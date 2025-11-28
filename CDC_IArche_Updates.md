@@ -350,7 +350,7 @@ contact_submissions:
 - [x] Design system configuré (index.css + tailwind.config.ts)
 - [x] Composant hero adapté à charte IArche (animations A+B appliquées)
 - [x] Copy hero finalisé (IArche + baseline "L'IA se construit avec vous")
-- [x] CTA principal "Découvrir" avec animation hover
+- [x] CTA principal "Découvrir" pointant vers /accueil
 - [x] Ancrage géographique ("Bayonne · France · nlq@iarche.fr")
 - [x] CTA secondaire "Une question ?" en footer
 - [x] Intégration design system : utilisation exclusive tokens CSS
@@ -361,23 +361,26 @@ contact_submissions:
 - [x] BackgroundLayout créé (composant réutilisable pour toutes les pages)
 - [x] Logo SVG texte réutilisable créé (logo-iarche-text.svg)
 - [x] Homepage complète en version portail minimaliste
+- [x] Page /accueil créée avec BackgroundLayout (prête pour contenu)
 
 #### Concept Homepage :
 **Portail d'entrée minimaliste** servant de vitrine élégante vers les autres sections du site. Design épuré avec :
 - Hero section full-screen
 - Titre IArche avec gradient animé (signature visuelle)
 - Baseline claire et mémorable
-- CTA unique invitant à découvrir
+- CTA unique "Découvrir" → /accueil
 - Ancrage géographique discret
 - Fonds animés subtils (quadrillages, lignes SVG, rectangles)
 
 **Architecture de l'information :**
-- "/" → Portail minimaliste (actuel)
+- "/" → Portail minimaliste (actuel) ✅
+- "/accueil" → Page d'accueil avec contenu (créée, vide) ✅
 - Navigation header → À créer pour accès aux autres pages
 - Pages de contenu → À créer (Expertise, Solutions, etc.)
 
 #### Prochaines étapes (Phase 2) :
 - [ ] Validation client de la homepage portail
+- [ ] Ajout de contenu sur /accueil
 - [ ] Création header navigation
 - [ ] Création footer structuré
 - [ ] Développement pages : Expertise, Solutions, À propos, Contact, Ressources
