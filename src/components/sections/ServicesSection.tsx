@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowRight } from 'lucide-react';
 
 const services = [
   {
@@ -28,7 +29,7 @@ const ServicesSection = () => {
           {services.map((service, index) => (
             <Card 
               key={index}
-              className="grid grid-rows-[auto_1fr] bg-card border border-border rounded-lg shadow-sm hover:border-accent hover:shadow-lg transition-all duration-300"
+              className="grid grid-rows-[auto_1fr_auto] bg-card border border-border rounded-lg shadow-sm hover:border-accent hover:shadow-lg transition-all duration-300"
               style={{
                 visibility: 'hidden',
                 animation: `fadeIn 0.8s ease-out ${0.2 + index * 0.1}s forwards`,
@@ -45,6 +46,15 @@ const ServicesSection = () => {
                   {service.description}
                 </p>
               </CardContent>
+              <CardFooter>
+                <a
+                  href="/services"
+                  className="flex items-center text-sm text-accent hover:text-accent/80 transition-colors group"
+                >
+                  En savoir plus
+                  <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-1" />
+                </a>
+              </CardFooter>
             </Card>
           ))}
         </div>
