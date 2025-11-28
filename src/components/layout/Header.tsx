@@ -27,13 +27,13 @@ const Header = () => {
               href="#exemples" 
               className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
             >
-              Réalisations
+              Nos Solutions
             </a>
             <a 
               href="#newsletter" 
               className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
             >
-              Contact
+              Actualités
             </a>
           </nav>
 
@@ -80,14 +80,14 @@ const Header = () => {
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
               >
-                Réalisations
+                Nos Solutions
               </a>
               <a 
                 href="#newsletter"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
               >
-                Contact
+                Actualités
               </a>
               <button
                 onClick={() => {
