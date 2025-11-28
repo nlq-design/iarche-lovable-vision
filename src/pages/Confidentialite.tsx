@@ -115,14 +115,14 @@ const Confidentialite = () => {
               </div>
 
               <div>
-                <h2 className="text-2xl font-bold text-foreground mb-4">Cookies</h2>
+                <h2 className="text-2xl font-bold text-foreground mb-4">Cookies et outils d'analyse</h2>
                 <p className="mb-4">
                   Notre site utilise des cookies techniques strictement nécessaires au fonctionnement du site.
                 </p>
                 
-                <h3 className="text-xl font-semibold text-foreground mb-2 mt-6">Google Analytics</h3>
+                <h3 className="text-xl font-semibold text-foreground mb-2 mt-6">Google Tag Manager & Google Analytics</h3>
                 <p className="mb-2">
-                  Nous utilisons Google Analytics pour mesurer l'audience de notre site et améliorer nos contenus. Google Analytics utilise des cookies pour collecter des informations de manière anonyme, notamment :
+                  Nous utilisons Google Tag Manager (GTM) et Google Analytics 4 (GA4) pour mesurer l'audience de notre site et améliorer nos contenus. Ces outils collectent des informations de manière anonyme, notamment :
                 </p>
                 <ul className="list-disc pl-6 space-y-2 mb-4">
                   <li>Pages visitées et temps passé</li>
@@ -131,7 +131,7 @@ const Confidentialite = () => {
                   <li>Type d'appareil et navigateur utilisé</li>
                 </ul>
                 <p className="mb-2">
-                  <strong>Anonymisation des IPs :</strong> Les adresses IP sont automatiquement anonymisées par Google Analytics, conformément au RGPD.
+                  <strong>Anonymisation des données :</strong> Les adresses IP sont automatiquement anonymisées, conformément au RGPD.
                 </p>
                 <p>
                   Pour en savoir plus ou vous opposer au tracking Google Analytics, consultez : <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Extension de navigateur Google Analytics Opt-out</a>
