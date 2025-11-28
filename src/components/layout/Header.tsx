@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { ArrowRight } from 'lucide-react';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -44,10 +43,9 @@ const Header = () => {
               const footer = document.querySelector('footer');
               footer?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="hidden md:flex items-center gap-2 bg-accent hover:bg-accent/90 focus:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 text-background font-medium transition-all px-4 py-2 rounded-md cursor-pointer group hover:shadow-[0_0_20px_rgba(194,107,76,0.5)]"
+            className="hidden md:block bg-accent hover:bg-accent/90 focus:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 text-background font-medium transition-all px-4 py-2 rounded-md cursor-pointer"
           >
             Nous contacter
-            <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
           </button>
 
           {/* Bouton Hamburger Mobile */}
@@ -97,10 +95,9 @@ const Header = () => {
                   const footer = document.querySelector('footer');
                   footer?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="flex items-center gap-2 bg-accent hover:bg-accent/90 focus:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 text-background font-medium transition-all px-4 py-2 rounded-md cursor-pointer text-sm group hover:shadow-[0_0_20px_rgba(194,107,76,0.5)]"
+                className="bg-accent hover:bg-accent/90 focus:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 text-background font-medium transition-all px-4 py-2 rounded-md cursor-pointer text-sm text-left"
               >
                 Nous contacter
-                <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
               </button>
             </nav>
           </div>
