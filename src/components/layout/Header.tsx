@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <header className="sticky top-0 z-50 bg-background border-b border-border">
@@ -9,7 +11,7 @@ const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo IArche */}
           <button 
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            onClick={() => navigate('/')}
             className="flex items-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
           >
             <span className="text-3xl font-semibold hero-gradient-text">IArche</span>
@@ -17,32 +19,47 @@ const Header = () => {
 
           {/* Navigation Desktop */}
           <nav className="hidden md:flex items-center gap-8">
-            <a 
-              href="/services" 
-              className="text-sm text-primary hover:text-primary/80 focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
+            <NavLink 
+              to="/services"
+              className={({ isActive }) => 
+                `text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded px-2 py-1 ${
+                  isActive 
+                    ? 'text-primary font-semibold' 
+                    : 'text-primary hover:text-primary/80'
+                }`
+              }
             >
               Services
-            </a>
-            <a 
-              href="/solutions" 
-              className="text-sm hero-gradient-text focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
+            </NavLink>
+            <NavLink 
+              to="/solutions"
+              className={({ isActive }) => 
+                `text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded px-2 py-1 ${
+                  isActive 
+                    ? 'hero-gradient-text font-semibold' 
+                    : 'hero-gradient-text'
+                }`
+              }
             >
               Nos Solutions
-            </a>
-            <a 
-              href="/actualites" 
-              className="text-sm text-accent hover:text-accent/80 focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded transition-colors"
+            </NavLink>
+            <NavLink 
+              to="/actualites"
+              className={({ isActive }) => 
+                `text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded px-2 py-1 ${
+                  isActive 
+                    ? 'text-accent font-semibold' 
+                    : 'text-accent hover:text-accent/80'
+                }`
+              }
             >
               Actualités
-            </a>
+            </NavLink>
           </nav>
 
           {/* CTA Desktop */}
           <button
-            onClick={() => {
-              const footer = document.querySelector('footer');
-              footer?.scrollIntoView({ behavior: 'smooth' });
-            }}
+            onClick={() => navigate('/contact')}
             className="hidden md:block border-2 border-accent text-accent hover:bg-accent hover:text-background focus:bg-accent focus:text-background focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 font-medium transition-all px-4 py-2 rounded-md cursor-pointer"
           >
             Nous contacter
@@ -68,32 +85,49 @@ const Header = () => {
         {mobileMenuOpen && (
           <div className="md:hidden mt-4 pb-4 border-t border-border pt-4">
             <nav className="flex flex-col gap-4">
-              <a 
-                href="/services"
+              <NavLink 
+                to="/services"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm text-primary hover:text-primary/80 focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
+                className={({ isActive }) => 
+                  `text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded px-2 py-1 ${
+                    isActive 
+                      ? 'text-primary font-semibold' 
+                      : 'text-primary hover:text-primary/80'
+                  }`
+                }
               >
                 Services
-              </a>
-              <a 
-                href="/solutions"
+              </NavLink>
+              <NavLink 
+                to="/solutions"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm hero-gradient-text focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
+                className={({ isActive }) => 
+                  `text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded px-2 py-1 ${
+                    isActive 
+                      ? 'hero-gradient-text font-semibold' 
+                      : 'hero-gradient-text'
+                  }`
+                }
               >
                 Nos Solutions
-              </a>
-              <a 
-                href="/actualites"
+              </NavLink>
+              <NavLink 
+                to="/actualites"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm text-accent hover:text-accent/80 focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded transition-colors"
+                className={({ isActive }) => 
+                  `text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded px-2 py-1 ${
+                    isActive 
+                      ? 'text-accent font-semibold' 
+                      : 'text-accent hover:text-accent/80'
+                  }`
+                }
               >
                 Actualités
-              </a>
+              </NavLink>
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  const footer = document.querySelector('footer');
-                  footer?.scrollIntoView({ behavior: 'smooth' });
+                  navigate('/contact');
                 }}
                 className="border-2 border-accent text-accent hover:bg-accent hover:text-background focus:bg-accent focus:text-background focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 font-medium transition-all px-4 py-2 rounded-md cursor-pointer text-sm text-left"
               >

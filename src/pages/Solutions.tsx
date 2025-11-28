@@ -1,6 +1,9 @@
+import { Helmet } from 'react-helmet-async';
+import { Link } from 'react-router-dom';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -75,7 +78,18 @@ const Solutions = () => {
 
   return (
     <BackgroundLayout>
+      <Helmet>
+        <title>Nos solutions · IArche · SaaS IA pour PME</title>
+        <meta name="description" content="Solutions IA développées par IArche : Team 5 Connect, Lexia, Dialogue Plus. Ce qu'on conseille, on le construit aussi." />
+        <link rel="canonical" href="https://iarche.fr/solutions" />
+        <meta property="og:title" content="Nos solutions · IArche · SaaS IA pour PME" />
+        <meta property="og:description" content="Solutions IA développées par IArche : Team 5 Connect, Lexia, Dialogue Plus." />
+        <meta property="og:url" content="https://iarche.fr/solutions" />
+        <meta property="og:type" content="website" />
+      </Helmet>
+      
       <Header />
+      <BreadcrumbNav />
       
       <main className="min-h-screen pt-20">
         <section className="max-w-6xl mx-auto px-6 py-16">
@@ -172,14 +186,14 @@ const Solutions = () => {
             <p className="text-lg text-foreground mb-6">
               Envie de créer votre propre solution ?
             </p>
-            <a href="/contact">
+            <Link to="/contact">
               <Button 
                 size="lg"
                 className="bg-accent hover:bg-accent/90 text-white px-8 py-6 text-base"
               >
                 Discuter de votre projet →
               </Button>
-            </a>
+            </Link>
           </div>
         </section>
       </main>

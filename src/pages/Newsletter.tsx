@@ -1,6 +1,8 @@
+import { Helmet } from 'react-helmet-async';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +16,18 @@ const Newsletter = () => {
 
   return (
     <BackgroundLayout>
+      <Helmet>
+        <title>Newsletter · IArche · Actualités IA</title>
+        <meta name="description" content="Inscrivez-vous à la newsletter IArche. Actualités et conseils IA pour dirigeants de PME, sans spam." />
+        <link rel="canonical" href="https://iarche.fr/newsletter" />
+        <meta property="og:title" content="Newsletter · IArche · Actualités IA" />
+        <meta property="og:description" content="Inscrivez-vous à la newsletter IArche. Actualités et conseils IA pour dirigeants de PME." />
+        <meta property="og:url" content="https://iarche.fr/newsletter" />
+        <meta property="og:type" content="website" />
+      </Helmet>
+      
       <Header />
+      <BreadcrumbNav />
       
       <main className="min-h-screen pt-20">
         <section className="max-w-4xl mx-auto px-6 py-16">
