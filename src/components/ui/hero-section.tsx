@@ -4,8 +4,8 @@ import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 const HeroSection = () => {
   return (
     <BackgroundLayout>
-      <div className="flex items-center justify-center relative z-10">
-        <div className="container text-center px-6 py-20">
+      <div className="min-h-screen flex items-center justify-center relative">
+        <div className="container text-center z-10 relative px-6 py-20">
           <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-semibold m-0 relative z-20 mb-20 md:mb-28 hero-animate-fadeIn hero-stagger-1" style={{ visibility: 'hidden' }}>
             <span className="hero-gradient-text">IArche</span>
           </h1>
