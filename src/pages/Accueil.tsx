@@ -84,10 +84,6 @@ const Accueil = () => {
         <div className="relative z-10 min-h-screen flex flex-col">
           <Header />
 
-          <div className="container mx-auto px-6">
-            <BreadcrumbNav items={[{ label: 'Accueil' }]} />
-          </div>
-
           <main>
             <AccrocheSection />
 
