@@ -3,8 +3,6 @@ import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ServicesSection from '@/components/sections/ServicesSection';
-import SolutionsSection from '@/components/sections/SolutionsSection';
-import ActualitesSection from '@/components/sections/ActualitesSection';
 import NewsletterSection from '@/components/sections/NewsletterSection';
 import { Helmet } from 'react-helmet';
 
@@ -45,8 +43,6 @@ const Accueil = () => {
 
           {/* Sections */}
           <ServicesSection />
-          <SolutionsSection />
-          <ActualitesSection />
           <NewsletterSection />
 
           <Footer />
