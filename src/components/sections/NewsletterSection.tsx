@@ -59,6 +59,17 @@ const NewsletterSection = () => {
             </Button>
           </form>
         </div>
+        
+        <p 
+          className="text-sm text-muted-foreground tracking-widest text-center mt-12"
+          style={{
+            visibility: 'hidden',
+            animation: 'fadeIn 0.8s ease-out 0.8s forwards',
+            willChange: 'opacity, transform'
+          }}
+        >
+          Agence IA · Bayonne · Pays Basque · France
+        </p>
       </div>
     </section>
   );
