@@ -20,7 +20,7 @@ const SolutionsCTASection = () => {
             href="/NosSolutions"
             className="inline-flex items-center text-primary hover:text-primary/80 transition-colors group text-base md:text-lg font-medium"
           >
-            Découvrir nos solutions
+            Nos Solutions IArches
             <ArrowRight className="ml-2 size-5 transition-transform group-hover:translate-x-1" />
           </a>
         </div>
