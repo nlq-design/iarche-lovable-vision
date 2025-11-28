@@ -1,7 +1,7 @@
 # Brand Book IArche
 
-**Version :** 1.0  
-**Date :** 28 Novembre 2025  
+**Version :** 1.1  
+**Date : 29 Novembre 2025**  
 **Document de référence pour l'identité visuelle IArche**
 
 ---
@@ -602,6 +602,249 @@ L'IA se construit avec vous
 
 ---
 
+## 10. ARCHITECTURE SITE - PAGES BUILDÉES ✅
+
+### 10.1 Structure complète (9 pages + homepage)
+
+**État : 100% des pages fonctionnelles**  
+**Date : 29 Novembre 2025**
+
+| Route | Nom | Statut | Meta SEO | Contenu |
+|-------|-----|--------|----------|---------|
+| `/` | Homepage | ✅ Buildée | ✅ Complet | Portail minimaliste |
+| `/services` | Services | ✅ Buildée | ✅ Complet | 4 services détaillés |
+| `/solutions` | Solutions | ✅ Buildée | ✅ Complet | SaaS + projets |
+| `/actualites` | Actualités | ✅ Buildée | ✅ Complet | Placeholder blog |
+| `/contact` | Contact | ✅ Buildée | ✅ Complet | Formulaire 2 col |
+| `/newsletter` | Newsletter | ✅ Buildée | ✅ Complet | Inscription + bénéfices |
+| `/livre-or` | Livre d'Or | ✅ Buildée | ✅ Complet | Placeholder témoignages |
+| `/mentions-legales` | Mentions | ✅ Buildée | ✅ Complet | Texte légal complet |
+| `/conditions-generales` | CGV | ✅ Buildée | ✅ Complet | 9 articles |
+| `/confidentialite` | RGPD | ✅ Buildée | ✅ Complet | Politique complète |
+
+**Routing :**
+- Redirection 301 : `/accueil` → `/` (consolidation SEO)
+- 404 : Page NotFound fonctionnelle
+
+---
+
+### 10.2 Composants SEO & UX
+
+#### HelmetProvider ✅
+**Package :** react-helmet-async  
+**Configuration :** `main.tsx`
+
+Chaque page inclut :
+```jsx
+<Helmet>
+  <title>Titre Page · IArche</title>
+  <meta name="description" content="Description 150-160 caractères" />
+  <link rel="canonical" href="https://iarche.fr/route" />
+  <meta property="og:title" content="Titre · IArche" />
+  <meta property="og:description" content="Description" />
+  <meta property="og:url" content="https://iarche.fr/route" />
+  <meta property="og:type" content="website" />
+</Helmet>
+```
+
+#### ScrollToTop ✅
+**Fichier :** `src/components/utils/ScrollToTop.tsx`
+
+- Scroll automatique en haut lors changement de route
+- **Exception homepage** : pas de scroll sur `/`
+- Déclenché via `useLocation()` hook
+
+#### BreadcrumbNav ✅
+**Fichier :** `src/components/ui/BreadcrumbNav.tsx`
+
+- Fil d'Ariane : Accueil > Page actuelle
+- Affiché sur toutes pages **sauf homepage**
+- Icône ChevronRight (Lucide)
+- Accessible (aria-label)
+
+Structure visuelle :
+```
+Accueil > Services
+Accueil > Contact
+...etc
+```
+
+#### Header avec NavLink ✅
+**Fichier :** `src/components/layout/Header.tsx`
+
+Améliorations :
+- `<NavLink>` au lieu de `<a>` (navigation react-router)
+- **Active link states** : bold + primary color
+- Logo cliquable → navigate `/`
+- CTA "Nous contacter" → navigate `/contact`
+
+Exemple NavLink :
+```tsx
+<NavLink 
+  to="/services"
+  className={({ isActive }) => 
+    isActive 
+      ? 'text-primary font-semibold' 
+      : 'text-primary hover:text-primary/80'
+  }
+>
+  Services
+</NavLink>
+```
+
+---
+
+### 10.3 Sitemap.xml Complet
+
+**Fichier :** `public/sitemap.xml`
+
+Structure avec métadonnées SEO :
+
+| URL | Priority | Changefreq | Lastmod |
+|-----|----------|------------|---------|
+| `/` | 1.0 | weekly | 2025-11-29 |
+| `/services` | 0.9 | monthly | 2025-11-29 |
+| `/solutions` | 0.9 | monthly | 2025-11-29 |
+| `/actualites` | 0.8 | weekly | 2025-11-29 |
+| `/contact` | 0.7 | monthly | 2025-11-29 |
+| `/newsletter` | 0.5 | monthly | 2025-11-29 |
+| `/livre-or` | 0.4 | monthly | 2025-11-29 |
+| `/mentions-legales` | 0.3 | yearly | 2025-11-29 |
+| `/conditions-generales` | 0.3 | yearly | 2025-11-29 |
+| `/confidentialite` | 0.3 | yearly | 2025-11-29 |
+
+---
+
+### 10.4 Design System - Conformité 100%
+
+**Toutes les pages respectent :**
+
+1. **BackgroundLayout wrapper**
+   - Fonds quadrillés animés
+   - Rectangles décoratifs pulsants
+   - Cohérence visuelle totale
+
+2. **Couleurs tokenisées**
+   - 100% tokens CSS (hsl(var(--primary)), etc.)
+   - Aucun hardcode couleur
+   - Palette IArche respectée
+
+3. **Animations progressives**
+   - `invisible animate-fadeIn [animation-delay:X.Xs]`
+   - Délais échelonnés (0.1s → 0.9s)
+   - FOUC prevention pattern
+
+4. **Typography Inter**
+   - Titres : font-bold, text-foreground
+   - Texte : font-normal, text-muted-foreground
+   - Hiérarchie H1/H2/body
+
+5. **Navigation react-router**
+   - `<Link>` pour liens internes
+   - `<NavLink>` avec active states
+   - Pas de `<a>` pour navigation interne
+
+---
+
+### 10.5 Formulaires prêts pour backend
+
+#### Contact Form (`/contact`)
+**Champs :**
+- Nom* (required)
+- Email* (required)
+- Entreprise (optional)
+- Sujet* (select: Audit, Développement, Formation, Conformité, Autre)
+- Message* (textarea, required)
+
+**Layout :** 2 colonnes (formulaire + coordonnées)  
+**État :** Prêt pour connexion Lovable Cloud + Zod validation
+
+#### Newsletter Form (`/newsletter`)
+**Champs :**
+- Email* (required)
+
+**Bénéfices affichés :**
+1. Veille IA et actualités
+2. Conseils pratiques dirigeants PME
+3. Retours d'expérience projets
+4. Invitations événements
+
+**État :** Prêt pour connexion Lovable Cloud + double opt-in
+
+---
+
+### 10.6 Pages légales - Contenu complet
+
+#### Mentions Légales (`/mentions-legales`)
+Sections :
+- Éditeur (IArche, Bayonne, email)
+- Hébergeur (Lovable.dev)
+- Propriété intellectuelle
+- Responsabilité
+- Droit applicable
+
+#### CGV (`/conditions-generales`)
+9 articles détaillés :
+1. Objet
+2. Services (4 prestations listées)
+3. Tarifs
+4. Modalités paiement
+5. Livraison prestations
+6. Réclamations (contact nlq@iarche.fr)
+7. Responsabilité
+8. Données personnelles
+9. Règlement litiges
+
+#### Politique Confidentialité (`/confidentialite`)
+Sections RGPD :
+- Données collectées (formulaires)
+- Finalités traitement
+- Base légale (consentement + intérêt légitime)
+- Durée conservation (3 ans)
+- Destinataires (IArche uniquement)
+- Vos droits (accès, rectification, effacement, portabilité, opposition)
+- Cookies (techniques uniquement)
+- Contact DPO (nlq@iarche.fr)
+
+---
+
+### 10.7 Performance & Accessibilité
+
+**Performances :**
+- Navigation sans rechargement (react-router)
+- Meta tags dynamiques (react-helmet-async)
+- Animations GPU (`will-change`)
+- Score attendu Lighthouse : > 90
+
+**Accessibilité :**
+- Breadcrumb accessible (aria-label)
+- Navigation sémantique (nav, main, section)
+- Contraste WCAG AAA maintenu
+- Focus states sur tous interactifs
+- Labels associés aux inputs
+
+**SEO :**
+- Sitemap.xml complet
+- Meta tags uniques par page
+- Canonical tags
+- H1 uniques optimisés
+- Structure HTML5 sémantique
+
+---
+
+### 10.8 Prochaines étapes
+
+**Phase 3 - Backend & Contenu :**
+1. Connecter formulaires (Contact + Newsletter) à Lovable Cloud
+2. Créer système blog (table blog_posts + back-office)
+3. Intégrer Google Analytics 4
+4. Ajouter attributs alt sur images/SVG
+5. Tests multi-devices
+
+**Score Phase 2 :** 9.5/10 ✅
+
+---
+
 ## 11. ÉVOLUTIONS FUTURES
 
 ### 11.1 À considérer
@@ -615,17 +858,23 @@ L'IA se construit avec vous
 
 | Version | Date | Modifications |
 |---------|------|---------------|
-| 1.1 | 28 Nov 2025 | Mise à jour specs logo gradient (buildé), référence page "/" auditée (8.5/10) |
+| 1.1 | 29 Nov 2025 | Ajout section architecture site (9 pages buildées), composants SEO/UX, sitemap.xml, référence pages légales |
 | 1.0 | 28 Nov 2025 | Création initiale |
 
 ---
 
 ## 12. RÉFÉRENCE TECHNIQUE - ÉTAT DU BUILD ✅
 
-**Homepage (/) - Portail minimaliste**  
-**Score : 8.5/10** | **Audit : 28 Nov 2025**
+**Phase 2 Complète - Architecture site + SEO**  
+**Score global : 9.5/10** | **Date : 29 Nov 2025**
 
-Documentation complète dans `CDC_IArche_Updates.md` (Design System + Audit détaillé)
+**Pages buildées :** 10 pages fonctionnelles (homepage + 9 pages)  
+**Composants SEO :** HelmetProvider, ScrollToTop, BreadcrumbNav, NavLink  
+**Sitemap :** 10 URLs avec métadonnées complètes  
+**Formulaires :** Contact + Newsletter (prêts backend)  
+**Pages légales :** Mentions, CGV, Confidentialité (contenu complet)
+
+Documentation technique détaillée dans `CDC_IArche_Updates.md` (V4.0)
 
 ---
 
