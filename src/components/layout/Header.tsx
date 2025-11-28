@@ -35,14 +35,15 @@ const Header = () => {
           </nav>
 
           {/* CTA */}
-        <NavLink to="/contact">
-          <Button 
-            variant="default"
-            className="bg-accent hover:bg-accent/90 focus:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 text-background font-medium transition-all"
+          <button
+            onClick={() => {
+              const footer = document.querySelector('footer');
+              footer?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="bg-accent hover:bg-accent/90 focus:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 text-background font-medium transition-all px-4 py-2 rounded-md cursor-pointer"
           >
             Nous contacter
-          </Button>
-        </NavLink>
+          </button>
         </div>
       </div>
     </header>
