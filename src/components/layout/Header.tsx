@@ -19,7 +19,7 @@ const Header = () => {
           <nav className="hidden md:flex items-center gap-8">
             <a 
               href="#services" 
-              className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
+              className="text-sm text-primary hover:text-primary/80 focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
             >
               Services
             </a>
@@ -31,7 +31,7 @@ const Header = () => {
             </a>
             <a 
               href="#newsletter" 
-              className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
+              className="text-sm text-accent hover:text-accent/80 focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded transition-colors"
             >
               Actualités
             </a>
@@ -71,7 +71,7 @@ const Header = () => {
               <a 
                 href="#services"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
+                className="text-sm text-primary hover:text-primary/80 focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
               >
                 Services
               </a>
@@ -85,7 +85,7 @@ const Header = () => {
               <a 
                 href="#newsletter"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
+                className="text-sm text-accent hover:text-accent/80 focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded transition-colors"
               >
                 Actualités
               </a>
