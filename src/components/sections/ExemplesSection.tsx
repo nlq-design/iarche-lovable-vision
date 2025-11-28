@@ -33,6 +33,9 @@ const ExemplesSection = () => {
     <section className="py-8 md:py-12 bg-muted">
       <div className="container mx-auto px-6">
         <h2 className="sr-only">Exemples de réalisations IA</h2>
+        <h3 className="text-2xl md:text-3xl font-semibold text-foreground text-center mb-8 md:mb-12">
+          Nos derniers projets
+        </h3>
         <div
           className="max-w-4xl mx-auto space-y-6"
           style={{
