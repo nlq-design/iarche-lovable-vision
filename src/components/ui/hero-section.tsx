@@ -11,10 +11,10 @@ const HeroSection = () => {
       pathElement.style.strokeDasharray = `${len}px`;
       pathElement.style.strokeDashoffset = `${len}px`;
       
-      // Staggered animation: first line at 1.5s, second line at 2.5s
-      const delay = 800 + (index * 1000);
+      // Staggered animation: first line starts at 1s, second line at 2.5s, each takes 2.5s
+      const delay = 1000 + (index * 1500);
       setTimeout(() => {
-        pathElement.style.transition = 'stroke-dashoffset 1.5s ease-in-out';
+        pathElement.style.transition = 'stroke-dashoffset 2.5s ease-in-out';
         pathElement.style.strokeDashoffset = '0px';
       }, delay);
     });
