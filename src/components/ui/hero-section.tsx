@@ -207,6 +207,7 @@ const HeroSection = () => {
             clip-path: inset(0 100% 0 0);
             animation: revealLetter 0.15s ease-out forwards;
             will-change: clip-path;
+            z-index: 2;
           }
           
           .word-build span:nth-child(1) { animation-delay: 1.1s; }
