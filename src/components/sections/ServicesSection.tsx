@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const services = [
   {
@@ -23,27 +23,27 @@ const services = [
 const ServicesSection = () => {
   return (
     <section className="py-20 md:py-28 bg-background">
-      <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 max-w-7xl mx-auto">
+      <div className="container mx-auto px-6 lg:px-16">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 lg:gap-8 max-w-7xl mx-auto">
           {services.map((service, index) => (
             <Card 
               key={index}
-              className="grid grid-rows-[auto_1fr] bg-card border border-border rounded-lg hover:border-accent hover:shadow-lg transition-all duration-300"
+              className="grid grid-rows-[auto_1fr] bg-card border border-border rounded-lg shadow-sm hover:border-accent hover:shadow-lg transition-all duration-300"
               style={{
                 visibility: 'hidden',
-                animation: `fadeIn 0.8s ease-out ${0.4 + index * 0.1}s forwards`,
+                animation: `fadeIn 0.8s ease-out ${0.2 + index * 0.1}s forwards`,
                 willChange: 'opacity, transform'
               }}
             >
               <CardHeader>
-                <CardTitle className="text-lg font-semibold text-foreground leading-tight md:text-xl">
+                <CardTitle className="text-lg font-semibold leading-none tracking-tight md:text-xl">
                   {service.title}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-muted-foreground leading-relaxed">
+                <p className="text-muted-foreground">
                   {service.description}
-                </CardDescription>
+                </p>
               </CardContent>
             </Card>
           ))}
