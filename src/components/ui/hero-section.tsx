@@ -2,20 +2,21 @@ import React, { useEffect } from 'react';
 
 const HeroSection = () => {
   useEffect(() => {
-    // Calculate path lengths for accurate animations
+    // Calculate path lengths for accurate animations with staggered delays
     const paths = document.querySelectorAll('.animation-line');
-    paths.forEach((path) => {
+    paths.forEach((path, index) => {
       const svgPath = path as SVGGeometryElement;
       const len = svgPath.getTotalLength();
       const pathElement = path as HTMLElement;
       pathElement.style.strokeDasharray = `${len}px`;
       pathElement.style.strokeDashoffset = `${len}px`;
       
-      // Trigger the animation after a short delay
+      // Staggered animation: first line at 1.5s, second line at 2.5s
+      const delay = 800 + (index * 1000);
       setTimeout(() => {
-        pathElement.style.transition = 'stroke-dashoffset 2s ease-in-out';
+        pathElement.style.transition = 'stroke-dashoffset 1.5s ease-in-out';
         pathElement.style.strokeDashoffset = '0px';
-      }, 500);
+      }, delay);
     });
   }, []);
 
@@ -36,31 +37,32 @@ const HeroSection = () => {
           
           @keyframes patternScroll {
             0% { 
-              transform: translate(-2%, -2%); 
+              transform: translate(-1%, -1%); 
             }
             100% { 
-              transform: translate(2%, 2%); 
+              transform: translate(1%, 1%); 
             }
           }
           
-          @keyframes pulse {
+          @keyframes subtlePulse {
             0% { 
-              box-shadow: 0 4px 12px rgba(209, 90, 62, 0.2); 
+              box-shadow: 0 4px 12px rgba(209, 90, 62, 0.15); 
             }
             50% { 
-              box-shadow: 0 8px 24px rgba(209, 90, 62, 0.4); 
+              box-shadow: 0 6px 18px rgba(209, 90, 62, 0.25); 
             }
             100% { 
-              box-shadow: 0 4px 12px rgba(209, 90, 62, 0.2); 
+              box-shadow: 0 4px 12px rgba(209, 90, 62, 0.15); 
             }
           }
           
           .hero-animate-fadeIn {
-            animation: fadeIn 1s ease-out forwards;
+            animation: fadeIn 0.8s ease-out forwards;
+            opacity: 0;
           }
           
           .hero-animate-patternScroll {
-            animation: patternScroll 30s linear infinite;
+            animation: patternScroll 45s linear infinite;
           }
           
           .hero-animation-line {
@@ -71,25 +73,42 @@ const HeroSection = () => {
           }
           
           .hero-pulse-animation {
-            animation: pulse 2s infinite;
+            animation: subtlePulse 3s ease-in-out infinite;
+          }
+          
+          /* Staggered fade-in delays */
+          .hero-stagger-1 {
+            animation-delay: 0s;
+          }
+          
+          .hero-stagger-2 {
+            animation-delay: 0.2s;
+          }
+          
+          .hero-stagger-3 {
+            animation-delay: 0.4s;
+          }
+          
+          .hero-stagger-4 {
+            animation-delay: 0.6s;
           }
         `}
       </style>
       
       <div className="min-h-screen flex items-center justify-center bg-background text-foreground font-sans overflow-hidden relative">
-        {/* Container */}
-        <div className="container text-center z-10 relative px-6 py-20 hero-animate-fadeIn">
-          <p className="text-sm font-medium text-muted-foreground mb-4 tracking-wide uppercase">
+        {/* Container with staggered animations */}
+        <div className="container text-center z-10 relative px-6 py-20">
+          <p className="text-sm font-medium text-muted-foreground mb-4 tracking-wide uppercase hero-animate-fadeIn hero-stagger-1">
             Agence IA · Bayonne
           </p>
-          <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-semibold m-0 relative z-20 text-primary mb-6">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-semibold m-0 relative z-20 text-primary mb-6 hero-animate-fadeIn hero-stagger-2">
             L'IA se construit<br />
             <span className="text-accent">avec vous</span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed">
+          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed hero-animate-fadeIn hero-stagger-3">
             Votre entreprise mérite mieux que des slides. Un accompagnement de l'audit à l'autonomie, pour des résultats mesurables.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center hero-animate-fadeIn hero-stagger-4">
             <button className="px-8 py-4 bg-accent text-accent-foreground border-none rounded-lg cursor-pointer text-lg font-medium transition-all duration-300 ease-in-out hover:shadow-lg hover:translate-y-[-2px] shadow-md hover:scale-105 hero-pulse-animation">
               Nous contacter
             </button>
@@ -99,7 +118,7 @@ const HeroSection = () => {
           </div>
         </div>
 
-        {/* Dynamic Lines - Adapted to IArche colors */}
+        {/* Dynamic Lines - Staggered animation */}
         <div className="line-group absolute top-0 left-0 w-full h-full overflow-hidden z-0 opacity-30">
           <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 177 159" preserveAspectRatio="none">
             <path 
@@ -117,7 +136,7 @@ const HeroSection = () => {
           </svg>
         </div>
 
-        {/* Background Patterns - Subtle */}
+        {/* Background Patterns - Ultra slow, subtle movement */}
         <div 
           className="pattern absolute w-[150%] h-[150%] opacity-20 hero-animate-patternScroll" 
           style={{ 
@@ -132,7 +151,7 @@ const HeroSection = () => {
             top: '25%', 
             left: '25%',
             background: 'repeating-linear-gradient(-45deg, transparent, transparent 20px, hsl(30, 16%, 88%) 20px, hsl(30, 16%, 88%) 22px)',
-            animationDelay: '15s'
+            animationDelay: '22.5s'
           }}
         />
       </div>
