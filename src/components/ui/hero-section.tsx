@@ -70,8 +70,6 @@ const HeroSection = () => {
         <svg 
           className="absolute inset-0 w-full h-full pointer-events-none" 
           style={{ zIndex: 1 }}
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
@@ -87,32 +85,32 @@ const HeroSection = () => {
             </linearGradient>
           </defs>
           
-          {/* Ligne 1 : Diagonale haut gauche vers droite */}
+          {/* Ligne 1 : Diagonale gauche vers droite */}
           <path
-            d="M 0 15 Q 25 20, 50 18 T 100 15"
+            d="M 0 80 Q 200 150, 400 100 T 800 120 L 1200 80"
             fill="none"
             stroke="url(#lineGradient1)"
-            strokeWidth="0.3"
-            opacity="0.6"
-            vectorEffect="non-scaling-stroke"
+            strokeWidth="2"
+            opacity="0.4"
+            className="svg-line-animate"
             style={{
-              strokeDasharray: '200',
-              strokeDashoffset: '200',
+              strokeDasharray: '1500',
+              strokeDashoffset: '1500',
               animation: 'drawLine 3s ease-out forwards'
             }}
           />
           
           {/* Ligne 2 : Courbe en bas à droite */}
           <path
-            d="M 100 75 Q 70 78, 40 76 T 0 80"
+            d="M 1200 600 Q 900 550, 700 620 T 300 580 L 0 640"
             fill="none"
             stroke="url(#lineGradient2)"
-            strokeWidth="0.3"
-            opacity="0.5"
-            vectorEffect="non-scaling-stroke"
+            strokeWidth="2"
+            opacity="0.3"
+            className="svg-line-animate"
             style={{
-              strokeDasharray: '200',
-              strokeDashoffset: '200',
+              strokeDasharray: '1500',
+              strokeDashoffset: '1500',
               animation: 'drawLine 4s ease-out 0.5s forwards'
             }}
           />
