@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 const CTASection = () => {
   return (
     <section className="py-20 md:py-28 px-6 text-center bg-background">
-      <p 
+      <h2 
         className="text-2xl md:text-3xl font-semibold text-foreground mb-8"
         style={{
           visibility: 'hidden',
@@ -14,7 +14,7 @@ const CTASection = () => {
         }}
       >
         Une question sur votre projet ?
-      </p>
+      </h2>
       
       <div
         style={{

@@ -4,7 +4,7 @@ const PresentationSection = () => {
   return (
     <section className="pt-8 pb-12 md:pt-12 md:pb-16">
       <div className="container mx-auto px-6">
-        <h2 className="sr-only">À propos d'IArche</h2>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center mb-8">À propos</h2>
         <div
           className="max-w-3xl mx-auto text-center space-y-4"
           style={{
