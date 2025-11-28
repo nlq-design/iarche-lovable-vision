@@ -38,6 +38,9 @@ All colors MUST be HSL.
     --muted: 30 20% 93%;
     --muted-foreground: 0 0% 40%;
     
+    /* Text subtle: Gris clair #999999 */
+    --text-subtle: 0 0% 60%;
+    
     /* Destructive: Terracotta doux #C4553D */
     --destructive: 12 55% 50%;
     --destructive-foreground: 30 14% 98%;
