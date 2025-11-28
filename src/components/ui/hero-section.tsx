@@ -65,12 +65,6 @@ const HeroSection = () => {
             animation: patternScroll 45s linear infinite;
           }
           
-          .hero-animation-line {
-            fill: none;
-            stroke: hsl(12, 60%, 53%);
-            stroke-width: 2;
-            opacity: 0.6;
-          }
           
           .hero-pulse-animation {
             animation: subtlePulse 3s ease-in-out infinite;
@@ -122,19 +116,35 @@ const HeroSection = () => {
           </div>
         </div>
 
-        {/* Dynamic Lines - Staggered animation */}
+        {/* Dynamic Lines - Staggered animation with gradient */}
         <div className="line-group absolute top-0 left-0 w-full h-full overflow-hidden z-0 opacity-30">
           <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 177 159" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="lineGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="hsl(218, 47%, 20%)" />
+                <stop offset="100%" stopColor="hsl(12, 60%, 53%)" />
+              </linearGradient>
+            </defs>
             <path 
               id="main-line" 
-              className="hero-animation-line animation-line" 
+              className="animation-line" 
+              stroke="url(#lineGradient1)"
+              style={{ fill: 'none', strokeWidth: 2, opacity: 0.6 }}
               d="M176 1L53.5359 1C52.4313 1 51.5359 1.89543 51.5359 3L51.5359 56C51.5359 57.1046 50.6405 58 49.5359 58L0 58"
             />
           </svg>
           
           <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 176 59" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="lineGradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="hsl(12, 60%, 53%)" />
+                <stop offset="100%" stopColor="hsl(218, 47%, 20%)" />
+              </linearGradient>
+            </defs>
             <path 
-              className="hero-animation-line animation-line" 
+              className="animation-line" 
+              stroke="url(#lineGradient2)"
+              style={{ fill: 'none', strokeWidth: 2, opacity: 0.6 }}
               d="M0 1L122.464 1C123.569 1 124.464 1.89543 124.464 3L124.464 56C124.464 57.1046 125.36 58 126.464 58L176 58"
             />
           </svg>
