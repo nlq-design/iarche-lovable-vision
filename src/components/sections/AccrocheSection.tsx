@@ -2,7 +2,7 @@ import React from 'react';
 const AccrocheSection = () => {
   return (
     <section className="py-20 md:py-24 px-6 flex flex-col items-center">
-      <h2 className="text-2xl md:text-3xl font-semibold text-foreground text-center max-w-3xl leading-relaxed mb-6 invisible animate-fadeIn [animation-delay:0.1s]">
+      <h2 className="text-2xl md:text-3xl font-semibold text-primary text-center max-w-3xl leading-relaxed mb-6 invisible animate-fadeIn [animation-delay:0.1s]">
         Dirigeant, indépendant ou porteur de projet IA ?
       </h2>
       
