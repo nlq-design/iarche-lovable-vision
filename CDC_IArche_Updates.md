@@ -348,8 +348,449 @@ contact_submissions:
 - [x] Copy hero finalisé (IArche + baseline)
 - [x] Ancrage géographique ajouté ("Bayonne · France" en bas de page)
 - [x] Intégration design system : utilisation token `text-primary` pour cohérence globale
+- [x] CTA textuel bleu avec animation hover
+- [x] Animations dynamiques optimisées (gradients, lignes SVG)
+- [x] Repositionnement titre "IArche" (espacement vertical augmenté)
+- [x] Correction bug FOUC (Flash of Unstyled Content)
 - [ ] Homepage assemblée (sections suivantes à ajouter)
 - [ ] Validation client
+
+---
+
+## DESIGN SYSTEM & CHARTE GRAPHIQUE - RÉFÉRENTIEL V1
+
+**Date : 28 Novembre 2025**  
+**Version : 1.0**  
+**Objectif : Référence pour toutes les pages futures et médias de communication**
+
+---
+
+### 1. PALETTE COULEURS (HSL)
+
+#### Couleurs Principales
+```css
+--primary: 12 60% 53%           /* Terracotta #D15A3E - Couleur de marque */
+--primary-glow: 12 70% 65%      /* Terracotta lumineux - Accents */
+--background: 30 16% 98%        /* Blanc Cassé #FAF9F7 - Fond principal */
+--foreground: 218 47% 20%       /* Bleu Nuit #1A2B4A - Texte principal */
+```
+
+#### Couleurs Secondaires
+```css
+--muted: 30 16% 88%             /* Sable Doux #E5E3DF - Éléments subtils */
+--muted-foreground: 218 20% 40% /* Gris Bleuté - Texte secondaire */
+--border: 30 12% 85%            /* Bordures subtiles */
+```
+
+#### Couleurs Système
+```css
+--accent: 218 47% 30%           /* Bleu intermédiaire - Interactions */
+--destructive: 0 70% 50%        /* Rouge - Actions destructives */
+--success: 142 71% 45%          /* Vert - Validations */
+```
+
+**RÈGLE CRITIQUE :** Toujours utiliser les tokens CSS (ex: `text-primary`, `bg-background`) plutôt que des valeurs directes. Jamais de `text-white`, `bg-black`, etc.
+
+---
+
+### 2. TYPOGRAPHIE
+
+#### Famille de Police
+**Inter** - Police par défaut sur tout le site
+- Disponible via Google Fonts
+- Poids utilisés : 400 (Regular), 500 (Medium), 600 (Semibold), 700 (Bold)
+
+#### Hiérarchie Typographique
+```css
+/* Titre H1 - Hero principal */
+font-size: 3rem (48px) mobile → 4rem (64px) desktop
+font-weight: 600 (Semibold)
+line-height: tight (1.1)
+color: primary (avec effet gradient animé)
+
+/* Titre H2 - Sections principales */
+font-size: 2rem (32px) mobile → 2.5rem (40px) desktop
+font-weight: 600 (Semibold)
+line-height: tight (1.2)
+color: foreground
+
+/* Titre H3 - Sous-sections */
+font-size: 1.5rem (24px) mobile → 1.75rem (28px) desktop
+font-weight: 500 (Medium)
+color: foreground
+
+/* Body - Texte courant */
+font-size: 1rem (16px) mobile → 1.125rem (18px) desktop
+font-weight: 400 (Regular)
+line-height: relaxed (1.625)
+color: muted-foreground
+
+/* Small - Annotations */
+font-size: 0.875rem (14px)
+font-weight: 400 (Regular)
+color: muted-foreground
+```
+
+---
+
+### 3. ANIMATIONS & EFFETS
+
+#### A. Animations Hero Section
+
+##### Gradient Texte "IArche"
+```css
+Animation: gradient 15s ease infinite
+Effet: Dégradé animé Bleu Nuit → Terracotta → Bleu Nuit
+Background: linear-gradient(270deg, hsl(218, 47%, 20%), hsl(12, 60%, 53%), hsl(218, 47%, 35%), hsl(12, 60%, 53%))
+Background-size: 600% 600%
+Optimisation: will-change: background-position
+```
+
+##### Fade In Staggeré (Apparition progressive)
+```css
+Animation: fadeIn 0.8s ease-out forwards
+Effet: Opacité 0 → 1 + Translation Y(20px → 0)
+Optimisation: visibility: hidden → visible (évite FOUC)
+Optimisation: will-change: opacity, transform, visibility
+Délais staggerés:
+  - Titre H1: 0s
+  - Baseline: 0.2s
+  - CTA: 0.4s
+```
+
+##### Lignes SVG Animées
+```css
+Animation: Dessin progressif avec stroke-dashoffset
+Durée: 2s ease-in-out
+Délai staggeré: 0.5s entre chaque ligne
+Couleurs: Dégradés Bleu Nuit → Terracotta (alternance)
+Opacité: 0.6 (subtile)
+```
+
+##### Patterns de Fond (Ultra subtils)
+```css
+Animation: patternScroll 20s linear infinite
+Effet: Translation douce des motifs de fond
+Opacité: 0.1-0.2 (très discrète)
+Pattern: Lignes diagonales répétées 45deg
+```
+
+##### Rectangles Constructions (Éléments décoratifs)
+```css
+Animation: constructionFade 4s ease-in-out infinite
+Effet: Pulsation opacité + scale subtil
+Délais staggerés: 0s, 1s, 2s, 3s
+Bordures: border-border/30 (très subtiles)
+```
+
+#### B. CTA Textuel Bleu (Call-to-Action)
+
+##### Spécifications
+```css
+Type: Lien textuel (pas de bouton rempli)
+Couleur: text-primary (Terracotta)
+Font-size: 1.125rem (18px)
+Font-weight: 500 (Medium)
+Display: inline-flex avec icône flèche
+Gap: 0.5rem → 0.75rem au hover
+```
+
+##### Animation Hover
+```css
+Transition: all 300ms ease
+Effet 1: Gap augmente (flèche s'éloigne)
+Effet 2: Flèche translate-x-1 (avance de 4px)
+Effet 3: Couleur maintenue (pas de changement)
+```
+
+**Principe :** CTA minimaliste sans fond, privilégiant la typographie et le mouvement subtil. Anti-bouton massif.
+
+---
+
+### 4. COMPOSITION & LAYOUT
+
+#### Espacements Verticaux
+```css
+/* Hero Section */
+min-height: 100vh (plein écran)
+padding-y: 5rem (80px)
+Titre "IArche" margin-bottom: 5rem mobile → 7rem desktop (espacement majeur)
+Baseline margin-bottom: 2.5rem
+CTA margin-bottom: Auto
+
+/* Sections générales */
+Section padding: 4rem mobile → 6rem desktop
+Container max-width: 1280px
+Container padding-x: 1.5rem
+```
+
+#### Grilles & Cards
+```css
+/* Grid système (futur) */
+grid-gap: 2rem mobile → 3rem desktop
+columns: 1 mobile → 2 tablet → 3 desktop
+
+/* Cards projets (futur) */
+padding: 2rem
+border-radius: 0.75rem (12px)
+border: 1px solid border
+background: background
+hover: shadow-lg + scale(1.02)
+transition: 300ms ease
+```
+
+---
+
+### 5. PRINCIPES DE DESIGN
+
+#### Philosophie Visuelle
+- **Minimalisme élégant** : Privilégier les espaces, la typographie et les animations subtiles
+- **Anti-template** : Éviter les codes visuels génériques (pas de purple gradients, pas d'IA clipart)
+- **Dynamisme contrôlé** : Animations présentes mais jamais envahissantes
+- **Chaleur professionnelle** : Terracotta apporte chaleur sans perdre la crédibilité
+
+#### Hiérarchie Visuelle
+1. **Titre principal** : Grande taille + gradient animé = point focal
+2. **Baseline** : Texte secondaire mais lisible, couleur muted-foreground
+3. **CTA** : Couleur primary pour attirer l'œil, animation invite au clic
+4. **Éléments décoratifs** : Opacité basse, mouvement lent, jamais distrayants
+
+#### Règles d'Animation
+- **Performance** : `will-change` sur propriétés animées (opacity, transform, background-position)
+- **FOUC Prevention** : `visibility: hidden` initial + `visibility: visible` dans keyframe
+- **Durées** : 
+  - Micro-interactions : 200-300ms
+  - Apparitions : 800ms-1.2s
+  - Animations continues : 15s-20s
+- **Easing** : `ease-out` pour apparitions, `ease-in-out` pour boucles, `linear` pour patterns
+
+---
+
+### 6. COMPOSANTS UI (SHADCN)
+
+#### Tokens Sémantiques Utilisés
+```css
+--background      /* Fond principal des surfaces */
+--foreground      /* Texte sur background */
+--primary         /* Couleur de marque principale */
+--primary-foreground /* Texte sur primary (blanc) */
+--muted           /* Surface secondaire */
+--muted-foreground /* Texte secondaire */
+--border          /* Bordures subtiles */
+--accent          /* Surfaces d'interactions */
+```
+
+#### Variantes Boutons (Future usage)
+```css
+/* Variant "default" (primary rempli) */
+background: primary
+color: primary-foreground
+hover: opacity-90
+
+/* Variant "outline" (contour) */
+border: 1px solid border
+color: foreground
+hover: bg-accent
+
+/* Variant "ghost" (transparent) */
+color: foreground
+hover: bg-accent
+
+/* Variant "link" (textuel - utilisé actuellement) */
+color: primary
+text-decoration: underline-offset-4
+hover: underline
+```
+
+---
+
+### 7. RESPONSIVE DESIGN
+
+#### Breakpoints Tailwind
+```css
+sm: 640px   /* Petit mobile → Tablette */
+md: 768px   /* Tablette */
+lg: 1024px  /* Desktop */
+xl: 1280px  /* Large desktop */
+2xl: 1536px /* Extra large */
+```
+
+#### Stratégie Mobile-First
+- Base : Mobile (320px-640px)
+- Ajustements progressifs via `md:`, `lg:`, `xl:`
+- Hero : Centré vertical sur toutes tailles
+- Typographie : Scale up de ~25% sur desktop
+- Espacements : +50% sur desktop vs mobile
+
+---
+
+### 8. ACCESSIBILITÉ
+
+#### Contraste
+- Ratio texte/fond : ≥ 4.5:1 (WCAG AA)
+- primary sur background : ✅ Conforme
+- foreground sur background : ✅ Conforme
+- muted-foreground sur background : ✅ Conforme
+
+#### Navigation Clavier
+- CTA accessible via Tab
+- Focus visible : ring-2 ring-primary ring-offset-2
+- Animations respectent `prefers-reduced-motion` (à implémenter)
+
+---
+
+### 9. PERFORMANCE
+
+#### Optimisations Appliquées
+- `will-change` sur animations continues (background-position, opacity, transform)
+- `visibility: hidden` initial pour éviter FOUC
+- CSS inline dans composant Hero (évite FOUC)
+- SVG optimisé avec gradients réutilisables
+- Pas d'images lourdes (design typographique)
+
+#### Objectifs Lighthouse
+- Performance : > 90
+- Accessibility : > 95
+- Best Practices : > 95
+- SEO : > 95
+
+---
+
+### 10. GUIDELINES POUR FUTURES PAGES
+
+#### À Respecter Impérativement
+1. **Couleurs** : Utiliser exclusivement les tokens CSS définis
+2. **Typographie** : Inter uniquement, respecter la hiérarchie établie
+3. **Animations** : Privilégier les apparitions staggerées (0.2s entre éléments)
+4. **CTA** : Style textuel minimaliste avec flèche animée (sauf cas exceptionnels)
+5. **Espacements** : Utiliser les multiples de 1rem (Tailwind: 4, 8, 12, 16, 20, 24, 32)
+6. **Contraste** : Toujours valider le ratio > 4.5:1
+
+#### À Adapter Selon Contexte
+- Intensité des animations (plus subtil sur pages longues)
+- Grilles de contenu (2 ou 3 colonnes selon densité)
+- Ajout de variantes boutons (outline, default) si besoin CTA secondaires
+
+#### À Éviter Absolument
+- Couleurs hardcodées (`text-white`, `bg-black`, `border-gray-300`)
+- Animations trop rapides (< 200ms) ou trop lentes (> 20s pour continues)
+- Fonts autres que Inter
+- Gradients non alignés avec la palette (rose, violet, cyan)
+- Images générées par IA générique
+
+---
+
+### 11. EXPORTS & ASSETS
+
+#### Logo IArche
+- **Statut** : À fournir ultérieurement
+- **Formats attendus** : SVG (prioritaire), PNG haute résolution
+- **Usage** : Header (40-50px hauteur), Footer (30px hauteur)
+
+#### Iconographie
+- **Source** : Lucide React (déjà installé)
+- **Style** : Stroke 2px, couleur primary ou foreground
+- **Taille standard** : 24px (1.5rem)
+
+#### Médias Communication
+**Principe :** Tous les éléments visuels doivent pouvoir être recréés à partir de ce CDC
+- Palette couleurs HSL exportable
+- Typographie Inter (Google Fonts)
+- Animations CSS reproductibles
+- Composants React réutilisables
+
+---
+
+### 12. ÉVOLUTIONS FUTURES IDENTIFIÉES
+
+#### Page Solutions
+- Cards projets avec hover effects (scale + shadow)
+- Modales pour détails projets (overlay semi-transparent)
+- Tags catégories avec couleur accent
+
+#### Page Expertise
+- Grid 2x2 sur desktop, 1 col mobile
+- Icons Lucide pour chaque pôle
+- Hover state avec border-primary
+
+#### Navigation Header
+- Dropdown Expertise avec animation slide-down
+- Sticky header avec shadow au scroll
+- Mobile menu avec drawer (vaul)
+
+#### Page Blog/Ressources
+- Card articles avec image featured
+- Filtres par catégorie
+- Pagination ou infinite scroll
+
+---
+
+## DÉCISIONS TECHNIQUES FINALES
+
+### Bug FOUC (Flash of Unstyled Content) - RÉSOLU ✅
+
+**Problème identifié :**
+- Pendant le build/HMR, le contenu textuel apparaît brièvement déplacé avant que les animations se déclenchent
+- Causé par `opacity: 0` sans `visibility: hidden`
+
+**Solution appliquée :**
+```css
+/* Animation fadeIn mise à jour */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+  }
+  1% {
+    visibility: visible; /* Visible dès 1% pour éviter le flash */
+  }
+  100% {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+}
+
+/* Classes avec optimisations */
+.hero-animate-fadeIn {
+  animation: fadeIn 0.8s ease-out forwards;
+  opacity: 0;
+  visibility: hidden;
+  will-change: opacity, transform, visibility;
+}
+
+.hero-gradient-text {
+  /* ... */
+  will-change: background-position;
+}
+
+.hero-pulse-animation {
+  /* ... */
+  will-change: box-shadow;
+}
+```
+
+**Bénéfices :**
+- Plus de décalage visuel pendant le build
+- Layout stable dès le premier render
+- Performance maintenue via `will-change`
+
+---
+
+## RÉSUMÉ MODIFICATIONS 28 NOVEMBRE 2025
+
+### Changements Appliqués
+1. ✅ **CTA Hero** : Bouton plein remplacé par lien textuel bleu (Terracotta) avec animation hover flèche
+2. ✅ **Repositionnement Titre** : "IArche" espacé davantage de la baseline (mb-20 md:mb-28)
+3. ✅ **Animations Dynamiques** : Gradient texte + lignes SVG + patterns maintenues et optimisées
+4. ✅ **Correction Bug FOUC** : Ajout `visibility: hidden/visible` + `will-change` sur toutes animations
+5. ✅ **Documentation Complète** : Design system & charte graphique finalisés pour référence future
+
+### Prochaines Actions
+- [ ] Valider identité visuelle Hero avec client
+- [ ] Poursuivre assemblage Homepage (sections suivantes)
+- [ ] Préparer composants réutilisables (cards, buttons variants, etc.)
 
 ---
 
