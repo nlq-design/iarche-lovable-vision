@@ -24,16 +24,33 @@ const HeroSection = () => {
     <>
       <style>
         {`
-          @keyframes fadeIn {
-            from { 
-              opacity: 0; 
-              transform: translateY(20px); 
-            }
-            to { 
-              opacity: 1; 
-              transform: translateY(0); 
-            }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
           }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes drawArch {
+          to {
+            stroke-dashoffset: 0;
+          }
+        }
+
+        @keyframes constructionFade {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 0.5;
+            transform: scale(1);
+          }
+        }
           
           @keyframes patternScroll {
             0% { 
@@ -101,17 +118,37 @@ const HeroSection = () => {
         {/* Container with staggered animations */}
         <div className="container text-center z-10 relative px-6 py-20">
           <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-semibold m-0 relative z-20 mb-6 hero-animate-fadeIn hero-stagger-1">
-            <span className="hero-gradient-text">IArche</span>
+            <span className="hero-gradient-text relative inline-block">
+              IArche
+              <svg 
+                className="absolute top-0 left-0 w-full h-full pointer-events-none" 
+                viewBox="0 0 200 80" 
+                style={{ overflow: 'visible' }}
+              >
+                <path
+                  id="logo-arch"
+                  d="M 30 5 Q 100 -15, 170 5"
+                  fill="none"
+                  stroke="#D15A3E"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  style={{
+                    strokeDasharray: '200',
+                    strokeDashoffset: '200',
+                    animation: 'drawArch 2.5s ease-out forwards',
+                    animationDelay: '0.5s'
+                  }}
+                />
+              </svg>
+            </span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed hero-animate-fadeIn hero-stagger-2">
             L'IA se construit avec vous
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center hero-animate-fadeIn hero-stagger-3">
-            <button className="px-8 py-4 bg-accent text-accent-foreground border-none rounded-lg cursor-pointer text-lg font-medium transition-all duration-300 ease-in-out hover:shadow-lg hover:translate-y-[-2px] shadow-md hover:scale-105 hero-pulse-animation">
-              Nous contacter
-            </button>
-            <button className="px-8 py-4 bg-transparent text-primary border-2 border-primary rounded-lg cursor-pointer text-lg font-medium transition-all duration-300 ease-in-out hover:bg-primary hover:text-primary-foreground">
-              Découvrir l'approche ↓
+          <div className="flex justify-center hero-animate-fadeIn hero-stagger-3">
+            <button className="px-8 py-4 bg-[#D15A3E] text-white rounded-lg cursor-pointer text-lg font-medium transition-all duration-300 ease-in-out hover:bg-[#D15A3E]/90 flex items-center gap-2">
+              Entrer
+              <span>→</span>
             </button>
           </div>
         </div>
@@ -168,6 +205,42 @@ const HeroSection = () => {
             animationDelay: '22.5s'
           }}
         />
+
+        {/* Background rectangles - construction animation */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div 
+            className="absolute top-20 left-10 w-32 h-32 border border-border/30 rounded-lg" 
+            style={{
+              animation: 'constructionFade 1s ease-out forwards',
+              animationDelay: '0.2s',
+              opacity: 0
+            }}
+          />
+          <div 
+            className="absolute bottom-32 right-20 w-24 h-24 border border-border/30 rounded-lg" 
+            style={{
+              animation: 'constructionFade 1s ease-out forwards',
+              animationDelay: '0.6s',
+              opacity: 0
+            }}
+          />
+          <div 
+            className="absolute top-1/2 right-10 w-40 h-40 border border-border/30 rounded-lg" 
+            style={{
+              animation: 'constructionFade 1s ease-out forwards',
+              animationDelay: '1s',
+              opacity: 0
+            }}
+          />
+          <div 
+            className="absolute bottom-20 left-1/4 w-28 h-28 border border-border/30 rounded-lg" 
+            style={{
+              animation: 'constructionFade 1s ease-out forwards',
+              animationDelay: '0.8s',
+              opacity: 0
+            }}
+          />
+        </div>
       </div>
     </>
   );
