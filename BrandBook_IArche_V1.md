@@ -78,7 +78,7 @@ Cette baseline exprime :
 
 **Fichier :** `public/logo-iarche-text.svg`
 
-#### Logo texte avec gradient animé (Spécification définitive)
+#### Logo texte avec gradient animé (Spécification définitive - BUILDÉ ✅)
 
 **Description :** Logo texte "IArche" avec gradient animé, utilisant le système de design IArche.
 
@@ -93,36 +93,40 @@ Cette baseline exprime :
 **Style CSS** (défini dans `src/index.css`) :
 
 ```css
-.hero-gradient-text {
-  background: linear-gradient(
-    135deg,
-    hsl(var(--primary)) 0%,
-    hsl(var(--accent)) 25%,
-    hsl(var(--primary)) 50%,
-    hsl(var(--accent)) 75%,
-    hsl(var(--primary)) 100%
-  );
-  background-size: 200% 200%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: hero-gradient 15s ease infinite;
-  will-change: background-position;
-}
-
-@keyframes hero-gradient {
-  1% { visibility: visible; }
+@keyframes gradientText {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
+
+.hero-gradient-text {
+  background: linear-gradient(270deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)), hsl(var(--accent)));
+  background-size: 600% 600%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientText 8s ease infinite;
+  will-change: background-position;
+}
 ```
+
+**Spécifications techniques finales :**
+- **Direction gradient** : 270deg (droite → gauche)
+- **Couleurs** : Bleu Nuit (`hsl(var(--primary))`) → Terracotta (`hsl(var(--accent))`) → Bleu Nuit → Terracotta
+- **Background-size** : 600% 600% (fluidité de l'animation)
+- **Animation** : 8 secondes en boucle infinie, easing `ease`
+- **Optimisation** : `will-change: background-position` pour performance GPU
+- **Rendu visuel** : Gradient horizontal animé créant un effet de flux continu de couleurs
 
 **Caractéristiques :**
 - Utilise les tokens du design system (`--primary`, `--accent`)
-- Animation de gradient en boucle continue (15 secondes)
+- Animation de gradient en boucle continue (8 secondes)
 - Compatible avec tous les contextes (hero, header, etc.)
 - Taille ajustable via classes Tailwind (`text-3xl`, `text-5xl`, etc.)
-- Gradient diagonal (135deg) avec animation fluide
+- Gradient horizontal (270deg) avec animation fluide
+- Optimisation GPU via `will-change: background-position`
+
+**État : BUILDÉ ✅**  
+Implémentation finale dans `src/index.css`, testé et validé sur page "/".
 
 **Utilisation dans le header :**
 
@@ -347,19 +351,21 @@ Si des photos sont utilisées :
 
 ## 8. APPLICATIONS
 
-### 8.1 Site web
+### 8.1 Site web - Référence buildée ✅
 
-Référence : CDC_IArche_Updates.md (Design System complet)
+**État actuel :** Homepage (/) buildée et auditée - Score 8.5/10  
+**Documentation complète :** CDC_IArche_Updates.md (Design System complet + Audit détaillé)
 
-| Élément | Spécification |
-|---------|---------------|
-| Fond | Blanc Cassé #FAF9F7 |
-| Titres | Bleu Nuit #1A2B4A, Inter 600 |
-| Texte | Anthracite #2D2D2D, Inter 400 |
-| CTA | Terracotta #D15A3E, Inter 500 |
-| Animations | Subtiles, durée 0.3s-2s, easing ease-out |
+| Élément | Spécification | État |
+|---------|---------------|------|
+| Fond | Blanc Cassé #FAF9F7 | ✅ Buildé |
+| Titres | Bleu Nuit #1A2B4A, Inter 600 | ✅ Buildé |
+| Texte | Anthracite #2D2D2D, Inter 400 | ✅ Buildé |
+| CTA | Terracotta #D15A3E, Inter 500 | ✅ Buildé |
+| Animations | Subtiles, durée 0.3s-8s, easing ease-out | ✅ Buildé |
+| Logo gradient | 270deg, 8s, hsl tokens | ✅ Buildé |
 
-**Composant BackgroundLayout** (réutilisable sur toutes les pages)
+**Composant BackgroundLayout** (réutilisable sur toutes les pages) — ✅ BUILDÉ
 
 Emplacement : `src/components/layouts/BackgroundLayout.tsx`
 
@@ -367,9 +373,9 @@ Contenu :
 - Fond Blanc Cassé (#FAF9F7)
 - Quadrillages diagonaux animés (45deg et -45deg)
 - Rectangles décoratifs avec pulsation douce
-- Lignes SVG animées avec gradients Bleu Nuit ↔ Terracotta
+- Lignes SVG animées avec gradients Bleu Nuit ↔ Terracotta (SUPPRIMÉES de BackgroundLayout, présentes uniquement dans hero)
 - Toutes les keyframes d'animation (fadeIn, gradient, patternScroll, constructionFade, subtlePulse)
-- Classes CSS utilitaires (.hero-animate-fadeIn, .hero-gradient-text, etc.)
+- Classes CSS utilitaires (.hero-gradient-text, etc.)
 
 Usage :
 ```tsx
@@ -385,6 +391,8 @@ Avantages :
 - Maintenance centralisée du design system
 - Performances optimisées (will-change, animations CSS natives)
 - Réutilisabilité immédiate
+
+**Page de référence buildée :** Homepage (/) - Score audit 8.5/10
 
 ---
 
@@ -607,8 +615,18 @@ L'IA se construit avec vous
 
 | Version | Date | Modifications |
 |---------|------|---------------|
+| 1.1 | 28 Nov 2025 | Mise à jour specs logo gradient (buildé), référence page "/" auditée (8.5/10) |
 | 1.0 | 28 Nov 2025 | Création initiale |
 
 ---
 
-**Fin du Brand Book IArche V1**
+## 12. RÉFÉRENCE TECHNIQUE - ÉTAT DU BUILD ✅
+
+**Homepage (/) - Portail minimaliste**  
+**Score : 8.5/10** | **Audit : 28 Nov 2025**
+
+Documentation complète dans `CDC_IArche_Updates.md` (Design System + Audit détaillé)
+
+---
+
+**Fin du Brand Book IArche V1.1**
