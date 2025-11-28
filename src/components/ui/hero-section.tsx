@@ -11,10 +11,10 @@ const HeroSection = () => {
       pathElement.style.strokeDasharray = `${len}px`;
       pathElement.style.strokeDashoffset = `${len}px`;
       
-      // Staggered animation: first line starts at 1s, second line at 2.5s, each takes 2.5s
-      const delay = 1000 + (index * 1500);
+      // Staggered animation: faster like 21st.dev
+      const delay = 500 + (index * 1000);
       setTimeout(() => {
-        pathElement.style.transition = 'stroke-dashoffset 2.5s ease-in-out';
+        pathElement.style.transition = 'stroke-dashoffset 2s ease-in-out';
         pathElement.style.strokeDashoffset = '0px';
       }, delay);
     });
@@ -51,25 +51,27 @@ const HeroSection = () => {
             transform: scale(1);
           }
         }
+        
+        @keyframes gradient {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
           
           @keyframes patternScroll {
-            0%, 100% { 
-              transform: translate(-1%, -1%); 
-            }
-            50% { 
-              transform: translate(1%, 1%); 
-            }
+            0% { transform: translate(-5%, -5%); }
+            100% { transform: translate(5%, 5%); }
           }
           
           @keyframes subtlePulse {
             0% { 
-              box-shadow: 0 4px 12px rgba(209, 90, 62, 0.15); 
+              box-shadow: 0 0 10px rgba(209, 90, 62, 0.3); 
             }
             50% { 
-              box-shadow: 0 6px 18px rgba(209, 90, 62, 0.25); 
+              box-shadow: 0 0 25px rgba(209, 90, 62, 0.6); 
             }
             100% { 
-              box-shadow: 0 4px 12px rgba(209, 90, 62, 0.15); 
+              box-shadow: 0 0 10px rgba(209, 90, 62, 0.3); 
             }
           }
           
@@ -79,20 +81,22 @@ const HeroSection = () => {
           }
           
           .hero-animate-patternScroll {
-            animation: patternScroll 45s ease-in-out infinite;
+            animation: patternScroll 20s linear infinite;
           }
           
           
           .hero-pulse-animation {
-            animation: subtlePulse 3s ease-in-out infinite;
+            animation: subtlePulse 2s ease-in-out infinite;
           }
           
-          /* Gradient IArche - Bleu Nuit to Terracotta */
+          /* Gradient IArche animé - Bleu Nuit to Terracotta */
           .hero-gradient-text {
-            background: linear-gradient(135deg, hsl(218, 47%, 20%) 0%, hsl(12, 60%, 53%) 100%);
+            background: linear-gradient(270deg, hsl(218, 47%, 20%), hsl(12, 60%, 53%), hsl(218, 47%, 35%), hsl(12, 60%, 53%));
+            background-size: 600% 600%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            animation: gradient 15s ease infinite;
           }
           
           /* Staggered fade-in delays */
@@ -124,7 +128,7 @@ const HeroSection = () => {
             L'IA se construit avec vous
           </p>
           <div className="flex justify-center hero-animate-fadeIn hero-stagger-3">
-            <button className="px-8 py-4 bg-[#D15A3E] text-white rounded-lg cursor-pointer text-lg font-medium transition-all duration-300 ease-in-out hover:bg-[#D15A3E]/90 flex items-center gap-2">
+            <button className="px-8 py-4 bg-[#D15A3E] text-white rounded-lg cursor-pointer text-lg font-medium transition-all duration-300 ease-in-out hover:bg-[#D15A3E]/90 hover:translate-y-[-2px] hover:scale-105 flex items-center gap-2 hero-pulse-animation">
               Entrer
               <span>→</span>
             </button>
