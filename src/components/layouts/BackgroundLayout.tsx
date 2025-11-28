@@ -11,7 +11,6 @@ interface BackgroundLayoutProps {
  * Inclut :
  * - Fond Blanc Cassé (#FAF9F7)
  * - Quadrillages diagonaux animés
- * - Rectangles décoratifs avec animation de pulsation
  * - Lignes SVG animées avec gradients
  * - Toutes les animations keyframes nécessaires
  * 
@@ -76,18 +75,6 @@ const BackgroundLayout = ({ children, className = '' }: BackgroundLayoutProps) =
         @keyframes patternScroll {
           0% { transform: translate(-5%, -5%); }
           100% { transform: translate(5%, 5%); }
-        }
-        
-        /* Animation des rectangles décoratifs (pulsation douce) */
-        @keyframes constructionFade {
-          0%, 100% {
-            opacity: 0.3;
-            transform: scale(0.98);
-          }
-          50% {
-            opacity: 0.5;
-            transform: scale(1);
-          }
         }
         
         /* Pulse pour boutons/CTA */
@@ -209,39 +196,6 @@ const BackgroundLayout = ({ children, className = '' }: BackgroundLayoutProps) =
           }}
         />
 
-        {/* ========================================
-            RECTANGLES DÉCORATIFS (Construction)
-            ======================================== */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div 
-            className="absolute top-20 left-10 w-32 h-32 border border-border/30 rounded-lg" 
-            style={{
-              animation: 'constructionFade 4s ease-in-out infinite',
-              animationDelay: '0s'
-            }}
-          />
-          <div 
-            className="absolute bottom-32 right-20 w-24 h-24 border border-border/30 rounded-lg" 
-            style={{
-              animation: 'constructionFade 4s ease-in-out infinite',
-              animationDelay: '1s'
-            }}
-          />
-          <div 
-            className="absolute top-1/2 right-10 w-40 h-40 border border-border/30 rounded-lg" 
-            style={{
-              animation: 'constructionFade 4s ease-in-out infinite',
-              animationDelay: '2s'
-            }}
-          />
-          <div 
-            className="absolute bottom-20 left-1/4 w-28 h-28 border border-border/30 rounded-lg" 
-            style={{
-              animation: 'constructionFade 4s ease-in-out infinite',
-              animationDelay: '3s'
-            }}
-          />
-        </div>
       </div>
     </>
   );
