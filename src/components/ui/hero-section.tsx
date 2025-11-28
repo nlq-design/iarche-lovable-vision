@@ -122,7 +122,7 @@ const HeroSection = () => {
               const footer = document.querySelector('footer');
               footer?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="text-sm text-muted-foreground hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded inline-flex items-center gap-1 transition-all duration-300 group cursor-pointer"
+            className="text-sm text-foreground hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded inline-flex items-center gap-1 transition-all duration-300 group cursor-pointer"
           >
             Une question ?<span className="inline-block w-1"></span>
             <svg 
