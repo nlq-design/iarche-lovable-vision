@@ -273,6 +273,35 @@ Référence : CDC_IArche_Updates.md (Design System complet)
 | CTA | Terracotta #D15A3E, Inter 500 |
 | Animations | Subtiles, durée 0.3s-2s, easing ease-out |
 
+**Composant BackgroundLayout** (réutilisable sur toutes les pages)
+
+Emplacement : `src/components/layouts/BackgroundLayout.tsx`
+
+Contenu :
+- Fond Blanc Cassé (#FAF9F7)
+- Quadrillages diagonaux animés (45deg et -45deg)
+- Rectangles décoratifs avec pulsation douce
+- Lignes SVG animées avec gradients Bleu Nuit ↔ Terracotta
+- Toutes les keyframes d'animation (fadeIn, gradient, patternScroll, constructionFade, subtlePulse)
+- Classes CSS utilitaires (.hero-animate-fadeIn, .hero-gradient-text, etc.)
+
+Usage :
+```tsx
+import BackgroundLayout from '@/components/layouts/BackgroundLayout';
+
+<BackgroundLayout>
+  {/* Contenu de la page */}
+</BackgroundLayout>
+```
+
+Avantages :
+- Cohérence visuelle garantie sur toutes les pages
+- Maintenance centralisée du design system
+- Performances optimisées (will-change, animations CSS natives)
+- Réutilisabilité immédiate
+
+---
+
 ### 8.2 LinkedIn
 
 **Post image (1200x627px)**
