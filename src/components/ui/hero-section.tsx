@@ -42,21 +42,21 @@ const HeroSection = () => {
         }
 
         @keyframes constructionFade {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
+          0%, 100% {
+            opacity: 0.3;
+            transform: scale(0.98);
           }
-          to {
+          50% {
             opacity: 0.5;
             transform: scale(1);
           }
         }
           
           @keyframes patternScroll {
-            0% { 
+            0%, 100% { 
               transform: translate(-1%, -1%); 
             }
-            100% { 
+            50% { 
               transform: translate(1%, 1%); 
             }
           }
@@ -79,7 +79,7 @@ const HeroSection = () => {
           }
           
           .hero-animate-patternScroll {
-            animation: patternScroll 45s linear infinite;
+            animation: patternScroll 45s ease-in-out infinite;
           }
           
           
@@ -118,29 +118,7 @@ const HeroSection = () => {
         {/* Container with staggered animations */}
         <div className="container text-center z-10 relative px-6 py-20">
           <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-semibold m-0 relative z-20 mb-6 hero-animate-fadeIn hero-stagger-1">
-            <span className="hero-gradient-text relative inline-block">
-              IArche
-              <svg 
-                className="absolute top-0 left-0 w-full h-full pointer-events-none" 
-                viewBox="0 0 200 80" 
-                style={{ overflow: 'visible' }}
-              >
-                <path
-                  id="logo-arch"
-                  d="M 30 5 Q 100 -15, 170 5"
-                  fill="none"
-                  stroke="#D15A3E"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  style={{
-                    strokeDasharray: '200',
-                    strokeDashoffset: '200',
-                    animation: 'drawArch 2.5s ease-out forwards',
-                    animationDelay: '0.5s'
-                  }}
-                />
-              </svg>
-            </span>
+            <span className="hero-gradient-text">IArche</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed hero-animate-fadeIn hero-stagger-2">
             L'IA se construit avec vous
@@ -211,33 +189,29 @@ const HeroSection = () => {
           <div 
             className="absolute top-20 left-10 w-32 h-32 border border-border/30 rounded-lg" 
             style={{
-              animation: 'constructionFade 1s ease-out forwards',
-              animationDelay: '0.2s',
-              opacity: 0
+              animation: 'constructionFade 4s ease-in-out infinite',
+              animationDelay: '0s'
             }}
           />
           <div 
             className="absolute bottom-32 right-20 w-24 h-24 border border-border/30 rounded-lg" 
             style={{
-              animation: 'constructionFade 1s ease-out forwards',
-              animationDelay: '0.6s',
-              opacity: 0
+              animation: 'constructionFade 4s ease-in-out infinite',
+              animationDelay: '1s'
             }}
           />
           <div 
             className="absolute top-1/2 right-10 w-40 h-40 border border-border/30 rounded-lg" 
             style={{
-              animation: 'constructionFade 1s ease-out forwards',
-              animationDelay: '1s',
-              opacity: 0
+              animation: 'constructionFade 4s ease-in-out infinite',
+              animationDelay: '2s'
             }}
           />
           <div 
             className="absolute bottom-20 left-1/4 w-28 h-28 border border-border/30 rounded-lg" 
             style={{
-              animation: 'constructionFade 1s ease-out forwards',
-              animationDelay: '0.8s',
-              opacity: 0
+              animation: 'constructionFade 4s ease-in-out infinite',
+              animationDelay: '3s'
             }}
           />
         </div>
