@@ -215,6 +215,11 @@ const HeroSection = () => {
             }}
           />
         </div>
+
+        {/* Ancrage géographique */}
+        <div className="absolute bottom-6 left-0 right-0 text-center z-10">
+          <p className="text-sm text-muted-foreground/60">Bayonne · France</p>
+        </div>
       </div>
     </>
   );
