@@ -14,35 +14,16 @@ const NewsletterSection = () => {
     <section className="pt-8 md:pt-10 pb-12 md:pb-16 bg-muted">
       <div className="container mx-auto px-6">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 
-            className="text-2xl md:text-3xl font-semibold text-foreground mb-4"
-            style={{ 
-              visibility: 'hidden',
-              animation: 'fadeIn 0.8s ease-out 0.2s forwards',
-              willChange: 'opacity, transform'
-            }}
-          >
+          <h2 className="text-2xl md:text-3xl font-semibold text-foreground mb-4 invisible animate-fadeIn [animation-delay:0.2s]">
             Restez informé
           </h2>
-          <p 
-            className="text-base md:text-lg text-muted-foreground mb-6 leading-relaxed max-w-xl mx-auto"
-            style={{ 
-              visibility: 'hidden',
-              animation: 'fadeIn 0.8s ease-out 0.4s forwards',
-              willChange: 'opacity, transform'
-            }}
-          >
+          <p className="text-base md:text-lg text-muted-foreground mb-6 leading-relaxed max-w-xl mx-auto invisible animate-fadeIn [animation-delay:0.4s]">
             Recevez nos actualités et conseils IA directement dans votre boîte mail.
           </p>
 
           <form 
             onSubmit={handleSubmit} 
-            className="flex flex-col sm:flex-row gap-2 max-w-lg mx-auto mb-4"
-            style={{ 
-              visibility: 'hidden',
-              animation: 'fadeIn 0.8s ease-out 0.6s forwards',
-              willChange: 'opacity, transform'
-            }}
+            className="flex flex-col sm:flex-row gap-2 max-w-lg mx-auto mb-4 invisible animate-fadeIn [animation-delay:0.6s]"
           >
             <Input 
               type="email" 
@@ -59,14 +40,7 @@ const NewsletterSection = () => {
             </Button>
           </form>
 
-          <p 
-            className="text-xs text-muted-foreground text-center mb-8"
-            style={{ 
-              visibility: 'hidden',
-              animation: 'fadeIn 0.8s ease-out 0.7s forwards',
-              willChange: 'opacity, transform'
-            }}
-          >
+          <p className="text-xs text-muted-foreground text-center mb-8 invisible animate-fadeIn [animation-delay:0.7s]">
             En vous inscrivant, vous acceptez notre{' '}
             <a href="/confidentialite" className="text-accent hover:underline">
               politique de confidentialité
@@ -74,14 +48,7 @@ const NewsletterSection = () => {
           </p>
         </div>
         
-        <p 
-          className="text-sm text-muted-foreground tracking-widest text-center"
-          style={{
-            visibility: 'hidden',
-            animation: 'fadeIn 0.8s ease-out 0.8s forwards',
-            willChange: 'opacity, transform'
-          }}
-        >
+        <p className="text-sm text-muted-foreground tracking-widest text-center invisible animate-fadeIn [animation-delay:0.8s]">
           Agence IA · Bayonne · Pays Basque · France
         </p>
       </div>

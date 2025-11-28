@@ -35,14 +35,7 @@ const ExemplesSection = () => {
         <h2 className="text-lg md:text-xl font-semibold text-foreground text-center mb-8 md:mb-12">
           Nos derniers projets
         </h2>
-        <div
-          className="max-w-4xl mx-auto space-y-6"
-          style={{
-            visibility: 'hidden',
-            animation: 'fadeIn 0.8s ease-out 0.2s forwards',
-            willChange: 'opacity, transform'
-          }}
-        >
+        <div className="max-w-4xl mx-auto space-y-6 invisible animate-fadeIn [animation-delay:0.2s]">
           {exemples.map((exemple, index) => (
             <div 
               key={index}
