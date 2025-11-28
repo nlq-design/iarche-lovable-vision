@@ -78,66 +78,66 @@ Cette baseline exprime :
 
 **Fichier :** `public/logo-iarche-text.svg`
 
-**Code SVG complet :**
-```svg
-<svg width="400" height="120" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="textGradient" x1="100%" y1="0%" x2="0%" y2="0%">
-      <stop offset="0%" style="stop-color:#1B2A47;stop-opacity:1" />
-      <stop offset="33.33%" style="stop-color:#D15A3E;stop-opacity:1" />
-      <stop offset="66.67%" style="stop-color:#2F4570;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#D15A3E;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-  <text 
-    x="50%" 
-    y="50%" 
-    dominant-baseline="middle" 
-    text-anchor="middle" 
-    font-family="Inter, sans-serif" 
-    font-size="72" 
-    font-weight="600" 
-    fill="url(#textGradient)"
-  >
-    IArche
-  </text>
-</svg>
+#### Logo texte avec gradient animé (Spécification définitive)
+
+**Description :** Logo texte "IArche" avec gradient animé, utilisant le système de design IArche.
+
+**⚠️ IMPORTANT :** Cette implémentation avec gradient animé est la référence officielle. Les anciennes versions SVG statiques ont été retirées.
+
+**Implémentation HTML/React :**
+
+```jsx
+<span className="hero-gradient-text">IArche</span>
 ```
 
-**Propriétés :**
-- ViewBox : 400x120px (ratio 10:3)
-- Texte centré horizontalement et verticalement
-- Font-size : 72px (scalable)
-- Font-weight : 600 (Semibold)
-- Gradient id : `textGradient` (réutilisable)
+**Style CSS** (défini dans `src/index.css`) :
 
-**Intégration web :**
+```css
+.hero-gradient-text {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary)) 0%,
+    hsl(var(--accent)) 25%,
+    hsl(var(--primary)) 50%,
+    hsl(var(--accent)) 75%,
+    hsl(var(--primary)) 100%
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: hero-gradient 15s ease infinite;
+  will-change: background-position;
+}
 
-**⚠️ IMPORTANT :** Pour les projets React/Lovable, utiliser uniquement le SVG inline. Les composants React de logo ont été supprimés au profit du SVG pur pour plus de flexibilité et de maintenabilité.
+@keyframes hero-gradient {
+  1% { visibility: visible; }
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+```
 
-```html
-<!-- Image simple -->
-<img src="/logo-iarche-text.svg" alt="IArche" width="200" height="60" />
+**Caractéristiques :**
+- Utilise les tokens du design system (`--primary`, `--accent`)
+- Animation de gradient en boucle continue (15 secondes)
+- Compatible avec tous les contextes (hero, header, etc.)
+- Taille ajustable via classes Tailwind (`text-3xl`, `text-5xl`, etc.)
+- Gradient diagonal (135deg) avec animation fluide
 
-<!-- Inline SVG (recommandé pour React/JSX) -->
-<svg width="120" height="36" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="textGradient" x1="100%" y1="0%" x2="0%" y2="0%">
-      <stop offset="0%" style={{stopColor:'#1B2A47', stopOpacity:1}} />
-      <stop offset="33.33%" style={{stopColor:'#D15A3E', stopOpacity:1}} />
-      <stop offset="66.67%" style={{stopColor:'#2F4570', stopOpacity:1}} />
-      <stop offset="100%" style={{stopColor:'#D15A3E', stopOpacity:1}} />
-    </linearGradient>
-  </defs>
-  <text 
-    x="50%" 
-    y="50%" 
-    dominantBaseline="middle" 
-    textAnchor="middle" 
-    fontFamily="Inter, sans-serif" 
-    fontSize="72" 
-    fontWeight="600" 
-    fill="url(#textGradient)"
+**Utilisation dans le header :**
+
+```jsx
+<NavLink to="/accueil" className="flex items-center">
+  <span className="text-3xl font-semibold hero-gradient-text">IArche</span>
+</NavLink>
+```
+
+**Avantages :**
+- Gradient animé et dynamique
+- Intégration parfaite au design system
+- Maintainability : modification des couleurs via tokens CSS
+- Performance : utilisation de `will-change` et animation GPU
+- Flexibilité : taille adaptable sans perte de qualité
   >
     IArche
   </text>

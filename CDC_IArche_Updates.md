@@ -387,75 +387,81 @@ contact_submissions:
 
 ---
 
-## LOGO SVG TEXTE - SPÉCIFICATIONS TECHNIQUES ✅
+## LOGO TEXTE AVEC GRADIENT ANIMÉ - SPÉCIFICATIONS TECHNIQUES ✅
 
-### Fichier : `public/logo-iarche-text.svg`
+### Implémentation : Classe CSS `hero-gradient-text`
 
-**Description :** Logo texte "IArche" en SVG avec gradient figé, optimisé pour tous usages (web, print, export).
+**Description :** Logo texte "IArche" avec gradient animé, référence officielle pour toutes implémentations.
 
-**⚠️ IMPORTANT :** Les anciens composants React de logo (`IArcheLogo.tsx`, `IArcheLogoFixed.tsx`) ont été supprimés. Seul le SVG inline ci-dessous doit être utilisé.
+**⚠️ IMPORTANT :** Cette implémentation avec gradient animé est la référence définitive. Les anciennes versions SVG statiques ont été retirées.
 
-**Code SVG complet :**
-```svg
-<svg width="400" height="120" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="textGradient" x1="100%" y1="0%" x2="0%" y2="0%">
-      <stop offset="0%" style="stop-color:#1B2A47;stop-opacity:1" />
-      <stop offset="33.33%" style="stop-color:#D15A3E;stop-opacity:1" />
-      <stop offset="66.67%" style="stop-color:#2F4570;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#D15A3E;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-  <text 
-    x="50%" 
-    y="50%" 
-    dominant-baseline="middle" 
-    text-anchor="middle" 
-    font-family="Inter, sans-serif" 
-    font-size="72" 
-    font-weight="600" 
-    fill="url(#textGradient)"
-  >
-    IArche
-  </text>
-</svg>
+**Implémentation HTML/React :**
+
+```jsx
+<span className="hero-gradient-text">IArche</span>
 ```
 
-**Dimensions :**
-- ViewBox : 400x120px
-- Texte centré (x="50%", y="50%")
-- Font-size : 72px
-- Font-weight : 600 (Semibold)
-- Font-family : Inter, sans-serif
+**Style CSS** (défini dans `src/index.css`) :
 
-**Gradient spécifications (270deg - droite → gauche) :**
-- Direction : x1="100%" x2="0%" (droite vers gauche)
-- Couleurs exactes :
-  - 0% : #1B2A47 (Bleu Nuit foncé)
-  - 33.33% : #D15A3E (Terracotta)
-  - 66.67% : #2F4570 (Bleu Nuit moyen)
-  - 100% : #D15A3E (Terracotta)
+```css
+.hero-gradient-text {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary)) 0%,
+    hsl(var(--accent)) 25%,
+    hsl(var(--primary)) 50%,
+    hsl(var(--accent)) 75%,
+    hsl(var(--primary)) 100%
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: hero-gradient 15s ease infinite;
+  will-change: background-position;
+}
 
-**Répartition visuelle :**
-- "I" : Bleu Nuit foncé
-- "A" : Transition Bleu → Terracotta
-- "r" : Terracotta pur
-- "c" : Transition Terracotta → Bleu
-- "h" : Bleu Nuit moyen
-- "e" : Terracotta
+@keyframes hero-gradient {
+  1% { visibility: visible; }
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+```
+
+**Caractéristiques techniques :**
+- **Tokens du design system** : `hsl(var(--primary))`, `hsl(var(--accent))`
+- **Animation** : 15 secondes en boucle infinie
+- **Direction** : Diagonal 135deg
+- **Background-size** : 200% 200% pour effet d'animation fluide
+- **Optimisation** : `will-change: background-position` pour performance GPU
+
+**Répartition visuelle des couleurs :**
+- 0% : Primary (Bleu Nuit)
+- 25% : Accent (Terracotta)
+- 50% : Primary (Bleu Nuit)
+- 75% : Accent (Terracotta)
+- 100% : Primary (Bleu Nuit)
 
 **Usage recommandé :**
-- Web inline (Header) : Copier/coller le SVG directement dans le JSX
-- Web image : `<img src="/logo-iarche-text.svg" alt="IArche" />`
-- Export PNG : Ouvrir dans navigateur → Clic droit → Enregistrer l'image
-- Print : Export en haute résolution via Illustrator/Figma
-- Email signature : Convertir en PNG 2x (800x240px) pour compatibilité
+- **Header** : `<span className="text-3xl font-semibold hero-gradient-text">IArche</span>`
+- **Hero section** : `<span className="text-5xl md:text-7xl hero-gradient-text">IArche</span>`
+- **Footer** : Optionnel, selon contexte
 
-**Avantages SVG :**
-- Scalable sans perte de qualité
-- Poids léger (< 1Ko)
-- Gradient précis et reproductible
-- Compatible tous navigateurs modernes
+**Exemple complet (Header) :**
+
+```jsx
+<NavLink to="/accueil" className="flex items-center">
+  <span className="text-3xl font-semibold hero-gradient-text">IArche</span>
+</NavLink>
+```
+
+**Avantages :**
+- ✅ Gradient animé et dynamique
+- ✅ Intégration parfaite au design system
+- ✅ Maintenabilité : modification des couleurs via tokens CSS
+- ✅ Performance : animation GPU optimisée
+- ✅ Flexibilité : taille adaptable sans perte de qualité
+- ✅ Cohérence : même style sur toutes les pages
 
 ---
 
