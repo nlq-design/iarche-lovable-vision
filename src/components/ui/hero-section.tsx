@@ -1,24 +1,7 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 
 const HeroSection = () => {
-  useEffect(() => {
-    // Calcul de la longueur des paths pour animations précises
-    document.querySelectorAll('.animation-line').forEach(path => {
-      const svgPath = path as SVGGeometryElement;
-      const len = svgPath.getTotalLength();
-      const pathElement = path as HTMLElement;
-      pathElement.style.strokeDasharray = `${len}px`;
-      pathElement.style.strokeDashoffset = `${len}px`;
-      
-      // Déclencher l'animation après un court délai
-      setTimeout(() => {
-        pathElement.style.transition = 'stroke-dashoffset 2.5s ease-in-out';
-        pathElement.style.strokeDashoffset = '0px';
-      }, 500);
-    });
-  }, []);
-
   return (
     <BackgroundLayout>
       <div className="min-h-screen flex items-center justify-center relative">
@@ -83,14 +66,11 @@ const HeroSection = () => {
 
         {/* ========================================
             LIGNES SVG ANIMÉES - Gradients Bleu Nuit ↔ Terracotta
-            Tracé progressif avec useEffect
             ======================================== */}
         <svg 
           className="absolute inset-0 w-full h-full pointer-events-none" 
           style={{ zIndex: 1 }}
           xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 1440 900"
-          preserveAspectRatio="none"
         >
           <defs>
             {/* Gradient Bleu Nuit vers Terracotta */}
@@ -105,26 +85,46 @@ const HeroSection = () => {
             </linearGradient>
           </defs>
           
-          {/* Ligne 1 : De gauche à droite */}
+          {/* Ligne 1 : Diagonale gauche vers droite */}
           <path
-            className="animation-line"
-            d="M 0 150 Q 360 200, 720 150 T 1440 180"
+            d="M 0 80 Q 200 150, 400 100 T 800 120 L 1200 80"
             fill="none"
             stroke="url(#lineGradient1)"
-            strokeWidth="3"
-            opacity="0.5"
+            strokeWidth="2"
+            opacity="0.4"
+            className="svg-line-animate"
+            style={{
+              strokeDasharray: '1500',
+              strokeDashoffset: '1500',
+              animation: 'drawLine 3s ease-out forwards'
+            }}
           />
           
-          {/* Ligne 2 : De droite à gauche */}
+          {/* Ligne 2 : Courbe en bas à droite */}
           <path
-            className="animation-line"
-            d="M 1440 700 Q 1080 650, 720 720 T 0 680"
+            d="M 1200 600 Q 900 550, 700 620 T 300 580 L 0 640"
             fill="none"
             stroke="url(#lineGradient2)"
-            strokeWidth="3"
-            opacity="0.4"
+            strokeWidth="2"
+            opacity="0.3"
+            className="svg-line-animate"
+            style={{
+              strokeDasharray: '1500',
+              strokeDashoffset: '1500',
+              animation: 'drawLine 4s ease-out 0.5s forwards'
+            }}
           />
         </svg>
+
+        <style>
+          {`
+            @keyframes drawLine {
+              to {
+                strokeDashoffset: 0;
+              }
+            }
+          `}
+        </style>
 
         {/* Ancrage géographique */}
         <div className="absolute bottom-6 left-0 right-0 text-center z-10 hero-animate-fadeIn hero-stagger-4" style={{ visibility: 'hidden' }}>
