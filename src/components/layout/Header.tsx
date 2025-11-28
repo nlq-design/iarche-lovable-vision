@@ -24,13 +24,13 @@ const Header = () => {
               Services
             </a>
             <a 
-              href="#exemples" 
+              href="/solutions" 
               className="text-sm hero-gradient-text focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
             >
               Nos Solutions
             </a>
             <a 
-              href="#newsletter" 
+              href="/actualites" 
               className="text-sm text-accent hover:text-accent/80 focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded transition-colors"
             >
               Actualités
@@ -76,14 +76,14 @@ const Header = () => {
                 Services
               </a>
               <a 
-                href="#exemples"
+                href="/solutions"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-sm hero-gradient-text focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
               >
                 Nos Solutions
               </a>
               <a 
-                href="#newsletter"
+                href="/actualites"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-sm text-accent hover:text-accent/80 focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded transition-colors"
               >
