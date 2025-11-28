@@ -18,9 +18,9 @@ const SolutionsCTASection = () => {
           </p>
           <a
             href="/NosSolutions"
-            className="inline-flex items-center text-accent hover:text-accent/80 transition-colors group text-base md:text-lg"
+            className="inline-flex items-center text-primary hover:text-primary/80 transition-colors group text-base md:text-lg font-medium"
           >
-            Voir nos solutions
+            Découvrir nos solutions
             <ArrowRight className="ml-2 size-5 transition-transform group-hover:translate-x-1" />
           </a>
         </div>
