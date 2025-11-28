@@ -132,7 +132,7 @@ const BackgroundLayout = ({ children, className = '' }: BackgroundLayoutProps) =
             ======================================== */}
         {/* Quadrillage 1 : Diagonal 45deg */}
         <div 
-          className="pattern absolute w-[150%] h-[150%] opacity-30 hero-animate-patternScroll pointer-events-none" 
+          className="pattern absolute w-[150%] h-[150%] opacity-20 hero-animate-patternScroll pointer-events-none" 
           style={{ 
             top: '-25%', 
             left: '-25%',
@@ -142,7 +142,7 @@ const BackgroundLayout = ({ children, className = '' }: BackgroundLayoutProps) =
         />
         {/* Quadrillage 2 : Diagonal -45deg avec délai */}
         <div 
-          className="pattern absolute w-[150%] h-[150%] opacity-20 hero-animate-patternScroll pointer-events-none" 
+          className="pattern absolute w-[150%] h-[150%] opacity-10 hero-animate-patternScroll pointer-events-none" 
           style={{ 
             top: '25%', 
             left: '25%',
