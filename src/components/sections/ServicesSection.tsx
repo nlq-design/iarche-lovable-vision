@@ -46,7 +46,7 @@ const ServicesSection = () => {
               <CardFooter>
                 <a
                   href="/services"
-                  className="flex items-center text-sm text-accent hover:text-accent/80 transition-colors group"
+                  className="flex items-center text-sm text-accent hover:text-accent/80 focus:text-accent/80 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 rounded transition-colors group"
                 >
                   En savoir plus
                   <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-1" />

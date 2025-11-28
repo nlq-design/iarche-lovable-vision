@@ -38,10 +38,10 @@ const HeroSection = () => {
             L'IA se construit avec vous
           </p>
           <div className="flex justify-center invisible animate-fadeIn [animation-delay:0.3s]">
-            <a 
-              href="/accueil" 
-              className="inline-flex items-center gap-2 text-primary font-medium text-lg hover:gap-3 transition-all duration-300 group"
-            >
+          <a 
+            href="/accueil" 
+            className="inline-flex items-center gap-2 text-primary font-medium text-lg hover:gap-3 focus:gap-3 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded transition-all duration-300 group"
+          >
               Découvrir
               <svg 
                 className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" 
@@ -105,11 +105,16 @@ const HeroSection = () => {
         {/* Ancrage géographique */}
         <div className="absolute bottom-6 left-0 right-0 text-center z-10 invisible animate-fadeIn [animation-delay:0.4s]">
           <p className="text-sm mb-2 text-text-subtle">
-            Bayonne · France · <a href="mailto:nlq@iarche.fr" className="hover:underline transition-all duration-200">nlq@iarche.fr</a>
+            Bayonne · France · <a 
+              href="mailto:nlq@iarche.fr" 
+              className="hover:underline focus:underline focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded transition-all duration-200"
+            >
+              nlq@iarche.fr
+            </a>
           </p>
           <a 
             href="#contact" 
-            className="text-sm text-muted-foreground hover:text-accent inline-flex items-center gap-1 transition-all duration-300 group"
+            className="text-sm text-muted-foreground hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded inline-flex items-center gap-1 transition-all duration-300 group"
           >
             Une question ?<span className="inline-block w-1"></span>
             <svg 

@@ -13,7 +13,7 @@ const AccrocheSection = () => {
 
       <a 
         href="#services" 
-        className="inline-flex items-center gap-2 text-primary hover:text-accent transition-colors duration-300 font-medium text-base group invisible animate-fadeIn [animation-delay:0.4s]"
+        className="inline-flex items-center gap-2 text-primary hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 transition-colors duration-300 font-medium text-base group invisible animate-fadeIn [animation-delay:0.4s]"
       >
         Planifier un rendez-vous
         <span className="transition-transform group-hover:translate-x-1">→</span>

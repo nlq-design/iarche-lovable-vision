@@ -30,11 +30,11 @@ const NewsletterSection = () => {
               name="email"
               placeholder="votre@email.fr"
               required
-              className="flex-1 border-border rounded-lg px-4 py-3 text-base"
+              className="flex-1 border-border rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-accent focus:border-accent transition-all"
             />
             <Button 
               type="submit"
-              className="bg-accent hover:bg-accent/90 text-white font-medium px-6 py-3 rounded-lg whitespace-nowrap text-base"
+              className="bg-accent hover:bg-accent/90 focus:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 text-white font-medium px-6 py-3 rounded-lg whitespace-nowrap text-base transition-all"
             >
               S'inscrire →
             </Button>
@@ -42,7 +42,10 @@ const NewsletterSection = () => {
 
           <p className="text-xs text-muted-foreground text-center mb-8 invisible animate-fadeIn [animation-delay:0.7s]">
             En vous inscrivant, vous acceptez notre{' '}
-            <a href="/confidentialite" className="text-accent hover:underline">
+            <a 
+              href="/confidentialite" 
+              className="text-accent hover:underline focus:underline focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded"
+            >
               politique de confidentialité
             </a>
           </p>
