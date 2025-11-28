@@ -131,13 +131,13 @@ const HeroSection = () => {
         {/* Container with staggered animations */}
         <div className="container text-center z-10 relative px-6 py-20">
 
-          <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-semibold m-0 relative z-20 mb-20 md:mb-28 hero-animate-fadeIn hero-stagger-1">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-semibold m-0 relative z-20 mb-20 md:mb-28 hero-animate-fadeIn hero-stagger-1" style={{ visibility: 'hidden' }}>
             <span className="hero-gradient-text">IArche</span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-16 leading-relaxed hero-animate-fadeIn hero-stagger-2">
+          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-16 leading-relaxed hero-animate-fadeIn hero-stagger-2" style={{ visibility: 'hidden' }}>
             L'IA se construit avec vous
           </p>
-          <div className="flex justify-center hero-animate-fadeIn hero-stagger-3">
+          <div className="flex justify-center hero-animate-fadeIn hero-stagger-3" style={{ visibility: 'hidden' }}>
             <a 
               href="#solutions" 
               className="inline-flex items-center gap-2 text-primary font-medium text-lg hover:gap-3 transition-all duration-300 group"
@@ -241,7 +241,7 @@ const HeroSection = () => {
         </div>
 
         {/* Ancrage géographique */}
-        <div className="absolute bottom-6 left-0 right-0 text-center z-10 hero-animate-fadeIn hero-stagger-4">
+        <div className="absolute bottom-6 left-0 right-0 text-center z-10 hero-animate-fadeIn hero-stagger-4" style={{ visibility: 'hidden' }}>
           <p className="text-sm mb-2" style={{ color: 'hsl(var(--text-subtle))' }}>
             Bayonne · France · <a href="mailto:nlq@iarche.fr" className="hover:underline transition-all duration-200">nlq@iarche.fr</a>
           </p>
