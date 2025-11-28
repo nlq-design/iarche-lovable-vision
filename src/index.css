@@ -129,6 +129,11 @@ All colors MUST be HSL.
 }
 
 /* Gradient IArche animé (Bleu Nuit → Terracotta) */
+@keyframes gradientText {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
 .hero-gradient-text {
   background: linear-gradient(270deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)), hsl(var(--accent)));
   background-size: 600% 600%;
