@@ -1,29 +1,17 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
-
 const SolutionsCTASection = () => {
-  return (
-    <section className="py-12 md:py-16 bg-background">
+  return <section className="py-12 md:py-16 bg-background">
       <div className="container mx-auto px-6">
-        <div 
-          className="max-w-3xl mx-auto text-center"
-          style={{
-            visibility: 'hidden',
-            animation: 'fadeIn 0.8s ease-out 0.2s forwards',
-            willChange: 'opacity, transform'
-          }}
-        >
-          <a
-            href="/NosSolutions"
-            className="inline-flex items-center text-primary hover:text-primary/80 transition-colors group text-base md:text-lg font-medium"
-          >
-            Nos Solutions IArches
-            <ArrowRight className="ml-2 size-5 transition-transform group-hover:translate-x-1" />
+        <div className="max-w-3xl mx-auto text-center" style={{
+        visibility: 'hidden',
+        animation: 'fadeIn 0.8s ease-out 0.2s forwards',
+        willChange: 'opacity, transform'
+      }}>
+          <a href="/NosSolutions" className="inline-flex items-center text-primary hover:text-primary/80 transition-colors group text-base md:text-lg font-medium">Nos Solutions IArche<ArrowRight className="ml-2 size-5 transition-transform group-hover:translate-x-1" />
           </a>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default SolutionsCTASection;
