@@ -52,8 +52,7 @@ const HeroSection = () => {
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
-                role="img"
-                aria-label="Flèche vers le bas"
+                aria-hidden="true"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7m0 0l-7-7m7 7V3" />
               </svg>
@@ -63,7 +62,7 @@ const HeroSection = () => {
 
         {/* Lignes SVG animées type canalisation - Gradients Bleu Nuit ↔ Terracotta */}
         <div className="line-group absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-[1]">
-          <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 177 159" preserveAspectRatio="none" role="img" aria-label="Ligne décorative animée gradient bleu-orange">
+          <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 177 159" preserveAspectRatio="none" aria-hidden="true">
             <defs>
               <linearGradient id="canalisationGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="hsl(var(--primary))" />
@@ -76,7 +75,7 @@ const HeroSection = () => {
             />
           </svg>
           
-          <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 176 59" preserveAspectRatio="none" role="img" aria-label="Ligne décorative animée gradient orange-bleu">
+          <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 176 59" preserveAspectRatio="none" aria-hidden="true">
             <defs>
               <linearGradient id="canalisationGradient2" x1="100%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stopColor="hsl(var(--accent))" />
@@ -133,8 +132,7 @@ const HeroSection = () => {
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
-              role="img"
-              aria-label="Flèche vers la droite"
+              aria-hidden="true"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
