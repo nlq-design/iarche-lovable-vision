@@ -47,7 +47,7 @@ const NewsletterSection = () => {
             <Input 
               type="email" 
               name="email"
-              placeholder="Votre email professionnel"
+              placeholder="newsletters@iarche.com"
               required
               className="flex-1 border-border rounded-lg px-5 py-4 text-base"
             />
