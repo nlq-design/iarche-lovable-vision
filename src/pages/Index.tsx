@@ -1,11 +1,7 @@
-import HeroSection from "@/components/ui/hero-section";
+import PortalPage from "@/components/PortalPage";
 
 const Index = () => {
-  return (
-    <div className="w-full">
-      <HeroSection />
-    </div>
-  );
+  return <PortalPage />;
 };
 
 export default Index;
