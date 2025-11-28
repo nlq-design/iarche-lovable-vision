@@ -119,17 +119,22 @@ All colors MUST be HSL.
   }
 }
 
-/* Animations pour les sections */
-@keyframes fadeIn {
-  0% {
-    opacity: 0;
-    transform: translateY(10px);
+/* Accessibilité : Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
-  1% {
-    visibility: visible;
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+}
+
+/* Gradient IArche animé (Bleu Nuit → Terracotta) */
+.hero-gradient-text {
+  background: linear-gradient(270deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)), hsl(var(--accent)));
+  background-size: 600% 600%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientText 8s ease infinite;
+  will-change: background-position;
 }
