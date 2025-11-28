@@ -353,8 +353,43 @@ contact_submissions:
 - [x] Repositionnement titre "IArche" (espacement vertical augmenté)
 - [x] Correction bug FOUC (Flash of Unstyled Content)
 - [x] SEO technique complet (meta tags, Schema.org, geo tags)
+- [x] BackgroundLayout créé (composant réutilisable pour toutes les pages)
 - [ ] Homepage assemblée (sections suivantes à ajouter)
 - [ ] Validation client
+
+---
+
+## COMPOSANT RÉUTILISABLE - BackgroundLayout
+
+### Description
+Composant React réutilisable encapsulant tout le design system visuel IArche (fonds, animations, patterns).
+
+**Emplacement :** `src/components/layouts/BackgroundLayout.tsx`
+
+### Contenu
+- Fond Blanc Cassé (#FAF9F7)
+- Quadrillages diagonaux animés (45deg et -45deg)
+- Rectangles décoratifs avec pulsation douce
+- Lignes SVG animées avec gradients Bleu Nuit ↔ Terracotta
+- Toutes les keyframes d'animation (fadeIn, gradient, patternScroll, constructionFade, subtlePulse)
+- Classes CSS utilitaires (.hero-animate-fadeIn, .hero-gradient-text, etc.)
+
+### Usage
+```tsx
+import BackgroundLayout from '@/components/layouts/BackgroundLayout';
+
+<BackgroundLayout>
+  <div className="flex items-center justify-center min-h-screen z-10 relative">
+    {/* Votre contenu de page ici */}
+  </div>
+</BackgroundLayout>
+```
+
+### Avantages
+- Cohérence visuelle sur toutes les pages
+- Maintenance centralisée du design system
+- Animations et performances optimisées
+- Réutilisabilité immédiate
 
 ---
 
