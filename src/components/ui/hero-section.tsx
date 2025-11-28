@@ -25,12 +25,17 @@ const HeroSection = () => {
       <style>
         {`
         @keyframes fadeIn {
-          from {
+          0% {
             opacity: 0;
+            visibility: hidden;
             transform: translateY(20px);
           }
-          to {
+          1% {
+            visibility: visible;
+          }
+          100% {
             opacity: 1;
+            visibility: visible;
             transform: translateY(0);
           }
         }
@@ -78,6 +83,8 @@ const HeroSection = () => {
           .hero-animate-fadeIn {
             animation: fadeIn 0.8s ease-out forwards;
             opacity: 0;
+            visibility: hidden;
+            will-change: opacity, transform, visibility;
           }
           
           .hero-animate-patternScroll {
@@ -87,6 +94,7 @@ const HeroSection = () => {
           
           .hero-pulse-animation {
             animation: subtlePulse 2s ease-in-out infinite;
+            will-change: box-shadow;
           }
           
           /* Gradient IArche animé - Bleu Nuit to Terracotta */
@@ -97,6 +105,7 @@ const HeroSection = () => {
             -webkit-text-fill-color: transparent;
             background-clip: text;
             animation: gradient 15s ease infinite;
+            will-change: background-position;
           }
           
           /* Staggered fade-in delays */
