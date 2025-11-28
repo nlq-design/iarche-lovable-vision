@@ -1,0 +1,13 @@
+<svg width="400" height="120" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1A2B4A;stop-opacity:1" />
+      <stop offset="65%" style="stop-color:#1A2B4A;stop-opacity:1" />
+      <stop offset="65%" style="stop-color:#D15A3E;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D15A3E;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600" font-size="72" fill="url(#logoGradient)">
+    IArche
+  </text>
+</svg>
