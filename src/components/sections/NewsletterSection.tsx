@@ -1,13 +1,55 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { newsletterSchema } from '@/schemas/contact';
 
 const NewsletterSection = () => {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get('email');
-    console.log('Newsletter subscription:', email);
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const validatedData = newsletterSchema.parse({ email });
+      
+      const { error: dbError } = await supabase
+        .from('newsletter_subscribers')
+        .insert([{ email: validatedData.email }]);
+
+      if (dbError) {
+        if (dbError.code === '23505') {
+          throw new Error('Cet email est déjà inscrit');
+        }
+        throw dbError;
+      }
+
+      toast({
+        title: "Inscription réussie",
+        description: "Vous recevrez nos actualités par email.",
+      });
+
+      setEmail('');
+    } catch (error: any) {
+      if (error.errors) {
+        setError(error.errors[0]?.message || 'Email invalide');
+      } else {
+        setError(error.message || 'Une erreur est survenue');
+        toast({
+          title: "Erreur",
+          description: error.message || "Une erreur est survenue. Réessayez.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -25,18 +67,24 @@ const NewsletterSection = () => {
             onSubmit={handleSubmit} 
             className="flex flex-col sm:flex-row gap-2 max-w-lg mx-auto mb-4 invisible animate-fadeIn [animation-delay:0.6s]"
           >
-            <Input 
-              type="email" 
-              name="email"
-              placeholder="votre@email.fr"
-              required
-              className="flex-1 border-border rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-accent focus:border-accent transition-all"
-            />
+            <div className="flex-1">
+              <Input 
+                type="email" 
+                name="email"
+                placeholder="votre@email.fr"
+                required
+                className="w-full border-border rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-accent focus:border-accent transition-all"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              {error && <p className="text-sm text-destructive mt-1">{error}</p>}
+            </div>
             <Button 
               type="submit"
               className="bg-background border-2 border-primary text-primary hover:bg-primary hover:text-background focus:bg-primary focus:text-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 font-medium px-6 py-3 rounded-lg whitespace-nowrap text-base transition-all"
+              disabled={isSubmitting}
             >
-              S'inscrire →
+              {isSubmitting ? 'Inscription...' : "S'inscrire →"}
             </Button>
           </form>
 

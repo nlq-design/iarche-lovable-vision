@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async';
+import { useState } from 'react';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -9,11 +10,73 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin, Mail, Linkedin } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { contactSchema, type ContactFormData } from '@/schemas/contact';
 
 const Contact = () => {
-  const handleSubmit = (e: React.FormEvent) => {
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<ContactFormData>({
+    name: '',
+    email: '',
+    company: '',
+    subject: 'audit' as const,
+    message: ''
+  });
+  const [errors, setErrors] = useState<Partial<Record<keyof ContactFormData, string>>>({});
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted - Backend integration à venir');
+    setErrors({});
+    setIsSubmitting(true);
+
+    try {
+      const validatedData = contactSchema.parse(formData);
+      
+      const { error } = await supabase
+        .from('contacts')
+        .insert([{
+          name: validatedData.name,
+          email: validatedData.email,
+          company: validatedData.company || null,
+          subject: validatedData.subject,
+          message: validatedData.message
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Message envoyé",
+        description: "Nous vous répondrons sous 24h.",
+      });
+
+      setFormData({
+        name: '',
+        email: '',
+        company: '',
+        subject: 'audit',
+        message: ''
+      });
+    } catch (error: any) {
+      if (error.errors) {
+        const fieldErrors: Partial<Record<keyof ContactFormData, string>> = {};
+        error.errors.forEach((err: any) => {
+          if (err.path[0]) {
+            fieldErrors[err.path[0] as keyof ContactFormData] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Une erreur est survenue. Réessayez.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -56,7 +119,10 @@ const Contact = () => {
                     placeholder="Votre nom" 
                     required 
                     className="mt-2"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
+                  {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
                 </div>
 
                 <div>
@@ -67,7 +133,10 @@ const Contact = () => {
                     placeholder="votre@email.com" 
                     required 
                     className="mt-2"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
+                  {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
                 </div>
 
                 <div>
@@ -77,12 +146,19 @@ const Contact = () => {
                     type="text" 
                     placeholder="Nom de votre entreprise" 
                     className="mt-2"
+                    value={formData.company || ''}
+                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                   />
+                  {errors.company && <p className="text-sm text-destructive mt-1">{errors.company}</p>}
                 </div>
 
                 <div>
                   <Label htmlFor="sujet">Sujet *</Label>
-                  <Select required>
+                  <Select 
+                    required
+                    value={formData.subject}
+                    onValueChange={(value) => setFormData({ ...formData, subject: value as ContactFormData['subject'] })}
+                  >
                     <SelectTrigger className="mt-2">
                       <SelectValue placeholder="Sélectionnez un sujet" />
                     </SelectTrigger>
@@ -94,6 +170,7 @@ const Contact = () => {
                       <SelectItem value="autre">Autre demande</SelectItem>
                     </SelectContent>
                   </Select>
+                  {errors.subject && <p className="text-sm text-destructive mt-1">{errors.subject}</p>}
                 </div>
 
                 <div>
@@ -103,15 +180,19 @@ const Contact = () => {
                     placeholder="Décrivez votre projet ou votre question..." 
                     required 
                     className="mt-2 min-h-[150px]"
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   />
+                  {errors.message && <p className="text-sm text-destructive mt-1">{errors.message}</p>}
                 </div>
 
                 <Button 
                   type="submit" 
                   size="lg"
                   className="w-full bg-accent hover:bg-accent/90 text-white"
+                  disabled={isSubmitting}
                 >
-                  Envoyer
+                  {isSubmitting ? 'Envoi en cours...' : 'Envoyer'}
                 </Button>
               </form>
             </div>

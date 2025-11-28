@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async';
+import { useState } from 'react';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -7,11 +8,55 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CheckCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { newsletterSchema } from '@/schemas/contact';
 
 const Newsletter = () => {
-  const handleSubmit = (e: React.FormEvent) => {
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Newsletter subscription - Backend integration à venir');
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const validatedData = newsletterSchema.parse({ email });
+      
+      const { error: dbError } = await supabase
+        .from('newsletter_subscribers')
+        .insert([{ email: validatedData.email }]);
+
+      if (dbError) {
+        if (dbError.code === '23505') {
+          throw new Error('Cet email est déjà inscrit');
+        }
+        throw dbError;
+      }
+
+      toast({
+        title: "Inscription réussie",
+        description: "Vous recevrez nos actualités par email.",
+      });
+
+      setEmail('');
+    } catch (error: any) {
+      if (error.errors) {
+        setError(error.errors[0]?.message || 'Email invalide');
+      } else {
+        setError(error.message || 'Une erreur est survenue');
+        toast({
+          title: "Erreur",
+          description: error.message || "Une erreur est survenue. Réessayez.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -76,15 +121,19 @@ const Newsletter = () => {
                     placeholder="votre@email.com" 
                     required 
                     className="mt-2"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
+                  {error && <p className="text-sm text-destructive mt-1">{error}</p>}
                 </div>
 
                 <Button 
                   type="submit" 
                   size="lg"
                   className="w-full bg-primary hover:bg-primary/90 text-white"
+                  disabled={isSubmitting}
                 >
-                  S'inscrire
+                  {isSubmitting ? 'Inscription...' : "S'inscrire"}
                 </Button>
 
                 <p className="text-xs text-muted-foreground text-center">
