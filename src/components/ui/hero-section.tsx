@@ -5,6 +5,40 @@ const HeroSection = () => {
   return (
     <BackgroundLayout>
       <div className="min-h-screen flex items-center justify-center relative">
+        {/* ========================================
+            RECTANGLES DÉCORATIFS (Construction) - Uniquement sur /
+            ======================================== */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
+          <div 
+            className="absolute top-20 left-10 w-32 h-32 border border-border/30 rounded-lg" 
+            style={{
+              animation: 'constructionFade 4s ease-in-out infinite',
+              animationDelay: '0s'
+            }}
+          />
+          <div 
+            className="absolute bottom-32 right-20 w-24 h-24 border border-border/30 rounded-lg" 
+            style={{
+              animation: 'constructionFade 4s ease-in-out infinite',
+              animationDelay: '1s'
+            }}
+          />
+          <div 
+            className="absolute top-1/2 right-10 w-40 h-40 border border-border/30 rounded-lg" 
+            style={{
+              animation: 'constructionFade 4s ease-in-out infinite',
+              animationDelay: '2s'
+            }}
+          />
+          <div 
+            className="absolute bottom-20 left-1/4 w-28 h-28 border border-border/30 rounded-lg" 
+            style={{
+              animation: 'constructionFade 4s ease-in-out infinite',
+              animationDelay: '3s'
+            }}
+          />
+        </div>
+
         <div className="container text-center z-10 relative px-6 py-20">
           <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-semibold m-0 relative z-20 mb-20 md:mb-28 hero-animate-fadeIn hero-stagger-1" style={{ visibility: 'hidden' }}>
             <span className="hero-gradient-text">IArche</span>
