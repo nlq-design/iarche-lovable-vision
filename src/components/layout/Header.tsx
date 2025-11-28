@@ -25,15 +25,15 @@ const Header = () => {
             </a>
             <a 
               href="#exemples" 
-              className="text-sm hero-gradient-text font-semibold hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded transition-opacity"
-            >
-              Nos Solutions
-            </a>
-            <a 
-              href="#actualites" 
               className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
             >
-              Actualités
+              Réalisations
+            </a>
+            <a 
+              href="#newsletter" 
+              className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
+            >
+              Contact
             </a>
           </nav>
 
@@ -78,16 +78,16 @@ const Header = () => {
               <a 
                 href="#exemples"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm hero-gradient-text font-semibold hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded transition-opacity"
+                className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
               >
-                Nos Solutions
+                Réalisations
               </a>
               <a 
-                href="#actualites"
+                href="#newsletter"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
               >
-                Actualités
+                Contact
               </a>
               <button
                 onClick={() => {

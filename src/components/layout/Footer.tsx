@@ -6,21 +6,8 @@ const Footer = () => {
   return (
     <footer className="bg-foreground text-white">
       <div className="container mx-auto px-6 py-8">
-        {/* Ligne 1 : Navigation */}
-        <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm mb-6">
-          <a href="#services" className="text-white/70 hover:text-accent transition-colors">
-            Services
-          </a>
-          <a href="#exemples" className="hero-gradient-text font-semibold hover:opacity-80 transition-opacity">
-            Nos Solutions
-          </a>
-          <a href="#actualites" className="text-white/70 hover:text-accent transition-colors">
-            Actualités
-          </a>
-        </nav>
-
         {/* Grid 3 colonnes */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 border-t border-white/10 pt-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           {/* Colonne 1 : IArche */}
           <div>
             <h3 className="text-sm font-semibold mb-3">IArche</h3>
@@ -68,7 +55,7 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Colonne 2 : Navigation pages */}
+          {/* Colonne 2 : Navigation */}
           <div>
             <h3 className="text-sm font-semibold mb-3">Navigation</h3>
             <ul className="space-y-1.5">
