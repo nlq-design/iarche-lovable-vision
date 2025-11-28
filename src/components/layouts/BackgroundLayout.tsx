@@ -62,11 +62,11 @@ const BackgroundLayout = ({ children, className = '' }: BackgroundLayoutProps) =
         /* Animation des rectangles décoratifs (pulsation douce) */
         @keyframes constructionFade {
           0%, 100% {
-            opacity: 0.3;
+            opacity: 0.5;
             transform: scale(0.98);
           }
           50% {
-            opacity: 0.5;
+            opacity: 0.8;
             transform: scale(1);
           }
         }
