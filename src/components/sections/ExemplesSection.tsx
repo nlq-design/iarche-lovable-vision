@@ -1,6 +1,4 @@
 import React from 'react';
-import { NavLink } from '@/components/NavLink';
-import { ArrowRight } from 'lucide-react';
 
 const exemples = [
   { 
@@ -46,7 +44,7 @@ const ExemplesSection = () => {
         </h2>
 
         <div 
-          className="max-w-4xl mx-auto space-y-6 mb-12"
+          className="max-w-4xl mx-auto space-y-6"
           style={{
             visibility: 'hidden',
             animation: 'fadeIn 0.8s ease-out 0.4s forwards',
@@ -75,23 +73,6 @@ const ExemplesSection = () => {
               </div>
             </div>
           ))}
-        </div>
-
-        <div 
-          className="text-center"
-          style={{
-            visibility: 'hidden',
-            animation: 'fadeIn 0.8s ease-out 0.6s forwards',
-            willChange: 'opacity, transform'
-          }}
-        >
-          <NavLink 
-            to="/solutions"
-            className="inline-flex items-center gap-2 text-accent hover:text-accent/80 font-medium text-sm transition-colors group"
-          >
-            Voir tous nos projets
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-          </NavLink>
         </div>
       </div>
     </section>
