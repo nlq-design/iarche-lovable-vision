@@ -11,7 +11,7 @@ const NewsletterSection = () => {
   };
 
   return (
-    <section className="pt-16 md:pt-20 pb-24 md:pb-32 bg-muted">
+    <section className="pt-12 md:pt-16 pb-24 md:pb-32 bg-muted">
       <div className="container mx-auto px-6">
         <div className="max-w-2xl mx-auto text-center">
           <h2 
