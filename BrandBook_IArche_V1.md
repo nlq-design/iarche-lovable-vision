@@ -112,12 +112,36 @@ Cette baseline exprime :
 - Gradient id : `textGradient` (réutilisable)
 
 **Intégration web :**
+
+**⚠️ IMPORTANT :** Pour les projets React/Lovable, utiliser uniquement le SVG inline. Les composants React de logo ont été supprimés au profit du SVG pur pour plus de flexibilité et de maintenabilité.
+
 ```html
 <!-- Image simple -->
 <img src="/logo-iarche-text.svg" alt="IArche" width="200" height="60" />
 
-<!-- Inline SVG (pour manipulation CSS) -->
-<svg>...</svg>
+<!-- Inline SVG (recommandé pour React/JSX) -->
+<svg width="120" height="36" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="textGradient" x1="100%" y1="0%" x2="0%" y2="0%">
+      <stop offset="0%" style={{stopColor:'#1B2A47', stopOpacity:1}} />
+      <stop offset="33.33%" style={{stopColor:'#D15A3E', stopOpacity:1}} />
+      <stop offset="66.67%" style={{stopColor:'#2F4570', stopOpacity:1}} />
+      <stop offset="100%" style={{stopColor:'#D15A3E', stopOpacity:1}} />
+    </linearGradient>
+  </defs>
+  <text 
+    x="50%" 
+    y="50%" 
+    dominantBaseline="middle" 
+    textAnchor="middle" 
+    fontFamily="Inter, sans-serif" 
+    fontSize="72" 
+    fontWeight="600" 
+    fill="url(#textGradient)"
+  >
+    IArche
+  </text>
+</svg>
 ```
 
 **Export pour autres usages :**

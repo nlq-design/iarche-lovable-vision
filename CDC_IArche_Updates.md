@@ -359,9 +359,9 @@ contact_submissions:
 - [x] Correction bug FOUC (Flash of Unstyled Content)
 - [x] SEO technique complet (meta tags, Schema.org, geo tags, Open Graph)
 - [x] BackgroundLayout créé (composant réutilisable pour toutes les pages)
-- [x] Logo SVG texte réutilisable créé (logo-iarche-text.svg)
+- [x] Logo SVG inline intégré (composants React logo supprimés)
 - [x] Homepage complète en version portail minimaliste
-- [x] Page /accueil créée avec BackgroundLayout (prête pour contenu)
+- [x] Page /accueil créée avec BackgroundLayout et Header/Footer
 
 #### Concept Homepage :
 **Portail d'entrée minimaliste** servant de vitrine élégante vers les autres sections du site. Design épuré avec :
@@ -387,11 +387,39 @@ contact_submissions:
 
 ---
 
-## LOGO SVG TEXTE - SPÉCIFICATIONS TECHNIQUES
+## LOGO SVG TEXTE - SPÉCIFICATIONS TECHNIQUES ✅
 
 ### Fichier : `public/logo-iarche-text.svg`
 
 **Description :** Logo texte "IArche" en SVG avec gradient figé, optimisé pour tous usages (web, print, export).
+
+**⚠️ IMPORTANT :** Les anciens composants React de logo (`IArcheLogo.tsx`, `IArcheLogoFixed.tsx`) ont été supprimés. Seul le SVG inline ci-dessous doit être utilisé.
+
+**Code SVG complet :**
+```svg
+<svg width="400" height="120" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="textGradient" x1="100%" y1="0%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#1B2A47;stop-opacity:1" />
+      <stop offset="33.33%" style="stop-color:#D15A3E;stop-opacity:1" />
+      <stop offset="66.67%" style="stop-color:#2F4570;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D15A3E;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <text 
+    x="50%" 
+    y="50%" 
+    dominant-baseline="middle" 
+    text-anchor="middle" 
+    font-family="Inter, sans-serif" 
+    font-size="72" 
+    font-weight="600" 
+    fill="url(#textGradient)"
+  >
+    IArche
+  </text>
+</svg>
+```
 
 **Dimensions :**
 - ViewBox : 400x120px
@@ -401,14 +429,12 @@ contact_submissions:
 - Font-family : Inter, sans-serif
 
 **Gradient spécifications (270deg - droite → gauche) :**
-```svg
-<linearGradient id="textGradient" x1="100%" y1="0%" x2="0%" y2="0%">
-  <stop offset="0%" style="stop-color:#1B2A47;stop-opacity:1" />      <!-- Bleu Nuit foncé -->
-  <stop offset="33.33%" style="stop-color:#D15A3E;stop-opacity:1" />   <!-- Terracotta -->
-  <stop offset="66.67%" style="stop-color:#2F4570;stop-opacity:1" />   <!-- Bleu Nuit moyen -->
-  <stop offset="100%" style="stop-color:#D15A3E;stop-opacity:1" />     <!-- Terracotta -->
-</linearGradient>
-```
+- Direction : x1="100%" x2="0%" (droite vers gauche)
+- Couleurs exactes :
+  - 0% : #1B2A47 (Bleu Nuit foncé)
+  - 33.33% : #D15A3E (Terracotta)
+  - 66.67% : #2F4570 (Bleu Nuit moyen)
+  - 100% : #D15A3E (Terracotta)
 
 **Répartition visuelle :**
 - "I" : Bleu Nuit foncé
@@ -419,7 +445,8 @@ contact_submissions:
 - "e" : Terracotta
 
 **Usage recommandé :**
-- Web : Intégration directe `<img src="/logo-iarche-text.svg" alt="IArche" />`
+- Web inline (Header) : Copier/coller le SVG directement dans le JSX
+- Web image : `<img src="/logo-iarche-text.svg" alt="IArche" />`
 - Export PNG : Ouvrir dans navigateur → Clic droit → Enregistrer l'image
 - Print : Export en haute résolution via Illustrator/Figma
 - Email signature : Convertir en PNG 2x (800x240px) pour compatibilité
