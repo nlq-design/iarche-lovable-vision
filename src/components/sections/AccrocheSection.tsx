@@ -1,9 +1,15 @@
 import React from 'react';
 const AccrocheSection = () => {
   return <section className="py-20 md:py-24 px-6 flex flex-col items-center">
-      <h1 className="sr-only">IArche - Agence IA pour PME à Bayonne - Conseil et intégration intelligence artificielle</h1>
+      <h1 className="text-2xl md:text-3xl font-semibold text-foreground text-center max-w-3xl leading-relaxed mb-6" style={{
+      visibility: 'hidden',
+      animation: 'fadeIn 0.8s ease-out 0.1s forwards',
+      willChange: 'opacity, transform'
+    }}>
+        Dirigeant, indépendant ou porteur de projet IA ?
+      </h1>
       
-      <p className="text-xl md:text-2xl text-foreground text-center max-w-2xl leading-relaxed mb-8" style={{
+      <p className="text-lg md:text-xl text-foreground text-center max-w-2xl leading-relaxed mb-8" style={{
       visibility: 'hidden',
       animation: 'fadeIn 0.8s ease-out 0.2s forwards',
       willChange: 'opacity, transform'

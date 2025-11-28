@@ -17,8 +17,9 @@ const Accueil = () => {
       <Helmet>
         <html lang="fr" />
         <title>IArche · Agence IA pour PME · Conseil et intégration · Bayonne, Pays Basque, Sud-Ouest</title>
-        <meta name="description" content="IArche accompagne les PME du Sud-Ouest (Bayonne, Biarritz, Pau, Bordeaux, Dax) dans l'intégration de l'intelligence artificielle : audit, développement, accompagnement et conformité. De l'audit à l'autonomie." />
+        <meta name="description" content="Agence IA à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME. Sud-Ouest et toute la France." />
         <meta name="keywords" content="agence IA, conseil IA PME, intégration IA entreprise, intelligence artificielle, Bayonne, Biarritz, Pau, Bordeaux, Dax, Tarbes, Lourdes, Mont-de-Marsan, Oloron, Lescar, Pays Basque, Sud-Ouest" />
+        <link rel="alternate" href="https://iarche.fr/" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="canonical" href="https://iarche.fr/accueil" />
         
