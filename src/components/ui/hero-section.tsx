@@ -128,10 +128,20 @@ const HeroSection = () => {
             L'IA se construit avec vous
           </p>
           <div className="flex justify-center hero-animate-fadeIn hero-stagger-3">
-            <button className="px-8 py-4 bg-[#D15A3E] text-white rounded-lg cursor-pointer text-lg font-medium transition-all duration-300 ease-in-out hover:bg-[#D15A3E]/90 hover:translate-y-[-2px] hover:scale-105 flex items-center gap-2 hero-pulse-animation">
-              Entrer
-              <span>→</span>
-            </button>
+            <a 
+              href="#solutions" 
+              className="inline-flex items-center gap-2 text-primary font-medium text-lg hover:gap-3 transition-all duration-300 group"
+            >
+              Découvrir IArche
+              <svg 
+                className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </a>
           </div>
         </div>
 
