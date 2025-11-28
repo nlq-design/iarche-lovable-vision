@@ -34,7 +34,7 @@ const NewsletterSection = () => {
             />
             <Button 
               type="submit"
-              className="border-2 border-primary text-primary hover:bg-primary hover:text-background focus:bg-primary focus:text-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 font-medium px-6 py-3 rounded-lg whitespace-nowrap text-base transition-all"
+              className="bg-background border-2 border-primary text-primary hover:bg-primary hover:text-background focus:bg-primary focus:text-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 font-medium px-6 py-3 rounded-lg whitespace-nowrap text-base transition-all"
             >
               S'inscrire →
             </Button>
