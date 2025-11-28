@@ -837,6 +837,81 @@ Les deux lignes du footer (coordonnées + CTA question) avaient la même couleur
 - Élégance renforcée (underline retiré, espace fine)
 - Cohérence design system (nouvelles couleurs tokenisées)
 
+## 🎯 Règle Systématique : Prévention Bug FOUC sur Animations
+
+**IMPORTANT : Cette règle doit être appliquée à TOUS les composants animés du projet (actuels et futurs).**
+
+### Structure Obligatoire pour Animations CSS
+
+```jsx
+// ❌ INCORRECT - Risque de FOUC
+<div className="animate-fade-in">Content</div>
+
+// ✅ CORRECT - Pattern systématique
+<div className="animate-fade-in" style={{ visibility: 'hidden' }}>
+  Content
+</div>
+```
+
+### 3 Règles Obligatoires
+
+#### 1️⃣ Inline Style Initial
+```jsx
+style={{ visibility: 'hidden' }}
+```
+Tous les éléments animés doivent avoir `visibility: hidden` en style inline initial.
+
+#### 2️⃣ Animation CSS avec Visibility
+```css
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+  }
+  1% {
+    visibility: visible; /* ← CRITIQUE */
+  }
+  100% {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+}
+```
+L'animation doit passer `visibility: hidden → visible` dès la frame 1%.
+
+#### 3️⃣ Will-Change Optimization
+```css
+.animate-element {
+  will-change: opacity, transform, visibility;
+}
+```
+Déclarer `will-change` sur toutes les propriétés animées pour optimiser le rendu.
+
+### Commentaire Obligatoire dans Composants
+
+Ajouter ce commentaire en tête de tous les composants avec animations :
+
+```jsx
+{/* 
+  ============================================
+  ANIMATION RULE (FOUC Prevention)
+  ============================================
+  All animated elements MUST follow this pattern:
+  1. visibility: hidden in initial inline style
+  2. visibility: visible in first animation frame (1%)
+  3. will-change on animated properties
+  
+  This prevents Flash of Unstyled Content (FOUC)
+  during component mount and HMR updates.
+  ============================================
+*/}
+```
+
+### Composants Actuels Conformes
+- ✅ `src/components/ui/hero-section.tsx` - Pattern appliqué et documenté
+
 ### Prochaines Actions
 - [ ] Valider identité visuelle Hero avec client
 - [ ] Poursuivre assemblage Homepage (sections suivantes)

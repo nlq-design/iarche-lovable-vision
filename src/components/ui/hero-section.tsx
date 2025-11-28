@@ -22,6 +22,19 @@ const HeroSection = () => {
 
   return (
     <>
+      {/* 
+        ============================================
+        ANIMATION RULE (FOUC Prevention)
+        ============================================
+        All animated elements MUST follow this pattern:
+        1. visibility: hidden in initial inline style
+        2. visibility: visible in first animation frame (1%)
+        3. will-change on animated properties
+        
+        This prevents Flash of Unstyled Content (FOUC)
+        during component mount and HMR updates.
+        ============================================
+      */}
       <style>
         {`
         @keyframes fadeIn {
