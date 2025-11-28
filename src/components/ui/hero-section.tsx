@@ -173,8 +173,8 @@ const HeroSection = () => {
           <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 177 159" preserveAspectRatio="none">
             <defs>
               <linearGradient id="lineGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="hsl(218, 47%, 20%)" />
-                <stop offset="100%" stopColor="hsl(12, 60%, 53%)" />
+                <stop offset="0%" stopColor="hsl(var(--primary))" />
+                <stop offset="100%" stopColor="hsl(var(--accent))" />
               </linearGradient>
             </defs>
             <path 
@@ -189,8 +189,8 @@ const HeroSection = () => {
           <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 176 59" preserveAspectRatio="none">
             <defs>
               <linearGradient id="lineGradient2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="hsl(12, 60%, 53%)" />
-                <stop offset="100%" stopColor="hsl(218, 47%, 20%)" />
+                <stop offset="0%" stopColor="hsl(var(--accent))" />
+                <stop offset="100%" stopColor="hsl(var(--primary))" />
               </linearGradient>
             </defs>
             <path 
@@ -255,7 +255,7 @@ const HeroSection = () => {
 
         {/* Ancrage géographique */}
         <div className="absolute bottom-6 left-0 right-0 text-center z-10 hero-animate-fadeIn hero-stagger-4" style={{ visibility: 'hidden' }}>
-          <p className="text-sm mb-2" style={{ color: 'hsl(var(--text-subtle))' }}>
+          <p className="text-sm mb-2 text-text-subtle">
             Bayonne · France · <a href="mailto:nlq@iarche.fr" className="hover:underline transition-all duration-200">nlq@iarche.fr</a>
           </p>
           <a 
