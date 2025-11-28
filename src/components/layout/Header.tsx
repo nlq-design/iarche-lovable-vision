@@ -11,7 +11,7 @@ const Header = () => {
           <NavLink to="/accueil" className="flex items-center">
             <svg width="120" height="36" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
               <defs>
-                <linearGradient id="textGradient" x1="100%" y1="0%" x2="0%" y2="0%">
+                <linearGradient id="headerLogoGradient" x1="100%" y1="0%" x2="0%" y2="0%">
                   <stop offset="0%" style={{stopColor:'#1B2A47', stopOpacity:1}} />
                   <stop offset="33.33%" style={{stopColor:'#D15A3E', stopOpacity:1}} />
                   <stop offset="66.67%" style={{stopColor:'#2F4570', stopOpacity:1}} />
@@ -26,7 +26,7 @@ const Header = () => {
                 fontFamily="Inter, sans-serif" 
                 fontSize="72" 
                 fontWeight="600" 
-                fill="url(#textGradient)"
+                fill="url(#headerLogoGradient)"
               >
                 IArche
               </text>
