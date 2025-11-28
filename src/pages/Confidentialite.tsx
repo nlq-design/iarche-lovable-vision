@@ -1,11 +1,24 @@
+import { Helmet } from 'react-helmet-async';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 
 const Confidentialite = () => {
   return (
     <BackgroundLayout>
+      <Helmet>
+        <title>Politique de confidentialité · IArche</title>
+        <meta name="description" content="Politique de confidentialité IArche. Données collectées, finalités, vos droits RGPD." />
+        <link rel="canonical" href="https://iarche.fr/confidentialite" />
+        <meta property="og:title" content="Politique de confidentialité · IArche" />
+        <meta property="og:description" content="Politique de confidentialité IArche. Données collectées, finalités, vos droits RGPD." />
+        <meta property="og:url" content="https://iarche.fr/confidentialite" />
+        <meta property="og:type" content="website" />
+      </Helmet>
+      
       <Header />
+      <BreadcrumbNav />
       
       <main className="min-h-screen pt-20">
         <section className="max-w-4xl mx-auto px-6 py-16">

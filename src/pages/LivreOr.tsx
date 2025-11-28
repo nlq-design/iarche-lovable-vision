@@ -1,12 +1,25 @@
+import { Helmet } from 'react-helmet-async';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { Button } from '@/components/ui/button';
 
 const LivreOr = () => {
   return (
     <BackgroundLayout>
+      <Helmet>
+        <title>Livre d'Or · IArche · Témoignages clients</title>
+        <meta name="description" content="Découvrez les témoignages de nos clients. Ce qu'ils disent de leur collaboration avec IArche." />
+        <link rel="canonical" href="https://iarche.fr/livre-or" />
+        <meta property="og:title" content="Livre d'Or · IArche · Témoignages clients" />
+        <meta property="og:description" content="Découvrez les témoignages de nos clients. Ce qu'ils disent de leur collaboration avec IArche." />
+        <meta property="og:url" content="https://iarche.fr/livre-or" />
+        <meta property="og:type" content="website" />
+      </Helmet>
+      
       <Header />
+      <BreadcrumbNav />
       
       <main className="min-h-screen pt-20">
         <section className="max-w-6xl mx-auto px-6 py-16">

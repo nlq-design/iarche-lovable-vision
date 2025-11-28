@@ -1,13 +1,26 @@
+import { Helmet } from 'react-helmet-async';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 
 const ConditionsGenerales = () => {
   return (
     <BackgroundLayout>
-      <Header />
+      <Helmet>
+        <title>Conditions générales · IArche</title>
+        <meta name="description" content="Conditions générales de vente des services IArche. Prestations, tarifs, paiement." />
+        <link rel="canonical" href="https://iarche.fr/conditions-generales" />
+        <meta property="og:title" content="Conditions générales · IArche" />
+        <meta property="og:description" content="Conditions générales de vente des services IArche. Prestations, tarifs, paiement." />
+        <meta property="og:url" content="https://iarche.fr/conditions-generales" />
+        <meta property="og:type" content="website" />
+      </Helmet>
       
-      <main className="min-h-screen pt-20">
+      <Header />
+      <BreadcrumbNav />
+      
+      <main className="min-h-screen">
         <section className="max-w-4xl mx-auto px-6 py-16">
           {/* En-tête */}
           <div className="mb-16">
@@ -67,7 +80,7 @@ const ConditionsGenerales = () => {
               <div>
                 <h2 className="text-2xl font-bold text-foreground mb-4">Article 6 - Réclamations</h2>
                 <p>
-                  Toute réclamation doit être adressée par email à nlq@iarche.fr dans un délai de 15 jours suivant la livraison de la prestation.
+                  Toute réclamation doit être adressée par email à <a href="mailto:nlq@iarche.fr" className="text-primary hover:underline">nlq@iarche.fr</a> dans un délai de 15 jours suivant la livraison de la prestation.
                 </p>
               </div>
 

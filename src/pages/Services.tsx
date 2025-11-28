@@ -1,6 +1,9 @@
+import { Helmet } from 'react-helmet-async';
+import { Link } from 'react-router-dom';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, CheckCircle } from 'lucide-react';
@@ -67,7 +70,18 @@ const Services = () => {
 
   return (
     <BackgroundLayout>
+      <Helmet>
+        <title>Nos services · IArche · Agence IA Bayonne</title>
+        <meta name="description" content="Audit IA, développement, formation et conformité. Accompagnement adapté à votre maturité IA. Agence basée à Bayonne." />
+        <link rel="canonical" href="https://iarche.fr/services" />
+        <meta property="og:title" content="Nos services · IArche · Agence IA Bayonne" />
+        <meta property="og:description" content="Audit IA, développement, formation et conformité. Accompagnement adapté à votre maturité IA." />
+        <meta property="og:url" content="https://iarche.fr/services" />
+        <meta property="og:type" content="website" />
+      </Helmet>
+      
       <Header />
+      <BreadcrumbNav />
       
       <main className="min-h-screen pt-20">
         <section className="max-w-6xl mx-auto px-6 py-16">
@@ -125,14 +139,14 @@ const Services = () => {
 
                   {/* CTA */}
                   <div className="pt-4">
-                    <a href={service.ctaLink}>
+                    <Link to={service.ctaLink}>
                       <Button 
                         className="bg-accent hover:bg-accent/90 text-white group"
                       >
                         {service.cta}
                         <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
                       </Button>
-                    </a>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
@@ -144,14 +158,14 @@ const Services = () => {
             <p className="text-lg text-foreground mb-6">
               Une question sur votre projet ?
             </p>
-            <a href="/contact">
+            <Link to="/contact">
               <Button 
                 size="lg"
                 className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-base"
               >
                 Parlons-en →
               </Button>
-            </a>
+            </Link>
           </div>
         </section>
       </main>

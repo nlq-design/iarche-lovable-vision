@@ -1,11 +1,24 @@
+import { Helmet } from 'react-helmet-async';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 
 const MentionsLegales = () => {
   return (
     <BackgroundLayout>
+      <Helmet>
+        <title>Mentions légales · IArche</title>
+        <meta name="description" content="Mentions légales du site IArche. Éditeur, hébergeur, propriété intellectuelle." />
+        <link rel="canonical" href="https://iarche.fr/mentions-legales" />
+        <meta property="og:title" content="Mentions légales · IArche" />
+        <meta property="og:description" content="Mentions légales du site IArche. Éditeur, hébergeur, propriété intellectuelle." />
+        <meta property="og:url" content="https://iarche.fr/mentions-legales" />
+        <meta property="og:type" content="website" />
+      </Helmet>
+      
       <Header />
+      <BreadcrumbNav />
       
       <main className="min-h-screen pt-20">
         <section className="max-w-4xl mx-auto px-6 py-16">
