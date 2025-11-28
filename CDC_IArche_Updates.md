@@ -379,6 +379,7 @@ contact_submissions:
 ```css
 --muted: 30 16% 88%             /* Sable Doux #E5E3DF - Éléments subtils */
 --muted-foreground: 218 20% 40% /* Gris Bleuté - Texte secondaire */
+--text-subtle: 0 0% 60%         /* Gris clair #999999 - Info passive footer */
 --border: 30 12% 85%            /* Bordures subtiles */
 ```
 
@@ -786,6 +787,55 @@ xl: 1280px  /* Large desktop */
 3. ✅ **Animations Dynamiques** : Gradient texte + lignes SVG + patterns maintenues et optimisées
 4. ✅ **Correction Bug FOUC** : Ajout `visibility: hidden/visible` + `will-change` sur toutes animations
 5. ✅ **Documentation Complète** : Design system & charte graphique finalisés pour référence future
+6. ✅ **Hiérarchie Footer** : Différenciation visuelle coordonnées vs CTA question (voir détails ci-dessous)
+7. ✅ **Espacement Vertical** : Augmentation espace entre CTA "Découvrir" et footer (mb-10 → mb-16)
+8. ✅ **Micro-typographie** : Espace fine avant flèche "Une question ?" pour élégance typographique
+
+### Détails Hiérarchie Visuelle Footer (Ajout du 28 Nov 2025)
+
+**Problématique identifiée :**
+Les deux lignes du footer (coordonnées + CTA question) avaient la même couleur, créant une hiérarchie floue.
+
+**Solution appliquée :**
+
+#### 1. Nouvelle couleur Design System
+```css
+/* index.css */
+--text-subtle: 0 0% 60%;  /* Gris clair #999999 - Info passive */
+
+/* tailwind.config.ts */
+"text-subtle": "hsl(var(--text-subtle))",
+```
+
+#### 2. Footer - Hiérarchie différenciée
+```jsx
+/* Ligne 1 : Coordonnées (Info passive) */
+<p style={{ color: 'hsl(var(--text-subtle))' }}>
+  Bayonne · France · <a href="mailto:nlq@iarche.fr">nlq@iarche.fr</a>
+</p>
+
+/* Ligne 2 : CTA Question (Action) */
+<a className="text-muted-foreground hover:text-accent">
+  Une question ?<span className="inline-block w-1"></span>→
+</a>
+```
+
+**Mapping couleurs :**
+| Élément | Couleur par défaut | Couleur hover | Rationale |
+|---------|-------------------|---------------|-----------|
+| Coordonnées | `text-subtle` (#999) | `hover:underline` (email) | Info passive, discrète |
+| "Une question ?" | `text-muted-foreground` (#666) | `hover:text-accent` (terracotta) | Action, plus visible |
+
+**Effets appliqués :**
+- **Coordonnées** : Gris très clair, hover underline sur email uniquement
+- **CTA Question** : Gris plus foncé, hover couleur terracotta pour inciter au clic
+- **Underline retiré** : Pas de soulignement par défaut sur "Une question ?", évite l'effet "lien classique"
+- **Espace fine** : `<span className="inline-block w-1"></span>` (4px) avant flèche pour élégance typographique
+
+**Bénéfices :**
+- Hiérarchie claire : coordonnées = passif, question = actif
+- Élégance renforcée (underline retiré, espace fine)
+- Cohérence design system (nouvelles couleurs tokenisées)
 
 ### Prochaines Actions
 - [ ] Valider identité visuelle Hero avec client
