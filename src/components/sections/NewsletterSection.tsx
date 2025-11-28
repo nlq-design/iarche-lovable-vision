@@ -11,11 +11,11 @@ const NewsletterSection = () => {
   };
 
   return (
-    <section className="pt-12 md:pt-16 pb-24 md:pb-32 bg-muted">
+    <section className="pt-8 md:pt-10 pb-12 md:pb-16 bg-muted">
       <div className="container mx-auto px-6">
         <div className="max-w-2xl mx-auto text-center">
           <h2 
-            className="text-3xl md:text-4xl font-semibold text-foreground mb-6"
+            className="text-2xl md:text-3xl font-semibold text-foreground mb-4"
             style={{ 
               visibility: 'hidden',
               animation: 'fadeIn 0.8s ease-out 0.2s forwards',
@@ -25,7 +25,7 @@ const NewsletterSection = () => {
             Restez informé
           </h2>
           <p 
-            className="text-lg text-muted-foreground mb-10 leading-relaxed max-w-xl mx-auto"
+            className="text-base md:text-lg text-muted-foreground mb-6 leading-relaxed max-w-xl mx-auto"
             style={{ 
               visibility: 'hidden',
               animation: 'fadeIn 0.8s ease-out 0.4s forwards',
@@ -37,7 +37,7 @@ const NewsletterSection = () => {
 
           <form 
             onSubmit={handleSubmit} 
-            className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto mb-16"
+            className="flex flex-col sm:flex-row gap-2 max-w-lg mx-auto mb-8"
             style={{ 
               visibility: 'hidden',
               animation: 'fadeIn 0.8s ease-out 0.6s forwards',
@@ -49,11 +49,11 @@ const NewsletterSection = () => {
               name="email"
               placeholder="newsletters@iarche.com"
               required
-              className="flex-1 border-border rounded-lg px-5 py-4 text-base"
+              className="flex-1 border-border rounded-lg px-4 py-3 text-base"
             />
             <Button 
               type="submit"
-              className="bg-accent hover:bg-accent/90 text-white font-medium px-8 py-4 rounded-lg whitespace-nowrap text-base"
+              className="bg-accent hover:bg-accent/90 text-white font-medium px-6 py-3 rounded-lg whitespace-nowrap text-base"
             >
               S'inscrire →
             </Button>
