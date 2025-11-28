@@ -14,7 +14,7 @@ const HeroSection = () => {
           </p>
           <div className="flex justify-center hero-animate-fadeIn hero-stagger-3" style={{ visibility: 'hidden' }}>
             <a 
-              href="#solutions" 
+              href="/accueil" 
               className="inline-flex items-center gap-2 text-primary font-medium text-lg hover:gap-3 transition-all duration-300 group"
             >
               Découvrir
