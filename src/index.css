@@ -118,3 +118,18 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Animations pour les sections */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  1% {
+    visibility: visible;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

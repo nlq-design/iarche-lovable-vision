@@ -18,7 +18,8 @@ const NewsletterSection = () => {
             className="text-2xl md:text-3xl font-semibold text-foreground mb-3"
             style={{ 
               visibility: 'hidden',
-              animation: 'fadeIn 0.8s ease-out 0.2s forwards'
+              animation: 'fadeIn 0.8s ease-out 0.2s forwards',
+              willChange: 'opacity, transform'
             }}
           >
             Restez informé
@@ -27,7 +28,8 @@ const NewsletterSection = () => {
             className="text-muted-foreground mb-6"
             style={{ 
               visibility: 'hidden',
-              animation: 'fadeIn 0.8s ease-out 0.4s forwards'
+              animation: 'fadeIn 0.8s ease-out 0.4s forwards',
+              willChange: 'opacity, transform'
             }}
           >
             Recevez nos actualités et conseils IA directement dans votre boîte mail.
@@ -38,7 +40,8 @@ const NewsletterSection = () => {
             className="flex flex-col sm:flex-row gap-2"
             style={{ 
               visibility: 'hidden',
-              animation: 'fadeIn 0.8s ease-out 0.6s forwards'
+              animation: 'fadeIn 0.8s ease-out 0.6s forwards',
+              willChange: 'opacity, transform'
             }}
           >
             <Input 
