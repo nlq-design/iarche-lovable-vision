@@ -36,7 +36,7 @@ const ServicesSection = () => {
               }}
             >
               <CardHeader>
-                <CardTitle className="text-lg font-semibold leading-none tracking-tight md:text-xl">
+                <CardTitle className="text-lg font-semibold leading-none tracking-tight md:text-xl hero-gradient-text">
                   {service.title}
                 </CardTitle>
               </CardHeader>
