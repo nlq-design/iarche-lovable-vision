@@ -192,42 +192,162 @@ Le CDC V3 mentionnait :
 
 ---
 
-## QUESTIONS EN SUSPENS
+## RÉPONSES AUX QUESTIONS - CLARIFICATIONS FINALES ✅
 
-### Questions affinées post-clarifications :
+### A. Structure du blog/ressources (/ressources)
+**✅ CONFIRMÉ : Bibliothèque d'actualités avec back-office**
 
-**A. Structure du blog/ressources (/ressources)**
-- Quel niveau de détail pour la V1 ?
-  - Option 1 : Page vide "À venir" avec newsletter
-  - Option 2 : Structure blog avec 2-3 articles exemples (lorem ou réels ?)
-  - Option 3 : Uniquement formulaire newsletter sans section articles
+**Spécifications :**
+- Blog avec articles réguliers (potentiellement quotidiens)
+- Contenu : actualités IA, avancées technologiques, retours d'expérience projets
+- Gestion 100% via back-office Lovable Cloud
+- Structure blog avec section "Articles à venir" pour V1
+- Possibilité d'intégrer articles existants dès le départ si disponibles
 
-**B. Page Solutions - Niveau de détail**
-- Combien de projets à afficher dès la V1 ?
-  - Les 4 mentionnés dans le CDC ?
-  - Plus ? Moins ?
-- Format des projets anonymisés : card avec description uniquement ?
-- Projets nommés : besoin de CTA "En savoir plus" vers où ? (page externe ? modal ?)
+**Tables Supabase requises :**
+```sql
+blog_posts:
+  - id (uuid)
+  - title (text)
+  - slug (text, unique)
+  - excerpt (text)
+  - content (text)
+  - featured_image (text, nullable)
+  - author (text)
+  - published_at (timestamp)
+  - status (enum: draft, published)
+  - created_at (timestamp)
+  - updated_at (timestamp)
+```
 
-**C. Navigation header - Dropdown ou pas ?**
-Le CDC V3 mentionne :
-- Expertise : Dropdown (hub + 4 sous-pages)
-- Solutions : Dropdown (hub + 4 sous-pages) ← **obsolète**
+---
 
-**Nouveau :**
-- Expertise : Dropdown avec 5 liens (hub + 4 sous-pages) ✅
-- Solutions : Lien simple vers page unique ✅
+### B. Page Solutions - Niveau de détail
+**✅ CONFIRMÉ : 5 projets avec CTA "En savoir plus"**
 
-**D. Formulaire contact - Notifications**
-- Email de notification : quelle adresse recevoir les soumissions ?
-- Besoin d'une confirmation automatique à l'utilisateur ?
-- Stockage en base : juste pour historique ou besoin de tableau de bord admin ?
+**Spécifications :**
+- 5 projets/solutions à afficher dès V1
+- CTA "En savoir plus" sur chaque projet
+- Trois options pour le CTA :
+  1. **Modale** avec détails complets (recommandé pour projets internes)
+  2. **Formulaire de demande de documentation** (capture leads)
+  3. **Lien externe** (si solution a site dédié)
 
-**E. Ordre de développement préféré ?**
-Quelle approche préférez-vous :
-1. **Design system d'abord** : Créer toute la charte (couleurs, composants, etc.) puis les pages
-2. **Page par page** : Homepage complète → validation → suite
-3. **Skeleton complet** : Toutes les pages en wireframe → habillage progressif
+**Logique :**
+- Projets nommés publics : modale avec détails
+- Projets confidentiels/en cours : formulaire pour doc (capture email)
+
+**Table Supabase requise :**
+```sql
+projects:
+  - id (uuid)
+  - name (text)
+  - description (text)
+  - category (text)
+  - status (enum: available, coming_soon, confidential)
+  - is_public (boolean)
+  - cta_type (enum: modal, form, external_link)
+  - cta_url (text, nullable)
+  - image_url (text, nullable)
+  - order (integer)
+  - created_at (timestamp)
+```
+
+---
+
+### C. Navigation header
+**✅ CONFIRMÉ :**
+- Expertise : Dropdown avec 5 liens (hub + 4 sous-pages)
+- Solutions : Lien simple vers page unique
+
+---
+
+### D. Formulaire contact - Notifications
+**✅ CONFIRMÉ :**
+- Email de notification : **adresse email professionnelle du fondateur** (à fournir)
+- **Email de confirmation automatique** à l'utilisateur : OUI
+- Stockage en base : Historique complet pour suivi + tableau de bord admin
+
+**Spécifications techniques :**
+- Edge function avec Resend pour envoi emails
+- Double envoi : notification fondateur + confirmation utilisateur
+- Validation stricte avec Zod (sécurité)
+- Stockage contact_submissions en DB
+
+**Table Supabase requise :**
+```sql
+contact_submissions:
+  - id (uuid)
+  - name (text)
+  - email (text)
+  - company (text)
+  - message (text)
+  - status (enum: new, read, replied, archived)
+  - created_at (timestamp)
+```
+
+**Secrets requis :**
+- `RESEND_API_KEY` (pour envoi emails)
+- `CONTACT_EMAIL` (email destinataire notifications)
+
+---
+
+### E. Ordre de développement
+**✅ CONFIRMÉ : Homepage complète → validation → suite**
+
+**Approche validée :**
+1. **Phase 1 - Homepage seule** :
+   - Design system complet (couleurs, typo, composants)
+   - Hero adapté du composant 21st.dev
+   - Section problème/accroche
+   - 4 pôles Expertise (cards)
+   - Section crédibilité SaaS
+   - CTA final
+   - → **VALIDATION AVANT SUITE**
+
+2. **Phase 2 - Navigation + Hubs** (après validation homepage) :
+   - Header avec navigation dropdown
+   - Footer
+   - Hub Expertise
+   - Page Solutions unique
+
+3. **Phase 3 - Profondeur** (itératif) :
+   - 4 sous-pages Expertise
+   - Page À propos
+   - Page Contact avec formulaire
+   - Page Ressources/Blog
+
+---
+
+### F. Intégration composant 21st.dev
+**✅ CONFIRMÉ : Composant hero fourni**
+
+**Composant source :** `dynamic-animated-hero-section-with-gradient.tsx`
+
+**Adaptations obligatoires à la charte IArche :**
+- ❌ Fond noir → ✅ Blanc Cassé #FAF9F7
+- ❌ Dégradé rose/bleu/cyan → ✅ Bleu Nuit #1A2B4A avec accent Terracotta
+- ❌ Lignes blanches → ✅ Lignes Bleu Nuit ou Terracotta
+- ❌ Bouton blanc → ✅ Bouton Terracotta (#D15A3E)
+- ❌ Texte générique → ✅ Copy IArche (baseline, sur-titre Bayonne)
+- ✅ Conserver animations (lignes, fade-in, pulse)
+- ✅ Typographie Inter
+
+---
+
+## DÉVELOPPEMENT EN COURS
+
+### Étape actuelle : Homepage V1
+- [x] Lovable Cloud activé
+- [x] CDC mis à jour avec réponses finales
+- [ ] Design system configuré (index.css + tailwind.config.ts)
+- [ ] Composant hero adapté à charte IArche
+- [ ] Homepage assemblée
+- [ ] Validation client
+
+**Prochain message client : Composant hero 21st.dev fourni**
+
+---
 
 ---
 
