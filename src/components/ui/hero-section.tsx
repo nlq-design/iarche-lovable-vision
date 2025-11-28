@@ -118,11 +118,11 @@ const HeroSection = () => {
         `}
       </style>
       
-      <div className="min-h-screen flex items-start justify-center bg-background text-foreground font-sans overflow-hidden relative pt-32 md:pt-40">
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground font-sans overflow-hidden relative">
         {/* Container with staggered animations */}
-        <div className="container text-center z-10 relative px-6">
+        <div className="container text-center z-10 relative px-6 py-20">
 
-          <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-semibold m-0 relative z-20 mb-6 hero-animate-fadeIn hero-stagger-1">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-semibold m-0 relative z-20 mb-20 md:mb-28 hero-animate-fadeIn hero-stagger-1">
             <span className="hero-gradient-text">IArche</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed hero-animate-fadeIn hero-stagger-2">
