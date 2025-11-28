@@ -1,6 +1,5 @@
 import React from 'react';
 import { NavLink } from '@/components/NavLink';
-import IArcheLogoFixed from '@/components/ui/IArcheLogoFixed';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Linkedin } from 'lucide-react';
@@ -20,7 +19,6 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Colonne 1 : IArche */}
           <div>
-            <IArcheLogoFixed size="sm" className="mb-4" />
             <p className="text-sm text-white/70 mb-2">Bayonne · France</p>
             <p className="text-sm text-white/70 mb-4">nlq@iarche.fr</p>
             <a 
