@@ -5,19 +5,19 @@ import { ArrowRight } from 'lucide-react';
 const services = [
   {
     title: "Audit & Conseil",
-    description: "Diagnostic maturité IA, faisabilité, ROI, roadmap stratégique"
+    description: "Diagnostic, faisabilité, feuille de route concrète, ROI"
   },
   {
     title: "Développement & Intégration",
-    description: "Chatbots, automatisation, RAG, API, solutions sur-mesure"
+    description: "Automatisation, solutions sur-mesure, connexion à vos outils existants"
   },
   {
     title: "Accompagnement & Autonomie",
-    description: "Formation équipes, coaching, montée en compétences, support"
+    description: "Formation, montée en compétences, support durable"
   },
   {
     title: "Conformité & Réglementation",
-    description: "AI Act, RGPD, documentation, audit juridique IA"
+    description: "AI Act, RGPD, documentation, audit de conformité"
   }
 ];
 
