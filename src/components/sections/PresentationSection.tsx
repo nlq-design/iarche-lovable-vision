@@ -2,7 +2,7 @@ import React from 'react';
 
 const PresentationSection = () => {
   return (
-    <section className="py-12 md:py-16">
+    <section className="pt-8 pb-12 md:pt-12 md:pb-16">
       <div className="container mx-auto px-6">
         <div 
           className="max-w-3xl mx-auto text-center space-y-4"
