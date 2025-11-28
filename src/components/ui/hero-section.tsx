@@ -85,6 +85,7 @@ const HeroSection = () => {
             LIGNES SVG ANIMÉES TYPE CANALISATION - Gradients Bleu Nuit ↔ Terracotta
             ======================================== */}
         <div className="line-group absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none" style={{ zIndex: 1 }}>
+          {/* Ligne 1 : horizontale puis descente à gauche */}
           <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 177 159" preserveAspectRatio="none">
             <defs>
               <linearGradient id="canalisationGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -98,6 +99,7 @@ const HeroSection = () => {
             />
           </svg>
           
+          {/* Ligne 2 : horizontale puis descente à droite */}
           <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 176 59" preserveAspectRatio="none">
             <defs>
               <linearGradient id="canalisationGradient2" x1="100%" y1="0%" x2="0%" y2="100%">
@@ -108,6 +110,34 @@ const HeroSection = () => {
             <path 
               className="canalisation-line" 
               d="M0 1L122.464 1C123.569 1 124.464 1.89543 124.464 3L124.464 56C124.464 57.1046 125.36 58 126.464 58L176 58"
+            />
+          </svg>
+          
+          {/* Ligne 3 : diagonale du coin supérieur droit vers le centre */}
+          <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 200 200" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="canalisationGradient3" x1="100%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="hsl(var(--primary))" />
+                <stop offset="100%" stopColor="hsl(var(--accent))" />
+              </linearGradient>
+            </defs>
+            <path 
+              className="canalisation-line" 
+              d="M200 0L150 50C148.5 51.5 148.5 53.5 150 55L120 85C118.5 86.5 116.5 86.5 115 85L80 120"
+            />
+          </svg>
+          
+          {/* Ligne 4 : montée verticale puis horizontale */}
+          <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 150 200" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="canalisationGradient4" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="hsl(var(--accent))" />
+                <stop offset="100%" stopColor="hsl(var(--primary))" />
+              </linearGradient>
+            </defs>
+            <path 
+              className="canalisation-line" 
+              d="M20 200L20 80C20 78.5 21.5 77 23 77L127 77C128.5 77 150 75.5 150 74L150 40"
             />
           </svg>
         </div>
