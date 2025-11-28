@@ -615,6 +615,7 @@ L'IA se construit avec vous
 
 | Version | Date | Modifications |
 |---------|------|---------------|
+| 1.2 | 28 Nov 2025 | Terminologie : "Audit, Dev, Accompagnement, Conformité" / Navigation : "Nos Solutions" (gradient) + "Actualités" / Footer : ajout nav |
 | 1.1 | 28 Nov 2025 | Mise à jour specs logo gradient (buildé), référence page "/" auditée (8.5/10) |
 | 1.0 | 28 Nov 2025 | Création initiale |
 
@@ -629,4 +630,4 @@ Documentation complète dans `CDC_IArche_Updates.md` (Design System + Audit dét
 
 ---
 
-**Fin du Brand Book IArche V1.1**
+**Fin du Brand Book IArche V1.2**

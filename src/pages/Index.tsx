@@ -121,7 +121,7 @@ const Index = () => {
                 "name": "Lescar"
               }
             ],
-            "description": "Agence IA installée à Bayonne accompagnant les dirigeants de PME du Sud-Ouest (Bayonne, Biarritz, Pau, Bordeaux, Dax et région) dans l'intégration concrète de l'intelligence artificielle : diagnostic, développement, formation, conformité",
+            "description": "Agence IA installée à Bayonne accompagnant les dirigeants de PME du Sud-Ouest (Bayonne, Biarritz, Pau, Bordeaux, Dax et région) dans l'intégration concrète de l'intelligence artificielle : Audit, Dev, Accompagnement, Conformité",
             "serviceType": ["Conseil IA", "Audit IA", "Développement IA", "Formation IA", "Conformité IA"]
           })}
         </script>
