@@ -1,6 +1,4 @@
 import React from 'react';
-import { NavLink } from '@/components/NavLink';
-import { Button } from '@/components/ui/button';
 
 const Header = () => {
   return (
@@ -8,30 +6,30 @@ const Header = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo IArche */}
-          <NavLink to="/accueil" className="flex items-center">
+          <a href="/" className="flex items-center">
             <span className="text-3xl font-semibold hero-gradient-text">IArche</span>
-          </NavLink>
+          </a>
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-          <NavLink 
-            to="/services" 
-            className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
-          >
-            Services
-          </NavLink>
-          <NavLink 
-            to="/solutions" 
-            className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
-          >
-            Solutions
-          </NavLink>
-          <NavLink 
-            to="/actualites" 
-            className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
-          >
-            Actualités
-          </NavLink>
+            <a 
+              href="#services" 
+              className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
+            >
+              Services
+            </a>
+            <a 
+              href="#exemples" 
+              className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
+            >
+              Réalisations
+            </a>
+            <a 
+              href="#newsletter" 
+              className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
+            >
+              Contact
+            </a>
           </nav>
 
           {/* CTA */}

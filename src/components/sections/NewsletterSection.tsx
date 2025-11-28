@@ -11,7 +11,7 @@ const NewsletterSection = () => {
   };
 
   return (
-    <section className="pt-8 md:pt-10 pb-12 md:pb-16 bg-muted">
+    <section id="newsletter" className="pt-8 md:pt-10 pb-12 md:pb-16 bg-muted">
       <div className="container mx-auto px-6">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-2xl md:text-3xl font-semibold text-foreground mb-4 invisible animate-fadeIn [animation-delay:0.2s]">
