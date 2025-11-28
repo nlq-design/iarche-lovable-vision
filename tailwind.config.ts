@@ -64,7 +64,7 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['Manrope', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -73,25 +73,43 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "fadeIn": {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "1%": { visibility: "visible" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "gradientText": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        "patternScroll": {
+          "0%": { transform: "translate(0, 0)" },
+          "100%": { transform: "translate(40px, 40px)" },
+        },
+        "constructionFade": {
+          "0%, 100%": { opacity: "0.2" },
+          "50%": { opacity: "0.6" },
+        },
+        "subtlePulse": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fadeIn": "fadeIn 0.8s ease-out forwards",
+        "gradientText": "gradientText 15s ease infinite",
+        "patternScroll": "patternScroll 45s linear infinite",
+        "constructionFade": "constructionFade 4s ease-in-out infinite",
+        "subtlePulse": "subtlePulse 2s ease-in-out infinite",
       },
     },
   },

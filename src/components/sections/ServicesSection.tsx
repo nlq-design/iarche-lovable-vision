@@ -30,12 +30,8 @@ const ServicesSection = () => {
           {services.map((service, index) => (
             <Card 
               key={index}
-              className="grid grid-rows-[auto_1fr_auto] bg-card border border-border rounded-lg shadow-sm hover:border-accent hover:shadow-lg transition-all duration-300"
-              style={{
-                visibility: 'hidden',
-                animation: `fadeIn 0.8s ease-out ${0.2 + index * 0.1}s forwards`,
-                willChange: 'opacity, transform'
-              }}
+              className="grid grid-rows-[auto_1fr_auto] bg-card border border-border rounded-lg shadow-sm hover:border-accent hover:shadow-lg transition-all duration-300 invisible animate-fadeIn"
+              style={{ animationDelay: `${0.2 + index * 0.1}s` }}
             >
               <CardHeader>
                 <CardTitle className="text-lg font-semibold leading-none tracking-tight md:text-xl hero-gradient-text">
