@@ -241,8 +241,24 @@ const HeroSection = () => {
         </div>
 
         {/* Ancrage géographique */}
-        <div className="absolute bottom-6 left-0 right-0 text-center z-10">
-          <p className="text-sm text-primary">Bayonne · France</p>
+        <div className="absolute bottom-6 left-0 right-0 text-center z-10 hero-animate-fadeIn hero-stagger-4">
+          <p className="text-sm text-primary mb-2">
+            Bayonne · France · <a href="mailto:nlq@iarche.fr" className="hover:underline transition-all duration-200">nlq@iarche.fr</a>
+          </p>
+          <a 
+            href="#contact" 
+            className="text-sm text-primary hover:gap-2 inline-flex items-center gap-1 transition-all duration-300 group"
+          >
+            Une question ?
+            <svg 
+              className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </a>
         </div>
       </div>
     </>
