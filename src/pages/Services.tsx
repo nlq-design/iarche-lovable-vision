@@ -1,4 +1,3 @@
-import { Helmet } from 'react-helmet';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -68,15 +67,6 @@ const Services = () => {
 
   return (
     <BackgroundLayout>
-      <Helmet>
-        <title>Nos services · IArche · Agence IA Bayonne</title>
-        <meta 
-          name="description" 
-          content="Audit IA, développement, formation et conformité. Accompagnement adapté à votre maturité IA. Agence basée à Bayonne." 
-        />
-        <link rel="canonical" href="https://iarche.fr/services" />
-      </Helmet>
-      
       <Header />
       
       <main className="min-h-screen pt-20">
