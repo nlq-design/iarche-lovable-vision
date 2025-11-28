@@ -21,7 +21,7 @@ export default function IArcheLogoFixed({ size = 'lg', className = '' }: IArcheL
         lineHeight: 1.1,
         fontWeight: 600,
         fontFamily: 'Inter, sans-serif',
-        background: 'linear-gradient(270deg, hsl(218, 47%, 20%), hsl(12, 60%, 53%), hsl(218, 47%, 35%), hsl(12, 60%, 53%))',
+        background: 'linear-gradient(270deg, hsl(218, 47%, 20%) 0%, hsl(12, 60%, 53%) 33.33%, hsl(218, 47%, 35%) 66.67%, hsl(12, 60%, 53%) 100%)',
         WebkitBackgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
         backgroundClip: 'text',
