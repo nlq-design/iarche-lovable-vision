@@ -346,6 +346,8 @@ contact_submissions:
 - [x] Design system configuré (index.css + tailwind.config.ts)
 - [x] Composant hero adapté à charte IArche (animations A+B appliquées)
 - [x] Copy hero finalisé (IArche + baseline)
+- [x] Ancrage géographique ajouté ("Bayonne · France" en bas de page)
+- [x] Intégration design system : utilisation token `text-primary` pour cohérence globale
 - [ ] Homepage assemblée (sections suivantes à ajouter)
 - [ ] Validation client
 
