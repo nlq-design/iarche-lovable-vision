@@ -64,6 +64,68 @@ const HeroSection = () => {
           </div>
         </div>
 
+        {/* ========================================
+            LIGNES SVG ANIMÉES - Gradients Bleu Nuit ↔ Terracotta
+            ======================================== */}
+        <svg 
+          className="absolute inset-0 w-full h-full pointer-events-none" 
+          style={{ zIndex: 1 }}
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            {/* Gradient Bleu Nuit vers Terracotta */}
+            <linearGradient id="lineGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="hsl(218, 47%, 20%)" />
+              <stop offset="100%" stopColor="hsl(12, 60%, 53%)" />
+            </linearGradient>
+            {/* Gradient Terracotta vers Bleu Nuit */}
+            <linearGradient id="lineGradient2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="hsl(12, 60%, 53%)" />
+              <stop offset="100%" stopColor="hsl(218, 47%, 20%)" />
+            </linearGradient>
+          </defs>
+          
+          {/* Ligne 1 : Diagonale gauche vers droite */}
+          <path
+            d="M 0 80 Q 200 150, 400 100 T 800 120 L 1200 80"
+            fill="none"
+            stroke="url(#lineGradient1)"
+            strokeWidth="2"
+            opacity="0.4"
+            className="svg-line-animate"
+            style={{
+              strokeDasharray: '1500',
+              strokeDashoffset: '1500',
+              animation: 'drawLine 3s ease-out forwards'
+            }}
+          />
+          
+          {/* Ligne 2 : Courbe en bas à droite */}
+          <path
+            d="M 1200 600 Q 900 550, 700 620 T 300 580 L 0 640"
+            fill="none"
+            stroke="url(#lineGradient2)"
+            strokeWidth="2"
+            opacity="0.3"
+            className="svg-line-animate"
+            style={{
+              strokeDasharray: '1500',
+              strokeDashoffset: '1500',
+              animation: 'drawLine 4s ease-out 0.5s forwards'
+            }}
+          />
+        </svg>
+
+        <style>
+          {`
+            @keyframes drawLine {
+              to {
+                strokeDashoffset: 0;
+              }
+            }
+          `}
+        </style>
+
         {/* Ancrage géographique */}
         <div className="absolute bottom-6 left-0 right-0 text-center z-10 hero-animate-fadeIn hero-stagger-4" style={{ visibility: 'hidden' }}>
           <p className="text-sm mb-2 text-text-subtle">
