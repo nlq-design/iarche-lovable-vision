@@ -2,7 +2,6 @@ import React from 'react';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
 import AccrocheSection from '@/components/sections/AccrocheSection';
 import ServicesSection from '@/components/sections/ServicesSection';
 import PresentationSection from '@/components/sections/PresentationSection';
@@ -16,35 +15,39 @@ const Accueil = () => {
     <>
       <Helmet>
         <html lang="fr" />
-        <title>IArche · Agence IA pour PME · Conseil et intégration · Bayonne, Pays Basque, Sud-Ouest</title>
+        <title>Accueil · IArche · Agence IA Bayonne & Sud-Ouest</title>
         <meta name="description" content="Agence IA à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME. Sud-Ouest et toute la France." />
-        <meta name="keywords" content="agence IA, conseil IA PME, intégration IA entreprise, intelligence artificielle, Bayonne, Biarritz, Pau, Bordeaux, Dax, Tarbes, Lourdes, Mont-de-Marsan, Oloron, Lescar, Pays Basque, Sud-Ouest" />
-        <link rel="alternate" href="https://iarche.fr/" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="canonical" href="https://iarche.fr/accueil" />
+        <link rel="canonical" href="https://iarche.fr/" />
         
         {/* Open Graph tags */}
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="IArche · Agence IA pour PME · Bayonne, Pays Basque, Sud-Ouest" />
+        <meta property="og:title" content="IArche · Agence IA Bayonne & Sud-Ouest" />
         <meta property="og:description" content="IArche accompagne les PME du Sud-Ouest (Bayonne, Biarritz, Pau, Bordeaux) dans l'intégration de l'intelligence artificielle : audit, développement, accompagnement et conformité." />
         <meta property="og:url" content="https://iarche.fr/accueil" />
         <meta property="og:locale" content="fr_FR" />
         
-        {/* Structured Data - Organization */}
+        {/* Structured Data - ProfessionalService uniquement sur /accueil */}
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "Organization",
+            "@type": "ProfessionalService",
             "name": "IArche",
-            "url": "https://iarche.fr",
-            "logo": "https://iarche.fr/logo-iarche.svg",
-            "description": "Agence IA spécialisée dans l'accompagnement des PME françaises pour l'intégration de l'intelligence artificielle",
+            "image": "https://iarche.fr/logo-iarche.svg",
+            "url": "https://iarche.fr/accueil",
             "email": "nlq@iarche.fr",
             "address": {
               "@type": "PostalAddress",
               "addressLocality": "Bayonne",
+              "addressRegion": "Nouvelle-Aquitaine",
               "addressCountry": "FR"
             },
+            "geo": {
+              "@type": "GeoCoordinates",
+              "latitude": "43.4929",
+              "longitude": "-1.4748"
+            },
+            "priceRange": "€€",
             "areaServed": [
               {
                 "@type": "Country",
@@ -91,36 +94,6 @@ const Accueil = () => {
                 "name": "Lescar"
               }
             ],
-            "serviceType": ["Conseil IA", "Audit IA", "Développement IA", "Formation IA", "Conformité IA"]
-          })}
-        </script>
-        
-        {/* Structured Data - LocalBusiness */}
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "ProfessionalService",
-            "name": "IArche",
-            "image": "https://iarche.fr/logo-iarche.svg",
-            "url": "https://iarche.fr",
-            "telephone": "",
-            "email": "nlq@iarche.fr",
-            "address": {
-              "@type": "PostalAddress",
-              "addressLocality": "Bayonne",
-              "addressRegion": "Nouvelle-Aquitaine",
-              "addressCountry": "FR"
-            },
-            "geo": {
-              "@type": "GeoCoordinates",
-              "latitude": "43.4833",
-              "longitude": "-1.4833"
-            },
-            "priceRange": "€€",
-            "areaServed": {
-              "@type": "Country",
-              "name": "France"
-            },
             "description": "Agence IA fondée à Bayonne accompagnant les dirigeants de PME du Sud-Ouest (Bayonne, Biarritz, Pau, Bordeaux, Dax et région) dans l'intégration concrète de l'intelligence artificielle"
           })}
         </script>
