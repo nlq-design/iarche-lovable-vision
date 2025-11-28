@@ -136,23 +136,17 @@ const Index = () => {
         <Header />
       </div>
 
-      <main role="main" className="w-full">
-        {/* Section 1: Hero portail (100vh) */}
+      {/* Un seul BackgroundLayout englobant tout */}
+      <BackgroundLayout>
         <HeroSection />
-
-        {/* Section 2+: Contenu riche */}
-        <BackgroundLayout>
-          <div className="relative z-10">
-            <AccrocheSection />
-            <ServicesSection />
-            <PresentationSection />
-            <ExemplesSection />
-            <SolutionsCTASection />
-            <NewsletterSection />
-            <Footer />
-          </div>
-        </BackgroundLayout>
-      </main>
+        <AccrocheSection />
+        <ServicesSection />
+        <PresentationSection />
+        <ExemplesSection />
+        <SolutionsCTASection />
+        <NewsletterSection />
+        <Footer />
+      </BackgroundLayout>
     </>
   );
 };

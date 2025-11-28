@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 
 const HeroSection = () => {
   useEffect(() => {
@@ -20,8 +19,7 @@ const HeroSection = () => {
   }, []);
 
   return (
-    <BackgroundLayout>
-      <div className="min-h-screen flex items-center justify-center relative">
+    <div className="min-h-screen flex items-center justify-center relative">
         {/* Rectangles décoratifs (Construction) - Uniquement sur / */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
           <div className="absolute top-20 left-10 w-32 h-32 border border-border/30 rounded-lg animate-constructionFade" />
@@ -107,8 +105,15 @@ const HeroSection = () => {
           `}
         </style>
 
+        {/* Indicateur de scroll animé */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+          <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+        </div>
+
         {/* Ancrage géographique */}
-        <div className="absolute bottom-6 left-0 right-0 text-center z-10 invisible animate-fadeIn [animation-delay:0.4s]">
+        <div className="absolute bottom-20 left-0 right-0 text-center z-10 invisible animate-fadeIn [animation-delay:0.4s]">
           <p className="text-sm mb-2 text-text-subtle">
             Bayonne · France · <a 
               href="mailto:nlq@iarche.fr" 
@@ -138,7 +143,6 @@ const HeroSection = () => {
           </a>
         </div>
       </div>
-    </BackgroundLayout>
   );
 };
 

@@ -30,7 +30,7 @@ const exemples = [
 
 const ExemplesSection = () => {
   return (
-    <section className="py-8 md:py-12 bg-muted">
+    <section id="exemples" className="py-8 md:py-12 bg-muted">
       <div className="container mx-auto px-6">
           <h2 className="text-lg md:text-xl font-semibold text-foreground text-center mb-8 md:mb-12">
             Nos derniers projets
