@@ -117,7 +117,7 @@ const HeroSection = () => {
             .canalisation-line {
               fill: none;
               stroke-width: 2;
-              opacity: 0.7;
+              opacity: 0.5;
             }
             
             .canalisation-line:nth-child(1) {
