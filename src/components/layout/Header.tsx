@@ -25,7 +25,7 @@ const Header = () => {
             </a>
             <a 
               href="#exemples" 
-              className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
+              className="text-sm hero-gradient-text focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
             >
               Nos Solutions
             </a>
@@ -78,7 +78,7 @@ const Header = () => {
               <a 
                 href="#exemples"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
+                className="text-sm hero-gradient-text focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
               >
                 Nos Solutions
               </a>
