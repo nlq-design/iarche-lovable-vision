@@ -1,7 +1,24 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 
 const HeroSection = () => {
+  useEffect(() => {
+    // Calcul précis des longueurs de path pour animation fluide
+    document.querySelectorAll('.canalisation-line').forEach(path => {
+      const svgPath = path as SVGGeometryElement;
+      const len = svgPath.getTotalLength();
+      const pathElement = path as HTMLElement;
+      pathElement.style.strokeDasharray = `${len}px`;
+      pathElement.style.strokeDashoffset = `${len}px`;
+      
+      // Déclenchement de l'animation après court délai
+      setTimeout(() => {
+        pathElement.style.transition = 'stroke-dashoffset 3s ease-in-out';
+        pathElement.style.strokeDashoffset = '0px';
+      }, 500);
+    });
+  }, []);
+
   return (
     <BackgroundLayout>
       <div className="min-h-screen flex items-center justify-center relative">
@@ -65,62 +82,56 @@ const HeroSection = () => {
         </div>
 
         {/* ========================================
-            LIGNES SVG ANIMÉES - Gradients Bleu Nuit ↔ Terracotta
+            LIGNES SVG ANIMÉES TYPE CANALISATION - Gradients Bleu Nuit ↔ Terracotta
             ======================================== */}
-        <svg 
-          className="absolute inset-0 w-full h-full pointer-events-none" 
-          style={{ zIndex: 1 }}
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            {/* Gradient Bleu Nuit vers Terracotta */}
-            <linearGradient id="lineGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="hsl(218, 47%, 20%)" />
-              <stop offset="100%" stopColor="hsl(12, 60%, 53%)" />
-            </linearGradient>
-            {/* Gradient Terracotta vers Bleu Nuit */}
-            <linearGradient id="lineGradient2" x1="100%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="hsl(12, 60%, 53%)" />
-              <stop offset="100%" stopColor="hsl(218, 47%, 20%)" />
-            </linearGradient>
-          </defs>
+        <div className="line-group absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none" style={{ zIndex: 1 }}>
+          <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 177 159" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="canalisationGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="hsl(var(--primary))" />
+                <stop offset="100%" stopColor="hsl(var(--accent))" />
+              </linearGradient>
+            </defs>
+            <path 
+              id="main-line" 
+              className="canalisation-line" 
+              d="M176 1L53.5359 1C52.4313 1 51.5359 1.89543 51.5359 3L51.5359 56C51.5359 57.1046 50.6405 58 49.5359 58L0 58"
+              fill="none"
+              stroke="url(#canalisationGradient1)"
+              strokeWidth="2"
+              opacity="0.6"
+            />
+          </svg>
           
-          {/* Ligne 1 : Diagonale gauche vers droite */}
-          <path
-            d="M 0 80 Q 200 150, 400 100 T 800 120 L 1200 80"
-            fill="none"
-            stroke="url(#lineGradient1)"
-            strokeWidth="2"
-            opacity="0.4"
-            className="svg-line-animate"
-            style={{
-              strokeDasharray: '1500',
-              strokeDashoffset: '1500',
-              animation: 'drawLine 3s ease-out forwards'
-            }}
-          />
-          
-          {/* Ligne 2 : Courbe en bas à droite */}
-          <path
-            d="M 1200 600 Q 900 550, 700 620 T 300 580 L 0 640"
-            fill="none"
-            stroke="url(#lineGradient2)"
-            strokeWidth="2"
-            opacity="0.3"
-            className="svg-line-animate"
-            style={{
-              strokeDasharray: '1500',
-              strokeDashoffset: '1500',
-              animation: 'drawLine 4s ease-out 0.5s forwards'
-            }}
-          />
-        </svg>
+          <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 176 59" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="canalisationGradient2" x1="100%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="hsl(var(--accent))" />
+                <stop offset="100%" stopColor="hsl(var(--primary))" />
+              </linearGradient>
+            </defs>
+            <path 
+              className="canalisation-line" 
+              d="M0 1L122.464 1C123.569 1 124.464 1.89543 124.464 3L124.464 56C124.464 57.1046 125.36 58 126.464 58L176 58"
+              fill="none"
+              stroke="url(#canalisationGradient2)"
+              strokeWidth="2"
+              opacity="0.5"
+            />
+          </svg>
+        </div>
 
         <style>
           {`
-            @keyframes drawLine {
+            .canalisation-line {
+              stroke-dasharray: 1000px;
+              stroke-dashoffset: 1000px;
+              animation: drawCanalisation 3s ease-in-out forwards;
+            }
+            
+            @keyframes drawCanalisation {
               to {
-                strokeDashoffset: 0;
+                stroke-dashoffset: 0;
               }
             }
           `}
