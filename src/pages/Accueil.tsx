@@ -4,6 +4,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import AccrocheSection from '@/components/sections/AccrocheSection';
 import ServicesSection from '@/components/sections/ServicesSection';
+import PresentationSection from '@/components/sections/PresentationSection';
 import ExemplesSection from '@/components/sections/ExemplesSection';
 import NewsletterSection from '@/components/sections/NewsletterSection';
 import { Helmet } from 'react-helmet';
@@ -24,6 +25,8 @@ const Accueil = () => {
           <AccrocheSection />
 
           <ServicesSection />
+
+          <PresentationSection />
 
           <ExemplesSection />
 
