@@ -127,36 +127,35 @@ const BackgroundLayout = ({ children, className = '' }: BackgroundLayoutProps) =
       </style>
       
       <div className={`min-h-screen bg-background text-foreground font-sans overflow-hidden relative ${className}`}>
-        {/* Contenu principal passé en children */}
-        {children}
-
         {/* ========================================
-            QUADRILLAGES DIAGONAUX ANIMÉS
+            QUADRILLAGES DIAGONAUX ANIMÉS (en arrière-plan)
             ======================================== */}
         {/* Quadrillage 1 : Diagonal 45deg */}
         <div 
-          className="pattern absolute w-[150%] h-[150%] opacity-20 hero-animate-patternScroll pointer-events-none -z-10" 
+          className="pattern absolute w-[150%] h-[150%] opacity-20 hero-animate-patternScroll pointer-events-none" 
           style={{ 
             top: '-25%', 
             left: '-25%',
-            background: 'repeating-linear-gradient(45deg, transparent, transparent 20px, hsl(30, 16%, 88%) 20px, hsl(30, 16%, 88%) 22px)'
+            background: 'repeating-linear-gradient(45deg, transparent, transparent 20px, hsl(30, 16%, 88%) 20px, hsl(30, 16%, 88%) 22px)',
+            zIndex: 0
           }}
         />
         {/* Quadrillage 2 : Diagonal -45deg avec délai */}
         <div 
-          className="pattern absolute w-[150%] h-[150%] opacity-10 hero-animate-patternScroll pointer-events-none -z-10" 
+          className="pattern absolute w-[150%] h-[150%] opacity-10 hero-animate-patternScroll pointer-events-none" 
           style={{ 
             top: '25%', 
             left: '25%',
             background: 'repeating-linear-gradient(-45deg, transparent, transparent 20px, hsl(30, 16%, 88%) 20px, hsl(30, 16%, 88%) 22px)',
-            animationDelay: '22.5s'
+            animationDelay: '22.5s',
+            zIndex: 0
           }}
         />
 
         {/* ========================================
             RECTANGLES DÉCORATIFS (Construction)
             ======================================== */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
           <div 
             className="absolute top-20 left-10 w-32 h-32 border border-border/30 rounded-lg" 
             style={{
@@ -185,6 +184,11 @@ const BackgroundLayout = ({ children, className = '' }: BackgroundLayoutProps) =
               animationDelay: '3s'
             }}
           />
+        </div>
+
+        {/* Contenu principal passé en children - au-dessus des quadrillages */}
+        <div className="relative z-10">
+          {children}
         </div>
 
       </div>
