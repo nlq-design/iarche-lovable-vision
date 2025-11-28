@@ -11,7 +11,7 @@ const AccrocheSection = () => {
           willChange: 'opacity, transform'
         }}
       >
-        Dirigeant, indépendant ou porteur de projet IA ?
+        <span className="hero-gradient-text">IArche</span>, votre agence IA pour PME à Bayonne
       </h1>
       
       <p 
