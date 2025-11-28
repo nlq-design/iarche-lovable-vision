@@ -23,7 +23,7 @@ const SolutionsCTASection = () => {
         animation: 'fadeIn 0.8s ease-out 0.2s forwards',
         willChange: 'opacity, transform'
       }}>
-          <a href="/NosSolutions" className="inline-flex items-center text-primary hover:text-primary/80 transition-colors group text-base md:text-lg font-medium">
+          <a href="/NosSolutions" className="inline-flex items-center text-primary hover:text-primary/80 transition-colors group text-lg md:text-xl font-semibold">
             Nos Solutions <span className="hero-gradient-text"> IArche</span>
             <ArrowRight className="ml-2 size-5 transition-transform group-hover:translate-x-1" />
           </a>
