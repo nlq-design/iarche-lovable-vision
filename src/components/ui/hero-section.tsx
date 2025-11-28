@@ -13,7 +13,7 @@ const HeroSection = () => {
       
       // Déclenchement de l'animation après court délai
       setTimeout(() => {
-        pathElement.style.transition = 'stroke-dashoffset 3s ease-in-out';
+        pathElement.style.transition = 'stroke-dashoffset 9s ease-in-out';
         pathElement.style.strokeDashoffset = '0px';
       }, 500);
     });
@@ -126,7 +126,7 @@ const HeroSection = () => {
             .canalisation-line {
               stroke-dasharray: 1000px;
               stroke-dashoffset: 1000px;
-              animation: drawCanalisation 3s ease-in-out forwards;
+              animation: drawCanalisation 9s ease-in-out forwards;
             }
             
             @keyframes drawCanalisation {
