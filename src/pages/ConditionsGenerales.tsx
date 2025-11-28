@@ -1,4 +1,3 @@
-import { Helmet } from 'react-helmet';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -6,15 +5,6 @@ import Footer from '@/components/layout/Footer';
 const ConditionsGenerales = () => {
   return (
     <BackgroundLayout>
-      <Helmet>
-        <title>Conditions générales · IArche</title>
-        <meta 
-          name="description" 
-          content="Conditions générales de vente des services IArche. Prestations, tarifs, paiement." 
-        />
-        <link rel="canonical" href="https://iarche.fr/conditions-generales" />
-      </Helmet>
-      
       <Header />
       
       <main className="min-h-screen pt-20">

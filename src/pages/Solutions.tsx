@@ -1,4 +1,3 @@
-import { Helmet } from 'react-helmet';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -76,15 +75,6 @@ const Solutions = () => {
 
   return (
     <BackgroundLayout>
-      <Helmet>
-        <title>Nos solutions · IArche · SaaS IA pour PME</title>
-        <meta 
-          name="description" 
-          content="Solutions IA développées par IArche : Team 5 Connect, Lexia, Dialogue Plus. Ce qu'on conseille, on le construit aussi." 
-        />
-        <link rel="canonical" href="https://iarche.fr/solutions" />
-      </Helmet>
-      
       <Header />
       
       <main className="min-h-screen pt-20">

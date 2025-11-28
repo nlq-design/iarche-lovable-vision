@@ -1,4 +1,3 @@
-import { Helmet } from 'react-helmet';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -7,15 +6,6 @@ import { Button } from '@/components/ui/button';
 const LivreOr = () => {
   return (
     <BackgroundLayout>
-      <Helmet>
-        <title>Livre d'Or · IArche · Témoignages clients</title>
-        <meta 
-          name="description" 
-          content="Découvrez les témoignages de nos clients. Ce qu'ils disent de leur collaboration avec IArche." 
-        />
-        <link rel="canonical" href="https://iarche.fr/livre-or" />
-      </Helmet>
-      
       <Header />
       
       <main className="min-h-screen pt-20">

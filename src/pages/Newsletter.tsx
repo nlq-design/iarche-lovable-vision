@@ -1,4 +1,3 @@
-import { Helmet } from 'react-helmet';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -15,15 +14,6 @@ const Newsletter = () => {
 
   return (
     <BackgroundLayout>
-      <Helmet>
-        <title>Newsletter · IArche · Actualités IA</title>
-        <meta 
-          name="description" 
-          content="Inscrivez-vous à la newsletter IArche. Actualités et conseils IA pour dirigeants de PME, sans spam." 
-        />
-        <link rel="canonical" href="https://iarche.fr/newsletter" />
-      </Helmet>
-      
       <Header />
       
       <main className="min-h-screen pt-20">

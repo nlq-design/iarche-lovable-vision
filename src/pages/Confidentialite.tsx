@@ -1,4 +1,3 @@
-import { Helmet } from 'react-helmet';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -6,15 +5,6 @@ import Footer from '@/components/layout/Footer';
 const Confidentialite = () => {
   return (
     <BackgroundLayout>
-      <Helmet>
-        <title>Politique de confidentialité · IArche</title>
-        <meta 
-          name="description" 
-          content="Politique de confidentialité IArche. Données collectées, finalités, vos droits RGPD." 
-        />
-        <link rel="canonical" href="https://iarche.fr/confidentialite" />
-      </Helmet>
-      
       <Header />
       
       <main className="min-h-screen pt-20">

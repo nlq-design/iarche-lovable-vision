@@ -1,4 +1,3 @@
-import { Helmet } from 'react-helmet';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -8,15 +7,6 @@ import { ArrowRight } from 'lucide-react';
 const Actualites = () => {
   return (
     <BackgroundLayout>
-      <Helmet>
-        <title>Actualités · IArche · Veille IA et conseils</title>
-        <meta 
-          name="description" 
-          content="Articles, veille IA et retours d'expérience. Conseils pratiques pour dirigeants de PME." 
-        />
-        <link rel="canonical" href="https://iarche.fr/actualites" />
-      </Helmet>
-      
       <Header />
       
       <main className="min-h-screen pt-20">

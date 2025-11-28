@@ -1,4 +1,3 @@
-import { Helmet } from 'react-helmet';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -6,15 +5,6 @@ import Footer from '@/components/layout/Footer';
 const MentionsLegales = () => {
   return (
     <BackgroundLayout>
-      <Helmet>
-        <title>Mentions légales · IArche</title>
-        <meta 
-          name="description" 
-          content="Mentions légales du site IArche. Éditeur, hébergeur, propriété intellectuelle." 
-        />
-        <link rel="canonical" href="https://iarche.fr/mentions-legales" />
-      </Helmet>
-      
       <Header />
       
       <main className="min-h-screen pt-20">
