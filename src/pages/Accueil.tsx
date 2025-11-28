@@ -2,7 +2,10 @@ import React from 'react';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import AccrocheSection from '@/components/sections/AccrocheSection';
 import ServicesSection from '@/components/sections/ServicesSection';
+import ExemplesSection from '@/components/sections/ExemplesSection';
+import CTASection from '@/components/sections/CTASection';
 import NewsletterSection from '@/components/sections/NewsletterSection';
 import { Helmet } from 'react-helmet';
 
@@ -18,6 +21,14 @@ const Accueil = () => {
       <BackgroundLayout>
         <div className="relative z-10 min-h-screen flex flex-col">
           <Header />
+
+          <AccrocheSection />
+
+          <ServicesSection />
+
+          <ExemplesSection />
+
+          <CTASection />
 
           <NewsletterSection />
 

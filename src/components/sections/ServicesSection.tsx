@@ -26,16 +26,6 @@ const ServicesSection = () => {
   return (
     <section className="py-16 md:py-24">
       <div className="container mx-auto px-6">
-        <h2 
-          className="text-3xl md:text-4xl font-semibold text-foreground text-center mb-12"
-          style={{ 
-            visibility: 'hidden',
-            animation: 'fadeIn 0.8s ease-out 0.2s forwards'
-          }}
-        >
-          Nos services
-        </h2>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {services.map((service, index) => (
             <Card 
@@ -43,7 +33,8 @@ const ServicesSection = () => {
               className="bg-background border border-border rounded-xl hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
               style={{
                 visibility: 'hidden',
-                animation: `fadeIn 0.8s ease-out ${0.4 + index * 0.1}s forwards`
+                animation: `fadeIn 0.8s ease-out ${0.4 + index * 0.1}s forwards`,
+                willChange: 'opacity, transform'
               }}
             >
               <CardHeader>
@@ -64,7 +55,8 @@ const ServicesSection = () => {
           className="text-center"
           style={{
             visibility: 'hidden',
-            animation: 'fadeIn 0.8s ease-out 0.8s forwards'
+            animation: 'fadeIn 0.8s ease-out 0.8s forwards',
+            willChange: 'opacity, transform'
           }}
         >
           <NavLink 
