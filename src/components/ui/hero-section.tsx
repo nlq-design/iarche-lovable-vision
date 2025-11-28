@@ -37,7 +37,7 @@ const HeroSection = () => {
       */}
       <style>
         {`
-          @keyframes fadeIn {
+        @keyframes fadeIn {
           0% {
             opacity: 0;
             visibility: hidden;
@@ -67,33 +67,6 @@ const HeroSection = () => {
           50% {
             opacity: 0.5;
             transform: scale(1);
-          }
-        }
-        
-        @keyframes revealLetterBlock {
-          0% {
-            transform: scaleX(0);
-            transform-origin: left;
-          }
-          50% {
-            transform: scaleX(1);
-            transform-origin: left;
-          }
-          50.01% {
-            transform-origin: right;
-          }
-          100% {
-            transform: scaleX(0);
-            transform-origin: right;
-          }
-        }
-        
-        @keyframes showWord {
-          0% {
-            opacity: 0;
-          }
-          100% {
-            opacity: 1;
           }
         }
         
@@ -164,45 +137,6 @@ const HeroSection = () => {
           .hero-stagger-4 {
             animation-delay: 0.6s;
           }
-          
-          /* Animation "construit" - Version simplifiée */
-          .word-build {
-            position: relative;
-            display: inline-block;
-            opacity: 0;
-            animation: showWord 0.3s ease-out forwards;
-            animation-delay: 1s;
-            will-change: opacity;
-          }
-          
-          .word-build .letter-wrapper {
-            position: relative;
-            display: inline-block;
-            overflow: hidden;
-          }
-          
-          .word-build .letter-wrapper::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: hsl(12, 60%, 53%);
-            z-index: 1;
-            animation: revealLetterBlock 0.6s ease-in-out forwards;
-            will-change: transform;
-          }
-          
-          .word-build .letter-wrapper:nth-child(1)::before { animation-delay: 1.1s; }
-          .word-build .letter-wrapper:nth-child(2)::before { animation-delay: 1.25s; }
-          .word-build .letter-wrapper:nth-child(3)::before { animation-delay: 1.4s; }
-          .word-build .letter-wrapper:nth-child(4)::before { animation-delay: 1.55s; }
-          .word-build .letter-wrapper:nth-child(5)::before { animation-delay: 1.7s; }
-          .word-build .letter-wrapper:nth-child(6)::before { animation-delay: 1.85s; }
-          .word-build .letter-wrapper:nth-child(7)::before { animation-delay: 2s; }
-          .word-build .letter-wrapper:nth-child(8)::before { animation-delay: 2.15s; }
-          .word-build .letter-wrapper:nth-child(9)::before { animation-delay: 2.3s; }
         `}
       </style>
       
@@ -214,17 +148,7 @@ const HeroSection = () => {
             <span className="hero-gradient-text">IArche</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-16 leading-relaxed hero-animate-fadeIn hero-stagger-2" style={{ visibility: 'hidden' }}>
-            L'IA se <span className="word-build">
-              <span className="letter-wrapper">c</span>
-              <span className="letter-wrapper">o</span>
-              <span className="letter-wrapper">n</span>
-              <span className="letter-wrapper">s</span>
-              <span className="letter-wrapper">t</span>
-              <span className="letter-wrapper">r</span>
-              <span className="letter-wrapper">u</span>
-              <span className="letter-wrapper">i</span>
-              <span className="letter-wrapper">t</span>
-            </span> avec vous
+            L'IA se construit avec vous
           </p>
           <div className="flex justify-center hero-animate-fadeIn hero-stagger-3" style={{ visibility: 'hidden' }}>
             <a 
