@@ -8,12 +8,9 @@ const Header = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo IArche */}
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="flex items-center cursor-pointer bg-transparent border-0 p-0"
-          >
+          <NavLink to="/accueil" className="flex items-center">
             <span className="text-3xl font-semibold hero-gradient-text">IArche</span>
-          </button>
+          </NavLink>
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-8">
