@@ -2,7 +2,7 @@ import React from 'react';
 
 const AccrocheSection = () => {
   return (
-    <section className="py-20 md:py-32 px-6 flex flex-col items-center">
+    <section className="py-20 md:py-24 px-6 flex flex-col items-center">
       <h1 
         className="text-3xl md:text-4xl font-semibold text-foreground text-center mb-6 max-w-3xl"
         style={{
