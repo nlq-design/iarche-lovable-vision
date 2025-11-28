@@ -1,3 +1,5 @@
+import IArcheLogo from "@/components/IArcheLogo";
+
 const Logo = () => {
   return (
     <div className="min-h-screen bg-background p-8">
@@ -7,8 +9,35 @@ const Logo = () => {
             Logo IArche - Aperçu
           </h1>
           <p className="text-muted-foreground">
-            Prévisualisation des 4 versions du logo
+            Prévisualisation des versions du logo (texte + SVG)
           </p>
+        </div>
+
+        {/* Logo Texte - Component IArcheLogo */}
+        <div className="border border-border rounded-lg p-8 bg-background">
+          <h2 className="text-xl font-medium text-foreground mb-6">
+            Logo Texte (Gradient Component)
+          </h2>
+          <div className="flex flex-col items-center gap-6">
+            <div className="bg-white p-8 rounded-lg border border-border/50">
+              <IArcheLogo size="xl" />
+            </div>
+            <div className="bg-muted p-8 rounded-lg">
+              <IArcheLogo size="lg" />
+            </div>
+            <div className="bg-foreground p-8 rounded-lg">
+              <IArcheLogo size="md" className="opacity-90" />
+            </div>
+            <div className="flex gap-4 items-center">
+              <IArcheLogo size="sm" />
+              <IArcheLogo size="md" />
+              <IArcheLogo size="lg" />
+              <IArcheLogo size="xl" />
+            </div>
+            <p className="text-sm text-muted-foreground text-center">
+              Gradient 65% Bleu Nuit → 35% Terracotta (Tailles: sm/md/lg/xl)
+            </p>
+          </div>
         </div>
 
         {/* Logo Gradient Principal */}
