@@ -43,7 +43,7 @@ const Header = () => {
               const footer = document.querySelector('footer');
               footer?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="hidden md:block bg-accent hover:bg-accent/90 focus:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 text-background font-medium transition-all px-4 py-2 rounded-md cursor-pointer"
+            className="hidden md:block border-2 border-accent text-accent hover:bg-accent hover:text-background focus:bg-accent focus:text-background focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 font-medium transition-all px-4 py-2 rounded-md cursor-pointer"
           >
             Nous contacter
           </button>
@@ -95,7 +95,7 @@ const Header = () => {
                   const footer = document.querySelector('footer');
                   footer?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="bg-accent hover:bg-accent/90 focus:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 text-background font-medium transition-all px-4 py-2 rounded-md cursor-pointer text-sm text-left"
+                className="border-2 border-accent text-accent hover:bg-accent hover:text-background focus:bg-accent focus:text-background focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 font-medium transition-all px-4 py-2 rounded-md cursor-pointer text-sm text-left"
               >
                 Nous contacter
               </button>
