@@ -135,7 +135,7 @@ const BackgroundLayout = ({ children, className = '' }: BackgroundLayoutProps) =
             ======================================== */}
         {/* Quadrillage 1 : Diagonal 45deg */}
         <div 
-          className="pattern absolute w-[150%] h-[150%] opacity-20 hero-animate-patternScroll pointer-events-none" 
+          className="pattern absolute w-[150%] h-[150%] opacity-20 hero-animate-patternScroll pointer-events-none -z-10" 
           style={{ 
             top: '-25%', 
             left: '-25%',
@@ -144,7 +144,7 @@ const BackgroundLayout = ({ children, className = '' }: BackgroundLayoutProps) =
         />
         {/* Quadrillage 2 : Diagonal -45deg avec délai */}
         <div 
-          className="pattern absolute w-[150%] h-[150%] opacity-10 hero-animate-patternScroll pointer-events-none" 
+          className="pattern absolute w-[150%] h-[150%] opacity-10 hero-animate-patternScroll pointer-events-none -z-10" 
           style={{ 
             top: '25%', 
             left: '25%',
@@ -156,7 +156,7 @@ const BackgroundLayout = ({ children, className = '' }: BackgroundLayoutProps) =
         {/* ========================================
             RECTANGLES DÉCORATIFS (Construction)
             ======================================== */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
           <div 
             className="absolute top-20 left-10 w-32 h-32 border border-border/30 rounded-lg" 
             style={{
