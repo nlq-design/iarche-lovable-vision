@@ -13,9 +13,6 @@ const SolutionsCTASection = () => {
             willChange: 'opacity, transform'
           }}
         >
-          <p className="text-lg md:text-xl text-muted-foreground mb-6">
-            Découvrir les solutions IArche disponibles
-          </p>
           <a
             href="/NosSolutions"
             className="inline-flex items-center text-primary hover:text-primary/80 transition-colors group text-base md:text-lg font-medium"
