@@ -43,16 +43,16 @@ const HeroSection = () => {
                   behavior: 'smooth'
                 });
               }}
-              className="inline-flex items-center gap-2 text-primary font-medium text-lg hover:gap-3 focus:gap-3 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded transition-all duration-300 group cursor-pointer"
+              className="inline-flex flex-col items-center gap-2 text-primary font-medium text-lg hover:gap-3 focus:gap-3 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded transition-all duration-300 group cursor-pointer"
             >
               Découvrir
               <svg 
-                className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" 
+                className="w-5 h-5 transition-transform duration-300 group-hover:translate-y-1" 
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7m0 0l-7-7m7 7V3" />
               </svg>
             </button>
           </div>
@@ -105,13 +105,6 @@ const HeroSection = () => {
           `}
         </style>
 
-        {/* Indicateur de scroll animé */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-          </svg>
-        </div>
-
         {/* Ancrage géographique */}
         <div className="absolute bottom-20 left-0 right-0 text-center z-10 invisible animate-fadeIn [animation-delay:0.4s]">
           <p className="text-sm mb-2 text-text-subtle">
@@ -129,17 +122,9 @@ const HeroSection = () => {
               const footer = document.querySelector('footer');
               footer?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="text-sm text-muted-foreground hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded inline-flex items-center gap-1 transition-all duration-300 group cursor-pointer"
+            className="text-sm text-muted-foreground hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded transition-all duration-300 cursor-pointer"
           >
-            Une question ?<span className="inline-block w-1"></span>
-            <svg 
-              className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
+            Une question ?
           </a>
         </div>
       </div>
