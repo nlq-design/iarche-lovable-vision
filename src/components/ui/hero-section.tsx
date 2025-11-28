@@ -21,7 +21,7 @@ const HeroSection = () => {
   return (
     <div className="min-h-screen flex items-center justify-center relative">
         {/* Rectangles décoratifs (Construction) - Uniquement sur / */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" role="presentation" aria-hidden="true">
           <div className="absolute top-20 left-10 w-32 h-32 border border-border/30 rounded-lg animate-constructionFade" />
           <div className="absolute bottom-32 right-20 w-24 h-24 border border-border/30 rounded-lg animate-constructionFade [animation-delay:1s]" />
           <div className="absolute top-1/2 right-10 w-40 h-40 border border-border/30 rounded-lg animate-constructionFade [animation-delay:2s]" />
@@ -52,6 +52,8 @@ const HeroSection = () => {
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
+                role="img"
+                aria-label="Flèche vers le bas"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7m0 0l-7-7m7 7V3" />
               </svg>
@@ -61,7 +63,7 @@ const HeroSection = () => {
 
         {/* Lignes SVG animées type canalisation - Gradients Bleu Nuit ↔ Terracotta */}
         <div className="line-group absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-[1]">
-          <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 177 159" preserveAspectRatio="none">
+          <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 177 159" preserveAspectRatio="none" role="img" aria-label="Ligne décorative animée gradient bleu-orange">
             <defs>
               <linearGradient id="canalisationGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="hsl(var(--primary))" />
@@ -74,7 +76,7 @@ const HeroSection = () => {
             />
           </svg>
           
-          <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 176 59" preserveAspectRatio="none">
+          <svg className="line-wrapper absolute w-full h-full" viewBox="0 0 176 59" preserveAspectRatio="none" role="img" aria-label="Ligne décorative animée gradient orange-bleu">
             <defs>
               <linearGradient id="canalisationGradient2" x1="100%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stopColor="hsl(var(--accent))" />
@@ -131,6 +133,8 @@ const HeroSection = () => {
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
+              role="img"
+              aria-label="Flèche vers la droite"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
