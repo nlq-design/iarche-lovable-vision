@@ -13,7 +13,7 @@ const HeroSection = () => {
       
       // Déclenchement de l'animation après court délai
       setTimeout(() => {
-        pathElement.style.transition = 'stroke-dashoffset 9s ease-in-out';
+        pathElement.style.transition = 'stroke-dashoffset 2s ease-in-out';
         pathElement.style.strokeDashoffset = '0px';
       }, 500);
     });
@@ -93,13 +93,11 @@ const HeroSection = () => {
               </linearGradient>
             </defs>
             <path 
-              id="main-line" 
               className="canalisation-line" 
               d="M176 1L53.5359 1C52.4313 1 51.5359 1.89543 51.5359 3L51.5359 56C51.5359 57.1046 50.6405 58 49.5359 58L0 58"
               fill="none"
               stroke="url(#canalisationGradient1)"
               strokeWidth="2"
-              opacity="0.6"
             />
           </svg>
           
@@ -116,7 +114,6 @@ const HeroSection = () => {
               fill="none"
               stroke="url(#canalisationGradient2)"
               strokeWidth="2"
-              opacity="0.5"
             />
           </svg>
         </div>
@@ -124,15 +121,8 @@ const HeroSection = () => {
         <style>
           {`
             .canalisation-line {
-              stroke-dasharray: 1000px;
-              stroke-dashoffset: 1000px;
-              animation: drawCanalisation 9s ease-in-out forwards;
-            }
-            
-            @keyframes drawCanalisation {
-              to {
-                stroke-dashoffset: 0;
-              }
+              fill: none;
+              stroke-width: 2;
             }
           `}
         </style>
