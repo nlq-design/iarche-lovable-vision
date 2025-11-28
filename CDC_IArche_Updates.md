@@ -1364,4 +1364,41 @@ Positionner IArche comme **agence IA française** (national) avec un **ancrage l
 
 ---
 
+## 📘 BRAND BOOK — RÉFÉRENCE IDENTITÉ VISUELLE
+
+**Document :** `BrandBook_IArche_V1.md`  
+**Version :** 1.0  
+**Date :** 28 Novembre 2025
+
+### Contenu du Brand Book
+
+| Section | Description |
+|---------|-------------|
+| Positionnement | Mission, vision, valeurs, baseline, personnalité |
+| Logo | Specs, déclinaisons, zones de protection, usages interdits |
+| Palette couleurs | HEX/HSL/RGB/CMYK, usages par contexte |
+| Typographie | Inter, hiérarchie, alternatives print |
+| Iconographie | Lucide, guidelines d'usage |
+| Direction photo | Style, traitement, à éviter |
+| Ton de voix | Personnalité verbale, exemples Do/Don't |
+| Applications | Site, LinkedIn, Email, Cartes de visite, Présentations |
+| Do's & Don'ts | Règles visuelles synthétisées |
+
+### Fichiers logo générés
+
+| Fichier | Usage |
+|---------|-------|
+| `public/logo-iarche.svg` | Principal (gradient) |
+| `public/logo-iarche.png` | Réseaux sociaux (512px) |
+| `public/logo-iarche-white.svg` | Fonds sombres |
+| `public/logo-iarche-dark.svg` | Version sobre |
+
+### Utilisation
+
+Pour tout support de communication (site, print, réseaux sociaux), se référer au Brand Book comme source de vérité pour l'identité visuelle IArche.
+
+Le CDC technique (`CDC_IArche_Updates.md`) reste la référence pour le développement web.
+
+---
+
 *Fin des mises à jour CDC V3.1*
