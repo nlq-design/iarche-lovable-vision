@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { newsletterSchema } from '@/schemas/contact';
-import { trackFormSubmission } from '@/components/utils/GoogleAnalytics';
 
 const NewsletterSection = () => {
   const { toast } = useToast();
@@ -36,9 +35,6 @@ const NewsletterSection = () => {
         description: "Vous recevrez nos actualités par email.",
       });
 
-      // Track GA4 event
-      trackFormSubmission('Newsletter Signup (Homepage)', true);
-
       setEmail('');
     } catch (error: any) {
       if (error.errors) {
@@ -51,9 +47,6 @@ const NewsletterSection = () => {
           variant: "destructive",
         });
       }
-      
-      // Track GA4 error
-      trackFormSubmission('Newsletter Signup (Homepage)', false);
     } finally {
       setIsSubmitting(false);
     }

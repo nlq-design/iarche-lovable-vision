@@ -11,7 +11,6 @@ import { CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { newsletterSchema } from '@/schemas/contact';
-import { trackFormSubmission } from '@/components/utils/GoogleAnalytics';
 
 const Newsletter = () => {
   const { toast } = useToast();
@@ -43,9 +42,6 @@ const Newsletter = () => {
         description: "Vous recevrez nos actualités par email.",
       });
 
-      // Track GA4 event
-      trackFormSubmission('Newsletter Signup (Page)', true);
-
       setEmail('');
     } catch (error: any) {
       if (error.errors) {
@@ -58,9 +54,6 @@ const Newsletter = () => {
           variant: "destructive",
         });
       }
-      
-      // Track GA4 error
-      trackFormSubmission('Newsletter Signup (Page)', false);
     } finally {
       setIsSubmitting(false);
     }

@@ -13,7 +13,6 @@ import { MapPin, Mail, Linkedin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { contactSchema, type ContactFormData } from '@/schemas/contact';
-import { trackFormSubmission } from '@/components/utils/GoogleAnalytics';
 
 const Contact = () => {
   const { toast } = useToast();
@@ -52,9 +51,6 @@ const Contact = () => {
         description: "Nous vous répondrons sous 24h.",
       });
 
-      // Track GA4 event
-      trackFormSubmission('Contact Form', true);
-
       setFormData({
         name: '',
         email: '',
@@ -78,9 +74,6 @@ const Contact = () => {
           variant: "destructive",
         });
       }
-      
-      // Track GA4 error
-      trackFormSubmission('Contact Form', false);
     } finally {
       setIsSubmitting(false);
     }
