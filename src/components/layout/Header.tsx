@@ -25,15 +25,15 @@ const Header = () => {
             </a>
             <a 
               href="#exemples" 
-              className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
+              className="text-sm hero-gradient-text font-semibold hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded transition-opacity"
             >
-              Réalisations
+              Nos Solutions
             </a>
             <a 
-              href="#newsletter" 
+              href="#actualites" 
               className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
             >
-              Contact
+              Actualités
             </a>
           </nav>
 
@@ -78,16 +78,16 @@ const Header = () => {
               <a 
                 href="#exemples"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
+                className="text-sm hero-gradient-text font-semibold hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded transition-opacity"
               >
-                Réalisations
+                Nos Solutions
               </a>
               <a 
-                href="#newsletter"
+                href="#actualites"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-sm text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
               >
-                Contact
+                Actualités
               </a>
               <button
                 onClick={() => {

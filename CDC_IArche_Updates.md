@@ -1,6 +1,6 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V3.2**  
+**Version mise à jour : V3.3**  
 **Date : 28 Novembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
@@ -198,11 +198,12 @@ Le CDC V3 mentionnait :
 **✅ CONFIRMÉ : Bibliothèque d'actualités avec back-office**
 
 **Spécifications :**
-- Blog avec articles réguliers (potentiellement quotidiens)
+- Blog "Actualités" avec articles réguliers (potentiellement quotidiens)
 - Contenu : actualités IA, avancées technologiques, retours d'expérience projets
 - Gestion 100% via back-office Lovable Cloud
 - Structure blog avec section "Articles à venir" pour V1
 - Possibilité d'intégrer articles existants dès le départ si disponibles
+- Navigation : Ancre #actualites dans header et footer
 
 **Tables Supabase requises :**
 ```sql
@@ -257,8 +258,9 @@ projects:
 
 ### C. Navigation header
 **✅ CONFIRMÉ :**
-- Expertise : Dropdown avec 5 liens (hub + 4 sous-pages)
-- Solutions : Lien simple vers page unique
+- Services : Ancre vers section services
+- Nos Solutions : Ancre vers section solutions (style gradient radiant comme charte)
+- Actualités : Ancre vers section actualités (remplace "Contact")
 
 ---
 
@@ -366,6 +368,10 @@ contact_submissions:
 - [x] Correction Schema.org : "installée à Bayonne" (vs "fondée")
 - [x] Correction WCAG AAA : contraste "Une question ?" (text-foreground)
 - [x] Gradient IArche animé fonctionnel (keyframes dans index.css)
+- [x] Mise à jour terminologie : "Audit, Dev, Accompagnement, Conformité"
+- [x] Header : "Réalisations" → "Nos Solutions" (gradient radiant)
+- [x] Header : "Contact" → "Actualités"
+- [x] Footer : Ajout navigation avec liens (Services, Nos Solutions, Actualités)
 
 #### Concept Homepage :
 **Portail d'entrée minimaliste** servant de vitrine élégante vers les autres sections du site. Design épuré avec :
@@ -794,23 +800,33 @@ import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 
 ---
 
-## CHANGELOG - V3.2
+## CHANGELOG
 
-**28 Novembre 2025**
+### V3.3 - 28 Novembre 2025
 
-### Ajouté ✅
+**Terminologie & Navigation :**
+- ✅ Terminologie expertise : "diagnostic, développement, formation, conformité" → "Audit, Dev, Accompagnement, Conformité"
+- ✅ Header : "Réalisations" → "Nos Solutions" (avec gradient radiant hero-gradient-text)
+- ✅ Header : "Contact" → "Actualités"
+- ✅ Section : "Nos derniers projets" → "Nos Solutions"
+- ✅ Footer : Ajout navigation (Services, Nos Solutions gradient, Actualités)
+- ✅ MAJ CDC & BB (v3.3 et v1.2)
+
+### V3.2 - 28 Novembre 2025
+
+**Ajouté :**
 - Audit complet page "/" avec évaluation détaillée (8.5/10)
 - Documentation spécifications logo gradient animé (état final buildé)
 - Section Design System complet (référence technique)
 - Corrections prioritaires TODO
 
-### Modifié 🔄
+**Modifié :**
 - CDC version V3.1 → V3.2
 - Section "DÉVELOPPEMENT EN COURS" → "DÉVELOPPEMENT TERMINÉ - PHASE 1"
 - Mise à jour statut homepage : "COMPLÈTE" → "BUILDÉE ET AUDITÉE"
 - Ajout checklist corrections SEO et accessibilité
 
-### Corrections techniques ✅
+**Corrections techniques :**
 - Schema.org : "fondée à Bayonne" → "installée à Bayonne"
 - WCAG AAA : "Une question ?" text-muted-foreground → text-foreground
 - Gradient IArche : keyframes ajouté dans index.css (bug fix)
