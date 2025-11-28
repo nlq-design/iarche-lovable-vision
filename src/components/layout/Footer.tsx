@@ -72,7 +72,7 @@ const Footer = () => {
                   to="/solutions" 
                   className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
                 >
-                  Solutions
+                  Nos solutions
                 </NavLink>
               </li>
               <li>
