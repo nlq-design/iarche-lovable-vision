@@ -7,25 +7,79 @@
   <!-- Page d'accueil -->
   <url>
     <loc>https://iarche.fr/</loc>
-    <lastmod>2025-11-28</lastmod>
+    <lastmod>2025-11-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   
-  <!-- Page Solutions (prévue) -->
+  <!-- Page Services -->
+  <url>
+    <loc>https://iarche.fr/services</loc>
+    <lastmod>2025-11-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- Page Solutions -->
   <url>
     <loc>https://iarche.fr/solutions</loc>
-    <lastmod>2025-11-28</lastmod>
+    <lastmod>2025-11-29</lastmod>
     <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- Page Actualités -->
+  <url>
+    <loc>https://iarche.fr/actualites</loc>
+    <lastmod>2025-11-29</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   
-  <!-- Page Actualités (prévue) -->
+  <!-- Page Contact -->
   <url>
-    <loc>https://iarche.fr/actualites</loc>
-    <lastmod>2025-11-28</lastmod>
-    <changefreq>weekly</changefreq>
+    <loc>https://iarche.fr/contact</loc>
+    <lastmod>2025-11-29</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+  </url>
+  
+  <!-- Page Newsletter -->
+  <url>
+    <loc>https://iarche.fr/newsletter</loc>
+    <lastmod>2025-11-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <!-- Page Livre d'Or -->
+  <url>
+    <loc>https://iarche.fr/livre-or</loc>
+    <lastmod>2025-11-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <!-- Pages légales -->
+  <url>
+    <loc>https://iarche.fr/mentions-legales</loc>
+    <lastmod>2025-11-29</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  
+  <url>
+    <loc>https://iarche.fr/conditions-generales</loc>
+    <lastmod>2025-11-29</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  
+  <url>
+    <loc>https://iarche.fr/confidentialite</loc>
+    <lastmod>2025-11-29</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 
 </urlset>
