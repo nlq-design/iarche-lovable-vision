@@ -1072,6 +1072,96 @@ Audit complet réalisé sur le portail d'accueil pour :
 
 ### Bugs Identifiés - Priority 1 (CRITIQUES)
 
+#### 1. Couleurs Hardcodées - hero-section.tsx ✅ CORRIGÉ
+**Problème :** Valeurs HSL hardcodées au lieu de tokens CSS
+```jsx
+// ❌ AVANT
+hsl(218, 47%, 20%)  // Bleu Nuit
+hsl(12, 60%, 53%)   // Terracotta
+
+// ✅ APRÈS
+hsl(var(--primary))
+hsl(var(--accent))
+```
+
+**Impact :** Si la charte graphique change, il faut modifier le code manuellement partout au lieu de modifier uniquement les tokens.
+
+**Correction appliquée :**
+- Tous les gradients SVG utilisent maintenant `hsl(var(--primary))` et `hsl(var(--accent))`
+- Conformité 100% au design system
+
+---
+
+## 🎯 OPTIMISATIONS SEO & ACCESSIBILITÉ - 28 Novembre 2025
+
+**Date : 28 Novembre 2025**  
+**Version : 1.2**  
+**Portée : Homepage (/) - Schema.org + Contraste WCAG AAA**
+
+### 1. Schema.org - Mise à jour description ✅
+
+**Modification :**
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  "description": "Agence IA installée à Bayonne accompagnant les dirigeants de PME du Sud-Ouest (Bayonne, Biarritz, Pau, Bordeaux, Dax et région) dans l'intégration concrète de l'intelligence artificielle : diagnostic, développement, formation, conformité"
+}
+```
+
+**Changement :** "fondée à Bayonne" → "installée à Bayonne"
+
+**Rationale :**
+- Alignement avec le contenu de la section PresentationSection
+- Cohérence terminologique sur tout le site
+- SEO : correspond exactement au texte visible par l'utilisateur
+
+**Fichier modifié :** `src/pages/Index.tsx` (ligne 124)
+
+---
+
+### 2. Contraste WCAG AAA - CTA "Une question ?" ✅
+
+**Problème identifié :**
+- CTA "Une question ?" utilisait `text-muted-foreground` 
+- Ratio de contraste borderline pour WCAG AA (~4.5:1)
+- Non conforme WCAG AAA (> 7:1 requis)
+
+**Solution appliquée :**
+```jsx
+// ❌ AVANT
+className="text-sm text-muted-foreground hover:text-accent ..."
+
+// ✅ APRÈS
+className="text-sm text-foreground hover:text-accent ..."
+```
+
+**Impact :**
+- Contraste amélioré : `text-foreground` (#1A2B4A) sur fond blanc cassé (#FAF9F7)
+- Ratio de contraste : > 7:1 ✅ Conforme WCAG AAA
+- Meilleure lisibilité pour utilisateurs malvoyants
+- CTA plus visible sans compromettre l'esthétique minimaliste
+
+**Fichier modifié :** `src/components/ui/hero-section.tsx` (ligne 125)
+
+---
+
+### Récapitulatif Optimisations
+
+| Optimisation | Statut | Impact SEO | Impact A11y |
+|--------------|--------|------------|-------------|
+| Schema.org description | ✅ Complété | Cohérence contenu | N/A |
+| Contraste CTA WCAG AAA | ✅ Complété | N/A | +2.5 ratio |
+
+**Prochaines étapes identifiées (mais reportées) :**
+- ❌ Optimisation animations CPU (demande explicite de ne pas toucher aux quadrillages)
+- ⏸️ Création pages manquantes (en attente phase de build)
+- ⏸️ Backend newsletter fonctionnel (en attente Lovable Cloud configuration)
+
+---
+
+
+
 #### 🔴 1. Violation Design System - Couleurs Hardcodées
 **Localisation :** `hero-section.tsx` lignes 176-177, 192-193
 
