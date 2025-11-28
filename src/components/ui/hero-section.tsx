@@ -98,17 +98,13 @@ const HeroSection = () => {
       <div className="min-h-screen flex items-center justify-center bg-background text-foreground font-sans overflow-hidden relative">
         {/* Container with staggered animations */}
         <div className="container text-center z-10 relative px-6 py-20">
-          <p className="text-sm font-medium text-muted-foreground mb-4 tracking-wide uppercase hero-animate-fadeIn hero-stagger-1">
-            Agence IA · Bayonne
-          </p>
-          <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-semibold m-0 relative z-20 text-primary mb-6 hero-animate-fadeIn hero-stagger-2">
-            L'IA se construit<br />
-            <span className="text-accent">avec vous</span>
+          <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-semibold m-0 relative z-20 text-primary mb-6 hero-animate-fadeIn hero-stagger-1">
+            <span className="text-accent">IArche</span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed hero-animate-fadeIn hero-stagger-3">
-            Votre entreprise mérite mieux que des slides. Un accompagnement de l'audit à l'autonomie, pour des résultats mesurables.
+          <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed hero-animate-fadeIn hero-stagger-2">
+            L'IA se construit avec vous
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center hero-animate-fadeIn hero-stagger-4">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center hero-animate-fadeIn hero-stagger-3">
             <button className="px-8 py-4 bg-accent text-accent-foreground border-none rounded-lg cursor-pointer text-lg font-medium transition-all duration-300 ease-in-out hover:shadow-lg hover:translate-y-[-2px] shadow-md hover:scale-105 hero-pulse-animation">
               Nous contacter
             </button>

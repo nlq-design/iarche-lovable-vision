@@ -324,13 +324,16 @@ contact_submissions:
 
 **Composant source :** `dynamic-animated-hero-section-with-gradient.tsx`
 
-**Adaptations obligatoires à la charte IArche :**
+**Adaptations appliquées à la charte IArche :**
 - ❌ Fond noir → ✅ Blanc Cassé #FAF9F7
 - ❌ Dégradé rose/bleu/cyan → ✅ Bleu Nuit #1A2B4A avec accent Terracotta
-- ❌ Lignes blanches → ✅ Lignes Bleu Nuit ou Terracotta
+- ❌ Lignes blanches → ✅ Lignes Terracotta (#D15A3E)
 - ❌ Bouton blanc → ✅ Bouton Terracotta (#D15A3E)
-- ❌ Texte générique → ✅ Copy IArche (baseline, sur-titre Bayonne)
-- ✅ Conserver animations (lignes, fade-in, pulse)
+- ❌ Texte générique → ✅ Copy IArche :
+  - Titre H1 : "IArche" (en Terracotta)
+  - Baseline : "L'IA se construit avec vous"
+  - Suppression du sur-titre "Agence IA · Bayonne"
+- ✅ Animations optimisées : Progressive staggered, pulse subtil (3s), patterns ultra-lents (45s)
 - ✅ Typographie Inter
 
 ---
@@ -340,12 +343,11 @@ contact_submissions:
 ### Étape actuelle : Homepage V1
 - [x] Lovable Cloud activé
 - [x] CDC mis à jour avec réponses finales
-- [ ] Design system configuré (index.css + tailwind.config.ts)
-- [ ] Composant hero adapté à charte IArche
-- [ ] Homepage assemblée
+- [x] Design system configuré (index.css + tailwind.config.ts)
+- [x] Composant hero adapté à charte IArche (animations A+B appliquées)
+- [x] Copy hero finalisé (IArche + baseline)
+- [ ] Homepage assemblée (sections suivantes à ajouter)
 - [ ] Validation client
-
-**Prochain message client : Composant hero 21st.dev fourni**
 
 ---
 
