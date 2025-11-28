@@ -2,6 +2,7 @@ import React from 'react';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import BreadcrumbNav from '@/components/ui/breadcrumb-nav';
 import AccrocheSection from '@/components/sections/AccrocheSection';
 import ServicesSection from '@/components/sections/ServicesSection';
 import PresentationSection from '@/components/sections/PresentationSection';
@@ -82,6 +83,10 @@ const Accueil = () => {
       <BackgroundLayout>
         <div className="relative z-10 min-h-screen flex flex-col">
           <Header />
+
+          <div className="container mx-auto px-6">
+            <BreadcrumbNav items={[{ label: 'Accueil' }]} />
+          </div>
 
           <main>
             <AccrocheSection />

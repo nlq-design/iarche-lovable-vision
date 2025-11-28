@@ -37,7 +37,7 @@ const NewsletterSection = () => {
 
           <form 
             onSubmit={handleSubmit} 
-            className="flex flex-col sm:flex-row gap-2 max-w-lg mx-auto mb-8"
+            className="flex flex-col sm:flex-row gap-2 max-w-lg mx-auto mb-4"
             style={{ 
               visibility: 'hidden',
               animation: 'fadeIn 0.8s ease-out 0.6s forwards',
@@ -47,7 +47,7 @@ const NewsletterSection = () => {
             <Input 
               type="email" 
               name="email"
-              placeholder="newsletters@iarche.com"
+              placeholder="votre@email.fr"
               required
               className="flex-1 border-border rounded-lg px-4 py-3 text-base"
             />
@@ -58,6 +58,20 @@ const NewsletterSection = () => {
               S'inscrire →
             </Button>
           </form>
+
+          <p 
+            className="text-xs text-muted-foreground text-center mb-8"
+            style={{ 
+              visibility: 'hidden',
+              animation: 'fadeIn 0.8s ease-out 0.7s forwards',
+              willChange: 'opacity, transform'
+            }}
+          >
+            En vous inscrivant, vous acceptez notre{' '}
+            <a href="/confidentialite" className="text-accent hover:underline">
+              politique de confidentialité
+            </a>
+          </p>
         </div>
         
         <p 
