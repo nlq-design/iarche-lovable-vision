@@ -16,16 +16,16 @@ const Accueil = () => {
     <>
       <Helmet>
         <html lang="fr" />
-        <title>IArche · Agence IA pour PME · Conseil et intégration</title>
-        <meta name="description" content="IArche accompagne les PME françaises dans l'intégration de l'intelligence artificielle : audit, développement, accompagnement et conformité. De l'audit à l'autonomie." />
-        <meta name="keywords" content="agence IA, conseil IA PME, intégration IA entreprise, intelligence artificielle, Bayonne" />
+        <title>IArche · Agence IA pour PME · Conseil et intégration · Bayonne, Pays Basque, Sud-Ouest</title>
+        <meta name="description" content="IArche accompagne les PME du Sud-Ouest (Bayonne, Biarritz, Pau, Bordeaux, Dax) dans l'intégration de l'intelligence artificielle : audit, développement, accompagnement et conformité. De l'audit à l'autonomie." />
+        <meta name="keywords" content="agence IA, conseil IA PME, intégration IA entreprise, intelligence artificielle, Bayonne, Biarritz, Pau, Bordeaux, Dax, Tarbes, Lourdes, Mont-de-Marsan, Oloron, Lescar, Pays Basque, Sud-Ouest" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="canonical" href="https://iarche.fr/accueil" />
         
         {/* Open Graph tags */}
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="IArche · Agence IA pour PME · Conseil et intégration" />
-        <meta property="og:description" content="IArche accompagne les PME françaises dans l'intégration de l'intelligence artificielle : audit, développement, accompagnement et conformité." />
+        <meta property="og:title" content="IArche · Agence IA pour PME · Bayonne, Pays Basque, Sud-Ouest" />
+        <meta property="og:description" content="IArche accompagne les PME du Sud-Ouest (Bayonne, Biarritz, Pau, Bordeaux) dans l'intégration de l'intelligence artificielle : audit, développement, accompagnement et conformité." />
         <meta property="og:url" content="https://iarche.fr/accueil" />
         <meta property="og:locale" content="fr_FR" />
         
@@ -44,7 +44,52 @@ const Accueil = () => {
               "addressLocality": "Bayonne",
               "addressCountry": "FR"
             },
-            "areaServed": "FR",
+            "areaServed": [
+              {
+                "@type": "Country",
+                "name": "France"
+              },
+              {
+                "@type": "City",
+                "name": "Bayonne"
+              },
+              {
+                "@type": "City",
+                "name": "Biarritz"
+              },
+              {
+                "@type": "City",
+                "name": "Pau"
+              },
+              {
+                "@type": "City",
+                "name": "Bordeaux"
+              },
+              {
+                "@type": "City",
+                "name": "Dax"
+              },
+              {
+                "@type": "City",
+                "name": "Tarbes"
+              },
+              {
+                "@type": "City",
+                "name": "Lourdes"
+              },
+              {
+                "@type": "City",
+                "name": "Mont-de-Marsan"
+              },
+              {
+                "@type": "City",
+                "name": "Oloron-Sainte-Marie"
+              },
+              {
+                "@type": "City",
+                "name": "Lescar"
+              }
+            ],
             "serviceType": ["Conseil IA", "Audit IA", "Développement IA", "Formation IA", "Conformité IA"]
           })}
         </script>
@@ -75,7 +120,7 @@ const Accueil = () => {
               "@type": "Country",
               "name": "France"
             },
-            "description": "Agence IA fondée à Bayonne accompagnant les dirigeants de PME dans l'intégration concrète de l'intelligence artificielle"
+            "description": "Agence IA fondée à Bayonne accompagnant les dirigeants de PME du Sud-Ouest (Bayonne, Biarritz, Pau, Bordeaux, Dax et région) dans l'intégration concrète de l'intelligence artificielle"
           })}
         </script>
       </Helmet>
