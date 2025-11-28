@@ -53,24 +53,86 @@ Cette baseline exprime :
 **Typographie :** Inter 600 (Semibold)
 
 **Spécifications gradient :**
-- Direction : gauche → droite
-- Répartition : 65% Bleu Nuit, 35% Terracotta
-- Point de transition : au niveau du "A"
-- Couleurs : #1A2B4A → #D15A3E
+- Direction : droite → gauche (270deg, x1="100%" x2="0%")
+- Répartition : Bleu Nuit → Terracotta → Bleu Nuit → Terracotta
+- Points de transition : 0%, 33.33%, 66.67%, 100%
+- Couleurs : #1B2A47 → #D15A3E → #2F4570 → #D15A3E
 
 **Rendu attendu :**
-- "I" et "Ar" : majoritairement Bleu Nuit
-- "che" : majoritairement Terracotta
-- Transition douce au centre
+- "I" : Bleu Nuit foncé (#1B2A47)
+- "Ar" : Transition vers Terracotta (#D15A3E)
+- "ch" : Transition vers Bleu Nuit moyen (#2F4570)
+- "e" : Terracotta (#D15A3E)
 
 ### 2.2 Déclinaisons
 
 | Version | Fichier | Usage |
 |---------|---------|-------|
+| **Texte SVG (gradient)** | `logo-iarche-text.svg` | Usage universel web, export PNG/print |
 | **Principale (gradient)** | `logo-iarche.svg` | Usage standard web et print |
 | **PNG transparent** | `logo-iarche.png` | Réseaux sociaux, présentations |
 | **Monochrome blanc** | `logo-iarche-white.svg` | Fonds sombres |
 | **Monochrome Bleu Nuit** | `logo-iarche-dark.svg` | Version sobre, fonds clairs |
+
+### 2.2.1 Logo SVG Texte - Spécifications techniques
+
+**Fichier :** `public/logo-iarche-text.svg`
+
+**Code SVG complet :**
+```svg
+<svg width="400" height="120" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="textGradient" x1="100%" y1="0%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#1B2A47;stop-opacity:1" />
+      <stop offset="33.33%" style="stop-color:#D15A3E;stop-opacity:1" />
+      <stop offset="66.67%" style="stop-color:#2F4570;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D15A3E;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <text 
+    x="50%" 
+    y="50%" 
+    dominant-baseline="middle" 
+    text-anchor="middle" 
+    font-family="Inter, sans-serif" 
+    font-size="72" 
+    font-weight="600" 
+    fill="url(#textGradient)"
+  >
+    IArche
+  </text>
+</svg>
+```
+
+**Propriétés :**
+- ViewBox : 400x120px (ratio 10:3)
+- Texte centré horizontalement et verticalement
+- Font-size : 72px (scalable)
+- Font-weight : 600 (Semibold)
+- Gradient id : `textGradient` (réutilisable)
+
+**Intégration web :**
+```html
+<!-- Image simple -->
+<img src="/logo-iarche-text.svg" alt="IArche" width="200" height="60" />
+
+<!-- Inline SVG (pour manipulation CSS) -->
+<svg>...</svg>
+```
+
+**Export pour autres usages :**
+1. **PNG haute résolution** : Ouvrir SVG dans navigateur → Clic droit → Enregistrer l'image
+2. **Print** : Importer dans Adobe Illustrator/Figma, exporter en PDF ou haute résolution
+3. **Email signature** : Convertir en PNG 800x240px (2x) pour compatibilité clients email
+
+**Avantages :**
+- ✅ Scalable à l'infini sans perte de qualité
+- ✅ Poids ultra-léger (< 1Ko)
+- ✅ Gradient précis et reproductible
+- ✅ Modifiable facilement (changement couleurs, taille, police)
+- ✅ Compatible tous navigateurs modernes
+
+---
 
 ### 2.3 Zone de protection
 
@@ -481,12 +543,13 @@ L'IA se construit avec vous
 
 ### 10.1 Logos (dossier `/public/`)
 
-| Fichier | Format | Usage |
-|---------|--------|-------|
-| `logo-iarche.svg` | SVG | Principal, web & print |
-| `logo-iarche.png` | PNG 512px | Réseaux sociaux |
-| `logo-iarche-white.svg` | SVG | Fonds sombres |
-| `logo-iarche-dark.svg` | SVG | Version sobre |
+| Fichier | Format | Dimensions | Usage |
+|---------|--------|------------|-------|
+| `logo-iarche-text.svg` | SVG | 400x120px | Logo texte universel (gradient figé) |
+| `logo-iarche.svg` | SVG | Variable | Principal, web & print |
+| `logo-iarche.png` | PNG | 512x512px | Réseaux sociaux |
+| `logo-iarche-white.svg` | SVG | Variable | Fonds sombres |
+| `logo-iarche-dark.svg` | SVG | Variable | Version sobre |
 
 ### 10.2 Documents
 

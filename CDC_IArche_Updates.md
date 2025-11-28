@@ -354,8 +354,54 @@ contact_submissions:
 - [x] Correction bug FOUC (Flash of Unstyled Content)
 - [x] SEO technique complet (meta tags, Schema.org, geo tags)
 - [x] BackgroundLayout créé (composant réutilisable pour toutes les pages)
+- [x] Logo SVG texte réutilisable créé (logo-iarche-text.svg)
 - [ ] Homepage assemblée (sections suivantes à ajouter)
 - [ ] Validation client
+
+---
+
+## LOGO SVG TEXTE - SPÉCIFICATIONS TECHNIQUES
+
+### Fichier : `public/logo-iarche-text.svg`
+
+**Description :** Logo texte "IArche" en SVG avec gradient figé, optimisé pour tous usages (web, print, export).
+
+**Dimensions :**
+- ViewBox : 400x120px
+- Texte centré (x="50%", y="50%")
+- Font-size : 72px
+- Font-weight : 600 (Semibold)
+- Font-family : Inter, sans-serif
+
+**Gradient spécifications (270deg - droite → gauche) :**
+```svg
+<linearGradient id="textGradient" x1="100%" y1="0%" x2="0%" y2="0%">
+  <stop offset="0%" style="stop-color:#1B2A47;stop-opacity:1" />      <!-- Bleu Nuit foncé -->
+  <stop offset="33.33%" style="stop-color:#D15A3E;stop-opacity:1" />   <!-- Terracotta -->
+  <stop offset="66.67%" style="stop-color:#2F4570;stop-opacity:1" />   <!-- Bleu Nuit moyen -->
+  <stop offset="100%" style="stop-color:#D15A3E;stop-opacity:1" />     <!-- Terracotta -->
+</linearGradient>
+```
+
+**Répartition visuelle :**
+- "I" : Bleu Nuit foncé
+- "A" : Transition Bleu → Terracotta
+- "r" : Terracotta pur
+- "c" : Transition Terracotta → Bleu
+- "h" : Bleu Nuit moyen
+- "e" : Terracotta
+
+**Usage recommandé :**
+- Web : Intégration directe `<img src="/logo-iarche-text.svg" alt="IArche" />`
+- Export PNG : Ouvrir dans navigateur → Clic droit → Enregistrer l'image
+- Print : Export en haute résolution via Illustrator/Figma
+- Email signature : Convertir en PNG 2x (800x240px) pour compatibilité
+
+**Avantages SVG :**
+- Scalable sans perte de qualité
+- Poids léger (< 1Ko)
+- Gradient précis et reproductible
+- Compatible tous navigateurs modernes
 
 ---
 
