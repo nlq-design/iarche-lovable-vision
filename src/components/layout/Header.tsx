@@ -18,7 +18,7 @@ const Header = () => {
           {/* Navigation Desktop */}
           <nav className="hidden md:flex items-center gap-8">
             <a 
-              href="#services" 
+              href="/services" 
               className="text-sm text-primary hover:text-primary/80 focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
             >
               Services
@@ -69,7 +69,7 @@ const Header = () => {
           <div className="md:hidden mt-4 pb-4 border-t border-border pt-4">
             <nav className="flex flex-col gap-4">
               <a 
-                href="#services"
+                href="/services"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-sm text-primary hover:text-primary/80 focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded transition-colors"
               >
