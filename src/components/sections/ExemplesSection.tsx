@@ -30,24 +30,13 @@ const exemples = [
 
 const ExemplesSection = () => {
   return (
-    <section className="py-20 md:py-28 bg-muted">
+    <section className="py-16 md:py-20 bg-muted">
       <div className="container mx-auto px-6">
-        <h2 
-          className="text-xs font-semibold text-muted-foreground uppercase tracking-widest text-center mb-12"
-          style={{
-            visibility: 'hidden',
-            animation: 'fadeIn 0.8s ease-out 0.2s forwards',
-            willChange: 'opacity, transform'
-          }}
-        >
-          Quelques exemples de sur-mesure
-        </h2>
-
         <div 
           className="max-w-4xl mx-auto space-y-6"
           style={{
             visibility: 'hidden',
-            animation: 'fadeIn 0.8s ease-out 0.4s forwards',
+            animation: 'fadeIn 0.8s ease-out 0.2s forwards',
             willChange: 'opacity, transform'
           }}
         >
