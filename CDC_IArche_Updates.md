@@ -340,23 +340,47 @@ contact_submissions:
 
 ## DÉVELOPPEMENT EN COURS
 
-### Étape actuelle : Homepage V1
+### ✅ Homepage V1 - COMPLÈTE (Portail minimaliste)
+
+**Statut : Prête pour validation client**
+
+#### Éléments implémentés :
 - [x] Lovable Cloud activé
 - [x] CDC mis à jour avec réponses finales
 - [x] Design system configuré (index.css + tailwind.config.ts)
 - [x] Composant hero adapté à charte IArche (animations A+B appliquées)
-- [x] Copy hero finalisé (IArche + baseline)
-- [x] Ancrage géographique ajouté ("Bayonne · France" en bas de page)
-- [x] Intégration design system : utilisation token `text-primary` pour cohérence globale
-- [x] CTA textuel bleu avec animation hover
-- [x] Animations dynamiques optimisées (gradients, lignes SVG)
-- [x] Repositionnement titre "IArche" (espacement vertical augmenté)
+- [x] Copy hero finalisé (IArche + baseline "L'IA se construit avec vous")
+- [x] CTA principal "Découvrir" avec animation hover
+- [x] Ancrage géographique ("Bayonne · France · nlq@iarche.fr")
+- [x] CTA secondaire "Une question ?" en footer
+- [x] Intégration design system : utilisation exclusive tokens CSS
+- [x] Animations dynamiques optimisées (gradients, lignes SVG, quadrillages)
+- [x] Repositionnement titre "IArche" (mb-20 md:mb-28)
 - [x] Correction bug FOUC (Flash of Unstyled Content)
-- [x] SEO technique complet (meta tags, Schema.org, geo tags)
+- [x] SEO technique complet (meta tags, Schema.org, geo tags, Open Graph)
 - [x] BackgroundLayout créé (composant réutilisable pour toutes les pages)
 - [x] Logo SVG texte réutilisable créé (logo-iarche-text.svg)
-- [ ] Homepage assemblée (sections suivantes à ajouter)
-- [ ] Validation client
+- [x] Homepage complète en version portail minimaliste
+
+#### Concept Homepage :
+**Portail d'entrée minimaliste** servant de vitrine élégante vers les autres sections du site. Design épuré avec :
+- Hero section full-screen
+- Titre IArche avec gradient animé (signature visuelle)
+- Baseline claire et mémorable
+- CTA unique invitant à découvrir
+- Ancrage géographique discret
+- Fonds animés subtils (quadrillages, lignes SVG, rectangles)
+
+**Architecture de l'information :**
+- "/" → Portail minimaliste (actuel)
+- Navigation header → À créer pour accès aux autres pages
+- Pages de contenu → À créer (Expertise, Solutions, etc.)
+
+#### Prochaines étapes (Phase 2) :
+- [ ] Validation client de la homepage portail
+- [ ] Création header navigation
+- [ ] Création footer structuré
+- [ ] Développement pages : Expertise, Solutions, À propos, Contact, Ressources
 
 ---
 
