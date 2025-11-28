@@ -19,30 +19,6 @@ const Accueil = () => {
         <div className="relative z-10 min-h-screen flex flex-col">
           <Header />
 
-          {/* Hero Section */}
-          <section className="py-16 md:py-24 text-center">
-            <p 
-              className="text-sm text-muted-foreground mb-4"
-              style={{ 
-                visibility: 'hidden',
-                animation: 'fadeIn 0.8s ease-out 0.2s forwards'
-              }}
-            >
-              Agence IA · Bayonne
-            </p>
-            <h1 
-              className="text-2xl md:text-3xl font-semibold text-foreground max-w-3xl mx-auto px-6"
-              style={{ 
-                visibility: 'hidden',
-                animation: 'fadeIn 0.8s ease-out 0.4s forwards'
-              }}
-            >
-              Conseil, intégration et accompagnement en intelligence artificielle pour PME.
-            </h1>
-          </section>
-
-          {/* Sections */}
-          <ServicesSection />
           <NewsletterSection />
 
           <Footer />
