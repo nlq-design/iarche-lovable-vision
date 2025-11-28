@@ -11,11 +11,11 @@ const NewsletterSection = () => {
   };
 
   return (
-    <section className="py-16 bg-muted">
+    <section className="py-20 md:py-28 bg-muted">
       <div className="container mx-auto px-6">
-        <div className="max-w-md mx-auto text-center">
+        <div className="max-w-xl mx-auto text-center">
           <h2 
-            className="text-2xl md:text-3xl font-semibold text-foreground mb-3"
+            className="text-2xl md:text-3xl font-semibold text-foreground mb-4"
             style={{ 
               visibility: 'hidden',
               animation: 'fadeIn 0.8s ease-out 0.2s forwards',
@@ -25,7 +25,7 @@ const NewsletterSection = () => {
             Restez informé
           </h2>
           <p 
-            className="text-muted-foreground mb-6"
+            className="text-base text-muted-foreground mb-8 leading-relaxed"
             style={{ 
               visibility: 'hidden',
               animation: 'fadeIn 0.8s ease-out 0.4s forwards',
@@ -37,7 +37,7 @@ const NewsletterSection = () => {
 
           <form 
             onSubmit={handleSubmit} 
-            className="flex flex-col sm:flex-row gap-2"
+            className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
             style={{ 
               visibility: 'hidden',
               animation: 'fadeIn 0.8s ease-out 0.6s forwards',
@@ -47,13 +47,13 @@ const NewsletterSection = () => {
             <Input 
               type="email" 
               name="email"
-              placeholder="Votre email"
+              placeholder="Votre email professionnel"
               required
-              className="flex-1 border-border rounded-lg px-4 py-3"
+              className="flex-1 border-border rounded-lg px-4 py-3 text-sm"
             />
             <Button 
               type="submit"
-              className="bg-accent hover:bg-accent/90 text-background font-medium"
+              className="bg-accent hover:bg-accent/90 text-white font-medium px-6 py-3 rounded-lg whitespace-nowrap"
             >
               S'inscrire →
             </Button>

@@ -24,26 +24,37 @@ const services = [
 
 const ServicesSection = () => {
   return (
-    <section className="py-16 md:py-24">
+    <section className="py-20 md:py-28 bg-background">
       <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <h2 
+          className="text-xs font-semibold text-muted-foreground uppercase tracking-widest text-center mb-12"
+          style={{
+            visibility: 'hidden',
+            animation: 'fadeIn 0.8s ease-out 0.2s forwards',
+            willChange: 'opacity, transform'
+          }}
+        >
+          Notre approche
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12">
           {services.map((service, index) => (
             <Card 
               key={index}
-              className="bg-background border border-border rounded-xl hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+              className="bg-card border border-border rounded-lg hover:border-accent hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
               style={{
                 visibility: 'hidden',
                 animation: `fadeIn 0.8s ease-out ${0.4 + index * 0.1}s forwards`,
                 willChange: 'opacity, transform'
               }}
             >
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold text-foreground">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-semibold text-foreground leading-tight">
                   {service.title}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-sm text-muted-foreground">
+                <CardDescription className="text-sm text-muted-foreground leading-relaxed">
                   {service.description}
                 </CardDescription>
               </CardContent>
@@ -61,9 +72,9 @@ const ServicesSection = () => {
         >
           <NavLink 
             to="/services"
-            className="inline-flex items-center gap-2 text-accent hover:text-accent/80 font-medium transition-colors group"
+            className="inline-flex items-center gap-2 text-accent hover:text-accent/80 font-medium text-sm transition-colors group"
           >
-            Découvrir nos services
+            En savoir plus sur nos services
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </NavLink>
         </div>

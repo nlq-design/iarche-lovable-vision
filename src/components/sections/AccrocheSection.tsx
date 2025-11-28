@@ -2,9 +2,9 @@ import React from 'react';
 
 const AccrocheSection = () => {
   return (
-    <section className="py-16 md:py-24 px-6 flex flex-col items-center">
+    <section className="py-20 md:py-32 px-6 flex flex-col items-center">
       <h1 
-        className="text-2xl md:text-3xl font-semibold text-foreground text-center mb-4"
+        className="text-3xl md:text-4xl font-semibold text-foreground text-center mb-6 max-w-3xl"
         style={{
           visibility: 'hidden',
           animation: 'fadeIn 0.8s ease-out 0.2s forwards',
@@ -15,7 +15,7 @@ const AccrocheSection = () => {
       </h1>
       
       <p 
-        className="text-lg md:text-xl text-foreground text-center max-w-[600px] leading-relaxed mb-6"
+        className="text-xl md:text-2xl text-foreground text-center max-w-2xl leading-relaxed mb-8"
         style={{
           visibility: 'hidden',
           animation: 'fadeIn 0.8s ease-out 0.4s forwards',
@@ -27,7 +27,7 @@ const AccrocheSection = () => {
       </p>
       
       <p 
-        className="text-sm text-muted-foreground tracking-wider"
+        className="text-sm text-muted-foreground tracking-widest"
         style={{
           visibility: 'hidden',
           animation: 'fadeIn 0.8s ease-out 0.6s forwards',
