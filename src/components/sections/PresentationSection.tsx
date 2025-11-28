@@ -13,7 +13,7 @@ const PresentationSection = () => {
           }}
         >
           <p className="text-lg md:text-xl text-foreground leading-relaxed">
-            <strong>IArche</strong> est une agence IA fondée à Bayonne. On accompagne les dirigeants de PME dans l'intégration concrète de l'intelligence artificielle : diagnostic, développement, formation, conformité.
+            <span className="hero-gradient-text font-bold">IArche</span> est une agence IA fondée à Bayonne. On accompagne les dirigeants de PME dans l'intégration concrète de l'intelligence artificielle : diagnostic, développement, formation, conformité.
           </p>
           <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
             Engagés localement à Bayonne, nous intervenons aussi partout en France.
