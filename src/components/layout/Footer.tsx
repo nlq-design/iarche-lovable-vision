@@ -18,7 +18,7 @@ const Footer = () => {
                 href="https://linkedin.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-white/70 hover:text-accent transition-colors duration-200"
+                className="text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
                 aria-label="LinkedIn"
               >
                 <Linkedin className="w-5 h-5" />
@@ -27,7 +27,7 @@ const Footer = () => {
                 href="https://instagram.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-white/70 hover:text-accent transition-colors duration-200"
+                className="text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
                 aria-label="Instagram"
               >
                 <Instagram className="w-5 h-5" />
@@ -36,7 +36,7 @@ const Footer = () => {
                 href="https://tiktok.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-white/70 hover:text-accent transition-colors duration-200"
+                className="text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
                 aria-label="TikTok"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -47,7 +47,7 @@ const Footer = () => {
                 href="https://facebook.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-white/70 hover:text-accent transition-colors duration-200"
+                className="text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
                 aria-label="Facebook"
               >
                 <Facebook className="w-5 h-5" />
@@ -60,22 +60,34 @@ const Footer = () => {
             <h3 className="text-sm font-semibold mb-3">Navigation</h3>
             <ul className="space-y-1.5">
               <li>
-                <NavLink to="/services" className="text-sm text-white/70 hover:text-accent transition-colors duration-200">
+                <NavLink 
+                  to="/services" 
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                >
                   Services
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/solutions" className="text-sm text-white/70 hover:text-accent transition-colors duration-200">
+                <NavLink 
+                  to="/solutions" 
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                >
                   Solutions
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/actualites" className="text-sm text-white/70 hover:text-accent transition-colors duration-200">
+                <NavLink 
+                  to="/actualites" 
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                >
                   Actualités
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/contact" className="text-sm text-white/70 hover:text-accent transition-colors duration-200">
+                <NavLink 
+                  to="/contact" 
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                >
                   Contact
                 </NavLink>
               </li>
@@ -87,27 +99,42 @@ const Footer = () => {
             <h3 className="text-sm font-semibold mb-3">Informations</h3>
             <ul className="space-y-1.5">
               <li>
-                <NavLink to="/newsletter" className="text-sm text-white/70 hover:text-accent transition-colors duration-200">
+                <NavLink 
+                  to="/newsletter" 
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                >
                   Newsletters
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/livre-or" className="text-sm text-white/70 hover:text-accent transition-colors duration-200">
+                <NavLink 
+                  to="/livre-or" 
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                >
                   Livre d'Or
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/mentions-legales" className="text-sm text-white/70 hover:text-accent transition-colors duration-200">
+                <NavLink 
+                  to="/mentions-legales" 
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                >
                   Mentions
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/conditions-generales" className="text-sm text-white/70 hover:text-accent transition-colors duration-200">
+                <NavLink 
+                  to="/conditions-generales" 
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                >
                   Conditions générales
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/confidentialite" className="text-sm text-white/70 hover:text-accent transition-colors duration-200">
+                <NavLink 
+                  to="/confidentialite" 
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                >
                   Politique de confidentialité
                 </NavLink>
               </li>
