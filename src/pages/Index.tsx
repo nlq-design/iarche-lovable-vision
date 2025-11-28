@@ -1,13 +1,36 @@
 import HeroSection from "@/components/ui/hero-section";
+import Header from "@/components/layout/Header";
+import AccrocheSection from "@/components/sections/AccrocheSection";
+import ServicesSection from "@/components/sections/ServicesSection";
+import PresentationSection from "@/components/sections/PresentationSection";
+import ExemplesSection from "@/components/sections/ExemplesSection";
+import SolutionsCTASection from "@/components/sections/SolutionsCTASection";
+import NewsletterSection from "@/components/sections/NewsletterSection";
+import Footer from "@/components/layout/Footer";
+import BackgroundLayout from "@/components/layouts/BackgroundLayout";
 import { Helmet } from "react-helmet";
+import { useEffect, useState } from "react";
 
 const Index = () => {
+  const [showHeader, setShowHeader] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      // Afficher le header après 100vh de scroll
+      setShowHeader(window.scrollY > window.innerHeight * 0.8);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <>
       <Helmet>
+        <html lang="fr" />
         {/* Primary Meta Tags */}
         <title>IArche · Agence IA Bayonne | Conseil & Intégration PME</title>
-        <meta name="description" content="Agence IA à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME. L'IA se construit avec vous." />
+        <meta name="description" content="Agence IA à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME. Sud-Ouest et toute la France." />
         <link rel="canonical" href="https://iarche.fr/" />
         
         {/* Geo Tags - Local SEO */}
@@ -20,26 +43,25 @@ const Index = () => {
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="fr_FR" />
         <meta property="og:site_name" content="IArche" />
-        <meta property="og:title" content="IArche · Agence IA pour PME" />
-        <meta property="og:description" content="Conseil, intégration et accompagnement en intelligence artificielle. L'IA se construit avec vous." />
+        <meta property="og:title" content="IArche · Agence IA Bayonne | Conseil & Intégration PME" />
+        <meta property="og:description" content="Agence IA à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME. Sud-Ouest et toute la France." />
         <meta property="og:url" content="https://iarche.fr/" />
         <meta property="og:image" content="https://iarche.fr/og-image.png" />
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="IArche · Agence IA pour PME" />
-        <meta name="twitter:description" content="Conseil, intégration et accompagnement en intelligence artificielle pour PME." />
+        <meta name="twitter:title" content="IArche · Agence IA Bayonne | Conseil & Intégration PME" />
+        <meta name="twitter:description" content="Agence IA à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME." />
         <meta name="twitter:image" content="https://iarche.fr/og-image.png" />
         
-        {/* Schema.org JSON-LD - Organization - Page principale uniquement */}
+        {/* Schema.org JSON-LD - ProfessionalService */}
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "Organization",
+            "@type": "ProfessionalService",
             "name": "IArche",
+            "image": "https://iarche.fr/logo-iarche.svg",
             "url": "https://iarche.fr",
-            "logo": "https://iarche.fr/logo-iarche.svg",
-            "description": "Agence IA spécialisée dans l'accompagnement des PME françaises pour l'intégration de l'intelligence artificielle",
             "email": "nlq@iarche.fr",
             "address": {
               "@type": "PostalAddress",
@@ -52,13 +74,84 @@ const Index = () => {
               "latitude": "43.4929",
               "longitude": "-1.4748"
             },
-            "areaServed": "FR",
+            "priceRange": "€€",
+            "areaServed": [
+              {
+                "@type": "Country",
+                "name": "France"
+              },
+              {
+                "@type": "City",
+                "name": "Bayonne"
+              },
+              {
+                "@type": "City",
+                "name": "Biarritz"
+              },
+              {
+                "@type": "City",
+                "name": "Pau"
+              },
+              {
+                "@type": "City",
+                "name": "Bordeaux"
+              },
+              {
+                "@type": "City",
+                "name": "Dax"
+              },
+              {
+                "@type": "City",
+                "name": "Tarbes"
+              },
+              {
+                "@type": "City",
+                "name": "Lourdes"
+              },
+              {
+                "@type": "City",
+                "name": "Mont-de-Marsan"
+              },
+              {
+                "@type": "City",
+                "name": "Oloron-Sainte-Marie"
+              },
+              {
+                "@type": "City",
+                "name": "Lescar"
+              }
+            ],
+            "description": "Agence IA fondée à Bayonne accompagnant les dirigeants de PME du Sud-Ouest (Bayonne, Biarritz, Pau, Bordeaux, Dax et région) dans l'intégration concrète de l'intelligence artificielle",
             "serviceType": ["Conseil IA", "Audit IA", "Développement IA", "Formation IA", "Conformité IA"]
           })}
         </script>
       </Helmet>
+
+      {/* Header sticky avec apparition au scroll */}
+      <div 
+        className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
+          showHeader ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        <Header />
+      </div>
+
       <main role="main" className="w-full">
+        {/* Section 1: Hero portail (100vh) */}
         <HeroSection />
+
+        {/* Section 2+: Contenu riche */}
+        <BackgroundLayout>
+          <div className="relative z-10">
+            <AccrocheSection />
+            <ServicesSection />
+            <PresentationSection />
+            <ExemplesSection />
+            <SolutionsCTASection />
+            <NewsletterSection />
+            <Footer />
+          </div>
+        </BackgroundLayout>
       </main>
     </>
   );

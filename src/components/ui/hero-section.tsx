@@ -38,10 +38,15 @@ const HeroSection = () => {
             L'IA se construit avec vous
           </p>
           <div className="flex justify-center invisible animate-fadeIn [animation-delay:0.3s]">
-          <a 
-            href="/accueil" 
-            className="inline-flex items-center gap-2 text-primary font-medium text-lg hover:gap-3 focus:gap-3 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded transition-all duration-300 group"
-          >
+            <button
+              onClick={() => {
+                window.scrollTo({
+                  top: window.innerHeight,
+                  behavior: 'smooth'
+                });
+              }}
+              className="inline-flex items-center gap-2 text-primary font-medium text-lg hover:gap-3 focus:gap-3 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded transition-all duration-300 group cursor-pointer"
+            >
               Découvrir
               <svg 
                 className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" 
@@ -51,7 +56,7 @@ const HeroSection = () => {
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
-            </a>
+            </button>
           </div>
         </div>
 
@@ -114,7 +119,12 @@ const HeroSection = () => {
           </p>
           <a 
             href="#contact" 
-            className="text-sm text-muted-foreground hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded inline-flex items-center gap-1 transition-all duration-300 group"
+            onClick={(e) => {
+              e.preventDefault();
+              const footer = document.querySelector('footer');
+              footer?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="text-sm text-muted-foreground hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded inline-flex items-center gap-1 transition-all duration-300 group cursor-pointer"
           >
             Une question ?<span className="inline-block w-1"></span>
             <svg 
