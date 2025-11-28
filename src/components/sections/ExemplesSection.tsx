@@ -30,7 +30,7 @@ const exemples = [
 
 const ExemplesSection = () => {
   return (
-    <section className="py-12 md:py-16 bg-muted">
+    <section className="py-8 md:py-12 bg-muted">
       <div className="container mx-auto px-6">
         <div 
           className="max-w-4xl mx-auto space-y-6"
