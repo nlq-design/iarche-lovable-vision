@@ -116,8 +116,25 @@ const Confidentialite = () => {
 
               <div>
                 <h2 className="text-2xl font-bold text-foreground mb-4">Cookies</h2>
+                <p className="mb-4">
+                  Notre site utilise des cookies techniques strictement nécessaires au fonctionnement du site.
+                </p>
+                
+                <h3 className="text-xl font-semibold text-foreground mb-2 mt-6">Google Analytics</h3>
+                <p className="mb-2">
+                  Nous utilisons Google Analytics pour mesurer l'audience de notre site et améliorer nos contenus. Google Analytics utilise des cookies pour collecter des informations de manière anonyme, notamment :
+                </p>
+                <ul className="list-disc pl-6 space-y-2 mb-4">
+                  <li>Pages visitées et temps passé</li>
+                  <li>Source de trafic (recherche Google, lien direct, etc.)</li>
+                  <li>Données démographiques générales (pays, langue)</li>
+                  <li>Type d'appareil et navigateur utilisé</li>
+                </ul>
+                <p className="mb-2">
+                  <strong>Anonymisation des IPs :</strong> Les adresses IP sont automatiquement anonymisées par Google Analytics, conformément au RGPD.
+                </p>
                 <p>
-                  Notre site utilise des cookies techniques strictement nécessaires au fonctionnement du site. Aucun cookie de traçage publicitaire n'est utilisé sans votre consentement.
+                  Pour en savoir plus ou vous opposer au tracking Google Analytics, consultez : <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Extension de navigateur Google Analytics Opt-out</a>
                 </p>
               </div>
 
