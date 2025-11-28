@@ -37,7 +37,7 @@ const HeroSection = () => {
       */}
       <style>
         {`
-        @keyframes fadeIn {
+          @keyframes fadeIn {
           0% {
             opacity: 0;
             visibility: hidden;
@@ -66,6 +66,44 @@ const HeroSection = () => {
           }
           50% {
             opacity: 0.5;
+            transform: scale(1);
+          }
+        }
+        
+        @keyframes buildWord {
+          0% {
+            visibility: hidden;
+            opacity: 0;
+          }
+          1% {
+            visibility: visible;
+            opacity: 0;
+          }
+          100% {
+            opacity: 1;
+          }
+        }
+        
+        @keyframes revealLetter {
+          0% {
+            clip-path: inset(0 100% 0 0);
+          }
+          100% {
+            clip-path: inset(0 0 0 0);
+          }
+        }
+        
+        @keyframes blockAppear {
+          0%, 20% {
+            opacity: 0;
+            transform: scale(0.8);
+          }
+          40%, 80% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          100% {
+            opacity: 0;
             transform: scale(1);
           }
         }
@@ -137,6 +175,49 @@ const HeroSection = () => {
           .hero-stagger-4 {
             animation-delay: 0.6s;
           }
+          
+          /* Animation "construit" */
+          .word-build {
+            position: relative;
+            display: inline-block;
+            animation: buildWord 0.1s ease-out forwards;
+            animation-delay: 1s;
+            visibility: hidden;
+            will-change: opacity, visibility;
+          }
+          
+          .word-build::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: hsl(12, 60%, 53%);
+            animation: blockAppear 1.8s ease-out forwards;
+            animation-delay: 1s;
+            border-radius: 2px;
+            z-index: 1;
+            will-change: opacity, transform;
+          }
+          
+          .word-build span {
+            position: relative;
+            display: inline-block;
+            clip-path: inset(0 100% 0 0);
+            animation: revealLetter 0.15s ease-out forwards;
+            will-change: clip-path;
+          }
+          
+          .word-build span:nth-child(1) { animation-delay: 1.1s; }
+          .word-build span:nth-child(2) { animation-delay: 1.25s; }
+          .word-build span:nth-child(3) { animation-delay: 1.4s; }
+          .word-build span:nth-child(4) { animation-delay: 1.55s; }
+          .word-build span:nth-child(5) { animation-delay: 1.7s; }
+          .word-build span:nth-child(6) { animation-delay: 1.85s; }
+          .word-build span:nth-child(7) { animation-delay: 2s; }
+          .word-build span:nth-child(8) { animation-delay: 2.15s; }
+          .word-build span:nth-child(9) { animation-delay: 2.3s; }
         `}
       </style>
       
@@ -148,7 +229,17 @@ const HeroSection = () => {
             <span className="hero-gradient-text">IArche</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-16 leading-relaxed hero-animate-fadeIn hero-stagger-2" style={{ visibility: 'hidden' }}>
-            L'IA se construit avec vous
+            L'IA se <span className="word-build" style={{ visibility: 'hidden' }}>
+              <span>c</span>
+              <span>o</span>
+              <span>n</span>
+              <span>s</span>
+              <span>t</span>
+              <span>r</span>
+              <span>u</span>
+              <span>i</span>
+              <span>t</span>
+            </span> avec vous
           </p>
           <div className="flex justify-center hero-animate-fadeIn hero-stagger-3" style={{ visibility: 'hidden' }}>
             <a 
