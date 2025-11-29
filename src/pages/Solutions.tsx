@@ -5,9 +5,10 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight } from 'lucide-react';
+import GradientButton from '@/components/ui/GradientButton';
+import { Button } from '@/components/ui/button';
 
 const Solutions = () => {
   const saasSolutions = [
@@ -186,14 +187,9 @@ const Solutions = () => {
             <p className="text-lg text-foreground mb-6">
               Envie de créer votre propre solution ?
             </p>
-            <Link to="/contact">
-              <Button 
-                size="lg"
-                className="bg-accent hover:bg-accent/90 text-white px-8 py-6 text-base"
-              >
-                Discuter de votre projet →
-              </Button>
-            </Link>
+            <GradientButton href="/contact" size="lg">
+              Discuter de votre projet →
+            </GradientButton>
           </div>
         </section>
       </main>

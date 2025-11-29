@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { NavLink } from '@/components/NavLink';
 import { Loader2, Calendar } from 'lucide-react';
+import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
 
 interface Article {
   id: string;
@@ -227,9 +228,7 @@ const Actualites = () => {
                         />
                       </div>
                     ) : (
-                      <div className="h-48 bg-muted flex items-center justify-center">
-                        <span className="text-muted-foreground text-sm">IArche</span>
-                      </div>
+                      <ArticlePlaceholder className="h-48" />
                     )}
 
                     <CardHeader className="pb-3">
