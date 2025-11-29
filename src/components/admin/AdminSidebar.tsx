@@ -1,4 +1,4 @@
-import { Home, BarChart3, Sparkles, FileText, FolderOpen, Tag, MessageCircle, Users, Mail, Send, Shield, Settings, Database, HelpCircle } from 'lucide-react';
+import { Home, BarChart3, Sparkles, FileText, FolderOpen, Tag, MessageCircle, Users, Mail, Send, Shield, Settings, Database, HelpCircle, Activity } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -21,6 +21,7 @@ const navigationItems = [
       { title: 'Tableau de bord', url: '/admin', icon: Home, exact: true },
       { title: 'Statistiques', url: '/admin/dashboard', icon: BarChart3 },
       { title: 'Stats avancées', url: '/admin/advanced-stats', icon: BarChart3 },
+      { title: 'Performance', url: '/admin/performance-monitoring', icon: Activity },
     ]
   },
   {
