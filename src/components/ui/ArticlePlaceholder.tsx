@@ -30,7 +30,7 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
     <div className={`relative overflow-hidden bg-background ${className}`}>
       {/* Arches SVG avec croisement diagonal - Style portail exact avec viewBox séparés */}
       
-      {/* SVG 1 : Ligne droite→gauche (viewBox quasi-carré pour épaisseur uniforme) */}
+      {/* SVG 1 : Ligne droite→gauche (viewBox quasi-carré 400×360 pour épaisseur uniforme) */}
       <svg
         className="absolute inset-0 w-full h-full"
         viewBox="0 0 400 360"
@@ -46,7 +46,7 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
         <path
           ref={path1Ref}
           className="canalisation-line"
-          d="M 390 5 L 130 5 C 128 5 126 7 126 9 L 126 95 C 126 97 124 99 122 99 L 10 99"
+          d="M 398 2 L 121 2 C 119 2 117 4 117 6 L 117 127 C 117 129 115 131 113 131 L 0 131"
           fill="none"
           stroke="url(#archGrad1)"
           strokeWidth="2"
@@ -55,10 +55,10 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
         />
       </svg>
       
-      {/* SVG 2 : Ligne gauche→droite (viewBox aplati pour horizontal épais) */}
+      {/* SVG 2 : Ligne gauche→droite (viewBox très aplati 400×106 pour horizontal très épais) */}
       <svg
         className="absolute inset-0 w-full h-full"
-        viewBox="0 0 400 133"
+        viewBox="0 0 400 106"
         preserveAspectRatio="none"
         aria-hidden="true"
       >
@@ -71,7 +71,7 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
         <path
           ref={path2Ref}
           className="canalisation-line"
-          d="M 10 5 L 270 5 C 272 5 274 7 274 9 L 274 185 C 274 187 276 189 278 189 L 390 189"
+          d="M 0 2 L 278 2 C 280 2 282 4 282 6 L 282 101 C 282 103 284 105 286 105 L 400 105"
           fill="none"
           stroke="url(#archGrad2)"
           strokeWidth="2"
