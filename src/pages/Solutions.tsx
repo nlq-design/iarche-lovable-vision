@@ -108,7 +108,7 @@ const Solutions = () => {
           </div>
 
           {/* CTA */}
-          <div className="text-center mt-8 animate-fadeIn [animation-delay:1.6s]">
+          <div className="text-center mt-4 animate-fadeIn [animation-delay:1.6s]">
             <p className="text-lg text-foreground mb-6">
               Envie de créer votre propre solution ?
             </p>
