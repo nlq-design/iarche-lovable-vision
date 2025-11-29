@@ -87,6 +87,13 @@ const Header = () => {
                   onMouseLeave={() => setResourcesOpen(false)}
                 >
                   <NavLink
+                    to="/actualites"
+                    onClick={() => setResourcesOpen(false)}
+                    className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
+                  >
+                    Actualités
+                  </NavLink>
+                  <NavLink
                     to="/articles"
                     onClick={() => setResourcesOpen(false)}
                     className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
@@ -183,6 +190,13 @@ const Header = () => {
                   Ressources
                 </NavLink>
                 <div className="pl-4 flex flex-col gap-2 border-l-2 border-accent/30">
+                  <NavLink 
+                    to="/actualites"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-sm text-foreground hover:text-accent transition-colors px-2 py-1"
+                  >
+                    Actualités
+                  </NavLink>
                   <NavLink 
                     to="/articles"
                     onClick={() => setMobileMenuOpen(false)}
