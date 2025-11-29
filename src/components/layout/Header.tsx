@@ -28,7 +28,7 @@ const Header = () => {
           {/* Logo IArche */}
           <button 
             onClick={() => navigate('/')}
-            className="flex items-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 rounded"
+            className="flex items-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D15A3E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF9F7] rounded"
           >
             <span className="text-3xl font-semibold hero-gradient-text">IArche</span>
           </button>

@@ -36,6 +36,38 @@
     <priority>0.8</priority>
   </url>
   
+  <!-- Page Articles -->
+  <url>
+    <loc>https://iarche.fr/articles</loc>
+    <lastmod>2025-11-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Page Cas clients -->
+  <url>
+    <loc>https://iarche.fr/cas-clients</loc>
+    <lastmod>2025-11-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Page Livres blancs -->
+  <url>
+    <loc>https://iarche.fr/livres-blancs</loc>
+    <lastmod>2025-11-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- Page Ateliers & Webinaires -->
+  <url>
+    <loc>https://iarche.fr/ateliers-webinaires</loc>
+    <lastmod>2025-11-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
   <!-- Page Contact -->
   <url>
     <loc>https://iarche.fr/contact</loc>
