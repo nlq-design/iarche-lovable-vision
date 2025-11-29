@@ -95,14 +95,37 @@ const CTAAnalytics = () => {
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
 
-  // Sources de contacts
-  const contactsBySource = contacts.reduce((acc, contact) => {
-    const key = contact.source || 'non_specifie';
-    acc[key] = (acc[key] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  // Conversions par source (depuis la table leads unifiée)
+  const [conversionsBySource, setConversionsBySource] = useState<Record<string, number>>({});
 
-  const contactSourceData = Object.entries(contactsBySource)
+  useEffect(() => {
+    const fetchLeads = async () => {
+      const daysAgo = parseInt(period);
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysAgo);
+
+      const { data: leadsData } = await supabase
+        .from('leads')
+        .select('source')
+        .gte('created_at', startDate.toISOString());
+
+      if (leadsData) {
+        const bySource = leadsData.reduce((acc, lead) => {
+          const label = 
+            lead.source === 'atelier-webinaire' ? 'Atelier/Webinaire' :
+            lead.source === 'livre-blanc' ? 'Livre blanc' :
+            lead.source === 'newsletter' ? 'Newsletter' :
+            lead.source === 'contact' ? 'Contact' : lead.source;
+          acc[label] = (acc[label] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        setConversionsBySource(bySource);
+      }
+    };
+    fetchLeads();
+  }, [period]);
+
+  const contactSourceData = Object.entries(conversionsBySource)
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
 
@@ -245,7 +268,7 @@ const CTAAnalytics = () => {
         <Tabs defaultValue="ctas" className="space-y-4">
           <TabsList>
             <TabsTrigger value="ctas">CTAs Performance</TabsTrigger>
-            <TabsTrigger value="sources">Sources Contacts</TabsTrigger>
+            <TabsTrigger value="sources">Conversions</TabsTrigger>
             <TabsTrigger value="timeline">Evolution</TabsTrigger>
             <TabsTrigger value="context">Contextes</TabsTrigger>
           </TabsList>
@@ -298,11 +321,14 @@ const CTAAnalytics = () => {
             </Card>
           </TabsContent>
 
-          {/* Tab: Sources Contacts */}
+          {/* Tab: Conversions (depuis table leads) */}
           <TabsContent value="sources" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Origine des contacts</CardTitle>
+                <CardTitle>Conversions par source</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Toutes les conversions (newsletter, contact, livre-blanc, atelier)
+                </p>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={400}>
@@ -328,25 +354,15 @@ const CTAAnalytics = () => {
             </Card>
 
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Détail des sources</CardTitle>
-                <button
-                  onClick={() => exportToCSV(contacts.map(c => ({
-                    source: c.source || 'non_specifie',
-                    context: c.source_context || '',
-                    date: new Date(c.created_at).toLocaleDateString('fr-FR')
-                  })), 'contacts-sources.csv')}
-                  className="text-sm text-primary hover:underline"
-                >
-                  Exporter CSV
-                </button>
+              <CardHeader>
+                <CardTitle>Détail des conversions</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   {contactSourceData.map((item) => (
                     <div key={item.name} className="flex items-center justify-between border-b pb-2">
                       <span className="text-sm font-medium">{item.name}</span>
-                      <span className="text-sm text-muted-foreground">{item.value} contacts</span>
+                      <span className="text-sm text-muted-foreground">{item.value} conversions</span>
                     </div>
                   ))}
                 </div>

@@ -26,7 +26,9 @@ export const leadSchema = z.object({
   company: z.string().max(100, "Maximum 100 caractères").optional(),
   phone: z.string().regex(/^(\+33|0)[1-9](\d{2}){4}$/, "Numéro de téléphone invalide").optional().or(z.literal("")),
   consent_marketing: z.boolean().default(false),
-  source: z.string().min(1, "Source requise"),
+  source: z.enum(['newsletter', 'contact', 'livre-blanc', 'atelier-webinaire'], {
+    errorMap: () => ({ message: "Source invalide" })
+  }),
   source_id: z.string().uuid().optional()
 });
 
