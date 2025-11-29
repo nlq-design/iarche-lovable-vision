@@ -52,10 +52,10 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
           </linearGradient>
         </defs>
         
-        {/* Ligne 1: Haut-droite → Bas-gauche - Dominante (croisement central proportionnel) */}
+        {/* Ligne 1: Haut-droite → Bas-gauche - Dominante (grande diagonale) */}
         <path
           className="arche-line arche-line-primary"
-          d="M 380 15 L 220 15 C 217 15 215 17 215 20 L 215 130 C 215 133 212 135 210 135 L 20 135"
+          d="M 390 5 L 130 5 C 128 5 126 7 126 9 L 126 155 C 126 157 124 159 122 159 L 10 159"
           fill="none"
           stroke="url(#placeholderGradient1)"
           strokeWidth="2.5"
@@ -63,10 +63,10 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
           opacity="0.55"
         />
         
-        {/* Ligne 2: Haut-gauche → Bas-droite - Subtile (croisement central proportionnel) */}
+        {/* Ligne 2: Haut-gauche → Bas-droite - Subtile (grande diagonale inversée) */}
         <path
           className="arche-line arche-line-secondary"
-          d="M 20 15 L 180 15 C 183 15 185 17 185 20 L 185 130 C 185 133 188 135 190 135 L 380 135"
+          d="M 10 5 L 270 5 C 272 5 274 7 274 9 L 274 155 C 274 157 276 159 278 159 L 390 159"
           fill="none"
           stroke="url(#placeholderGradient2)"
           strokeWidth="2"
