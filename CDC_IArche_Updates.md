@@ -1,12 +1,45 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.3**  
+**Version mise à jour : V6.4**  
 **Date : 29 Novembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.3 GESTION ADMIN PAR TYPE DE RESSOURCE - MISE À JOUR V6.4 ✅
+
+#### Pages de gestion séparées pour chaque type de ressource
+
+**Nouvelles pages admin créées :**
+- `/admin` → Gestion des articles de fond (resource_type = 'article')
+- `/admin/actualites` → Gestion des actualités (resource_type = 'actualite')
+- `/admin/cas-clients` → Gestion des cas clients (resource_type = 'cas-client')
+- `/admin/livres-blancs` → Gestion des livres blancs (resource_type = 'livre-blanc')
+- `/admin/ateliers-webinaires` → Gestion des ateliers & webinaires (resource_type = 'atelier-webinaire')
+
+**Fonctionnalités identiques sur chaque page :**
+- Liste complète des ressources du type concerné
+- Bouton "Créer nouveau" spécifique au type
+- Actions par ressource : Voir (lien vers page publique), Éditer, Historique des versions, Supprimer
+- Badges statut : Publié (vert) / Brouillon (jaune)
+- Date de publication/création
+- Tri par date de création décroissante
+
+**Sidebar admin mise à jour :**
+- Section "Contenu" avec 6 entrées :
+  - Articles (fond)
+  - Actualités
+  - Cas clients
+  - Livres blancs
+  - Ateliers & Webinaires
+  - Redacia (IA)
+
+**Rationale :**
+Chaque type de ressource a sa propre interface de gestion pour faciliter la navigation et éviter la confusion. Les admins peuvent gérer chaque catégorie de contenu indépendamment avec les mêmes fonctionnalités complètes.
+
+---
 
 ### 0.2 FILTRES ET TRANSITIONS PAGES RESSOURCES - MISE À JOUR V6.3 ✅
 
