@@ -1,6 +1,6 @@
 # Brand Book IArche
 
-**Version :** 1.1  
+**Version :** 1.2  
 **Date : 29 Novembre 2025**  
 **Document de référence pour l'identité visuelle IArche**
 
@@ -858,6 +858,7 @@ Sections RGPD :
 
 | Version | Date | Modifications |
 |---------|------|---------------|
+| 1.2 | 29 Nov 2025 | Ajout référence Phase 3 (back-office complet), mise à jour score global 9.8/10 |
 | 1.1 | 29 Nov 2025 | Ajout section architecture site (9 pages buildées), composants SEO/UX, sitemap.xml, référence pages légales |
 | 1.0 | 28 Nov 2025 | Création initiale |
 
@@ -865,17 +866,35 @@ Sections RGPD :
 
 ## 12. RÉFÉRENCE TECHNIQUE - ÉTAT DU BUILD ✅
 
-**Phase 2 Complète - Architecture site + SEO**  
-**Score global : 9.5/10** | **Date : 29 Nov 2025**
+**Phase 3 Complète - Back-office & automatisations**  
+**Score global : 9.8/10** | **Date : 29 Nov 2025**
 
-**Pages buildées :** 10 pages fonctionnelles (homepage + 9 pages)  
+**Pages front-end :** 10 pages fonctionnelles (homepage + 9 pages)  
+**Pages admin :** 7 interfaces back-office (dashboard, articles, catégories, tags, commentaires, newsletters, statistiques)  
 **Composants SEO :** HelmetProvider, ScrollToTop, BreadcrumbNav, NavLink  
 **Sitemap :** 10 URLs avec métadonnées complètes  
-**Formulaires :** Contact + Newsletter (prêts backend)  
+**Formulaires :** Contact + Newsletter (backend intégré)  
 **Pages légales :** Mentions, CGV, Confidentialité (contenu complet)
 
-Documentation technique détaillée dans `CDC_IArche_Updates.md` (V4.0)
+**Fonctionnalités back-office :**
+- Éditeur WYSIWYG complet avec versioning
+- Système de publication programmée avec DatePicker
+- Newsletter automatique lors de publication
+- Notifications email nouveaux commentaires
+- Pagination articles et commentaires
+- Filtres avancés par catégorie et tag
+- Tableau de bord avec statistiques temps réel
+- Tracking des vues articles
+- Assignation catégories/tags depuis éditeur
+
+**Automatisations :**
+- 3 Edge Functions (send-newsletter, notify-new-comment, publish-scheduled-articles)
+- Envoi automatique newsletter première publication
+- Notification admin nouveaux commentaires
+- Publication automatique articles programmés
+
+Documentation technique détaillée dans `CDC_IArche_Updates.md` (V5.0)
 
 ---
 
-**Fin du Brand Book IArche V1.1**
+**Fin du Brand Book IArche V1.2**

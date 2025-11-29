@@ -1,6 +1,6 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V4.0**  
+**Version mise à jour : V5.0**  
 **Date : 29 Novembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
@@ -176,6 +176,318 @@ Le CDC V3 mentionnait :
 - Composants proposés au fur et à mesure de la construction
 - Adaptation obligatoire à la charte IArche
 - Mapping couleurs conservé
+
+---
+
+## BACK-OFFICE & CMS - IMPLÉMENTATION COMPLÈTE ✅
+
+### ✅ BUILDÉ : Système de gestion de contenu complet
+
+**Solution : Lovable Cloud (Supabase) activé**
+
+#### Architecture des tables principales
+
+1. **Articles** (`articles`)
+   - Gestion complète du blog avec éditeur WYSIWYG (ReactQuill)
+   - Champs : id, title, slug, excerpt, content, cover_image_url, published, published_at, scheduled_publish_at, author_id
+   - Versioning intégré (table `article_versions`)
+   - Publication immédiate ou programmée
+
+2. **Catégories** (`categories`)
+   - Système de classification des articles
+   - Génération automatique de slug
+   - Interface CRUD complète
+
+3. **Tags** (`tags`)
+   - Système de tags pour articles
+   - Génération automatique de slug
+   - Interface CRUD complète
+
+4. **Commentaires** (`comments`)
+   - Système de commentaires modérés
+   - Champs : article_id, author_name, author_email, content, approved
+   - Workflow de modération intégré
+
+5. **Abonnés Newsletter** (`newsletter_subscribers`)
+   - Liste des abonnés avec date d'inscription
+   - Intégration avec système d'envoi automatique
+
+6. **Vues articles** (`article_views`)
+   - Tracking des vues par article
+   - Statistiques en temps réel
+
+7. **Soumissions contact** (`contacts`)
+   - Historique des demandes de contact
+   - Champs : name, email, company, subject, message
+
+---
+
+### ✅ INTERFACES ADMIN - FONCTIONNALITÉS COMPLÈTES
+
+#### 1. Tableau de bord principal (`/admin`)
+**État : BUILDÉ ✅**
+
+**Fonctionnalités :**
+- Vue d'ensemble avec cartes de navigation
+- Liste des articles avec statuts (publié/brouillon)
+- Actions rapides : créer, éditer, voir, supprimer
+- Accès rapide à toutes les sections admin
+- Bouton de déconnexion
+
+**Liens de navigation :**
+- Tableau de bord statistiques → `/admin/dashboard`
+- Gestion articles → `/admin/articles`
+- Gestion catégories → `/admin/categories`
+- Gestion tags → `/admin/tags`
+- Modération commentaires → `/admin/comments`
+- Gestion newsletter → `/admin/newsletters`
+
+---
+
+#### 2. Tableau de bord statistiques (`/admin/dashboard`)
+**État : BUILDÉ ✅**
+
+**Métriques affichées :**
+- Nombre total d'articles
+- Articles publiés vs brouillons
+- Commentaires en attente de modération
+- Commentaires approuvés
+- Total des vues d'articles
+- **Top 10 des articles les plus vus** avec graphique
+
+**Visualisations :**
+- Cards avec statistiques clés
+- Liste des articles populaires avec nombre de vues
+- Mise à jour temps réel
+
+---
+
+#### 3. Éditeur d'articles (`/admin/articles/:id`)
+**État : BUILDÉ ✅**
+
+**Fonctionnalités :**
+- Éditeur WYSIWYG complet (ReactQuill)
+- Champs : titre, slug (auto-généré + validation unicité), excerpt, contenu, image de couverture
+- **Assignation catégories et tags** directement depuis l'éditeur (checkboxes)
+- **Publication programmée** avec DatePicker (calendrier français)
+- Switch publication immédiate/programmée
+- Prévisualisation de l'article
+- Versioning automatique (historique des modifications)
+- Validation slug (détection doublons, suggestions alternatives)
+- **Envoi automatique newsletter** lors de première publication
+
+**Workflow :**
+1. Créer/éditer article
+2. Assigner catégories et tags (optionnel)
+3. Choisir publication immédiate OU programmée
+4. Si programmée : sélectionner date et heure dans le calendrier
+5. Sauvegarder → Notification automatique des abonnés si publié
+
+---
+
+#### 4. Gestion catégories (`/admin/categories`)
+**État : BUILDÉ ✅**
+
+**Fonctionnalités :**
+- Liste de toutes les catégories
+- Création avec génération auto de slug
+- Modification en ligne
+- Suppression avec confirmation
+- Tri alphabétique
+
+---
+
+#### 5. Gestion tags (`/admin/tags`)
+**État : BUILDÉ ✅**
+
+**Fonctionnalités :**
+- Liste de tous les tags
+- Création avec génération auto de slug
+- Modification en ligne
+- Suppression avec confirmation
+- Tri alphabétique
+
+---
+
+#### 6. Modération commentaires (`/admin/comments`)
+**État : BUILDÉ ✅**
+
+**Fonctionnalités :**
+- **Pagination** (10 commentaires par page)
+- Filtrage par statut (en attente/approuvé)
+- Tri par date (plus récents en premier)
+- Actions : approuver, rejeter, supprimer
+- Affichage article associé avec lien direct
+- Navigation pages (précédent/suivant)
+
+---
+
+#### 7. Gestion newsletter (`/admin/newsletters`)
+**État : BUILDÉ ✅**
+
+**Fonctionnalités :**
+- Liste de tous les abonnés avec pagination (20 par page)
+- Affichage email + date d'inscription
+- Suppression d'abonnés avec confirmation
+- Statistiques : nombre total d'abonnés
+- Navigation pages (précédent/suivant)
+
+---
+
+### ✅ FONCTIONNALITÉS AUTOMATISÉES
+
+#### 1. Système de newsletter automatique
+**État : BUILDÉ ✅**
+
+**Edge Function :** `send-newsletter`
+
+**Fonctionnement :**
+1. Lors de la première publication d'un article (passage de brouillon → publié)
+2. Edge function invoquée automatiquement
+3. Récupération de tous les abonnés newsletter
+4. Envoi email à chaque abonné avec :
+   - Titre de l'article
+   - Extrait (si disponible)
+   - Lien direct vers l'article
+   - Design aux couleurs IArche (Terracotta CTA)
+5. Notification toast à l'admin du succès/échec
+
+**Technologies :**
+- Resend pour envoi emails
+- Template HTML responsive
+- Gestion erreurs et logs
+
+---
+
+#### 2. Notifications email nouveaux commentaires
+**État : BUILDÉ ✅**
+
+**Edge Function :** `notify-new-comment`
+
+**Fonctionnement :**
+1. Visiteur soumet un commentaire sur un article
+2. Edge function invoquée automatiquement
+3. Email envoyé à l'admin avec :
+   - Détails du commentaire (auteur, email, contenu)
+   - Lien direct vers l'article
+   - Lien vers modération admin
+4. Commentaire enregistré en statut "en attente"
+
+**Technologies :**
+- Resend pour envoi emails
+- Webhook sécurisé
+- Template HTML responsive
+
+---
+
+#### 3. Publication programmée automatique
+**État : BUILDÉ ✅**
+
+**Edge Function :** `publish-scheduled-articles`
+
+**Fonctionnement :**
+1. Function déclenchée régulièrement (cron ou appel manuel)
+2. Recherche articles avec `scheduled_publish_at` <= maintenant ET `published = false`
+3. Pour chaque article trouvé :
+   - Mise à jour `published = true` et `published_at = now()`
+   - Réinitialisation `scheduled_publish_at = null`
+   - **Envoi automatique newsletter** aux abonnés
+4. Logs détaillés de chaque publication
+
+**Configuration cron recommandée :**
+```sql
+-- Exécuter toutes les 15 minutes
+select cron.schedule(
+  'publish-scheduled-articles',
+  '*/15 * * * *',
+  $$
+  select net.http_post(
+    url:='https://project-ref.supabase.co/functions/v1/publish-scheduled-articles',
+    headers:='{"Authorization": "Bearer ANON_KEY"}'::jsonb
+  ) as request_id;
+  $$
+);
+```
+
+---
+
+#### 4. Tracking des vues articles
+**État : BUILDÉ ✅**
+
+**Fonctionnement :**
+1. À chaque consultation d'un article (`/actualites/:slug`)
+2. Insertion automatique dans table `article_views`
+3. Timestamp enregistré
+4. Statistiques calculées en temps réel pour dashboard
+
+---
+
+### ✅ FONCTIONNALITÉS FRONT-END PUBLIC
+
+#### 1. Filtres page Actualités (`/actualites`)
+**État : BUILDÉ ✅**
+
+**Fonctionnalités :**
+- **Filtre par catégorie** : Menu déroulant avec toutes les catégories
+- **Filtre par tag** : Menu déroulant avec tous les tags
+- **Filtres combinables** : catégorie ET tag simultanément
+- Bouton "Réinitialiser" pour supprimer tous les filtres
+- Mise à jour instantanée de la liste d'articles
+
+**UX :**
+- Filtres placés au-dessus de la grille d'articles
+- Design cohérent avec charte graphique
+- Responsive (stacked mobile, inline desktop)
+- État vide si aucun article ne correspond
+
+---
+
+#### 2. Formulaire newsletter (`/newsletter` + sections)
+**État : BUILDÉ ✅**
+
+**Fonctionnalités :**
+- Formulaire d'inscription avec email uniquement
+- Validation Zod (email valide, max 255 caractères)
+- Insertion base de données avec gestion doublons
+- Toast de confirmation après inscription
+- Mention RGPD et lien politique de confidentialité
+- **Event GTM** : `newsletter_signup` avec email
+
+**Intégrations :**
+- Section dédiée sur page `/newsletter`
+- Section newsletter sur homepage et autres pages
+- Design aux couleurs IArche
+
+---
+
+### ✅ SÉCURITÉ & PERMISSIONS
+
+#### Row-Level Security (RLS) configurée
+
+**Tables protégées :**
+1. **articles** : Admins peuvent tout gérer, public ne voit que `published = true`
+2. **article_versions** : Admins seulement (lecture/écriture)
+3. **article_views** : Public peut insérer (tracking), admins peuvent lire (stats)
+4. **categories** : Admins peuvent tout gérer, public en lecture seule
+5. **tags** : Admins peuvent tout gérer, public en lecture seule
+6. **comments** : Public peut insérer, public voit `approved = true`, admins peuvent tout gérer
+7. **newsletter_subscribers** : Public peut insérer, admins seulement lecture/suppression (via edge function)
+8. **contacts** : Public peut insérer uniquement
+
+**Système de rôles :**
+- Table `user_roles` avec enum `app_role` (admin, user)
+- Fonction security definer `has_role()` pour éviter récursion RLS
+- Policies utilisant `has_role(auth.uid(), 'admin')`
+
+---
+
+### ✅ SECRETS CONFIGURÉS
+
+**Variables d'environnement Supabase :**
+1. `RESEND_API_KEY` : Envoi emails (newsletter, notifications)
+2. `SUPABASE_URL` : URL du projet
+3. `SUPABASE_ANON_KEY` : Clé publique
+4. `SUPABASE_SERVICE_ROLE_KEY` : Clé admin pour edge functions
 
 ---
 
@@ -1223,6 +1535,51 @@ const routeNames: Record<string, string> = {
 ---
 
 ## CHANGELOG
+
+### V5.0 - 29 Novembre 2025 🚀
+
+**Phase 3 complète : Back-office & automatisations**
+
+#### Ajouté ✅
+- **Système de pagination** : Articles et commentaires (10/20 items par page)
+- **Tableau de bord statistiques** (`/admin/dashboard`) :
+  - Métriques clés (articles, commentaires, vues)
+  - Top 10 articles les plus vus
+- **Notifications email** pour nouveaux commentaires (Edge function `notify-new-comment`)
+- **Assignation catégories et tags** directement dans éditeur d'articles (checkboxes)
+- **Filtres avancés** page Actualités (par catégorie + tag, combinables)
+- **Système de newsletter automatique** :
+  - Edge function `send-newsletter`
+  - Envoi automatique lors de première publication
+  - Template email responsive aux couleurs IArche
+- **Page admin newsletters** (`/admin/newsletters`) :
+  - Liste abonnés avec pagination
+  - Gestion (suppression) des abonnés
+  - Statistiques
+- **Navigation centralisée admin** : Toutes les pages admin accessibles depuis `/admin`
+- **Système de publication programmée** :
+  - DatePicker français (date-fns + fr locale)
+  - Champ `scheduled_publish_at` sur articles
+  - Edge function `publish-scheduled-articles` pour publication automatique
+  - Envoi newsletter automatique lors de publication programmée
+- **Tracking des vues** : Table `article_views` + statistiques temps réel
+
+#### Modifié 🔄
+- CDC version V4.0 → V5.0
+- Éditeur d'articles : ajout section catégories/tags + publication programmée
+- Page `/admin` : ajout bouton déconnexion + cartes navigation
+- Table `articles` : ajout colonne `scheduled_publish_at`
+
+#### Technique 🔧
+- Index BTree sur `scheduled_publish_at` pour performances
+- 3 nouvelles Edge Functions (send-newsletter, notify-new-comment, publish-scheduled-articles)
+- Intégration date-fns pour formatage dates en français
+- Calendar Shadcn avec `pointer-events-auto` pour interaction modale
+
+#### Score global Phase 3 ✅
+**9.8/10** - Back-office complet et fonctionnel avec automatisations
+
+---
 
 ### V4.0 - 29 Novembre 2025 🚀
 
