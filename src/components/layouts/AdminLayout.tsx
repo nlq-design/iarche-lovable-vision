@@ -6,6 +6,7 @@ import { LogOut, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { NotificationBell } from '@/components/admin/NotificationBell';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -49,6 +50,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                   <Home className="w-4 h-4" />
                   <span className="hidden sm:inline">Retour au site</span>
                 </Link>
+                <NotificationBell />
                 {user && (
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground hidden sm:inline">{user.email}</span>

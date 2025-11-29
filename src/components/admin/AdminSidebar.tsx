@@ -20,6 +20,7 @@ const navigationItems = [
     items: [
       { title: 'Tableau de bord', url: '/admin', icon: Home, exact: true },
       { title: 'Statistiques', url: '/admin/dashboard', icon: BarChart3 },
+      { title: 'Stats avancées', url: '/admin/advanced-stats', icon: BarChart3 },
     ]
   },
   {
