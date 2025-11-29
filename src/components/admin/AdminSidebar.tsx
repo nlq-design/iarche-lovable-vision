@@ -45,6 +45,7 @@ const navigationItems = [
     group: 'Engagement',
     items: [
       { title: 'Commentaires', url: '/admin/comments', icon: MessageCircle },
+      { title: 'Leads', url: '/admin/leads', icon: Users },
     ]
   },
   {
