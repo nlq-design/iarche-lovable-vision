@@ -219,7 +219,12 @@ const Redacia = () => {
       const functionName = ai === 'claude' ? 'generate-article-claude' : 'generate-article-gpt';
       
       const { data, error } = await supabase.functions.invoke(functionName, {
-        body: { brief, tone, length }
+        body: { 
+          brief, 
+          tone, 
+          length,
+          templateId: selectedTemplate 
+        }
       });
 
       if (error) throw error;

@@ -12,6 +12,7 @@ interface RequestBody {
   brief: string;
   tone: 'expert' | 'vulgarise' | 'technique';
   length: 'court' | 'moyen' | 'long';
+  templateId?: string;
 }
 
 const lengthMap = {
@@ -32,9 +33,9 @@ serve(async (req) => {
   }
 
   try {
-    const { brief, tone, length }: RequestBody = await req.json();
+    const { brief, tone, length, templateId }: RequestBody = await req.json();
     
-    console.log(`Generating article with GPT - tone: ${tone}, length: ${length}`);
+    console.log(`Generating article with GPT - tone: ${tone}, length: ${length}, template: ${templateId || 'custom'}`);
 
     const systemPrompt = `Tu es un rédacteur expert pour IArche, une agence IA basée à Bayonne. 
 Tu rédiges des articles de blog professionnels sur l'IA pour les PME françaises.
@@ -60,10 +61,15 @@ Format de sortie OBLIGATOIRE (JSON) :
   "tags": ["tag1", "tag2", "tag3"]
 }`;
 
+    let templateInstruction = '';
+    if (templateId && templateId !== 'custom') {
+      templateInstruction = `\nIMPORTANT : Le brief ci-dessous contient une structure de template pré-définie. Suis scrupuleusement cette structure et réponds à chaque section demandée.`;
+    }
+
     const userPrompt = `Rédige un article de blog sur le sujet suivant :
 
 BRIEF :
-${brief}
+${brief}${templateInstruction}
 
 CONTRAINTES :
 - Ton : ${toneMap[tone]}
