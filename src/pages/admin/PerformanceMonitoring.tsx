@@ -87,7 +87,8 @@ const PerformanceMonitoring = () => {
         bundle_size_total: data.bundle_size_total ? parseInt(data.bundle_size_total) : null,
         environment: data.environment,
         notes: data.notes || null,
-        recorded_by: user.user?.id
+        recorded_by: user.user?.id,
+        recorded_at: new Date().toISOString()
       };
 
       const { error } = await supabase
@@ -95,6 +96,28 @@ const PerformanceMonitoring = () => {
         .insert(metricData);
       
       if (error) throw error;
+
+      // Vérifier les seuils et envoyer alerte si nécessaire
+      try {
+        const { data: alertData, error: alertError } = await supabase.functions.invoke(
+          'check-performance-threshold',
+          { body: metricData }
+        );
+
+        if (alertError) {
+          console.error('Error checking thresholds:', alertError);
+        } else if (alertData?.violations > 0) {
+          toast({
+            title: `⚠️ ${alertData.critical > 0 ? 'Alerte critique' : 'Avertissement'} performance`,
+            description: `${alertData.violations} métrique${alertData.violations > 1 ? 's' : ''} hors seuil. Email envoyé.`,
+            variant: alertData.critical > 0 ? 'destructive' : 'default'
+          });
+        }
+      } catch (alertErr) {
+        console.error('Alert check failed:', alertErr);
+      }
+
+      return metricData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['performance-metrics'] });
@@ -225,6 +248,63 @@ const PerformanceMonitoring = () => {
           </Button>
         </div>
       </div>
+
+      {/* Seuils d'alerte */}
+      <Card className="border-accent/20 bg-accent/5">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Activity className="w-4 h-4" />
+            Seuils d'alerte configurés
+          </CardTitle>
+          <CardDescription>
+            Les alertes email sont envoyées automatiquement lorsque ces seuils sont dépassés
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 text-sm">
+            <div>
+              <p className="text-muted-foreground mb-1">Performance</p>
+              <p className="font-mono font-semibold">&lt; 85</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground mb-1">Accessibilité</p>
+              <p className="font-mono font-semibold">&lt; 90</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground mb-1">Best Practices</p>
+              <p className="font-mono font-semibold">&lt; 90</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground mb-1">SEO</p>
+              <p className="font-mono font-semibold">&lt; 95</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground mb-1">LCP</p>
+              <p className="font-mono font-semibold">&gt; 2.5s</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground mb-1">FCP</p>
+              <p className="font-mono font-semibold">&gt; 1.8s</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground mb-1">TTI</p>
+              <p className="font-mono font-semibold">&gt; 3.8s</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground mb-1">CLS</p>
+              <p className="font-mono font-semibold">&gt; 0.1</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground mb-1">TBT</p>
+              <p className="font-mono font-semibold">&gt; 200ms</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground mb-1">Bundle Total</p>
+              <p className="font-mono font-semibold">&gt; 500 KB</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
