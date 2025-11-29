@@ -463,6 +463,7 @@ const AdminArticleEditor = () => {
       published,
       published_at: published ? new Date().toISOString() : null,
       scheduled_publish_at: scheduledPublishAt ? scheduledPublishAt.toISOString() : null,
+      resource_type: resourceType,
       author_id: user.id,
     };
 
