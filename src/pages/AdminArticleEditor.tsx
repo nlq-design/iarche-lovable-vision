@@ -12,7 +12,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, Save, Eye, History } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
-import { AdminNav } from '@/components/AdminNav';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Switch } from '@/components/ui/switch';
@@ -252,12 +251,6 @@ const AdminArticleEditor = () => {
 
     setIsLoading(true);
 
-    const wasPublished = id ? (await supabase
-      .from('articles')
-      .select('published')
-      .eq('id', id)
-      .single()).data?.published : false;
-
     const articleData = {
       title,
       slug,
@@ -331,24 +324,9 @@ const AdminArticleEditor = () => {
           );
         }
 
-        // Si l'article vient d'être publié (n'était pas publié avant), envoyer la newsletter
-        if (published && !wasPublished) {
-          console.log('Article just published, sending newsletter...');
-          await supabase.functions.invoke('send-newsletter', {
-            body: {
-              article_id: id,
-              article_title: title,
-              article_slug: slug,
-              article_excerpt: excerpt,
-            },
-          });
-        }
-
         toast({
           title: 'Article mis à jour',
-          description: published && !wasPublished 
-            ? 'Article publié et newsletter envoyée aux abonnés'
-            : 'L\'article a été mis à jour avec succès',
+          description: 'L\'article a été mis à jour avec succès',
         });
         
         // Push GTM event
@@ -387,24 +365,9 @@ const AdminArticleEditor = () => {
           );
         }
 
-        // Si l'article est publié directement, envoyer la newsletter
-        if (published) {
-          console.log('New article published, sending newsletter...');
-          await supabase.functions.invoke('send-newsletter', {
-            body: {
-              article_id: newArticle.id,
-              article_title: title,
-              article_slug: slug,
-              article_excerpt: excerpt,
-            },
-          });
-        }
-
         toast({
           title: 'Article créé',
-          description: published 
-            ? 'Article créé et newsletter envoyée aux abonnés'
-            : 'L\'article a été créé avec succès',
+          description: 'L\'article a été créé avec succès',
         });
         
         // Push GTM event
@@ -440,18 +403,22 @@ const AdminArticleEditor = () => {
 
       <div className="min-h-screen px-6 py-12">
         <div className="container mx-auto max-w-4xl">
-          <AdminNav />
-          
-          {id && (
-            <div className="mb-8 flex justify-end">
+          <div className="mb-8 flex items-center justify-between">
+            <NavLink to="/admin">
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Retour
+              </Button>
+            </NavLink>
+            {id && (
               <NavLink to={`/admin/articles/${id}/history`}>
                 <Button variant="outline" size="sm">
                   <History className="mr-2 h-4 w-4" />
                   Historique
                 </Button>
               </NavLink>
-            </div>
-          )}
+            )}
+          </div>
 
           <Card className="bg-background/95 border-border">
             <CardHeader>

@@ -23,7 +23,6 @@ import AdminCategories from "./pages/AdminCategories";
 import AdminTags from "./pages/AdminTags";
 import AdminComments from "./pages/AdminComments";
 import AdminDashboard from "./pages/AdminDashboard";
-import NewsletterManagement from "./pages/NewsletterManagement";
 import { CookieConsent } from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
@@ -50,7 +49,7 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           
           {/* Pages secondaires */}
-          <Route path="/newsletter" element={<NewsletterManagement />} />
+          <Route path="/newsletter" element={<Newsletter />} />
           <Route path="/livre-or" element={<LivreOr />} />
           
           {/* Pages légales */}

@@ -7,16 +7,7 @@ import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { NavLink } from '@/components/NavLink';
-import { Loader2, Calendar, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { NewsletterForm } from '@/components/NewsletterForm';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Loader2, Calendar } from 'lucide-react';
 
 interface Article {
   id: string;
@@ -28,115 +19,26 @@ interface Article {
   created_at: string;
 }
 
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-interface Tag {
-  id: string;
-  name: string;
-  slug: string;
-}
-
 const Actualites = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedTag, setSelectedTag] = useState<string>('');
-
-  useEffect(() => {
-    loadFilters();
-  }, []);
 
   useEffect(() => {
     loadArticles();
-  }, [selectedCategory, selectedTag]);
-
-  const loadFilters = async () => {
-    // Charger les catégories
-    const { data: categoriesData } = await supabase
-      .from('categories')
-      .select('id, name, slug')
-      .order('name');
-    setCategories(categoriesData || []);
-
-    // Charger les tags
-    const { data: tagsData } = await supabase
-      .from('tags')
-      .select('id, name, slug')
-      .order('name');
-    setTags(tagsData || []);
-  };
+  }, []);
 
   const loadArticles = async () => {
     setLoading(true);
-    
-    let query = supabase
+    const { data, error } = await supabase
       .from('articles')
-      .select(`
-        id, 
-        title, 
-        slug, 
-        excerpt, 
-        cover_image_url, 
-        published_at, 
-        created_at,
-        article_categories(category_id),
-        article_tags(tag_id)
-      `)
-      .eq('published', true);
-
-    // Filtre par catégorie
-    if (selectedCategory) {
-      const { data: articleIds } = await supabase
-        .from('article_categories')
-        .select('article_id')
-        .eq('category_id', selectedCategory);
-      
-      const ids = articleIds?.map(ac => ac.article_id) || [];
-      if (ids.length > 0) {
-        query = query.in('id', ids);
-      } else {
-        // Aucun article dans cette catégorie
-        setArticles([]);
-        setLoading(false);
-        return;
-      }
-    }
-
-    // Filtre par tag
-    if (selectedTag) {
-      const { data: articleIds } = await supabase
-        .from('article_tags')
-        .select('article_id')
-        .eq('tag_id', selectedTag);
-      
-      const ids = articleIds?.map(at => at.article_id) || [];
-      if (ids.length > 0) {
-        query = query.in('id', ids);
-      } else {
-        // Aucun article avec ce tag
-        setArticles([]);
-        setLoading(false);
-        return;
-      }
-    }
-
-    const { data, error } = await query.order('published_at', { ascending: false });
+      .select('id, title, slug, excerpt, cover_image_url, published_at, created_at')
+      .eq('published', true)
+      .order('published_at', { ascending: false });
 
     if (!error && data) {
       setArticles(data);
     }
     setLoading(false);
-  };
-
-  const handleResetFilters = () => {
-    setSelectedCategory('');
-    setSelectedTag('');
   };
 
   const formatDate = (dateString: string) => {
@@ -171,68 +73,13 @@ const Actualites = () => {
       <main className="min-h-screen pt-20">
         <section className="max-w-6xl mx-auto px-6 py-16">
           {/* En-tête */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
             <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 invisible animate-fadeIn [animation-delay:0.1s]">
               Actualités & Articles
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto invisible animate-fadeIn [animation-delay:0.2s]">
               Veille technologique, cas d'usage et réglementation IA
             </p>
-          </div>
-
-          {/* Filtres */}
-          <div className="mb-8 flex flex-wrap items-center gap-4 p-4 bg-background/50 border border-border rounded-lg">
-            <div className="flex-1 min-w-[200px]">
-              <label className="text-sm text-muted-foreground mb-2 block">
-                Catégorie
-              </label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="bg-background border-border">
-                  <SelectValue placeholder="Toutes les catégories" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border-border z-[100]">
-                  <SelectItem value="all">Toutes les catégories</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex-1 min-w-[200px]">
-              <label className="text-sm text-muted-foreground mb-2 block">
-                Tag
-              </label>
-              <Select value={selectedTag} onValueChange={setSelectedTag}>
-                <SelectTrigger className="bg-background border-border">
-                  <SelectValue placeholder="Tous les tags" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border-border z-[100]">
-                  <SelectItem value="all">Tous les tags</SelectItem>
-                  {tags.map((tag) => (
-                    <SelectItem key={tag.id} value={tag.id}>
-                      {tag.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {(selectedCategory || selectedTag) && (
-              <div className="flex items-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleResetFilters}
-                  className="mt-6"
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Réinitialiser
-                </Button>
-              </div>
-            )}
           </div>
 
           {loading ? (
@@ -300,15 +147,6 @@ const Actualites = () => {
               ))}
             </div>
           )}
-
-          {/* Newsletter */}
-          <div className="mt-16 max-w-2xl mx-auto">
-            <Card className="bg-background border border-border">
-              <CardContent className="p-6">
-                <NewsletterForm />
-              </CardContent>
-            </Card>
-          </div>
         </section>
       </main>
 
