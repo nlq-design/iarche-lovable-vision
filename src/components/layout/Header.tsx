@@ -2,12 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import GradientLink from '@/components/ui/GradientLink';
 import { ChevronDown } from 'lucide-react';
+import { useCTATracking } from '@/hooks/useCTATracking';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [resourcesOpen, setResourcesOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { trackCTAClick } = useCTATracking();
 
   // Fermer le dropdown si on clique à l'extérieur
   useEffect(() => {
@@ -128,7 +130,10 @@ const Header = () => {
 
           {/* CTA Desktop */}
           <div className="hidden md:block">
-            <GradientLink onClick={() => navigate('/contact')}>
+            <GradientLink onClick={() => {
+              trackCTAClick('nous_contacter', 'header');
+              navigate('/contact?source=header');
+            }}>
               Nous contacter
             </GradientLink>
           </div>
@@ -231,7 +236,8 @@ const Header = () => {
               <GradientLink 
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  navigate('/contact');
+                  trackCTAClick('nous_contacter', 'header_mobile');
+                  navigate('/contact?source=header');
                 }}
                 className="text-sm"
               >

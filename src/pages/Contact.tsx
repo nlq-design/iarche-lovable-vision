@@ -1,5 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -13,9 +14,12 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { contactSchema, type ContactFormData } from '@/schemas/contact';
 import GradientLink from '@/components/ui/GradientLink';
+import { useCTATracking } from '@/hooks/useCTATracking';
 
 const Contact = () => {
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const { getSessionId } = useCTATracking();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<ContactFormData>({
     name: '',
@@ -41,7 +45,10 @@ const Contact = () => {
           email: validatedData.email,
           company: validatedData.company || null,
           subject: validatedData.subject,
-          message: validatedData.message
+          message: validatedData.message,
+          source: searchParams.get('source') || 'contact_page',
+          source_context: searchParams.get('context') || null,
+          user_session: getSessionId(),
         }]);
 
       if (error) throw error;

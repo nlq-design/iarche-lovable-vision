@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { NavLink } from '../NavLink';
 import { Loader2 } from 'lucide-react';
 import GradientLink from '../ui/GradientLink';
+import { useCTATracking } from '@/hooks/useCTATracking';
 
 interface CasClient {
   id: string;
@@ -15,6 +16,7 @@ interface CasClient {
 const ExemplesSection = () => {
   const [casClients, setCasClients] = useState<CasClient[]>([]);
   const [loading, setLoading] = useState(true);
+  const { trackCTAClick } = useCTATracking();
 
   useEffect(() => {
     loadCasClients();
@@ -64,7 +66,10 @@ const ExemplesSection = () => {
                             {casClient.excerpt}
                           </p>
                           <div className="pt-2">
-                            <GradientLink href={`/cas-clients/${casClient.slug}`}>
+                            <GradientLink 
+                              href={`/cas-clients/${casClient.slug}`}
+                              onClick={() => trackCTAClick('voir_projet', 'exemples_section', casClient.slug)}
+                            >
                               Voir le projet
                             </GradientLink>
                           </div>

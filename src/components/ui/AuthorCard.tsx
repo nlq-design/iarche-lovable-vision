@@ -1,6 +1,8 @@
 import React from 'react';
 import { Linkedin, Globe, Share2 } from 'lucide-react';
 import GradientLink from './GradientLink';
+import { useCTATracking } from '@/hooks/useCTATracking';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthorCardProps {
   photo?: string;
@@ -17,6 +19,8 @@ const AuthorCard = ({
   linkedin = 'https://www.linkedin.com/in/nicolas-lara-queralta/',
   site = 'https://iarche.fr'
 }: AuthorCardProps) => {
+  const { trackCTAClick } = useCTATracking();
+  const navigate = useNavigate();
   
   const handleShare = async () => {
     if (navigator.share) {
@@ -106,7 +110,13 @@ const AuthorCard = ({
 
         {/* CTA En savoir plus - Mobile */}
         <div className="mt-4 pt-4 border-t border-[#E5E7EB]">
-          <GradientLink href="/contact" className="text-sm">
+          <GradientLink 
+            onClick={() => {
+              trackCTAClick('en_savoir_plus', 'author_card_mobile', window.location.pathname);
+              navigate('/contact?source=author_card&context=' + encodeURIComponent(window.location.pathname));
+            }}
+            className="text-sm"
+          >
             En savoir plus
           </GradientLink>
         </div>
@@ -197,7 +207,13 @@ const AuthorCard = ({
 
         {/* CTA En savoir plus - Desktop */}
         <div className="mt-4 pt-4 border-t border-[#E5E7EB] text-center">
-          <GradientLink href="/contact" className="text-sm">
+          <GradientLink 
+            onClick={() => {
+              trackCTAClick('en_savoir_plus', 'author_card', window.location.pathname);
+              navigate('/contact?source=author_card&context=' + encodeURIComponent(window.location.pathname));
+            }}
+            className="text-sm"
+          >
             En savoir plus
           </GradientLink>
         </div>
