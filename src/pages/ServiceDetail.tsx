@@ -11,9 +11,11 @@ import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { getServiceBySlug } from '@/data/servicesData';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import GradientLink from '@/components/ui/GradientLink';
+import { useCTATracking } from '@/hooks/useCTATracking';
 
 const ServiceDetail = () => {
   const { slug } = useParams();
+  const { trackCTAClick } = useCTATracking();
   const navigate = useNavigate();
   const service = getServiceBySlug(slug || '');
 
@@ -198,7 +200,11 @@ const ServiceDetail = () => {
             <p className="text-lg text-foreground mb-6">
               Prêt à démarrer ce service ?
             </p>
-            <GradientLink href="/contact" className="text-lg">
+            <GradientLink 
+              href="/contact" 
+              className="text-lg"
+              onClick={() => trackCTAClick('premier_echange', 'service_detail', slug || '')}
+            >
               Premier échange
             </GradientLink>
           </div>

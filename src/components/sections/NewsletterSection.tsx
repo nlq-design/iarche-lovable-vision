@@ -4,9 +4,11 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { newsletterSchema } from '@/schemas/contact';
 import GradientLink from '@/components/ui/GradientLink';
+import { useCTATracking } from '@/hooks/useCTATracking';
 
 const NewsletterSection = () => {
   const { toast } = useToast();
+  const { trackCTAClick } = useCTATracking();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -18,6 +20,9 @@ const NewsletterSection = () => {
 
     try {
       const validatedData = newsletterSchema.parse({ email });
+      
+      // Track CTA click
+      await trackCTAClick('newsletter_inscription', 'newsletter_section_homepage', email);
       
       const { error: dbError } = await supabase
         .from('newsletter_subscribers')

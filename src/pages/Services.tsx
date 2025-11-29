@@ -8,8 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { CheckCircle } from 'lucide-react';
 import GradientLink from '@/components/ui/GradientLink';
 import IArcheLink from '@/components/ui/IArcheLink';
+import { useCTATracking } from '@/hooks/useCTATracking';
 
 const Services = () => {
+  const { trackCTAClick } = useCTATracking();
   const services = [
     {
       id: 'audit',
@@ -180,7 +182,10 @@ const Services = () => {
 
                   {/* CTA */}
                   <div className="pt-4">
-                    <IArcheLink href={`/services/${service.id}`}>
+                    <IArcheLink 
+                      href={`/services/${service.id}`}
+                      onClick={() => trackCTAClick('en_savoir_plus_service', 'services_page', service.id)}
+                    >
                       En savoir plus
                     </IArcheLink>
                   </div>
@@ -193,7 +198,11 @@ const Services = () => {
             <p className="text-lg text-foreground mb-6">
               Prêt à démarrer ?
             </p>
-            <GradientLink href="/contact" className="text-lg">
+            <GradientLink 
+              href="/contact" 
+              className="text-lg"
+              onClick={() => trackCTAClick('premier_echange', 'services_page_bottom')}
+            >
               Premier échange
             </GradientLink>
           </div>
