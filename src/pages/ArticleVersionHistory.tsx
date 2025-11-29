@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, RotateCcw, Eye, Calendar } from 'lucide-react';
+import { Loader2, ArrowLeft, RotateCcw, Eye, Calendar, GitCompare } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { diffWords, diffLines } from 'diff';
 
 interface ArticleVersion {
   id: string;
@@ -36,6 +38,8 @@ const ArticleVersionHistory = () => {
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [compareDialog, setCompareDialog] = useState(false);
+  const [compareVersions, setCompareVersions] = useState<[ArticleVersion | null, ArticleVersion | null]>([null, null]);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -131,6 +135,43 @@ const ArticleVersionHistory = () => {
     });
   };
 
+  const handleCompare = (version: ArticleVersion) => {
+    if (!compareVersions[0]) {
+      setCompareVersions([version, null]);
+      toast({
+        title: 'Première version sélectionnée',
+        description: 'Sélectionnez une autre version pour comparer',
+      });
+    } else if (compareVersions[0].id === version.id) {
+      setCompareVersions([null, null]);
+      toast({
+        title: 'Sélection annulée',
+        description: 'Sélectionnez deux versions différentes',
+      });
+    } else {
+      setCompareVersions([compareVersions[0], version]);
+      setCompareDialog(true);
+    }
+  };
+
+  const renderDiff = (oldText: string, newText: string, type: 'title' | 'content') => {
+    const diff = type === 'title' ? diffWords(oldText, newText) : diffLines(oldText, newText);
+    
+    return diff.map((part, index) => {
+      const className = part.added
+        ? 'bg-green-500/20 text-green-700 dark:text-green-300'
+        : part.removed
+        ? 'bg-red-500/20 text-red-700 dark:text-red-300 line-through'
+        : 'text-foreground';
+      
+      return (
+        <span key={index} className={className}>
+          {part.value}
+        </span>
+      );
+    });
+  };
+
   if (authLoading || loading) {
     return (
       <BackgroundLayout>
@@ -220,14 +261,24 @@ const ArticleVersionHistory = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => window.open(`/actualites/${version.slug}`, '_blank')}
+                          title="Prévisualiser"
                         >
                           <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant={compareVersions[0]?.id === version.id ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => handleCompare(version)}
+                          title="Comparer"
+                        >
+                          <GitCompare className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleRestore(version)}
                           disabled={restoringId === version.id}
+                          title="Restaurer"
                         >
                           {restoringId === version.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -247,6 +298,89 @@ const ArticleVersionHistory = () => {
           )}
         </div>
       </div>
+
+      <Dialog open={compareDialog} onOpenChange={setCompareDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">
+              Comparaison des versions
+            </DialogTitle>
+          </DialogHeader>
+          
+          {compareVersions[0] && compareVersions[1] && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4 pb-4 border-b border-border">
+                <div>
+                  <p className="text-sm font-semibold text-primary">
+                    Version {compareVersions[0].version_number}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(compareVersions[0].created_at)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-accent">
+                    Version {compareVersions[1].version_number}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(compareVersions[1].created_at)}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-foreground mb-2">Titre</h3>
+                <div className="p-4 rounded-lg bg-background/50 border border-border">
+                  {renderDiff(compareVersions[0].title, compareVersions[1].title, 'title')}
+                </div>
+              </div>
+
+              {(compareVersions[0].excerpt || compareVersions[1].excerpt) && (
+                <div>
+                  <h3 className="font-semibold text-foreground mb-2">Extrait</h3>
+                  <div className="p-4 rounded-lg bg-background/50 border border-border">
+                    {renderDiff(
+                      compareVersions[0].excerpt || '',
+                      compareVersions[1].excerpt || '',
+                      'content'
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h3 className="font-semibold text-foreground mb-2">Contenu</h3>
+                <div className="p-4 rounded-lg bg-background/50 border border-border max-h-96 overflow-y-auto">
+                  <div className="whitespace-pre-wrap font-mono text-sm">
+                    {renderDiff(compareVersions[0].content, compareVersions[1].content, 'content')}
+                  </div>
+                </div>
+              </div>
+
+              {(compareVersions[0].slug !== compareVersions[1].slug) && (
+                <div>
+                  <h3 className="font-semibold text-foreground mb-2">Slug</h3>
+                  <div className="p-4 rounded-lg bg-background/50 border border-border">
+                    {renderDiff(compareVersions[0].slug, compareVersions[1].slug, 'title')}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-border">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setCompareDialog(false);
+                    setCompareVersions([null, null]);
+                  }}
+                >
+                  Fermer
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </BackgroundLayout>
   );
 };
