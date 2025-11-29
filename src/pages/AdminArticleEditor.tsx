@@ -29,6 +29,9 @@ const AdminArticleEditor = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [loadingArticle, setLoadingArticle] = useState(!!id);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
   
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
@@ -60,6 +63,24 @@ const AdminArticleEditor = () => {
       loadCategoriesAndTags();
     }
   }, [user, isAdmin]);
+
+  // Auto-save toutes les 30 secondes
+  useEffect(() => {
+    if (!id || !hasChanges) return;
+
+    const autoSaveInterval = setInterval(async () => {
+      await handleAutoSave();
+    }, 30000); // 30 secondes
+
+    return () => clearInterval(autoSaveInterval);
+  }, [id, hasChanges, title, slug, excerpt, content, coverImageUrl, published, scheduledPublishAt, selectedCategories, selectedTags]);
+
+  // Marquer comme modifié lors des changements
+  useEffect(() => {
+    if (id && !loadingArticle) {
+      setHasChanges(true);
+    }
+  }, [title, excerpt, content, coverImageUrl, published, scheduledPublishAt, selectedCategories, selectedTags]);
 
   const loadCategoriesAndTags = async () => {
     // Charger les catégories
@@ -127,6 +148,58 @@ const AdminArticleEditor = () => {
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
+  };
+
+  const handleAutoSave = async () => {
+    if (!id || !user || autoSaving || !hasChanges) return;
+
+    // Valider le slug avant de sauvegarder
+    const isSlugValid = await validateSlug(slug);
+    if (!isSlugValid) return;
+
+    setAutoSaving(true);
+
+    const articleData = {
+      title,
+      slug,
+      excerpt: excerpt || null,
+      content,
+      cover_image_url: coverImageUrl || null,
+      published,
+      scheduled_publish_at: scheduledPublishAt ? scheduledPublishAt.toISOString() : null,
+    };
+
+    try {
+      const { error } = await supabase
+        .from('articles')
+        .update(articleData)
+        .eq('id', id);
+
+      if (!error) {
+        // Mettre à jour les catégories
+        await supabase.from('article_categories').delete().eq('article_id', id);
+        if (selectedCategories.length > 0) {
+          await supabase.from('article_categories').insert(
+            selectedCategories.map(catId => ({ article_id: id, category_id: catId }))
+          );
+        }
+
+        // Mettre à jour les tags
+        await supabase.from('article_tags').delete().eq('article_id', id);
+        if (selectedTags.length > 0) {
+          await supabase.from('article_tags').insert(
+            selectedTags.map(tagId => ({ article_id: id, tag_id: tagId }))
+          );
+        }
+
+        setLastSaved(new Date());
+        setHasChanges(false);
+      }
+    } catch (error) {
+      console.error('Auto-save error:', error);
+    } finally {
+      setAutoSaving(false);
+    }
   };
 
   const handleTitleChange = async (value: string) => {
@@ -351,6 +424,9 @@ const AdminArticleEditor = () => {
           }
         }
 
+        setLastSaved(new Date());
+        setHasChanges(false);
+        
         toast({
           title: 'Article mis à jour',
           description: 'L\'article a été mis à jour avec succès',
@@ -431,12 +507,29 @@ const AdminArticleEditor = () => {
       <div className="min-h-screen px-6 py-12">
         <div className="container mx-auto max-w-4xl">
           <div className="mb-8 flex items-center justify-between">
-            <NavLink to="/admin">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Retour
-              </Button>
-            </NavLink>
+            <div className="flex items-center gap-4">
+              <NavLink to="/admin">
+                <Button variant="outline" size="sm">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Retour
+                </Button>
+              </NavLink>
+              {id && autoSaving && (
+                <span className="text-sm text-muted-foreground animate-pulse">
+                  Sauvegarde automatique...
+                </span>
+              )}
+              {id && lastSaved && !autoSaving && !hasChanges && (
+                <span className="text-sm text-muted-foreground">
+                  Sauvegardé à {format(lastSaved, 'HH:mm:ss')}
+                </span>
+              )}
+              {id && hasChanges && !autoSaving && (
+                <span className="text-sm text-accent">
+                  Modifications non sauvegardées
+                </span>
+              )}
+            </div>
             {id && (
               <NavLink to={`/admin/articles/${id}/history`}>
                 <Button variant="outline" size="sm">
