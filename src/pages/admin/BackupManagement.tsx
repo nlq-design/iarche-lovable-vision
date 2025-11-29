@@ -14,7 +14,11 @@ import {
   Clock,
   Download,
   HardDrive,
-  RefreshCw
+  RefreshCw,
+  ShieldCheck,
+  AlertCircle,
+  Play,
+  FileText
 } from 'lucide-react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { formatDistance } from 'date-fns';
@@ -30,6 +34,12 @@ interface Backup {
   started_at: string;
   completed_at: string | null;
   created_at: string;
+  execution_logs: any;
+  progress_percentage: number | null;
+  current_table: string | null;
+  integrity_check_status: string | null;
+  integrity_check_at: string | null;
+  restoration_possible: boolean | null;
 }
 
 const BackupManagement = () => {
@@ -37,9 +47,34 @@ const BackupManagement = () => {
   const [backups, setBackups] = useState<Backup[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [selectedBackup, setSelectedBackup] = useState<Backup | null>(null);
+  const [showLogs, setShowLogs] = useState(false);
+  const [verifying, setVerifying] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState<string | null>(null);
 
   useEffect(() => {
     loadBackups();
+
+    // S'abonner aux changements en temps réel
+    const channel = supabase
+      .channel('backup-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'database_backups'
+        },
+        (payload) => {
+          console.log('Backup update:', payload);
+          loadBackups();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadBackups = async () => {
@@ -127,6 +162,63 @@ const BackupManagement = () => {
     if (!bytes) return 'N/A';
     const mb = bytes / (1024 * 1024);
     return `${mb.toFixed(2)} MB`;
+  };
+
+  const verifyIntegrity = async (backupId: string) => {
+    setVerifying(backupId);
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-backup-integrity', {
+        body: { backup_id: backupId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Vérification terminée',
+        description: `Score d'intégrité: ${data.integrity_check.score}/100 (${data.integrity_check.status})`,
+      });
+
+      loadBackups();
+    } catch (error: any) {
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Impossible de vérifier l\'intégrité',
+        variant: 'destructive',
+      });
+    }
+    setVerifying(null);
+  };
+
+  const restoreBackup = async (backupId: string, previewMode = true) => {
+    setRestoring(backupId);
+    try {
+      const { data, error } = await supabase.functions.invoke('restore-backup', {
+        body: { 
+          backup_id: backupId,
+          preview_mode: previewMode
+        }
+      });
+
+      if (error) throw error;
+
+      if (previewMode) {
+        toast({
+          title: 'Aperçu du backup',
+          description: `${data.backup_info.tables_count} tables · ${data.backup_info.file_size_mb} MB`,
+        });
+      } else {
+        toast({
+          title: 'Restauration réussie',
+          description: 'Les données ont été restaurées',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Info',
+        description: error.message || 'Fonctionnalité en cours de développement',
+      });
+    }
+    setRestoring(null);
   };
 
   return (
@@ -289,7 +381,82 @@ const BackupManagement = () => {
                             <strong>Erreur:</strong> {backup.error_message}
                           </div>
                         )}
+
+                        {backup.progress_percentage !== null && backup.progress_percentage < 100 && (
+                          <div className="mt-2">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                              <span>Progression</span>
+                              <span>{backup.progress_percentage}%</span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2">
+                              <div 
+                                className="bg-primary h-2 rounded-full transition-all"
+                                style={{ width: `${backup.progress_percentage}%` }}
+                              />
+                            </div>
+                            {backup.current_table && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Table en cours: {backup.current_table}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {backup.integrity_check_status && (
+                          <div className="flex items-center gap-2 mt-2 text-sm">
+                            <ShieldCheck className="h-4 w-4 text-green-600" />
+                            <span>Intégrité: {backup.integrity_check_status}</span>
+                            {!backup.restoration_possible && (
+                              <Badge variant="destructive">Non restaurable</Badge>
+                            )}
+                          </div>
+                        )}
                       </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      {backup.status === 'completed' && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => verifyIntegrity(backup.id)}
+                            disabled={verifying === backup.id}
+                          >
+                            {verifying === backup.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <ShieldCheck className="h-4 w-4" />
+                            )}
+                          </Button>
+                          
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => restoreBackup(backup.id, true)}
+                            disabled={restoring === backup.id || !backup.restoration_possible}
+                          >
+                            {restoring === backup.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Play className="h-4 w-4" />
+                            )}
+                          </Button>
+
+                          {backup.execution_logs && backup.execution_logs.length > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedBackup(backup);
+                                setShowLogs(true);
+                              }}
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -297,6 +464,60 @@ const BackupManagement = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Modal des logs */}
+        {showLogs && selectedBackup && (
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <Card className="w-full max-w-4xl max-h-[80vh] overflow-hidden">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Logs d'exécution</CardTitle>
+                  <Button variant="ghost" size="sm" onClick={() => setShowLogs(false)}>
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+                <CardDescription>
+                  Backup {selectedBackup.backup_type} · {new Date(selectedBackup.created_at).toLocaleString('fr-FR')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="overflow-y-auto max-h-[60vh]">
+                <div className="space-y-2 font-mono text-sm">
+                  {selectedBackup.execution_logs?.map((log: any, idx: number) => (
+                    <div 
+                      key={idx}
+                      className={`p-3 rounded border ${
+                        log.level === 'error' ? 'bg-destructive/10 border-destructive' :
+                        log.level === 'warning' ? 'bg-yellow-500/10 border-yellow-500' :
+                        log.level === 'success' ? 'bg-green-500/10 border-green-500' :
+                        'bg-muted border-border'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <span className="text-muted-foreground text-xs">
+                          {new Date(log.timestamp).toLocaleTimeString('fr-FR')}
+                        </span>
+                        <span className={`text-xs font-semibold uppercase ${
+                          log.level === 'error' ? 'text-destructive' :
+                          log.level === 'warning' ? 'text-yellow-600' :
+                          log.level === 'success' ? 'text-green-600' :
+                          'text-muted-foreground'
+                        }`}>
+                          {log.level}
+                        </span>
+                      </div>
+                      <p className="mt-1">{log.message}</p>
+                      {log.details && Object.keys(log.details).length > 0 && (
+                        <pre className="mt-2 text-xs text-muted-foreground overflow-x-auto">
+                          {JSON.stringify(log.details, null, 2)}
+                        </pre>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

@@ -18,6 +18,12 @@ verify_jwt = false
 [functions.create-database-backup]
 verify_jwt = true
 
+[functions.restore-backup]
+verify_jwt = true
+
+[functions.verify-backup-integrity]
+verify_jwt = true
+
 [functions.generate-article-claude]
 verify_jwt = true
 
