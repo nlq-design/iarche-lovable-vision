@@ -35,7 +35,7 @@ const PreviewModal = ({ article, onClose }: Props) => {
             <ReactMarkdown>{article.content}</ReactMarkdown>
             
             {/* FAQ */}
-            {article.faq.length > 0 && (
+            {article.faq && article.faq.length > 0 && (
               <section className="mt-12 pt-8 border-t border-border">
                 <h2>Questions fréquentes</h2>
                 <div className="space-y-4">
