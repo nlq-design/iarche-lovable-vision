@@ -10,12 +10,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Save, Eye, History } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, Eye, History, Calendar as CalendarIcon } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 const AdminArticleEditor = () => {
   const { id } = useParams();
@@ -32,6 +37,7 @@ const AdminArticleEditor = () => {
   const [content, setContent] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [published, setPublished] = useState(false);
+  const [scheduledPublishAt, setScheduledPublishAt] = useState<Date | undefined>();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [availableCategories, setAvailableCategories] = useState<Array<{ id: string; name: string }>>([]);
@@ -95,6 +101,7 @@ const AdminArticleEditor = () => {
       setContent(data.content);
       setCoverImageUrl(data.cover_image_url || '');
       setPublished(data.published);
+      setScheduledPublishAt(data.scheduled_publish_at ? new Date(data.scheduled_publish_at) : undefined);
 
       // Charger les catégories de l'article
       const { data: articleCategories } = await supabase
@@ -259,6 +266,7 @@ const AdminArticleEditor = () => {
       cover_image_url: coverImageUrl || null,
       published,
       published_at: published ? new Date().toISOString() : null,
+      scheduled_publish_at: scheduledPublishAt ? scheduledPublishAt.toISOString() : null,
       author_id: user.id,
     };
 
@@ -598,13 +606,68 @@ const AdminArticleEditor = () => {
                   <Switch
                     id="published"
                     checked={published}
-                    onCheckedChange={setPublished}
+                    onCheckedChange={(checked) => {
+                      setPublished(checked);
+                      if (checked) setScheduledPublishAt(undefined);
+                    }}
                     disabled={isLoading}
                   />
                   <Label htmlFor="published" className="cursor-pointer">
-                    Publier l'article
+                    Publier l'article immédiatement
                   </Label>
                 </div>
+
+                {!published && (
+                  <div className="space-y-2">
+                    <Label>Publication programmée (optionnel)</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !scheduledPublishAt && "text-muted-foreground"
+                          )}
+                          disabled={isLoading}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {scheduledPublishAt ? (
+                            format(scheduledPublishAt, "PPP 'à' HH:mm", { locale: fr })
+                          ) : (
+                            <span>Choisir une date de publication</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={scheduledPublishAt}
+                          onSelect={setScheduledPublishAt}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {scheduledPublishAt && (
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-muted-foreground">
+                          L'article sera publié automatiquement le{' '}
+                          {format(scheduledPublishAt, "PPP 'à' HH:mm", { locale: fr })}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setScheduledPublishAt(undefined)}
+                          disabled={isLoading}
+                        >
+                          Annuler
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex gap-4">
                   <Button type="submit" disabled={isLoading || !!slugError} className="flex-1">
