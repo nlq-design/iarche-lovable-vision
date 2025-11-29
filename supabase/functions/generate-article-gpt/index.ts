@@ -107,8 +107,18 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
     
     const content = data.choices[0].message.content;
     
-    // Parser le JSON
-    const article = JSON.parse(content);
+    // Nettoyer la réponse pour extraire le JSON pur
+    let cleanedContent = content.trim();
+    
+    // Supprimer les balises markdown si présentes
+    if (cleanedContent.startsWith('```json')) {
+      cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+    } else if (cleanedContent.startsWith('```')) {
+      cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/```\s*$/, '');
+    }
+    
+    // Parser le JSON nettoyé
+    const article = JSON.parse(cleanedContent.trim());
 
     return new Response(JSON.stringify(article), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
