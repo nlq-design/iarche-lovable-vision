@@ -9,6 +9,10 @@ import NotFound from "./pages/NotFound";
 import Services from "./pages/Services";
 import Solutions from "./pages/Solutions";
 import Actualites from "./pages/Actualites";
+import Articles from "./pages/Articles";
+import CasClients from "./pages/CasClients";
+import LivresBlancs from "./pages/LivresBlancs";
+import AteliersWebinaires from "./pages/AteliersWebinaires";
 import ArticleDetail from "./pages/ArticleDetail";
 import Contact from "./pages/Contact";
 import Newsletter from "./pages/Newsletter";
@@ -54,6 +58,10 @@ const App = () => (
           <Route path="/services" element={<Services />} />
           <Route path="/solutions" element={<Solutions />} />
           <Route path="/actualites" element={<Actualites />} />
+          <Route path="/articles" element={<Articles />} />
+          <Route path="/cas-clients" element={<CasClients />} />
+          <Route path="/livres-blancs" element={<LivresBlancs />} />
+          <Route path="/ateliers-webinaires" element={<AteliersWebinaires />} />
           <Route path="/actualites/:slug" element={<ArticleDetail />} />
           <Route path="/contact" element={<Contact />} />
           
