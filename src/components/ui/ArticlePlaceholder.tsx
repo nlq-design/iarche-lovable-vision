@@ -28,30 +28,24 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
 
   return (
     <div className={`relative overflow-hidden bg-background ${className}`}>
-      {/* Arches SVG avec croisement diagonal - Style portail exact */}
+      {/* Arches SVG avec croisement diagonal - Style portail exact avec viewBox séparés */}
+      
+      {/* SVG 1 : Ligne droite→gauche (viewBox quasi-carré pour épaisseur uniforme) */}
       <svg
         className="absolute inset-0 w-full h-full"
-        viewBox="0 0 400 200"
+        viewBox="0 0 400 360"
         preserveAspectRatio="none"
         aria-hidden="true"
       >
         <defs>
-          {/* Gradient Ligne 1 : Bleu Nuit → Terracotta */}
           <linearGradient id="archGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="hsl(var(--primary))" />
             <stop offset="100%" stopColor="hsl(var(--accent))" />
           </linearGradient>
-          
-          {/* Gradient Ligne 2 : Terracotta → Bleu Nuit */}
-          <linearGradient id="archGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="hsl(var(--accent))" />
-            <stop offset="100%" stopColor="hsl(var(--primary))" />
-          </linearGradient>
         </defs>
-        
-        {/* Ligne 1 : Haut-droit → Centre → Niveau IArche (flux fin) */}
         <path
           ref={path1Ref}
+          className="canalisation-line"
           d="M 390 5 L 130 5 C 128 5 126 7 126 9 L 126 95 C 126 97 124 99 122 99 L 10 99"
           fill="none"
           stroke="url(#archGrad1)"
@@ -59,10 +53,24 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
           strokeLinecap="round"
           opacity="0.5"
         />
-        
-        {/* Ligne 2 : Haut-gauche → Centre → Bas portail (flux épais) */}
+      </svg>
+      
+      {/* SVG 2 : Ligne gauche→droite (viewBox aplati pour horizontal épais) */}
+      <svg
+        className="absolute inset-0 w-full h-full"
+        viewBox="0 0 400 133"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <defs>
+          <linearGradient id="archGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="hsl(var(--accent))" />
+            <stop offset="100%" stopColor="hsl(var(--primary))" />
+          </linearGradient>
+        </defs>
         <path
           ref={path2Ref}
+          className="canalisation-line"
           d="M 10 5 L 270 5 C 272 5 274 7 274 9 L 274 185 C 274 187 276 189 278 189 L 390 189"
           fill="none"
           stroke="url(#archGrad2)"
