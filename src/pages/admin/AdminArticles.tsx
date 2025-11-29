@@ -21,7 +21,7 @@ interface Article {
   resource_type: string;
 }
 
-const AdminActualites = () => {
+const AdminArticles = () => {
   const { user, isAdmin, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -45,13 +45,13 @@ const AdminActualites = () => {
     const { data, error } = await supabase
       .from('articles')
       .select('id, title, slug, excerpt, published, published_at, created_at, resource_type')
-      .eq('resource_type', 'actualite')
+      .eq('resource_type', 'article')
       .order('created_at', { ascending: false });
 
     if (error) {
       toast({
         title: 'Erreur',
-        description: 'Impossible de charger les actualités',
+        description: 'Impossible de charger les articles',
         variant: 'destructive',
       });
     } else {
@@ -61,20 +61,20 @@ const AdminActualites = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette actualité ?')) return;
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) return;
 
     const { error } = await supabase.from('articles').delete().eq('id', id);
 
     if (error) {
       toast({
         title: 'Erreur',
-        description: 'Impossible de supprimer l\'actualité',
+        description: 'Impossible de supprimer l\'article',
         variant: 'destructive',
       });
     } else {
       toast({
         title: 'Succès',
-        description: 'Actualité supprimée',
+        description: 'Article supprimé',
       });
       loadArticles();
     }
@@ -93,18 +93,18 @@ const AdminActualites = () => {
   return (
     <AdminLayout>
       <Helmet>
-        <title>Gestion des actualités - Admin IArche</title>
+        <title>Gestion des articles - Admin IArche</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
       <div className="min-h-screen px-6 py-12">
         <div className="container mx-auto max-w-6xl">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Gestion des actualités</h1>
-            <NavLink to="/admin/articles/new?type=actualite">
+            <h1 className="text-3xl font-bold text-foreground">Gestion des articles</h1>
+            <NavLink to="/admin/articles/new?type=article">
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                Nouvelle actualité
+                Nouvel article
               </Button>
             </NavLink>
           </div>
@@ -112,7 +112,7 @@ const AdminActualites = () => {
           <div className="space-y-4">
             {articles.length === 0 ? (
               <Card className="p-8 text-center">
-                <p className="text-muted-foreground">Aucune actualité publiée</p>
+                <p className="text-muted-foreground">Aucun article publié</p>
               </Card>
             ) : (
               articles.map((article) => (
@@ -137,7 +137,7 @@ const AdminActualites = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <NavLink to={`/actualites/${article.slug}`}>
+                      <NavLink to={`/articles/${article.slug}`}>
                         <Button variant="outline" size="icon">
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -171,4 +171,4 @@ const AdminActualites = () => {
   );
 };
 
-export default AdminActualites;
+export default AdminArticles;
