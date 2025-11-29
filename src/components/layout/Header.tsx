@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import GradientLink from '@/components/ui/GradientLink';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -58,12 +59,11 @@ const Header = () => {
           </nav>
 
           {/* CTA Desktop */}
-          <button
-            onClick={() => navigate('/contact')}
-            className="hidden md:block border-2 border-accent text-accent hover:bg-accent hover:text-background focus:bg-accent focus:text-background focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 font-medium transition-all px-4 py-2 rounded-md cursor-pointer"
-          >
-            Nous contacter
-          </button>
+          <div className="hidden md:block">
+            <GradientLink onClick={() => navigate('/contact')}>
+              Nous contacter
+            </GradientLink>
+          </div>
 
           {/* Bouton Hamburger Mobile */}
           <button 
@@ -124,15 +124,15 @@ const Header = () => {
               >
                 Actualités
               </NavLink>
-              <button
+              <GradientLink 
                 onClick={() => {
                   setMobileMenuOpen(false);
                   navigate('/contact');
                 }}
-                className="border-2 border-accent text-accent hover:bg-accent hover:text-background focus:bg-accent focus:text-background focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 font-medium transition-all px-4 py-2 rounded-md cursor-pointer text-sm text-left"
+                className="text-sm"
               >
                 Nous contacter
-              </button>
+              </GradientLink>
             </nav>
           </div>
         )}

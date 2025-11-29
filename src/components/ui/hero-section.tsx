@@ -1,4 +1,7 @@
 import React, { useEffect } from 'react';
+import GradientLink from '@/components/ui/GradientLink';
+import IArcheLink from '@/components/ui/IArcheLink';
+import { ChevronDown } from 'lucide-react';
 
 const HeroSection = () => {
   useEffect(() => {
@@ -37,26 +40,18 @@ const HeroSection = () => {
             L'IA se construit avec vous
           </p>
           <div className="flex justify-center invisible animate-fadeIn [animation-delay:0.3s]">
-            <button
+            <GradientLink
               onClick={() => {
                 window.scrollTo({
                   top: window.innerHeight,
                   behavior: 'smooth'
                 });
               }}
-              className="inline-flex flex-col items-center gap-2 text-primary font-medium text-lg hover:gap-3 focus:gap-3 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded transition-all duration-300 group cursor-pointer"
+              className="text-lg"
             >
-              Découvrir
-              <svg 
-                className="w-5 h-5 transition-transform duration-300 group-hover:translate-y-1" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
-            </button>
+              <span>Découvrir</span>
+              <ChevronDown className="w-5 h-5 transition-transform duration-300 group-hover:translate-y-1" />
+            </GradientLink>
           </div>
         </div>
 
@@ -117,26 +112,16 @@ const HeroSection = () => {
               nlq@iarche.fr
             </a>
           </p>
-          <a 
-            href="#contact" 
+          <IArcheLink
+            href="#contact"
             onClick={(e) => {
               e.preventDefault();
               const footer = document.querySelector('footer');
               footer?.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="text-sm text-foreground hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded inline-flex items-center gap-1 transition-all duration-300 group cursor-pointer"
           >
-            Une question ?<span className="inline-block w-1"></span>
-            <svg 
-              className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </a>
+            Une question ?
+          </IArcheLink>
         </div>
       </div>
   );
