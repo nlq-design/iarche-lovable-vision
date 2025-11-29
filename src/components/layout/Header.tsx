@@ -18,21 +18,21 @@ const Header = () => {
           </button>
 
           {/* Navigation Desktop */}
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-6">
 ...
           </nav>
 
           {/* CTA Desktop */}
           <button
             onClick={() => navigate('/contact')}
-            className="hidden md:block border-2 border-accent text-accent hover:bg-accent hover:text-background focus:bg-accent focus:text-background focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 font-medium transition-all px-4 py-2 rounded-md cursor-pointer whitespace-nowrap"
+            className="hidden lg:block border-2 border-accent text-accent hover:bg-accent hover:text-background focus:bg-accent focus:text-background focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 font-medium transition-all px-4 py-2 rounded-md cursor-pointer whitespace-nowrap"
           >
             Nous contacter
           </button>
 
           {/* Bouton Hamburger Mobile */}
           <button 
-            className="md:hidden p-2 text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded transition-colors"
+            className="lg:hidden p-2 text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
           >
@@ -48,7 +48,7 @@ const Header = () => {
 
         {/* Menu Mobile Dropdown */}
         {mobileMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 border-t border-border pt-4">
+          <div className="lg:hidden mt-4 pb-4 border-t border-border pt-4">
             <nav className="flex flex-col gap-4">
               <NavLink 
                 to="/services"
