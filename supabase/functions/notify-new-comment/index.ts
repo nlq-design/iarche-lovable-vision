@@ -18,6 +18,18 @@ interface CommentNotificationRequest {
   content: string;
 }
 
+// Fonction d'échappement HTML pour prévenir les attaques XSS dans les emails
+const escapeHtml = (text: string): string => {
+  const map: { [key: string]: string } = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+};
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -77,18 +89,24 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    // Échapper le contenu pour prévenir les attaques XSS
+    const safeAuthorName = escapeHtml(author_name);
+    const safeAuthorEmail = escapeHtml(author_email);
+    const safeContent = escapeHtml(content);
+    const safeArticleTitle = escapeHtml(article.title);
+
     // Envoyer l'email aux admins
     const emailResponse = await resend.emails.send({
       from: "IArche <onboarding@resend.dev>", // Remplacez par votre domaine vérifié
       to: adminEmails,
-      subject: `Nouveau commentaire en attente - ${article.title}`,
+      subject: `Nouveau commentaire en attente - ${safeArticleTitle}`,
       html: `
         <h1>Nouveau commentaire en attente de modération</h1>
-        <p><strong>Article :</strong> ${article.title}</p>
-        <p><strong>Auteur :</strong> ${author_name} (${author_email})</p>
+        <p><strong>Article :</strong> ${safeArticleTitle}</p>
+        <p><strong>Auteur :</strong> ${safeAuthorName} (${safeAuthorEmail})</p>
         <p><strong>Commentaire :</strong></p>
-        <blockquote style="border-left: 4px solid #ccc; padding-left: 16px; margin: 16px 0;">
-          ${content}
+        <blockquote style="border-left: 4px solid #ccc; padding-left: 16px; margin: 16px 0; white-space: pre-wrap;">
+          ${safeContent}
         </blockquote>
         <p>
           <a href="https://iarche.fr/admin/comments" style="display: inline-block; padding: 10px 20px; background-color: #2754C5; color: white; text-decoration: none; border-radius: 5px;">
