@@ -493,6 +493,86 @@ select cron.schedule(
 
 ---
 
+## NOTIFICATIONS TEMPS RÉEL ADMIN ✅
+
+### État : BUILDÉ ✅
+
+**Fonctionnalités :**
+
+1. **Hook useAdminNotifications**
+   - Écoute temps réel des nouveaux commentaires via Supabase Realtime
+   - Écoute temps réel des nouveaux abonnés newsletter
+   - Compteur de notifications non lues
+   - Gestion des notifications (marquer comme lu, tout marquer, effacer)
+
+2. **Composant NotificationBell**
+   - Badge avec compteur de notifications non lues
+   - Popover avec liste des notifications
+   - Format timestamp relatif (il y a X min/h/jours)
+   - Actions : marquer tout comme lu, effacer toutes
+   - Code couleur par type (bleu pour commentaires, vert pour abonnés)
+
+3. **Toasts de notification**
+   - Toast automatique lors de nouveaux commentaires
+   - Toast automatique lors de nouveaux abonnés
+   - Affichage nom/email dans la notification
+
+**Intégration :**
+- Cloche de notification dans le header admin (à droite)
+- Visible sur toutes les pages admin
+- Utilise Supabase Realtime (postgres_changes)
+
+**Technologies :**
+- Supabase Realtime avec postgres_changes
+- React hooks personnalisés
+- shadcn/ui Popover et ScrollArea
+
+---
+
+## STATISTIQUES AVANCÉES ✅
+
+### État : BUILDÉ ✅
+
+**Route :** `/admin/advanced-stats`
+
+**KPIs principaux :**
+1. Articles publiés (total)
+2. Total vues (avec moyenne par article)
+3. Commentaires (avec taux d'approbation)
+4. Abonnés newsletter
+
+**Graphiques :**
+
+1. **Évolution des publications** (LineChart)
+   - Affiche les 6 derniers mois
+   - Nombre d'articles publiés par mois
+   - Tendance visuelle avec ligne
+
+2. **Répartition de l'engagement** (PieChart)
+   - Distribution : Vues / Commentaires / Abonnés
+   - Pourcentages affichés
+   - Code couleur IArche
+
+3. **Top 10 articles les plus vus** (BarChart horizontal)
+   - Liste des 10 articles avec le plus de vues
+   - Affichage titre + nombre de vues
+   - Titres tronqués si trop longs
+
+**Métriques calculées :**
+- Moyenne de vues par article
+- Moyenne de commentaires par article
+- Taux d'approbation des commentaires
+
+**Technologies :**
+- recharts pour tous les graphiques
+- Supabase queries avec agrégation
+- Design cohérent avec charte IArche
+
+**Liens de navigation :**
+- Accessible depuis sidebar admin : Vue d'ensemble > Stats avancées
+
+---
+
 ## RÉORGANISATION ADMIN - SIDEBAR VERTICALE ✅
 
 ### État : BUILDÉ ✅
