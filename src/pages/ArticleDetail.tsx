@@ -12,6 +12,7 @@ import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { ArticleComments } from '@/components/ArticleComments';
 import DOMPurify from 'dompurify';
+import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
 import 'react-quill/dist/quill.snow.css';
 
 interface Article {
@@ -138,7 +139,7 @@ const ArticleDetail = () => {
           </div>
 
           {/* Image de couverture */}
-          {article.cover_image_url && (
+          {article.cover_image_url ? (
             <div className="mb-8 rounded-xl overflow-hidden">
               <img
                 src={article.cover_image_url}
@@ -146,6 +147,8 @@ const ArticleDetail = () => {
                 className="w-full h-auto"
               />
             </div>
+          ) : (
+            <ArticlePlaceholder className="mb-8 rounded-xl h-56 md:h-72" />
           )}
 
           {/* En-tête */}
