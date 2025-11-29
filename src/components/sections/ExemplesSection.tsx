@@ -55,19 +55,16 @@ const ExemplesSection = () => {
                       <div 
                         className="bg-background rounded-lg p-6 h-full"
                       >
-                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <span className="text-xs font-semibold text-accent uppercase tracking-wide">
-                                {casClient.title}
-                              </span>
-                            </div>
-                            <h3 className="text-base font-semibold text-primary mb-2">
-                              {casClient.excerpt}
-                            </h3>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                              {casClient.content}
-                            </p>
+                        <div className="flex flex-col gap-3">
+                          <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+                            {casClient.title}
+                          </h3>
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {casClient.excerpt}
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-accent font-medium pt-2">
+                            <span>Voir le projet</span>
+                            <span className="group-hover:translate-x-1 transition-transform">→</span>
                           </div>
                         </div>
                       </div>
