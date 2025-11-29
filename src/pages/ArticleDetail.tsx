@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Calendar, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NavLink } from '@/components/NavLink';
+import { useAuth } from '@/hooks/useAuth';
 import 'react-quill/dist/quill.snow.css';
 
 interface Article {
@@ -18,6 +19,7 @@ interface Article {
   excerpt: string | null;
   content: string;
   cover_image_url: string | null;
+  published: boolean;
   published_at: string | null;
   created_at: string;
 }
@@ -25,6 +27,7 @@ interface Article {
 const ArticleDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -38,12 +41,19 @@ const ArticleDetail = () => {
     if (!slug) return;
 
     setLoading(true);
-    const { data, error } = await supabase
+    
+    // Construction de la requête
+    let query = supabase
       .from('articles')
       .select('*')
-      .eq('slug', slug)
-      .eq('published', true)
-      .single();
+      .eq('slug', slug);
+    
+    // Si l'utilisateur n'est pas admin, ne montrer que les articles publiés
+    if (!isAdmin) {
+      query = query.eq('published', true);
+    }
+    
+    const { data, error } = await query.maybeSingle();
 
     if (error || !data) {
       navigate('/404');
@@ -126,6 +136,13 @@ const ArticleDetail = () => {
 
           {/* En-tête */}
           <header className="mb-8">
+            {!article.published && isAdmin && (
+              <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm font-medium text-yellow-800">
+                  ⚠️ Mode prévisualisation : Cet article n'est pas encore publié. Seuls les admins peuvent le voir.
+                </p>
+              </div>
+            )}
             <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 invisible animate-fadeIn [animation-delay:0.1s]">
               {article.title}
             </h1>

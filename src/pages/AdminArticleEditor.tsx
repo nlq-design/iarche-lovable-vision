@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Save } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, Eye } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -26,6 +26,7 @@ const AdminArticleEditor = () => {
   
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
+  const [slugError, setSlugError] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [content, setContent] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState('');
@@ -87,10 +88,71 @@ const AdminArticleEditor = () => {
     }
   };
 
+  const validateSlug = async (slugToValidate: string) => {
+    if (!slugToValidate) {
+      setSlugError('Le slug est obligatoire');
+      return false;
+    }
+
+    // Vérifier si le slug existe déjà
+    const { data, error } = await supabase
+      .from('articles')
+      .select('id')
+      .eq('slug', slugToValidate)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error validating slug:', error);
+      return true; // Continue si erreur de validation
+    }
+
+    // Si un article existe avec ce slug et ce n'est pas celui qu'on édite
+    if (data && data.id !== id) {
+      setSlugError('Ce slug existe déjà. Choisissez-en un autre.');
+      return false;
+    }
+
+    setSlugError('');
+    return true;
+  };
+
+  const handleSlugChange = async (value: string) => {
+    const cleanSlug = generateSlug(value);
+    setSlug(cleanSlug);
+    if (cleanSlug) {
+      await validateSlug(cleanSlug);
+    } else {
+      setSlugError('Le slug est obligatoire');
+    }
+  };
+
+  const handlePreview = () => {
+    if (!slug) {
+      toast({
+        title: 'Slug manquant',
+        description: 'Ajoutez un slug pour prévisualiser l\'article',
+        variant: 'destructive',
+      });
+      return;
+    }
+    window.open(`/actualites/${slug}`, '_blank');
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!user) return;
+
+    // Valider le slug avant de sauvegarder
+    const isSlugValid = await validateSlug(slug);
+    if (!isSlugValid) {
+      toast({
+        title: 'Slug invalide',
+        description: 'Ce slug existe déjà. Choisissez-en un autre.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setIsLoading(true);
 
@@ -212,13 +274,18 @@ const AdminArticleEditor = () => {
                   <Input
                     id="slug"
                     value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
+                    onChange={(e) => handleSlugChange(e.target.value)}
                     required
                     disabled={isLoading}
+                    className={slugError ? 'border-destructive' : ''}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    URL: /actualites/{slug}
-                  </p>
+                  {slugError ? (
+                    <p className="text-xs text-destructive">{slugError}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      URL: /actualites/{slug}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -277,7 +344,7 @@ const AdminArticleEditor = () => {
                 </div>
 
                 <div className="flex gap-4">
-                  <Button type="submit" disabled={isLoading} className="flex-1">
+                  <Button type="submit" disabled={isLoading || !!slugError} className="flex-1">
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -289,6 +356,15 @@ const AdminArticleEditor = () => {
                         {id ? 'Mettre à jour' : 'Créer l\'article'}
                       </>
                     )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePreview}
+                    disabled={isLoading || !slug}
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Prévisualiser
                   </Button>
                   <Button
                     type="button"
