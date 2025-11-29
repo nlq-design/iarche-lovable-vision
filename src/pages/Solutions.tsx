@@ -14,36 +14,36 @@ const Solutions = () => {
     {
       name: 'Team 5 Connect',
       slug: 'team-5-connect',
-      tagline: 'Gestion RH pour le BTP',
-      description: 'Plateforme complète de gestion des ressources humaines spécialisée pour les entreprises du bâtiment.',
+      tagline: 'Gestion RH des équipes terrain',
+      description: 'Pointage, absences, conformité — en une seule solution pour le BTP et l\'industrie.',
       status: 'Disponible'
     },
     {
-      name: 'Lexia',
+      name: 'ERP Avocat',
       slug: 'lexia',
       tagline: 'ERP pour cabinets d\'avocats',
-      description: 'Solution de gestion complète pour cabinets juridiques : dossiers, facturation, time tracking.',
+      description: 'Dossiers, contrats, facturation, conformité — tout au même endroit.',
       status: 'À venir'
     },
     {
       name: 'Collaboria',
       slug: 'collaboria',
-      tagline: 'Plateforme collaborative',
-      description: 'Espace de travail partagé pour équipes distribuées avec gestion de projets et communication intégrée.',
+      tagline: 'Plateforme collaborative IA',
+      description: 'Multi-LLM, benchmark des outils, maîtrise des usages. Souveraine, sécurisée et conforme.',
       status: 'Disponible'
     },
     {
-      name: 'Dialogue Plus',
+      name: 'Chatbot RAG Avancé',
       slug: 'dialogue-plus',
-      tagline: 'Chatbot RAG intelligent',
-      description: 'Chatbot conversationnel alimenté par vos documents avec recherche sémantique et génération contextuelle.',
+      tagline: 'Chatbot IA connecté à vos documents',
+      description: 'RAG avancé, multi-formats, benchmark intégré. Intégration widget ou API.',
       status: 'Disponible'
     },
     {
       name: 'Datalia',
       slug: 'datalia',
-      tagline: 'Extraction de données',
-      description: 'Extraction automatique et structuration de données depuis documents PDF, images et formulaires.',
+      tagline: 'Extraction de données locales',
+      description: 'Prospection par mots-clés et zones géographiques. Licence à vie.',
       status: 'Disponible'
     }
   ];
