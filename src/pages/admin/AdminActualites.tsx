@@ -142,12 +142,12 @@ const AdminActualites = () => {
                           <Eye className="h-4 w-4" />
                         </Button>
                       </NavLink>
-                      <NavLink to={`/admin/articles/${article.id}`}>
+                      <NavLink to={`/admin/actualites/${article.id}`}>
                         <Button variant="outline" size="icon">
                           <Edit className="h-4 w-4" />
                         </Button>
                       </NavLink>
-                      <NavLink to={`/admin/articles/${article.id}/history`}>
+                      <NavLink to={`/admin/actualites/${article.id}/history`}>
                         <Button variant="outline" size="icon">
                           <History className="h-4 w-4" />
                         </Button>
