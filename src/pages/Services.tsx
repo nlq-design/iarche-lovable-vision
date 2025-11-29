@@ -5,8 +5,9 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, CheckCircle } from 'lucide-react';
-import GradientButton from '@/components/ui/GradientButton';
+import { CheckCircle } from 'lucide-react';
+import GradientLink from '@/components/ui/GradientLink';
+import IArcheLink from '@/components/ui/IArcheLink';
 
 const Services = () => {
   const services = [
@@ -139,10 +140,9 @@ const Services = () => {
 
                   {/* CTA */}
                   <div className="pt-4">
-                    <GradientButton href={service.ctaLink} className="group">
+                    <IArcheLink href={service.ctaLink}>
                       {service.cta}
-                      <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
-                    </GradientButton>
+                    </IArcheLink>
                   </div>
                 </CardContent>
               </Card>
@@ -154,9 +154,9 @@ const Services = () => {
             <p className="text-lg text-foreground mb-6">
               Une question sur votre projet ?
             </p>
-            <GradientButton href="/contact" size="lg">
-              Parlons-en →
-            </GradientButton>
+            <GradientLink href="/contact" className="text-lg">
+              Parlons-en
+            </GradientLink>
           </div>
         </section>
       </main>

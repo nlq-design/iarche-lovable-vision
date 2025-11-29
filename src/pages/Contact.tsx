@@ -4,7 +4,6 @@ import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -13,6 +12,7 @@ import { MapPin, Mail, Linkedin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { contactSchema, type ContactFormData } from '@/schemas/contact';
+import GradientLink from '@/components/ui/GradientLink';
 
 const Contact = () => {
   const { toast } = useToast();
@@ -193,14 +193,13 @@ const Contact = () => {
                   {errors.message && <p className="text-sm text-destructive mt-1">{errors.message}</p>}
                 </div>
 
-                <Button 
+                <GradientLink 
                   type="submit" 
-                  size="lg"
-                  className="w-full bg-accent hover:bg-accent/90 text-white"
                   disabled={isSubmitting}
+                  className="w-full justify-center text-lg py-3"
                 >
                   {isSubmitting ? 'Envoi en cours...' : 'Envoyer'}
-                </Button>
+                </GradientLink>
               </form>
             </div>
 

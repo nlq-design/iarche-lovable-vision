@@ -6,9 +6,8 @@ import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight } from 'lucide-react';
-import GradientButton from '@/components/ui/GradientButton';
-import { Button } from '@/components/ui/button';
+import GradientLink from '@/components/ui/GradientLink';
+import IArcheLink from '@/components/ui/IArcheLink';
 
 const Solutions = () => {
   const saasSolutions = [
@@ -139,12 +138,9 @@ const Solutions = () => {
                       {solution.description}
                     </p>
                     {solution.link && (
-                      <a href={solution.link}>
-                        <Button variant="outline" size="sm" className="group">
-                          En savoir plus
-                          <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
-                        </Button>
-                      </a>
+                      <IArcheLink href={solution.link}>
+                        En savoir plus
+                      </IArcheLink>
                     )}
                   </CardContent>
                 </Card>
@@ -187,9 +183,9 @@ const Solutions = () => {
             <p className="text-lg text-foreground mb-6">
               Envie de créer votre propre solution ?
             </p>
-            <GradientButton href="/contact" size="lg">
-              Discuter de votre projet →
-            </GradientButton>
+            <GradientLink href="/contact" className="text-lg">
+              Discuter de votre projet
+            </GradientLink>
           </div>
         </section>
       </main>
