@@ -1,6 +1,6 @@
 # Brand Book IArche
 
-**Version :** 1.2  
+**Version :** 1.3  
 **Date : 29 Novembre 2025**  
 **Document de référence pour l'identité visuelle IArche**
 
@@ -191,6 +191,89 @@ Espace minimum autour du logo : **hauteur du "I"** sur tous les côtés.
 - ❌ Placer sur fond qui réduit la lisibilité
 - ❌ Animer le logo (sauf sur le site web hero)
 - ❌ Utiliser une autre typographie
+
+### 2.6 Composant ArticlePlaceholder - Spécifications techniques
+
+**État : BUILDÉ ✅ (Version 1.1 - 29 Nov 2025)**  
+**Fichier :** `src/components/ui/ArticlePlaceholder.tsx`
+
+#### Description
+
+Composant placeholder réutilisable affichant le logo IArche avec gradient animé et arches SVG croisées. Utilisé sur toutes les pages ressources (actualités, articles, cas clients, livres blancs, ateliers & webinaires) pour représenter les images de couverture.
+
+#### Props
+
+| Prop | Type | Défaut | Description |
+|------|------|--------|-------------|
+| `className` | string | `''` | Classes Tailwind additionnelles (hauteur, bordures, etc.) |
+| `size` | `'default' \| 'large'` | `'default'` | Taille du logo IArche |
+
+#### Variantes de taille
+
+| Variante | Classes appliquées | Usage |
+|----------|-------------------|-------|
+| `default` | `text-3xl md:text-4xl` | Cards listing (grilles 3 colonnes) |
+| `large` | `text-4xl md:text-5xl` | Pages détail (`/actualites/:slug`, `/articles/:slug`, etc.) |
+
+#### Structure visuelle
+
+**Arches SVG animées :**
+
+1. **Arch 1 (droite → gauche)** :
+   - viewBox : `0 0 400 360`
+   - Path : `M 398 2 L 121 2 C 119 2 117 4 117 6 L 117 176 C 117 178 115 180 113 180 L 0 180`
+   - Gradient : Bleu Nuit (#1A2B4A / `hsl(var(--primary))`) → Terracotta (#D15A3E / `hsl(var(--accent))`)
+   - **strokeWidth : 3px** (màj V1.1)
+   - **opacity : 0.7** (màj V1.1)
+   - Animation : stroke-dasharray 6s ease-in-out, delay 300ms
+
+2. **Arch 2 (gauche → droite)** :
+   - viewBox : `0 0 400 106`
+   - Path : `M 0 2 L 278 2 C 280 2 282 4 282 6 L 282 101 C 282 103 284 105 286 105 L 400 105`
+   - Gradient : Terracotta → Bleu Nuit (inverse de Arch 1)
+   - **strokeWidth : 3px** (màj V1.1)
+   - **opacity : 0.7** (màj V1.1)
+   - Animation : stroke-dasharray 6s ease-in-out, delay 300ms
+
+**Logo IArche centré :**
+- Position : centré absolument
+- Gradient animé : classe `hero-gradient-text`
+- Typographie : Inter 600 (Semibold)
+- Taille dynamique selon prop `size`
+
+#### Exemples d'utilisation
+
+**Cards listing (size default) :**
+
+```tsx
+<ArticlePlaceholder className="h-40" />
+```
+
+**Pages détail (size large) :**
+
+```tsx
+<ArticlePlaceholder className="mb-6 rounded-xl h-56 md:h-72" size="large" />
+```
+
+**Placeholder empty state :**
+
+```tsx
+<ArticlePlaceholder />
+```
+
+#### Évolutions (V1.1 - 29 Nov 2025)
+
+- ✅ Ajout prop `size` avec variantes default/large
+- ✅ Épaississement lignes SVG : 2px → 3px
+- ✅ Augmentation opacité : 0.5 → 0.7
+- ✅ Suppression module LogoArcheAnimated (consolidation sur ArticlePlaceholder unique)
+
+#### Cohérence design system
+
+- Utilise tokens CSS : `hsl(var(--primary))`, `hsl(var(--accent))`
+- Classe réutilisable : `.hero-gradient-text`
+- Animation GPU optimisée : `will-change: background-position`
+- Responsive : tailles adaptatives via classes Tailwind
 
 ---
 
@@ -858,6 +941,7 @@ Sections RGPD :
 
 | Version | Date | Modifications |
 |---------|------|---------------|
+| 1.3 | 29 Nov 2025 | Ajout section 2.6 ArticlePlaceholder : spécifications techniques complètes (prop size, strokeWidth 3px, opacity 0.7) |
 | 1.2 | 29 Nov 2025 | Ajout référence Phase 3 (back-office complet), mise à jour score global 9.8/10 |
 | 1.1 | 29 Nov 2025 | Ajout section architecture site (9 pages buildées), composants SEO/UX, sitemap.xml, référence pages légales |
 | 1.0 | 28 Nov 2025 | Création initiale |

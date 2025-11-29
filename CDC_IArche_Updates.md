@@ -1,12 +1,54 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.6**  
+**Version mise à jour : V6.7**  
 **Date : 29 Novembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.6 OPTIMISATION PLACEHOLDER ARTICLE - MISE À JOUR V6.7 ✅
+
+#### Améliorations visuelles ArticlePlaceholder
+
+**Contexte :**
+- Placeholder utilisé sur toutes les pages ressources (cards et détails)
+- Besoin de différencier visuellement les pages de détail des cards listing
+- Amélioration de la visibilité des lignes SVG animées
+
+**Changements appliqués :**
+
+1. **Suppression LogoArcheAnimated** :
+   - Module `LogoArcheAnimated.tsx` retiré des pages de détail `/actualites/:slug`, `/articles/:slug`, etc.
+   - Suppression de l'import et du rendu dans `ArticleDetail.tsx`
+   - Conservation du placeholder unifié pour cohérence visuelle
+
+2. **Prop `size` ajoutée à ArticlePlaceholder** :
+   - `size='default'` : `text-3xl md:text-4xl` (cards listing)
+   - `size='large'` : `text-4xl md:text-5xl` (pages détail)
+   - Différenciation visuelle entre contextes d'utilisation
+
+3. **Épaississement lignes SVG** :
+   - `strokeWidth` augmenté de `2px` à `3px` sur les deux paths
+   - Amélioration de la visibilité des arches animées
+   - Rendu plus prononcé aligné avec l'identité visuelle
+
+4. **Augmentation opacité lignes** :
+   - `opacity` augmentée de `0.5` à `0.7`
+   - Meilleur contraste visuel des gradients Bleu Nuit ↔ Terracotta
+   - Lignes plus présentes sans être trop agressives
+
+**Fichiers modifiés :**
+- `src/components/ui/ArticlePlaceholder.tsx` : ajout prop size, strokeWidth 3px, opacity 0.7
+- `src/pages/ArticleDetail.tsx` : utilisation `size="large"`, suppression LogoArcheAnimated
+
+**Impact :**
+- Hiérarchie visuelle renforcée entre cards et pages détail
+- Lignes SVG plus visibles et cohérentes avec charte graphique
+- Simplification architecture (un seul composant placeholder)
+
+---
 
 ### 0.5 EXEMPLESSECTION DYNAMIQUE - MISE À JOUR V6.6 ✅
 
