@@ -31,7 +31,7 @@ const Services = () => {
       description: 'Construire et déployer des solutions qui marchent dans votre contexte.',
       livrables: [
         'Prototypage rapide (maquette en 2-4 semaines)',
-        'Architecture scalable et maintenable',
+        'Architecture adaptée à vos besoins',
         'Intégration avec vos outils existants',
         'Documentation technique et transfert de compétences'
       ],
@@ -46,7 +46,7 @@ const Services = () => {
       livrables: [
         'Sessions techniques (prompting, fine-tuning, RAG)',
         'Ateliers métier (cas d\'usage, ROI, éthique)',
-        'Coaching individuel ou collectif',
+        'Accompagnement individuel ou collectif',
         'Documentation et guides internes personnalisés'
       ],
       pourQui: 'Acculturer, accompagner, rendre autonome — pour tous ceux qui veulent intégrer l\'IA durablement.',
@@ -73,10 +73,10 @@ const Services = () => {
     <BackgroundLayout>
       <Helmet>
         <title>Nos services · IArche · Agence IA Bayonne</title>
-        <meta name="description" content="Audit IA, développement, accompagnement et conformité. Services adaptés à votre maturité IA. Agence basée à Bayonne." />
+        <meta name="description" content="Audit IA, développement, accompagnement et conformité. Services adaptés aux PME. Agence basée à Bayonne." />
         <link rel="canonical" href="https://iarche.fr/services" />
         <meta property="og:title" content="Nos services · IArche · Agence IA Bayonne" />
-        <meta property="og:description" content="Audit IA, développement, accompagnement et conformité. Services adaptés à votre maturité IA." />
+        <meta property="og:description" content="Audit IA, développement, accompagnement et conformité. Services adaptés aux PME." />
         <meta property="og:url" content="https://iarche.fr/services" />
         <meta property="og:type" content="website" />
 
@@ -132,7 +132,7 @@ const Services = () => {
             {/* Ligne décorative gradient */}
             <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 animate-fadeIn [animation-delay:0.15s]"></div>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
-              De l'audit à l'accompagnement, nous vous aidons à intégrer l'IA concrètement
+              Audit, développement, accompagnement, conformité.
             </p>
           </div>
 

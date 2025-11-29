@@ -54,34 +54,30 @@ export const servicesData: ServiceDetail[] = [
     ],
     casUsage: [
       {
-        titre: 'Automatisation de la relation client',
-        description: 'Mise en place d\'un assistant IA pour gérer les demandes récurrentes et libérer du temps aux équipes commerciales.'
+        titre: 'Relation client',
+        description: 'Vos équipes passent du temps à répondre aux mêmes questions ? On identifie ce qui peut être automatisé.'
       },
       {
-        titre: 'Optimisation des processus métier',
-        description: 'Identification des tâches répétitives automatisables par IA pour gagner en productivité.'
+        titre: 'Optimisation des process',
+        description: 'Des tâches répétitives qui ralentissent vos équipes ? On repère lesquelles sont automatisables.'
       },
       {
         titre: 'Analyse prédictive',
-        description: 'Exploitation des données historiques pour anticiper les besoins clients ou optimiser les stocks.'
+        description: 'Vous avez des données mais vous n\'en faites rien ? On évalue ce qu\'elles peuvent vous apporter.'
       }
     ],
     faq: [
       {
         question: 'Quelle est la durée moyenne d\'un audit ?',
-        answer: 'Un audit complet dure entre 2 et 4 semaines selon la taille de votre organisation et la complexité de vos processus. Nous adaptons le périmètre en fonction de vos besoins et contraintes.'
+        answer: 'Entre une demi-journée et quelques jours selon la taille de votre structure et la complexité de vos process.'
       },
       {
-        question: 'Dois-je avoir des compétences techniques en interne ?',
-        answer: 'Non, notre audit s\'adresse justement aux dirigeants sans expertise IA préalable. Nous vulgarisons les concepts techniques et vous accompagnons dans la compréhension des enjeux.'
+        question: 'Pourquoi commencer par un audit ?',
+        answer: 'Pour éviter de partir dans la mauvaise direction. L\'audit permet d\'identifier ce qui a vraiment du sens pour votre activité — et ce qui n\'en a pas.'
       },
       {
         question: 'Quel est le coût d\'un audit ?',
-        answer: 'Le tarif varie selon le périmètre et la profondeur de l\'analyse. Contactez-nous pour un devis personnalisé adapté à votre contexte.'
-      },
-      {
-        question: 'L\'audit inclut-il des recommandations d\'outils ?',
-        answer: 'Oui, nous vous conseillons sur les solutions techniques adaptées à vos cas d\'usage identifiés, qu\'il s\'agisse d\'outils no-code ou de développements sur-mesure.'
+        answer: 'Sur devis. Ça dépend du projet. On en discute ensemble avant de s\'engager.'
       }
     ]
   },
@@ -93,7 +89,7 @@ export const servicesData: ServiceDetail[] = [
     descriptionLongue: 'Des solutions IA conçues pour votre métier, connectées à vos outils. Du prototype à la production.',
     livrables: [
       'Prototypage rapide (maquette en 2-4 semaines)',
-      'Architecture scalable et maintenable',
+      'Architecture adaptée à vos besoins',
       'Intégration avec vos outils existants',
       'Documentation technique et transfert de compétences'
     ],
@@ -116,36 +112,19 @@ export const servicesData: ServiceDetail[] = [
         description: 'Mise en production, suivi et ajustements.'
       }
     ],
-    casUsage: [
-      {
-        titre: 'Chatbot métier sur-mesure',
-        description: 'Développement d\'un assistant conversationnel spécialisé pour votre secteur d\'activité, intégré à vos bases de connaissances.'
-      },
-      {
-        titre: 'Système de recommandation',
-        description: 'Moteur IA pour personnaliser l\'expérience utilisateur et optimiser les conversions.'
-      },
-      {
-        titre: 'Analyse documentaire automatisée',
-        description: 'Extraction et classification intelligente d\'informations dans vos documents métier.'
-      }
-    ],
+    casUsage: [],
     faq: [
       {
+        question: 'Combien de temps dure un projet ?',
+        answer: 'Ça dépend du projet — un agent IA, un chatbot, un logiciel métier complet, ce n\'est pas le même travail. On en discute ensemble.'
+      },
+      {
         question: 'Travaillez-vous avec des technologies open-source ?',
-        answer: 'Oui, nous privilégions les solutions open-source éprouvées (LangChain, Hugging Face, etc.) pour garantir votre autonomie et éviter le vendor lock-in. Nous utilisons aussi des APIs propriétaires (OpenAI, Anthropic) si elles correspondent mieux à vos besoins.'
+        answer: 'Oui, quand c\'est pertinent. Le choix technologique dépend de votre contexte et de vos contraintes.'
       },
       {
-        question: 'Combien de temps dure un projet de développement ?',
-        answer: 'Une maquette prend 2-4 semaines. L\'industrialisation complète varie de 2 à 6 mois selon la complexité. Nous travaillons en mode agile avec des livraisons itératives.'
-      },
-      {
-        question: 'Assurez-vous l\'accompagnement après livraison ?',
-        answer: 'Oui, nous proposons des contrats de suivi évolutif et correctif. Nous pouvons aussi former vos équipes pour qu\'elles gagnent en autonomie.'
-      },
-      {
-        question: 'Peut-on commencer par une maquette avant de s\'engager ?',
-        answer: 'Absolument, c\'est même notre approche recommandée. La maquette permet de valider la faisabilité technique et l\'adéquation avec vos besoins avant tout investissement conséquent.'
+        question: 'Y a-t-il un accompagnement après la mise en production ?',
+        answer: 'Oui. Suivi, ajustements, évolutions — on reste disponibles.'
       }
     ]
   },
@@ -158,7 +137,7 @@ export const servicesData: ServiceDetail[] = [
     livrables: [
       'Sessions techniques (prompting, fine-tuning, RAG)',
       'Ateliers métier (cas d\'usage, ROI, éthique)',
-      'Coaching individuel ou collectif',
+      'Accompagnement individuel ou collectif',
       'Documentation et guides internes personnalisés'
     ],
     pourQui: 'Acculturer, accompagner, rendre autonome — pour tous ceux qui veulent intégrer l\'IA durablement.',
