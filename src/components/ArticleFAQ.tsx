@@ -53,25 +53,25 @@ export const ArticleFAQ = ({ articleId }: ArticleFAQProps) => {
   }
 
   return (
-    <Card className="bg-background/95 border-border/50">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-foreground text-lg">
+    <Card className="bg-background/50 border-border/30">
+      <CardHeader className="pb-2 pt-4">
+        <CardTitle className="flex items-center gap-2 text-foreground text-base">
           <HelpCircle className="h-4 w-4" />
           Questions fréquentes
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">
-        <Accordion type="single" collapsible className="w-full space-y-2">
+      <CardContent className="pt-0 pb-4">
+        <Accordion type="single" collapsible className="w-full space-y-1.5">
           {faq.map((item, index) => (
             <AccordionItem 
               key={index} 
               value={`item-${index}`}
-              className="border border-border/50 rounded-md px-4 bg-background/30"
+              className="border border-border/30 rounded px-3 bg-background/20"
             >
-              <AccordionTrigger className="text-sm font-medium text-foreground hover:no-underline py-3">
+              <AccordionTrigger className="text-sm font-medium text-foreground hover:no-underline py-2.5">
                 {item.question}
               </AccordionTrigger>
-              <AccordionContent className="text-sm text-muted-foreground pb-3 leading-relaxed">
+              <AccordionContent className="text-sm text-muted-foreground pb-2.5 leading-relaxed">
                 {item.answer}
               </AccordionContent>
             </AccordionItem>

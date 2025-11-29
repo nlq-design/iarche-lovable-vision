@@ -14,6 +14,8 @@ import { ArticleComments } from '@/components/ArticleComments';
 import { ArticleFAQ } from '@/components/ArticleFAQ';
 import DOMPurify from 'dompurify';
 import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
+import LogoArcheAnimated from '@/components/ui/LogoArcheAnimated';
+import GradientLink from '@/components/ui/GradientLink';
 import 'react-quill/dist/quill.snow.css';
 
 interface Article {
@@ -377,19 +379,12 @@ const ArticleDetail = () => {
 
       <main className="min-h-screen pt-4">
         <article className="max-w-4xl mx-auto px-6 py-4">
-          {/* Bouton retour */}
-          <div className="mb-8">
-            <NavLink to={getBackPath()}>
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
-                {getBackLabel()}
-              </Button>
-            </NavLink>
-          </div>
+          {/* 1. Logo IArche animé + flux */}
+          <LogoArcheAnimated className="mb-6" />
 
           {/* Image de couverture */}
           {article.cover_image_url ? (
-            <div className="mb-8 rounded-xl overflow-hidden">
+            <div className="mb-6 rounded-xl overflow-hidden">
               <img
                 src={article.cover_image_url}
                 alt={article.title}
@@ -397,10 +392,10 @@ const ArticleDetail = () => {
               />
             </div>
           ) : (
-            <ArticlePlaceholder className="mb-8 rounded-xl h-56 md:h-72" />
+            <ArticlePlaceholder className="mb-6 rounded-xl h-56 md:h-72" />
           )}
 
-          {/* En-tête */}
+          {/* 2. Titre */}
           <header className="mb-8">
             {!article.published && isAdmin && (
               <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -419,13 +414,13 @@ const ArticleDetail = () => {
                 {article.excerpt}
               </p>
             )}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground invisible animate-fadeIn [animation-delay:0.3s]">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground animate-fadeIn [animation-delay:0.3s]">
               <Calendar className="h-4 w-4" aria-hidden="true" />
               {formatDate(article.published_at || article.created_at)}
             </div>
           </header>
 
-          {/* Contenu */}
+          {/* 3. Corps du contenu */}
           <div
             className="prose prose-lg max-w-none 
               prose-headings:text-foreground 
@@ -436,15 +431,41 @@ const ArticleDetail = () => {
               prose-ol:text-muted-foreground
               prose-blockquote:border-l-accent
               prose-blockquote:text-muted-foreground
-              invisible animate-fadeIn [animation-delay:0.4s]
+              animate-fadeIn [animation-delay:0.4s]
               ql-editor"
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
           />
 
-          {/* Commentaires */}
-          <div className="mt-16 space-y-8">
+          {/* 4. CTA */}
+          <div className="text-center my-12 animate-fadeIn [animation-delay:0.5s]">
+            <p className="text-lg text-foreground mb-4">
+              Une question sur ce sujet ?
+            </p>
+            <GradientLink href="/contact" className="text-base">
+              Contactez-nous
+            </GradientLink>
+          </div>
+
+          {/* 5. FAQ (si présente) */}
+          {faq && faq.length > 0 && (
+            <div className="mb-12">
+              <ArticleFAQ articleId={article.id} />
+            </div>
+          )}
+
+          {/* 6. Commentaires (allégé) */}
+          <div className="mb-12">
             <ArticleComments articleId={article.id} />
-            <ArticleFAQ articleId={article.id} />
+          </div>
+
+          {/* 7. Bouton retour en bas */}
+          <div className="pt-8 border-t border-border/30">
+            <NavLink to={getBackPath()}>
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+                {getBackLabel()}
+              </Button>
+            </NavLink>
           </div>
         </article>
       </main>
