@@ -57,7 +57,7 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
           stroke="url(#archGrad1)"
           strokeWidth="2"
           strokeLinecap="round"
-          opacity="0.45"
+          opacity="0.5"
         />
         
         {/* Ligne 2 : Haut-gauche → Centre → Bas portail (flux épais) */}
@@ -66,9 +66,9 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
           d="M 10 5 L 270 5 C 272 5 274 7 274 9 L 274 185 C 274 187 276 189 278 189 L 390 189"
           fill="none"
           stroke="url(#archGrad2)"
-          strokeWidth="2.5"
+          strokeWidth="2"
           strokeLinecap="round"
-          opacity="0.55"
+          opacity="0.5"
         />
       </svg>
       
