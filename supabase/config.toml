@@ -1,5 +1,14 @@
 project_id = "mgjyhlyrwnnioctkbdkk"
 
+[functions.send-lead-notification]
+verify_jwt = false
+
+[functions.check-cta-conversion]
+verify_jwt = false
+
+[functions.track-cta-click]
+verify_jwt = false
+
 [functions.notify-new-comment]
 verify_jwt = false
 

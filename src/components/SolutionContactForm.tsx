@@ -42,7 +42,7 @@ const SolutionContactForm = ({ solutionName }: SolutionContactFormProps) => {
     try {
       const validatedData = contactSchema.parse(formData);
       
-      const { error } = await supabase
+      const { data: contactData, error } = await supabase
         .from('contacts')
         .insert([{
           name: validatedData.name,
@@ -53,9 +53,29 @@ const SolutionContactForm = ({ solutionName }: SolutionContactFormProps) => {
           source: 'solution_detail',
           source_context: solutionName,
           user_session: getSessionId(),
-        }]);
+        }])
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Envoyer notification email pour le nouveau lead
+      try {
+        await supabase.functions.invoke('send-lead-notification', {
+          body: {
+            lead_id: contactData.id,
+            name: validatedData.name,
+            email: validatedData.email,
+            company: validatedData.company,
+            phone: null,
+            source: 'solution_detail',
+            source_context: solutionName,
+          },
+        });
+      } catch (notifError) {
+        console.warn('Failed to send lead notification:', notifError);
+        // Ne pas bloquer si la notification échoue
+      }
 
       toast({
         title: "Demande envoyée",

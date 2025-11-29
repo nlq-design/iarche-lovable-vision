@@ -37,21 +37,40 @@ const Contact = () => {
 
     try {
       const validatedData = contactSchema.parse(formData);
+      const sessionId = getSessionId();
+      const sourceParam = searchParams.get('source') || 'contact';
+      const contextParam = searchParams.get('context');
       
-      const { error } = await supabase
-        .from('contacts')
-        .insert([{
-          name: validatedData.name,
-          email: validatedData.email,
-          company: validatedData.company || null,
-          subject: validatedData.subject,
-          message: validatedData.message,
-          source: searchParams.get('source') || 'contact_page',
-          source_context: searchParams.get('context') || null,
-          user_session: getSessionId(),
-        }]);
+      const { data: contactData, error } = await supabase.from("contacts").insert({
+        name: validatedData.name,
+        email: validatedData.email,
+        company: validatedData.company || null,
+        subject: validatedData.subject,
+        message: validatedData.message,
+        source: sourceParam,
+        source_context: contextParam || null,
+        user_session: sessionId,
+      }).select().single();
 
       if (error) throw error;
+
+      // Envoyer notification email pour le nouveau lead
+      try {
+        await supabase.functions.invoke('send-lead-notification', {
+          body: {
+            lead_id: contactData.id,
+            name: validatedData.name,
+            email: validatedData.email,
+            company: validatedData.company,
+            phone: null, // Les contacts ne capturent pas le téléphone
+            source: sourceParam,
+            source_context: contextParam,
+          },
+        });
+      } catch (notifError) {
+        console.warn('Failed to send lead notification:', notifError);
+        // Ne pas bloquer si la notification échoue
+      }
 
       toast({
         title: "Message envoyé",
