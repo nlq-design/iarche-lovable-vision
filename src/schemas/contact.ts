@@ -20,6 +20,17 @@ export const commentSchema = z.object({
   content: z.string().trim().min(10, "Minimum 10 caractères").max(2000, "Maximum 2000 caractères")
 });
 
+export const leadSchema = z.object({
+  name: z.string().trim().min(2, "Minimum 2 caractères").max(100, "Maximum 100 caractères"),
+  email: z.string().email("Email invalide").max(255, "Email trop long"),
+  company: z.string().max(100, "Maximum 100 caractères").optional(),
+  phone: z.string().regex(/^(\+33|0)[1-9](\d{2}){4}$/, "Numéro de téléphone invalide").optional().or(z.literal("")),
+  consent_marketing: z.boolean().default(false),
+  source: z.string().min(1, "Source requise"),
+  source_id: z.string().uuid().optional()
+});
+
 export type ContactFormData = z.infer<typeof contactSchema>;
 export type NewsletterFormData = z.infer<typeof newsletterSchema>;
 export type CommentFormData = z.infer<typeof commentSchema>;
+export type LeadFormData = z.infer<typeof leadSchema>;

@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Save, Eye, History, Calendar as CalendarIcon } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, Eye, History, Calendar as CalendarIcon, Upload, FileText } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const AdminArticleEditor = () => {
   const { id } = useParams();
@@ -47,6 +48,16 @@ const AdminArticleEditor = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [availableCategories, setAvailableCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [availableTags, setAvailableTags] = useState<Array<{ id: string; name: string }>>([]);
+  
+  // Champs spécifiques aux types de contenu
+  const [resourceType, setResourceType] = useState('actualite');
+  const [eventDate, setEventDate] = useState<Date | undefined>();
+  const [eventLocation, setEventLocation] = useState('');
+  const [registrationOpen, setRegistrationOpen] = useState(true);
+  const [maxParticipants, setMaxParticipants] = useState(30);
+  const [replayUrl, setReplayUrl] = useState('');
+  const [fileUrl, setFileUrl] = useState('');
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -75,14 +86,14 @@ const AdminArticleEditor = () => {
     }, 30000); // 30 secondes
 
     return () => clearInterval(autoSaveInterval);
-  }, [id, hasChanges, title, slug, excerpt, content, coverImageUrl, published, scheduledPublishAt, selectedCategories, selectedTags]);
+  }, [id, hasChanges, title, slug, excerpt, content, coverImageUrl, published, scheduledPublishAt, selectedCategories, selectedTags, resourceType, eventDate, eventLocation, registrationOpen, maxParticipants, replayUrl, fileUrl]);
 
   // Marquer comme modifié lors des changements
   useEffect(() => {
     if (id && !loadingArticle) {
       setHasChanges(true);
     }
-  }, [title, excerpt, content, coverImageUrl, published, scheduledPublishAt, selectedCategories, selectedTags]);
+  }, [title, excerpt, content, coverImageUrl, published, scheduledPublishAt, selectedCategories, selectedTags, resourceType, eventDate, eventLocation, registrationOpen, maxParticipants, replayUrl, fileUrl]);
 
   const loadCategoriesAndTags = async () => {
     // Charger les catégories
@@ -125,6 +136,13 @@ const AdminArticleEditor = () => {
       setCoverImageUrl(data.cover_image_url || '');
       setPublished(data.published);
       setScheduledPublishAt(data.scheduled_publish_at ? new Date(data.scheduled_publish_at) : undefined);
+      setResourceType(data.resource_type || 'actualite');
+      setEventDate(data.event_date ? new Date(data.event_date) : undefined);
+      setEventLocation(data.event_location || '');
+      setRegistrationOpen(data.registration_open ?? true);
+      setMaxParticipants(data.max_participants || 30);
+      setReplayUrl(data.replay_url || '');
+      setFileUrl(data.file_url || '');
 
       // Charger les catégories de l'article
       const { data: articleCategories } = await supabase
@@ -169,6 +187,13 @@ const AdminArticleEditor = () => {
       cover_image_url: coverImageUrl || null,
       published,
       scheduled_publish_at: scheduledPublishAt ? scheduledPublishAt.toISOString() : null,
+      resource_type: resourceType,
+      event_date: eventDate ? eventDate.toISOString() : null,
+      event_location: eventLocation || null,
+      registration_open: registrationOpen,
+      max_participants: maxParticipants,
+      replay_url: replayUrl || null,
+      file_url: fileUrl || null,
     };
 
     try {
@@ -665,6 +690,22 @@ const AdminArticleEditor = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="resourceType">Type de contenu *</Label>
+                  <Select value={resourceType} onValueChange={setResourceType} disabled={isLoading}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="actualite">Actualité</SelectItem>
+                      <SelectItem value="article">Article (fond)</SelectItem>
+                      <SelectItem value="cas-client">Cas client</SelectItem>
+                      <SelectItem value="livre-blanc">Livre blanc</SelectItem>
+                      <SelectItem value="atelier-webinaire">Atelier/Webinaire</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="coverImageUrl">Image de couverture (URL)</Label>
                   <Input
                     id="coverImageUrl"
@@ -675,6 +716,149 @@ const AdminArticleEditor = () => {
                     placeholder="https://..."
                   />
                 </div>
+
+                {resourceType === 'livre-blanc' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="fileUpload">Fichier PDF</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="fileUpload"
+                        type="file"
+                        accept=".pdf"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+
+                          if (file.size > 20 * 1024 * 1024) {
+                            toast({
+                              title: 'Fichier trop volumineux',
+                              description: 'La taille maximale est de 20 MB',
+                              variant: 'destructive'
+                            });
+                            return;
+                          }
+
+                          setUploadingFile(true);
+                          const fileExt = file.name.split('.').pop();
+                          const fileName = `${Math.random()}.${fileExt}`;
+                          const filePath = `${fileName}`;
+
+                          const { error: uploadError, data } = await supabase.storage
+                            .from('livres-blancs')
+                            .upload(filePath, file);
+
+                          if (uploadError) {
+                            toast({
+                              title: 'Erreur d\'upload',
+                              description: uploadError.message,
+                              variant: 'destructive'
+                            });
+                          } else {
+                            const { data: { publicUrl } } = supabase.storage
+                              .from('livres-blancs')
+                              .getPublicUrl(filePath);
+                            setFileUrl(publicUrl);
+                            toast({
+                              title: 'Fichier uploadé',
+                              description: 'Le fichier a été uploadé avec succès'
+                            });
+                          }
+                          setUploadingFile(false);
+                        }}
+                        disabled={isLoading || uploadingFile}
+                      />
+                      {uploadingFile && <Loader2 className="h-4 w-4 animate-spin" />}
+                    </div>
+                    {fileUrl && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <FileText className="h-4 w-4" />
+                        <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary">
+                          Voir le fichier
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {resourceType === 'atelier-webinaire' && (
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    <h3 className="font-semibold text-foreground">Informations événement</h3>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="eventDate">Date de l'événement</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !eventDate && "text-muted-foreground"
+                            )}
+                            disabled={isLoading}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {eventDate ? format(eventDate, "PPP 'à' HH:mm", { locale: fr }) : "Choisir une date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={eventDate}
+                            onSelect={setEventDate}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="eventLocation">Lieu de l'événement</Label>
+                      <Input
+                        id="eventLocation"
+                        value={eventLocation}
+                        onChange={(e) => setEventLocation(e.target.value)}
+                        disabled={isLoading}
+                        placeholder="Ex: Visio, Bayonne, Paris..."
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="maxParticipants">Nombre maximum de participants</Label>
+                      <Input
+                        id="maxParticipants"
+                        type="number"
+                        value={maxParticipants}
+                        onChange={(e) => setMaxParticipants(parseInt(e.target.value))}
+                        disabled={isLoading}
+                        min="1"
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="registrationOpen"
+                        checked={registrationOpen}
+                        onCheckedChange={setRegistrationOpen}
+                        disabled={isLoading}
+                      />
+                      <Label htmlFor="registrationOpen" className="cursor-pointer">
+                        Inscriptions ouvertes
+                      </Label>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="replayUrl">URL du replay (optionnel)</Label>
+                      <Input
+                        id="replayUrl"
+                        type="url"
+                        value={replayUrl}
+                        onChange={(e) => setReplayUrl(e.target.value)}
+                        disabled={isLoading}
+                        placeholder="https://..."
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-3">
                   <Label>Catégories</Label>
