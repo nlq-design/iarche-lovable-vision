@@ -63,7 +63,7 @@ const Index = () => {
             "alternateName": "Collabor IA",
             "url": "https://iarche.fr",
             "logo": "https://iarche.fr/logo-iarche.svg",
-            "description": "Agence IA installée à Bayonne. On accompagne les dirigeants de PME dans l'intégration concrète de l'intelligence artificielle : diagnostic, développement, formation, conformité. Engagés localement, nous intervenons aussi partout en France.",
+            "description": "Agence IA installée à Bayonne. On accompagne les dirigeants de PME dans l'intégration concrète de l'intelligence artificielle : audit, développement, accompagnement, conformité. Engagés localement, nous intervenons aussi partout en France.",
             "address": {
               "@type": "PostalAddress",
               "addressLocality": "Bayonne",
