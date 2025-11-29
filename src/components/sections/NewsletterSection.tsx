@@ -4,7 +4,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { newsletterSchema } from '@/schemas/contact';
 import GradientLink from '@/components/ui/GradientLink';
-import { ArrowRight } from 'lucide-react';
 
 const NewsletterSection = () => {
   const { toast } = useToast();
@@ -92,12 +91,7 @@ const NewsletterSection = () => {
               disabled={isSubmitting}
               className="px-6 py-3 whitespace-nowrap"
             >
-              {isSubmitting ? 'Inscription...' : (
-                <>
-                  S'inscrire
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
+              {isSubmitting ? 'Inscription...' : "S'inscrire"}
             </GradientLink>
           </form>
 
