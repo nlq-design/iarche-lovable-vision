@@ -181,6 +181,7 @@ const Redacia = () => {
   const [brief, setBrief] = useState('');
   const [tone, setTone] = useState<'expert' | 'vulgarise' | 'technique'>('expert');
   const [length, setLength] = useState<'court' | 'moyen' | 'long'>('moyen');
+  const [generationMode, setGenerationMode] = useState<'claude' | 'gpt' | 'arena'>('arena');
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeAI, setActiveAI] = useState<'claude' | 'gpt' | null>(null);
   
@@ -206,36 +207,80 @@ const Redacia = () => {
     }
   };
 
-  const handleGenerate = async (ai: 'claude' | 'gpt') => {
+  const handleGenerate = async (ai?: 'claude' | 'gpt') => {
     if (!brief.trim()) {
       toast({ title: "Brief requis", description: "Veuillez saisir un sujet", variant: "destructive" });
       return;
     }
 
     setIsGenerating(true);
-    setActiveAI(ai);
+
+    const generateWithAI = async (model: 'claude' | 'gpt') => {
+      setActiveAI(model);
+      const functionName = model === 'claude' ? 'generate-article-claude' : 'generate-article-gpt';
+      
+      try {
+        const { data, error } = await supabase.functions.invoke(functionName, {
+          body: { 
+            brief, 
+            tone, 
+            length,
+            templateId: selectedTemplate 
+          }
+        });
+
+        if (error) throw error;
+
+        if (model === 'claude') {
+          setClaudeResult(data);
+        } else {
+          setGptResult(data);
+        }
+
+        return { success: true, model };
+      } catch (error) {
+        console.error(`Error generating with ${model}:`, error);
+        return { success: false, model, error };
+      }
+    };
 
     try {
-      const functionName = ai === 'claude' ? 'generate-article-claude' : 'generate-article-gpt';
-      
-      const { data, error } = await supabase.functions.invoke(functionName, {
-        body: { 
-          brief, 
-          tone, 
-          length,
-          templateId: selectedTemplate 
+      if (ai) {
+        // Génération avec un seul AI spécifique
+        const result = await generateWithAI(ai);
+        if (result.success) {
+          toast({ 
+            title: "Généré !", 
+            description: `Article généré avec ${ai === 'claude' ? 'Claude' : 'GPT'}` 
+          });
+        } else {
+          throw result.error;
         }
-      });
-
-      if (error) throw error;
-
-      if (ai === 'claude') {
-        setClaudeResult(data);
       } else {
-        setGptResult(data);
-      }
+        // Mode Arena : générer avec les deux en parallèle
+        const [claudeResult, gptResult] = await Promise.all([
+          generateWithAI('claude'),
+          generateWithAI('gpt')
+        ]);
 
-      toast({ title: "Généré !", description: `Article généré avec ${ai === 'claude' ? 'Claude' : 'GPT'}` });
+        const successCount = [claudeResult, gptResult].filter(r => r.success).length;
+        
+        if (successCount === 2) {
+          toast({ 
+            title: "Mode Arena !", 
+            description: "Articles générés avec Claude et GPT" 
+          });
+        } else if (successCount === 1) {
+          const successModel = claudeResult.success ? 'Claude' : 'GPT';
+          toast({ 
+            title: "Partiellement généré", 
+            description: `Article généré avec ${successModel} uniquement`,
+            variant: "destructive" 
+          });
+        } else {
+          throw new Error("Échec de génération avec les deux modèles");
+        }
+      }
     } catch (error) {
       console.error('Error generating article:', error);
       toast({ 
@@ -340,7 +385,7 @@ const Redacia = () => {
               />
             </div>
             
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Ton</label>
                 <select
@@ -366,34 +411,68 @@ const Redacia = () => {
                   <option value="long">Long (~2500 mots)</option>
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Mode de génération</label>
+                <select
+                  value={generationMode}
+                  onChange={(e) => setGenerationMode(e.target.value as any)}
+                  className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-background"
+                >
+                  <option value="arena">🏟️ Arena (Claude + GPT)</option>
+                  <option value="claude">Claude uniquement</option>
+                  <option value="gpt">GPT uniquement</option>
+                </select>
+              </div>
             </div>
             
-            <div className="flex gap-4 pt-4">
-              <button
-                onClick={() => handleGenerate('claude')}
-                disabled={!brief.trim() || isGenerating}
-                className="flex-1 flex items-center justify-center gap-2 bg-[#D97706] text-white px-6 py-3 rounded-lg hover:bg-[#B45309] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isGenerating && activeAI === 'claude' ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Sparkles className="w-5 h-5" />
-                )}
-                Générer avec Claude
-              </button>
-              
-              <button
-                onClick={() => handleGenerate('gpt')}
-                disabled={!brief.trim() || isGenerating}
-                className="flex-1 flex items-center justify-center gap-2 bg-[#10A37F] text-white px-6 py-3 rounded-lg hover:bg-[#0D8A6A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isGenerating && activeAI === 'gpt' ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Sparkles className="w-5 h-5" />
-                )}
-                Générer avec GPT
-              </button>
+            <div className="pt-4">
+              {generationMode === 'arena' ? (
+                <button
+                  onClick={() => handleGenerate()}
+                  disabled={!brief.trim() || isGenerating}
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#D97706] to-[#10A37F] text-white px-6 py-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGenerating ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <span className="text-lg">🏟️</span>
+                  )}
+                  Mode Arena : Générer avec Claude + GPT
+                </button>
+              ) : (
+                <div className="flex gap-4">
+                  {generationMode === 'claude' && (
+                    <button
+                      onClick={() => handleGenerate('claude')}
+                      disabled={!brief.trim() || isGenerating}
+                      className="flex-1 flex items-center justify-center gap-2 bg-[#D97706] text-white px-6 py-3 rounded-lg hover:bg-[#B45309] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isGenerating ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-5 h-5" />
+                      )}
+                      Générer avec Claude
+                    </button>
+                  )}
+                  
+                  {generationMode === 'gpt' && (
+                    <button
+                      onClick={() => handleGenerate('gpt')}
+                      disabled={!brief.trim() || isGenerating}
+                      className="flex-1 flex items-center justify-center gap-2 bg-[#10A37F] text-white px-6 py-3 rounded-lg hover:bg-[#0D8A6A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isGenerating ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-5 h-5" />
+                      )}
+                      Générer avec GPT
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </section>
