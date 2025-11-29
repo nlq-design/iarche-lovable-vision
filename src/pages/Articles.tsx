@@ -130,9 +130,9 @@ const Articles = () => {
       <BreadcrumbNav />
 
       <main className="min-h-screen pt-4">
-        <section className="max-w-6xl mx-auto px-6 py-8">
+        <section className="max-w-6xl mx-auto px-6 py-4">
           {/* En-tête dynamique - Style Timeline */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
               Articles
             </h1>

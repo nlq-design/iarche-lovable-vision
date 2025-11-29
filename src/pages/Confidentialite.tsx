@@ -21,9 +21,9 @@ const Confidentialite = () => {
       <BreadcrumbNav />
       
       <main className="min-h-screen pt-4">
-        <section className="max-w-4xl mx-auto px-6 py-8">
+        <section className="max-w-4xl mx-auto px-6 py-4">
           {/* En-tête */}
-          <div className="mb-16">
+          <div className="mb-8">
             <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
               Politique de confidentialité
             </h1>

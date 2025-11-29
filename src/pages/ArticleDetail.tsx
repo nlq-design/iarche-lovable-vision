@@ -376,7 +376,7 @@ const ArticleDetail = () => {
       <BreadcrumbNav />
 
       <main className="min-h-screen pt-4">
-        <article className="max-w-4xl mx-auto px-6 py-8">
+        <article className="max-w-4xl mx-auto px-6 py-4">
           {/* Bouton retour */}
           <div className="mb-8">
             <NavLink to={getBackPath()}>
