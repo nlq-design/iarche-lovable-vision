@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import GradientLink from '@/components/ui/GradientLink';
-import IArcheLink from '@/components/ui/IArcheLink';
 import { ChevronDown } from 'lucide-react';
 
 const HeroSection = () => {
@@ -103,8 +102,8 @@ const HeroSection = () => {
         </style>
 
         {/* Ancrage géographique */}
-        <div className="absolute bottom-20 left-0 right-0 text-center z-10 invisible animate-fadeIn [animation-delay:0.4s]">
-          <p className="text-sm mb-2 text-text-subtle">
+        <div className="absolute bottom-16 left-0 right-0 text-center z-10 invisible animate-fadeIn [animation-delay:0.4s]">
+          <p className="text-sm mb-3 text-text-subtle">
             Bayonne · France · <a 
               href="mailto:nlq@iarche.fr" 
               className="hover:underline focus:underline focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded transition-all duration-200"
@@ -112,16 +111,15 @@ const HeroSection = () => {
               nlq@iarche.fr
             </a>
           </p>
-          <IArcheLink
-            href="#contact"
-            onClick={(e) => {
-              e.preventDefault();
+          <GradientLink
+            onClick={() => {
               const footer = document.querySelector('footer');
               footer?.scrollIntoView({ behavior: 'smooth' });
             }}
+            className="inline-flex items-center gap-2 cursor-pointer"
           >
             Une question ?
-          </IArcheLink>
+          </GradientLink>
         </div>
       </div>
   );
