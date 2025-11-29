@@ -84,7 +84,7 @@ const AdminArticleEditor = () => {
   const [availableTags, setAvailableTags] = useState<Array<{ id: string; name: string }>>([]);
   
   // Champs spécifiques aux types de contenu
-  const [resourceType, setResourceType] = useState(() => !id ? getResourceTypeFromPath() : 'actualite');
+  const [resourceType, setResourceType] = useState<string>(() => !id ? getResourceTypeFromPath() : 'actualite');
   const [eventDate, setEventDate] = useState<Date | undefined>();
   const [eventLocation, setEventLocation] = useState('');
   const [registrationOpen, setRegistrationOpen] = useState(true);
@@ -815,7 +815,7 @@ const AdminArticleEditor = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="resourceType">Type de contenu *</Label>
-                  <Select value={resourceType} onValueChange={setResourceType} disabled={isLoading || !id}>
+                  <Select value={resourceType} onValueChange={setResourceType} disabled={isLoading || !!id}>
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner un type" />
                     </SelectTrigger>
@@ -1238,7 +1238,7 @@ const AdminArticleEditor = () => {
                       ) : (
                         <Sparkles className="mr-2 h-4 w-4" />
                       )}
-                      FAQ
+                      Générer FAQ
                     </Button>
                   )}
                   <Button
