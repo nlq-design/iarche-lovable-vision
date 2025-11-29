@@ -14,7 +14,6 @@ import { ArticleComments } from '@/components/ArticleComments';
 import { ArticleFAQ } from '@/components/ArticleFAQ';
 import DOMPurify from 'dompurify';
 import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
-import LogoArcheAnimated from '@/components/ui/LogoArcheAnimated';
 import GradientLink from '@/components/ui/GradientLink';
 import 'react-quill/dist/quill.snow.css';
 
@@ -379,9 +378,6 @@ const ArticleDetail = () => {
 
       <main className="min-h-screen pt-4">
         <article className="max-w-4xl mx-auto px-6 py-4">
-          {/* 1. Logo IArche animé + flux */}
-          <LogoArcheAnimated className="mb-6" />
-
           {/* Image de couverture */}
           {article.cover_image_url ? (
             <div className="mb-6 rounded-xl overflow-hidden">
