@@ -295,6 +295,10 @@ const AdminArticleEditor = () => {
         }]);
       }
 
+      // Check if article is being published for the first time
+      const wasUnpublished = currentArticle && !currentArticle.published;
+      const isBeingPublished = published && wasUnpublished;
+
       // Mettre à jour l'article
       const { error } = await supabase
         .from('articles')
@@ -322,6 +326,21 @@ const AdminArticleEditor = () => {
           await supabase.from('article_tags').insert(
             selectedTags.map(tagId => ({ article_id: id, tag_id: tagId }))
           );
+        }
+
+        // Send newsletter if article is being published for the first time
+        if (isBeingPublished) {
+          try {
+            await supabase.functions.invoke('send-newsletter', {
+              body: { articleId: id }
+            });
+            toast({
+              title: 'Newsletter envoyée',
+              description: 'Les abonnés ont été notifiés du nouvel article',
+            });
+          } catch (newsletterError) {
+            console.error('Newsletter send error:', newsletterError);
+          }
         }
 
         toast({

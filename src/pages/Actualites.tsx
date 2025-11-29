@@ -19,26 +19,90 @@ interface Article {
   created_at: string;
 }
 
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface Tag {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 const Actualites = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedTag, setSelectedTag] = useState<string>('');
 
   useEffect(() => {
     loadArticles();
+    loadCategoriesAndTags();
   }, []);
+
+  useEffect(() => {
+    loadArticles();
+  }, [selectedCategory, selectedTag]);
 
   const loadArticles = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from('articles')
       .select('id, title, slug, excerpt, cover_image_url, published_at, created_at')
-      .eq('published', true)
-      .order('published_at', { ascending: false });
+      .eq('published', true);
+
+    // Apply filters
+    if (selectedCategory || selectedTag) {
+      const { data: filteredArticles } = await supabase
+        .from('articles')
+        .select(`
+          id,
+          title,
+          slug,
+          excerpt,
+          cover_image_url,
+          published_at,
+          created_at,
+          article_categories(category_id),
+          article_tags(tag_id)
+        `)
+        .eq('published', true);
+
+      if (filteredArticles) {
+        const filtered = filteredArticles.filter((article: any) => {
+          const matchesCategory = !selectedCategory || 
+            article.article_categories?.some((ac: any) => ac.category_id === selectedCategory);
+          const matchesTag = !selectedTag || 
+            article.article_tags?.some((at: any) => at.tag_id === selectedTag);
+          return matchesCategory && matchesTag;
+        });
+
+        setArticles(filtered);
+      }
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await query.order('published_at', { ascending: false });
 
     if (!error && data) {
       setArticles(data);
     }
     setLoading(false);
+  };
+
+  const loadCategoriesAndTags = async () => {
+    const [categoriesResult, tagsResult] = await Promise.all([
+      supabase.from('categories').select('*').order('name'),
+      supabase.from('tags').select('*').order('name'),
+    ]);
+
+    if (categoriesResult.data) setCategories(categoriesResult.data);
+    if (tagsResult.data) setTags(tagsResult.data);
   };
 
   const formatDate = (dateString: string) => {
@@ -73,13 +137,56 @@ const Actualites = () => {
       <main className="min-h-screen pt-20">
         <section className="max-w-6xl mx-auto px-6 py-16">
           {/* En-tête */}
-          <div className="text-center mb-16">
+          <div className="text-center mb-12">
             <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 invisible animate-fadeIn [animation-delay:0.1s]">
               Actualités & Articles
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto invisible animate-fadeIn [animation-delay:0.2s]">
               Veille technologique, cas d'usage et réglementation IA
             </p>
+          </div>
+
+          {/* Filtres */}
+          <div className="flex flex-wrap gap-4 mb-8 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:ring-2 focus:ring-accent transition-all"
+              >
+                <option value="">Toutes les catégories</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={selectedTag}
+                onChange={(e) => setSelectedTag(e.target.value)}
+                className="px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:ring-2 focus:ring-accent transition-all"
+              >
+                <option value="">Tous les tags</option>
+                {tags.map((tag) => (
+                  <option key={tag.id} value={tag.id}>
+                    {tag.name}
+                  </option>
+                ))}
+              </select>
+
+              {(selectedCategory || selectedTag) && (
+                <button
+                  onClick={() => {
+                    setSelectedCategory('');
+                    setSelectedTag('');
+                  }}
+                  className="px-4 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-accent transition-all"
+                >
+                  Réinitialiser
+                </button>
+              )}
+            </div>
           </div>
 
           {loading ? (
