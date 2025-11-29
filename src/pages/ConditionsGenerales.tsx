@@ -20,13 +20,15 @@ const ConditionsGenerales = () => {
       <Header />
       <BreadcrumbNav />
       
-      <main className="min-h-screen">
-        <section className="max-w-4xl mx-auto px-6 py-16">
+      <main className="min-h-screen pt-4">
+        <section className="max-w-4xl mx-auto px-6 py-8">
           {/* En-tête */}
           <div className="mb-16">
-            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 invisible animate-fadeIn [animation-delay:0.1s]">
+            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 invisible animate-fadeIn [animation-delay:0.1s]">
               Conditions générales de vente
             </h1>
+            {/* Ligne décorative gradient */}
+            <div className="w-24 h-1 mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 invisible animate-fadeIn [animation-delay:0.15s]"></div>
           </div>
 
           {/* Contenu */}

@@ -82,7 +82,7 @@ const BreadcrumbNav = () => {
       
       <nav 
         aria-label="Fil d'Ariane" 
-        className="max-w-6xl mx-auto px-6 pt-24 pb-4"
+        className="max-w-6xl mx-auto px-6 pt-24 pb-2"
       >
         <ol className="flex items-center gap-2 text-sm text-muted-foreground">
           <li>
