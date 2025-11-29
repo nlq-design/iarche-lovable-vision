@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,39 +23,55 @@ import MentionsLegales from "./pages/MentionsLegales";
 import ConditionsGenerales from "./pages/ConditionsGenerales";
 import Confidentialite from "./pages/Confidentialite";
 import Admin from "./pages/Admin";
-import AdminArticleEditor from "./pages/AdminArticleEditor";
-import ArticleVersionHistory from "./pages/ArticleVersionHistory";
-import AdminCategories from "./pages/AdminCategories";
-import AdminTags from "./pages/AdminTags";
-import AdminComments from './pages/AdminComments';
-import AdminNewsletters from './pages/AdminNewsletters';
-import AdminDashboard from "./pages/AdminDashboard";
-import Redacia from "./pages/admin/Redacia";
-import RedacNews from "./pages/admin/RedacNews";
-import AdvancedStats from "./pages/admin/AdvancedStats";
-import AuditLogs from "./pages/admin/AuditLogs";
-import SecurityDashboard from "./pages/admin/SecurityDashboard";
-import AdminSettings from "./pages/admin/AdminSettings";
-import BackupManagement from "./pages/admin/BackupManagement";
-import AdminArticles from "./pages/admin/AdminArticles";
-import AdminActualites from "./pages/admin/AdminActualites";
-import AdminCasClients from "./pages/admin/AdminCasClients";
-import AdminLivresBlancs from "./pages/admin/AdminLivresBlancs";
-import AdminAteliersWebinaires from "./pages/admin/AdminAteliersWebinaires";
-import AdminLeads from "./pages/admin/AdminLeads";
-import AdminFAQs from "./pages/admin/AdminFAQs";
-import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import { CookieConsent } from "./components/CookieConsent";
 import { ResourceTypeValidator } from "./components/dev/ResourceTypeValidator";
+import { Loader2 } from "lucide-react";
 
-const queryClient = new QueryClient();
+// Lazy load admin routes
+const AdminArticleEditor = lazy(() => import("./pages/AdminArticleEditor"));
+const ArticleVersionHistory = lazy(() => import("./pages/ArticleVersionHistory"));
+const AdminCategories = lazy(() => import("./pages/AdminCategories"));
+const AdminTags = lazy(() => import("./pages/AdminTags"));
+const AdminComments = lazy(() => import('./pages/AdminComments'));
+const AdminNewsletters = lazy(() => import('./pages/AdminNewsletters'));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const Redacia = lazy(() => import("./pages/admin/Redacia"));
+const RedacNews = lazy(() => import("./pages/admin/RedacNews"));
+const AdvancedStats = lazy(() => import("./pages/admin/AdvancedStats"));
+const AuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
+const SecurityDashboard = lazy(() => import("./pages/admin/SecurityDashboard"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const BackupManagement = lazy(() => import("./pages/admin/BackupManagement"));
+const AdminArticles = lazy(() => import("./pages/admin/AdminArticles"));
+const AdminActualites = lazy(() => import("./pages/admin/AdminActualites"));
+const AdminCasClients = lazy(() => import("./pages/admin/AdminCasClients"));
+const AdminLivresBlancs = lazy(() => import("./pages/admin/AdminLivresBlancs"));
+const AdminAteliersWebinaires = lazy(() => import("./pages/admin/AdminAteliersWebinaires"));
+const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
+const AdminFAQs = lazy(() => import("./pages/admin/AdminFAQs"));
+const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"));
+
+// QueryClient avec cache optimisé
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (anciennement cacheTime)
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter future={{ 
+        v7_startTransition: true,
+        v7_relativeSplatPath: true 
+      }}>
         <ScrollToTop />
         <Routes>
           {/* Homepage */}
@@ -88,42 +105,178 @@ const App = () => (
           <Route path="/conditions-generales" element={<ConditionsGenerales />} />
           <Route path="/confidentialite" element={<Confidentialite />} />
           
-          {/* Admin */}
+          {/* Admin - Lazy loaded avec Suspense */}
           <Route path="/admin" element={<Admin />} />
-          <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
-          <Route path="/admin/advanced-stats" element={<ProtectedAdminRoute><AdvancedStats /></ProtectedAdminRoute>} />
-          <Route path="/admin/articles" element={<ProtectedAdminRoute><AdminArticles /></ProtectedAdminRoute>} />
-          <Route path="/admin/actualites" element={<ProtectedAdminRoute><AdminActualites /></ProtectedAdminRoute>} />
-          <Route path="/admin/cas-clients" element={<ProtectedAdminRoute><AdminCasClients /></ProtectedAdminRoute>} />
-          <Route path="/admin/livres-blancs" element={<ProtectedAdminRoute><AdminLivresBlancs /></ProtectedAdminRoute>} />
-          <Route path="/admin/ateliers-webinaires" element={<ProtectedAdminRoute><AdminAteliersWebinaires /></ProtectedAdminRoute>} />
-          <Route path="/admin/leads" element={<ProtectedAdminRoute><AdminLeads /></ProtectedAdminRoute>} />
-          <Route path="/admin/redacia" element={<ProtectedAdminRoute><Redacia /></ProtectedAdminRoute>} />
-          <Route path="/admin/redacnews" element={<ProtectedAdminRoute><RedacNews /></ProtectedAdminRoute>} />
-          <Route path="/admin/articles/new" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
-          <Route path="/admin/actualites/new" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
-          <Route path="/admin/cas-clients/new" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
-          <Route path="/admin/livres-blancs/new" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
-          <Route path="/admin/ateliers-webinaires/new" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
-          <Route path="/admin/articles/:id" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
-          <Route path="/admin/actualites/:id" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
-          <Route path="/admin/cas-clients/:id" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
-          <Route path="/admin/livres-blancs/:id" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
-          <Route path="/admin/ateliers-webinaires/:id" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
-          <Route path="/admin/articles/:id/history" element={<ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>} />
-          <Route path="/admin/actualites/:id/history" element={<ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>} />
-          <Route path="/admin/cas-clients/:id/history" element={<ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>} />
-          <Route path="/admin/livres-blancs/:id/history" element={<ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>} />
-          <Route path="/admin/ateliers-webinaires/:id/history" element={<ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>} />
-          <Route path="/admin/categories" element={<ProtectedAdminRoute><AdminCategories /></ProtectedAdminRoute>} />
-          <Route path="/admin/tags" element={<ProtectedAdminRoute><AdminTags /></ProtectedAdminRoute>} />
-          <Route path="/admin/comments" element={<ProtectedAdminRoute><AdminComments /></ProtectedAdminRoute>} />
-          <Route path="/admin/faqs" element={<ProtectedAdminRoute><AdminFAQs /></ProtectedAdminRoute>} />
-          <Route path="/admin/newsletters" element={<ProtectedAdminRoute><AdminNewsletters /></ProtectedAdminRoute>} />
-          <Route path="/admin/security-dashboard" element={<ProtectedAdminRoute><SecurityDashboard /></ProtectedAdminRoute>} />
-          <Route path="/admin/audit-logs" element={<ProtectedAdminRoute><AuditLogs /></ProtectedAdminRoute>} />
-          <Route path="/admin/backups" element={<ProtectedAdminRoute><BackupManagement /></ProtectedAdminRoute>} />
-          <Route path="/admin/settings" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
+          <Route path="/admin/dashboard" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/advanced-stats" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdvancedStats /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/articles" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminArticles /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/actualites" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminActualites /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/cas-clients" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminCasClients /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/livres-blancs" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminLivresBlancs /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/ateliers-webinaires" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminAteliersWebinaires /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/leads" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminLeads /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/redacia" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><Redacia /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/redacnews" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><RedacNews /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/articles/new" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/actualites/new" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/cas-clients/new" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/livres-blancs/new" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/ateliers-webinaires/new" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/articles/:id" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/actualites/:id" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/cas-clients/:id" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/livres-blancs/:id" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/ateliers-webinaires/:id" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/articles/:id/history" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/actualites/:id/history" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/cas-clients/:id/history" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/livres-blancs/:id/history" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/ateliers-webinaires/:id/history" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/categories" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminCategories /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/tags" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminTags /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/comments" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminComments /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/faqs" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminFAQs /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/newsletters" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminNewsletters /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/security-dashboard" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><SecurityDashboard /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/audit-logs" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AuditLogs /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/backups" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><BackupManagement /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/settings" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>
+            </Suspense>
+          } />
           
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
