@@ -21,7 +21,8 @@ import AdminArticleEditor from "./pages/AdminArticleEditor";
 import ArticleVersionHistory from "./pages/ArticleVersionHistory";
 import AdminCategories from "./pages/AdminCategories";
 import AdminTags from "./pages/AdminTags";
-import AdminComments from "./pages/AdminComments";
+import AdminComments from './pages/AdminComments';
+import AdminNewsletters from './pages/AdminNewsletters';
 import AdminDashboard from "./pages/AdminDashboard";
 import { CookieConsent } from "./components/CookieConsent";
 
@@ -66,6 +67,7 @@ const App = () => (
           <Route path="/admin/categories" element={<AdminCategories />} />
           <Route path="/admin/tags" element={<AdminTags />} />
           <Route path="/admin/comments" element={<AdminComments />} />
+          <Route path="/admin/newsletters" element={<AdminNewsletters />} />
           
           {/* 404 */}
           <Route path="*" element={<NotFound />} />

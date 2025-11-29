@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Edit, Trash2, Eye, History, FolderOpen, Tags, MessageCircle, BarChart3 } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Eye, History, FolderOpen, Tags, MessageCircle, BarChart3, Mail } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 
 interface Article {
@@ -260,6 +260,18 @@ const Admin = () => {
                   <div>
                     <h3 className="font-semibold text-foreground">Commentaires</h3>
                     <p className="text-sm text-muted-foreground">Modérer les commentaires</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </NavLink>
+
+            <NavLink to="/admin/newsletters">
+              <Card className="bg-background/95 border-border hover:shadow-lg transition-shadow cursor-pointer">
+                <CardContent className="p-6 flex items-center gap-4">
+                  <Mail className="h-8 w-8 text-primary" />
+                  <div>
+                    <h3 className="font-semibold text-foreground">Newsletter</h3>
+                    <p className="text-sm text-muted-foreground">Gérer les abonnés</p>
                   </div>
                 </CardContent>
               </Card>
