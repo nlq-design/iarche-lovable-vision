@@ -26,6 +26,7 @@ import AdminNewsletters from './pages/AdminNewsletters';
 import AdminDashboard from "./pages/AdminDashboard";
 import Redacia from "./pages/admin/Redacia";
 import RedacNews from "./pages/admin/RedacNews";
+import AdvancedStats from "./pages/admin/AdvancedStats";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import { CookieConsent } from "./components/CookieConsent";
 
@@ -64,6 +65,7 @@ const App = () => (
           {/* Admin */}
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
+          <Route path="/admin/advanced-stats" element={<ProtectedAdminRoute><AdvancedStats /></ProtectedAdminRoute>} />
           <Route path="/admin/redacia" element={<ProtectedAdminRoute><Redacia /></ProtectedAdminRoute>} />
           <Route path="/admin/redacnews" element={<ProtectedAdminRoute><RedacNews /></ProtectedAdminRoute>} />
           <Route path="/admin/articles/new" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
