@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink } from '@/components/NavLink';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ArrowRight } from 'lucide-react';
+import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
 
 const articles = [
   {
@@ -46,7 +47,7 @@ const ActualitesSection = () => {
               }}
             >
               {/* Image placeholder */}
-              <div className="h-48 bg-muted" />
+              <ArticlePlaceholder className="h-48" />
               
               <CardHeader className="pb-3">
                 <h3 className="font-semibold text-foreground line-clamp-2">
