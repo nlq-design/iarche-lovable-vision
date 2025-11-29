@@ -1,6 +1,6 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.10**  
+**Version mise à jour : V6.11**  
 **Date : 29 Janvier 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
@@ -131,6 +131,75 @@
 - `src/pages/Index.tsx`
 - `src/pages/ConditionsGenerales.tsx`
 - `src/pages/admin/Redacia.tsx`
+
+---
+
+### 0.10 CONTENUS SOLUTIONS DÉTAILLÉS + FAQ — MISE À JOUR V6.11 ✅
+
+#### Contenus complets et FAQ pour les 5 solutions SaaS
+
+**Contexte :**
+- Document de vérification V2 complet incluant contenus détaillés pour les 5 solutions
+- Besoin d'harmoniser les contenus avec descriptions complètes et FAQ standardisées
+- Mise à jour des excerpts et contenus dans la base de données articles
+
+**1. Corrections terminologiques finales**
+- **Fichier** : `src/pages/Index.tsx`
+  - Schema.org description : "autonomie" → **"accompagnement"**
+- **Fichier** : `src/components/sections/PresentationSection.tsx`
+  - Section À propos : "autonomie" → **"accompagnement"**
+
+**2. Page Solutions hub**
+- **Fichier** : `src/pages/Solutions.tsx`
+- **Modifications** :
+  - Sous-titre : "Ce qu'on conseille, on le construit aussi" → **"IArche édite des solutions développées à partir de besoins concrets identifiés en accompagnant nos clients."**
+  - Descriptions cards raccourcies pour cohérence :
+    - Team 5 Connect : "Pointage, absences, conformité — BTP et industrie."
+    - ERP Avocat : "Dossiers, contrats, facturation, conformité."
+    - Collaboria : "Multi-LLM, benchmark, maîtrise des usages. Souveraine et conforme."
+    - Chatbot RAG : "RAG avancé, 340+ modèles, benchmark intégré."
+    - Datalia : "Prospection par mots-clés et zones. Licence à vie."
+
+**3. Contenus détaillés mis à jour (base de données)**
+
+**Team 5 Connect** (`/solutions/team-5-connect`)
+- **Excerpt** : "Solution tout-en-un pour le pointage, les absences et la conformité dans le BTP et l'industrie. Application mobile intuitive + back office puissant."
+- **Content** : 3 modules détaillés (Application Mobile, Back Office, Conformité & Sécurité)
+- **FAQ** : 6 questions (public cible, smartphone requis, pointage géolocalisé, export paie, sécurité, tarifs)
+
+**ERP Avocat / Lexia** (`/solutions/lexia`)
+- **Excerpt** : "Dossiers, contrats, facturation, conformité — tout au même endroit. Double interface : assistant IA conversationnel + back office classique."
+- **Content** : Double interface (Assistant IA + Back Office) + Fonctionnalités clés
+- **FAQ** : 5 questions (public cible, fonctionnement assistant IA, import dossiers, sécurité, tarifs)
+
+**Collaboria** (`/solutions/collaboria`)
+- **Excerpt** : "Tous vos outils IA au même endroit. Multi-LLM, génération d'images, présentations, transcription de réunions, collaboration d'équipe. Gestion centralisée des utilisateurs, des crédits et des usages. Souveraine, sécurisée et conforme."
+- **Content** : 5 sections (Multi-LLM, Outils création, Collaboration, Administration avec 11 fonctionnalités, Sécurité & Conformité)
+- **FAQ** : 7 questions (public cible, modèles disponibles, mode Arena, benchmark, crédits, sécurité, tarifs)
+
+**Chatbot RAG Avancé / Dialogue Plus** (`/solutions/dialogue-plus`)
+- **Excerpt** : "Un chatbot qui répond à partir de vos propres données. Documents, process, FAQ — il interroge votre base de connaissances et génère des réponses sourcées. Déploiement en interne ou pour vos clients. 340+ modèles LLM disponibles, benchmark intégré, analyse des coûts."
+- **Content** : 9 fonctionnalités détaillées (Multi-LLM 340+ modèles, RAG avancé, Benchmark, Analyse coûts, Personnalisation, Intégration, Connexions, Suivi temps réel, Analytics) + 4 cas d'usage (Support client, RH, Formation, E-commerce)
+- **FAQ** : 9 questions (public cible, formats documents, nombre modèles, benchmark, suivi coûts, intégration, personnalisation, performances, tarifs)
+
+**Datalia** (`/solutions/datalia`)
+- **Excerpt** : "Trouvez vos prospects par mots-clés et zones géographiques. Datalia interroge l'API Google Places avec votre propre clé. Export en un clic. Licence à vie."
+- **Content** : 5 fonctionnalités (Recherche mots-clés, Filtrage géographique, Données extraites, Export, Licence à vie)
+- **FAQ** : 7 questions (public cible, fonctionnement, clé API Google, données extraites, ciblage zone, format export, prix 749€HT)
+
+**Impact :**
+- Contenus exhaustifs et structurés sur toutes les pages solutions
+- FAQ standardisées répondant aux questions concrètes des prospects
+- Cohérence terminologique totale entre hub solutions et pages détaillées
+- Excerpts optimisés pour affichage cards et métadonnées SEO
+- Descriptions complètes facilitant la compréhension des fonctionnalités
+- Prix Datalia (749€HT) clairement mentionné dans FAQ pour transparence
+
+**Fichiers modifiés :**
+- `src/pages/Index.tsx` (Schema.org description)
+- `src/components/sections/PresentationSection.tsx` (section À propos)
+- `src/pages/Solutions.tsx` (sous-titre + descriptions cards)
+- Base de données `articles` : colonnes `excerpt`, `content`, `faq` mises à jour pour les 5 solutions
 
 ---
 
