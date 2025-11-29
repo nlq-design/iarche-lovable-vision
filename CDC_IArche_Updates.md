@@ -1,12 +1,37 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.1**  
+**Version mise à jour : V6.2**  
 **Date : 29 Novembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.1 ROUTING ET DESIGN PAGES RESSOURCES - MISE À JOUR V6.2 ✅
+
+#### Structure de routing par type de ressource
+
+**Routes des articles détaillés :**
+- Les articles de type `'article'` (affichés sur `/actualites`) → routes détaillées `/actualites/:slug`
+- Les articles de type `'actualite'` (affichés sur `/articles`) → routes détaillées `/articles/:slug`
+
+**Cohérence navigation :**
+- Page `/actualites` → liens vers `/actualites/:slug`
+- Page `/articles` → liens vers `/articles/:slug`
+- Chaque type de ressource a son propre préfixe de route pour éviter confusion
+
+**Design différencié page `/articles` :**
+- Suppression badge "NOUVEAU" sur les cards récentes
+- Suppression badge date en haut de l'image
+- Date discrète en bas de la card (petit texte gris avec icône calendrier)
+- En-tête simplifié : titre seul, sans badge "Mis à jour quotidiennement"
+- Grille 3 colonnes compacte maintenue
+
+**Rationale :**
+Clarifier la navigation en donnant à chaque type de contenu son propre espace URL. Les actualités courtes (articles rapides) n'ont pas besoin de badges temporels proéminents, une date discrète en bas suffit.
+
+---
 
 ### 0. ARCHITECTURE RESSOURCES - MISE À JOUR V6.1 ✅
 

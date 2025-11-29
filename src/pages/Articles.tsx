@@ -70,14 +70,9 @@ const Articles = () => {
         <section className="max-w-6xl mx-auto px-6 py-16">
           {/* En-tête dynamique - Style Timeline */}
           <div className="text-center mb-12">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <h1 className="text-3xl md:text-5xl font-bold text-foreground invisible animate-fadeIn [animation-delay:0.1s]">
-                Articles
-              </h1>
-              <span className="px-3 py-1 bg-accent/10 text-accent text-sm font-medium rounded-full invisible animate-fadeIn [animation-delay:0.2s]">
-                Mis à jour quotidiennement
-              </span>
-            </div>
+            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 invisible animate-fadeIn [animation-delay:0.1s]">
+              Articles
+            </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto invisible animate-fadeIn [animation-delay:0.3s]">
               Veille tech, cas d'usage et réglementation IA
             </p>
@@ -98,63 +93,54 @@ const Articles = () => {
           ) : (
             /* Grille 3 colonnes compacte - Style Timeline */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {articles.map((article, index) => {
-                const isRecent = article.published_at && 
-                  new Date(article.published_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-                
-                return (
-                  <NavLink
-                    key={article.id}
-                    to={`/actualites/${article.slug}`}
-                    className="group"
+              {articles.map((article, index) => (
+                <NavLink
+                  key={article.id}
+                  to={`/articles/${article.slug}`}
+                  className="group"
+                >
+                  <Card 
+                    className="h-full hover:shadow-lg transition-shadow duration-300 bg-background border border-border rounded-lg overflow-hidden invisible animate-fadeIn"
+                    style={{ animationDelay: `${0.3 + index * 0.1}s` }}
                   >
-                    <Card 
-                      className="h-full hover:shadow-lg transition-shadow duration-300 bg-background border border-border rounded-lg overflow-hidden invisible animate-fadeIn"
-                      style={{ animationDelay: `${0.3 + index * 0.1}s` }}
-                    >
-                      {/* Badge date proéminent en haut */}
-                      <div className="relative">
-                        {article.cover_image_url ? (
-                          <div className="h-40 overflow-hidden">
-                            <img
-                              src={article.cover_image_url}
-                              alt={article.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                          </div>
-                        ) : (
-                          <ArticlePlaceholder className="h-40" />
-                        )}
-                        <div className="absolute top-3 right-3 px-3 py-1 bg-background/90 backdrop-blur-sm rounded-lg border border-border/50 text-xs font-medium text-foreground shadow-sm">
-                          {new Date(article.published_at || article.created_at).toLocaleDateString('fr-FR', {
-                            day: 'numeric',
-                            month: 'short'
-                          })}
-                        </div>
-                        {isRecent && (
-                          <div className="absolute top-3 left-3 px-2 py-1 bg-accent text-background text-xs font-bold rounded shadow-sm">
-                            NOUVEAU
-                          </div>
-                        )}
+                    {/* Image de couverture sans badges */}
+                    {article.cover_image_url ? (
+                      <div className="h-40 overflow-hidden">
+                        <img
+                          src={article.cover_image_url}
+                          alt={article.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
                       </div>
+                    ) : (
+                      <ArticlePlaceholder className="h-40" />
+                    )}
 
-                      <CardHeader className="pb-2">
-                        <h2 className="text-base font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">
-                          {article.title}
-                        </h2>
-                      </CardHeader>
+                    <CardHeader className="pb-2">
+                      <h2 className="text-base font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">
+                        {article.title}
+                      </h2>
+                    </CardHeader>
 
-                      <CardContent>
-                        {article.excerpt && (
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {article.excerpt}
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </NavLink>
-                );
-              })}
+                    <CardContent className="space-y-2">
+                      {article.excerpt && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {article.excerpt}
+                        </p>
+                      )}
+                      {/* Date discrète en bas */}
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 pt-1">
+                        <Calendar className="h-3 w-3" aria-hidden="true" />
+                        {new Date(article.published_at || article.created_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </NavLink>
+              ))}
             </div>
           )}
         </section>
