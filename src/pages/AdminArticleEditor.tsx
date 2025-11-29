@@ -47,6 +47,18 @@ const AdminArticleEditor = () => {
     if (path.includes('/admin/articles/new')) return 'article';
     return 'actualite'; // Défaut
   };
+
+  // Générer l'URL publique en fonction du resource_type
+  const getPublicUrl = (resourceType: string, articleSlug: string) => {
+    const urlMap: Record<string, string> = {
+      'article': `/articles/${articleSlug}`,
+      'actualite': `/actualites/${articleSlug}`,
+      'cas-client': `/cas-clients/${articleSlug}`,
+      'livre-blanc': `/livres-blancs/${articleSlug}`,
+      'atelier-webinaire': `/ateliers-webinaires/${articleSlug}`,
+    };
+    return urlMap[resourceType] || `/actualites/${articleSlug}`;
+  };
   
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
@@ -421,7 +433,7 @@ const AdminArticleEditor = () => {
       });
       return;
     }
-    window.open(`/actualites/${slug}`, '_blank');
+    window.open(getPublicUrl(resourceType, slug), '_blank');
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -692,7 +704,7 @@ const AdminArticleEditor = () => {
                     <p className="text-xs text-destructive">{slugError}</p>
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      URL: /actualites/{slug}
+                      URL: {getPublicUrl(resourceType, slug || 'mon-article')}
                     </p>
                   )}
                 </div>
