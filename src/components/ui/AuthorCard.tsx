@@ -56,11 +56,13 @@ const AuthorCard = ({
 
       {/* Photo */}
       <div className="flex justify-center mb-3">
-        <img 
-          src={photo} 
-          alt={nom}
-          className="w-16 h-16 rounded-full object-cover border-2 border-[#E5E7EB]"
-        />
+        <div className="relative p-[2px] rounded-full bg-gradient-to-br from-primary via-accent to-primary shadow-lg">
+          <img 
+            src={photo} 
+            alt={nom}
+            className="w-16 h-16 rounded-full object-cover bg-background"
+          />
+        </div>
       </div>
 
       {/* Nom */}
