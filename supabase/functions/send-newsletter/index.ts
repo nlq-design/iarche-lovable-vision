@@ -84,11 +84,24 @@ const handler = async (req: Request): Promise<Response> => {
       .from('newsletter_subscribers')
       .select('email');
 
-    if (subscribersError || !subscribers || subscribers.length === 0) {
-      console.error('No subscribers found:', subscribersError);
+    if (subscribersError) {
+      console.error('Error fetching subscribers:', subscribersError);
       return new Response(
-        JSON.stringify({ error: 'No subscribers found' }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: 'Failed to fetch subscribers' }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Si aucun abonné, retourner un succès avec message informatif
+    if (!subscribers || subscribers.length === 0) {
+      console.log('No subscribers found - newsletter not sent');
+      return new Response(
+        JSON.stringify({ 
+          message: 'No subscribers found - newsletter not sent',
+          sent: 0,
+          failed: 0
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
