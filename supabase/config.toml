@@ -3,6 +3,9 @@ project_id = "mgjyhlyrwnnioctkbdkk"
 [functions.notify-new-comment]
 verify_jwt = false
 
+[functions.record-lighthouse-metrics]
+verify_jwt = false
+
 [functions.publish-scheduled-articles]
 verify_jwt = false
 
