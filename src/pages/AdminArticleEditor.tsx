@@ -614,8 +614,8 @@ const AdminArticleEditor = () => {
           article_title: title,
         });
         
-        // Générer FAQ automatiquement si demandé
-        if (autoGenerateFAQ) {
+        // Générer FAQ automatiquement si demandé et si type éligible
+        if (autoGenerateFAQ && ['article', 'actualite', 'cas-client'].includes(resourceType)) {
           toast({
             title: 'Génération FAQ en cours',
             description: 'La FAQ est en cours de génération...',
@@ -1137,7 +1137,7 @@ const AdminArticleEditor = () => {
                   </Label>
                 </div>
 
-                {!id && (
+                {!id && ['article', 'actualite', 'cas-client'].includes(resourceType) && (
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="autoGenerateFAQ"
@@ -1226,7 +1226,7 @@ const AdminArticleEditor = () => {
                     <Eye className="mr-2 h-4 w-4" />
                     Prévisualiser
                   </Button>
-                  {id && (
+                  {id && ['article', 'actualite', 'cas-client'].includes(resourceType) && (
                     <Button
                       type="button"
                       variant="outline"
