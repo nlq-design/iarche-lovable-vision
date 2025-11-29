@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Save, Eye, History, Calendar as CalendarIcon, Upload, FileText, Sparkles } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, Eye, History, Calendar as CalendarIcon, Upload, FileText, Sparkles, ChevronDown } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -22,6 +22,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { FAQPreviewModal } from '@/components/admin/FAQPreviewModal';
 
 interface FAQItem {
@@ -46,6 +47,8 @@ const AdminArticleEditor = () => {
   const [faqPreviewOpen, setFaqPreviewOpen] = useState(false);
   const [generatedFAQ, setGeneratedFAQ] = useState<FAQItem[] | null>(null);
   const [autoGenerateFAQ, setAutoGenerateFAQ] = useState(false);
+  const [existingFAQ, setExistingFAQ] = useState<FAQItem[] | null>(null);
+  const [faqMode, setFaqMode] = useState<'new' | 'add'>('new');
   
   // Déterminer le resource_type depuis la route
   const getResourceTypeFromPath = () => {
@@ -191,6 +194,17 @@ const AdminArticleEditor = () => {
         .select('tag_id')
         .eq('article_id', id);
       setSelectedTags(articleTags?.map(at => at.tag_id) || []);
+
+      // Charger la FAQ existante
+      const { data: faqData } = await supabase
+        .from('faqs')
+        .select('questions')
+        .eq('article_id', id)
+        .maybeSingle();
+      
+      if (faqData && faqData.questions) {
+        setExistingFAQ(faqData.questions as unknown as FAQItem[]);
+      }
     }
     setLoadingArticle(false);
   };
@@ -642,7 +656,7 @@ const AdminArticleEditor = () => {
     setIsLoading(false);
   };
 
-  const handleGenerateFAQ = async (articleId?: string) => {
+  const handleGenerateFAQ = async (articleId?: string, mode: 'new' | 'add' = 'new') => {
     const targetId = articleId || id;
     
     if (!targetId || !title || !content) {
@@ -654,6 +668,7 @@ const AdminArticleEditor = () => {
       return;
     }
 
+    setFaqMode(mode);
     setGeneratingFAQ(true);
     setFaqPreviewOpen(true);
 
@@ -663,7 +678,9 @@ const AdminArticleEditor = () => {
           article_id: targetId,
           title,
           content,
-          resource_type: resourceType
+          resource_type: resourceType,
+          mode: mode,
+          existing_questions: mode === 'add' && existingFAQ ? existingFAQ.map(f => f.question) : []
         }
       });
 
@@ -671,9 +688,12 @@ const AdminArticleEditor = () => {
 
       if (data && data.questions) {
         setGeneratedFAQ(data.questions);
+        const count = data.questions.length;
         toast({
-          title: "FAQ générée",
-          description: `${data.questions.length} questions créées automatiquement`
+          title: mode === 'add' ? "Questions ajoutées" : "FAQ générée",
+          description: mode === 'add' 
+            ? `${count} nouvelle(s) question(s) suggérée(s)` 
+            : `${count} questions créées automatiquement`
         });
       }
     } catch (error) {
@@ -1227,19 +1247,33 @@ const AdminArticleEditor = () => {
                     Prévisualiser
                   </Button>
                   {id && ['article', 'actualite', 'cas-client'].includes(resourceType) && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => handleGenerateFAQ()}
-                      disabled={isLoading || generatingFAQ}
-                    >
-                      {generatingFAQ ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="mr-2 h-4 w-4" />
-                      )}
-                      Générer FAQ
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={isLoading || generatingFAQ}
+                        >
+                          {generatingFAQ ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="mr-2 h-4 w-4" />
+                          )}
+                          Générer FAQ
+                          <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleGenerateFAQ(undefined, 'new')}>
+                          Générer nouvelle FAQ
+                        </DropdownMenuItem>
+                        {existingFAQ && existingFAQ.length > 0 && (
+                          <DropdownMenuItem onClick={() => handleGenerateFAQ(undefined, 'add')}>
+                            Ajouter questions
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
                   <Button
                     type="button"

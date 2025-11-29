@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Edit, Trash2, Eye, History } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Eye, History, HelpCircle } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import AdminLayout from '@/components/layouts/AdminLayout';
 
@@ -19,6 +19,7 @@ interface Article {
   published_at: string | null;
   created_at: string;
   resource_type: string;
+  has_faq?: boolean;
 }
 
 const AdminArticles = () => {
@@ -42,21 +43,38 @@ const AdminArticles = () => {
 
   const loadArticles = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    
+    // Récupérer les articles
+    const { data: articlesData, error: articlesError } = await supabase
       .from('articles')
       .select('id, title, slug, excerpt, published, published_at, created_at, resource_type')
       .eq('resource_type', 'article')
       .order('created_at', { ascending: false });
 
-    if (error) {
+    if (articlesError) {
       toast({
         title: 'Erreur',
         description: 'Impossible de charger les articles',
         variant: 'destructive',
       });
-    } else {
-      setArticles(data || []);
+      setLoading(false);
+      return;
     }
+
+    // Récupérer les FAQs
+    const { data: faqsData } = await supabase
+      .from('faqs')
+      .select('article_id');
+
+    const faqArticleIds = new Set(faqsData?.map(f => f.article_id) || []);
+
+    // Ajouter has_faq à chaque article
+    const articlesWithFaq = articlesData?.map(article => ({
+      ...article,
+      has_faq: faqArticleIds.has(article.id)
+    })) || [];
+
+    setArticles(articlesWithFaq);
     setLoading(false);
   };
 
@@ -131,6 +149,12 @@ const AdminArticles = () => {
                         <span className={`px-2 py-1 rounded ${article.published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                           {article.published ? 'Publié' : 'Brouillon'}
                         </span>
+                        {article.has_faq && (
+                          <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 flex items-center gap-1">
+                            <HelpCircle className="h-3 w-3" />
+                            FAQ
+                          </span>
+                        )}
                         <span>
                           {new Date(article.published_at || article.created_at).toLocaleDateString('fr-FR')}
                         </span>
