@@ -1,6 +1,6 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.4**  
+**Version mise à jour : V6.5**  
 **Date : 29 Novembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
@@ -8,16 +8,53 @@
 
 ## MODIFICATIONS MAJEURES
 
+### 0.4 CORRECTION COHÉRENCE RESOURCE_TYPE - MISE À JOUR V6.5 ✅
+
+#### Inversion des resource_type pour cohérence admin/frontend
+
+**Problème identifié :**
+- Les articles créés depuis `/admin/articles` pointaient vers `/actualites/:slug`
+- Les articles créés depuis `/admin/actualites` pointaient vers `/articles/:slug`
+- Incohérence totale entre le back-office et le frontend public
+
+**Solution appliquée :**
+Inversion des `resource_type` en base de données via UPDATE :
+```sql
+UPDATE articles 
+SET resource_type = CASE 
+  WHEN resource_type = 'article' THEN 'actualite'
+  WHEN resource_type = 'actualite' THEN 'article'
+  ELSE resource_type
+END
+WHERE resource_type IN ('article', 'actualite');
+```
+
+**Résultat après correction :**
+- **`/admin/articles`** → crée `resource_type = 'article'` → affichage sur `/articles/:slug`
+- **`/admin/actualites`** → crée `resource_type = 'actualite'` → affichage sur `/actualites/:slug`
+
+**Cohérence rétablie :**
+- Admin "Articles (fond)" gère contenu pour page publique `/articles`
+- Admin "Actualités" gère contenu pour page publique `/actualites`
+- Navigation de retour depuis ArticleDetail basée sur l'URL (`location.pathname`) plutôt que sur `resource_type`
+
+**Rationale :**
+Assurer une cohérence totale entre les interfaces de gestion admin et les pages publiques pour éviter toute confusion lors de la création de contenu.
+
+---
+
 ### 0.3 GESTION ADMIN PAR TYPE DE RESSOURCE - MISE À JOUR V6.4 ✅
 
 #### Pages de gestion séparées pour chaque type de ressource
 
 **Nouvelles pages admin créées :**
-- `/admin` → Gestion des articles de fond (resource_type = 'article')
-- `/admin/actualites` → Gestion des actualités (resource_type = 'actualite')
-- `/admin/cas-clients` → Gestion des cas clients (resource_type = 'cas-client')
-- `/admin/livres-blancs` → Gestion des livres blancs (resource_type = 'livre-blanc')
-- `/admin/ateliers-webinaires` → Gestion des ateliers & webinaires (resource_type = 'atelier-webinaire')
+- `/admin/articles` → Gestion des articles de fond (resource_type = 'article') → affichage sur `/articles`
+- `/admin/actualites` → Gestion des actualités (resource_type = 'actualite') → affichage sur `/actualites`
+- `/admin/cas-clients` → Gestion des cas clients (resource_type = 'cas-client') → affichage sur `/cas-clients`
+- `/admin/livres-blancs` → Gestion des livres blancs (resource_type = 'livre-blanc') → affichage sur `/livres-blancs`
+- `/admin/ateliers-webinaires` → Gestion des ateliers & webinaires (resource_type = 'atelier-webinaire') → affichage sur `/ateliers-webinaires`
+
+**⚠️ Note V6.5 :** Les resource_type ont été inversés en V6.5 pour assurer la cohérence admin→frontend. Voir section 0.4 pour détails.
 
 **Fonctionnalités identiques sur chaque page :**
 - Liste complète des ressources du type concerné
@@ -58,11 +95,13 @@ Chaque type de ressource a sa propre interface de gestion pour faciliter la navi
 - `will-change: opacity, transform` pour optimisation GPU
 
 **Routes détaillées par type de ressource :**
-- `/actualites/:slug` → articles de type `'article'`
-- `/articles/:slug` → articles de type `'actualite'`
+- `/actualites/:slug` → articles de type `'actualite'` (après correction V6.5)
+- `/articles/:slug` → articles de type `'article'` (après correction V6.5)
 - `/cas-clients/:slug` → articles de type `'cas-client'`
 - `/livres-blancs/:slug` → articles de type `'livre-blanc'`
 - `/ateliers-webinaires/:slug` → articles de type `'atelier-webinaire'`
+
+**⚠️ Note V6.5 :** Les routes ont été corrigées suite à l'inversion des resource_type. Voir section 0.4 pour détails.
 
 **Rationale :**
 Unifier l'expérience utilisateur en proposant les mêmes capacités de filtrage sur toutes les pages ressources. Les transitions renforcent la cohérence visuelle lors de la navigation entre les sections.
@@ -74,8 +113,10 @@ Unifier l'expérience utilisateur en proposant les mêmes capacités de filtrage
 #### Structure de routing par type de ressource
 
 **Routes des articles détaillés :**
-- Les articles de type `'article'` (affichés sur `/actualites`) → routes détaillées `/actualites/:slug`
-- Les articles de type `'actualite'` (affichés sur `/articles`) → routes détaillées `/articles/:slug`
+- Les articles de type `'article'` (affichés sur `/articles`) → routes détaillées `/articles/:slug` (après correction V6.5)
+- Les articles de type `'actualite'` (affichés sur `/actualites`) → routes détaillées `/actualites/:slug` (après correction V6.5)
+
+**⚠️ Note V6.5 :** La correspondance entre resource_type et routes a été corrigée. Voir section 0.4.
 
 **Cohérence navigation :**
 - Page `/actualites` → liens vers `/actualites/:slug`
@@ -107,25 +148,23 @@ Clarifier la navigation en donnant à chaque type de contenu son propre espace U
   4. Livres blancs → `/livres-blancs`
   5. Ateliers & Webinaires → `/ateliers-webinaires`
 
-**⚠️ INVERSION DES CONTENUS (V6.1) :**
+**⚠️ CORRECTION EN V6.5 :**
 
-La taxonomie a été inversée pour correspondre aux intentions utilisateurs :
+La confusion initiale entre resource_type et pages frontend a été corrigée :
 
-- **Page `/actualites`** affiche les contenus de type `resource_type = 'article'`
-  - Articles de fond, guides pratiques, analyses techniques
-  - Descriptions meta : "guides pratiques, analyses et retours d'expérience"
+- **Page `/actualites`** affiche les contenus de type `resource_type = 'actualite'`
+  - Gérés depuis `/admin/actualites`
+  - Actualités, veille technologique, nouveautés
   
-- **Page `/articles`** affiche les contenus de type `resource_type = 'actualite'`
-  - Actualités courtes, veille technologique, nouveautés
-  - Descriptions meta : "veille technologique, cas d'usage et réglementation IA"
-
-**Rationale de l'inversion :**
-L'URL `/actualites` est la page hub principale des ressources (bouton Ressources y redirige), elle doit donc présenter le contenu le plus riche (articles de fond) plutôt que les actualités courtes. Cela améliore l'UX et la hiérarchie de navigation.
+- **Page `/articles`** affiche les contenus de type `resource_type = 'article'`
+  - Gérés depuis `/admin/articles`
+  - Articles de fond, guides pratiques, analyses techniques
 
 **Backend :**
 - Table `articles` avec colonne `resource_type` (5 valeurs : `actualite`, `article`, `cas-client`, `livre-blanc`, `atelier-webinaire`)
 - Filtrage par type dans chaque page dédiée
 - RLS policies : public voit `published = true`, admins gèrent tout
+- **Correction V6.5 :** Swap des resource_type pour cohérence admin↔frontend
 
 **Footer :**
 - Colonne dédiée "Ressources" listant les 5 types
