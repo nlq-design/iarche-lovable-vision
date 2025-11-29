@@ -15,6 +15,7 @@ import { NavLink } from '@/components/NavLink';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const AdminArticleEditor = () => {
   const { id } = useParams();
@@ -31,6 +32,10 @@ const AdminArticleEditor = () => {
   const [content, setContent] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState('');
   const [published, setPublished] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const [availableTags, setAvailableTags] = useState<Array<{ id: string; name: string }>>([]);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -43,6 +48,28 @@ const AdminArticleEditor = () => {
       loadArticle();
     }
   }, [id, user, isAdmin]);
+
+  useEffect(() => {
+    if (user && isAdmin) {
+      loadCategoriesAndTags();
+    }
+  }, [user, isAdmin]);
+
+  const loadCategoriesAndTags = async () => {
+    // Charger les catégories
+    const { data: categories } = await supabase
+      .from('categories')
+      .select('id, name')
+      .order('name');
+    setAvailableCategories(categories || []);
+
+    // Charger les tags
+    const { data: tags } = await supabase
+      .from('tags')
+      .select('id, name')
+      .order('name');
+    setAvailableTags(tags || []);
+  };
 
   const loadArticle = async () => {
     if (!id) return;
@@ -68,6 +95,20 @@ const AdminArticleEditor = () => {
       setContent(data.content);
       setCoverImageUrl(data.cover_image_url || '');
       setPublished(data.published);
+
+      // Charger les catégories de l'article
+      const { data: articleCategories } = await supabase
+        .from('article_categories')
+        .select('category_id')
+        .eq('article_id', id);
+      setSelectedCategories(articleCategories?.map(ac => ac.category_id) || []);
+
+      // Charger les tags de l'article
+      const { data: articleTags } = await supabase
+        .from('article_tags')
+        .select('tag_id')
+        .eq('article_id', id);
+      setSelectedTags(articleTags?.map(at => at.tag_id) || []);
     }
     setLoadingArticle(false);
   };
@@ -267,6 +308,22 @@ const AdminArticleEditor = () => {
           variant: 'destructive',
         });
       } else {
+        // Mettre à jour les catégories
+        await supabase.from('article_categories').delete().eq('article_id', id);
+        if (selectedCategories.length > 0) {
+          await supabase.from('article_categories').insert(
+            selectedCategories.map(catId => ({ article_id: id, category_id: catId }))
+          );
+        }
+
+        // Mettre à jour les tags
+        await supabase.from('article_tags').delete().eq('article_id', id);
+        if (selectedTags.length > 0) {
+          await supabase.from('article_tags').insert(
+            selectedTags.map(tagId => ({ article_id: id, tag_id: tagId }))
+          );
+        }
+
         toast({
           title: 'Article mis à jour',
           description: 'L\'article a été mis à jour avec succès',
@@ -281,7 +338,11 @@ const AdminArticleEditor = () => {
         });
       }
     } else {
-      const { error } = await supabase.from('articles').insert([articleData]);
+      const { data: newArticle, error } = await supabase
+        .from('articles')
+        .insert([articleData])
+        .select()
+        .single();
 
       if (error) {
         toast({
@@ -290,6 +351,20 @@ const AdminArticleEditor = () => {
           variant: 'destructive',
         });
       } else {
+        // Ajouter les catégories
+        if (selectedCategories.length > 0) {
+          await supabase.from('article_categories').insert(
+            selectedCategories.map(catId => ({ article_id: newArticle.id, category_id: catId }))
+          );
+        }
+
+        // Ajouter les tags
+        if (selectedTags.length > 0) {
+          await supabase.from('article_tags').insert(
+            selectedTags.map(tagId => ({ article_id: newArticle.id, tag_id: tagId }))
+          );
+        }
+
         toast({
           title: 'Article créé',
           description: 'L\'article a été créé avec succès',
@@ -405,6 +480,80 @@ const AdminArticleEditor = () => {
                     disabled={isLoading}
                     placeholder="https://..."
                   />
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Catégories</Label>
+                  {availableCategories.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Aucune catégorie disponible.{' '}
+                      <NavLink to="/admin/categories" className="text-primary hover:underline">
+                        Créer une catégorie
+                      </NavLink>
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {availableCategories.map((category) => (
+                        <div key={category.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`category-${category.id}`}
+                            checked={selectedCategories.includes(category.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedCategories([...selectedCategories, category.id]);
+                              } else {
+                                setSelectedCategories(selectedCategories.filter(id => id !== category.id));
+                              }
+                            }}
+                            disabled={isLoading}
+                          />
+                          <label
+                            htmlFor={`category-${category.id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                          >
+                            {category.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Tags</Label>
+                  {availableTags.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Aucun tag disponible.{' '}
+                      <NavLink to="/admin/tags" className="text-primary hover:underline">
+                        Créer un tag
+                      </NavLink>
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {availableTags.map((tag) => (
+                        <div key={tag.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`tag-${tag.id}`}
+                            checked={selectedTags.includes(tag.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedTags([...selectedTags, tag.id]);
+                              } else {
+                                setSelectedTags(selectedTags.filter(id => id !== tag.id));
+                              }
+                            }}
+                            disabled={isLoading}
+                          />
+                          <label
+                            htmlFor={`tag-${tag.id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                          >
+                            {tag.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">

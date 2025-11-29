@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Edit, Trash2, Eye, History, FolderOpen, Tags, MessageCircle } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Eye, History, FolderOpen, Tags, MessageCircle, BarChart3 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 
 interface Article {
@@ -216,7 +216,19 @@ const Admin = () => {
             </NavLink>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <NavLink to="/admin/dashboard">
+              <Card className="bg-background/95 border-border hover:shadow-lg transition-shadow cursor-pointer">
+                <CardContent className="p-6 flex items-center gap-4">
+                  <BarChart3 className="h-8 w-8 text-primary" />
+                  <div>
+                    <h3 className="font-semibold text-foreground">Statistiques</h3>
+                    <p className="text-sm text-muted-foreground">Tableau de bord</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </NavLink>
+
             <NavLink to="/admin/categories">
               <Card className="bg-background/95 border-border hover:shadow-lg transition-shadow cursor-pointer">
                 <CardContent className="p-6 flex items-center gap-4">

@@ -61,13 +61,17 @@ export const ArticleComments = ({ articleId }: ArticleCommentsProps) => {
 
     setSubmitting(true);
 
-    const { error } = await supabase.from('comments').insert({
-      article_id: articleId,
-      author_name: name,
-      author_email: email,
-      content: content,
-      approved: false,
-    });
+    const { data: newComment, error } = await supabase
+      .from('comments')
+      .insert({
+        article_id: articleId,
+        author_name: name,
+        author_email: email,
+        content: content,
+        approved: false,
+      })
+      .select()
+      .single();
 
     if (error) {
       toast({
@@ -76,6 +80,17 @@ export const ArticleComments = ({ articleId }: ArticleCommentsProps) => {
         variant: 'destructive',
       });
     } else {
+      // Envoyer la notification aux admins
+      await supabase.functions.invoke('notify-new-comment', {
+        body: {
+          comment_id: newComment.id,
+          article_id: articleId,
+          author_name: name,
+          author_email: email,
+          content: content,
+        },
+      });
+
       toast({
         title: 'Commentaire envoyé',
         description: 'Votre commentaire sera visible après modération',

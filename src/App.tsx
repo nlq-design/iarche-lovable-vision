@@ -22,6 +22,7 @@ import ArticleVersionHistory from "./pages/ArticleVersionHistory";
 import AdminCategories from "./pages/AdminCategories";
 import AdminTags from "./pages/AdminTags";
 import AdminComments from "./pages/AdminComments";
+import AdminDashboard from "./pages/AdminDashboard";
 import { CookieConsent } from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,7 @@ const App = () => (
           
           {/* Admin */}
           <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/articles/new" element={<AdminArticleEditor />} />
           <Route path="/admin/articles/:id" element={<AdminArticleEditor />} />
           <Route path="/admin/articles/:id/history" element={<ArticleVersionHistory />} />

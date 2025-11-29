@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle, XCircle, Trash2, ArrowLeft } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Trash2, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import {
   AlertDialog,
@@ -41,6 +41,9 @@ const AdminComments = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -52,14 +55,27 @@ const AdminComments = () => {
     if (user && isAdmin) {
       loadComments();
     }
-  }, [user, isAdmin]);
+  }, [user, isAdmin, currentPage]);
 
   const loadComments = async () => {
     setLoading(true);
+    
+    // Récupérer le nombre total
+    const { count } = await supabase
+      .from('comments')
+      .select('*', { count: 'exact', head: true });
+    
+    setTotalCount(count || 0);
+
+    // Récupérer les commentaires paginés
+    const from = (currentPage - 1) * ITEMS_PER_PAGE;
+    const to = from + ITEMS_PER_PAGE - 1;
+
     const { data, error } = await supabase
       .from('comments')
       .select('*, articles(title)')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(from, to);
 
     if (error) {
       toast({
@@ -151,6 +167,7 @@ const AdminComments = () => {
 
   const pendingComments = comments.filter((c) => !c.approved);
   const approvedComments = comments.filter((c) => c.approved);
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   if (authLoading || loading) {
     return (
@@ -287,6 +304,31 @@ const AdminComments = () => {
               )}
             </TabsContent>
           </Tabs>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage} sur {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

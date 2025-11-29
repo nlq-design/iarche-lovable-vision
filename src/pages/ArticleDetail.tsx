@@ -38,6 +38,18 @@ const ArticleDetail = () => {
     }
   }, [slug]);
 
+  useEffect(() => {
+    // Track article view
+    const trackView = async () => {
+      if (article?.id) {
+        await supabase.from('article_views').insert({
+          article_id: article.id,
+        });
+      }
+    };
+    trackView();
+  }, [article?.id]);
+
   const loadArticle = async () => {
     if (!slug) return;
 
