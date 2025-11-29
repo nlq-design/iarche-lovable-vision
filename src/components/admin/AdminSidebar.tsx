@@ -53,6 +53,7 @@ const navigationItems = [
   {
     group: 'Sécurité',
     items: [
+      { title: 'Dashboard sécurité', url: '/admin/security-dashboard', icon: Shield },
       { title: 'Logs d\'audit', url: '/admin/audit-logs', icon: Shield },
     ]
   }

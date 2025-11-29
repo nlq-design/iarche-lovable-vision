@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -36,13 +37,49 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { comment_id, article_id, author_name, author_email, content }: CommentNotificationRequest = await req.json();
-
-    // Créer le client Supabase avec la clé service pour accéder aux données
+    // Rate limiting: 10 requêtes par IP par 5 minutes
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0].trim() 
+      || req.headers.get('x-real-ip') 
+      || 'unknown';
+
+    const rateLimitResult = await checkRateLimit(
+      supabaseAdmin,
+      clientIP,
+      'notify-new-comment',
+      { maxRequests: 10, windowMinutes: 5 }
+    );
+
+    const rateLimitHeaders = getRateLimitHeaders(
+      rateLimitResult.remaining,
+      10,
+      5
+    );
+
+    if (!rateLimitResult.allowed) {
+      console.warn('Rate limit exceeded for IP:', clientIP);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Too many requests. Please try again later.',
+          retryAfter: 5 * 60 
+        }),
+        { 
+          status: 429, 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Retry-After': String(5 * 60),
+            ...corsHeaders,
+            ...rateLimitHeaders
+          } 
+        }
+      );
+    }
+
+    const { comment_id, article_id, author_name, author_email, content }: CommentNotificationRequest = await req.json();
 
     // Récupérer l'article concerné
     const { data: article, error: articleError } = await supabaseAdmin
@@ -128,6 +165,7 @@ const handler = async (req: Request): Promise<Response> => {
       headers: {
         "Content-Type": "application/json",
         ...corsHeaders,
+        ...rateLimitHeaders
       },
     });
   } catch (error: any) {
