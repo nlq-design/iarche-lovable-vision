@@ -153,7 +153,7 @@ const AdminLeads = () => {
     switch (source) {
       case 'newsletter':
         return 'bg-blue-100 text-blue-800 hover:bg-blue-100';
-      case 'atelier':
+      case 'atelier-webinaire':
         return 'bg-green-100 text-green-800 hover:bg-green-100';
       case 'livre-blanc':
         return 'bg-purple-100 text-purple-800 hover:bg-purple-100';
@@ -168,7 +168,7 @@ const AdminLeads = () => {
     switch (source) {
       case 'newsletter':
         return 'Newsletter';
-      case 'atelier':
+      case 'atelier-webinaire':
         return 'Atelier/Webinaire';
       case 'livre-blanc':
         return 'Livre blanc';
@@ -192,7 +192,7 @@ const AdminLeads = () => {
   const stats = {
     total: leads.length,
     newsletter: leads.filter((l) => l.source === 'newsletter').length,
-    atelier: leads.filter((l) => l.source === 'atelier').length,
+    atelier: leads.filter((l) => l.source === 'atelier-webinaire').length,
     livreBlanc: leads.filter((l) => l.source === 'livre-blanc').length,
     contact: leads.filter((l) => l.source === 'contact').length,
     withConsent: leads.filter((l) => l.consent_marketing).length,
@@ -297,7 +297,7 @@ const AdminLeads = () => {
                     <SelectContent>
                       <SelectItem value="all">Toutes les sources</SelectItem>
                       <SelectItem value="newsletter">Newsletter</SelectItem>
-                      <SelectItem value="atelier">Atelier/Webinaire</SelectItem>
+                      <SelectItem value="atelier-webinaire">Atelier/Webinaire</SelectItem>
                       <SelectItem value="livre-blanc">Livre blanc</SelectItem>
                       <SelectItem value="contact">Contact</SelectItem>
                     </SelectContent>

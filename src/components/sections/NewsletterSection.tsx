@@ -24,6 +24,21 @@ const NewsletterSection = () => {
       // Track CTA click
       await trackCTAClick('newsletter_inscription', 'newsletter_section_homepage', email);
       
+      // Créer le lead
+      const { error: leadError } = await supabase
+        .from('leads')
+        .insert([{
+          name: validatedData.email.split('@')[0], // Nom basique depuis l'email
+          email: validatedData.email,
+          source: 'newsletter',
+          consent_marketing: true
+        }]);
+
+      if (leadError && leadError.code !== '23505') {
+        console.warn('Failed to create lead:', leadError);
+      }
+
+      // Créer l'abonné newsletter
       const { error: dbError } = await supabase
         .from('newsletter_subscribers')
         .insert([{ email: validatedData.email }]);
