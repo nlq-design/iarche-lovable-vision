@@ -1,195 +1,154 @@
-import { Helmet } from 'react-helmet-async';
-import { Link } from 'react-router-dom';
-import BackgroundLayout from '@/components/layouts/BackgroundLayout';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import GradientLink from '@/components/ui/GradientLink';
-import IArcheLink from '@/components/ui/IArcheLink';
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { NavLink } from "@/components/NavLink";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import BackgroundLayout from "@/components/layouts/BackgroundLayout";
+import { Card } from "@/components/ui/card";
+import { Loader2, ArrowRight } from "lucide-react";
+import { Helmet } from "react-helmet";
+import BreadcrumbNav from "@/components/ui/BreadcrumbNav";
+import ArticlePlaceholder from "@/components/ui/ArticlePlaceholder";
+
+interface Solution {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  cover_image_url: string | null;
+  published_at: string | null;
+  created_at: string;
+}
 
 const Solutions = () => {
-  const saasSolutions = [
-    {
-      name: 'Team 5 Connect',
-      tagline: 'Gestion RH pour le BTP',
-      description: 'Plateforme complète de gestion des ressources humaines spécialisée pour les entreprises du bâtiment.',
-      status: 'Disponible',
-      link: '#'
-    },
-    {
-      name: 'Lexia',
-      tagline: 'ERP pour cabinets d\'avocats',
-      description: 'Solution de gestion complète pour cabinets juridiques : dossiers, facturation, time tracking.',
-      status: 'À venir',
-      link: null
-    },
-    {
-      name: 'Collaboration',
-      tagline: 'Plateforme collaborative',
-      description: 'Espace de travail partagé pour équipes distribuées avec gestion de projets et communication intégrée.',
-      status: 'Disponible',
-      link: '#'
-    },
-    {
-      name: 'Dialogue Plus',
-      tagline: 'Chatbot RAG intelligent',
-      description: 'Chatbot conversationnel alimenté par vos documents avec recherche sémantique et génération contextuelle.',
-      status: 'Disponible',
-      link: '#'
-    },
-    {
-      name: 'Datalia',
-      tagline: 'Extraction de données',
-      description: 'Extraction automatique et structuration de données depuis documents PDF, images et formulaires.',
-      status: 'Disponible',
-      link: '#'
-    }
-  ];
+  const [solutions, setSolutions] = useState<Solution[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const customProjects = [
-    {
-      secteur: 'Logistique',
-      realisation: 'Optimisation de tournées',
-      description: 'Algorithme d\'optimisation réduisant de 23% les kilomètres parcourus.'
-    },
-    {
-      secteur: 'Retail',
-      realisation: 'Recommandation produits',
-      description: 'Moteur de recommandation augmentant de 18% le panier moyen.'
-    },
-    {
-      secteur: 'Santé',
-      realisation: 'Assistant médical',
-      description: 'Chatbot d\'aide au diagnostic pour médecins généralistes.'
-    },
-    {
-      secteur: 'Finance',
-      realisation: 'Détection de fraude',
-      description: 'Système de scoring réduisant de 34% les faux positifs.'
-    },
-    {
-      secteur: 'Industrie',
-      realisation: 'Maintenance prédictive',
-      description: 'Modèle prédictif anticipant les pannes machines avec 87% de précision.'
+  useEffect(() => {
+    loadSolutions();
+  }, []);
+
+  const loadSolutions = async () => {
+    const { data, error } = await supabase
+      .from("articles")
+      .select("id, title, slug, excerpt, cover_image_url, published_at, created_at")
+      .eq("resource_type", "solution")
+      .eq("published", true)
+      .order("published_at", { ascending: false });
+
+    if (error) {
+      console.error("Error loading solutions:", error);
+    } else {
+      setSolutions(data || []);
     }
-  ];
+    setLoading(false);
+  };
 
   return (
     <BackgroundLayout>
       <Helmet>
-        <title>Nos solutions · IArche · SaaS IA pour PME</title>
-        <meta name="description" content="Solutions IA développées par IArche : Team 5 Connect, Lexia, Dialogue Plus. Ce qu'on conseille, on le construit aussi." />
+        <html lang="fr" />
+        <title>Nos solutions IA - Projets et réalisations | IArche</title>
+        <meta
+          name="description"
+          content="Découvrez nos solutions IA pour PME : analyse pricing, automatisation logistique, réponse appels d'offres, gestion associative et chatbot vocal."
+        />
         <link rel="canonical" href="https://iarche.fr/solutions" />
-        <meta property="og:title" content="Nos solutions · IArche · SaaS IA pour PME" />
-        <meta property="og:description" content="Solutions IA développées par IArche : Team 5 Connect, Lexia, Dialogue Plus." />
-        <meta property="og:url" content="https://iarche.fr/solutions" />
-        <meta property="og:type" content="website" />
       </Helmet>
-      
+
       <Header />
-      <BreadcrumbNav />
-      
-      <main className="min-h-screen pt-8">
-        <section className="max-w-6xl mx-auto px-6 py-16">
-          {/* En-tête */}
+
+      <main className="container mx-auto px-6 pt-32 pb-16 min-h-screen">
+        <BreadcrumbNav />
+
+        <div className="max-w-6xl mx-auto">
+          {/* Header enrichi */}
           <div className="text-center mb-16">
-            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 invisible animate-fadeIn [animation-delay:0.1s]">
-              Nos solutions
+            <h1 className="text-4xl md:text-5xl font-bold text-primary mb-6 invisible animate-fadeIn [animation-delay:0.1s]">
+              Nos solutions IA
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto invisible animate-fadeIn [animation-delay:0.2s]">
-              Ce qu'on conseille, on le construit aussi
+              Projets concrets, résultats mesurables. Découvrez comment l'IA transforme les PME.
             </p>
           </div>
 
-          {/* SaaS IArche */}
-          <div className="mb-20">
-            <h2 className="text-2xl md:text-3xl font-bold text-primary mb-8 invisible animate-fadeIn [animation-delay:0.3s]">
-              Solutions SaaS IArche
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {saasSolutions.map((solution, index) => (
-                <Card 
-                  key={solution.name}
-                  className="invisible animate-fadeIn hover:shadow-lg transition-shadow duration-300"
-                  style={{ animationDelay: `${0.4 + index * 0.1}s` }}
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-xl text-foreground">
-                          {solution.name}
-                        </CardTitle>
-                        <CardDescription className="text-sm mt-1">
-                          {solution.tagline}
-                        </CardDescription>
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : solutions.length === 0 ? (
+            <div className="text-center py-20">
+              <ArticlePlaceholder className="max-w-md mx-auto mb-6" />
+              <p className="text-muted-foreground text-lg">
+                Aucune solution disponible pour le moment
+              </p>
+              <p className="text-muted-foreground text-sm mt-2">
+                Nos premières solutions seront bientôt présentées
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {solutions.map((solution, index) => {
+                const [secteur, realisation] = solution.title.split(' — ');
+                return (
+                  <NavLink
+                    key={solution.id}
+                    to={`/solutions/${solution.slug}`}
+                    className="group block invisible animate-fadeIn"
+                    style={{ animationDelay: `${0.3 + index * 0.1}s` }}
+                  >
+                    <Card className="h-full overflow-hidden hover:shadow-lg hover:border-accent transition-all duration-300">
+                      {/* Image ou placeholder */}
+                      {solution.cover_image_url ? (
+                        <div className="aspect-video overflow-hidden">
+                          <img
+                            src={solution.cover_image_url}
+                            alt={solution.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                      ) : (
+                        <div className="aspect-video">
+                          <ArticlePlaceholder />
+                        </div>
+                      )}
+
+                      {/* Contenu */}
+                      <div className="p-6">
+                        {/* Badge secteur */}
+                        <div className="mb-3">
+                          <span className="text-xs font-semibold text-accent uppercase tracking-wide">
+                            {secteur}
+                          </span>
+                        </div>
+
+                        {/* Titre */}
+                        <h2 className="text-xl font-semibold text-primary mb-3 group-hover:text-accent transition-colors line-clamp-2">
+                          {realisation}
+                        </h2>
+
+                        {/* Excerpt */}
+                        {solution.excerpt && (
+                          <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
+                            {solution.excerpt}
+                          </p>
+                        )}
+
+                        {/* CTA */}
+                        <div className="flex items-center text-sm text-accent font-medium group-hover:translate-x-2 transition-transform duration-300">
+                          <span>Découvrir le projet</span>
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </div>
                       </div>
-                      <Badge 
-                        variant={solution.status === 'Disponible' ? 'default' : 'secondary'}
-                        className="shrink-0"
-                      >
-                        {solution.status}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground mb-4">
-                      {solution.description}
-                    </p>
-                    {solution.link && (
-                      <IArcheLink href={solution.link}>
-                        En savoir plus
-                      </IArcheLink>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                    </Card>
+                  </NavLink>
+                );
+              })}
             </div>
-          </div>
-
-          {/* Projets sur-mesure */}
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-primary mb-8 invisible animate-fadeIn [animation-delay:0.9s]">
-              Projets sur-mesure
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {customProjects.map((project, index) => (
-                <Card 
-                  key={index}
-                  className="invisible animate-fadeIn hover:shadow-lg transition-shadow duration-300"
-                  style={{ animationDelay: `${1.0 + index * 0.1}s` }}
-                >
-                  <CardHeader>
-                    <Badge variant="secondary" className="w-fit mb-2">
-                      {project.secteur}
-                    </Badge>
-                    <CardTitle className="text-lg text-foreground">
-                      {project.realisation}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      {project.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {/* CTA */}
-          <div className="text-center mt-16 invisible animate-fadeIn [animation-delay:1.6s]">
-            <p className="text-lg text-foreground mb-6">
-              Envie de créer votre propre solution ?
-            </p>
-            <GradientLink href="/contact" className="text-lg">
-              Discuter de votre projet
-            </GradientLink>
-          </div>
-        </section>
+          )}
+        </div>
       </main>
-      
+
       <Footer />
     </BackgroundLayout>
   );
