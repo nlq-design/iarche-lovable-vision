@@ -3,9 +3,10 @@ import { Helmet } from 'react-helmet-async';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import { Loader2, Filter, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Filter, Eye, EyeOff, Download, FileJson } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface AuditLog {
@@ -116,6 +117,56 @@ const AuditLogs = () => {
     setExpandedLog(expandedLog === logId ? null : logId);
   };
 
+  const exportToCSV = () => {
+    const headers = ['Date', 'Utilisateur', 'Action', 'Ressource', 'Nom', 'IP'];
+    const rows = filteredLogs.map(log => [
+      formatDate(log.created_at),
+      log.user_email || 'Inconnu',
+      log.action_type,
+      log.resource_type,
+      log.resource_name || log.resource_id?.substring(0, 8) || 'N/A',
+      log.ip_address ? String(log.ip_address) : 'N/A'
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `audit-logs-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Export réussi",
+      description: `${filteredLogs.length} logs exportés en CSV`
+    });
+  };
+
+  const exportToJSON = () => {
+    const jsonContent = JSON.stringify(filteredLogs, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `audit-logs-${new Date().toISOString().split('T')[0]}.json`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Export réussi",
+      description: `${filteredLogs.length} logs exportés en JSON`
+    });
+  };
+
   return (
     <AdminLayout>
       <Helmet>
@@ -124,11 +175,31 @@ const AuditLogs = () => {
       </Helmet>
 
       <div className="px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-2">Logs d'audit</h1>
-          <p className="text-muted-foreground">
-            Suivez toutes les actions administratives importantes sur la plateforme
-          </p>
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold mb-2">Logs d'audit</h1>
+            <p className="text-muted-foreground">
+              Suivez toutes les actions administratives importantes sur la plateforme
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              onClick={exportToCSV} 
+              variant="outline"
+              disabled={filteredLogs.length === 0}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
+            <Button 
+              onClick={exportToJSON} 
+              variant="outline"
+              disabled={filteredLogs.length === 0}
+            >
+              <FileJson className="h-4 w-4 mr-2" />
+              Export JSON
+            </Button>
+          </div>
         </div>
 
         {/* Filtres */}
