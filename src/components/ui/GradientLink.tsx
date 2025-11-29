@@ -43,6 +43,23 @@ const GradientLink: React.FC<GradientLinkProps> = ({
     origin-left
   `;
 
+  // Séparer texte et icône si les enfants sont multiples
+  const childrenArray = React.Children.toArray(children);
+  const hasMultipleChildren = childrenArray.length > 1;
+
+  const content = hasMultipleChildren ? (
+    <>
+      <span className={gradientTextClasses}>{childrenArray[0]}</span>
+      {childrenArray.slice(1)}
+      <span className={underlineClasses} aria-hidden="true" />
+    </>
+  ) : (
+    <>
+      <span className={gradientTextClasses}>{children}</span>
+      <span className={underlineClasses} aria-hidden="true" />
+    </>
+  );
+
   if (href) {
     return (
       <a
@@ -50,8 +67,7 @@ const GradientLink: React.FC<GradientLinkProps> = ({
         className={`${baseClasses} group`}
         onClick={onClick}
       >
-        <span className={gradientTextClasses}>{children}</span>
-        <span className={underlineClasses} aria-hidden="true" />
+        {content}
       </a>
     );
   }
@@ -63,8 +79,7 @@ const GradientLink: React.FC<GradientLinkProps> = ({
       className={`${baseClasses} group`}
       disabled={disabled}
     >
-      <span className={gradientTextClasses}>{children}</span>
-      <span className={underlineClasses} aria-hidden="true" />
+      {content}
     </button>
   );
 };
