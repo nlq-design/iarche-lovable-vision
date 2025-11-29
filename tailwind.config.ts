@@ -111,6 +111,10 @@ export default {
         "constructionFade": "constructionFade 4s ease-in-out infinite",
         "subtlePulse": "subtlePulse 3s ease-in-out infinite",
       },
+      backgroundPosition: {
+        'left': '0% 50%',
+        'right': '100% 50%',
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],

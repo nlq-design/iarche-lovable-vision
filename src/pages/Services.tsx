@@ -5,8 +5,8 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { ArrowRight, CheckCircle } from 'lucide-react';
+import GradientButton from '@/components/ui/GradientButton';
 
 const Services = () => {
   const services = [
@@ -139,14 +139,10 @@ const Services = () => {
 
                   {/* CTA */}
                   <div className="pt-4">
-                    <Link to={service.ctaLink}>
-                      <Button 
-                        className="bg-accent hover:bg-accent/90 text-white group"
-                      >
-                        {service.cta}
-                        <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
-                      </Button>
-                    </Link>
+                    <GradientButton href={service.ctaLink} className="group">
+                      {service.cta}
+                      <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                    </GradientButton>
                   </div>
                 </CardContent>
               </Card>
@@ -158,14 +154,9 @@ const Services = () => {
             <p className="text-lg text-foreground mb-6">
               Une question sur votre projet ?
             </p>
-            <Link to="/contact">
-              <Button 
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-base"
-              >
-                Parlons-en →
-              </Button>
-            </Link>
+            <GradientButton href="/contact" size="lg">
+              Parlons-en →
+            </GradientButton>
           </div>
         </section>
       </main>
