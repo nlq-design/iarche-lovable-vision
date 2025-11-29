@@ -388,7 +388,7 @@ const ArticleDetail = () => {
               />
             </div>
           ) : (
-            <ArticlePlaceholder className="mb-6 rounded-xl h-56 md:h-72" />
+            <ArticlePlaceholder className="mb-6 rounded-xl h-56 md:h-72" size="large" />
           )}
 
           {/* 2. Titre */}
