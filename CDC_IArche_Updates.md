@@ -1,12 +1,40 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.2**  
+**Version mise à jour : V6.3**  
 **Date : 29 Novembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.2 FILTRES ET TRANSITIONS PAGES RESSOURCES - MISE À JOUR V6.3 ✅
+
+#### Filtres par catégories et tags sur toutes les pages ressources
+
+**Implémentation des filtres :**
+- Page `/articles` : ajout filtres identiques à `/actualites` (catégories + tags + réinitialiser)
+- Filtrage côté client après fetch depuis Supabase
+- Jointures sur `article_categories` et `article_tags` pour filtrage combiné
+- Design uniforme : selects arrondis avec border accent au focus
+
+**Transitions visuelles entre pages :**
+- Animation `pageTransition` globale sur toutes les balises `<main>`
+- Durée : 0.4s ease-out
+- Effet : fade-in + translateY(10px) → translateY(0)
+- `will-change: opacity, transform` pour optimisation GPU
+
+**Routes détaillées par type de ressource :**
+- `/actualites/:slug` → articles de type `'article'`
+- `/articles/:slug` → articles de type `'actualite'`
+- `/cas-clients/:slug` → articles de type `'cas-client'`
+- `/livres-blancs/:slug` → articles de type `'livre-blanc'`
+- `/ateliers-webinaires/:slug` → articles de type `'atelier-webinaire'`
+
+**Rationale :**
+Unifier l'expérience utilisateur en proposant les mêmes capacités de filtrage sur toutes les pages ressources. Les transitions renforcent la cohérence visuelle lors de la navigation entre les sections.
+
+---
 
 ### 0.1 ROUTING ET DESIGN PAGES RESSOURCES - MISE À JOUR V6.2 ✅
 

@@ -95,7 +95,7 @@ const CasClients = () => {
               {casClients.map((casClient, index) => (
                 <NavLink
                   key={casClient.id}
-                  to={`/actualites/${casClient.slug}`}
+                  to={`/cas-clients/${casClient.slug}`}
                   className="group"
                 >
                   <Card className="h-full hover:shadow-lg transition-shadow duration-300 invisible animate-fadeIn"

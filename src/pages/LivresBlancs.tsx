@@ -95,7 +95,7 @@ const LivresBlancs = () => {
               {livresBlancs.map((livreBlanc, index) => (
                 <NavLink
                   key={livreBlanc.id}
-                  to={`/actualites/${livreBlanc.slug}`}
+                  to={`/livres-blancs/${livreBlanc.slug}`}
                   className="group"
                 >
                   <Card className="h-full hover:shadow-lg transition-shadow duration-300 invisible animate-fadeIn"
