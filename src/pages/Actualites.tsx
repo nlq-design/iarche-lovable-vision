@@ -55,7 +55,7 @@ const Actualites = () => {
       .from('articles')
       .select('id, title, slug, excerpt, cover_image_url, published_at, created_at')
       .eq('published', true)
-      .eq('resource_type', 'actualite');
+      .eq('resource_type', 'article');
 
     // Apply filters
     if (selectedCategory || selectedTag) {
@@ -121,13 +121,13 @@ const Actualites = () => {
         <title>Actualités IA · IArche · Agence IA Bayonne</title>
         <meta
           name="description"
-          content="Actualités, articles et conseils sur l'intelligence artificielle pour les PME. Veille technologique, cas d'usage et réglementation IA."
+          content="Découvrez nos articles de fond sur l'intelligence artificielle : guides pratiques, analyses techniques et retours d'expérience pour les dirigeants de PME."
         />
         <link rel="canonical" href="https://iarche.fr/actualites" />
         <meta property="og:title" content="Actualités IA · IArche · Agence IA Bayonne" />
         <meta
           property="og:description"
-          content="Actualités, articles et conseils sur l'intelligence artificielle pour les PME."
+          content="Articles de fond sur l'IA : guides pratiques, analyses techniques et retours d'expérience pour PME."
         />
         <meta property="og:url" content="https://iarche.fr/actualites" />
         <meta property="og:type" content="website" />
@@ -144,7 +144,7 @@ const Actualites = () => {
               Actualités & Articles
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto invisible animate-fadeIn [animation-delay:0.2s]">
-              Veille technologique, cas d'usage et réglementation IA
+              Guides pratiques, analyses et retours d'expérience sur l'IA
             </p>
           </div>
 
