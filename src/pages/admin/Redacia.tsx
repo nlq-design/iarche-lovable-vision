@@ -22,7 +22,161 @@ interface GeneratedArticle {
   tags: string[];
 }
 
+interface PromptTemplate {
+  id: string;
+  name: string;
+  description: string;
+  prompt: string;
+  defaultTone: 'expert' | 'vulgarise' | 'technique';
+  defaultLength: 'court' | 'moyen' | 'long';
+}
+
+const PROMPT_TEMPLATES: PromptTemplate[] = [
+  {
+    id: 'custom',
+    name: 'Brief personnalisé',
+    description: 'Rédigez votre propre brief',
+    prompt: '',
+    defaultTone: 'expert',
+    defaultLength: 'moyen'
+  },
+  {
+    id: 'tutorial',
+    name: 'Tutoriel pratique',
+    description: 'Guide étape par étape pour implémenter une solution IA',
+    prompt: `Rédige un tutoriel pratique détaillé pour : [SUJET]
+
+Structure attendue :
+- Introduction : contexte et bénéfices
+- Prérequis techniques et organisationnels
+- Étapes détaillées avec captures/exemples
+- Conseils pratiques et pièges à éviter
+- Checklist de validation
+- Ressources complémentaires
+
+Ton : pédagogique et actionnable
+Public cible : chefs de projet et équipes techniques PME`,
+    defaultTone: 'technique',
+    defaultLength: 'long'
+  },
+  {
+    id: 'case-study',
+    name: 'Étude de cas',
+    description: 'Présentation d\'un projet client avec résultats chiffrés',
+    prompt: `Rédige une étude de cas professionnelle sur : [SUJET]
+
+Structure attendue :
+- Contexte entreprise et enjeux métier
+- Problématique initiale (quantifiée si possible)
+- Solution mise en œuvre (architecture, technologies, méthodologie)
+- Résultats chiffrés (gains de temps, ROI, KPIs)
+- Témoignage client (si pertinent)
+- Leçons apprises et bonnes pratiques
+
+Ton : factuel, orienté résultats
+Public cible : décideurs et directions métier`,
+    defaultTone: 'expert',
+    defaultLength: 'moyen'
+  },
+  {
+    id: 'news',
+    name: 'Actualité IA',
+    description: 'Décryptage d\'une actualité ou tendance du secteur',
+    prompt: `Rédige un article d'actualité sur : [SUJET]
+
+Structure attendue :
+- Accroche : l'actualité en 2 phrases
+- Contexte et enjeux
+- Impact pour les PME françaises
+- Analyse critique (opportunités et limites)
+- Recommandations concrètes pour les dirigeants
+- Sources et liens utiles
+
+Ton : expert mais accessible
+Public cible : dirigeants de PME et responsables innovation`,
+    defaultTone: 'expert',
+    defaultLength: 'court'
+  },
+  {
+    id: 'guide',
+    name: 'Guide méthodologique',
+    description: 'Cadre méthodologique pour structurer un projet IA',
+    prompt: `Rédige un guide méthodologique complet sur : [SUJET]
+
+Structure attendue :
+- Vue d'ensemble de la méthodologie
+- Phases du projet avec livrables
+- Rôles et responsabilités
+- Outils et ressources recommandés
+- Critères de succès et KPIs
+- Template téléchargeable (si pertinent)
+
+Ton : structuré et opérationnel
+Public cible : chefs de projet et consultants`,
+    defaultTone: 'expert',
+    defaultLength: 'long'
+  },
+  {
+    id: 'comparison',
+    name: 'Comparatif solutions',
+    description: 'Analyse comparative de technologies ou approches IA',
+    prompt: `Rédige un comparatif objectif sur : [SUJET]
+
+Structure attendue :
+- Tableau comparatif synthétique (critères clés)
+- Description détaillée de chaque solution
+- Forces et faiblesses par cas d'usage
+- Critères de choix selon le contexte
+- Recommandations par profil d'entreprise
+- Coûts et investissement requis
+
+Ton : neutre et analytique
+Public cible : décideurs en phase de sélection`,
+    defaultTone: 'expert',
+    defaultLength: 'moyen'
+  },
+  {
+    id: 'glossary',
+    name: 'Glossaire / Définition',
+    description: 'Explication claire d\'un concept IA complexe',
+    prompt: `Rédige un article explicatif sur le concept : [SUJET]
+
+Structure attendue :
+- Définition simple en une phrase
+- Explication détaillée avec métaphores
+- Applications concrètes en entreprise
+- Exemples d'usage chez des PME
+- Idées reçues à déconstruire
+- Pour aller plus loin (ressources)
+
+Ton : pédagogique et accessible
+Public cible : néophytes et dirigeants non-techniques`,
+    defaultTone: 'vulgarise',
+    defaultLength: 'court'
+  },
+  {
+    id: 'opinion',
+    name: 'Point de vue expert',
+    description: 'Analyse critique d\'une tendance ou débat du secteur',
+    prompt: `Rédige un article d'opinion sur : [SUJET]
+
+Structure attendue :
+- Positionnement clair dès l'introduction
+- Argumentaire structuré (3-4 arguments)
+- Contre-arguments et nuances
+- Exemples concrets à l'appui
+- Vision prospective
+- Conclusion avec recommandations
+
+Ton : affirmé mais nuancé
+Public cible : professionnels du secteur et décideurs`,
+    defaultTone: 'expert',
+    defaultLength: 'moyen'
+  }
+];
+
 const Redacia = () => {
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('custom');
   const [brief, setBrief] = useState('');
   const [tone, setTone] = useState<'expert' | 'vulgarise' | 'technique'>('expert');
   const [length, setLength] = useState<'court' | 'moyen' | 'long'>('moyen');
@@ -36,6 +190,20 @@ const Redacia = () => {
   const [selectedArticle, setSelectedArticle] = useState<GeneratedArticle | null>(null);
   
   const { toast } = useToast();
+
+  const handleTemplateChange = (templateId: string) => {
+    const template = PROMPT_TEMPLATES.find(t => t.id === templateId);
+    if (!template) return;
+
+    setSelectedTemplate(templateId);
+    if (templateId !== 'custom') {
+      setBrief(template.prompt);
+      setTone(template.defaultTone);
+      setLength(template.defaultLength);
+    } else {
+      setBrief('');
+    }
+  };
 
   const handleGenerate = async (ai: 'claude' | 'gpt') => {
     if (!brief.trim()) {
@@ -146,13 +314,35 @@ const Redacia = () => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">
+                Type d'article
+              </label>
+              <select
+                value={selectedTemplate}
+                onChange={(e) => handleTemplateChange(e.target.value)}
+                className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-background"
+              >
+                {PROMPT_TEMPLATES.map(template => (
+                  <option key={template.id} value={template.id}>
+                    {template.name} — {template.description}
+                  </option>
+                ))}
+              </select>
+              {selectedTemplate !== 'custom' && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  💡 Template pré-rempli. Remplacez [SUJET] par votre thématique.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
                 Sujet / Idée / Brief *
               </label>
               <textarea
                 value={brief}
                 onChange={(e) => setBrief(e.target.value)}
                 placeholder="Ex: Écrire un article sur l'implémentation CLM pour les directions juridiques. Points clés : phases du projet, facteurs de succès, rôle du Legal Ops..."
-                rows={4}
+                rows={selectedTemplate === 'custom' ? 4 : 8}
                 className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-background"
               />
             </div>
