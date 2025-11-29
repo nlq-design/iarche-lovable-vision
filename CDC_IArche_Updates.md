@@ -1,12 +1,85 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.5**  
+**Version mise à jour : V6.6**  
 **Date : 29 Novembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.5 RESTRUCTURATION COMPLÈTE RESSOURCES ET MIGRATION EXEMPLESSECTION - MISE À JOUR V6.6 ✅
+
+#### Migration des projets en dur vers base de données
+
+**Problème initial :**
+- Les 5 projets de la section "Nos derniers projets" sur `/` étaient codés en dur dans `ExemplesSection.tsx`
+- Aucune gestion admin possible
+- Contenu statique non modifiable
+
+**Solution appliquée :**
+
+**1. Insertion des 5 projets en base de données**
+```sql
+INSERT INTO articles (title, slug, excerpt, content, resource_type, published, created_at, updated_at, published_at)
+VALUES 
+('Grande distribution — Analyse pricing et optimisation marges', 'grande-distribution-pricing', ..., 'cas-client', true, NOW(), NOW(), NOW()),
+('Transport & Logistique — Automatisation planification tournées', 'transport-logistique-tournees', ..., 'cas-client', true, NOW(), NOW(), NOW()),
+('Bureau d''études — Agent IA réponse appels d''offres', 'bureau-etudes-appels-offres', ..., 'cas-client', true, NOW(), NOW(), NOW()),
+('Association nationale — Gestion vie associative', 'association-gestion-vie-associative', ..., 'cas-client', true, NOW(), NOW(), NOW()),
+('Garage automobile — Chatbot vocal SAV', 'garage-chatbot-vocal', ..., 'cas-client', true, NOW(), NOW(), NOW());
+```
+
+**2. ExemplesSection dynamique**
+- Fetch des cas clients depuis Supabase : `resource_type='cas-client'`, `published=true`
+- Limite 5 résultats, tri par `created_at DESC`
+- Chaque card cliquable vers `/cas-clients/:slug`
+- Gestion via `/admin/cas-clients`
+
+**3. Architecture ressources finalisée**
+
+| Type de ressource | resource_type | Page admin | Page listing | Détail | Bouton création |
+|-------------------|---------------|------------|--------------|--------|-----------------|
+| Articles (veille technique) | `article` | `/admin/articles` | `/articles` | `/articles/:slug` | `?type=article` |
+| Actualités (événements) | `actualite` | `/admin/actualites` | `/actualites` | `/actualites/:slug` | `?type=actualite` |
+| Cas clients | `cas-client` | `/admin/cas-clients` | `/cas-clients` | `/cas-clients/:slug` | `?type=cas-client` |
+| Livres blancs | `livre-blanc` | `/admin/livres-blancs` | `/livres-blancs` | `/livres-blancs/:slug` | `?type=livre-blanc` |
+| Ateliers & Webinaires | `atelier-webinaire` | `/admin/ateliers-webinaires` | `/ateliers-webinaires` | `/ateliers-webinaires/:slug` | `?type=atelier-webinaire` |
+
+**4. Pages vérifiées/complétées**
+- ✅ `/admin/livres-blancs` : Bouton création pointe vers `?type=livre-blanc`
+- ✅ `/admin/ateliers-webinaires` : Bouton création pointe vers `?type=atelier-webinaire`
+- ✅ `/livres-blancs` : Listing public avec filtrage `resource_type='livre-blanc'`
+- ✅ `/ateliers-webinaires` : Listing public avec filtrage `resource_type='atelier-webinaire'`
+- ✅ Routes détail pour toutes les ressources dans `App.tsx`
+
+**5. Sidebar admin complet**
+Section "Contenu" avec 6 entrées :
+- Articles (fond) → `/admin/articles`
+- Actualités → `/admin/actualites`
+- Cas clients → `/admin/cas-clients`
+- Livres blancs → `/admin/livres-blancs`
+- Ateliers & Webinaires → `/admin/ateliers-webinaires`
+- Redacia (IA) → `/admin/redacia`
+
+**6. Navigation ArticleDetail**
+Bouton "Retour" utilise `location.pathname.startsWith()` pour détecter automatiquement la page parente :
+- `/articles/:slug` → retour vers `/articles`
+- `/actualites/:slug` → retour vers `/actualites`
+- `/cas-clients/:slug` → retour vers `/cas-clients`
+- `/livres-blancs/:slug` → retour vers `/livres-blancs`
+- `/ateliers-webinaires/:slug` → retour vers `/ateliers-webinaires`
+
+**Résultat final :**
+✅ Cohérence totale entre admin → base de données → listing public → détail article
+✅ Tous les contenus sont gérables dynamiquement depuis le back-office
+✅ ExemplesSection sur homepage affiche les 5 derniers cas clients publiés
+✅ Architecture évolutive pour tous les types de ressources
+
+**Rationale :**
+Cette restructuration complète garantit que chaque type de ressource suit le même pattern cohérent, élimine le contenu statique en dur, et permet une gestion centralisée de tous les contenus via l'interface admin.
+
+---
 
 ### 0.4 CORRECTION COHÉRENCE RESOURCE_TYPE - MISE À JOUR V6.5 ✅
 

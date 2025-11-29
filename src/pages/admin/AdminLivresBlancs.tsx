@@ -101,7 +101,7 @@ const AdminLivresBlancs = () => {
         <div className="container mx-auto max-w-6xl">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold text-foreground">Gestion des livres blancs</h1>
-            <NavLink to="/admin/articles/new">
+            <NavLink to="/admin/articles/new?type=livre-blanc">
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
                 Nouveau livre blanc
