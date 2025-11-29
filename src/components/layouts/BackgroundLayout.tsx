@@ -35,6 +35,7 @@ const BackgroundLayout = ({ children, className = '' }: BackgroundLayoutProps) =
             background: 'repeating-linear-gradient(45deg, transparent, transparent 20px, hsl(var(--border)) 20px, hsl(var(--border)) 22px)',
             zIndex: 0
           }}
+          aria-hidden="true"
         />
         {/* Quadrillage 2 : Diagonal -45deg avec délai */}
         <div 
@@ -46,6 +47,7 @@ const BackgroundLayout = ({ children, className = '' }: BackgroundLayoutProps) =
             animationDelay: '10s',
             zIndex: 0
           }}
+          aria-hidden="true"
         />
 
         {/* Contenu principal passé en children - au-dessus des quadrillages */}

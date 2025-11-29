@@ -49,8 +49,8 @@ const Actualites = () => {
                   size="lg"
                   className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-base group"
                 >
-                  S'inscrire à la newsletter
-                  <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  <span>S'inscrire à la newsletter</span>
+                  <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                 </Button>
               </Link>
             </div>

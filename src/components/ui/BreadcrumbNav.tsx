@@ -36,7 +36,7 @@ const BreadcrumbNav = () => {
           </Link>
         </li>
         <li>
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-4 h-4" aria-hidden="true" />
         </li>
         <li>
           <span className="text-foreground font-medium">{pageName}</span>

@@ -78,7 +78,7 @@ const ActualitesSection = () => {
             className="inline-flex items-center gap-2 text-accent hover:text-accent/80 font-medium transition-colors group"
           >
             Toutes les actualités
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
           </NavLink>
         </div>
       </div>

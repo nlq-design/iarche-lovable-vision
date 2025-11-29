@@ -206,7 +206,7 @@ const Contact = () => {
                 
                 <div className="space-y-6">
                   <div className="flex items-start gap-4">
-                    <Mail className="w-6 h-6 text-accent shrink-0 mt-1" />
+                    <Mail className="w-6 h-6 text-accent shrink-0 mt-1" aria-hidden="true" />
                     <div>
                       <p className="font-semibold text-foreground mb-1">Email</p>
                       <a 
@@ -219,7 +219,7 @@ const Contact = () => {
                   </div>
 
                   <div className="flex items-start gap-4">
-                    <MapPin className="w-6 h-6 text-accent shrink-0 mt-1" />
+                    <MapPin className="w-6 h-6 text-accent shrink-0 mt-1" aria-hidden="true" />
                     <div>
                       <p className="font-semibold text-foreground mb-1">Localisation</p>
                       <p className="text-muted-foreground">
@@ -229,7 +229,7 @@ const Contact = () => {
                   </div>
 
                   <div className="flex items-start gap-4">
-                    <Linkedin className="w-6 h-6 text-accent shrink-0 mt-1" />
+                    <Linkedin className="w-6 h-6 text-accent shrink-0 mt-1" aria-hidden="true" />
                     <div>
                       <p className="font-semibold text-foreground mb-1">LinkedIn</p>
                       <a 
