@@ -95,26 +95,26 @@ const Solutions = () => {
         <section className="max-w-6xl mx-auto px-6 py-8">
           {/* En-tête */}
           <div className="text-center mb-16">
-            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 invisible animate-fadeIn [animation-delay:0.1s]">
+            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
               Nos solutions
             </h1>
             {/* Ligne décorative gradient */}
-            <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 invisible animate-fadeIn [animation-delay:0.15s]"></div>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto invisible animate-fadeIn [animation-delay:0.2s]">
+            <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 animate-fadeIn [animation-delay:0.15s]"></div>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
               Ce qu'on conseille, on le construit aussi
             </p>
           </div>
 
           {/* SaaS IArche */}
           <div className="mb-20">
-            <h2 className="text-2xl md:text-3xl font-bold text-primary mb-8 invisible animate-fadeIn [animation-delay:0.3s]">
+            <h2 className="text-2xl md:text-3xl font-bold text-primary mb-8 animate-fadeIn [animation-delay:0.3s]">
               Solutions SaaS IArche
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {saasSolutions.map((solution, index) => (
                 <Card 
                   key={solution.name}
-                  className="invisible animate-fadeIn hover:shadow-lg transition-shadow duration-300"
+                  className="animate-fadeIn hover:shadow-lg transition-shadow duration-300"
                   style={{ animationDelay: `${0.4 + index * 0.1}s` }}
                 >
                   <CardHeader>
@@ -152,14 +152,14 @@ const Solutions = () => {
 
           {/* Projets sur-mesure */}
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-primary mb-8 invisible animate-fadeIn [animation-delay:0.9s]">
+            <h2 className="text-2xl md:text-3xl font-bold text-primary mb-8 animate-fadeIn [animation-delay:0.9s]">
               Projets sur-mesure
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {customProjects.map((project, index) => (
                 <Card 
                   key={index}
-                  className="invisible animate-fadeIn hover:shadow-lg transition-shadow duration-300"
+                  className="animate-fadeIn hover:shadow-lg transition-shadow duration-300"
                   style={{ animationDelay: `${1.0 + index * 0.1}s` }}
                 >
                   <CardHeader>
@@ -181,7 +181,7 @@ const Solutions = () => {
           </div>
 
           {/* CTA */}
-          <div className="text-center mt-16 invisible animate-fadeIn [animation-delay:1.6s]">
+          <div className="text-center mt-16 animate-fadeIn [animation-delay:1.6s]">
             <p className="text-lg text-foreground mb-6">
               Envie de créer votre propre solution ?
             </p>

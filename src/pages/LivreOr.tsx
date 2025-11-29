@@ -90,18 +90,18 @@ const LivreOr = () => {
         <section className="max-w-6xl mx-auto px-6 py-8">
           {/* En-tête */}
           <div className="text-center mb-16">
-            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 invisible animate-fadeIn [animation-delay:0.1s]">
+            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
               Livre d'Or
             </h1>
             {/* Ligne décorative gradient */}
-            <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 invisible animate-fadeIn [animation-delay:0.15s]"></div>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto invisible animate-fadeIn [animation-delay:0.2s]">
+            <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 animate-fadeIn [animation-delay:0.15s]"></div>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
               Ce que nos clients disent de nous
             </p>
           </div>
 
           {/* Contenu placeholder */}
-          <div className="max-w-2xl mx-auto text-center space-y-8 invisible animate-fadeIn [animation-delay:0.3s]">
+          <div className="max-w-2xl mx-auto text-center space-y-8 animate-fadeIn [animation-delay:0.3s]">
             <div className="bg-secondary/50 rounded-lg p-12 border border-border">
               <p className="text-lg text-muted-foreground mb-6">
                 Les premiers témoignages arrivent bientôt.

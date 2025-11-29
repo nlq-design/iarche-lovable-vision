@@ -109,18 +109,18 @@ const ServiceDetail = () => {
 
           {/* En-tête */}
           <header className="mb-12">
-            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 invisible animate-fadeIn [animation-delay:0.1s]">
+            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
               {service.title}
             </h1>
             {/* Ligne décorative gradient */}
-            <div className="w-24 h-1 mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 invisible animate-fadeIn [animation-delay:0.15s]"></div>
-            <p className="text-lg md:text-xl text-muted-foreground invisible animate-fadeIn [animation-delay:0.2s]">
+            <div className="w-24 h-1 mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 animate-fadeIn [animation-delay:0.15s]"></div>
+            <p className="text-lg md:text-xl text-muted-foreground animate-fadeIn [animation-delay:0.2s]">
               {service.descriptionLongue}
             </p>
           </header>
 
           {/* Livrables */}
-          <section className="mb-12 invisible animate-fadeIn [animation-delay:0.3s]">
+          <section className="mb-12 animate-fadeIn [animation-delay:0.3s]">
             <h2 className="text-2xl font-bold text-foreground mb-6">Livrables</h2>
             <ul className="space-y-3">
               {service.livrables.map((livrable, idx) => (
@@ -133,7 +133,7 @@ const ServiceDetail = () => {
           </section>
 
           {/* Pour qui */}
-          <section className="mb-12 invisible animate-fadeIn [animation-delay:0.4s]">
+          <section className="mb-12 animate-fadeIn [animation-delay:0.4s]">
             <h2 className="text-2xl font-bold text-foreground mb-6">Pour qui ?</h2>
             <p className="text-lg text-muted-foreground">
               {service.pourQui}
@@ -141,7 +141,7 @@ const ServiceDetail = () => {
           </section>
 
           {/* Méthodologie */}
-          <section className="mb-12 invisible animate-fadeIn [animation-delay:0.5s]">
+          <section className="mb-12 animate-fadeIn [animation-delay:0.5s]">
             <h2 className="text-2xl font-bold text-foreground mb-6">Méthodologie</h2>
             <div className="space-y-6">
               {service.methodologie.map((etape, idx) => (
