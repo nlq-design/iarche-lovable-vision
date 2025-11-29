@@ -5,46 +5,41 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+
 import GradientLink from '@/components/ui/GradientLink';
 import IArcheLink from '@/components/ui/IArcheLink';
 
 const Solutions = () => {
   const saasSolutions = [
     {
-      name: 'Team 5 Connect',
-      slug: 'team-5-connect',
-      tagline: 'Gestion RH des équipes terrain',
-      description: 'Pointage, absences, conformité — BTP et industrie.',
-      status: 'Disponible'
-    },
-    {
-      name: 'ERP Avocat',
-      slug: 'lexia',
-      tagline: 'ERP pour cabinets d\'avocats',
-      description: 'Dossiers, contrats, facturation, conformité.',
-      status: 'À venir'
-    },
-    {
       name: 'Collaboria',
       slug: 'collaboria',
       tagline: 'Plateforme collaborative IA',
-      description: 'Multi-LLM, benchmark, maîtrise des usages. Souveraine et conforme.',
-      status: 'Disponible'
+      description: 'Multi-LLM, benchmark, maîtrise des usages. Souveraine et conforme.'
     },
     {
       name: 'Chatbot RAG Avancé',
       slug: 'dialogue-plus',
       tagline: 'Chatbot IA connecté à vos documents',
-      description: 'RAG avancé, 340+ modèles, benchmark intégré.',
-      status: 'Disponible'
+      description: 'RAG avancé, 340+ modèles, benchmark intégré.'
+    },
+    {
+      name: 'ERP Avocat',
+      slug: 'lexia',
+      tagline: 'ERP pour cabinets d\'avocats',
+      description: 'ERP pour cabinet d\'avocats boosté à l\'IA'
     },
     {
       name: 'Datalia',
       slug: 'datalia',
       tagline: 'Extraction de données locales',
-      description: 'Prospection par mots-clés et zones. Licence à vie.',
-      status: 'Disponible'
+      description: 'Prospection par mots-clés et zones. Licence à vie.'
+    },
+    {
+      name: 'Team 5 Connect',
+      slug: 'team-5-connect',
+      tagline: 'Gestion RH des équipes terrain',
+      description: 'Pointage, absences, conformité — BTP et industrie.'
     }
   ];
 
@@ -78,10 +73,12 @@ const Solutions = () => {
           </div>
 
           {/* SaaS IArche */}
-          <div className="mb-20">
-            <h2 className="text-2xl md:text-3xl font-bold text-primary mb-8 animate-fadeIn [animation-delay:0.3s]">
-              Solutions SaaS IArche
-            </h2>
+          <div className="mb-12 pb-8">
+            <div className="text-center mb-8 animate-fadeIn [animation-delay:0.3s]">
+              <GradientLink href="/contact" className="text-lg">
+                Je veux en savoir plus
+              </GradientLink>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {saasSolutions.map((solution, index) => (
                 <Card 
@@ -90,22 +87,12 @@ const Solutions = () => {
                   style={{ animationDelay: `${0.4 + index * 0.1}s` }}
                 >
                   <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-xl text-foreground">
-                          {solution.name}
-                        </CardTitle>
-                        <CardDescription className="text-sm mt-1">
-                          {solution.tagline}
-                        </CardDescription>
-                      </div>
-                      <Badge 
-                        variant={solution.status === 'Disponible' ? 'default' : 'secondary'}
-                        className="shrink-0"
-                      >
-                        {solution.status}
-                      </Badge>
-                    </div>
+                    <CardTitle className="text-xl text-foreground">
+                      {solution.name}
+                    </CardTitle>
+                    <CardDescription className="text-sm mt-1">
+                      {solution.tagline}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground mb-4">
@@ -121,7 +108,7 @@ const Solutions = () => {
           </div>
 
           {/* CTA */}
-          <div className="text-center mt-16 animate-fadeIn [animation-delay:1.6s]">
+          <div className="text-center mt-8 animate-fadeIn [animation-delay:1.6s]">
             <p className="text-lg text-foreground mb-6">
               Envie de créer votre propre solution ?
             </p>
