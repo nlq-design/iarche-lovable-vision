@@ -1,12 +1,74 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.7**  
+**Version mise à jour : V6.8**  
 **Date : 29 Novembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.7 CONTENU SOLUTIONS SAAS - MISE À JOUR V6.8 ✅
+
+#### Textes validés pour les 5 solutions principales
+
+**Contexte :**
+- Les 5 solutions SaaS (Team 5 Connect, Lexia, Collaboria, Dialogue Plus, Datalia) nécessitaient des contenus détaillés et structurés
+- Besoin de descriptions claires, scannable, et factuelles pour les pages `/solutions/:slug`
+- Harmonisation du ton et de la structure sur les 5 pages solutions
+
+**Contenus mis à jour :**
+
+1. **Team 5 Connect** (`/solutions/team-5-connect`)
+   - Titre : "Simplifiez la gestion RH de vos équipes terrain"
+   - Intro : Solution tout-en-un pour le pointage, les absences et la conformité dans le BTP et l'industrie
+   - 3 modules détaillés : Application Mobile (Collaborateurs), Back Office (Managers/RH), Conformité & Sécurité
+   - Description hub : "Gestion RH des équipes terrain. Pointage, absences, conformité — en une seule solution pour le BTP et l'industrie."
+
+2. **ERP Avocat / Lexia** (`/solutions/lexia`)
+   - Titre : "ERP Avocat — Gestion de cabinet tout-en-un"
+   - Intro : Dossiers, contrats, facturation, conformité — tout au même endroit
+   - Double interface : Assistant IA (conversationnel) + Back Office (classique)
+   - Fonctionnalités clés : Gestion dossiers, facturation, conformité RGPD
+   - Description hub : "ERP pour cabinets d'avocats. Dossiers, contrats, facturation, conformité — tout au même endroit."
+
+3. **Collaboria** (`/solutions/collaboria`)
+   - Titre : "Collaboria — Plateforme collaborative IA pour les équipes"
+   - Intro : Tous vos outils IA au même endroit (Multi-LLM, génération d'images, présentations, transcription)
+   - 5 sections : Multi-LLM (38 modèles), Outils de création, Collaboration, Administration, Sécurité & Conformité
+   - Modes de crédit, templates d'organisation, analytics organisation
+   - Description hub : "Plateforme collaborative IA. Multi-LLM, benchmark des outils, maîtrise des usages. Souveraine, sécurisée et conforme."
+
+4. **Chatbot RAG Avancé / Dialogue Plus** (`/solutions/dialogue-plus`)
+   - Titre : "Chatbot RAG Avancé — Un assistant IA connecté à vos documents"
+   - Intro : Un chatbot qui répond à partir de vos propres données (340+ modèles LLM disponibles)
+   - 9 fonctionnalités détaillées : Multi-LLM (340+ modèles), RAG avancé, Benchmark intégré, Analyse des coûts, Personnalisation, Intégration, Connexions, Suivi temps réel, Analytics
+   - Cas d'usage : Support client, RH, Formation, E-commerce
+   - Description hub : "Chatbot IA connecté à vos documents. RAG avancé, multi-formats, benchmark intégré. Intégration widget ou API."
+
+5. **Datalia** (`/solutions/datalia`)
+   - Titre : "Datalia — Extraction de données locales pour la prospection"
+   - Intro : Trouvez vos prospects par mots-clés et zones géographiques (API Google Places)
+   - 5 fonctionnalités : Recherche par mots-clés, Filtrage géographique, Données extraites, Export (CSV/Excel), Licence à vie
+   - Description hub : "Extraction de données locales. Prospection par mots-clés et zones géographiques. Licence à vie."
+
+**Règles de rédaction appliquées :**
+- **Clarté** : Phrases courtes, un message par phrase, pas de jargon
+- **Structure** : Hiérarchie visuelle claire (titre > intro > sections > détails)
+- **Scannable** : L'utilisateur doit comprendre en 5 secondes ce que fait la solution
+- **Factuel** : Ce que ça fait, pas ce que ça promet
+- **Cohérent** : Même ton et même structure sur les 5 pages solutions
+
+**Fichiers modifiés :**
+- Base de données `articles` : colonnes `content` et `excerpt` mises à jour pour les 5 solutions
+
+**Impact :**
+- Contenu professionnel, structuré et cohérent sur toutes les pages solutions
+- Descriptions claires facilitant la compréhension immédiate de chaque solution
+- Excerpts optimisés pour affichage sur page hub `/solutions`
+- Hiérarchie visuelle identique sur les 5 pages pour cohérence utilisateur
+
+---
 
 ### 0.6 OPTIMISATION PLACEHOLDER ARTICLE - MISE À JOUR V6.7 ✅
 
