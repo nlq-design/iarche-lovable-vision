@@ -14,56 +14,56 @@ const Services = () => {
     {
       id: 'audit',
       title: 'Audit & Conseil',
-      description: 'Diagnostic personnalisé de votre maturité IA et définition d\'une feuille de route adaptée à vos enjeux métier.',
+      description: 'Comprendre où vous en êtes et définir par où commencer.',
       livrables: [
         'Cartographie des cas d\'usage prioritaires',
         'Évaluation de la maturité technologique',
         'Plan d\'action chiffré et priorisé',
         'Recommandations d\'outils et partenaires'
       ],
-      pourQui: 'Dirigeants de PME souhaitant structurer leur démarche IA sans partir d\'une page blanche.',
-      cta: 'Demander un diagnostic',
+      pourQui: 'Pour ceux qui veulent avancer sur l\'IA sans partir dans tous les sens.',
+      cta: 'Demander un audit',
       ctaLink: '/contact'
     },
     {
       id: 'developpement',
       title: 'Développement & Intégration',
-      description: 'Conception et déploiement de solutions IA sur-mesure, du POC à la production, avec accompagnement technique complet.',
+      description: 'Construire et déployer des solutions qui marchent dans votre contexte.',
       livrables: [
-        'Prototypage rapide (POC en 2-4 semaines)',
+        'Prototypage rapide (maquette en 2-4 semaines)',
         'Architecture scalable et maintenable',
         'Intégration avec vos outils existants',
         'Documentation technique et transfert de compétences'
       ],
-      pourQui: 'Entreprises prêtes à industrialiser un cas d\'usage métier concret nécessitant une expertise technique pointue.',
+      pourQui: 'TPE, PME, indépendants, collectivités — l\'IA s\'adresse à tous.',
       cta: 'Discuter de votre projet',
       ctaLink: '/contact'
     },
     {
       id: 'accompagnement',
       title: 'Accompagnement & Autonomie',
-      description: 'Montée en compétences de vos équipes via formations pratiques, coaching et transfert de connaissances opérantes.',
+      description: 'Rendre vos équipes capables de continuer sans nous.',
       livrables: [
-        'Formations techniques (prompting, fine-tuning, RAG)',
+        'Sessions techniques (prompting, fine-tuning, RAG)',
         'Ateliers métier (cas d\'usage, ROI, éthique)',
         'Coaching individuel ou collectif',
         'Documentation et guides internes personnalisés'
       ],
-      pourQui: 'Organisations visant l\'autonomie et l\'acculturation IA de leurs collaborateurs sans dépendance à un prestataire.',
-      cta: 'Planifier une formation',
+      pourQui: 'Acculturer, accompagner, rendre autonome — pour tous ceux qui veulent intégrer l\'IA durablement.',
+      cta: 'Planifier un accompagnement',
       ctaLink: '/contact'
     },
     {
       id: 'conformite',
       title: 'Conformité & Réglementation',
-      description: 'Mise en conformité RGPD et AI Act, audit de vos systèmes IA et accompagnement juridique adapté.',
+      description: 'S\'assurer que vos projets IA respectent les règles du jeu.',
       livrables: [
         'Audit de conformité RGPD et AI Act',
         'Documentation réglementaire (registres, impacts)',
         'Recommandations d\'implémentation',
         'Veille réglementaire continue'
       ],
-      pourQui: 'Entreprises soumises aux obligations réglementaires ou anticipant les futures exigences de l\'AI Act.',
+      pourQui: 'Entreprises soumises aux obligations réglementaires et/ou anticipant les futures exigences de l\'AI Act.',
       cta: 'Auditer ma conformité',
       ctaLink: '/contact'
     }
@@ -73,10 +73,10 @@ const Services = () => {
     <BackgroundLayout>
       <Helmet>
         <title>Nos services · IArche · Agence IA Bayonne</title>
-        <meta name="description" content="Audit IA, développement, formation et conformité. Accompagnement adapté à votre maturité IA. Agence basée à Bayonne." />
+        <meta name="description" content="Audit IA, développement, accompagnement et conformité. Services adaptés à votre maturité IA. Agence basée à Bayonne." />
         <link rel="canonical" href="https://iarche.fr/services" />
         <meta property="og:title" content="Nos services · IArche · Agence IA Bayonne" />
-        <meta property="og:description" content="Audit IA, développement, formation et conformité. Accompagnement adapté à votre maturité IA." />
+        <meta property="og:description" content="Audit IA, développement, accompagnement et conformité. Services adaptés à votre maturité IA." />
         <meta property="og:url" content="https://iarche.fr/services" />
         <meta property="og:type" content="website" />
 
@@ -132,7 +132,7 @@ const Services = () => {
             {/* Ligne décorative gradient */}
             <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 animate-fadeIn [animation-delay:0.15s]"></div>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
-              Accompagnement IA adapté à votre stade de maturité
+              De l'audit à l'accompagnement, nous vous aidons à intégrer l'IA concrètement
             </p>
           </div>
 
@@ -189,13 +189,12 @@ const Services = () => {
             ))}
           </div>
 
-          {/* CTA global */}
           <div className="text-center mt-16 animate-fadeIn [animation-delay:0.9s]">
             <p className="text-lg text-foreground mb-6">
-              Une question sur votre projet ?
+              Prêt à démarrer ?
             </p>
             <GradientLink href="/contact" className="text-lg">
-              Parlons-en
+              Premier échange
             </GradientLink>
           </div>
         </section>
