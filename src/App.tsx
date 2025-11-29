@@ -9,12 +9,16 @@ import NotFound from "./pages/NotFound";
 import Services from "./pages/Services";
 import Solutions from "./pages/Solutions";
 import Actualites from "./pages/Actualites";
+import ArticleDetail from "./pages/ArticleDetail";
 import Contact from "./pages/Contact";
 import Newsletter from "./pages/Newsletter";
 import LivreOr from "./pages/LivreOr";
 import MentionsLegales from "./pages/MentionsLegales";
 import ConditionsGenerales from "./pages/ConditionsGenerales";
 import Confidentialite from "./pages/Confidentialite";
+import Admin from "./pages/Admin";
+import AdminArticleEditor from "./pages/AdminArticleEditor";
+import { CookieConsent } from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +40,7 @@ const App = () => (
           <Route path="/services" element={<Services />} />
           <Route path="/solutions" element={<Solutions />} />
           <Route path="/actualites" element={<Actualites />} />
+          <Route path="/actualites/:slug" element={<ArticleDetail />} />
           <Route path="/contact" element={<Contact />} />
           
           {/* Pages secondaires */}
@@ -47,9 +52,15 @@ const App = () => (
           <Route path="/conditions-generales" element={<ConditionsGenerales />} />
           <Route path="/confidentialite" element={<Confidentialite />} />
           
+          {/* Admin */}
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/articles/new" element={<AdminArticleEditor />} />
+          <Route path="/admin/articles/:id" element={<AdminArticleEditor />} />
+          
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <CookieConsent />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

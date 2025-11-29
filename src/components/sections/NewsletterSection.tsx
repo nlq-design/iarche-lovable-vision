@@ -35,6 +35,13 @@ const NewsletterSection = () => {
         description: "Vous recevrez nos actualités par email.",
       });
 
+      // Push GTM event
+      (window as any).dataLayer = (window as any).dataLayer || [];
+      (window as any).dataLayer.push({
+        event: 'newsletter_signup',
+        email: validatedData.email,
+      });
+
       setEmail('');
     } catch (error: any) {
       if (error.errors) {
