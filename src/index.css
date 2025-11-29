@@ -118,11 +118,33 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 
-  /* Strong tags dans le contenu des articles utilisent le bleu IArche */
+  /* Strong tags dans le contenu des articles utilisent le bleu IArche avec surlignage subtil */
   article strong,
   .prose strong {
     color: hsl(var(--primary));
     font-weight: 600;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      transparent 40%,
+      hsla(218, 47%, 20%, 0.08) 40%,
+      hsla(218, 47%, 20%, 0.08) 100%
+    );
+    padding: 0.1em 0.2em;
+    border-radius: 2px;
+    transition: background 0.2s ease;
+  }
+
+  /* Effet hover sur les mots surlignés */
+  article strong:hover,
+  .prose strong:hover {
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      transparent 30%,
+      hsla(218, 47%, 20%, 0.12) 30%,
+      hsla(218, 47%, 20%, 0.12) 100%
+    );
   }
 
   /* Focus global IArche - utilise la charte graphique */
