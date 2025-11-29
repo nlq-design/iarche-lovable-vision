@@ -43,6 +43,7 @@ import AdminAteliersWebinaires from "./pages/admin/AdminAteliersWebinaires";
 import AdminLeads from "./pages/admin/AdminLeads";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import { CookieConsent } from "./components/CookieConsent";
+import { ResourceTypeValidator } from "./components/dev/ResourceTypeValidator";
 
 const queryClient = new QueryClient();
 
@@ -124,6 +125,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
         <CookieConsent />
+        <ResourceTypeValidator />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
