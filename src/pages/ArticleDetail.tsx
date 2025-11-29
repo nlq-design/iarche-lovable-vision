@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { ArticleComments } from '@/components/ArticleComments';
+import { NewsletterForm } from '@/components/NewsletterForm';
+import { Card, CardContent } from '@/components/ui/card';
 import 'react-quill/dist/quill.snow.css';
 
 interface Article {
@@ -189,6 +191,15 @@ const ArticleDetail = () => {
           {/* Commentaires */}
           <div className="mt-16">
             <ArticleComments articleId={article.id} />
+          </div>
+
+          {/* Newsletter */}
+          <div className="mt-12">
+            <Card className="bg-background border border-border">
+              <CardContent className="p-6">
+                <NewsletterForm />
+              </CardContent>
+            </Card>
           </div>
         </article>
       </main>
