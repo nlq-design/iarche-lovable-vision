@@ -204,8 +204,11 @@ const Articles = () => {
               {articles.map((article, index) => (
                 <div 
                   key={article.id}
-                  className="relative rounded-lg p-[2px] gradient-border-animated group invisible animate-fadeIn"
-                  style={{ animationDelay: `${0.3 + index * 0.1}s` }}
+                  className="relative rounded-lg p-[2px] gradient-border-animated group animate-fadeIn opacity-0"
+                  style={{ 
+                    animationDelay: `${0.3 + index * 0.1}s`,
+                    animationFillMode: 'forwards'
+                  }}
                 >
                   <NavLink
                     to={`/articles/${article.slug}`}
