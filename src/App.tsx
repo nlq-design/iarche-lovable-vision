@@ -25,6 +25,7 @@ import AdminComments from './pages/AdminComments';
 import AdminNewsletters from './pages/AdminNewsletters';
 import AdminDashboard from "./pages/AdminDashboard";
 import Redacia from "./pages/admin/Redacia";
+import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import { CookieConsent } from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
@@ -61,15 +62,15 @@ const App = () => (
           
           {/* Admin */}
           <Route path="/admin" element={<Admin />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/redacia" element={<Redacia />} />
-          <Route path="/admin/articles/new" element={<AdminArticleEditor />} />
-          <Route path="/admin/articles/:id" element={<AdminArticleEditor />} />
-          <Route path="/admin/articles/:id/history" element={<ArticleVersionHistory />} />
-          <Route path="/admin/categories" element={<AdminCategories />} />
-          <Route path="/admin/tags" element={<AdminTags />} />
-          <Route path="/admin/comments" element={<AdminComments />} />
-          <Route path="/admin/newsletters" element={<AdminNewsletters />} />
+          <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
+          <Route path="/admin/redacia" element={<ProtectedAdminRoute><Redacia /></ProtectedAdminRoute>} />
+          <Route path="/admin/articles/new" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
+          <Route path="/admin/articles/:id" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
+          <Route path="/admin/articles/:id/history" element={<ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>} />
+          <Route path="/admin/categories" element={<ProtectedAdminRoute><AdminCategories /></ProtectedAdminRoute>} />
+          <Route path="/admin/tags" element={<ProtectedAdminRoute><AdminTags /></ProtectedAdminRoute>} />
+          <Route path="/admin/comments" element={<ProtectedAdminRoute><AdminComments /></ProtectedAdminRoute>} />
+          <Route path="/admin/newsletters" element={<ProtectedAdminRoute><AdminNewsletters /></ProtectedAdminRoute>} />
           
           {/* 404 */}
           <Route path="*" element={<NotFound />} />

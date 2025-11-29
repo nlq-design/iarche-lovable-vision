@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import BackgroundLayout from '@/components/layouts/BackgroundLayout';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -171,11 +171,11 @@ const AdminComments = () => {
 
   if (authLoading || loading) {
     return (
-      <BackgroundLayout>
+      <AdminLayout>
         <div className="min-h-screen flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </BackgroundLayout>
+      </AdminLayout>
     );
   }
 
@@ -237,7 +237,7 @@ const AdminComments = () => {
   );
 
   return (
-    <BackgroundLayout>
+    <AdminLayout>
       <Helmet>
         <title>Modération des commentaires - IArche</title>
         <meta name="robots" content="noindex, nofollow" />
@@ -349,7 +349,7 @@ const AdminComments = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </BackgroundLayout>
+    </AdminLayout>
   );
 };
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import BackgroundLayout from '@/components/layouts/BackgroundLayout';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -413,16 +413,16 @@ const AdminArticleEditor = () => {
 
   if (authLoading || loadingArticle) {
     return (
-      <BackgroundLayout>
+      <AdminLayout>
         <div className="min-h-screen flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </BackgroundLayout>
+      </AdminLayout>
     );
   }
 
   return (
-    <BackgroundLayout>
+    <AdminLayout>
       <Helmet>
         <title>{id ? 'Modifier l\'article' : 'Nouvel article'} - IArche</title>
         <meta name="robots" content="noindex, nofollow" />
@@ -706,7 +706,7 @@ const AdminArticleEditor = () => {
           </Card>
         </div>
       </div>
-    </BackgroundLayout>
+    </AdminLayout>
   );
 };
 
