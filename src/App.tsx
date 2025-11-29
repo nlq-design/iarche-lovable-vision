@@ -49,6 +49,7 @@ const AdminLivresBlancs = lazy(() => import("./pages/admin/AdminLivresBlancs"));
 const AdminAteliersWebinaires = lazy(() => import("./pages/admin/AdminAteliersWebinaires"));
 const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
 const AdminFAQs = lazy(() => import("./pages/admin/AdminFAQs"));
+const PerformanceMonitoring = lazy(() => import("./pages/admin/PerformanceMonitoring"));
 const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"));
 
 // QueryClient avec cache optimisé
@@ -275,6 +276,11 @@ const App = () => (
           <Route path="/admin/settings" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/performance-monitoring" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><PerformanceMonitoring /></ProtectedAdminRoute>
             </Suspense>
           } />
           

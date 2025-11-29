@@ -649,6 +649,69 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_metrics: {
+        Row: {
+          accessibility_score: number | null
+          best_practices_score: number | null
+          bundle_size_css: number | null
+          bundle_size_js: number | null
+          bundle_size_total: number | null
+          cls: number | null
+          created_at: string
+          environment: string | null
+          fcp: number | null
+          id: string
+          lcp: number | null
+          notes: string | null
+          performance_score: number | null
+          recorded_at: string
+          recorded_by: string | null
+          seo_score: number | null
+          tbt: number | null
+          tti: number | null
+        }
+        Insert: {
+          accessibility_score?: number | null
+          best_practices_score?: number | null
+          bundle_size_css?: number | null
+          bundle_size_js?: number | null
+          bundle_size_total?: number | null
+          cls?: number | null
+          created_at?: string
+          environment?: string | null
+          fcp?: number | null
+          id?: string
+          lcp?: number | null
+          notes?: string | null
+          performance_score?: number | null
+          recorded_at?: string
+          recorded_by?: string | null
+          seo_score?: number | null
+          tbt?: number | null
+          tti?: number | null
+        }
+        Update: {
+          accessibility_score?: number | null
+          best_practices_score?: number | null
+          bundle_size_css?: number | null
+          bundle_size_js?: number | null
+          bundle_size_total?: number | null
+          cls?: number | null
+          created_at?: string
+          environment?: string | null
+          fcp?: number | null
+          id?: string
+          lcp?: number | null
+          notes?: string | null
+          performance_score?: number | null
+          recorded_at?: string
+          recorded_by?: string | null
+          seo_score?: number | null
+          tbt?: number | null
+          tti?: number | null
+        }
+        Relationships: []
+      }
       rate_limit_requests: {
         Row: {
           created_at: string
