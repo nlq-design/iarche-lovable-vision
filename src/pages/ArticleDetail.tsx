@@ -25,6 +25,7 @@ interface Article {
   published: boolean;
   published_at: string | null;
   created_at: string;
+  resource_type: string;
 }
 
 const ArticleDetail = () => {
@@ -86,6 +87,40 @@ const ArticleDetail = () => {
     });
   };
 
+  const getBackPath = (resourceType: string) => {
+    switch (resourceType) {
+      case 'actualite':
+        return '/actualites';
+      case 'article':
+        return '/articles';
+      case 'cas-client':
+        return '/cas-clients';
+      case 'livre-blanc':
+        return '/livres-blancs';
+      case 'atelier-webinaire':
+        return '/ateliers-webinaires';
+      default:
+        return '/actualites';
+    }
+  };
+
+  const getBackLabel = (resourceType: string) => {
+    switch (resourceType) {
+      case 'actualite':
+        return 'Retour aux actualités';
+      case 'article':
+        return 'Retour aux articles';
+      case 'cas-client':
+        return 'Retour aux cas clients';
+      case 'livre-blanc':
+        return 'Retour aux livres blancs';
+      case 'atelier-webinaire':
+        return 'Retour aux ateliers & webinaires';
+      default:
+        return 'Retour aux actualités';
+    }
+  };
+
   if (loading) {
     return (
       <BackgroundLayout>
@@ -130,10 +165,10 @@ const ArticleDetail = () => {
         <article className="max-w-4xl mx-auto px-6 py-16">
           {/* Bouton retour */}
           <div className="mb-8">
-            <NavLink to="/actualites">
+            <NavLink to={getBackPath(article.resource_type)}>
               <Button variant="outline" size="sm">
                 <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
-                Retour aux actualités
+                {getBackLabel(article.resource_type)}
               </Button>
             </NavLink>
           </div>
