@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, MessageCircle } from 'lucide-react';
+import { commentSchema } from '@/schemas/contact';
 
 interface Comment {
   id: string;
@@ -50,10 +51,18 @@ export const ArticleComments = ({ articleId }: ArticleCommentsProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim() || !email.trim() || !content.trim()) {
+    // Validation avec Zod
+    const validation = commentSchema.safeParse({
+      author_name: name,
+      author_email: email,
+      content: content
+    });
+
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
       toast({
-        title: 'Erreur',
-        description: 'Tous les champs sont requis',
+        title: 'Erreur de validation',
+        description: firstError.message,
         variant: 'destructive',
       });
       return;

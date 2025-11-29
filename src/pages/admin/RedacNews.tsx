@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import ReactQuill from 'react-quill';
+import DOMPurify from 'dompurify';
 import 'react-quill/dist/quill.snow.css';
 
 interface Newsletter {
@@ -308,7 +309,7 @@ const RedacNews = () => {
                       </div>
                       <div 
                         className="text-sm text-muted-foreground line-clamp-2"
-                        dangerouslySetInnerHTML={{ __html: newsletter.content }}
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(newsletter.content) }}
                       />
                       <p className="text-xs text-muted-foreground mt-2">
                         Créée le {new Date(newsletter.created_at).toLocaleDateString('fr-FR')}
@@ -375,7 +376,7 @@ const RedacNews = () => {
                 <div className="border-t pt-4">
                   <div 
                     className="prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: previewNewsletter.content }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(previewNewsletter.content) }}
                   />
                 </div>
               </div>

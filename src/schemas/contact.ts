@@ -14,5 +14,12 @@ export const newsletterSchema = z.object({
   email: z.string().email("Email invalide").max(255, "Email trop long")
 });
 
+export const commentSchema = z.object({
+  author_name: z.string().trim().min(2, "Minimum 2 caractères").max(100, "Maximum 100 caractères"),
+  author_email: z.string().email("Email invalide").max(255, "Email trop long"),
+  content: z.string().trim().min(10, "Minimum 10 caractères").max(2000, "Maximum 2000 caractères")
+});
+
 export type ContactFormData = z.infer<typeof contactSchema>;
 export type NewsletterFormData = z.infer<typeof newsletterSchema>;
+export type CommentFormData = z.infer<typeof commentSchema>;
