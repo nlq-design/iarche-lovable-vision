@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef } from 'react';
+import { useAnimationPause } from '@/hooks/useAnimationPause';
 
 interface ArticlePlaceholderProps {
   className?: string;
@@ -8,6 +9,7 @@ interface ArticlePlaceholderProps {
 const ArticlePlaceholder = memo(({ className = '', size = 'default' }: ArticlePlaceholderProps) => {
   const path1Ref = useRef<SVGPathElement>(null);
   const path2Ref = useRef<SVGPathElement>(null);
+  const placeholderRef = useAnimationPause<HTMLDivElement>();
 
   useEffect(() => {
     const animatePath = (path: SVGPathElement | null, delay: number) => {
@@ -28,7 +30,7 @@ const ArticlePlaceholder = memo(({ className = '', size = 'default' }: ArticlePl
   }, []);
 
   return (
-    <div className={`relative overflow-hidden bg-background ${className}`}>
+    <div ref={placeholderRef} className={`relative overflow-hidden bg-background ${className}`}>
       {/* Arches SVG avec croisement diagonal - Style portail exact avec viewBox séparés */}
       
       {/* SVG 1 : Ligne droite→gauche (viewBox quasi-carré 400×360 pour épaisseur uniforme) */}
