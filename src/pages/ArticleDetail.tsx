@@ -26,6 +26,7 @@ interface Article {
   published: boolean;
   published_at: string | null;
   created_at: string;
+  updated_at: string | null;
   resource_type: string;
 }
 
@@ -35,6 +36,7 @@ const ArticleDetail = () => {
   const location = useLocation();
   const { isAdmin } = useAuth();
   const [article, setArticle] = useState<Article | null>(null);
+  const [faq, setFaq] = useState<Array<{ question: string; answer: string }>>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,7 +55,26 @@ const ArticleDetail = () => {
       }
     };
     trackView();
+    
+    // Load FAQ if article is loaded
+    if (article?.id) {
+      loadFAQ();
+    }
   }, [article?.id]);
+
+  const loadFAQ = async () => {
+    if (!article?.id) return;
+    
+    const { data, error } = await supabase
+      .from('faqs')
+      .select('questions')
+      .eq('article_id', article.id)
+      .maybeSingle();
+
+    if (!error && data && data.questions) {
+      setFaq(data.questions as unknown as Array<{ question: string; answer: string }>);
+    }
+  };
 
   const loadArticle = async () => {
     if (!slug) return;
@@ -159,6 +180,53 @@ const ArticleDetail = () => {
         <meta property="og:type" content="article" />
         {article.cover_image_url && (
           <meta property="og:image" content={article.cover_image_url} />
+        )}
+        
+        {/* Schema.org Article */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": article.title,
+            "description": article.excerpt || article.title,
+            "image": article.cover_image_url || "https://iarche.fr/og-image.png",
+            "author": {
+              "@type": "Organization",
+              "name": "IArche"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "IArche",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://iarche.fr/logo-iarche.svg"
+              }
+            },
+            "datePublished": article.published_at || article.created_at,
+            "dateModified": article.updated_at || article.published_at || article.created_at,
+            "mainEntityOfPage": {
+              "@type": "WebPage",
+              "@id": getCanonicalUrl()
+            }
+          })}
+        </script>
+        
+        {/* Schema.org FAQPage - Only if FAQ exists */}
+        {faq && faq.length > 0 && (
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              "mainEntity": faq.map((item) => ({
+                "@type": "Question",
+                "name": item.question,
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": item.answer
+                }
+              }))
+            })}
+          </script>
         )}
       </Helmet>
 

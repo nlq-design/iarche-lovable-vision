@@ -54,19 +54,21 @@ const Index = () => {
         <meta name="twitter:description" content="Agence IA à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME." />
         <meta name="twitter:image" content="https://iarche.fr/og-image.png" />
         
-        {/* Schema.org JSON-LD - ProfessionalService */}
+        {/* Schema.org JSON-LD - Organization + LocalBusiness */}
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "ProfessionalService",
+            "@type": "Organization",
             "name": "IArche",
-            "image": "https://iarche.fr/logo-iarche.svg",
+            "alternateName": "Collabor IA",
             "url": "https://iarche.fr",
-            "email": "nlq@iarche.fr",
+            "logo": "https://iarche.fr/logo-iarche.svg",
+            "description": "Agence IA installée à Bayonne. On accompagne les dirigeants de PME dans l'intégration concrète de l'intelligence artificielle : diagnostic, développement, formation, conformité. Engagés localement, nous intervenons aussi partout en France.",
             "address": {
               "@type": "PostalAddress",
               "addressLocality": "Bayonne",
               "addressRegion": "Nouvelle-Aquitaine",
+              "postalCode": "64100",
               "addressCountry": "FR"
             },
             "geo": {
@@ -74,7 +76,15 @@ const Index = () => {
               "latitude": "43.4929",
               "longitude": "-1.4748"
             },
-            "priceRange": "€€",
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "email": "nlq@iarche.fr",
+              "contactType": "customer service",
+              "availableLanguage": ["French"]
+            },
+            "sameAs": [
+              "https://www.linkedin.com/company/iarche"
+            ],
             "areaServed": [
               {
                 "@type": "Country",
@@ -95,34 +105,8 @@ const Index = () => {
               {
                 "@type": "City",
                 "name": "Bordeaux"
-              },
-              {
-                "@type": "City",
-                "name": "Dax"
-              },
-              {
-                "@type": "City",
-                "name": "Tarbes"
-              },
-              {
-                "@type": "City",
-                "name": "Lourdes"
-              },
-              {
-                "@type": "City",
-                "name": "Mont-de-Marsan"
-              },
-              {
-                "@type": "City",
-                "name": "Oloron-Sainte-Marie"
-              },
-              {
-                "@type": "City",
-                "name": "Lescar"
               }
-            ],
-            "description": "Agence IA installée à Bayonne accompagnant les dirigeants de PME du Sud-Ouest (Bayonne, Biarritz, Pau, Bordeaux, Dax et région) dans l'intégration concrète de l'intelligence artificielle : diagnostic, développement, formation, conformité",
-            "serviceType": ["Conseil IA", "Audit IA", "Développement IA", "Formation IA", "Conformité IA"]
+            ]
           })}
         </script>
       </Helmet>

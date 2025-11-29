@@ -33,3 +33,7 @@ verify_jwt = true
 [functions.suggest-tags]
 verify_jwt = true
 
+[functions.generate-sitemap]
+verify_jwt = false
+
+
