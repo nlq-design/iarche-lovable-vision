@@ -1,0 +1,118 @@
+name: Lighthouse CI
+
+on:
+  deployment_status:
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    if: github.event.deployment_status.state == 'success'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.13.x
+
+      - name: Run Lighthouse
+        run: |
+          lhci autorun --collect.url=${{ github.event.deployment_status.target_url }} --collect.numberOfRuns=3
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Parse Lighthouse Results
+        id: lighthouse
+        run: |
+          # Extract latest manifest
+          MANIFEST=$(ls -t .lighthouseci/*.manifest.json | head -n1)
+          
+          # Get the latest run JSON file path from manifest
+          LATEST_RUN=$(node -pe "JSON.parse(require('fs').readFileSync('$MANIFEST', 'utf8'))[0].jsonPath")
+          
+          # Parse scores
+          PERFORMANCE=$(node -pe "Math.round(JSON.parse(require('fs').readFileSync('$LATEST_RUN', 'utf8')).categories.performance.score * 100)")
+          ACCESSIBILITY=$(node -pe "Math.round(JSON.parse(require('fs').readFileSync('$LATEST_RUN', 'utf8')).categories.accessibility.score * 100)")
+          BEST_PRACTICES=$(node -pe "Math.round(JSON.parse(require('fs').readFileSync('$LATEST_RUN', 'utf8')).categories['best-practices'].score * 100)")
+          SEO=$(node -pe "Math.round(JSON.parse(require('fs').readFileSync('$LATEST_RUN', 'utf8')).categories.seo.score * 100)")
+          
+          # Parse Core Web Vitals
+          FCP=$(node -pe "JSON.parse(require('fs').readFileSync('$LATEST_RUN', 'utf8')).audits['first-contentful-paint'].numericValue")
+          LCP=$(node -pe "JSON.parse(require('fs').readFileSync('$LATEST_RUN', 'utf8')).audits['largest-contentful-paint'].numericValue")
+          TTI=$(node -pe "JSON.parse(require('fs').readFileSync('$LATEST_RUN', 'utf8')).audits['interactive'].numericValue")
+          TBT=$(node -pe "JSON.parse(require('fs').readFileSync('$LATEST_RUN', 'utf8')).audits['total-blocking-time'].numericValue")
+          CLS=$(node -pe "JSON.parse(require('fs').readFileSync('$LATEST_RUN', 'utf8')).audits['cumulative-layout-shift'].numericValue")
+          
+          # Get bundle sizes from audits
+          BUNDLE_JS=$(node -pe "JSON.parse(require('fs').readFileSync('$LATEST_RUN', 'utf8')).audits['network-requests'].details.items.filter(i => i.resourceType === 'Script').reduce((sum, i) => sum + (i.transferSize || 0), 0)")
+          BUNDLE_CSS=$(node -pe "JSON.parse(require('fs').readFileSync('$LATEST_RUN', 'utf8')).audits['network-requests'].details.items.filter(i => i.resourceType === 'Stylesheet').reduce((sum, i) => sum + (i.transferSize || 0), 0)")
+          BUNDLE_TOTAL=$(node -pe "JSON.parse(require('fs').readFileSync('$LATEST_RUN', 'utf8')).audits['network-requests'].details.items.reduce((sum, i) => sum + (i.transferSize || 0), 0)")
+          
+          echo "performance=$PERFORMANCE" >> $GITHUB_OUTPUT
+          echo "accessibility=$ACCESSIBILITY" >> $GITHUB_OUTPUT
+          echo "best_practices=$BEST_PRACTICES" >> $GITHUB_OUTPUT
+          echo "seo=$SEO" >> $GITHUB_OUTPUT
+          echo "fcp=$FCP" >> $GITHUB_OUTPUT
+          echo "lcp=$LCP" >> $GITHUB_OUTPUT
+          echo "tti=$TTI" >> $GITHUB_OUTPUT
+          echo "tbt=$TBT" >> $GITHUB_OUTPUT
+          echo "cls=$CLS" >> $GITHUB_OUTPUT
+          echo "bundle_js=$BUNDLE_JS" >> $GITHUB_OUTPUT
+          echo "bundle_css=$BUNDLE_CSS" >> $GITHUB_OUTPUT
+          echo "bundle_total=$BUNDLE_TOTAL" >> $GITHUB_OUTPUT
+
+      - name: Record metrics to Supabase
+        run: |
+          curl -X POST '${{ secrets.SUPABASE_URL }}/functions/v1/record-lighthouse-metrics' \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "performance_score": ${{ steps.lighthouse.outputs.performance }},
+              "accessibility_score": ${{ steps.lighthouse.outputs.accessibility }},
+              "best_practices_score": ${{ steps.lighthouse.outputs.best_practices }},
+              "seo_score": ${{ steps.lighthouse.outputs.seo }},
+              "fcp": ${{ steps.lighthouse.outputs.fcp }},
+              "lcp": ${{ steps.lighthouse.outputs.lcp }},
+              "tti": ${{ steps.lighthouse.outputs.tti }},
+              "tbt": ${{ steps.lighthouse.outputs.tbt }},
+              "cls": ${{ steps.lighthouse.outputs.cls }},
+              "bundle_size_js": ${{ steps.lighthouse.outputs.bundle_js }},
+              "bundle_size_css": ${{ steps.lighthouse.outputs.bundle_css }},
+              "bundle_size_total": ${{ steps.lighthouse.outputs.bundle_total }},
+              "environment": "production",
+              "notes": "Automated capture via GitHub Actions - Deployment ${{ github.event.deployment.id }}"
+            }'
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = `## 🚦 Lighthouse Results
+            
+            | Metric | Score |
+            |--------|-------|
+            | 🎯 Performance | ${{ steps.lighthouse.outputs.performance }} |
+            | ♿ Accessibility | ${{ steps.lighthouse.outputs.accessibility }} |
+            | ✅ Best Practices | ${{ steps.lighthouse.outputs.best_practices }} |
+            | 🔍 SEO | ${{ steps.lighthouse.outputs.seo }} |
+            
+            ### Core Web Vitals
+            - **FCP**: ${{ steps.lighthouse.outputs.fcp }}ms
+            - **LCP**: ${{ steps.lighthouse.outputs.lcp }}ms
+            - **TTI**: ${{ steps.lighthouse.outputs.tti }}ms
+            - **TBT**: ${{ steps.lighthouse.outputs.tbt }}ms
+            - **CLS**: ${{ steps.lighthouse.outputs.cls }}
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
