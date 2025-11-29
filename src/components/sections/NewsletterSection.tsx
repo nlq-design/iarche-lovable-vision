@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { newsletterSchema } from '@/schemas/contact';
+import GradientLink from '@/components/ui/GradientLink';
+import { ArrowRight } from 'lucide-react';
 
 const NewsletterSection = () => {
   const { toast } = useToast();
@@ -86,13 +87,18 @@ const NewsletterSection = () => {
               />
               {error && <p className="text-sm text-destructive mt-1">{error}</p>}
             </div>
-            <Button 
+            <GradientLink 
               type="submit"
-              className="bg-background border-2 border-primary text-primary hover:bg-primary hover:text-background focus:bg-primary focus:text-background focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 font-medium px-6 py-3 rounded-lg whitespace-nowrap text-base transition-all"
               disabled={isSubmitting}
+              className="px-6 py-3 whitespace-nowrap"
             >
-              {isSubmitting ? 'Inscription...' : "S'inscrire →"}
-            </Button>
+              {isSubmitting ? 'Inscription...' : (
+                <>
+                  S'inscrire
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </GradientLink>
           </form>
 
           <p className="text-xs text-muted-foreground text-center mb-8 invisible animate-fadeIn [animation-delay:0.7s]">
