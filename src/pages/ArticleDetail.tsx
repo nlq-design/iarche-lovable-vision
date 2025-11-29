@@ -15,6 +15,8 @@ import { ArticleFAQ } from '@/components/ArticleFAQ';
 import DOMPurify from 'dompurify';
 import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
 import GradientLink from '@/components/ui/GradientLink';
+import { Badge } from '@/components/ui/badge';
+import SolutionContactForm from '@/components/SolutionContactForm';
 import 'react-quill/dist/quill.snow.css';
 
 interface Article {
@@ -34,6 +36,7 @@ interface Article {
   registration_open: boolean | null;
   file_url: string | null;
   replay_url: string | null;
+  tags: string[] | null;
 }
 
 const ArticleDetail = () => {
@@ -128,6 +131,8 @@ const ArticleDetail = () => {
       return '/livres-blancs';
     } else if (pathname.startsWith('/ateliers-webinaires/')) {
       return '/ateliers-webinaires';
+    } else if (pathname.startsWith('/solutions/')) {
+      return '/solutions';
     }
     return '/actualites';
   };
@@ -144,6 +149,8 @@ const ArticleDetail = () => {
       return 'Retour aux livres blancs';
     } else if (pathname.startsWith('/ateliers-webinaires/')) {
       return 'Retour aux ateliers & webinaires';
+    } else if (pathname.startsWith('/solutions/')) {
+      return 'Retour aux solutions';
     }
     return 'Retour aux actualités';
   };
@@ -400,6 +407,19 @@ const ArticleDetail = () => {
                 </p>
               </div>
             )}
+            
+            {/* Badge de statut pour les solutions */}
+            {article.resource_type === 'solution' && article.tags && article.tags.length > 0 && (
+              <div className="mb-4 animate-fadeIn">
+                <Badge 
+                  variant={article.tags[0] === 'Disponible' ? 'default' : 'secondary'}
+                  className="text-sm"
+                >
+                  {article.tags[0]}
+                </Badge>
+              </div>
+            )}
+            
             <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-6 animate-fadeIn [animation-delay:0.1s]">
               {article.title}
             </h1>
@@ -430,15 +450,21 @@ const ArticleDetail = () => {
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
           />
 
-          {/* 4. CTA */}
-          <div className="text-center my-12 animate-fadeIn [animation-delay:0.5s]">
-            <p className="text-lg text-foreground mb-4">
-              Une question sur ce sujet ?
-            </p>
-            <GradientLink href="/contact" className="text-base">
-              Contactez-nous
-            </GradientLink>
-          </div>
+          {/* 4. CTA - Formulaire spécifique pour solutions */}
+          {article.resource_type === 'solution' ? (
+            <div className="my-12">
+              <SolutionContactForm solutionName={article.title} />
+            </div>
+          ) : (
+            <div className="text-center my-12 animate-fadeIn [animation-delay:0.5s]">
+              <p className="text-lg text-foreground mb-4">
+                Une question sur ce sujet ?
+              </p>
+              <GradientLink href="/contact" className="text-base">
+                Contactez-nous
+              </GradientLink>
+            </div>
+          )}
 
           {/* 5. FAQ (si présente) */}
           {faq && faq.length > 0 && (
