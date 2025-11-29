@@ -52,25 +52,17 @@ const ExemplesSection = () => {
                 {casClients.map((casClient, index) => (
                   <NavLink key={casClient.id} to={`/cas-clients/${casClient.slug}`}>
                     <div className="relative rounded-lg p-[2px] bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_100%] hover:bg-[length:100%_100%] transition-all duration-500 cursor-pointer group">
-                      <div 
-                        className="bg-background rounded-lg p-6 h-full"
-                      >
-                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <span className="text-xs font-semibold text-accent uppercase tracking-wide">
-                                {casClient.title}
-                              </span>
-                            </div>
-                            <h3 className="text-base font-semibold text-primary mb-2">
-                              {casClient.excerpt}
+                        <div className="bg-background rounded-lg p-6 h-full">
+                          <div className="flex flex-col gap-4">
+                            <h3 className="text-lg font-semibold text-primary">
+                              {casClient.title}
                             </h3>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                              {casClient.content}
-                            </p>
+                            <div 
+                              className="text-sm text-foreground leading-relaxed prose prose-sm max-w-none"
+                              dangerouslySetInnerHTML={{ __html: casClient.content }}
+                            />
                           </div>
                         </div>
-                      </div>
                     </div>
                   </NavLink>
                 ))}
