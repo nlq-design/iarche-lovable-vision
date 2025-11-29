@@ -1,19 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import GradientLink from '@/components/ui/GradientLink';
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
 import { ChevronDown } from 'lucide-react';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [resourcesOpen, setResourcesOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // Fermer le dropdown si on clique à l'extérieur
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setResourcesOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 bg-background border-b border-border">
@@ -54,70 +60,59 @@ const Header = () => {
               Nos Solutions
             </NavLink>
             
-            {/* Menu Ressources */}
-            <NavigationMenu>
-              <NavigationMenuList>
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="text-sm text-accent hover:text-accent/80 focus:text-accent bg-transparent hover:bg-transparent data-[state=open]:bg-transparent focus:ring-2 focus:ring-accent">
-                    Ressources
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent className="bg-background border border-border shadow-lg rounded-lg p-4 min-w-[240px]">
-                    <ul className="flex flex-col gap-2">
-                      <li>
-                        <NavigationMenuLink asChild>
-                          <NavLink
-                            to="/actualites"
-                            className="block px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md transition-colors"
-                          >
-                            Actualités
-                          </NavLink>
-                        </NavigationMenuLink>
-                      </li>
-                      <li>
-                        <NavigationMenuLink asChild>
-                          <NavLink
-                            to="/ressources/articles"
-                            className="block px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md transition-colors"
-                          >
-                            Articles
-                          </NavLink>
-                        </NavigationMenuLink>
-                      </li>
-                      <li>
-                        <NavigationMenuLink asChild>
-                          <NavLink
-                            to="/ressources/cas-clients"
-                            className="block px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md transition-colors"
-                          >
-                            Cas clients
-                          </NavLink>
-                        </NavigationMenuLink>
-                      </li>
-                      <li>
-                        <NavigationMenuLink asChild>
-                          <NavLink
-                            to="/ressources/livres-blancs"
-                            className="block px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md transition-colors"
-                          >
-                            Livres blancs
-                          </NavLink>
-                        </NavigationMenuLink>
-                      </li>
-                      <li>
-                        <NavigationMenuLink asChild>
-                          <NavLink
-                            to="/ressources/ateliers-webinaires"
-                            className="block px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md transition-colors"
-                          >
-                            Ateliers & Webinaires
-                          </NavLink>
-                        </NavigationMenuLink>
-                      </li>
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
+            {/* Menu Ressources personnalisé */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setResourcesOpen(!resourcesOpen)}
+                className="flex items-center gap-1 text-sm text-accent hover:text-accent/80 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded px-2 py-1"
+              >
+                Ressources
+                <ChevronDown 
+                  className={`w-4 h-4 transition-transform duration-200 ${resourcesOpen ? 'rotate-180' : ''}`} 
+                />
+              </button>
+
+              {/* Dropdown */}
+              {resourcesOpen && (
+                <div className="absolute top-full left-0 mt-2 bg-background border border-border shadow-lg rounded-lg py-2 min-w-[220px] z-50">
+                  <NavLink
+                    to="/actualites"
+                    onClick={() => setResourcesOpen(false)}
+                    className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
+                  >
+                    Actualités
+                  </NavLink>
+                  <NavLink
+                    to="/ressources/articles"
+                    onClick={() => setResourcesOpen(false)}
+                    className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
+                  >
+                    Articles
+                  </NavLink>
+                  <NavLink
+                    to="/ressources/cas-clients"
+                    onClick={() => setResourcesOpen(false)}
+                    className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
+                  >
+                    Cas clients
+                  </NavLink>
+                  <NavLink
+                    to="/ressources/livres-blancs"
+                    onClick={() => setResourcesOpen(false)}
+                    className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
+                  >
+                    Livres blancs
+                  </NavLink>
+                  <NavLink
+                    to="/ressources/ateliers-webinaires"
+                    onClick={() => setResourcesOpen(false)}
+                    className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
+                  >
+                    Ateliers & Webinaires
+                  </NavLink>
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* CTA Desktop */}
