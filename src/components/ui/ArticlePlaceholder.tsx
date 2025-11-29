@@ -17,7 +17,7 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
       path.style.strokeDashoffset = `${length}px`;
       
       setTimeout(() => {
-        path.style.transition = 'stroke-dashoffset 4s ease-in-out';
+        path.style.transition = 'stroke-dashoffset 6s ease-in-out';
         path.style.strokeDashoffset = '0px';
       }, delay);
     };
