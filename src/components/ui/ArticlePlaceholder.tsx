@@ -52,26 +52,26 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
           </linearGradient>
         </defs>
         
-        {/* Ligne 1: Haut-droite → Bas-gauche (croisement diagonal) */}
+        {/* Ligne 1: Haut-droite → Bas-gauche - Dominante (croisement central proportionnel) */}
         <path
-          className="arche-line"
-          d="M 390 10 L 140 10 C 138 10 136 12 136 14 L 136 96 C 136 98 134 100 132 100 L 10 100"
+          className="arche-line arche-line-primary"
+          d="M 380 15 L 220 15 C 217 15 215 17 215 20 L 215 130 C 215 133 212 135 210 135 L 20 135"
           fill="none"
           stroke="url(#placeholderGradient1)"
-          strokeWidth="2"
+          strokeWidth="2.5"
           strokeLinecap="round"
-          opacity="0.5"
+          opacity="0.55"
         />
         
-        {/* Ligne 2: Haut-gauche → Bas-droite (croisement diagonal inversé) */}
+        {/* Ligne 2: Haut-gauche → Bas-droite - Subtile (croisement central proportionnel) */}
         <path
-          className="arche-line"
-          d="M 10 10 L 260 10 C 262 10 264 12 264 14 L 264 96 C 264 98 266 100 268 100 L 390 100"
+          className="arche-line arche-line-secondary"
+          d="M 20 15 L 180 15 C 183 15 185 17 185 20 L 185 130 C 185 133 188 135 190 135 L 380 135"
           fill="none"
           stroke="url(#placeholderGradient2)"
           strokeWidth="2"
           strokeLinecap="round"
-          opacity="0.5"
+          opacity="0.45"
         />
       </svg>
       
