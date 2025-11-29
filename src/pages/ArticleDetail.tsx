@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -31,6 +31,7 @@ interface Article {
 const ArticleDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAdmin } = useAuth();
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,38 +88,36 @@ const ArticleDetail = () => {
     });
   };
 
-  const getBackPath = (resourceType: string) => {
-    switch (resourceType) {
-      case 'actualite':
-        return '/actualites';
-      case 'article':
-        return '/articles';
-      case 'cas-client':
-        return '/cas-clients';
-      case 'livre-blanc':
-        return '/livres-blancs';
-      case 'atelier-webinaire':
-        return '/ateliers-webinaires';
-      default:
-        return '/actualites';
+  const getBackPath = () => {
+    const pathname = location.pathname;
+    if (pathname.startsWith('/articles/')) {
+      return '/articles';
+    } else if (pathname.startsWith('/actualites/')) {
+      return '/actualites';
+    } else if (pathname.startsWith('/cas-clients/')) {
+      return '/cas-clients';
+    } else if (pathname.startsWith('/livres-blancs/')) {
+      return '/livres-blancs';
+    } else if (pathname.startsWith('/ateliers-webinaires/')) {
+      return '/ateliers-webinaires';
     }
+    return '/actualites';
   };
 
-  const getBackLabel = (resourceType: string) => {
-    switch (resourceType) {
-      case 'actualite':
-        return 'Retour aux actualités';
-      case 'article':
-        return 'Retour aux articles';
-      case 'cas-client':
-        return 'Retour aux cas clients';
-      case 'livre-blanc':
-        return 'Retour aux livres blancs';
-      case 'atelier-webinaire':
-        return 'Retour aux ateliers & webinaires';
-      default:
-        return 'Retour aux actualités';
+  const getBackLabel = () => {
+    const pathname = location.pathname;
+    if (pathname.startsWith('/articles/')) {
+      return 'Retour aux articles';
+    } else if (pathname.startsWith('/actualites/')) {
+      return 'Retour aux actualités';
+    } else if (pathname.startsWith('/cas-clients/')) {
+      return 'Retour aux cas clients';
+    } else if (pathname.startsWith('/livres-blancs/')) {
+      return 'Retour aux livres blancs';
+    } else if (pathname.startsWith('/ateliers-webinaires/')) {
+      return 'Retour aux ateliers & webinaires';
     }
+    return 'Retour aux actualités';
   };
 
   if (loading) {
@@ -165,10 +164,10 @@ const ArticleDetail = () => {
         <article className="max-w-4xl mx-auto px-6 py-16">
           {/* Bouton retour */}
           <div className="mb-8">
-            <NavLink to={getBackPath(article.resource_type)}>
+            <NavLink to={getBackPath()}>
               <Button variant="outline" size="sm">
                 <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
-                {getBackLabel(article.resource_type)}
+                {getBackLabel()}
               </Button>
             </NavLink>
           </div>
