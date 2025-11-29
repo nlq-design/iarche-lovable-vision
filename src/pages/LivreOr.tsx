@@ -16,6 +16,71 @@ const LivreOr = () => {
         <meta property="og:description" content="Découvrez les témoignages de nos clients. Ce qu'ils disent de leur collaboration avec IArche." />
         <meta property="og:url" content="https://iarche.fr/livre-or" />
         <meta property="og:type" content="website" />
+
+        {/* Schema.org Organization with AggregateRating */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "IArche",
+            "url": "https://iarche.fr",
+            "logo": "https://iarche.fr/logo-iarche.svg",
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "5",
+              "reviewCount": "3",
+              "bestRating": "5",
+              "worstRating": "1"
+            },
+            "review": [
+              {
+                "@type": "Review",
+                "author": {
+                  "@type": "Person",
+                  "name": "Marie Dupont"
+                },
+                "datePublished": "2025-01-15",
+                "reviewBody": "Accompagnement de qualité pour l'intégration de l'IA dans nos processus. Équipe réactive et à l'écoute.",
+                "reviewRating": {
+                  "@type": "Rating",
+                  "ratingValue": "5",
+                  "bestRating": "5",
+                  "worstRating": "1"
+                }
+              },
+              {
+                "@type": "Review",
+                "author": {
+                  "@type": "Person",
+                  "name": "Jean Martin"
+                },
+                "datePublished": "2025-01-10",
+                "reviewBody": "Formation complète et pragmatique. Nos équipes ont rapidement monté en compétences sur l'IA.",
+                "reviewRating": {
+                  "@type": "Rating",
+                  "ratingValue": "5",
+                  "bestRating": "5",
+                  "worstRating": "1"
+                }
+              },
+              {
+                "@type": "Review",
+                "author": {
+                  "@type": "Person",
+                  "name": "Sophie Bernard"
+                },
+                "datePublished": "2025-01-05",
+                "reviewBody": "Audit pertinent et feuille de route claire pour structurer notre démarche IA. Très satisfaits.",
+                "reviewRating": {
+                  "@type": "Rating",
+                  "ratingValue": "5",
+                  "bestRating": "5",
+                  "worstRating": "1"
+                }
+              }
+            ]
+          })}
+        </script>
       </Helmet>
       
       <Header />

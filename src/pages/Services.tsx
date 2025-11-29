@@ -79,6 +79,44 @@ const Services = () => {
         <meta property="og:description" content="Audit IA, développement, formation et conformité. Accompagnement adapté à votre maturité IA." />
         <meta property="og:url" content="https://iarche.fr/services" />
         <meta property="og:type" content="website" />
+
+        {/* Schema.org ItemList - Services offered */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "itemListElement": services.map((service, index) => ({
+              "@type": "ListItem",
+              "position": index + 1,
+              "item": {
+                "@type": "Service",
+                "@id": `https://iarche.fr/services#${service.id}`,
+                "name": service.title,
+                "description": service.description,
+                "provider": {
+                  "@type": "Organization",
+                  "name": "IArche",
+                  "url": "https://iarche.fr"
+                },
+                "areaServed": {
+                  "@type": "Country",
+                  "name": "France"
+                },
+                "serviceOutput": service.livrables.join(", "),
+                "audience": {
+                  "@type": "Audience",
+                  "audienceType": service.pourQui
+                },
+                "offers": {
+                  "@type": "Offer",
+                  "priceCurrency": "EUR",
+                  "price": "Sur devis",
+                  "url": `https://iarche.fr${service.ctaLink}`
+                }
+              }
+            }))
+          })}
+        </script>
       </Helmet>
       
       <Header />
