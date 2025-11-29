@@ -32,6 +32,8 @@ const AdminArticleEditor = () => {
   const [autoSaving, setAutoSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [suggestingTags, setSuggestingTags] = useState(false);
+  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
@@ -199,6 +201,78 @@ const AdminArticleEditor = () => {
       console.error('Auto-save error:', error);
     } finally {
       setAutoSaving(false);
+    }
+  };
+
+  const handleSuggestTags = async () => {
+    if (!title || !content) {
+      toast({ 
+        title: "Contenu insuffisant", 
+        description: "Ajoutez un titre et du contenu pour suggérer des tags",
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    setSuggestingTags(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-tags', {
+        body: { title, content, excerpt }
+      });
+
+      if (error) throw error;
+
+      if (data && data.tags) {
+        setSuggestedTags(data.tags);
+        toast({ 
+          title: "Tags suggérés", 
+          description: `${data.tags.length} tags générés automatiquement` 
+        });
+      }
+    } catch (error) {
+      console.error('Error suggesting tags:', error);
+      toast({ 
+        title: "Erreur", 
+        description: error.message || "Impossible de suggérer des tags",
+        variant: "destructive" 
+      });
+    } finally {
+      setSuggestingTags(false);
+    }
+  };
+
+  const handleAddSuggestedTag = async (tagName: string) => {
+    // Vérifier si le tag existe déjà dans la DB
+    let { data: existingTag } = await supabase
+      .from('tags')
+      .select('id')
+      .eq('name', tagName)
+      .maybeSingle();
+
+    if (!existingTag) {
+      // Créer le tag
+      const tagSlug = tagName
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-');
+      
+      const { data: newTag } = await supabase
+        .from('tags')
+        .insert({ name: tagName, slug: tagSlug })
+        .select('id')
+        .single();
+      
+      if (newTag) {
+        existingTag = newTag;
+        // Ajouter à la liste des tags disponibles
+        setAvailableTags([...availableTags, { id: newTag.id, name: tagName }]);
+      }
+    }
+
+    if (existingTag && !selectedTags.includes(existingTag.id)) {
+      setSelectedTags([...selectedTags, existingTag.id]);
+      setSuggestedTags(suggestedTags.filter(t => t !== tagName));
     }
   };
 
@@ -640,7 +714,47 @@ const AdminArticleEditor = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <Label>Tags</Label>
+                  <div className="flex items-center justify-between">
+                    <Label>Tags</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSuggestTags}
+                      disabled={suggestingTags || !title || !content}
+                    >
+                      {suggestingTags ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Génération...
+                        </>
+                      ) : (
+                        <>
+                          <span className="mr-2">✨</span>
+                          Suggérer des tags
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {suggestedTags.length > 0 && (
+                    <div className="bg-muted/50 p-3 rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-2">Tags suggérés (cliquez pour ajouter) :</p>
+                      <div className="flex flex-wrap gap-2">
+                        {suggestedTags.map((tag, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => handleAddSuggestedTag(tag)}
+                            className="text-xs bg-primary/10 text-primary px-2 py-1 rounded hover:bg-primary hover:text-primary-foreground transition-colors"
+                          >
+                            + {tag}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
                   {availableTags.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
                       Aucun tag disponible.{' '}
