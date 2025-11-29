@@ -136,12 +136,12 @@ const Contact = () => {
         <section className="max-w-6xl mx-auto px-6 py-8">
           {/* En-tête */}
           <div className="text-center mb-16">
-            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 invisible animate-fadeIn [animation-delay:0.1s]">
+            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
               Contact
             </h1>
             {/* Ligne décorative gradient */}
-            <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 invisible animate-fadeIn [animation-delay:0.15s]"></div>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto invisible animate-fadeIn [animation-delay:0.2s]">
+            <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 animate-fadeIn [animation-delay:0.15s]"></div>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
               Une question ? Un projet ? Parlons-en.
             </p>
           </div>
@@ -149,7 +149,7 @@ const Contact = () => {
           {/* 2 colonnes : Formulaire + Coordonnées */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Formulaire */}
-            <div className="invisible animate-fadeIn [animation-delay:0.3s]">
+            <div className="animate-fadeIn [animation-delay:0.3s]">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <Label htmlFor="nom">Nom *</Label>
@@ -237,7 +237,7 @@ const Contact = () => {
             </div>
 
             {/* Coordonnées */}
-            <div className="invisible animate-fadeIn [animation-delay:0.4s] space-y-8">
+            <div className="animate-fadeIn [animation-delay:0.4s] space-y-8">
               <div>
                 <h2 className="text-2xl font-bold text-foreground mb-6">
                   Nos coordonnées

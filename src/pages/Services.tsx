@@ -126,12 +126,12 @@ const Services = () => {
         <section className="max-w-6xl mx-auto px-6 py-8">
           {/* En-tête */}
           <div className="text-center mb-16">
-            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 invisible animate-fadeIn [animation-delay:0.1s]">
+            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
               Nos services
             </h1>
             {/* Ligne décorative gradient */}
-            <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 invisible animate-fadeIn [animation-delay:0.15s]"></div>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto invisible animate-fadeIn [animation-delay:0.2s]">
+            <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 animate-fadeIn [animation-delay:0.15s]"></div>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
               Accompagnement IA adapté à votre stade de maturité
             </p>
           </div>
@@ -141,7 +141,7 @@ const Services = () => {
             {services.map((service, index) => (
               <Card 
                 key={service.id}
-                className="invisible animate-fadeIn hover:shadow-lg transition-shadow duration-300"
+                className="animate-fadeIn hover:shadow-lg transition-shadow duration-300"
                 style={{ animationDelay: `${0.3 + index * 0.1}s` }}
               >
                 <CardHeader>
@@ -190,7 +190,7 @@ const Services = () => {
           </div>
 
           {/* CTA global */}
-          <div className="text-center mt-16 invisible animate-fadeIn [animation-delay:0.9s]">
+          <div className="text-center mt-16 animate-fadeIn [animation-delay:0.9s]">
             <p className="text-lg text-foreground mb-6">
               Une question sur votre projet ?
             </p>
