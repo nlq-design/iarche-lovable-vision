@@ -15,21 +15,21 @@ const ExemplesSection = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCasClients = async () => {
+    const fetchSolutions = async () => {
       const { data, error } = await supabase
         .from('articles')
         .select('id, title, slug, excerpt, created_at')
-        .eq('resource_type', 'cas-client')
+        .eq('resource_type', 'solution')
         .eq('published', true)
         .order('created_at', { ascending: false })
         .limit(5);
       
       if (data) setCasClients(data);
-      if (error) console.error('Error fetching cas clients:', error);
+      if (error) console.error('Error fetching solutions:', error);
       setLoading(false);
     };
     
-    fetchCasClients();
+    fetchSolutions();
   }, []);
   if (loading) {
     return (
@@ -58,7 +58,7 @@ const ExemplesSection = () => {
             return (
               <NavLink 
                 key={casClient.id}
-                to={`/cas-clients/${casClient.slug}`}
+                to={`/solutions/${casClient.slug}`}
                 className="block"
               >
                 <div className="bg-background border border-border rounded-lg p-6 hover:border-accent transition-colors duration-300">

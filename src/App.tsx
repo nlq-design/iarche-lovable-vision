@@ -40,6 +40,7 @@ import AdminActualites from "./pages/admin/AdminActualites";
 import AdminCasClients from "./pages/admin/AdminCasClients";
 import AdminLivresBlancs from "./pages/admin/AdminLivresBlancs";
 import AdminAteliersWebinaires from "./pages/admin/AdminAteliersWebinaires";
+import AdminSolutions from "./pages/admin/AdminSolutions";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import { CookieConsent } from "./components/CookieConsent";
 
@@ -72,6 +73,7 @@ const App = () => (
           <Route path="/cas-clients/:slug" element={<ArticleDetail />} />
           <Route path="/livres-blancs/:slug" element={<ArticleDetail />} />
           <Route path="/ateliers-webinaires/:slug" element={<ArticleDetail />} />
+          <Route path="/solutions/:slug" element={<ArticleDetail />} />
           <Route path="/contact" element={<Contact />} />
           
           {/* Pages secondaires */}
@@ -92,6 +94,7 @@ const App = () => (
           <Route path="/admin/cas-clients" element={<ProtectedAdminRoute><AdminCasClients /></ProtectedAdminRoute>} />
           <Route path="/admin/livres-blancs" element={<ProtectedAdminRoute><AdminLivresBlancs /></ProtectedAdminRoute>} />
           <Route path="/admin/ateliers-webinaires" element={<ProtectedAdminRoute><AdminAteliersWebinaires /></ProtectedAdminRoute>} />
+          <Route path="/admin/solutions" element={<ProtectedAdminRoute><AdminSolutions /></ProtectedAdminRoute>} />
           <Route path="/admin/redacia" element={<ProtectedAdminRoute><Redacia /></ProtectedAdminRoute>} />
           <Route path="/admin/redacnews" element={<ProtectedAdminRoute><RedacNews /></ProtectedAdminRoute>} />
           <Route path="/admin/articles/new" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
