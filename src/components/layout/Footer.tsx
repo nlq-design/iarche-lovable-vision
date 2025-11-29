@@ -6,8 +6,8 @@ const Footer = () => {
   return (
     <footer className="bg-foreground text-white">
       <div className="container mx-auto px-6 py-8">
-        {/* Grid 3 colonnes */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* Grid 4 colonnes sur desktop, 2 sur tablette, 1 sur mobile */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           {/* Colonne 1 : IArche */}
           <div>
             <h3 className="text-sm font-semibold mb-3">IArche</h3>
@@ -55,7 +55,7 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Colonne 2 : Navigation */}
+          {/* Colonne 2 : Navigation principale */}
           <div>
             <h3 className="text-sm font-semibold mb-3">Navigation</h3>
             <ul className="space-y-1.5">
@@ -77,14 +77,6 @@ const Footer = () => {
               </li>
               <li>
                 <NavLink 
-                  to="/actualites" 
-                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
-                >
-                  Actualités
-                </NavLink>
-              </li>
-              <li>
-                <NavLink 
                   to="/contact" 
                   className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
                 >
@@ -94,7 +86,54 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Colonne 3 : Informations */}
+          {/* Colonne 3 : Ressources */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3">Ressources</h3>
+            <ul className="space-y-1.5">
+              <li>
+                <NavLink 
+                  to="/actualites" 
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                >
+                  Actualités
+                </NavLink>
+              </li>
+              <li>
+                <NavLink 
+                  to="/articles" 
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                >
+                  Articles
+                </NavLink>
+              </li>
+              <li>
+                <NavLink 
+                  to="/cas-clients" 
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                >
+                  Cas clients
+                </NavLink>
+              </li>
+              <li>
+                <NavLink 
+                  to="/livres-blancs" 
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                >
+                  Livres blancs
+                </NavLink>
+              </li>
+              <li>
+                <NavLink 
+                  to="/ateliers-webinaires" 
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                >
+                  Ateliers & Webinaires
+                </NavLink>
+              </li>
+            </ul>
+          </div>
+
+          {/* Colonne 4 : Informations légales */}
           <div>
             <h3 className="text-sm font-semibold mb-3">Informations</h3>
             <ul className="space-y-1.5">
@@ -119,7 +158,7 @@ const Footer = () => {
                   to="/mentions-legales" 
                   className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
                 >
-                  Mentions
+                  Mentions légales
                 </NavLink>
               </li>
               <li>
@@ -127,7 +166,7 @@ const Footer = () => {
                   to="/conditions-generales" 
                   className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
                 >
-                  Conditions générales
+                  CGU
                 </NavLink>
               </li>
               <li>
@@ -135,7 +174,7 @@ const Footer = () => {
                   to="/confidentialite" 
                   className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
                 >
-                  Politique de confidentialité
+                  Confidentialité
                 </NavLink>
               </li>
             </ul>

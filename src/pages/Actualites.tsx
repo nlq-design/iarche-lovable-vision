@@ -54,7 +54,8 @@ const Actualites = () => {
     let query = supabase
       .from('articles')
       .select('id, title, slug, excerpt, cover_image_url, published_at, created_at')
-      .eq('published', true);
+      .eq('published', true)
+      .eq('resource_type', 'actualite');
 
     // Apply filters
     if (selectedCategory || selectedTag) {

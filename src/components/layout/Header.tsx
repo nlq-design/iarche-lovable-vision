@@ -60,51 +60,55 @@ const Header = () => {
               Nos Solutions
             </NavLink>
             
-            {/* Menu Ressources personnalisé */}
+            {/* Menu Ressources - pointe vers /actualites avec dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button
-                onClick={() => setResourcesOpen(!resourcesOpen)}
+                onClick={() => {
+                  navigate('/actualites');
+                  setResourcesOpen(false);
+                }}
+                onMouseEnter={() => setResourcesOpen(true)}
                 className="flex items-center gap-1 text-sm text-accent hover:text-accent/80 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded px-2 py-1"
               >
                 Ressources
                 <ChevronDown 
-                  className={`w-4 h-4 transition-transform duration-200 ${resourcesOpen ? 'rotate-180' : ''}`} 
+                  className={`w-4 h-4 transition-transform duration-200 ${resourcesOpen ? 'rotate-180' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setResourcesOpen(!resourcesOpen);
+                  }}
                 />
               </button>
 
               {/* Dropdown */}
               {resourcesOpen && (
-                <div className="absolute top-full left-0 mt-2 bg-background border border-border shadow-lg rounded-lg py-2 min-w-[220px] z-50">
+                <div 
+                  className="absolute top-full left-0 mt-2 bg-background border border-border shadow-lg rounded-lg py-2 min-w-[220px] z-50"
+                  onMouseLeave={() => setResourcesOpen(false)}
+                >
                   <NavLink
-                    to="/actualites"
-                    onClick={() => setResourcesOpen(false)}
-                    className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
-                  >
-                    Actualités
-                  </NavLink>
-                  <NavLink
-                    to="/ressources/articles"
+                    to="/articles"
                     onClick={() => setResourcesOpen(false)}
                     className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
                   >
                     Articles
                   </NavLink>
                   <NavLink
-                    to="/ressources/cas-clients"
+                    to="/cas-clients"
                     onClick={() => setResourcesOpen(false)}
                     className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
                   >
                     Cas clients
                   </NavLink>
                   <NavLink
-                    to="/ressources/livres-blancs"
+                    to="/livres-blancs"
                     onClick={() => setResourcesOpen(false)}
                     className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
                   >
                     Livres blancs
                   </NavLink>
                   <NavLink
-                    to="/ressources/ateliers-webinaires"
+                    to="/ateliers-webinaires"
                     onClick={() => setResourcesOpen(false)}
                     className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
                   >
@@ -171,38 +175,37 @@ const Header = () => {
               
               {/* Ressources Mobile avec sous-menu */}
               <div className="flex flex-col gap-2">
-                <span className="text-sm text-accent font-semibold px-2 py-1">Ressources</span>
+                <NavLink 
+                  to="/actualites"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-sm text-accent font-semibold px-2 py-1 hover:text-accent/80 transition-colors"
+                >
+                  Ressources
+                </NavLink>
                 <div className="pl-4 flex flex-col gap-2 border-l-2 border-accent/30">
                   <NavLink 
-                    to="/actualites"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-sm text-foreground hover:text-accent transition-colors px-2 py-1"
-                  >
-                    Actualités
-                  </NavLink>
-                  <NavLink 
-                    to="/ressources/articles"
+                    to="/articles"
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-sm text-foreground hover:text-accent transition-colors px-2 py-1"
                   >
                     Articles
                   </NavLink>
                   <NavLink 
-                    to="/ressources/cas-clients"
+                    to="/cas-clients"
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-sm text-foreground hover:text-accent transition-colors px-2 py-1"
                   >
                     Cas clients
                   </NavLink>
                   <NavLink 
-                    to="/ressources/livres-blancs"
+                    to="/livres-blancs"
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-sm text-foreground hover:text-accent transition-colors px-2 py-1"
                   >
                     Livres blancs
                   </NavLink>
                   <NavLink 
-                    to="/ressources/ateliers-webinaires"
+                    to="/ateliers-webinaires"
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-sm text-foreground hover:text-accent transition-colors px-2 py-1"
                   >
