@@ -1,8 +1,11 @@
 import React, { useEffect } from 'react';
 import GradientLink from '@/components/ui/GradientLink';
 import { ChevronDown } from 'lucide-react';
+import { useAnimationPause } from '@/hooks/useAnimationPause';
 
 const HeroSection = () => {
+  const heroRef = useAnimationPause<HTMLDivElement>();
+  
   useEffect(() => {
     // Calcul précis des longueurs de path pour animation fluide
     document.querySelectorAll('.canalisation-line').forEach(path => {
@@ -21,7 +24,7 @@ const HeroSection = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative">
+    <div ref={heroRef} className="min-h-screen flex items-center justify-center relative">
         {/* Rectangles décoratifs (Construction) - Uniquement sur / */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" role="presentation" aria-hidden="true">
           <div className="absolute top-20 left-10 w-32 h-32 border border-border/30 rounded-lg animate-constructionFade" />

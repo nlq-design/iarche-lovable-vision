@@ -107,8 +107,8 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "fadeIn": "fadeIn 0.6s ease-out forwards",
         "gradientText": "gradientText 8s ease infinite",
-        "patternScroll": "patternScroll 20s linear infinite",
-        "constructionFade": "constructionFade 4s ease-in-out infinite",
+        "patternScroll": "patternScroll 40s linear infinite", // Optimisé: 20s → 40s (2× moins de cycles CPU)
+        "constructionFade": "constructionFade 6s ease-in-out infinite", // Optimisé: 4s → 6s
         "subtlePulse": "subtlePulse 3s ease-in-out infinite",
       },
       backgroundPosition: {
