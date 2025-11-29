@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { ArticleComments } from '@/components/ArticleComments';
+import DOMPurify from 'dompurify';
 import 'react-quill/dist/quill.snow.css';
 
 interface Article {
@@ -183,7 +184,7 @@ const ArticleDetail = () => {
               prose-blockquote:text-muted-foreground
               invisible animate-fadeIn [animation-delay:0.4s]
               ql-editor"
-            dangerouslySetInnerHTML={{ __html: article.content }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
           />
 
           {/* Commentaires */}

@@ -7,7 +7,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-newsletter]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-article-claude]
 verify_jwt = true
