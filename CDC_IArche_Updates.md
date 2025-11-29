@@ -1,12 +1,44 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.5**  
+**Version mise à jour : V6.6**  
 **Date : 29 Novembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.5 EXEMPLESSECTION DYNAMIQUE - MISE À JOUR V6.6 ✅
+
+#### Migration cas clients vers base de données
+
+**Contexte :**
+- Section "Nos derniers projets" sur homepage (/) affichait 5 cas clients en dur
+- Besoin de rendre cette section dynamique et gérable depuis `/admin/cas-clients`
+
+**Changements appliqués :**
+
+1. **Migration données** :
+   - 5 cas clients insérés dans table `articles` avec `resource_type='cas-client'`
+   - Slugs générés : `grande-distribution-pricing`, `transport-logistique-tournees`, `bureau-etudes-appels-offres`, `association-gestion-vie-associative`, `garage-chatbot-vocal`
+
+2. **ExemplesSection refactorisé** :
+   - Fetch dynamique depuis Supabase : `resource_type='cas-client'` AND `published=true`
+   - État de chargement avec spinner `Loader2`
+   - Cards rendues cliquables vers `/cas-clients/:slug` via `NavLink`
+   - Conservation UI identique (design, animations fadeIn, hover effects)
+
+3. **Architecture ressources complète vérifiée** :
+   - Cas clients : `/admin/cas-clients` → `/cas-clients` → `/cas-clients/:slug`
+   - Livres blancs : `/admin/livres-blancs` → `/livres-blancs` → `/livres-blancs/:slug`
+   - Ateliers & Webinaires : `/admin/ateliers-webinaires` → `/ateliers-webinaires` → `/ateliers-webinaires/:slug`
+
+**Impact :**
+- Section "Nos derniers projets" désormais gérée depuis back-office
+- Ajout/modification/suppression dynamique des cas clients affichés sur homepage
+- Continuité visuelle préservée avec animations et hover states
+
+---
 
 ### 0.4 CORRECTION COHÉRENCE RESOURCE_TYPE - MISE À JOUR V6.5 ✅
 
