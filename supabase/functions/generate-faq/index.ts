@@ -11,6 +11,8 @@ interface RequestBody {
   title: string;
   content: string;
   resource_type: string;
+  mode?: 'new' | 'add';
+  existing_questions?: string[];
 }
 
 serve(async (req) => {
@@ -19,7 +21,7 @@ serve(async (req) => {
   }
 
   try {
-    const { article_id, title, content, resource_type }: RequestBody = await req.json();
+    const { article_id, title, content, resource_type, mode = 'new', existing_questions = [] }: RequestBody = await req.json();
 
     if (!article_id || !title || !content || !resource_type) {
       throw new Error('Missing required fields');
@@ -30,10 +32,14 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY not configured");
     }
 
-    // Determine number of questions based on resource_type
-    const questionCount = resource_type === 'actualite' ? 3 : 5;
+    // Determine number of questions based on resource_type and mode
+    const questionCount = mode === 'add' ? 3 : (resource_type === 'actualite' ? 3 : 5);
 
     // Construct empathetic prompt
+    const modeInstruction = mode === 'add' 
+      ? `Questions déjà existantes (NE PAS LES DUPLIQUER) :\n${existing_questions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n\nGénère ${questionCount} NOUVELLES questions différentes qui complètent les questions existantes.`
+      : `Génère exactement ${questionCount} questions.`;
+
     const systemPrompt = `Tu es un expert en IA appliquée aux PME françaises.
 Génère une FAQ empathique pour cet article.
 
@@ -44,7 +50,7 @@ Règles strictes :
 - Réponses courtes (2-3 phrases max)
 - Inclure obligatoirement 1 question sur "Par où commencer ?" ou "Est-ce adapté à mon entreprise ?"
 
-Génère exactement ${questionCount} questions.
+${modeInstruction}
 
 Format de réponse UNIQUEMENT en JSON :
 [
@@ -108,12 +114,29 @@ Type de ressource : ${resource_type}`;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Handle mode: new vs add
+    let finalQuestions = questions;
+    
+    if (mode === 'add') {
+      // Récupérer FAQ existante et merger les questions
+      const { data: existingFaq } = await supabase
+        .from('faqs')
+        .select('questions')
+        .eq('article_id', article_id)
+        .maybeSingle();
+      
+      if (existingFaq && existingFaq.questions) {
+        const existingQuestionsArray = existingFaq.questions as any[];
+        finalQuestions = [...existingQuestionsArray, ...questions];
+      }
+    }
+
     // Upsert FAQ
     const { data: faqData, error: faqError } = await supabase
       .from('faqs')
       .upsert({
         article_id,
-        questions,
+        questions: finalQuestions,
         updated_at: new Date().toISOString()
       }, {
         onConflict: 'article_id'
