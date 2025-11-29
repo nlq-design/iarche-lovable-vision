@@ -208,7 +208,7 @@ const Articles = () => {
                   className="group"
                 >
                   <Card 
-                    className="h-full hover:shadow-lg transition-shadow duration-300 bg-background border border-border rounded-lg overflow-hidden invisible animate-fadeIn"
+                    className="h-full hover:shadow-lg transition-shadow duration-300 bg-background border border-border rounded-lg overflow-hidden animate-fadeIn"
                     style={{ animationDelay: `${0.3 + index * 0.1}s` }}
                   >
                     {/* Image de couverture sans badges */}
