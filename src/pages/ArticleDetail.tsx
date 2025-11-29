@@ -17,6 +17,7 @@ import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
 import GradientLink from '@/components/ui/GradientLink';
 import { Badge } from '@/components/ui/badge';
 import SolutionContactForm from '@/components/SolutionContactForm';
+import AuthorCard from '@/components/ui/AuthorCard';
 import 'react-quill/dist/quill.snow.css';
 
 interface Article {
@@ -441,7 +442,7 @@ const ArticleDetail = () => {
       <BreadcrumbNav />
 
       <main className="min-h-screen pt-4">
-        <article className="max-w-4xl mx-auto px-6 py-4">
+        <article className="max-w-[1000px] mx-auto px-6 py-4">
           {/* Image de couverture */}
           {article.cover_image_url ? (
             <div className="mb-6 rounded-xl overflow-hidden">
@@ -455,7 +456,7 @@ const ArticleDetail = () => {
             <ArticlePlaceholder className="mb-6 rounded-xl h-56 md:h-72" size="large" />
           )}
 
-          {/* 2. Titre */}
+          {/* 2. Titre et metadata en haut (avant l'encadré auteur) */}
           <header className="mb-8">
             {!article.published && isAdmin && (
               <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -491,21 +492,44 @@ const ArticleDetail = () => {
             </div>
           </header>
 
-          {/* 3. Corps du contenu */}
-          <div
-            className="prose prose-lg max-w-none 
-              prose-headings:text-foreground 
-              prose-p:text-muted-foreground 
-              prose-a:text-accent hover:prose-a:text-accent/80
-              prose-strong:text-foreground
-              prose-ul:text-muted-foreground
-              prose-ol:text-muted-foreground
-              prose-blockquote:border-l-accent
-              prose-blockquote:text-muted-foreground
-              animate-fadeIn [animation-delay:0.4s]
-              ql-editor"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
-          />
+          {/* 3. Layout avec AuthorCard float + Contenu */}
+          <div className="flow-root">
+            {/* Encadré auteur - float left, visible desktop uniquement */}
+            <AuthorCard />
+
+            {/* 4. Corps du contenu - s'adapte avec l'encadré */}
+            <div
+              className="prose prose-lg max-w-none text-left
+                prose-headings:text-foreground prose-headings:text-left
+                prose-h1:text-[32px] prose-h1:font-bold
+                prose-h2:text-[24px] prose-h2:font-semibold
+                prose-p:text-[#374151] prose-p:leading-[1.75] prose-p:text-left
+                prose-a:text-accent hover:prose-a:text-accent/80
+                prose-strong:text-foreground
+                prose-ul:text-[#374151]
+                prose-ol:text-[#374151]
+                prose-blockquote:border-l-accent
+                prose-blockquote:text-muted-foreground
+                animate-fadeIn [animation-delay:0.4s]
+                ql-editor"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
+            />
+          </div>
+
+          {/* Version mobile de l'auteur (horizontal compact) */}
+          <div className="md:hidden mt-8 mb-8 p-4 bg-[#F8F9FA] border border-[#E5E7EB] rounded-xl animate-fadeIn">
+            <div className="flex items-center gap-4">
+              <img 
+                src="/logo-iarche.svg" 
+                alt="Nicolas LARA"
+                className="w-12 h-12 rounded-full object-cover border-2 border-[#E5E7EB] flex-shrink-0"
+              />
+              <div className="flex-1">
+                <div className="text-sm font-semibold text-[#111827]">Nicolas LARA</div>
+                <div className="text-xs text-[#6B7280]">CEO & Fondateur IArche</div>
+              </div>
+            </div>
+          </div>
 
           {/* 4. FAQ (si présente) - AVANT le CTA */}
           {faq && faq.length > 0 && (
