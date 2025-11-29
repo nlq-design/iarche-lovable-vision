@@ -202,15 +202,18 @@ const Articles = () => {
             /* Grille 3 colonnes compacte - Style Timeline */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {articles.map((article, index) => (
-                <NavLink
+                <div 
                   key={article.id}
-                  to={`/articles/${article.slug}`}
-                  className="group"
+                  className="relative rounded-lg p-[2px] gradient-border-animated group invisible animate-fadeIn"
+                  style={{ animationDelay: `${0.3 + index * 0.1}s` }}
                 >
-                  <Card 
-                    className="h-full hover:shadow-lg transition-shadow duration-300 bg-background border border-border rounded-lg overflow-hidden animate-fadeIn"
-                    style={{ animationDelay: `${0.3 + index * 0.1}s` }}
+                  <NavLink
+                    to={`/articles/${article.slug}`}
+                    className="block"
                   >
+                    <Card 
+                      className="h-full bg-background border-0 rounded-lg overflow-hidden transition-all duration-300 group-hover:shadow-[0_10px_40px_hsla(var(--primary)/0.15)] group-hover:scale-[1.02] group-hover:-translate-y-0.5"
+                    >
                     {/* Image de couverture sans badges */}
                     {article.cover_image_url ? (
                       <div className="h-40 overflow-hidden">
@@ -248,6 +251,7 @@ const Articles = () => {
                     </CardContent>
                   </Card>
                 </NavLink>
+                </div>
               ))}
             </div>
           )}
