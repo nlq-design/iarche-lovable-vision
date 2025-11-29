@@ -149,44 +149,65 @@ export type Database = {
       }
       articles: {
         Row: {
+          ai_source: string | null
+          author: string | null
           author_id: string | null
           content: string
           cover_image_url: string | null
           created_at: string | null
           excerpt: string | null
+          faq: Json | null
           id: string
+          meta_description: string | null
+          meta_title: string | null
           published: boolean | null
           published_at: string | null
           scheduled_publish_at: string | null
           slug: string
+          status: string | null
+          tags: string[] | null
           title: string
           updated_at: string | null
         }
         Insert: {
+          ai_source?: string | null
+          author?: string | null
           author_id?: string | null
           content: string
           cover_image_url?: string | null
           created_at?: string | null
           excerpt?: string | null
+          faq?: Json | null
           id?: string
+          meta_description?: string | null
+          meta_title?: string | null
           published?: boolean | null
           published_at?: string | null
           scheduled_publish_at?: string | null
           slug: string
+          status?: string | null
+          tags?: string[] | null
           title: string
           updated_at?: string | null
         }
         Update: {
+          ai_source?: string | null
+          author?: string | null
           author_id?: string | null
           content?: string
           cover_image_url?: string | null
           created_at?: string | null
           excerpt?: string | null
+          faq?: Json | null
           id?: string
+          meta_description?: string | null
+          meta_title?: string | null
           published?: boolean | null
           published_at?: string | null
           scheduled_publish_at?: string | null
           slug?: string
+          status?: string | null
+          tags?: string[] | null
           title?: string
           updated_at?: string | null
         }
