@@ -230,13 +230,19 @@ export type Database = {
           content: string
           cover_image_url: string | null
           created_at: string | null
+          event_date: string | null
+          event_location: string | null
           excerpt: string | null
           faq: Json | null
+          file_url: string | null
           id: string
+          max_participants: number | null
           meta_description: string | null
           meta_title: string | null
           published: boolean | null
           published_at: string | null
+          registration_open: boolean | null
+          replay_url: string | null
           resource_type: string
           scheduled_publish_at: string | null
           slug: string
@@ -252,13 +258,19 @@ export type Database = {
           content: string
           cover_image_url?: string | null
           created_at?: string | null
+          event_date?: string | null
+          event_location?: string | null
           excerpt?: string | null
           faq?: Json | null
+          file_url?: string | null
           id?: string
+          max_participants?: number | null
           meta_description?: string | null
           meta_title?: string | null
           published?: boolean | null
           published_at?: string | null
+          registration_open?: boolean | null
+          replay_url?: string | null
           resource_type?: string
           scheduled_publish_at?: string | null
           slug: string
@@ -274,13 +286,19 @@ export type Database = {
           content?: string
           cover_image_url?: string | null
           created_at?: string | null
+          event_date?: string | null
+          event_location?: string | null
           excerpt?: string | null
           faq?: Json | null
+          file_url?: string | null
           id?: string
+          max_participants?: number | null
           meta_description?: string | null
           meta_title?: string | null
           published?: boolean | null
           published_at?: string | null
+          registration_open?: boolean | null
+          replay_url?: string | null
           resource_type?: string
           scheduled_publish_at?: string | null
           slug?: string
@@ -290,6 +308,42 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      atelier_inscriptions: {
+        Row: {
+          atelier_id: string
+          created_at: string | null
+          id: string
+          lead_id: string
+        }
+        Insert: {
+          atelier_id: string
+          created_at?: string | null
+          id?: string
+          lead_id: string
+        }
+        Update: {
+          atelier_id?: string
+          created_at?: string | null
+          id?: string
+          lead_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atelier_inscriptions_atelier_id_fkey"
+            columns: ["atelier_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atelier_inscriptions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       categories: {
         Row: {
@@ -437,6 +491,42 @@ export type Database = {
           started_at?: string
           status?: string
           tables_backed_up?: string[] | null
+        }
+        Relationships: []
+      }
+      leads: {
+        Row: {
+          company: string | null
+          consent_marketing: boolean | null
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          phone: string | null
+          source: string
+          source_id: string | null
+        }
+        Insert: {
+          company?: string | null
+          consent_marketing?: boolean | null
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          phone?: string | null
+          source: string
+          source_id?: string | null
+        }
+        Update: {
+          company?: string | null
+          consent_marketing?: boolean | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          source?: string
+          source_id?: string | null
         }
         Relationships: []
       }
@@ -606,6 +696,10 @@ export type Database = {
       }
       cleanup_login_attempts: { Args: never; Returns: undefined }
       cleanup_rate_limit_requests: { Args: never; Returns: undefined }
+      count_atelier_inscriptions: {
+        Args: { atelier_uuid: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
