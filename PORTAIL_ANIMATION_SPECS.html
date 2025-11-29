@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>IArche Portail - Spécifications Animation SVG</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.6;
+      background: hsl(40, 30%, 97%);
+    }
+    
+    h1, h2 { color: hsl(218, 47%, 20%); }
+    
+    code {
+      background: hsl(218, 47%, 20%);
+      color: hsl(40, 30%, 97%);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+    
+    pre {
+      background: hsl(218, 47%, 20%);
+      color: hsl(40, 30%, 97%);
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    
+    .spec-block {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      border-left: 4px solid hsl(12, 60%, 53%);
+    }
+    
+    .demo-container {
+      background: hsl(40, 30%, 97%);
+      padding: 40px;
+      margin: 30px 0;
+      border-radius: 12px;
+      position: relative;
+      min-height: 400px;
+      overflow: hidden;
+    }
+    
+    /* Animation identique au portail */
+    .canalisation-line {
+      fill: none;
+      stroke-width: 2;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🏛️ IArche Portail — Spécifications Animation SVG</h1>
+
+<p>Documentation complète des animations de lignes SVG du portail IArche (<code>/</code>) pour reproduction dans ArticlePlaceholder.</p>
+
+<hr>
+
+<div class="spec-block">
+  <h2>📐 1. Structure SVG (2 lignes croisées)</h2>
+  
+  <h3>Ligne 1 : Haut-droite → Bas-gauche (Gradient Bleu Nuit → Terracotta)</h3>
+  <pre><code>&lt;svg viewBox="0 0 177 159" preserveAspectRatio="none"&gt;
+  &lt;defs&gt;
+    &lt;linearGradient id="canalisationGradient1" x1="0%" y1="0%" x2="100%" y2="100%"&gt;
+      &lt;stop offset="0%" stopColor="hsl(218, 47%, 20%)" /&gt;
+      &lt;stop offset="100%" stopColor="hsl(12, 60%, 53%)" /&gt;
+    &lt;/linearGradient&gt;
+  &lt;/defs&gt;
+  
+  &lt;path 
+    class="canalisation-line" 
+    d="M176 1L53.5359 1C52.4313 1 51.5359 1.89543 51.5359 3L51.5359 56C51.5359 57.1046 50.6405 58 49.5359 58L0 58"
+    stroke="url(#canalisationGradient1)"
+  /&gt;
+&lt;/svg&gt;</code></pre>
+
+  <p><strong>Explication du path :</strong></p>
+  <ul>
+    <li><code>M176 1</code> — Départ haut-droite</li>
+    <li><code>L53.5359 1</code> — Ligne horizontale vers le centre</li>
+    <li><code>C52.4313 1 51.5359 1.89543 51.5359 3</code> — Virage arrondi (coin)</li>
+    <li><code>L51.5359 56</code> — Descente verticale</li>
+    <li><code>C51.5359 57.1046 50.6405 58 49.5359 58</code> — Virage arrondi (coin)</li>
+    <li><code>L0 58</code> — Ligne horizontale vers bas-gauche</li>
+  </ul>
+
+  <h3>Ligne 2 : Haut-gauche → Bas-droite (Gradient Terracotta → Bleu Nuit)</h3>
+  <pre><code>&lt;svg viewBox="0 0 176 59" preserveAspectRatio="none"&gt;
+  &lt;defs&gt;
+    &lt;linearGradient id="canalisationGradient2" x1="100%" y1="0%" x2="0%" y2="100%"&gt;
+      &lt;stop offset="0%" stopColor="hsl(12, 60%, 53%)" /&gt;
+      &lt;stop offset="100%" stopColor="hsl(218, 47%, 20%)" /&gt;
+    &lt;/linearGradient&gt;
+  &lt;/defs&gt;
+  
+  &lt;path 
+    class="canalisation-line" 
+    d="M0 1L122.464 1C123.569 1 124.464 1.89543 124.464 3L124.464 56C124.464 57.1046 125.36 58 126.464 58L176 58"
+    stroke="url(#canalisationGradient2)"
+  /&gt;
+&lt;/svg&gt;</code></pre>
+
+  <p><strong>Explication du path :</strong></p>
+  <ul>
+    <li><code>M0 1</code> — Départ haut-gauche</li>
+    <li><code>L122.464 1</code> — Ligne horizontale vers le centre</li>
+    <li><code>C123.569 1 124.464 1.89543 124.464 3</code> — Virage arrondi (coin)</li>
+    <li><code>L124.464 56</code> — Descente verticale</li>
+    <li><code>C124.464 57.1046 125.36 58 126.464 58</code> — Virage arrondi (coin)</li>
+    <li><code>L176 58</code> — Ligne horizontale vers bas-droite</li>
+  </ul>
+</div>
+
+<div class="spec-block">
+  <h2>🎨 2. Styles CSS</h2>
+  
+  <pre><code>.canalisation-line {
+  fill: none;
+  stroke-width: 2;
+  opacity: 0.5;
+}</code></pre>
+</div>
+
+<div class="spec-block">
+  <h2>⚡ 3. Animation JavaScript (Drawing Effect)</h2>
+  
+  <p>Animation de "dessin progressif" utilisant <code>stroke-dashoffset</code> :</p>
+  
+  <pre><code>// Sélectionner toutes les lignes avec classe 'canalisation-line'
+document.querySelectorAll('.canalisation-line').forEach(path =&gt; {
+  const svgPath = path as SVGGeometryElement;
+  
+  // 1. Calculer la longueur totale du path
+  const len = svgPath.getTotalLength();
+  
+  // 2. Définir dasharray et dashoffset initiaux (ligne invisible)
+  path.style.strokeDasharray = `${len}px`;
+  path.style.strokeDashoffset = `${len}px`;
+  
+  // 3. Démarrer l'animation après 500ms
+  setTimeout(() => {
+    path.style.transition = 'stroke-dashoffset 6s ease-in-out';
+    path.style.strokeDashoffset = '0px';
+  }, 500);
+});</code></pre>
+
+  <p><strong>Timing :</strong></p>
+  <ul>
+    <li><strong>Délai initial :</strong> 500ms (avant démarrage)</li>
+    <li><strong>Durée :</strong> 6 secondes</li>
+    <li><strong>Easing :</strong> <code>ease-in-out</code> (démarrage doux, fin douce)</li>
+  </ul>
+</div>
+
+<div class="spec-block">
+  <h2>🔄 4. Adaptation pour ArticlePlaceholder (viewBox 400×200)</h2>
+  
+  <p>Pour adapter ces paths au viewBox <code>400×200</code> de ArticlePlaceholder :</p>
+  
+  <h3>Proportions originales du portail :</h3>
+  <ul>
+    <li><strong>Ligne 1 :</strong> viewBox <code>177×159</code></li>
+    <li><strong>Ligne 2 :</strong> viewBox <code>176×59</code></li>
+  </ul>
+  
+  <h3>Méthode de conversion :</h3>
+  <ol>
+    <li>Identifier les points clés des paths (départ, virages, arrivée)</li>
+    <li>Calculer les proportions relatives (<code>x/177</code>, <code>y/159</code>)</li>
+    <li>Multiplier par les nouvelles dimensions (<code>400×200</code>)</li>
+    <li>Reconstruire les paths avec coordonnées cubiques de Bézier pour virages arrondis</li>
+  </ol>
+  
+  <h3>Exemple pour Ligne 1 (Haut-droite → Bas-gauche) :</h3>
+  <pre><code>// ORIGINAL (177×159) :
+M176 1 L53.5359 1 C52.4313 1 51.5359 1.89543 51.5359 3 L51.5359 56 C51.5359 57.1046 50.6405 58 49.5359 58 L0 58
+
+// ADAPTÉ (400×200) :
+M 390 5 L 130 5 C 128 5 126 7 126 9 L 126 155 C 126 157 124 159 122 159 L 10 159</code></pre>
+  
+  <p><strong>Points de conversion :</strong></p>
+  <ul>
+    <li><code>176/177 ≈ 99%</code> de la largeur → <code>0.99 × 400 ≈ 390</code></li>
+    <li><code>53.5359/177 ≈ 30%</code> de la largeur → <code>0.30 × 400 ≈ 130</code></li>
+    <li><code>56/159 ≈ 35%</code> de la hauteur → <code>0.35 × 200 ≈ 155</code></li>
+  </ul>
+</div>
+
+<div class="spec-block">
+  <h2>✅ 5. Checklist de reproduction</h2>
+  
+  <ul>
+    <li>✅ Deux SVG avec viewBox <code>400×200</code> et <code>preserveAspectRatio="xMidYMid slice"</code></li>
+    <li>✅ Deux paths avec structure en "L" inversés (croisement diagonal)</li>
+    <li>✅ Gradients linéaires inversés (Bleu→Terracotta, Terracotta→Bleu)</li>
+    <li>✅ <code>stroke-width: 2</code>, <code>opacity: 0.5</code></li>
+    <li>✅ Animation JavaScript : <code>getTotalLength()</code> + <code>stroke-dashoffset</code></li>
+    <li>✅ Timing : 500ms delay, 6s duration, ease-in-out</li>
+    <li>✅ Classes <code>.arche-line</code> pour ciblage JavaScript</li>
+  </ul>
+</div>
+
+<div class="spec-block">
+  <h2>🎯 6. Objectif visuel</h2>
+  
+  <p>Créer deux lignes qui se "dessinent" progressivement de manière symétrique :</p>
+  <ul>
+    <li><strong>Ligne 1 :</strong> Part du coin supérieur droit, descend en diagonale avec deux virages arrondis, finit au coin inférieur gauche</li>
+    <li><strong>Ligne 2 :</strong> Part du coin supérieur gauche, descend en diagonale (miroir de Ligne 1), finit au coin inférieur droit</li>
+    <li><strong>Croisement visuel :</strong> Les deux lignes se "croisent" visuellement au centre de l'espace (pas d'intersection réelle, mais impression de X ou de portique)</li>
+    <li><strong>Gradients :</strong> Chaque ligne a un dégradé de couleur (Bleu Nuit ↔ Terracotta) orienté selon sa direction</li>
+  </ul>
+</div>
+
+<hr>
+
+<p><strong>Note :</strong> Ce document est destiné à être partagé avec Claude pour reproduire fidèlement l'animation du portail IArche dans le composant ArticlePlaceholder.</p>
+
+<p style="color: hsl(12, 60%, 53%); font-weight: bold;">Fichier généré depuis hero-section.tsx — © IArche 2025</p>
+
+</body>
+</html>
