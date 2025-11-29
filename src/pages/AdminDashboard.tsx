@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, FileText, MessageCircle, Eye, TrendingUp } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
+import { AdminNav } from '@/components/AdminNav';
 
 interface ArticleStats {
   id: string;
@@ -166,14 +167,7 @@ const AdminDashboard = () => {
 
       <div className="min-h-screen px-6 py-12">
         <div className="container mx-auto max-w-6xl">
-          <div className="mb-8">
-            <NavLink to="/admin">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Retour au back-office
-              </Button>
-            </NavLink>
-          </div>
+          <AdminNav />
 
           <Card className="bg-background/95 border-border mb-8">
             <CardHeader>
