@@ -63,7 +63,7 @@ const NewsletterSection = () => {
     <section id="newsletter" className="pt-8 md:pt-10 pb-12 md:pb-16 bg-muted">
       <div className="container mx-auto px-6">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-semibold text-primary mb-4 invisible animate-fadeIn [animation-delay:0.2s]">
+          <h2 className="text-2xl md:text-3xl font-semibold hero-gradient-text mb-4 invisible animate-fadeIn [animation-delay:0.2s]">
             Restez informé
           </h2>
           <p className="text-base md:text-lg text-muted-foreground mb-6 leading-relaxed max-w-xl mx-auto invisible animate-fadeIn [animation-delay:0.4s]">
