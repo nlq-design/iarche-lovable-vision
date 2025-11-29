@@ -49,7 +49,7 @@ const ExemplesSection = () => {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : (
-          <div className="max-w-4xl mx-auto space-y-6 animate-fadeIn opacity-0 [animation-delay:0.2s]" style={{ animationFillMode: 'forwards' }}>
+          <div className="max-w-4xl mx-auto space-y-6 animate-fadeIn" style={{ visibility: 'hidden', animationDelay: '0.2s', animationFillMode: 'forwards', willChange: 'opacity, visibility' }}>
             {casClients.map((casClient, index) => (
               <NavLink key={casClient.id} to={`/cas-clients/${casClient.slug}`}>
                 <div className="relative rounded-lg p-[2px] gradient-border-animated cursor-pointer group">
