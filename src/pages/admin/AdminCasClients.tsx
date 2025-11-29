@@ -101,7 +101,7 @@ const AdminCasClients = () => {
         <div className="container mx-auto max-w-6xl">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold text-foreground">Gestion des cas clients</h1>
-            <NavLink to="/admin/articles/new">
+            <NavLink to="/admin/cas-clients/new">
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
                 Nouveau cas client

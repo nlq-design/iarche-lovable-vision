@@ -97,6 +97,10 @@ const App = () => (
           <Route path="/admin/redacia" element={<ProtectedAdminRoute><Redacia /></ProtectedAdminRoute>} />
           <Route path="/admin/redacnews" element={<ProtectedAdminRoute><RedacNews /></ProtectedAdminRoute>} />
           <Route path="/admin/articles/new" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
+          <Route path="/admin/actualites/new" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
+          <Route path="/admin/cas-clients/new" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
+          <Route path="/admin/livres-blancs/new" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
+          <Route path="/admin/ateliers-webinaires/new" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
           <Route path="/admin/articles/:id" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
           <Route path="/admin/articles/:id/history" element={<ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>} />
           <Route path="/admin/categories" element={<ProtectedAdminRoute><AdminCategories /></ProtectedAdminRoute>} />

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const AdminArticleEditor = () => {
   const { id } = useParams();
+  const location = useLocation();
   const { user, isAdmin, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -35,6 +36,17 @@ const AdminArticleEditor = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [suggestingTags, setSuggestingTags] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  
+  // Déterminer le resource_type depuis la route
+  const getResourceTypeFromPath = () => {
+    const path = location.pathname;
+    if (path.includes('/admin/actualites/new')) return 'actualite';
+    if (path.includes('/admin/cas-clients/new')) return 'cas-client';
+    if (path.includes('/admin/livres-blancs/new')) return 'livre-blanc';
+    if (path.includes('/admin/ateliers-webinaires/new')) return 'atelier-webinaire';
+    if (path.includes('/admin/articles/new')) return 'article';
+    return 'actualite'; // Défaut
+  };
   
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
@@ -50,7 +62,7 @@ const AdminArticleEditor = () => {
   const [availableTags, setAvailableTags] = useState<Array<{ id: string; name: string }>>([]);
   
   // Champs spécifiques aux types de contenu
-  const [resourceType, setResourceType] = useState('actualite');
+  const [resourceType, setResourceType] = useState(() => !id ? getResourceTypeFromPath() : 'actualite');
   const [eventDate, setEventDate] = useState<Date | undefined>();
   const [eventLocation, setEventLocation] = useState('');
   const [registrationOpen, setRegistrationOpen] = useState(true);
@@ -579,7 +591,15 @@ const AdminArticleEditor = () => {
           article_title: title,
         });
         
-        navigate('/admin');
+        // Rediriger vers la page admin correspondant au resource_type
+        const adminRedirectMap: Record<string, string> = {
+          'article': '/admin/articles',
+          'actualite': '/admin/actualites',
+          'cas-client': '/admin/cas-clients',
+          'livre-blanc': '/admin/livres-blancs',
+          'atelier-webinaire': '/admin/ateliers-webinaires',
+        };
+        navigate(adminRedirectMap[resourceType] || '/admin');
       }
     }
 
@@ -691,7 +711,7 @@ const AdminArticleEditor = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="resourceType">Type de contenu *</Label>
-                  <Select value={resourceType} onValueChange={setResourceType} disabled={isLoading}>
+                  <Select value={resourceType} onValueChange={setResourceType} disabled={isLoading || !id}>
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner un type" />
                     </SelectTrigger>
@@ -703,6 +723,11 @@ const AdminArticleEditor = () => {
                       <SelectItem value="atelier-webinaire">Atelier/Webinaire</SelectItem>
                     </SelectContent>
                   </Select>
+                  {!id && (
+                    <p className="text-xs text-muted-foreground">
+                      Le type est déterminé par la page de création utilisée
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
