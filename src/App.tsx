@@ -19,6 +19,7 @@ import ArticleDetail from "./pages/ArticleDetail";
 import Contact from "./pages/Contact";
 import Newsletter from "./pages/Newsletter";
 import LivreOr from "./pages/LivreOr";
+import Status from "./pages/Status";
 import MentionsLegales from "./pages/MentionsLegales";
 import ConditionsGenerales from "./pages/ConditionsGenerales";
 import Confidentialite from "./pages/Confidentialite";
@@ -100,6 +101,7 @@ const App = () => (
           {/* Pages secondaires */}
           <Route path="/newsletter" element={<Newsletter />} />
           <Route path="/livre-or" element={<LivreOr />} />
+          <Route path="/status" element={<Status />} />
           
           {/* Pages légales */}
           <Route path="/mentions-legales" element={<MentionsLegales />} />

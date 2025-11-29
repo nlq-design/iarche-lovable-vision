@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BackgroundLayout } from "@/components/layouts/BackgroundLayout";
+import BackgroundLayout from "@/components/layouts/BackgroundLayout";
 import { Helmet } from "react-helmet-async";
 import { Activity, CheckCircle2, AlertTriangle, Gauge, Accessibility, CheckSquare, Search } from "lucide-react";
 
