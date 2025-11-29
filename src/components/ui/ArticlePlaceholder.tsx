@@ -82,7 +82,7 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
       
       {/* Logo IArche centré avec gradient animé */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-2xl font-bold tracking-tight hero-gradient-text">
+        <span className="text-3xl md:text-4xl font-bold tracking-tight hero-gradient-text">
           IArche
         </span>
       </div>
