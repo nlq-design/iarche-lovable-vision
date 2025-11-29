@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { NavLink } from '../NavLink';
 import { Loader2 } from 'lucide-react';
+import GradientLink from '../ui/GradientLink';
 
 interface CasClient {
   id: string;
@@ -62,9 +63,10 @@ const ExemplesSection = () => {
                           <p className="text-sm text-muted-foreground leading-relaxed">
                             {casClient.excerpt}
                           </p>
-                          <div className="flex items-center gap-2 text-xs text-accent font-medium pt-2">
-                            <span>Voir le projet</span>
-                            <span className="group-hover:translate-x-1 transition-transform">→</span>
+                          <div className="pt-2">
+                            <GradientLink href={`/cas-clients/${casClient.slug}`}>
+                              Voir le projet
+                            </GradientLink>
                           </div>
                         </div>
                       </div>
