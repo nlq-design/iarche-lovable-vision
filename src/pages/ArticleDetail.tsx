@@ -121,6 +121,10 @@ const ArticleDetail = () => {
     return 'Retour aux actualités';
   };
 
+  const getCanonicalUrl = () => {
+    return `https://iarche.fr${location.pathname}`;
+  };
+
   if (loading) {
     return (
       <BackgroundLayout>
@@ -145,13 +149,13 @@ const ArticleDetail = () => {
           name="description"
           content={article.excerpt || article.title}
         />
-        <link rel="canonical" href={`https://iarche.fr/actualites/${article.slug}`} />
+        <link rel="canonical" href={getCanonicalUrl()} />
         <meta property="og:title" content={`${article.title} · IArche`} />
         <meta
           property="og:description"
           content={article.excerpt || article.title}
         />
-        <meta property="og:url" content={`https://iarche.fr/actualites/${article.slug}`} />
+        <meta property="og:url" content={getCanonicalUrl()} />
         <meta property="og:type" content="article" />
         {article.cover_image_url && (
           <meta property="og:image" content={article.cover_image_url} />

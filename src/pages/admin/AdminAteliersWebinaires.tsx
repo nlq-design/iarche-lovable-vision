@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Edit, Trash2, Eye, History } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Eye, History, HelpCircle } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import AdminLayout from '@/components/layouts/AdminLayout';
 
@@ -19,6 +19,7 @@ interface Article {
   published_at: string | null;
   created_at: string;
   resource_type: string;
+  has_faq?: boolean;
 }
 
 const AdminAteliersWebinaires = () => {
@@ -44,7 +45,17 @@ const AdminAteliersWebinaires = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('articles')
-      .select('id, title, slug, excerpt, published, published_at, created_at, resource_type')
+      .select(`
+        id, 
+        title, 
+        slug, 
+        excerpt, 
+        published, 
+        published_at, 
+        created_at, 
+        resource_type,
+        faqs!left(id)
+      `)
       .eq('resource_type', 'atelier-webinaire')
       .order('created_at', { ascending: false });
 
@@ -55,7 +66,12 @@ const AdminAteliersWebinaires = () => {
         variant: 'destructive',
       });
     } else {
-      setArticles(data || []);
+      const articlesWithFAQ = (data || []).map((article: any) => ({
+        ...article,
+        has_faq: article.faqs && article.faqs.length > 0,
+        faqs: undefined, // Remove faqs from final object
+      }));
+      setArticles(articlesWithFAQ);
     }
     setLoading(false);
   };
@@ -131,6 +147,11 @@ const AdminAteliersWebinaires = () => {
                         <span className={`px-2 py-1 rounded ${article.published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                           {article.published ? 'Publié' : 'Brouillon'}
                         </span>
+                        {article.has_faq && (
+                          <span title="FAQ générée">
+                            <HelpCircle className="h-4 w-4 text-accent" />
+                          </span>
+                        )}
                         <span>
                           {new Date(article.published_at || article.created_at).toLocaleDateString('fr-FR')}
                         </span>
