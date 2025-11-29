@@ -8,8 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Edit, Trash2, Eye, History, FolderOpen, Tags, MessageCircle, BarChart3, Mail, Sparkles } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Eye, History } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
+import AdminLayout from '@/components/layouts/AdminLayout';
 
 interface Article {
   id: string;
@@ -189,199 +190,123 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <AdminLayout>
       <Helmet>
-        <title>Administration - IArche</title>
+        <title>Tableau de bord · Admin · IArche</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
-      <div className="min-h-screen px-6 py-12">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-semibold text-foreground mb-2">
-                Back-office IArche
-              </h1>
-              <p className="text-muted-foreground">
-                Gérez vos articles et actualités
-              </p>
-            </div>
-            <NavLink to="/admin/articles/new">
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Nouvel article
-              </Button>
-            </NavLink>
+      <div className="px-6 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground mb-1">
+              Tableau de bord
+            </h1>
+            <p className="text-muted-foreground">
+              Gérez vos articles et actualités
+            </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <NavLink to="/admin/dashboard">
-              <Card className="bg-background/95 border-border hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6 flex items-center gap-4">
-                  <BarChart3 className="h-8 w-8 text-primary" />
-                  <div>
-                    <h3 className="font-semibold text-foreground">Statistiques</h3>
-                    <p className="text-sm text-muted-foreground">Tableau de bord</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </NavLink>
-
-            <NavLink to="/admin/redacia">
-              <Card className="bg-background/95 border-border hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6 flex items-center gap-4">
-                  <Sparkles className="h-8 w-8 text-accent" />
-                  <div>
-                    <h3 className="font-semibold text-foreground">Redacia</h3>
-                    <p className="text-sm text-muted-foreground">Rédaction IA</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </NavLink>
-
-            <NavLink to="/admin/categories">
-              <Card className="bg-background/95 border-border hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6 flex items-center gap-4">
-                  <FolderOpen className="h-8 w-8 text-primary" />
-                  <div>
-                    <h3 className="font-semibold text-foreground">Catégories</h3>
-                    <p className="text-sm text-muted-foreground">Gérer les catégories</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </NavLink>
-
-            <NavLink to="/admin/tags">
-              <Card className="bg-background/95 border-border hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6 flex items-center gap-4">
-                  <Tags className="h-8 w-8 text-primary" />
-                  <div>
-                    <h3 className="font-semibold text-foreground">Tags</h3>
-                    <p className="text-sm text-muted-foreground">Gérer les tags</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </NavLink>
-
-            <NavLink to="/admin/comments">
-              <Card className="bg-background/95 border-border hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6 flex items-center gap-4">
-                  <MessageCircle className="h-8 w-8 text-primary" />
-                  <div>
-                    <h3 className="font-semibold text-foreground">Commentaires</h3>
-                    <p className="text-sm text-muted-foreground">Modérer les commentaires</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </NavLink>
-
-            <NavLink to="/admin/newsletters">
-              <Card className="bg-background/95 border-border hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6 flex items-center gap-4">
-                  <Mail className="h-8 w-8 text-primary" />
-                  <div>
-                    <h3 className="font-semibold text-foreground">Newsletter</h3>
-                    <p className="text-sm text-muted-foreground">Gérer les abonnés</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </NavLink>
-          </div>
-
-          {loadingArticles ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : articles.length === 0 ? (
-            <Card className="bg-background/95 border-border">
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground mb-4">
-                  Aucun article pour le moment
-                </p>
-                <NavLink to="/admin/articles/new">
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Créer le premier article
-                  </Button>
-                </NavLink>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {articles.map((article) => (
-                <Card
-                  key={article.id}
-                  className="bg-background/95 border-border hover:shadow-lg transition-shadow"
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-foreground">
-                            {article.title}
-                          </h3>
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full ${
-                              article.published
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}
-                          >
-                            {article.published ? 'Publié' : 'Brouillon'}
-                          </span>
-                        </div>
-                        {article.excerpt && (
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {article.excerpt}
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          Créé le{' '}
-                          {new Date(article.created_at).toLocaleDateString('fr-FR')}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        {article.published && (
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => navigate(`/actualites/${article.slug}`)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => navigate(`/admin/articles/${article.id}/history`)}
-                          title="Historique des versions"
-                        >
-                          <History className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => navigate(`/admin/articles/${article.id}`)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleDelete(article.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <NavLink to="/admin/articles/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Nouvel article
+            </Button>
+          </NavLink>
         </div>
+
+        {loadingArticles ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : articles.length === 0 ? (
+          <Card className="bg-background border-border">
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground mb-4">
+                Aucun article pour le moment
+              </p>
+              <NavLink to="/admin/articles/new">
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Créer le premier article
+                </Button>
+              </NavLink>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {articles.map((article) => (
+              <Card
+                key={article.id}
+                className="bg-background border-border hover:shadow-lg transition-shadow"
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-lg font-semibold text-foreground">
+                          {article.title}
+                        </h3>
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full ${
+                            article.published
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {article.published ? 'Publié' : 'Brouillon'}
+                        </span>
+                      </div>
+                      {article.excerpt && (
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {article.excerpt}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Créé le{' '}
+                        {new Date(article.created_at).toLocaleDateString('fr-FR')}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      {article.published && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => navigate(`/actualites/${article.slug}`)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => navigate(`/admin/articles/${article.id}/history`)}
+                        title="Historique des versions"
+                      >
+                        <History className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => navigate(`/admin/articles/${article.id}`)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleDelete(article.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 

@@ -493,6 +493,56 @@ select cron.schedule(
 
 ---
 
+## RÉORGANISATION ADMIN - SIDEBAR VERTICALE ✅
+
+### État : BUILDÉ ✅
+
+**Architecture :**
+- Sidebar verticale collapsible avec shadcn/ui
+- Header horizontal simplifié (logo, retour au site, déconnexion)
+- Layout responsive avec SidebarProvider
+
+**Navigation organisée par sections :**
+
+1. **Vue d'ensemble**
+   - Tableau de bord (/admin) - Liste des articles
+   - Statistiques (/admin/dashboard) - Métriques et top articles
+
+2. **Contenu**
+   - Articles (/admin) - Gestion complète des articles
+   - Redacia (IA) (/admin/redacia) - Génération d'articles avec IA
+
+3. **Organisation**
+   - Catégories (/admin/categories) - Taxonomie
+   - Tags (/admin/tags) - Taxonomie
+
+4. **Engagement**
+   - Commentaires (/admin/comments) - Modération
+
+5. **Communication**
+   - Abonnés (/admin/newsletters) - Gestion des inscrits
+   - RedacNews (/admin/redacnews) - Création newsletters
+
+**Fonctionnalités :**
+- Sidebar collapsible en mode mini (icônes seules, 56px width)
+- Mode pleine largeur (256px) avec labels de section
+- Highlight automatique de la route active
+- Groupes de navigation avec labels visuels
+- Responsive : trigger mobile dans le header
+
+**Composants créés :**
+- `AdminSidebar.tsx` - Composant sidebar avec navigation organisée
+- `AdminLayout.tsx` - Refactorisé pour intégrer SidebarProvider
+- `/admin` - Simplifié en tableau de bord avec liste d'articles
+
+**Avantages :**
+- Scalabilité : facile d'ajouter de nouvelles sections
+- UX professionnelle et cohérente
+- Navigation claire par domaines fonctionnels
+- Préparé pour évolution future du back-office
+
+---
+
 ## MODULE REDACNEWS - CRÉATION NEWSLETTERS ✅
 
 ### État : BUILDÉ ✅
