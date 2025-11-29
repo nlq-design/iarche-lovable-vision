@@ -1,7 +1,7 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.9**  
-**Date : 29 Novembre 2025**  
+**Version mise à jour : V6.10**  
+**Date : 29 Janvier 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
@@ -49,6 +49,88 @@
 3. Collaboria - Plateforme collaborative IA (Web)
 4. Dialogue Plus - Chatbot RAG avancé (Web)
 5. Datalia - Extraction données locales (Web, 749€ HT licence à vie)
+
+---
+
+### 0.9 HARMONISATION TERMINOLOGIQUE - MISE À JOUR V6.10 ✅
+
+#### Corrections terminologiques complètes selon checklist de vérification
+
+**Contexte :**
+- Document de vérification & complétion IArche identifiait incohérences terminologiques
+- Besoin d'harmonisation vocabulaire sur l'ensemble du site (pages publiques + admin)
+- Suppression des "mots interdits" nuisant à la clarté et au positionnement IArche
+
+**1. Section Services (accueil)**
+- **Fichier** : `src/components/sections/ServicesSection.tsx`
+- **Modifications** :
+  - Audit & Conseil : "Comprendre où vous en êtes et définir par où commencer."
+  - Développement & Intégration : "Des solutions sur-mesure qui s'intègrent à vos outils existants."
+  - Accompagnement & Autonomie : "On rend vos équipes autonomes. L'IA évolue, votre entreprise aussi."
+  - Conformité & Réglementation : "AI Act, RGPD : intégrer l'IA en restant conforme."
+
+**2. Section À propos (accueil)**
+- **Fichier** : `src/components/sections/PresentationSection.tsx`
+- **Modifications** :
+  - "installée à" → **"basée à"** (cohérence avec positionnement national)
+  - "accompagnement" → **"autonomie"** (dans liste : audit, développement, autonomie, conformité)
+
+**3. Page Services (hub)**
+- **Fichier** : `src/pages/Services.tsx`
+- **Modifications** :
+  - Sous-titre : "Audit, développement, accompagnement, conformité."
+  - Meta description mise à jour avec nouvelle terminologie
+
+**4. Données services (servicesData.ts)**
+- **Fichier** : `src/data/servicesData.ts`
+- **Modifications par service** :
+
+**Audit & Conseil** :
+- FAQ Q3 : "Quel est le coût d'un audit ?" → "Sur devis. Ça dépend du **projet**. On en discute ensemble avant de s'engager."
+  - Remplacement "périmètre" par "projet"
+- Cas d'usage : titres simplifiés sans mention "Exemple :"
+
+**Développement & Intégration** :
+- **Section "Cas d'usage" supprimée** (faisait doublon avec cas clients)
+- FAQ Q1 : suppression mentions "scalable" → "adaptée à vos besoins"
+- Méthodologie Étape 4 : **"accompagnement"** (pas "maintenance")
+
+**Accompagnement & Autonomie** :
+- Méthodologie Étape 4 : titre **"Accompagnement"** (pas "Coaching")
+- Intro : ordre des mots **"conforme, éthique, sécurisée"**
+
+**Conformité & Réglementation** :
+- Pour qui : **"et/ou"** (pas juste "ou")
+
+**5. Remplacement mots interdits (recherche globale)**
+- **Fichiers concernés** : `src/pages/ConditionsGenerales.tsx`, `src/pages/admin/Redacia.tsx`, `src/pages/Services.tsx`
+- **Remplacements effectués** :
+  - "formation" → **"accompagnement"** (sauf titres de catégories ressources Ateliers & Webinaires)
+  - "Coaching" → **"Accompagnement"**
+  - "périmètre" → **"projet"**
+  - "scalable" → **"adaptée à vos besoins"**
+  - "maturité IA" → **"adaptés aux PME"**
+  - "enjeux métier" → **"situation initiale"**
+
+**6. Schema.org (homepage)**
+- **Fichier** : `src/pages/Index.tsx`
+- **Modification** : Description Organization mise à jour avec "basée à" + "autonomie" (cohérence avec section À propos)
+
+**Impact :**
+- Harmonisation terminologique complète du vocabulaire IArche
+- Suppression des termes interdits nuisant à la clarté et au positionnement
+- Cohérence totale entre contenus accueil, pages services, métadonnées SEO et Schema.org
+- Simplification des descriptions et suppression des redondances (cas d'usage Développement)
+- Alignement 100% avec document de vérification & complétion V6.10
+
+**Fichiers modifiés :**
+- `src/components/sections/ServicesSection.tsx`
+- `src/components/sections/PresentationSection.tsx`
+- `src/pages/Services.tsx`
+- `src/data/servicesData.ts`
+- `src/pages/Index.tsx`
+- `src/pages/ConditionsGenerales.tsx`
+- `src/pages/admin/Redacia.tsx`
 
 ---
 
