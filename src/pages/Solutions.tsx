@@ -15,35 +15,35 @@ const Solutions = () => {
       name: 'Team 5 Connect',
       slug: 'team-5-connect',
       tagline: 'Gestion RH des équipes terrain',
-      description: 'Pointage, absences, conformité — en une seule solution pour le BTP et l\'industrie.',
+      description: 'Pointage, absences, conformité — BTP et industrie.',
       status: 'Disponible'
     },
     {
       name: 'ERP Avocat',
       slug: 'lexia',
       tagline: 'ERP pour cabinets d\'avocats',
-      description: 'Dossiers, contrats, facturation, conformité — tout au même endroit.',
+      description: 'Dossiers, contrats, facturation, conformité.',
       status: 'À venir'
     },
     {
       name: 'Collaboria',
       slug: 'collaboria',
       tagline: 'Plateforme collaborative IA',
-      description: 'Multi-LLM, benchmark des outils, maîtrise des usages. Souveraine, sécurisée et conforme.',
+      description: 'Multi-LLM, benchmark, maîtrise des usages. Souveraine et conforme.',
       status: 'Disponible'
     },
     {
       name: 'Chatbot RAG Avancé',
       slug: 'dialogue-plus',
       tagline: 'Chatbot IA connecté à vos documents',
-      description: 'RAG avancé, multi-formats, benchmark intégré. Intégration widget ou API.',
+      description: 'RAG avancé, 340+ modèles, benchmark intégré.',
       status: 'Disponible'
     },
     {
       name: 'Datalia',
       slug: 'datalia',
       tagline: 'Extraction de données locales',
-      description: 'Prospection par mots-clés et zones géographiques. Licence à vie.',
+      description: 'Prospection par mots-clés et zones. Licence à vie.',
       status: 'Disponible'
     }
   ];
@@ -73,7 +73,7 @@ const Solutions = () => {
             {/* Ligne décorative gradient */}
             <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 animate-fadeIn [animation-delay:0.15s]"></div>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
-              Ce qu'on conseille, on le construit aussi
+              IArche édite des solutions développées à partir de besoins concrets identifiés en accompagnant nos clients.
             </p>
           </div>
 
