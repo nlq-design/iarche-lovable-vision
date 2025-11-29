@@ -6,8 +6,12 @@ verify_jwt = false
 [functions.publish-scheduled-articles]
 verify_jwt = false
 
-[functions.send-newsletter]
+[functions.detect-anomalies]
 verify_jwt = true
+
+[functions.send-security-alert]
+verify_jwt = true
+
 
 [functions.generate-article-claude]
 verify_jwt = true

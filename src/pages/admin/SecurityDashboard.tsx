@@ -3,9 +3,10 @@ import { Helmet } from 'react-helmet-async';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import { Loader2, Shield, AlertTriangle, Activity, Users, FileText, MessageCircle } from 'lucide-react';
+import { Loader2, Shield, AlertTriangle, Activity, Users, FileText, MessageCircle, Brain } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 interface SecurityMetrics {
   totalActions: number;
@@ -27,6 +28,8 @@ interface SecurityMetrics {
 const SecurityDashboard = () => {
   const [metrics, setMetrics] = useState<SecurityMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+  const [analyzingAI, setAnalyzingAI] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -91,6 +94,20 @@ const SecurityDashboard = () => {
         }))
       });
 
+      // Vérifier automatiquement les seuils de sécurité
+      if (deletionActions > 15 || recentLogs.length > 100) {
+        await triggerSecurityAlert({
+          severity: deletionActions > 20 ? 'critical' : 'high',
+          title: 'Activité de sécurité élevée détectée',
+          description: `${deletionActions} suppressions et ${recentLogs.length} actions dans les dernières 24h`,
+          details: {
+            deletions: deletionActions,
+            recentActions: recentLogs.length,
+            uniqueUsers
+          }
+        });
+      }
+
     } catch (error) {
       console.error('Error loading security metrics:', error);
       toast({
@@ -100,6 +117,66 @@ const SecurityDashboard = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const runAIAnomalyDetection = async () => {
+    setAnalyzingAI(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.functions.invoke('detect-anomalies', {
+        headers: {
+          Authorization: `Bearer ${session.session.access_token}`
+        }
+      });
+
+      if (error) throw error;
+
+      setAiAnalysis(data.analysis);
+
+      if (data.analysis.isAnomalous && data.analysis.riskScore > 70) {
+        await triggerSecurityAlert({
+          severity: data.analysis.riskScore > 85 ? 'critical' : 'high',
+          title: 'Anomalie de sécurité détectée par l\'IA',
+          description: `Score de risque : ${data.analysis.riskScore}/100. ${data.analysis.reasons.join(', ')}`,
+          details: data.analysis
+        });
+      }
+
+      toast({
+        title: "Analyse IA terminée",
+        description: data.analysis.isAnomalous 
+          ? `⚠️ Anomalies détectées (risque: ${data.analysis.riskScore}/100)` 
+          : "✅ Aucune anomalie détectée"
+      });
+
+    } catch (error) {
+      console.error('Error running AI detection:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'exécuter l'analyse IA",
+        variant: "destructive"
+      });
+    } finally {
+      setAnalyzingAI(false);
+    }
+  };
+
+  const triggerSecurityAlert = async (alert: any) => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return;
+
+      await supabase.functions.invoke('send-security-alert', {
+        body: { alert },
+        headers: {
+          Authorization: `Bearer ${session.session.access_token}`
+        }
+      });
+    } catch (error) {
+      console.error('Error sending security alert:', error);
     }
   };
 
@@ -162,7 +239,6 @@ const SecurityDashboard = () => {
           </div>
         </div>
 
-        {/* Métriques principales */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardHeader className="pb-3">
@@ -224,6 +300,81 @@ const SecurityDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Analyse IA */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Brain className="h-5 w-5 text-purple-500" />
+                Détection d'anomalies par IA
+              </div>
+              <Button 
+                onClick={runAIAnomalyDetection} 
+                disabled={analyzingAI}
+                variant="outline"
+              >
+                {analyzingAI ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Analyse en cours...
+                  </>
+                ) : (
+                  'Lancer l\'analyse IA'
+                )}
+              </Button>
+            </CardTitle>
+            <CardDescription>
+              Utilisez l'IA pour détecter automatiquement les comportements suspects
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {aiAnalysis ? (
+              <div className={`p-4 rounded-lg ${aiAnalysis.isAnomalous ? 'bg-orange-50 border border-orange-200' : 'bg-green-50 border border-green-200'}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="font-semibold">
+                    {aiAnalysis.isAnomalous ? '⚠️ Anomalies détectées' : '✅ Aucune anomalie'}
+                  </span>
+                  <Badge className={aiAnalysis.riskScore > 70 ? 'bg-red-100 text-red-800' : aiAnalysis.riskScore > 40 ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}>
+                    Risque: {aiAnalysis.riskScore}/100
+                  </Badge>
+                </div>
+                
+                {aiAnalysis.reasons && aiAnalysis.reasons.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-sm font-medium mb-2">Raisons :</p>
+                    <ul className="text-sm space-y-1">
+                      {aiAnalysis.reasons.map((reason: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-orange-500">•</span>
+                          <span>{reason}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {aiAnalysis.recommendations && aiAnalysis.recommendations.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium mb-2">Recommandations :</p>
+                    <ul className="text-sm space-y-1">
+                      {aiAnalysis.recommendations.map((rec: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-blue-500">→</span>
+                          <span>{rec}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Cliquez sur "Lancer l'analyse IA" pour détecter les anomalies de sécurité dans vos logs d'audit
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Actions par type */}
