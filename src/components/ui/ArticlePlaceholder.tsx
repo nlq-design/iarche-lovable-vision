@@ -46,7 +46,7 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
         <path
           ref={path1Ref}
           className="canalisation-line"
-          d="M 398 2 L 121 2 C 119 2 117 4 117 6 L 117 127 C 117 129 115 131 113 131 L 0 131"
+          d="M 398 2 L 121 2 C 119 2 117 4 117 6 L 117 178 C 117 180 115 182 113 182 L 0 182"
           fill="none"
           stroke="url(#archGrad1)"
           strokeWidth="2"
