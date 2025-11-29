@@ -13,38 +13,38 @@ const Solutions = () => {
   const saasSolutions = [
     {
       name: 'Team 5 Connect',
+      slug: 'team-5-connect',
       tagline: 'Gestion RH pour le BTP',
       description: 'Plateforme complète de gestion des ressources humaines spécialisée pour les entreprises du bâtiment.',
-      status: 'Disponible',
-      link: '#'
+      status: 'Disponible'
     },
     {
       name: 'Lexia',
+      slug: 'lexia',
       tagline: 'ERP pour cabinets d\'avocats',
       description: 'Solution de gestion complète pour cabinets juridiques : dossiers, facturation, time tracking.',
-      status: 'À venir',
-      link: null
+      status: 'À venir'
     },
     {
-      name: 'Collaboration',
+      name: 'Collaboria',
+      slug: 'collaboria',
       tagline: 'Plateforme collaborative',
       description: 'Espace de travail partagé pour équipes distribuées avec gestion de projets et communication intégrée.',
-      status: 'Disponible',
-      link: '#'
+      status: 'Disponible'
     },
     {
       name: 'Dialogue Plus',
+      slug: 'dialogue-plus',
       tagline: 'Chatbot RAG intelligent',
       description: 'Chatbot conversationnel alimenté par vos documents avec recherche sémantique et génération contextuelle.',
-      status: 'Disponible',
-      link: '#'
+      status: 'Disponible'
     },
     {
       name: 'Datalia',
+      slug: 'datalia',
       tagline: 'Extraction de données',
       description: 'Extraction automatique et structuration de données depuis documents PDF, images et formulaires.',
-      status: 'Disponible',
-      link: '#'
+      status: 'Disponible'
     }
   ];
 
@@ -139,11 +139,9 @@ const Solutions = () => {
                     <p className="text-muted-foreground mb-4">
                       {solution.description}
                     </p>
-                    {solution.link && (
-                      <IArcheLink href={solution.link}>
-                        En savoir plus
-                      </IArcheLink>
-                    )}
+                    <IArcheLink href={`/solutions/${solution.slug}`}>
+                      En savoir plus
+                    </IArcheLink>
                   </CardContent>
                 </Card>
               ))}
