@@ -10,6 +10,7 @@ import { Loader2, Calendar, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
+import { ArticleComments } from '@/components/ArticleComments';
 import 'react-quill/dist/quill.snow.css';
 
 interface Article {
@@ -172,6 +173,11 @@ const ArticleDetail = () => {
               ql-editor"
             dangerouslySetInnerHTML={{ __html: article.content }}
           />
+
+          {/* Commentaires */}
+          <div className="mt-16">
+            <ArticleComments articleId={article.id} />
+          </div>
         </article>
       </main>
 

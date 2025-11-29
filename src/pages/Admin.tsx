@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Edit, Trash2, Eye, History } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Eye, History, FolderOpen, Tags, MessageCircle } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 
 interface Article {
@@ -213,6 +213,44 @@ const Admin = () => {
                 <Plus className="mr-2 h-4 w-4" />
                 Nouvel article
               </Button>
+            </NavLink>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <NavLink to="/admin/categories">
+              <Card className="bg-background/95 border-border hover:shadow-lg transition-shadow cursor-pointer">
+                <CardContent className="p-6 flex items-center gap-4">
+                  <FolderOpen className="h-8 w-8 text-primary" />
+                  <div>
+                    <h3 className="font-semibold text-foreground">Catégories</h3>
+                    <p className="text-sm text-muted-foreground">Gérer les catégories</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </NavLink>
+
+            <NavLink to="/admin/tags">
+              <Card className="bg-background/95 border-border hover:shadow-lg transition-shadow cursor-pointer">
+                <CardContent className="p-6 flex items-center gap-4">
+                  <Tags className="h-8 w-8 text-primary" />
+                  <div>
+                    <h3 className="font-semibold text-foreground">Tags</h3>
+                    <p className="text-sm text-muted-foreground">Gérer les tags</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </NavLink>
+
+            <NavLink to="/admin/comments">
+              <Card className="bg-background/95 border-border hover:shadow-lg transition-shadow cursor-pointer">
+                <CardContent className="p-6 flex items-center gap-4">
+                  <MessageCircle className="h-8 w-8 text-primary" />
+                  <div>
+                    <h3 className="font-semibold text-foreground">Commentaires</h3>
+                    <p className="text-sm text-muted-foreground">Modérer les commentaires</p>
+                  </div>
+                </CardContent>
+              </Card>
             </NavLink>
           </div>
 

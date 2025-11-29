@@ -184,6 +184,47 @@ export type Database = {
         }
         Relationships: []
       }
+      comments: {
+        Row: {
+          approved: boolean
+          article_id: string
+          author_email: string
+          author_name: string
+          content: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          approved?: boolean
+          article_id: string
+          author_email: string
+          author_name: string
+          content: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          approved?: boolean
+          article_id?: string
+          author_email?: string
+          author_name?: string
+          content?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           company: string | null
