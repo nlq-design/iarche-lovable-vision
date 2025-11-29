@@ -98,35 +98,42 @@ const AteliersWebinaires = () => {
                   to={`/ateliers-webinaires/${item.slug}`}
                   className="group"
                 >
-                  <Card className="h-full hover:shadow-lg transition-shadow duration-300 invisible animate-fadeIn"
+                  <Card 
+                    className="h-full hover:shadow-lg transition-shadow duration-300 bg-background border border-border rounded-lg overflow-hidden invisible animate-fadeIn"
                     style={{ animationDelay: `${0.3 + index * 0.1}s` }}
                   >
-                    {item.cover_image_url && (
-                      <div className="aspect-video overflow-hidden rounded-t-lg">
+                    {/* Image de couverture compacte */}
+                    {item.cover_image_url ? (
+                      <div className="h-40 overflow-hidden">
                         <img
                           src={item.cover_image_url}
                           alt={item.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       </div>
+                    ) : (
+                      <ArticlePlaceholder className="h-40" />
                     )}
-                    <CardHeader>
-                      <h2 className="text-xl font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">
+
+                    <CardHeader className="pb-2">
+                      <h2 className="text-base font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">
                         {item.title}
                       </h2>
                     </CardHeader>
-                    <CardContent>
+
+                    <CardContent className="space-y-2">
                       {item.excerpt && (
-                        <p className="text-muted-foreground line-clamp-3 mb-4">
+                        <p className="text-sm text-muted-foreground line-clamp-2">
                           {item.excerpt}
                         </p>
                       )}
-                      <div className="flex items-center text-sm text-text-subtle">
-                        <Calendar className="w-4 h-4 mr-2" />
+                      {/* Date discrète en bas */}
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 pt-1">
+                        <Calendar className="h-3 w-3" aria-hidden="true" />
                         {new Date(item.published_at || item.created_at).toLocaleDateString('fr-FR', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
                         })}
                       </div>
                     </CardContent>

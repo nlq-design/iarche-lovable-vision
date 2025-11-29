@@ -88,13 +88,6 @@ const Actualites = () => {
     if (categoriesResult.data) setCategories(categoriesResult.data);
     if (tagsResult.data) setTags(tagsResult.data);
   };
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-  };
   return <BackgroundLayout>
       <Helmet>
         <title>Actualités IA · IArche · Agence IA Bayonne</title>
@@ -111,19 +104,14 @@ const Actualites = () => {
 
       <main className="min-h-screen pt-8">
         <section className="max-w-6xl mx-auto px-6 py-16">
-          {/* En-tête enrichi - Style Premium */}
+          {/* En-tête */}
           <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 invisible animate-fadeIn [animation-delay:0.1s]">Actualités</h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-4 invisible animate-fadeIn [animation-delay:0.2s]">
+            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 invisible animate-fadeIn [animation-delay:0.1s]">
+              Actualités
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto invisible animate-fadeIn [animation-delay:0.3s]">
               Guides pratiques, analyses techniques et retours d'expérience sur l'IA
             </p>
-            <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground invisible animate-fadeIn [animation-delay:0.3s]">
-              <span>{articles.length} {articles.length > 1 ? 'articles' : 'article'}</span>
-              <span>·</span>
-              <NavLink to="/newsletter" className="text-accent hover:underline">
-                S'abonner à la newsletter
-              </NavLink>
-            </div>
           </div>
 
           {/* Filtres */}
@@ -152,50 +140,71 @@ const Actualites = () => {
             </div>
           </div>
 
-          {loading ? <div className="flex justify-center py-16">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div> : articles.length === 0 ? <div className="text-center py-16">
-              <p className="text-muted-foreground mb-4">
-                Aucun article publié pour le moment.
+          {/* Liste des actualités */}
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : articles.length === 0 ? (
+            <div className="text-center py-20">
+              <ArticlePlaceholder />
+              <p className="text-muted-foreground mt-4">
+                Aucune actualité disponible pour le moment.
               </p>
-              <p className="text-sm text-muted-foreground">
-                Revenez bientôt pour découvrir nos actualités IA.
-              </p>
-            </div> : (/* Grille 2 colonnes Premium avec large cards */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {articles.map((article, index) => <NavLink key={article.id} to={`/actualites/${article.slug}`} className="group">
-                  <Card className="bg-background border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 h-full" style={{
-              visibility: 'hidden',
-              animation: `fadeIn 0.8s ease-out ${0.3 + index * 0.1}s forwards`
-            }}>
-                    {/* Image de couverture plus large */}
-                    {article.cover_image_url ? <div className="h-64 overflow-hidden">
-                        <img src={article.cover_image_url} alt={article.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      </div> : <ArticlePlaceholder className="h-64" />}
+            </div>
+          ) : (
+            /* Grille 3 colonnes compacte - Style Timeline */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {articles.map((article, index) => (
+                <NavLink
+                  key={article.id}
+                  to={`/actualites/${article.slug}`}
+                  className="group"
+                >
+                  <Card 
+                    className="h-full hover:shadow-lg transition-shadow duration-300 bg-background border border-border rounded-lg overflow-hidden invisible animate-fadeIn"
+                    style={{ animationDelay: `${0.3 + index * 0.1}s` }}
+                  >
+                    {/* Image de couverture compacte */}
+                    {article.cover_image_url ? (
+                      <div className="h-40 overflow-hidden">
+                        <img
+                          src={article.cover_image_url}
+                          alt={article.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    ) : (
+                      <ArticlePlaceholder className="h-40" />
+                    )}
 
-                    <CardHeader className="pb-3">
-                      <h3 className="text-xl font-semibold text-foreground line-clamp-2 group-hover:text-accent transition-colors">
+                    <CardHeader className="pb-2">
+                      <h2 className="text-base font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">
                         {article.title}
-                      </h3>
+                      </h2>
                     </CardHeader>
 
-                    <CardContent className="space-y-3">
-                      {article.excerpt && <p className="text-base text-muted-foreground line-clamp-4">
+                    <CardContent className="space-y-2">
+                      {article.excerpt && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
                           {article.excerpt}
-                        </p>}
-                      <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4" aria-hidden="true" />
-                          {formatDate(article.published_at || article.created_at)}
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          {Math.ceil((article.excerpt?.length || 0) / 200)} min de lecture
-                        </span>
+                        </p>
+                      )}
+                      {/* Date discrète en bas */}
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 pt-1">
+                        <Calendar className="h-3 w-3" aria-hidden="true" />
+                        {new Date(article.published_at || article.created_at).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
                       </div>
                     </CardContent>
                   </Card>
-                </NavLink>)}
-            </div>)}
+                </NavLink>
+              ))}
+            </div>
+          )}
         </section>
       </main>
 
