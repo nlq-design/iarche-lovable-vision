@@ -35,6 +35,7 @@ import AuditLogs from "./pages/admin/AuditLogs";
 import SecurityDashboard from "./pages/admin/SecurityDashboard";
 import AdminSettings from "./pages/admin/AdminSettings";
 import BackupManagement from "./pages/admin/BackupManagement";
+import AdminArticles from "./pages/admin/AdminArticles";
 import AdminActualites from "./pages/admin/AdminActualites";
 import AdminCasClients from "./pages/admin/AdminCasClients";
 import AdminLivresBlancs from "./pages/admin/AdminLivresBlancs";
@@ -86,6 +87,7 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
           <Route path="/admin/advanced-stats" element={<ProtectedAdminRoute><AdvancedStats /></ProtectedAdminRoute>} />
+          <Route path="/admin/articles" element={<ProtectedAdminRoute><AdminArticles /></ProtectedAdminRoute>} />
           <Route path="/admin/actualites" element={<ProtectedAdminRoute><AdminActualites /></ProtectedAdminRoute>} />
           <Route path="/admin/cas-clients" element={<ProtectedAdminRoute><AdminCasClients /></ProtectedAdminRoute>} />
           <Route path="/admin/livres-blancs" element={<ProtectedAdminRoute><AdminLivresBlancs /></ProtectedAdminRoute>} />

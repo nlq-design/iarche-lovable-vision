@@ -26,7 +26,7 @@ const navigationItems = [
   {
     group: 'Contenu',
     items: [
-      { title: 'Articles (fond)', url: '/admin', icon: FileText },
+      { title: 'Articles (fond)', url: '/admin/articles', icon: FileText },
       { title: 'Actualités', url: '/admin/actualites', icon: FileText },
       { title: 'Cas clients', url: '/admin/cas-clients', icon: FileText },
       { title: 'Livres blancs', url: '/admin/livres-blancs', icon: FileText },
