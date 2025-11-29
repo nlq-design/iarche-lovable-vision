@@ -28,6 +28,10 @@ interface Article {
   created_at: string;
   updated_at: string | null;
   resource_type: string;
+  event_date: string | null;
+  event_location: string | null;
+  registration_open: boolean | null;
+  file_url: string | null;
 }
 
 const ArticleDetail = () => {
@@ -225,6 +229,103 @@ const ArticleDetail = () => {
                   "text": item.answer
                 }
               }))
+            })}
+          </script>
+        )}
+
+        {/* Schema.org Event - Only for atelier-webinaire */}
+        {article.resource_type === 'atelier-webinaire' && (
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Event",
+              "name": article.title,
+              "description": article.excerpt || article.title,
+              "image": article.cover_image_url || "https://iarche.fr/og-image.png",
+              "startDate": article.event_date || article.published_at || article.created_at,
+              "eventStatus": "https://schema.org/EventScheduled",
+              "eventAttendanceMode": article.event_location 
+                ? "https://schema.org/OfflineEventAttendanceMode"
+                : "https://schema.org/OnlineEventAttendanceMode",
+              "location": article.event_location 
+                ? {
+                    "@type": "Place",
+                    "name": article.event_location,
+                    "address": {
+                      "@type": "PostalAddress",
+                      "addressLocality": article.event_location
+                    }
+                  }
+                : {
+                    "@type": "VirtualLocation",
+                    "url": getCanonicalUrl()
+                  },
+              "organizer": {
+                "@type": "Organization",
+                "name": "IArche",
+                "url": "https://iarche.fr"
+              },
+              "performer": {
+                "@type": "Organization",
+                "name": "IArche"
+              },
+              "offers": {
+                "@type": "Offer",
+                "url": getCanonicalUrl(),
+                "price": "0",
+                "priceCurrency": "EUR",
+                "availability": article.registration_open 
+                  ? "https://schema.org/InStock" 
+                  : "https://schema.org/SoldOut",
+                "validFrom": article.published_at || article.created_at
+              }
+            })}
+          </script>
+        )}
+
+        {/* Schema.org Book - Only for livre-blanc */}
+        {article.resource_type === 'livre-blanc' && (
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Book",
+              "name": article.title,
+              "description": article.excerpt || article.title,
+              "image": article.cover_image_url || "https://iarche.fr/og-image.png",
+              "author": {
+                "@type": "Organization",
+                "name": "IArche",
+                "url": "https://iarche.fr"
+              },
+              "publisher": {
+                "@type": "Organization",
+                "name": "IArche",
+                "logo": {
+                  "@type": "ImageObject",
+                  "url": "https://iarche.fr/logo-iarche.svg"
+                }
+              },
+              "datePublished": article.published_at || article.created_at,
+              "inLanguage": "fr",
+              "bookFormat": "https://schema.org/EBook",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "EUR",
+                "availability": "https://schema.org/InStock",
+                "url": getCanonicalUrl()
+              },
+              "potentialAction": {
+                "@type": "ReadAction",
+                "target": {
+                  "@type": "EntryPoint",
+                  "urlTemplate": article.file_url || getCanonicalUrl(),
+                  "actionPlatform": [
+                    "https://schema.org/DesktopWebPlatform",
+                    "https://schema.org/MobileWebPlatform"
+                  ]
+                }
+              }
             })}
           </script>
         )}
