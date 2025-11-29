@@ -26,7 +26,11 @@ const navigationItems = [
   {
     group: 'Contenu',
     items: [
-      { title: 'Articles', url: '/admin', icon: FileText },
+      { title: 'Articles (fond)', url: '/admin', icon: FileText },
+      { title: 'Actualités', url: '/admin/actualites', icon: FileText },
+      { title: 'Cas clients', url: '/admin/cas-clients', icon: FileText },
+      { title: 'Livres blancs', url: '/admin/livres-blancs', icon: FileText },
+      { title: 'Ateliers & Webinaires', url: '/admin/ateliers-webinaires', icon: FileText },
       { title: 'Redacia (IA)', url: '/admin/redacia', icon: Sparkles },
     ]
   },

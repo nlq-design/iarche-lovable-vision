@@ -35,6 +35,10 @@ import AuditLogs from "./pages/admin/AuditLogs";
 import SecurityDashboard from "./pages/admin/SecurityDashboard";
 import AdminSettings from "./pages/admin/AdminSettings";
 import BackupManagement from "./pages/admin/BackupManagement";
+import AdminActualites from "./pages/admin/AdminActualites";
+import AdminCasClients from "./pages/admin/AdminCasClients";
+import AdminLivresBlancs from "./pages/admin/AdminLivresBlancs";
+import AdminAteliersWebinaires from "./pages/admin/AdminAteliersWebinaires";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import { CookieConsent } from "./components/CookieConsent";
 
@@ -82,6 +86,10 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>} />
           <Route path="/admin/advanced-stats" element={<ProtectedAdminRoute><AdvancedStats /></ProtectedAdminRoute>} />
+          <Route path="/admin/actualites" element={<ProtectedAdminRoute><AdminActualites /></ProtectedAdminRoute>} />
+          <Route path="/admin/cas-clients" element={<ProtectedAdminRoute><AdminCasClients /></ProtectedAdminRoute>} />
+          <Route path="/admin/livres-blancs" element={<ProtectedAdminRoute><AdminLivresBlancs /></ProtectedAdminRoute>} />
+          <Route path="/admin/ateliers-webinaires" element={<ProtectedAdminRoute><AdminAteliersWebinaires /></ProtectedAdminRoute>} />
           <Route path="/admin/redacia" element={<ProtectedAdminRoute><Redacia /></ProtectedAdminRoute>} />
           <Route path="/admin/redacnews" element={<ProtectedAdminRoute><RedacNews /></ProtectedAdminRoute>} />
           <Route path="/admin/articles/new" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
