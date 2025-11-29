@@ -1,12 +1,56 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.8**  
+**Version mise à jour : V6.9**  
 **Date : 29 Novembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.8 SCHEMA.ORG SOFTWAREAPPLICATION - MISE À JOUR V6.9 ✅
+
+#### Implémentation balisage données structurées pour solutions SaaS
+
+**Contexte :**
+- Les 5 solutions SaaS nécessitaient un balisage Schema.org pour améliorer le référencement
+- IArche positionné comme agence locale (Organization) + éditeur de logiciels (SoftwareApplication)
+- Besoin de rich snippets Google pour les pages produits
+
+**Schema.org implémenté :**
+
+**SoftwareApplication** ajouté sur toutes les pages `/solutions/:slug` :
+- `name`, `description`, `image` : données dynamiques de l'article
+- `applicationCategory` : "BusinessApplication"
+- `operatingSystem` : "Web, iOS, Android" (Team 5 Connect) ou "Web" (autres)
+- `author` et `provider` : Organisation IArche avec contact
+- `offers` : 
+  - Datalia → prix fixe 749€ HT avec PriceSpecification
+  - Autres solutions → "Sur devis"
+- `datePublished`, `dateModified`, `inLanguage`, `softwareVersion`, `url`
+
+**Complémentarité avec schema Organisation :**
+- **Homepage (/)** : Schema Organization + LocalBusiness (agence Bayonne)
+- **Solutions (/solutions/:slug)** : Schema SoftwareApplication (produits SaaS)
+- Aucun conflit : Google comprend qu'IArche = agence locale + éditeur logiciels
+
+**Avantages SEO :**
+- Rich snippets possibles dans résultats Google (nom, prix, description)
+- Meilleure compréhension par Google du positionnement "agence + éditeur"
+- Visibilité accrue pour les solutions SaaS dans les recherches produits
+- Différenciation claire entre services agence et produits SaaS
+
+**Fichiers modifiés :**
+- `src/pages/ArticleDetail.tsx` : ajout conditionnel schema SoftwareApplication
+
+**Solutions concernées :**
+1. Team 5 Connect - RH équipes terrain (iOS, Android, Web)
+2. Lexia (ERP Avocat) - Gestion cabinet juridique (Web)
+3. Collaboria - Plateforme collaborative IA (Web)
+4. Dialogue Plus - Chatbot RAG avancé (Web)
+5. Datalia - Extraction données locales (Web, 749€ HT licence à vie)
+
+---
 
 ### 0.7 CONTENU SOLUTIONS SAAS - MISE À JOUR V6.8 ✅
 

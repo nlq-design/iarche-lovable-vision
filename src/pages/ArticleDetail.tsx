@@ -378,6 +378,63 @@ const ArticleDetail = () => {
             })}
           </script>
         )}
+
+        {/* Schema.org SoftwareApplication - Only for solution */}
+        {article.resource_type === 'solution' && (
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "name": article.title,
+              "description": article.excerpt || article.title,
+              "image": article.cover_image_url || "https://iarche.fr/og-image.png",
+              "applicationCategory": "BusinessApplication",
+              "operatingSystem": article.slug === 'team-5-connect' 
+                ? "Web, iOS, Android"
+                : "Web",
+              "author": {
+                "@type": "Organization",
+                "name": "IArche",
+                "url": "https://iarche.fr"
+              },
+              "provider": {
+                "@type": "Organization",
+                "name": "IArche",
+                "url": "https://iarche.fr",
+                "logo": {
+                  "@type": "ImageObject",
+                  "url": "https://iarche.fr/logo-iarche.svg"
+                },
+                "contactPoint": {
+                  "@type": "ContactPoint",
+                  "email": "nlq@iarche.fr",
+                  "contactType": "customer service",
+                  "availableLanguage": ["French"]
+                }
+              },
+              "offers": {
+                "@type": "Offer",
+                "price": article.slug === 'datalia' ? "749" : "Sur devis",
+                "priceCurrency": "EUR",
+                "availability": "https://schema.org/InStock",
+                "url": getCanonicalUrl(),
+                "priceSpecification": article.slug === 'datalia' 
+                  ? {
+                      "@type": "PriceSpecification",
+                      "price": "749",
+                      "priceCurrency": "EUR",
+                      "valueAddedTaxIncluded": false
+                    }
+                  : undefined
+              },
+              "datePublished": article.published_at || article.created_at,
+              "dateModified": article.updated_at || article.published_at || article.created_at,
+              "inLanguage": "fr",
+              "softwareVersion": "1.0",
+              "url": getCanonicalUrl()
+            })}
+          </script>
+        )}
       </Helmet>
 
       <Header />
