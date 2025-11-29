@@ -450,26 +450,26 @@ const ArticleDetail = () => {
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
           />
 
-          {/* 4. CTA - Formulaire spécifique pour solutions */}
+          {/* 4. FAQ (si présente) - AVANT le CTA */}
+          {faq && faq.length > 0 && (
+            <div className="mb-12 animate-fadeIn [animation-delay:0.5s]">
+              <ArticleFAQ articleId={article.id} />
+            </div>
+          )}
+
+          {/* 5. CTA - Formulaire spécifique pour solutions */}
           {article.resource_type === 'solution' ? (
             <div className="my-12">
               <SolutionContactForm solutionName={article.title} />
             </div>
           ) : (
-            <div className="text-center my-12 animate-fadeIn [animation-delay:0.5s]">
+            <div className="text-center my-12 animate-fadeIn [animation-delay:0.6s]">
               <p className="text-lg text-foreground mb-4">
                 Une question sur ce sujet ?
               </p>
               <GradientLink href="/contact" className="text-base">
                 Contactez-nous
               </GradientLink>
-            </div>
-          )}
-
-          {/* 5. FAQ (si présente) */}
-          {faq && faq.length > 0 && (
-            <div className="mb-12">
-              <ArticleFAQ articleId={article.id} />
             </div>
           )}
 
