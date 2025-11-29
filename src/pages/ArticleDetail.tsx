@@ -18,6 +18,7 @@ import GradientLink from '@/components/ui/GradientLink';
 import { Badge } from '@/components/ui/badge';
 import SolutionContactForm from '@/components/SolutionContactForm';
 import AuthorCard from '@/components/ui/AuthorCard';
+import RelatedArticles from '@/components/ui/RelatedArticles';
 import 'react-quill/dist/quill.snow.css';
 
 interface Article {
@@ -559,7 +560,15 @@ const ArticleDetail = () => {
             <ArticleComments articleId={article.id} />
           </div>
 
-          {/* 7. Bouton retour en bas */}
+          {/* 7. Articles similaires */}
+          <RelatedArticles 
+            currentArticleId={article.id}
+            resourceType={article.resource_type}
+            tags={article.tags || []}
+            limit={3}
+          />
+
+          {/* 8. Bouton retour en bas */}
           <div className="pt-8 border-t border-border/30">
             <NavLink to={getBackPath()}>
               <Button variant="outline" size="sm">
