@@ -32,6 +32,7 @@ interface Article {
   event_location: string | null;
   registration_open: boolean | null;
   file_url: string | null;
+  replay_url: string | null;
 }
 
 const ArticleDetail = () => {
@@ -278,6 +279,46 @@ const ArticleDetail = () => {
                   ? "https://schema.org/InStock" 
                   : "https://schema.org/SoldOut",
                 "validFrom": article.published_at || article.created_at
+              },
+              ...(article.replay_url && {
+                "recordedIn": {
+                  "@type": "VideoObject",
+                  "@id": `${getCanonicalUrl()}#video`,
+                  "name": `Replay: ${article.title}`,
+                  "description": article.excerpt || article.title,
+                  "thumbnailUrl": article.cover_image_url || "https://iarche.fr/og-image.png",
+                  "contentUrl": article.replay_url,
+                  "embedUrl": article.replay_url,
+                  "uploadDate": article.published_at || article.created_at
+                }
+              })
+            })}
+          </script>
+        )}
+
+        {/* Schema.org VideoObject - Only for atelier-webinaire with replay_url */}
+        {article.resource_type === 'atelier-webinaire' && article.replay_url && (
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "VideoObject",
+              "name": `Replay: ${article.title}`,
+              "description": article.excerpt || article.title,
+              "thumbnailUrl": article.cover_image_url || "https://iarche.fr/og-image.png",
+              "uploadDate": article.published_at || article.created_at,
+              "contentUrl": article.replay_url,
+              "embedUrl": article.replay_url,
+              "publisher": {
+                "@type": "Organization",
+                "name": "IArche",
+                "logo": {
+                  "@type": "ImageObject",
+                  "url": "https://iarche.fr/logo-iarche.svg"
+                }
+              },
+              "creator": {
+                "@type": "Organization",
+                "name": "IArche"
               }
             })}
           </script>
