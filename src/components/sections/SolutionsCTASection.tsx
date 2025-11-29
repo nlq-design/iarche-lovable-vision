@@ -1,12 +1,16 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import { useCTATracking } from '@/hooks/useCTATracking';
 
 const SolutionsCTASection = () => {
+  const { trackCTAClick } = useCTATracking();
+
   return (
     <section className="relative py-8 md:py-12 bg-background">
       <div className="container mx-auto px-6">
         <a 
           href="/solutions"
+          onClick={() => trackCTAClick('nos_solutions', 'solutions_cta_section')}
           className="block relative rounded-lg py-12 md:py-16 px-6 md:px-8 overflow-hidden transition-all duration-500 group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
         >
             {/* Quadrillages diagonaux animés */}

@@ -415,7 +415,10 @@ export type Database = {
           id: string
           message: string
           name: string
+          source: string | null
+          source_context: string | null
           subject: string
+          user_session: string | null
         }
         Insert: {
           company?: string | null
@@ -424,7 +427,10 @@ export type Database = {
           id?: string
           message: string
           name: string
+          source?: string | null
+          source_context?: string | null
           subject: string
+          user_session?: string | null
         }
         Update: {
           company?: string | null
@@ -433,7 +439,43 @@ export type Database = {
           id?: string
           message?: string
           name?: string
+          source?: string | null
+          source_context?: string | null
           subject?: string
+          user_session?: string | null
+        }
+        Relationships: []
+      }
+      cta_clicks: {
+        Row: {
+          clicked_at: string | null
+          created_at: string | null
+          cta_name: string
+          id: string
+          referrer: string | null
+          source_context: string | null
+          source_page: string
+          user_session: string | null
+        }
+        Insert: {
+          clicked_at?: string | null
+          created_at?: string | null
+          cta_name: string
+          id?: string
+          referrer?: string | null
+          source_context?: string | null
+          source_page: string
+          user_session?: string | null
+        }
+        Update: {
+          clicked_at?: string | null
+          created_at?: string | null
+          cta_name?: string
+          id?: string
+          referrer?: string | null
+          source_context?: string | null
+          source_page?: string
+          user_session?: string | null
         }
         Relationships: []
       }

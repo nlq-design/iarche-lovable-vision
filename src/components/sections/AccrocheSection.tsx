@@ -1,5 +1,8 @@
 import React from 'react';
+import { useCTATracking } from '@/hooks/useCTATracking';
+
 const AccrocheSection = () => {
+  const { trackCTAClick } = useCTATracking();
   return (
     <section className="py-20 md:py-24 px-6 flex flex-col items-center">
       <h2 className="text-2xl md:text-3xl font-semibold text-primary text-center max-w-3xl leading-relaxed mb-6 invisible animate-fadeIn [animation-delay:0.1s]">
@@ -15,6 +18,7 @@ const AccrocheSection = () => {
         href="#services" 
         onClick={(e) => {
           e.preventDefault();
+          trackCTAClick('premier_echange', 'accroche_section');
           const servicesSection = document.getElementById('services');
           servicesSection?.scrollIntoView({ behavior: 'smooth' });
         }}

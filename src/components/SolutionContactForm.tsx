@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { contactSchema, type ContactFormData } from '@/schemas/contact';
 import GradientLink from '@/components/ui/GradientLink';
+import { useCTATracking } from '@/hooks/useCTATracking';
 
 interface SolutionContactFormProps {
   solutionName: string;
@@ -14,6 +15,7 @@ interface SolutionContactFormProps {
 
 const SolutionContactForm = ({ solutionName }: SolutionContactFormProps) => {
   const { toast } = useToast();
+  const { getSessionId } = useCTATracking();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<ContactFormData>({
     name: '',
@@ -47,7 +49,10 @@ const SolutionContactForm = ({ solutionName }: SolutionContactFormProps) => {
           email: validatedData.email,
           company: validatedData.company || null,
           subject: validatedData.subject,
-          message: validatedData.message
+          message: validatedData.message,
+          source: 'solution_detail',
+          source_context: solutionName,
+          user_session: getSessionId(),
         }]);
 
       if (error) throw error;
