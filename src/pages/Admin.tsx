@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -105,17 +104,18 @@ const Admin = () => {
 
   if (authLoading) {
     return (
-      <BackgroundLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-sm text-muted-foreground">Chargement...</p>
         </div>
-      </BackgroundLayout>
+      </div>
     );
   }
 
   if (!user) {
     return (
-      <BackgroundLayout>
+      <div className="min-h-screen bg-muted/30">
         <Helmet>
           <title>Connexion Admin - IArche</title>
           <meta name="robots" content="noindex, nofollow" />
@@ -164,36 +164,34 @@ const Admin = () => {
             </CardContent>
           </Card>
         </div>
-      </BackgroundLayout>
+      </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <BackgroundLayout>
-        <div className="min-h-screen flex items-center justify-center px-6">
-          <Card className="max-w-md bg-background/95 border-border">
-            <CardHeader>
-              <CardTitle className="text-destructive">Accès refusé</CardTitle>
-              <CardDescription>
-                Vous n'avez pas les permissions nécessaires pour accéder au back-office.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => navigate('/')} className="w-full">
-                Retour à l'accueil
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </BackgroundLayout>
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center px-6">
+        <Card className="max-w-md bg-background/95 border-border">
+          <CardHeader>
+            <CardTitle className="text-destructive">Accès refusé</CardTitle>
+            <CardDescription>
+              Vous n'avez pas les permissions nécessaires pour accéder au back-office.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate('/')} className="w-full">
+              Retour à l'accueil
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <BackgroundLayout>
+    <div className="min-h-screen bg-muted/30">
       <Helmet>
-        <title>Back-office - IArche</title>
+        <title>Administration - IArche</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
@@ -383,7 +381,7 @@ const Admin = () => {
           )}
         </div>
       </div>
-    </BackgroundLayout>
+    </div>
   );
 };
 

@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import ArticlePreviewCard from '@/components/admin/ArticlePreviewCard';
 import PreviewModal from '@/components/admin/PreviewModal';
 import DraftsList from '@/components/admin/DraftsList';
+import AdminLayout from '@/components/layouts/AdminLayout';
 
 interface FAQ {
   question: string;
@@ -287,26 +288,13 @@ const Redacia = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <AdminLayout>
       <Helmet>
         <title>Redacia · Admin · IArche</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       
-      <header className="border-b border-border bg-background sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Sparkles className="w-6 h-6 text-primary" />
-            <h1 className="text-xl font-bold">Redacia</h1>
-            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">Admin</span>
-          </div>
-          <a href="/" className="text-sm text-muted-foreground hover:text-primary">
-            ← Retour au site
-          </a>
-        </div>
-      </header>
-      
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <div className="px-6 py-8">
         
         <section className="bg-background border border-border rounded-xl p-6 mb-8">
           <h2 className="text-lg font-semibold mb-4">Nouveau brief</h2>
@@ -452,7 +440,7 @@ const Redacia = () => {
           <DraftsList />
         </section>
         
-      </main>
+      </div>
       
       {previewMode && selectedArticle && (
         <PreviewModal 
@@ -460,7 +448,7 @@ const Redacia = () => {
           onClose={() => setPreviewMode(false)} 
         />
       )}
-    </div>
+    </AdminLayout>
   );
 };
 
