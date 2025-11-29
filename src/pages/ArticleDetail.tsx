@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import SolutionContactForm from '@/components/SolutionContactForm';
 import AuthorCard from '@/components/ui/AuthorCard';
 import RelatedArticles from '@/components/ui/RelatedArticles';
+import { useCTATracking } from '@/hooks/useCTATracking';
 import 'react-quill/dist/quill.snow.css';
 
 interface Article {
@@ -46,6 +47,7 @@ const ArticleDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAdmin } = useAuth();
+  const { trackCTAClick } = useCTATracking();
   const [article, setArticle] = useState<Article | null>(null);
   const [faq, setFaq] = useState<Array<{ question: string; answer: string }>>([]);
   const [loading, setLoading] = useState(true);
@@ -549,7 +551,11 @@ const ArticleDetail = () => {
               <p className="text-lg text-foreground mb-4">
                 Une question sur ce sujet ?
               </p>
-              <GradientLink href="/contact" className="text-base">
+              <GradientLink 
+                href="/contact" 
+                className="text-base"
+                onClick={() => trackCTAClick('contactez_nous', `article_detail_${article.resource_type}`, article.slug)}
+              >
                 Contactez-nous
               </GradientLink>
             </div>

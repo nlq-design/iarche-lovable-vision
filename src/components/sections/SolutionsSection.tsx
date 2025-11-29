@@ -3,6 +3,7 @@ import { NavLink } from '@/components/NavLink';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight } from 'lucide-react';
+import { useCTATracking } from '@/hooks/useCTATracking';
 
 const solutions = [
   {
@@ -28,6 +29,8 @@ const solutions = [
 ];
 
 const SolutionsSection = () => {
+  const { trackCTAClick } = useCTATracking();
+  
   return (
     <section className="py-16 md:py-24 bg-muted/30">
       <div className="container mx-auto px-6">
@@ -92,6 +95,7 @@ const SolutionsSection = () => {
           <NavLink 
             to="/solutions"
             className="inline-flex items-center gap-2 text-accent hover:text-accent/80 font-medium transition-colors group"
+            onClick={() => trackCTAClick('voir_toutes_solutions', 'solutions_section_homepage')}
           >
             Voir toutes nos solutions
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />

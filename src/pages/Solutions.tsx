@@ -5,11 +5,12 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-
 import GradientLink from '@/components/ui/GradientLink';
 import IArcheLink from '@/components/ui/IArcheLink';
+import { useCTATracking } from '@/hooks/useCTATracking';
 
 const Solutions = () => {
+  const { trackCTAClick } = useCTATracking();
   const saasSolutions = [
     {
       name: 'Collaboria',
@@ -75,7 +76,11 @@ const Solutions = () => {
           {/* SaaS IArche */}
           <div className="mb-12 pb-8">
             <div className="text-center mb-8 animate-fadeIn [animation-delay:0.3s]">
-              <GradientLink href="/contact" className="text-lg">
+              <GradientLink 
+                href="/contact" 
+                className="text-lg"
+                onClick={() => trackCTAClick('en_savoir_plus', 'solutions_page_top')}
+              >
                 Je veux en savoir plus
               </GradientLink>
             </div>
@@ -98,7 +103,10 @@ const Solutions = () => {
                     <p className="text-muted-foreground mb-4">
                       {solution.description}
                     </p>
-                    <IArcheLink href={`/solutions/${solution.slug}`}>
+                    <IArcheLink 
+                      href={`/solutions/${solution.slug}`}
+                      onClick={() => trackCTAClick('en_savoir_plus_solution', 'solutions_page', solution.slug)}
+                    >
                       En savoir plus
                     </IArcheLink>
                   </CardContent>
@@ -112,7 +120,11 @@ const Solutions = () => {
             <p className="text-lg text-foreground mb-6">
               Envie de créer votre propre solution ?
             </p>
-            <GradientLink href="/contact" className="text-lg">
+            <GradientLink 
+              href="/contact" 
+              className="text-lg"
+              onClick={() => trackCTAClick('discuter_projet', 'solutions_page_bottom')}
+            >
               Discuter de votre projet
             </GradientLink>
           </div>

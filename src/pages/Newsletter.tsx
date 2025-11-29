@@ -11,9 +11,11 @@ import { CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { newsletterSchema } from '@/schemas/contact';
+import { useCTATracking } from '@/hooks/useCTATracking';
 
 const Newsletter = () => {
   const { toast } = useToast();
+  const { trackCTAClick } = useCTATracking();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -25,6 +27,9 @@ const Newsletter = () => {
 
     try {
       const validatedData = newsletterSchema.parse({ email });
+      
+      // Track CTA click
+      await trackCTAClick('newsletter_inscription', 'newsletter_page', email);
       
       const { error: dbError } = await supabase
         .from('newsletter_subscribers')
