@@ -114,10 +114,12 @@ const Solutions = () => {
               {saasSolutions.map((solution, index) => (
                 <div
                   key={solution.name}
-                  className="relative rounded-lg p-[2px] gradient-border-animated animate-fadeIn opacity-0 group"
+                  className="relative rounded-lg p-[2px] gradient-border-animated animate-fadeIn group"
                   style={{ 
+                    visibility: 'hidden',
                     animationDelay: `${0.4 + index * 0.1}s`,
-                    animationFillMode: 'forwards'
+                    animationFillMode: 'forwards',
+                    willChange: 'opacity, visibility'
                   }}
                 >
                   <Card 
@@ -166,10 +168,12 @@ const Solutions = () => {
               {customProjects.map((project, index) => (
                 <div
                   key={index}
-                  className="relative rounded-lg p-[2px] gradient-border-animated animate-fadeIn opacity-0 group"
+                  className="relative rounded-lg p-[2px] gradient-border-animated animate-fadeIn group"
                   style={{ 
+                    visibility: 'hidden',
                     animationDelay: `${1.0 + index * 0.1}s`,
-                    animationFillMode: 'forwards'
+                    animationFillMode: 'forwards',
+                    willChange: 'opacity, visibility'
                   }}
                 >
                   <Card 

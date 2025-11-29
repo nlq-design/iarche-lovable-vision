@@ -97,10 +97,12 @@ const AteliersWebinaires = () => {
               {ateliersWebinaires.map((item, index) => (
                 <div 
                   key={item.id}
-                  className="relative rounded-lg p-[2px] gradient-border-animated group animate-fadeIn opacity-0"
+                  className="relative rounded-lg p-[2px] gradient-border-animated group animate-fadeIn"
                   style={{ 
+                    visibility: 'hidden',
                     animationDelay: `${0.3 + index * 0.1}s`,
-                    animationFillMode: 'forwards'
+                    animationFillMode: 'forwards',
+                    willChange: 'opacity, visibility'
                   }}
                 >
                   <NavLink
