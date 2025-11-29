@@ -237,6 +237,7 @@ export type Database = {
           meta_title: string | null
           published: boolean | null
           published_at: string | null
+          resource_type: string
           scheduled_publish_at: string | null
           slug: string
           status: string | null
@@ -258,6 +259,7 @@ export type Database = {
           meta_title?: string | null
           published?: boolean | null
           published_at?: string | null
+          resource_type?: string
           scheduled_publish_at?: string | null
           slug: string
           status?: string | null
@@ -279,6 +281,7 @@ export type Database = {
           meta_title?: string | null
           published?: boolean | null
           published_at?: string | null
+          resource_type?: string
           scheduled_publish_at?: string | null
           slug?: string
           status?: string | null
