@@ -1,0 +1,166 @@
+import { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { useParams, useNavigate } from 'react-router-dom';
+import BackgroundLayout from '@/components/layouts/BackgroundLayout';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
+import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2, Calendar, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { NavLink } from '@/components/NavLink';
+import 'react-quill/dist/quill.snow.css';
+
+interface Article {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content: string;
+  cover_image_url: string | null;
+  published_at: string | null;
+  created_at: string;
+}
+
+const ArticleDetail = () => {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const [article, setArticle] = useState<Article | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (slug) {
+      loadArticle();
+    }
+  }, [slug]);
+
+  const loadArticle = async () => {
+    if (!slug) return;
+
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .eq('slug', slug)
+      .eq('published', true)
+      .single();
+
+    if (error || !data) {
+      navigate('/404');
+    } else {
+      setArticle(data);
+    }
+    setLoading(false);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  };
+
+  if (loading) {
+    return (
+      <BackgroundLayout>
+        <Header />
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+        <Footer />
+      </BackgroundLayout>
+    );
+  }
+
+  if (!article) {
+    return null;
+  }
+
+  return (
+    <BackgroundLayout>
+      <Helmet>
+        <title>{article.title} · IArche</title>
+        <meta
+          name="description"
+          content={article.excerpt || article.title}
+        />
+        <link rel="canonical" href={`https://iarche.fr/actualites/${article.slug}`} />
+        <meta property="og:title" content={`${article.title} · IArche`} />
+        <meta
+          property="og:description"
+          content={article.excerpt || article.title}
+        />
+        <meta property="og:url" content={`https://iarche.fr/actualites/${article.slug}`} />
+        <meta property="og:type" content="article" />
+        {article.cover_image_url && (
+          <meta property="og:image" content={article.cover_image_url} />
+        )}
+      </Helmet>
+
+      <Header />
+      <BreadcrumbNav />
+
+      <main className="min-h-screen pt-20">
+        <article className="max-w-4xl mx-auto px-6 py-16">
+          {/* Bouton retour */}
+          <div className="mb-8">
+            <NavLink to="/actualites">
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+                Retour aux actualités
+              </Button>
+            </NavLink>
+          </div>
+
+          {/* Image de couverture */}
+          {article.cover_image_url && (
+            <div className="mb-8 rounded-xl overflow-hidden">
+              <img
+                src={article.cover_image_url}
+                alt={article.title}
+                className="w-full h-auto"
+              />
+            </div>
+          )}
+
+          {/* En-tête */}
+          <header className="mb-8">
+            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 invisible animate-fadeIn [animation-delay:0.1s]">
+              {article.title}
+            </h1>
+            {article.excerpt && (
+              <p className="text-lg text-muted-foreground mb-4 invisible animate-fadeIn [animation-delay:0.2s]">
+                {article.excerpt}
+              </p>
+            )}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground invisible animate-fadeIn [animation-delay:0.3s]">
+              <Calendar className="h-4 w-4" aria-hidden="true" />
+              {formatDate(article.published_at || article.created_at)}
+            </div>
+          </header>
+
+          {/* Contenu */}
+          <div
+            className="prose prose-lg max-w-none 
+              prose-headings:text-foreground 
+              prose-p:text-muted-foreground 
+              prose-a:text-accent hover:prose-a:text-accent/80
+              prose-strong:text-foreground
+              prose-ul:text-muted-foreground
+              prose-ol:text-muted-foreground
+              prose-blockquote:border-l-accent
+              prose-blockquote:text-muted-foreground
+              invisible animate-fadeIn [animation-delay:0.4s]
+              ql-editor"
+            dangerouslySetInnerHTML={{ __html: article.content }}
+          />
+        </article>
+      </main>
+
+      <Footer />
+    </BackgroundLayout>
+  );
+};
+
+export default ArticleDetail;

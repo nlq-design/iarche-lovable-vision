@@ -51,6 +51,13 @@ const Contact = () => {
         description: "Nous vous répondrons sous 24h.",
       });
 
+      // Push GTM event
+      (window as any).dataLayer = (window as any).dataLayer || [];
+      (window as any).dataLayer.push({
+        event: 'contact_form_submit',
+        form_subject: validatedData.subject,
+      });
+
       setFormData({
         name: '',
         email: '',
