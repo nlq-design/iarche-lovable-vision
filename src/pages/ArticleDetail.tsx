@@ -96,8 +96,6 @@ const ArticleDetail = () => {
       return '/actualites';
     } else if (pathname.startsWith('/cas-clients/')) {
       return '/cas-clients';
-    } else if (pathname.startsWith('/solutions/')) {
-      return '/solutions';
     } else if (pathname.startsWith('/livres-blancs/')) {
       return '/livres-blancs';
     } else if (pathname.startsWith('/ateliers-webinaires/')) {
@@ -114,8 +112,6 @@ const ArticleDetail = () => {
       return 'Retour aux actualités';
     } else if (pathname.startsWith('/cas-clients/')) {
       return 'Retour aux cas clients';
-    } else if (pathname.startsWith('/solutions/')) {
-      return 'Retour aux solutions';
     } else if (pathname.startsWith('/livres-blancs/')) {
       return 'Retour aux livres blancs';
     } else if (pathname.startsWith('/ateliers-webinaires/')) {
