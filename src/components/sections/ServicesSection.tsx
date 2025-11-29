@@ -30,11 +30,10 @@ const ServicesSection = () => {
           {services.map((service, index) => (
             <div 
               key={index}
-              className="relative rounded-lg p-[2px] gradient-border-animated group animate-fadeIn"
+              className="relative rounded-lg p-[2px] gradient-border-animated group animate-fadeIn opacity-0"
               style={{ 
-                visibility: 'hidden',
                 animationDelay: `${0.2 + index * 0.1}s`,
-                willChange: 'opacity, visibility'
+                animationFillMode: 'forwards'
               }}
             >
               <Card 
