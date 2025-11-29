@@ -1,8 +1,49 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.0**  
+**Version mise à jour : V6.1**  
 **Date : 29 Novembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
+
+---
+
+## MODIFICATIONS MAJEURES
+
+### 0. ARCHITECTURE RESSOURCES - MISE À JOUR V6.1 ✅
+
+#### Navigation et taxonomie des ressources
+
+**Structure du menu Ressources :**
+- Bouton principal "Ressources" dans le header → redirige vers `/actualites`
+- Dropdown au survol affichant 5 types de ressources :
+  1. Actualités → `/actualites`
+  2. Articles → `/articles`
+  3. Cas clients → `/cas-clients`
+  4. Livres blancs → `/livres-blancs`
+  5. Ateliers & Webinaires → `/ateliers-webinaires`
+
+**⚠️ INVERSION DES CONTENUS (V6.1) :**
+
+La taxonomie a été inversée pour correspondre aux intentions utilisateurs :
+
+- **Page `/actualites`** affiche les contenus de type `resource_type = 'article'`
+  - Articles de fond, guides pratiques, analyses techniques
+  - Descriptions meta : "guides pratiques, analyses et retours d'expérience"
+  
+- **Page `/articles`** affiche les contenus de type `resource_type = 'actualite'`
+  - Actualités courtes, veille technologique, nouveautés
+  - Descriptions meta : "veille technologique, cas d'usage et réglementation IA"
+
+**Rationale de l'inversion :**
+L'URL `/actualites` est la page hub principale des ressources (bouton Ressources y redirige), elle doit donc présenter le contenu le plus riche (articles de fond) plutôt que les actualités courtes. Cela améliore l'UX et la hiérarchie de navigation.
+
+**Backend :**
+- Table `articles` avec colonne `resource_type` (5 valeurs : `actualite`, `article`, `cas-client`, `livre-blanc`, `atelier-webinaire`)
+- Filtrage par type dans chaque page dédiée
+- RLS policies : public voit `published = true`, admins gèrent tout
+
+**Footer :**
+- Colonne dédiée "Ressources" listant les 5 types
+- Aucun doublon avec le header
 
 ---
 
