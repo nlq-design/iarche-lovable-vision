@@ -41,6 +41,7 @@ import AdminCasClients from "./pages/admin/AdminCasClients";
 import AdminLivresBlancs from "./pages/admin/AdminLivresBlancs";
 import AdminAteliersWebinaires from "./pages/admin/AdminAteliersWebinaires";
 import AdminLeads from "./pages/admin/AdminLeads";
+import AdminFAQs from "./pages/admin/AdminFAQs";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import { CookieConsent } from "./components/CookieConsent";
 import { ResourceTypeValidator } from "./components/dev/ResourceTypeValidator";
@@ -115,6 +116,7 @@ const App = () => (
           <Route path="/admin/categories" element={<ProtectedAdminRoute><AdminCategories /></ProtectedAdminRoute>} />
           <Route path="/admin/tags" element={<ProtectedAdminRoute><AdminTags /></ProtectedAdminRoute>} />
           <Route path="/admin/comments" element={<ProtectedAdminRoute><AdminComments /></ProtectedAdminRoute>} />
+          <Route path="/admin/faqs" element={<ProtectedAdminRoute><AdminFAQs /></ProtectedAdminRoute>} />
           <Route path="/admin/newsletters" element={<ProtectedAdminRoute><AdminNewsletters /></ProtectedAdminRoute>} />
           <Route path="/admin/security-dashboard" element={<ProtectedAdminRoute><SecurityDashboard /></ProtectedAdminRoute>} />
           <Route path="/admin/audit-logs" element={<ProtectedAdminRoute><AuditLogs /></ProtectedAdminRoute>} />
