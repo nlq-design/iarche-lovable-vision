@@ -1,4 +1,4 @@
-import { Home, BarChart3, Sparkles, FileText, FolderOpen, Tag, MessageCircle, Users, Mail, Send } from 'lucide-react';
+import { Home, BarChart3, Sparkles, FileText, FolderOpen, Tag, MessageCircle, Users, Mail, Send, Shield } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -48,6 +48,12 @@ const navigationItems = [
     items: [
       { title: 'Abonnés', url: '/admin/newsletters', icon: Users },
       { title: 'RedacNews', url: '/admin/redacnews', icon: Send },
+    ]
+  },
+  {
+    group: 'Sécurité',
+    items: [
+      { title: 'Logs d\'audit', url: '/admin/audit-logs', icon: Shield },
     ]
   }
 ];
