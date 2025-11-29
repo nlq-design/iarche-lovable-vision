@@ -1,1 +1,16 @@
 project_id = "mgjyhlyrwnnioctkbdkk"
+
+[functions.notify-new-comment]
+verify_jwt = false
+
+[functions.publish-scheduled-articles]
+verify_jwt = false
+
+[functions.send-newsletter]
+verify_jwt = false
+
+[functions.generate-article-claude]
+verify_jwt = true
+
+[functions.generate-article-gpt]
+verify_jwt = true

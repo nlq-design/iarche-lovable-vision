@@ -24,6 +24,7 @@ import AdminTags from "./pages/AdminTags";
 import AdminComments from './pages/AdminComments';
 import AdminNewsletters from './pages/AdminNewsletters';
 import AdminDashboard from "./pages/AdminDashboard";
+import Redacia from "./pages/admin/Redacia";
 import { CookieConsent } from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
@@ -61,6 +62,7 @@ const App = () => (
           {/* Admin */}
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/redacia" element={<Redacia />} />
           <Route path="/admin/articles/new" element={<AdminArticleEditor />} />
           <Route path="/admin/articles/:id" element={<AdminArticleEditor />} />
           <Route path="/admin/articles/:id/history" element={<ArticleVersionHistory />} />
