@@ -164,8 +164,11 @@ const Actualites = () => {
                   className="group"
                 >
                   <div 
-                    className="relative rounded-lg p-[2px] gradient-border-animated h-full animate-fadeIn"
-                    style={{ animationDelay: `${0.3 + index * 0.1}s` }}
+                    className="relative rounded-lg p-[2px] gradient-border-animated h-full animate-fadeIn opacity-0"
+                    style={{ 
+                      animationDelay: `${0.3 + index * 0.1}s`,
+                      animationFillMode: 'forwards'
+                    }}
                   >
                     <Card 
                       className="h-full bg-background border-0 rounded-lg overflow-hidden transition-all duration-300 group-hover:shadow-[0_10px_40px_hsla(var(--primary)/0.15)] group-hover:scale-[1.02] group-hover:-translate-y-0.5"

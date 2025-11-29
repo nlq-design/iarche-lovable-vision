@@ -114,8 +114,11 @@ const Solutions = () => {
               {saasSolutions.map((solution, index) => (
                 <div
                   key={solution.name}
-                  className="relative rounded-lg p-[2px] gradient-border-animated animate-fadeIn group"
-                  style={{ animationDelay: `${0.4 + index * 0.1}s` }}
+                  className="relative rounded-lg p-[2px] gradient-border-animated animate-fadeIn opacity-0 group"
+                  style={{ 
+                    animationDelay: `${0.4 + index * 0.1}s`,
+                    animationFillMode: 'forwards'
+                  }}
                 >
                   <Card 
                     className="h-full border-0 transition-all duration-300 group-hover:shadow-[0_10px_40px_hsla(var(--primary)/0.15)] group-hover:scale-[1.02] group-hover:-translate-y-0.5"
@@ -163,8 +166,11 @@ const Solutions = () => {
               {customProjects.map((project, index) => (
                 <div
                   key={index}
-                  className="relative rounded-lg p-[2px] gradient-border-animated animate-fadeIn group"
-                  style={{ animationDelay: `${1.0 + index * 0.1}s` }}
+                  className="relative rounded-lg p-[2px] gradient-border-animated animate-fadeIn opacity-0 group"
+                  style={{ 
+                    animationDelay: `${1.0 + index * 0.1}s`,
+                    animationFillMode: 'forwards'
+                  }}
                 >
                   <Card 
                     className="h-full border-0 transition-all duration-300 group-hover:shadow-[0_10px_40px_hsla(var(--primary)/0.15)] group-hover:scale-[1.02] group-hover:-translate-y-0.5"
