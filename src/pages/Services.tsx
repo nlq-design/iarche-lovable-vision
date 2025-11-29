@@ -178,8 +178,8 @@ const Services = () => {
 
                   {/* CTA */}
                   <div className="pt-4">
-                    <IArcheLink href={service.ctaLink}>
-                      {service.cta}
+                    <IArcheLink href={`/services/${service.id}`}>
+                      En savoir plus
                     </IArcheLink>
                   </div>
                 </CardContent>

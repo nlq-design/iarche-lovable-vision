@@ -14,6 +14,10 @@ const SITE_URL = 'https://iarche.fr'
 const staticPages = [
   { url: '/', changefreq: 'weekly', priority: '1.0' },
   { url: '/services', changefreq: 'monthly', priority: '0.9' },
+  { url: '/services/audit', changefreq: 'monthly', priority: '0.8' },
+  { url: '/services/developpement', changefreq: 'monthly', priority: '0.8' },
+  { url: '/services/accompagnement', changefreq: 'monthly', priority: '0.8' },
+  { url: '/services/conformite', changefreq: 'monthly', priority: '0.8' },
   { url: '/solutions', changefreq: 'monthly', priority: '0.9' },
   { url: '/contact', changefreq: 'monthly', priority: '0.8' },
   { url: '/newsletter', changefreq: 'monthly', priority: '0.6' },

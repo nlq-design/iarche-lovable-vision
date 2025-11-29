@@ -7,6 +7,7 @@ import ScrollToTop from "./components/utils/ScrollToTop";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Services from "./pages/Services";
+import ServiceDetail from "./pages/ServiceDetail";
 import Solutions from "./pages/Solutions";
 import Actualites from "./pages/Actualites";
 import Articles from "./pages/Articles";
@@ -64,6 +65,7 @@ const App = () => (
           
           {/* Pages principales */}
           <Route path="/services" element={<Services />} />
+          <Route path="/services/:slug" element={<ServiceDetail />} />
           <Route path="/solutions" element={<Solutions />} />
           <Route path="/actualites" element={<Actualites />} />
           <Route path="/articles" element={<Articles />} />
