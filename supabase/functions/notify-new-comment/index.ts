@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "https://esm.sh/resend@4.0.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { Resend } from "https://esm.sh/resend@4.0.0";
 import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
+import { checkGeoBlocking, getGeoBlockingHeaders } from '../_shared/geoBlock.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -37,6 +38,28 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Vérification du géo-blocage
+    const geoResult = await checkGeoBlocking(req);
+    const geoHeaders = getGeoBlockingHeaders(geoResult);
+
+    if (!geoResult.allowed) {
+      console.warn('Geo-blocking triggered:', geoResult);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Access denied from your location',
+          country: geoResult.country 
+        }),
+        { 
+          status: 403, 
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders,
+            ...geoHeaders
+          } 
+        }
+      );
+    }
+
     // Rate limiting: 10 requêtes par IP par 5 minutes
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
