@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_locks: {
+        Row: {
+          created_at: string
+          email: string
+          failed_attempts: number
+          id: string
+          locked_at: string
+          locked_until: string
+          unlock_token: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          failed_attempts?: number
+          id?: string
+          locked_at?: string
+          locked_until: string
+          unlock_token?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          failed_attempts?: number
+          id?: string
+          locked_at?: string
+          locked_until?: string
+          unlock_token?: string | null
+        }
+        Relationships: []
+      }
       admin_audit_logs: {
         Row: {
           action_type: string
@@ -350,6 +380,78 @@ export type Database = {
         }
         Relationships: []
       }
+      database_backups: {
+        Row: {
+          backup_type: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          file_size_bytes: number | null
+          id: string
+          started_at: string
+          status: string
+          tables_backed_up: string[] | null
+        }
+        Insert: {
+          backup_type: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          started_at?: string
+          status?: string
+          tables_backed_up?: string[] | null
+        }
+        Update: {
+          backup_type?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          started_at?: string
+          status?: string
+          tables_backed_up?: string[] | null
+        }
+        Relationships: []
+      }
+      login_attempts: {
+        Row: {
+          attempted_at: string
+          created_at: string
+          email: string
+          failure_reason: string | null
+          id: string
+          ip_address: unknown
+          success: boolean
+          user_agent: string | null
+        }
+        Insert: {
+          attempted_at?: string
+          created_at?: string
+          email: string
+          failure_reason?: string | null
+          id?: string
+          ip_address: unknown
+          success?: boolean
+          user_agent?: string | null
+        }
+        Update: {
+          attempted_at?: string
+          created_at?: string
+          email?: string
+          failure_reason?: string | null
+          id?: string
+          ip_address?: unknown
+          success?: boolean
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       newsletter_subscribers: {
         Row: {
           email: string
@@ -472,6 +574,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_login_attempts: { Args: never; Returns: undefined }
       cleanup_rate_limit_requests: { Args: never; Returns: undefined }
       has_role: {
         Args: {
@@ -480,6 +583,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      unlock_expired_accounts: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"

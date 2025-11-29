@@ -10,8 +10,13 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.send-security-alert]
-verify_jwt = true
+verify_jwt = false
 
+[functions.check-login-attempt]
+verify_jwt = false
+
+[functions.create-database-backup]
+verify_jwt = true
 
 [functions.generate-article-claude]
 verify_jwt = true
