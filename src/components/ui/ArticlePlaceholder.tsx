@@ -7,7 +7,7 @@ interface ArticlePlaceholderProps {
 const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) => {
   return (
     <div className={`relative overflow-hidden bg-background ${className}`}>
-      {/* Arches SVG - Version corrigée symétrique comme le portail */}
+      {/* Arches SVG - Arche symétrique encadrant le logo */}
       <svg
         className="absolute inset-0 w-full h-full"
         viewBox="0 0 400 200"
@@ -28,30 +28,30 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
           </linearGradient>
         </defs>
         
-        {/* Ligne arche 1 - HAUT DROITE : descend puis tourne vers centre-gauche */}
+        {/* Ligne arche droite - Forme le côté droit de l'arche */}
         <path
-          d="M 380 10 
-             L 380 60 
-             Q 380 80 360 80 
-             L 220 80"
+          d="M 320 20 
+             L 320 70 
+             Q 320 100 290 100 
+             L 230 100"
           fill="none"
           stroke="url(#placeholderGradient1)"
-          strokeWidth="2"
+          strokeWidth="2.5"
           strokeLinecap="round"
-          opacity="0.5"
+          opacity="0.6"
         />
         
-        {/* Ligne arche 2 - BAS GAUCHE : monte puis tourne vers centre-droite */}
+        {/* Ligne arche gauche - Forme le côté gauche de l'arche (symétrique) */}
         <path
-          d="M 20 190 
-             L 20 140 
-             Q 20 120 40 120 
-             L 180 120"
+          d="M 80 180 
+             L 80 130 
+             Q 80 100 110 100 
+             L 170 100"
           fill="none"
           stroke="url(#placeholderGradient2)"
-          strokeWidth="2"
+          strokeWidth="2.5"
           strokeLinecap="round"
-          opacity="0.5"
+          opacity="0.6"
         />
       </svg>
       
