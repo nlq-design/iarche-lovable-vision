@@ -386,9 +386,15 @@ export type Database = {
           completed_at: string | null
           created_at: string
           created_by: string | null
+          current_table: string | null
           error_message: string | null
+          execution_logs: Json | null
           file_size_bytes: number | null
           id: string
+          integrity_check_at: string | null
+          integrity_check_status: string | null
+          progress_percentage: number | null
+          restoration_possible: boolean | null
           started_at: string
           status: string
           tables_backed_up: string[] | null
@@ -398,9 +404,15 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
+          current_table?: string | null
           error_message?: string | null
+          execution_logs?: Json | null
           file_size_bytes?: number | null
           id?: string
+          integrity_check_at?: string | null
+          integrity_check_status?: string | null
+          progress_percentage?: number | null
+          restoration_possible?: boolean | null
           started_at?: string
           status?: string
           tables_backed_up?: string[] | null
@@ -410,9 +422,15 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           created_by?: string | null
+          current_table?: string | null
           error_message?: string | null
+          execution_logs?: Json | null
           file_size_bytes?: number | null
           id?: string
+          integrity_check_at?: string | null
+          integrity_check_status?: string | null
+          progress_percentage?: number | null
+          restoration_possible?: boolean | null
           started_at?: string
           status?: string
           tables_backed_up?: string[] | null
@@ -574,6 +592,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_backup_log: {
+        Args: {
+          backup_id: string
+          log_details?: Json
+          log_level: string
+          log_message: string
+        }
+        Returns: undefined
+      }
       cleanup_login_attempts: { Args: never; Returns: undefined }
       cleanup_rate_limit_requests: { Args: never; Returns: undefined }
       has_role: {

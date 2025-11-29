@@ -48,7 +48,14 @@ Deno.serve(async (req) => {
         backup_type,
         status: 'in_progress',
         created_by: userId,
-        started_at: new Date().toISOString()
+        started_at: new Date().toISOString(),
+        progress_percentage: 0,
+        execution_logs: [{
+          timestamp: new Date().toISOString(),
+          level: 'info',
+          message: 'Backup démarré',
+          details: { backup_type }
+        }]
       })
       .select()
       .single();
@@ -83,22 +90,53 @@ Deno.serve(async (req) => {
     const backupData: Record<string, any[]> = {};
 
     // Exporter les données de chaque table
-    for (const table of tablesToBackup) {
+    for (let i = 0; i < tablesToBackup.length; i++) {
+      const table = tablesToBackup[i];
+      const progress = Math.round(((i + 1) / tablesToBackup.length) * 100);
+      
       try {
+        // Mettre à jour la progression
+        await supabaseClient
+          .from('database_backups')
+          .update({
+            progress_percentage: progress,
+            current_table: table
+          })
+          .eq('id', backupRecord.id);
+
         const { data, error } = await supabaseClient
           .from(table)
           .select('*');
 
         if (error) {
           console.error(`Error backing up table ${table}:`, error);
+          await supabaseClient.rpc('add_backup_log', {
+            backup_id: backupRecord.id,
+            log_level: 'warning',
+            log_message: `Erreur lors de la sauvegarde de ${table}`,
+            log_details: { error: error.message }
+          });
           continue;
         }
 
         backupData[table] = data || [];
         totalRecords += data?.length || 0;
         console.log(`Backed up ${table}: ${data?.length || 0} records`);
-      } catch (tableError) {
+        
+        await supabaseClient.rpc('add_backup_log', {
+          backup_id: backupRecord.id,
+          log_level: 'info',
+          log_message: `Table ${table} sauvegardée`,
+          log_details: { records: data?.length || 0 }
+        });
+      } catch (tableError: any) {
         console.error(`Error processing table ${table}:`, tableError);
+        await supabaseClient.rpc('add_backup_log', {
+          backup_id: backupRecord.id,
+          log_level: 'error',
+          log_message: `Erreur critique sur ${table}`,
+          log_details: { error: tableError?.message }
+        });
       }
     }
 
@@ -115,9 +153,21 @@ Deno.serve(async (req) => {
         status: 'completed',
         file_size_bytes: fileSizeBytes,
         tables_backed_up: tablesToBackup,
-        completed_at: new Date().toISOString()
+        completed_at: new Date().toISOString(),
+        progress_percentage: 100,
+        current_table: null
       })
       .eq('id', backupRecord.id);
+
+    await supabaseClient.rpc('add_backup_log', {
+      backup_id: backupRecord.id,
+      log_level: 'success',
+      log_message: 'Backup terminé avec succès',
+      log_details: { 
+        total_records: totalRecords, 
+        file_size_mb: (fileSizeBytes / 1024 / 1024).toFixed(2) 
+      }
+    });
 
     // Envoyer une notification email de succès
     try {
