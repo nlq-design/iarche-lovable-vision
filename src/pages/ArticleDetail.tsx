@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import { ArticleComments } from '@/components/ArticleComments';
+import { ArticleFAQ } from '@/components/ArticleFAQ';
 import DOMPurify from 'dompurify';
 import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
 import 'react-quill/dist/quill.snow.css';
@@ -225,8 +226,9 @@ const ArticleDetail = () => {
           />
 
           {/* Commentaires */}
-          <div className="mt-16">
+          <div className="mt-16 space-y-8">
             <ArticleComments articleId={article.id} />
+            <ArticleFAQ articleId={article.id} />
           </div>
         </article>
       </main>
