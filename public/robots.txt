@@ -13,4 +13,8 @@ Allow: /
 User-agent: *
 Allow: /
 
+# Bloquer l'accès admin
+Disallow: /admin/
+
+# Sitemap dynamique
 Sitemap: https://iarche.fr/sitemap.xml

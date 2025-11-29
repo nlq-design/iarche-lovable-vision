@@ -96,6 +96,37 @@ const Contact = () => {
         <meta property="og:description" content="Une question ? Un projet IA ? Contactez IArche, agence IA à Bayonne." />
         <meta property="og:url" content="https://iarche.fr/contact" />
         <meta property="og:type" content="website" />
+        
+        {/* Schema.org LocalBusiness */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            "name": "IArche",
+            "image": "https://iarche.fr/og-image.png",
+            "url": "https://iarche.fr",
+            "email": "nlq@iarche.fr",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Bayonne",
+              "postalCode": "64100",
+              "addressRegion": "Nouvelle-Aquitaine",
+              "addressCountry": "FR"
+            },
+            "geo": {
+              "@type": "GeoCoordinates",
+              "latitude": 43.4929,
+              "longitude": -1.4748
+            },
+            "priceRange": "€€",
+            "openingHoursSpecification": {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+              "opens": "09:00",
+              "closes": "18:00"
+            }
+          })}
+        </script>
       </Helmet>
       
       <Header />
