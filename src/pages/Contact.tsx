@@ -205,7 +205,7 @@ const Contact = () => {
                     <SelectContent>
                       <SelectItem value="audit">Audit & Conseil</SelectItem>
                       <SelectItem value="developpement">Développement</SelectItem>
-                      <SelectItem value="formation">Formation</SelectItem>
+                      <SelectItem value="accompagnement">Accompagnement</SelectItem>
                       <SelectItem value="conformite">Conformité</SelectItem>
                       <SelectItem value="autre">Autre demande</SelectItem>
                     </SelectContent>

@@ -199,7 +199,7 @@ const ServiceDetail = () => {
               Prêt à démarrer ce service ?
             </p>
             <GradientLink href="/contact" className="text-lg">
-              Parlons-en
+              Premier échange
             </GradientLink>
           </div>
         </article>
