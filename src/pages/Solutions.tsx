@@ -141,7 +141,7 @@ const Solutions = () => {
                       <a href={solution.link}>
                         <Button variant="outline" size="sm" className="group">
                           En savoir plus
-                          <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                          <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                         </Button>
                       </a>
                     )}

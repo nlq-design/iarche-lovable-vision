@@ -95,19 +95,19 @@ const Newsletter = () => {
               
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start gap-2 text-muted-foreground">
-                  <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                  <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" aria-hidden="true" />
                   <span>Veille technologique et actualités IA</span>
                 </li>
                 <li className="flex items-start gap-2 text-muted-foreground">
-                  <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                  <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" aria-hidden="true" />
                   <span>Conseils pratiques pour dirigeants</span>
                 </li>
                 <li className="flex items-start gap-2 text-muted-foreground">
-                  <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                  <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" aria-hidden="true" />
                   <span>Retours d'expérience et cas d'usage</span>
                 </li>
                 <li className="flex items-start gap-2 text-muted-foreground">
-                  <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                  <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" aria-hidden="true" />
                   <span>Envoi mensuel, désinscription en un clic</span>
                 </li>
               </ul>

@@ -120,7 +120,7 @@ const Services = () => {
                     <ul className="space-y-2">
                       {service.livrables.map((livrable, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-muted-foreground">
-                          <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                          <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" aria-hidden="true" />
                           <span>{livrable}</span>
                         </li>
                       ))}
@@ -144,7 +144,7 @@ const Services = () => {
                         className="bg-accent hover:bg-accent/90 text-white group"
                       >
                         {service.cta}
-                        <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                        <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                       </Button>
                     </Link>
                   </div>
