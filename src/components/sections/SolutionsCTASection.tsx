@@ -3,10 +3,10 @@ import { ArrowRight } from 'lucide-react';
 
 const SolutionsCTASection = () => {
   return (
-    <section className="relative py-12 md:py-16 bg-background overflow-hidden">
-      <div className="container mx-auto px-6 relative z-10">
+    <section className="relative py-8 md:py-12 bg-background">
+      <div className="container mx-auto px-6">
         <div className="relative rounded-lg p-[2px] bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_100%]">
-          <div className="bg-background rounded-lg py-8 md:py-10 px-6 relative overflow-hidden">
+          <div className="bg-background rounded-lg py-12 md:py-16 px-6 md:px-8 relative overflow-hidden">
             {/* Quadrillages diagonaux animés */}
             <div className="pattern absolute w-[150%] h-[150%] -top-1/4 -left-1/4 opacity-20 animate-patternScroll pointer-events-none z-0 [background:repeating-linear-gradient(45deg,transparent,transparent_20px,hsl(var(--border))_20px,hsl(var(--border))_22px)]" aria-hidden="true" />
             <div className="pattern absolute w-[150%] h-[150%] top-1/4 left-1/4 opacity-10 animate-patternScroll [animation-delay:10s] pointer-events-none z-0 [background:repeating-linear-gradient(-45deg,transparent,transparent_20px,hsl(var(--border))_20px,hsl(var(--border))_22px)]" aria-hidden="true" />
