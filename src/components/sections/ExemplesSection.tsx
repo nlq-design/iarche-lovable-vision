@@ -40,7 +40,7 @@ const ExemplesSection = () => {
     <section id="exemples" className="py-8 md:py-12 bg-muted">
       <div className="container mx-auto px-6">
         <div className="rounded-lg p-8 md:p-10">
-            <h2 className="text-lg md:text-xl font-semibold text-primary text-center mb-8 md:mb-12">
+            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center mb-8 md:mb-12">
               Nos derniers projets
             </h2>
             {loading ? (
