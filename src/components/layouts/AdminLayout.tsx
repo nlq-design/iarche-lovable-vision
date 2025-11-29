@@ -59,7 +59,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               </Link>
               <Link to="/admin/newsletters" className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors flex items-center gap-2">
                 <Mail className="w-4 h-4" />
-                Newsletter
+                Abonnés
+              </Link>
+              <Link to="/admin/redacnews" className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                RedacNews
               </Link>
             </nav>
           </div>

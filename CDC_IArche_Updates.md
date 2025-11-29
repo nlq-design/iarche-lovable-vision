@@ -491,6 +491,52 @@ select cron.schedule(
 
 ---
 
+---
+
+## MODULE REDACNEWS - CRÉATION NEWSLETTERS ✅
+
+### État : BUILDÉ ✅
+
+**Route :** `/admin/redacnews`
+
+**Fonctionnalités V1 :**
+
+1. **Éditeur de newsletters**
+   - Formulaire avec ReactQuill pour mise en forme riche
+   - Champs : Objet de l'email (subject), Contenu HTML
+   - Statuts : Brouillon, Prête à envoyer
+   - Sauvegarde en base de données (table `newsletters`)
+
+2. **Gestion des newsletters**
+   - Liste de toutes les newsletters créées
+   - Filtrage par statut (draft/ready/sent)
+   - Actions : Modifier, Prévisualiser, Supprimer
+   - Affichage date de création et dernière mise à jour
+   - Badge de statut visuel (gris/bleu/vert)
+
+3. **Interface de prévisualisation**
+   - Modal de preview pour voir le rendu avant envoi
+   - Affichage objet + contenu formaté
+   - Fermeture simple
+
+**Technologies :**
+- ReactQuill pour l'éditeur WYSIWYG
+- Table Supabase `newsletters` avec RLS
+- Interface responsive et cohérente avec le design system
+
+**Fonctionnalités V2 (prévues) :**
+- Intégration Brevo pour envoi massif
+- Segmentation des abonnés (par tag, catégorie, etc.)
+- Statistiques d'ouverture et de clics
+- Templates prédéfinis
+- Historique des envois avec métriques
+
+**Navigation :**
+- Accessible depuis le menu admin via le lien "RedacNews"
+- Section distincte de "Abonnés" (gestion des inscrits)
+
+---
+
 ## PROCHAINES ÉTAPES
 
 1. **Validation de cette mise à jour CDC** par le client
