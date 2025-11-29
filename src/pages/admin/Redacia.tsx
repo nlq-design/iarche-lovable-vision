@@ -304,7 +304,8 @@ const Redacia = () => {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
 
-      const { error } = await supabase.from('articles').insert({
+      // Insérer l'article
+      const { data: newArticle, error } = await supabase.from('articles').insert({
         title: article.title,
         slug,
         excerpt: article.excerpt,
@@ -318,11 +319,26 @@ const Redacia = () => {
         meta_description: article.metaDescription,
         published: false,
         resource_type: resourceType
-      });
+      }).select().single();
 
       if (error) throw error;
 
-      toast({ title: "Sauvegardé !", description: "Article enregistré en brouillon" });
+      // Si l'article a des FAQs et que le type est éligible, les sauvegarder dans la table faqs dédiée
+      if (newArticle && article.faq && article.faq.length > 0 && ['article', 'actualite', 'cas-client'].includes(resourceType)) {
+        const { error: faqError } = await supabase.from('faqs').insert({
+          article_id: newArticle.id,
+          questions: article.faq as unknown as any,
+          auto_suggested: false,
+          suggestion_source: `redacia_${source}`
+        });
+
+        if (faqError) {
+          console.error('Error saving FAQ to dedicated table:', faqError);
+          // Ne pas bloquer la sauvegarde de l'article si erreur FAQ
+        }
+      }
+
+      toast({ title: "Sauvegardé !", description: "Article enregistré en brouillon avec FAQ" });
       
       if (source === 'claude') {
         setClaudeResult(null);
