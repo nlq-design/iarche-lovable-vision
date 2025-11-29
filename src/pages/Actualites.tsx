@@ -44,7 +44,7 @@ const Actualites = () => {
   }, [selectedCategory, selectedTag]);
   const loadArticles = async () => {
     setLoading(true);
-    let query = supabase.from('articles').select('id, title, slug, excerpt, cover_image_url, published_at, created_at').eq('published', true).eq('resource_type', 'article');
+    let query = supabase.from('articles').select('id, title, slug, excerpt, cover_image_url, published_at, created_at').eq('published', true).eq('resource_type', 'actualite');
 
     // Apply filters
     if (selectedCategory || selectedTag) {
@@ -60,7 +60,7 @@ const Actualites = () => {
           created_at,
           article_categories(category_id),
           article_tags(tag_id)
-        `).eq('published', true);
+        `).eq('published', true).eq('resource_type', 'actualite');
       if (filteredArticles) {
         const filtered = filteredArticles.filter((article: any) => {
           const matchesCategory = !selectedCategory || article.article_categories?.some((ac: any) => ac.category_id === selectedCategory);
