@@ -48,34 +48,6 @@ const Solutions = () => {
     }
   ];
 
-  const customProjects = [
-    {
-      secteur: 'Logistique',
-      realisation: 'Optimisation de tournées',
-      description: 'Algorithme d\'optimisation réduisant de 23% les kilomètres parcourus.'
-    },
-    {
-      secteur: 'Retail',
-      realisation: 'Recommandation produits',
-      description: 'Moteur de recommandation augmentant de 18% le panier moyen.'
-    },
-    {
-      secteur: 'Santé',
-      realisation: 'Assistant médical',
-      description: 'Chatbot d\'aide au diagnostic pour médecins généralistes.'
-    },
-    {
-      secteur: 'Finance',
-      realisation: 'Détection de fraude',
-      description: 'Système de scoring réduisant de 34% les faux positifs.'
-    },
-    {
-      secteur: 'Industrie',
-      realisation: 'Maintenance prédictive',
-      description: 'Modèle prédictif anticipant les pannes machines avec 87% de précision.'
-    }
-  ];
-
   return (
     <BackgroundLayout>
       <Helmet>
@@ -142,36 +114,6 @@ const Solutions = () => {
                     <IArcheLink href={`/solutions/${solution.slug}`}>
                       En savoir plus
                     </IArcheLink>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {/* Projets sur-mesure */}
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-primary mb-8 animate-fadeIn [animation-delay:0.9s]">
-              Projets sur-mesure
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {customProjects.map((project, index) => (
-                <Card 
-                  key={index}
-                  className="animate-fadeIn hover:shadow-lg transition-shadow duration-300"
-                  style={{ animationDelay: `${1.0 + index * 0.1}s` }}
-                >
-                  <CardHeader>
-                    <Badge variant="secondary" className="w-fit mb-2">
-                      {project.secteur}
-                    </Badge>
-                    <CardTitle className="text-lg text-foreground">
-                      {project.realisation}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      {project.description}
-                    </p>
                   </CardContent>
                 </Card>
               ))}
