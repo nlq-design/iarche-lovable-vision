@@ -1,5 +1,6 @@
 import React from 'react';
 import { Linkedin, Globe, Share2 } from 'lucide-react';
+import GradientLink from './GradientLink';
 
 interface AuthorCardProps {
   photo?: string;
@@ -12,7 +13,7 @@ interface AuthorCardProps {
 const AuthorCard = ({
   photo = '/images/nicolas-lara.jpg',
   nom = 'Nicolas LARA',
-  fonction = 'CEO & Fondateur IArche',
+  fonction = 'Fondateur IArche',
   linkedin = 'https://www.linkedin.com/in/nicolas-lara-queralta/',
   site = 'https://iarche.fr'
 }: AuthorCardProps) => {
@@ -102,6 +103,13 @@ const AuthorCard = ({
             </button>
           </div>
         </div>
+
+        {/* CTA En savoir plus - Mobile */}
+        <div className="mt-4 pt-4 border-t border-[#E5E7EB]">
+          <GradientLink href="/contact" className="text-sm">
+            En savoir plus
+          </GradientLink>
+        </div>
       </aside>
 
       {/* Version Desktop - Vertical Sticky */}
@@ -186,6 +194,13 @@ const AuthorCard = ({
           <Share2 className="w-4 h-4" />
           Partager
         </button>
+
+        {/* CTA En savoir plus - Desktop */}
+        <div className="mt-4 pt-4 border-t border-[#E5E7EB] text-center">
+          <GradientLink href="/contact" className="text-sm">
+            En savoir plus
+          </GradientLink>
+        </div>
       </aside>
     </>
   );
