@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Edit, Trash2, Eye, History, FolderOpen, Tags, MessageCircle, BarChart3 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
+import { AdminNav } from '@/components/AdminNav';
 
 interface Article {
   id: string;
@@ -199,6 +200,8 @@ const Admin = () => {
 
       <div className="min-h-screen px-6 py-12">
         <div className="container mx-auto max-w-6xl">
+          <AdminNav />
+          
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-semibold text-foreground mb-2">

@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, Save, Eye, History } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
+import { AdminNav } from '@/components/AdminNav';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Switch } from '@/components/ui/switch';
@@ -439,22 +440,18 @@ const AdminArticleEditor = () => {
 
       <div className="min-h-screen px-6 py-12">
         <div className="container mx-auto max-w-4xl">
-          <div className="mb-8 flex items-center justify-between">
-            <NavLink to="/admin">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Retour
-              </Button>
-            </NavLink>
-            {id && (
+          <AdminNav />
+          
+          {id && (
+            <div className="mb-8 flex justify-end">
               <NavLink to={`/admin/articles/${id}/history`}>
                 <Button variant="outline" size="sm">
                   <History className="mr-2 h-4 w-4" />
                   Historique
                 </Button>
               </NavLink>
-            )}
-          </div>
+            </div>
+          )}
 
           <Card className="bg-background/95 border-border">
             <CardHeader>

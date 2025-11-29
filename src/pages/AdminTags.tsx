@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Pencil, Trash2, ArrowLeft } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
+import { AdminNav } from '@/components/AdminNav';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -192,14 +193,7 @@ const AdminTags = () => {
 
       <div className="min-h-screen px-6 py-12">
         <div className="container mx-auto max-w-4xl">
-          <div className="mb-8">
-            <NavLink to="/admin">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Retour au tableau de bord
-              </Button>
-            </NavLink>
-          </div>
+          <AdminNav />
 
           <Card className="bg-background/95 border-border mb-6">
             <CardHeader>
