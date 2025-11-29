@@ -10,6 +10,9 @@ Le système de blog complet a été implémenté avec back-office Lovable Cloud 
 - ✅ Pages publiques d'actualités et détails d'articles
 - ✅ Tracking GTM automatique des événements
 - ✅ Banner de consentement RGPD
+- ✅ Historique des versions avec restauration
+- ✅ Génération automatique de slugs alternatifs
+- ✅ Prévisualisation des articles avant publication
 
 ## Accès au back-office
 
@@ -72,6 +75,31 @@ Pour accéder au back-office, vous devez :
 
 1. Cliquez sur l'icône "œil" pour voir l'article tel qu'il apparaît aux visiteurs
 2. Ou allez sur `/actualites` pour voir tous les articles publiés
+
+### Prévisualiser un article (brouillon ou publié)
+
+1. Dans l'éditeur d'article, cliquez sur "Prévisualiser"
+2. L'article s'ouvre dans un nouvel onglet
+3. Les admins peuvent voir les brouillons en prévisualisation
+
+### Voir l'historique des versions
+
+1. Depuis la liste des articles `/admin`, cliquez sur l'icône "historique" (📜)
+2. Ou depuis l'éditeur, cliquez sur le bouton "Historique" en haut à droite
+3. Consultez toutes les versions précédentes de l'article
+4. Restaurez une ancienne version en un clic
+
+**Note** : Consultez **README_VERSIONS.md** pour le guide complet de l'historique des versions.
+
+### Génération automatique de slugs
+
+Le système génère automatiquement des slugs alternatifs si le slug souhaité existe déjà :
+- Titre : "Mon Article" → Slug : `mon-article`
+- Si `mon-article` existe → essaie `mon-article-2`
+- Continue jusqu'à trouver un slug disponible
+- Vous recevez une notification du slug utilisé
+
+**Note** : Consultez **README_VERSIONS.md** pour plus de détails sur la gestion des slugs.
 
 ## Éditeur de contenu
 
@@ -191,6 +219,11 @@ Pour toute question ou problème :
 Fonctionnalités prévues :
 - Interface de gestion des catégories et tags
 - Upload d'images directement dans l'éditeur
-- Prévisualisation avant publication
 - Gestion des commentaires
 - SEO avancé avec rich snippets
+- Comparaison visuelle entre versions (diff)
+
+## Documentation complémentaire
+
+- **README_VERSIONS.md** : Guide complet de l'historique des versions et gestion des slugs
+- **README_GTM.md** : Configuration détaillée de Google Tag Manager

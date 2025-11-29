@@ -74,6 +74,53 @@ export type Database = {
           },
         ]
       }
+      article_versions: {
+        Row: {
+          article_id: string
+          author_id: string | null
+          content: string
+          cover_image_url: string | null
+          created_at: string | null
+          excerpt: string | null
+          id: string
+          slug: string
+          title: string
+          version_number: number
+        }
+        Insert: {
+          article_id: string
+          author_id?: string | null
+          content: string
+          cover_image_url?: string | null
+          created_at?: string | null
+          excerpt?: string | null
+          id?: string
+          slug: string
+          title: string
+          version_number: number
+        }
+        Update: {
+          article_id?: string
+          author_id?: string | null
+          content?: string
+          cover_image_url?: string | null
+          created_at?: string | null
+          excerpt?: string | null
+          id?: string
+          slug?: string
+          title?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_versions_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       articles: {
         Row: {
           author_id: string | null

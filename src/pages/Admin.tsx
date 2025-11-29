@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Eye, History } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 
 interface Article {
@@ -278,6 +278,14 @@ const Admin = () => {
                             <Eye className="h-4 w-4" />
                           </Button>
                         )}
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => navigate(`/admin/articles/${article.id}/history`)}
+                          title="Historique des versions"
+                        >
+                          <History className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="icon"

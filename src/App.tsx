@@ -18,6 +18,7 @@ import ConditionsGenerales from "./pages/ConditionsGenerales";
 import Confidentialite from "./pages/Confidentialite";
 import Admin from "./pages/Admin";
 import AdminArticleEditor from "./pages/AdminArticleEditor";
+import ArticleVersionHistory from "./pages/ArticleVersionHistory";
 import { CookieConsent } from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/articles/new" element={<AdminArticleEditor />} />
           <Route path="/admin/articles/:id" element={<AdminArticleEditor />} />
+          <Route path="/admin/articles/:id/history" element={<ArticleVersionHistory />} />
           
           {/* 404 */}
           <Route path="*" element={<NotFound />} />

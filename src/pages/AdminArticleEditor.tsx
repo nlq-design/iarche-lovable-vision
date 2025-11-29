@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Save, Eye } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, Eye, History } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -81,10 +81,50 @@ const AdminArticleEditor = () => {
       .replace(/(^-|-$)/g, '');
   };
 
-  const handleTitleChange = (value: string) => {
+  const handleTitleChange = async (value: string) => {
     setTitle(value);
     if (!id) {
-      setSlug(generateSlug(value));
+      const baseSlug = generateSlug(value);
+      const availableSlug = await findAvailableSlug(baseSlug);
+      setSlug(availableSlug);
+      if (availableSlug !== baseSlug) {
+        toast({
+          title: 'Slug modifié',
+          description: `Le slug "${baseSlug}" existe déjà. Utilisation de "${availableSlug}" à la place.`,
+        });
+      }
+    }
+  };
+
+  const findAvailableSlug = async (baseSlug: string): Promise<string> => {
+    let testSlug = baseSlug;
+    let counter = 2;
+    
+    while (true) {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('id')
+        .eq('slug', testSlug)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error checking slug:', error);
+        return testSlug;
+      }
+      
+      // Si le slug n'existe pas ou c'est notre article actuel, on peut l'utiliser
+      if (!data || data.id === id) {
+        return testSlug;
+      }
+      
+      // Sinon, essayer avec un suffixe
+      testSlug = `${baseSlug}-${counter}`;
+      counter++;
+      
+      // Sécurité: arrêter après 100 tentatives
+      if (counter > 100) {
+        return `${baseSlug}-${Date.now()}`;
+      }
     }
   };
 
@@ -103,7 +143,7 @@ const AdminArticleEditor = () => {
 
     if (error) {
       console.error('Error validating slug:', error);
-      return true; // Continue si erreur de validation
+      return true;
     }
 
     // Si un article existe avec ce slug et ce n'est pas celui qu'on édite
@@ -119,10 +159,24 @@ const AdminArticleEditor = () => {
   const handleSlugChange = async (value: string) => {
     const cleanSlug = generateSlug(value);
     setSlug(cleanSlug);
-    if (cleanSlug) {
-      await validateSlug(cleanSlug);
-    } else {
+    
+    if (!cleanSlug) {
       setSlugError('Le slug est obligatoire');
+      return;
+    }
+    
+    // Vérifier si le slug existe
+    const isValid = await validateSlug(cleanSlug);
+    
+    // Si le slug existe déjà et n'est pas valide, proposer un slug alternatif
+    if (!isValid) {
+      const availableSlug = await findAvailableSlug(cleanSlug);
+      if (availableSlug !== cleanSlug) {
+        toast({
+          title: 'Slug modifié',
+          description: `Le slug "${cleanSlug}" existe déjà. Suggestion : "${availableSlug}"`,
+        });
+      }
     }
   };
 
@@ -168,6 +222,39 @@ const AdminArticleEditor = () => {
     };
 
     if (id) {
+      // Sauvegarder une version avant la mise à jour
+      const { data: currentArticle } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (currentArticle) {
+        // Obtenir le dernier numéro de version
+        const { data: lastVersion } = await supabase
+          .from('article_versions')
+          .select('version_number')
+          .eq('article_id', id)
+          .order('version_number', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const nextVersionNumber = (lastVersion?.version_number || 0) + 1;
+
+        // Créer une nouvelle version
+        await supabase.from('article_versions').insert([{
+          article_id: id,
+          version_number: nextVersionNumber,
+          title: currentArticle.title,
+          slug: currentArticle.slug,
+          excerpt: currentArticle.excerpt,
+          content: currentArticle.content,
+          cover_image_url: currentArticle.cover_image_url,
+          author_id: user.id,
+        }]);
+      }
+
+      // Mettre à jour l'article
       const { error } = await supabase
         .from('articles')
         .update(articleData)
@@ -241,13 +328,21 @@ const AdminArticleEditor = () => {
 
       <div className="min-h-screen px-6 py-12">
         <div className="container mx-auto max-w-4xl">
-          <div className="mb-8">
+          <div className="mb-8 flex items-center justify-between">
             <NavLink to="/admin">
               <Button variant="outline" size="sm">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Retour
               </Button>
             </NavLink>
+            {id && (
+              <NavLink to={`/admin/articles/${id}/history`}>
+                <Button variant="outline" size="sm">
+                  <History className="mr-2 h-4 w-4" />
+                  Historique
+                </Button>
+              </NavLink>
+            )}
           </div>
 
           <Card className="bg-background/95 border-border">
