@@ -138,14 +138,21 @@ const Actualites = () => {
 
       <main className="min-h-screen pt-8">
         <section className="max-w-6xl mx-auto px-6 py-16">
-          {/* En-tête */}
+          {/* En-tête enrichi - Style Premium */}
           <div className="text-center mb-12">
             <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 invisible animate-fadeIn [animation-delay:0.1s]">
               Actualités & Articles
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto invisible animate-fadeIn [animation-delay:0.2s]">
-              Guides pratiques, analyses et retours d'expérience sur l'IA
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-4 invisible animate-fadeIn [animation-delay:0.2s]">
+              Guides pratiques, analyses techniques et retours d'expérience sur l'IA
             </p>
+            <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground invisible animate-fadeIn [animation-delay:0.3s]">
+              <span>{articles.length} {articles.length > 1 ? 'articles' : 'article'}</span>
+              <span>·</span>
+              <NavLink to="/newsletter" className="text-accent hover:underline">
+                S'abonner à la newsletter
+              </NavLink>
+            </div>
           </div>
 
           {/* Filtres */}
@@ -205,7 +212,8 @@ const Actualites = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            /* Grille 2 colonnes Premium avec large cards */
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {articles.map((article, index) => (
                 <NavLink
                   key={article.id}
@@ -219,9 +227,9 @@ const Actualites = () => {
                       animation: `fadeIn 0.8s ease-out ${0.3 + index * 0.1}s forwards`,
                     }}
                   >
-                    {/* Image de couverture */}
+                    {/* Image de couverture plus large */}
                     {article.cover_image_url ? (
-                      <div className="h-48 overflow-hidden">
+                      <div className="h-64 overflow-hidden">
                         <img
                           src={article.cover_image_url}
                           alt={article.title}
@@ -229,24 +237,29 @@ const Actualites = () => {
                         />
                       </div>
                     ) : (
-                      <ArticlePlaceholder className="h-48" />
+                      <ArticlePlaceholder className="h-64" />
                     )}
 
                     <CardHeader className="pb-3">
-                      <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-accent transition-colors">
+                      <h3 className="text-xl font-semibold text-foreground line-clamp-2 group-hover:text-accent transition-colors">
                         {article.title}
                       </h3>
                     </CardHeader>
 
-                    <CardContent>
+                    <CardContent className="space-y-3">
                       {article.excerpt && (
-                        <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
+                        <p className="text-base text-muted-foreground line-clamp-4">
                           {article.excerpt}
                         </p>
                       )}
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3" aria-hidden="true" />
-                        {formatDate(article.published_at || article.created_at)}
+                      <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" aria-hidden="true" />
+                          {formatDate(article.published_at || article.created_at)}
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {Math.ceil((article.excerpt?.length || 0) / 200)} min de lecture
+                        </span>
                       </div>
                     </CardContent>
                   </Card>
