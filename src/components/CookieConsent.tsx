@@ -87,19 +87,22 @@ export const CookieConsent = () => {
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 md:p-6">
-        <Card className="max-w-4xl mx-auto bg-background/98 backdrop-blur-sm border-2 border-border shadow-xl">
-          <div className="p-6">
-            <div className="flex items-start justify-between gap-4 mb-4">
+      <div className="fixed bottom-4 right-4 z-50 max-w-sm">
+        <Card className="bg-background/95 backdrop-blur-sm border border-border shadow-lg">
+          <div className="p-4">
+            <div className="flex items-start justify-between gap-3 mb-3">
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-foreground mb-2">
-                  Nous respectons votre vie privée
+                <h3 className="text-sm font-semibold text-foreground mb-1">
+                  Cookies
                 </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Nous utilisons des cookies pour améliorer votre expérience de navigation,
-                  analyser le trafic du site et personnaliser le contenu. En cliquant sur
-                  "Tout accepter", vous consentez à notre utilisation des cookies. Vous pouvez
-                  gérer vos préférences à tout moment.
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Nous utilisons des cookies pour améliorer votre expérience. 
+                  <a
+                    href="/confidentialite"
+                    className="text-accent hover:underline ml-1"
+                  >
+                    En savoir plus
+                  </a>
                 </p>
               </div>
               <button
@@ -107,39 +110,33 @@ export const CookieConsent = () => {
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="Fermer"
               >
-                <X className="h-5 w-5" aria-hidden="true" />
+                <X className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col gap-2">
               <Button
                 onClick={acceptAll}
-                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                size="sm"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                Tout accepter
+                Accepter
               </Button>
-              <Button
-                onClick={() => setShowSettings(true)}
-                variant="outline"
-                className="flex-1"
-              >
-                <Settings className="mr-2 h-4 w-4" aria-hidden="true" />
-                Personnaliser
-              </Button>
-              <Button onClick={rejectAll} variant="outline" className="flex-1">
-                Tout refuser
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setShowSettings(true)}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                >
+                  <Settings className="mr-1 h-3 w-3" aria-hidden="true" />
+                  Gérer
+                </Button>
+                <Button onClick={rejectAll} variant="outline" size="sm" className="flex-1">
+                  Refuser
+                </Button>
+              </div>
             </div>
-
-            <p className="text-xs text-muted-foreground mt-4">
-              En savoir plus sur notre{' '}
-              <a
-                href="/confidentialite"
-                className="text-accent hover:underline focus:underline focus:outline-none"
-              >
-                politique de confidentialité
-              </a>
-            </p>
           </div>
         </Card>
       </div>
