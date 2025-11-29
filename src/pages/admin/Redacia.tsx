@@ -67,7 +67,7 @@ Public cible : chefs de projet et équipes techniques PME`,
     prompt: `Rédige une étude de cas professionnelle sur : [SUJET]
 
 Structure attendue :
-- Contexte entreprise et enjeux métier
+- Contexte entreprise et situation initiale
 - Problématique initiale (quantifiée si possible)
 - Solution mise en œuvre (architecture, technologies, méthodologie)
 - Résultats chiffrés (gains de temps, ROI, KPIs)

@@ -9,15 +9,15 @@ const services = [
   },
   {
     title: "Développement & Intégration",
-    description: "Construire et déployer des solutions qui marchent dans votre contexte."
+    description: "Des solutions sur-mesure qui s'intègrent à vos outils existants."
   },
   {
     title: "Accompagnement & Autonomie",
-    description: "Rendre vos équipes capables de continuer sans nous."
+    description: "On rend vos équipes autonomes. L'IA évolue, votre entreprise aussi."
   },
   {
     title: "Conformité & Réglementation",
-    description: "S'assurer que vos projets IA respectent les règles du jeu."
+    description: "AI Act, RGPD : intégrer l'IA en restant conforme."
   }
 ];
 

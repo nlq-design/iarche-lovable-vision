@@ -38,7 +38,7 @@ const ConditionsGenerales = () => {
                 <h2 className="text-2xl font-bold text-foreground mb-4">Article 1 - Objet</h2>
                 <p>
                   Les présentes Conditions Générales de Vente (CGV) régissent les relations contractuelles entre IArche et ses clients dans le cadre 
-                  de la fourniture de services de conseil, développement, formation et conformité en intelligence artificielle.
+                  de la fourniture de services de conseil, développement, accompagnement et conformité en intelligence artificielle.
                 </p>
               </div>
 
@@ -50,7 +50,7 @@ const ConditionsGenerales = () => {
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Audit et conseil en intelligence artificielle</li>
                   <li>Développement et intégration de solutions IA</li>
-                  <li>Formation et accompagnement des équipes</li>
+                  <li>Accompagnement et autonomie des équipes</li>
                   <li>Conformité réglementaire (RGPD, AI Act)</li>
                 </ul>
               </div>
@@ -75,7 +75,7 @@ const ConditionsGenerales = () => {
                 <h2 className="text-2xl font-bold text-foreground mb-4">Article 5 - Livraison des prestations</h2>
                 <p>
                   Les délais de réalisation sont communiqués à titre indicatif dans le devis. IArche s'engage à respecter les délais convenus, 
-                  sauf en cas de force majeure ou de modification de périmètre demandée par le client.
+                  sauf en cas de force majeure ou de modification du projet demandée par le client.
                 </p>
               </div>
 
