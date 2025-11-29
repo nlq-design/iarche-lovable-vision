@@ -130,13 +130,6 @@ const Footer = () => {
                   Ateliers & Webinaires
                 </NavLink>
               </li>
-            </ul>
-          </div>
-
-          {/* Colonne 4 : Informations légales */}
-          <div>
-            <h3 className="text-sm font-semibold mb-3">Informations</h3>
-            <ul className="space-y-1.5">
               <li>
                 <NavLink 
                   to="/newsletter" 
@@ -145,6 +138,13 @@ const Footer = () => {
                   Newsletters
                 </NavLink>
               </li>
+            </ul>
+          </div>
+
+          {/* Colonne 4 : Informations légales */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3">Informations</h3>
+            <ul className="space-y-1.5">
               <li>
                 <NavLink 
                   to="/livre-or" 
