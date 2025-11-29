@@ -8,6 +8,89 @@
 
 ## MODIFICATIONS MAJEURES
 
+### 0.6 CRÉATION PAGE SOLUTIONS ET RESOURCE_TYPE SOLUTION - MISE À JOUR V6.7 ✅
+
+#### Nouvelle architecture Solutions distincte des Cas clients
+
+**Objectif :**
+Créer une page `/solutions` dédiée avec présentation visuelle en grid cards, séparée de `/cas-clients`, permettant une différenciation entre solutions commercialisables et études de cas.
+
+**1. Nouveau resource_type `solution`**
+```sql
+ALTER TABLE articles DROP CONSTRAINT IF EXISTS articles_resource_type_check;
+ALTER TABLE articles ADD CONSTRAINT articles_resource_type_check 
+CHECK (resource_type IN ('actualite', 'article', 'cas-client', 'livre-blanc', 'atelier-webinaire', 'solution'));
+```
+
+**2. Duplication des 5 cas clients en solutions**
+```sql
+INSERT INTO articles (title, slug, excerpt, content, resource_type, published, ...)
+SELECT title, 
+  CASE slug
+    WHEN 'grande-distribution-pricing' THEN 'solution-grande-distribution-pricing'
+    WHEN 'transport-logistique-tournees' THEN 'solution-transport-logistique'
+    ...
+  END as slug,
+  excerpt, content, 'solution' as resource_type, published, ...
+FROM articles WHERE resource_type = 'cas-client';
+```
+
+**3. Pages créées**
+- **`/admin/solutions`** : Gestion admin avec filtrage `resource_type='solution'`
+- **`/solutions`** : Page publique avec grid 3 colonnes (responsive mobile 1 colonne)
+  - Header enrichi avec baseline "Projets concrets, résultats mesurables"
+  - Cards avec hover effects (shadow-lg, border-accent, scale image)
+  - Badge secteur + titre + excerpt + CTA "Découvrir le projet →"
+  - Animation fadeIn staggered (0.3s + index*0.1s)
+- **`/solutions/:slug`** : Détail solution (réutilise `ArticleDetail.tsx`)
+
+**4. ExemplesSection sur `/` modifié**
+- Fetch maintenant `resource_type='solution'` au lieu de `'cas-client'`
+- Cards pointent vers `/solutions/:slug`
+- Cohérence avec la nouvelle page Solutions
+
+**5. Architecture complète ressources (7 types)**
+
+| Type | resource_type | Admin | Listing | Détail | Création |
+|------|---------------|-------|---------|--------|----------|
+| Articles | `article` | `/admin/articles` | `/articles` | `/articles/:slug` | `?type=article` |
+| Actualités | `actualite` | `/admin/actualites` | `/actualites` | `/actualites/:slug` | `?type=actualite` |
+| Cas clients | `cas-client` | `/admin/cas-clients` | `/cas-clients` | `/cas-clients/:slug` | `?type=cas-client` |
+| **Solutions** | **`solution`** | **`/admin/solutions`** | **`/solutions`** | **`/solutions/:slug`** | **`?type=solution`** |
+| Livres blancs | `livre-blanc` | `/admin/livres-blancs` | `/livres-blancs` | `/livres-blancs/:slug` | `?type=livre-blanc` |
+| Ateliers & Webinaires | `atelier-webinaire` | `/admin/ateliers-webinaires` | `/ateliers-webinaires` | `/ateliers-webinaires/:slug` | `?type=atelier-webinaire` |
+
+**6. Sidebar admin mis à jour**
+Section "Contenu" avec 7 entrées :
+- Articles (fond)
+- Actualités
+- Cas clients
+- **Solutions** ← NOUVEAU
+- Livres blancs
+- Ateliers & Webinaires
+- Redacia (IA)
+
+**7. ArticleDetail navigation étendue**
+Ajout de `/solutions/` dans les fonctions `getBackPath()` et `getBackLabel()` pour navigation contextuelle.
+
+**8. Routes App.tsx complètes**
+```tsx
+<Route path="/solutions" element={<Solutions />} />
+<Route path="/solutions/:slug" element={<ArticleDetail />} />
+<Route path="/admin/solutions" element={<AdminSolutions />} />
+```
+
+**Résultat final :**
+✅ Séparation claire entre Solutions (présentation commerciale) et Cas clients (études de cas détaillées)
+✅ ExemplesSection sur homepage affiche les 5 solutions avec CTA vers `/solutions`
+✅ Grid visuelle attractive avec animations et hover effects
+✅ Architecture extensible pour futurs types de ressources
+
+**Rationale :**
+Cette séparation permet de distinguer les solutions potentiellement commercialisables (présentées sur `/solutions`) des cas clients purs (études de cas détaillées sur `/cas-clients`), tout en maintenant une architecture cohérente et évolutive.
+
+---
+
 ### 0.5 RESTRUCTURATION COMPLÈTE RESSOURCES ET MIGRATION EXEMPLESSECTION - MISE À JOUR V6.6 ✅
 
 #### Migration des projets en dur vers base de données
