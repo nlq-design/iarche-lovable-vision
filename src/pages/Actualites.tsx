@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { NavLink } from '@/components/NavLink';
 import { Loader2, Calendar, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { NewsletterForm } from '@/components/NewsletterForm';
 import {
   Select,
   SelectContent,
@@ -299,6 +300,15 @@ const Actualites = () => {
               ))}
             </div>
           )}
+
+          {/* Newsletter */}
+          <div className="mt-16 max-w-2xl mx-auto">
+            <Card className="bg-background border border-border">
+              <CardContent className="p-6">
+                <NewsletterForm />
+              </CardContent>
+            </Card>
+          </div>
         </section>
       </main>
 

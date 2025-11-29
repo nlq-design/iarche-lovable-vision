@@ -251,6 +251,12 @@ const AdminArticleEditor = () => {
 
     setIsLoading(true);
 
+    const wasPublished = id ? (await supabase
+      .from('articles')
+      .select('published')
+      .eq('id', id)
+      .single()).data?.published : false;
+
     const articleData = {
       title,
       slug,
@@ -324,9 +330,24 @@ const AdminArticleEditor = () => {
           );
         }
 
+        // Si l'article vient d'être publié (n'était pas publié avant), envoyer la newsletter
+        if (published && !wasPublished) {
+          console.log('Article just published, sending newsletter...');
+          await supabase.functions.invoke('send-newsletter', {
+            body: {
+              article_id: id,
+              article_title: title,
+              article_slug: slug,
+              article_excerpt: excerpt,
+            },
+          });
+        }
+
         toast({
           title: 'Article mis à jour',
-          description: 'L\'article a été mis à jour avec succès',
+          description: published && !wasPublished 
+            ? 'Article publié et newsletter envoyée aux abonnés'
+            : 'L\'article a été mis à jour avec succès',
         });
         
         // Push GTM event
@@ -365,9 +386,24 @@ const AdminArticleEditor = () => {
           );
         }
 
+        // Si l'article est publié directement, envoyer la newsletter
+        if (published) {
+          console.log('New article published, sending newsletter...');
+          await supabase.functions.invoke('send-newsletter', {
+            body: {
+              article_id: newArticle.id,
+              article_title: title,
+              article_slug: slug,
+              article_excerpt: excerpt,
+            },
+          });
+        }
+
         toast({
           title: 'Article créé',
-          description: 'L\'article a été créé avec succès',
+          description: published 
+            ? 'Article créé et newsletter envoyée aux abonnés'
+            : 'L\'article a été créé avec succès',
         });
         
         // Push GTM event
