@@ -49,26 +49,26 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
           </linearGradient>
         </defs>
         
-        {/* Ligne 1 : Haut-droit → Centre → Bas-gauche */}
+        {/* Ligne 1 : Haut-droit → Centre → Niveau IArche (flux fin) */}
         <path
           ref={path1Ref}
-          d="M 390 5 L 130 5 C 128 5 126 7 126 9 L 126 140 C 126 142 124 144 122 144 L 10 144"
+          d="M 390 5 L 130 5 C 128 5 126 7 126 9 L 126 95 C 126 97 124 99 122 99 L 10 99"
           fill="none"
           stroke="url(#archGrad1)"
           strokeWidth="2"
           strokeLinecap="round"
-          opacity="0.5"
+          opacity="0.45"
         />
         
-        {/* Ligne 2 : Haut-gauche → Centre → Bas-droit */}
+        {/* Ligne 2 : Haut-gauche → Centre → Bas portail (flux épais) */}
         <path
           ref={path2Ref}
-          d="M 10 5 L 270 5 C 272 5 274 7 274 9 L 274 140 C 274 142 276 144 278 144 L 390 144"
+          d="M 10 5 L 270 5 C 272 5 274 7 274 9 L 274 185 C 274 187 276 189 278 189 L 390 189"
           fill="none"
           stroke="url(#archGrad2)"
-          strokeWidth="2"
+          strokeWidth="2.5"
           strokeLinecap="round"
-          opacity="0.5"
+          opacity="0.55"
         />
       </svg>
       
