@@ -29,6 +29,7 @@ import RedacNews from "./pages/admin/RedacNews";
 import AdvancedStats from "./pages/admin/AdvancedStats";
 import AuditLogs from "./pages/admin/AuditLogs";
 import SecurityDashboard from "./pages/admin/SecurityDashboard";
+import AdminSettings from "./pages/admin/AdminSettings";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import { CookieConsent } from "./components/CookieConsent";
 
@@ -79,6 +80,7 @@ const App = () => (
           <Route path="/admin/newsletters" element={<ProtectedAdminRoute><AdminNewsletters /></ProtectedAdminRoute>} />
           <Route path="/admin/security-dashboard" element={<ProtectedAdminRoute><SecurityDashboard /></ProtectedAdminRoute>} />
           <Route path="/admin/audit-logs" element={<ProtectedAdminRoute><AuditLogs /></ProtectedAdminRoute>} />
+          <Route path="/admin/settings" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
           
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
