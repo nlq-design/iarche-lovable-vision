@@ -52,7 +52,7 @@ const ArticlePlaceholder = memo(({ className = '', size = 'default' }: ArticlePl
           stroke="url(#archGrad1)"
           strokeWidth="3"
           strokeLinecap="round"
-          opacity="0.5"
+          opacity="0.7"
         />
       </svg>
       
@@ -77,7 +77,7 @@ const ArticlePlaceholder = memo(({ className = '', size = 'default' }: ArticlePl
           stroke="url(#archGrad2)"
           strokeWidth="3"
           strokeLinecap="round"
-          opacity="0.5"
+          opacity="0.7"
         />
       </svg>
       
