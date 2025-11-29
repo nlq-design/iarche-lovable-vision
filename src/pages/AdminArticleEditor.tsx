@@ -45,6 +45,7 @@ const AdminArticleEditor = () => {
   const [generatingFAQ, setGeneratingFAQ] = useState(false);
   const [faqPreviewOpen, setFaqPreviewOpen] = useState(false);
   const [generatedFAQ, setGeneratedFAQ] = useState<FAQItem[] | null>(null);
+  const [autoGenerateFAQ, setAutoGenerateFAQ] = useState(false);
   
   // Déterminer le resource_type depuis la route
   const getResourceTypeFromPath = () => {
@@ -613,23 +614,38 @@ const AdminArticleEditor = () => {
           article_title: title,
         });
         
-        // Rediriger vers la page admin correspondant au resource_type
-        const adminRedirectMap: Record<string, string> = {
-          'article': '/admin/articles',
-          'actualite': '/admin/actualites',
-          'cas-client': '/admin/cas-clients',
-          'livre-blanc': '/admin/livres-blancs',
-          'atelier-webinaire': '/admin/ateliers-webinaires',
-        };
-        navigate(adminRedirectMap[resourceType] || '/admin');
+        // Générer FAQ automatiquement si demandé
+        if (autoGenerateFAQ) {
+          toast({
+            title: 'Génération FAQ en cours',
+            description: 'La FAQ est en cours de génération...',
+          });
+          
+          // Délai pour permettre la mise à jour de l'article avant génération
+          setTimeout(() => {
+            handleGenerateFAQ(newArticle.id);
+          }, 1000);
+        } else {
+          // Rediriger vers la page admin correspondant au resource_type
+          const adminRedirectMap: Record<string, string> = {
+            'article': '/admin/articles',
+            'actualite': '/admin/actualites',
+            'cas-client': '/admin/cas-clients',
+            'livre-blanc': '/admin/livres-blancs',
+            'atelier-webinaire': '/admin/ateliers-webinaires',
+          };
+          navigate(adminRedirectMap[resourceType] || '/admin');
+        }
       }
     }
 
     setIsLoading(false);
   };
 
-  const handleGenerateFAQ = async () => {
-    if (!id || !title || !content) {
+  const handleGenerateFAQ = async (articleId?: string) => {
+    const targetId = articleId || id;
+    
+    if (!targetId || !title || !content) {
       toast({
         title: "Contenu insuffisant",
         description: "Sauvegardez l'article avant de générer la FAQ",
@@ -644,7 +660,7 @@ const AdminArticleEditor = () => {
     try {
       const { data, error } = await supabase.functions.invoke('generate-faq', {
         body: {
-          article_id: id,
+          article_id: targetId,
           title,
           content,
           resource_type: resourceType
@@ -1121,6 +1137,20 @@ const AdminArticleEditor = () => {
                   </Label>
                 </div>
 
+                {!id && (
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="autoGenerateFAQ"
+                      checked={autoGenerateFAQ}
+                      onCheckedChange={(checked) => setAutoGenerateFAQ(checked as boolean)}
+                      disabled={isLoading}
+                    />
+                    <Label htmlFor="autoGenerateFAQ" className="cursor-pointer text-sm">
+                      Générer FAQ automatiquement après création
+                    </Label>
+                  </div>
+                )}
+
                 {!published && (
                   <div className="space-y-2">
                     <Label>Publication programmée (optionnel)</Label>
@@ -1200,7 +1230,7 @@ const AdminArticleEditor = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={handleGenerateFAQ}
+                      onClick={() => handleGenerateFAQ()}
                       disabled={isLoading || generatingFAQ}
                     >
                       {generatingFAQ ? (
