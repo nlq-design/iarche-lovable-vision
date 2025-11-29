@@ -66,13 +66,15 @@ const AteliersWebinaires = () => {
       <Header />
       <BreadcrumbNav />
 
-      <main className="min-h-screen pt-8">
-        <section className="max-w-6xl mx-auto px-6 py-16">
+      <main className="min-h-screen pt-4">
+        <section className="max-w-6xl mx-auto px-6 py-8">
           {/* En-tête */}
           <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 invisible animate-fadeIn [animation-delay:0.1s]">
+            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 invisible animate-fadeIn [animation-delay:0.1s]">
               Ateliers & Webinaires
             </h1>
+            {/* Ligne décorative gradient */}
+            <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 invisible animate-fadeIn [animation-delay:0.15s]"></div>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto invisible animate-fadeIn [animation-delay:0.2s]">
               Formations pratiques, démonstrations et sessions Q&A sur l'IA
             </p>

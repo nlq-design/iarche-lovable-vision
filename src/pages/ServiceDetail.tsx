@@ -95,8 +95,8 @@ const ServiceDetail = () => {
       <Header />
       <BreadcrumbNav />
 
-      <main className="min-h-screen pt-20">
-        <article className="max-w-4xl mx-auto px-6 py-16">
+      <main className="min-h-screen pt-4">
+        <article className="max-w-4xl mx-auto px-6 py-8">
           {/* Bouton retour */}
           <div className="mb-8">
             <NavLink to="/services">
@@ -109,9 +109,11 @@ const ServiceDetail = () => {
 
           {/* En-tête */}
           <header className="mb-12">
-            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 invisible animate-fadeIn [animation-delay:0.1s]">
+            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 invisible animate-fadeIn [animation-delay:0.1s]">
               {service.title}
             </h1>
+            {/* Ligne décorative gradient */}
+            <div className="w-24 h-1 mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 invisible animate-fadeIn [animation-delay:0.15s]"></div>
             <p className="text-lg md:text-xl text-muted-foreground invisible animate-fadeIn [animation-delay:0.2s]">
               {service.descriptionLongue}
             </p>
