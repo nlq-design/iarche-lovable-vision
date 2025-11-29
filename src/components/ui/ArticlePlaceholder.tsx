@@ -50,7 +50,7 @@ const ArticlePlaceholder = memo(({ className = '', size = 'default' }: ArticlePl
           d="M 398 2 L 121 2 C 119 2 117 4 117 6 L 117 176 C 117 178 115 180 113 180 L 0 180"
           fill="none"
           stroke="url(#archGrad1)"
-          strokeWidth="2"
+          strokeWidth="3"
           strokeLinecap="round"
           opacity="0.5"
         />
@@ -75,7 +75,7 @@ const ArticlePlaceholder = memo(({ className = '', size = 'default' }: ArticlePl
           d="M 0 2 L 278 2 C 280 2 282 4 282 6 L 282 101 C 282 103 284 105 286 105 L 400 105"
           fill="none"
           stroke="url(#archGrad2)"
-          strokeWidth="2"
+          strokeWidth="3"
           strokeLinecap="round"
           opacity="0.5"
         />
