@@ -497,23 +497,29 @@ export type Database = {
       faqs: {
         Row: {
           article_id: string
+          auto_suggested: boolean | null
           created_at: string | null
           id: string
           questions: Json
+          suggestion_source: string | null
           updated_at: string | null
         }
         Insert: {
           article_id: string
+          auto_suggested?: boolean | null
           created_at?: string | null
           id?: string
           questions: Json
+          suggestion_source?: string | null
           updated_at?: string | null
         }
         Update: {
           article_id?: string
+          auto_suggested?: boolean | null
           created_at?: string | null
           id?: string
           questions?: Json
+          suggestion_source?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -667,6 +673,27 @@ export type Database = {
           ip_address?: unknown
           request_count?: number
           window_start?: string
+        }
+        Relationships: []
+      }
+      search_queries: {
+        Row: {
+          created_at: string | null
+          id: string
+          page_context: string | null
+          query: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          page_context?: string | null
+          query: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          page_context?: string | null
+          query?: string
         }
         Relationships: []
       }
