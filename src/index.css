@@ -150,3 +150,20 @@ All colors MUST be HSL.
   animation: gradientText 8s ease infinite;
   will-change: background-position;
 }
+
+/* Transition entre pages */
+@keyframes pageTransition {
+  0% { 
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+main {
+  animation: pageTransition 0.4s ease-out;
+  will-change: opacity, transform;
+}

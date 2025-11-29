@@ -95,7 +95,7 @@ const AteliersWebinaires = () => {
               {ateliersWebinaires.map((item, index) => (
                 <NavLink
                   key={item.id}
-                  to={`/actualites/${item.slug}`}
+                  to={`/ateliers-webinaires/${item.slug}`}
                   className="group"
                 >
                   <Card className="h-full hover:shadow-lg transition-shadow duration-300 invisible animate-fadeIn"
