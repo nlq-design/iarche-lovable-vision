@@ -102,7 +102,15 @@ const App = () => (
           <Route path="/admin/livres-blancs/new" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
           <Route path="/admin/ateliers-webinaires/new" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
           <Route path="/admin/articles/:id" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
+          <Route path="/admin/actualites/:id" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
+          <Route path="/admin/cas-clients/:id" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
+          <Route path="/admin/livres-blancs/:id" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
+          <Route path="/admin/ateliers-webinaires/:id" element={<ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>} />
           <Route path="/admin/articles/:id/history" element={<ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>} />
+          <Route path="/admin/actualites/:id/history" element={<ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>} />
+          <Route path="/admin/cas-clients/:id/history" element={<ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>} />
+          <Route path="/admin/livres-blancs/:id/history" element={<ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>} />
+          <Route path="/admin/ateliers-webinaires/:id/history" element={<ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>} />
           <Route path="/admin/categories" element={<ProtectedAdminRoute><AdminCategories /></ProtectedAdminRoute>} />
           <Route path="/admin/tags" element={<ProtectedAdminRoute><AdminTags /></ProtectedAdminRoute>} />
           <Route path="/admin/comments" element={<ProtectedAdminRoute><AdminComments /></ProtectedAdminRoute>} />
