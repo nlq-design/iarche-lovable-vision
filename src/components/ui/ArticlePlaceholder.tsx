@@ -7,7 +7,7 @@ interface ArticlePlaceholderProps {
 const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) => {
   return (
     <div className={`relative overflow-hidden bg-background ${className}`}>
-      {/* Arches SVG - Arche symétrique encadrant le logo */}
+      {/* Arches SVG - Reproduction exacte du style portail */}
       <svg
         className="absolute inset-0 w-full h-full"
         viewBox="0 0 400 200"
@@ -15,43 +15,37 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
         aria-hidden="true"
       >
         <defs>
-          {/* Gradient Bleu Nuit → Terracotta */}
+          {/* Gradient Bleu Nuit → Terracotta (comme le portail) */}
           <linearGradient id="placeholderGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(218, 47%, 20%)" />
-            <stop offset="100%" stopColor="hsl(12, 60%, 53%)" />
+            <stop offset="0%" stopColor="hsl(var(--primary))" />
+            <stop offset="100%" stopColor="hsl(var(--accent))" />
           </linearGradient>
           
-          {/* Gradient Terracotta → Bleu Nuit (inversé) */}
-          <linearGradient id="placeholderGradient2" x1="100%" y1="100%" x2="0%" y2="0%">
-            <stop offset="0%" stopColor="hsl(218, 47%, 20%)" />
-            <stop offset="100%" stopColor="hsl(12, 60%, 53%)" />
+          {/* Gradient Terracotta → Bleu Nuit (inversé comme le portail) */}
+          <linearGradient id="placeholderGradient2" x1="100%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="hsl(var(--accent))" />
+            <stop offset="100%" stopColor="hsl(var(--primary))" />
           </linearGradient>
         </defs>
         
-        {/* Ligne arche droite - Forme le côté droit de l'arche */}
+        {/* Ligne arche 1 - Haut droite vers bas gauche (style portail) */}
         <path
-          d="M 320 20 
-             L 320 70 
-             Q 320 100 290 100 
-             L 230 100"
+          d="M 380 10 L 120 10 C 118 10 116 12 116 14 L 116 86 C 116 88 114 90 112 90 L 20 90"
           fill="none"
           stroke="url(#placeholderGradient1)"
-          strokeWidth="2.5"
+          strokeWidth="2"
           strokeLinecap="round"
-          opacity="0.6"
+          opacity="0.5"
         />
         
-        {/* Ligne arche gauche - Forme le côté gauche de l'arche (symétrique) */}
+        {/* Ligne arche 2 - Bas gauche vers haut droite (style portail inversé) */}
         <path
-          d="M 80 180 
-             L 80 130 
-             Q 80 100 110 100 
-             L 170 100"
+          d="M 20 190 L 280 190 C 282 190 284 188 284 186 L 284 114 C 284 112 286 110 288 110 L 380 110"
           fill="none"
           stroke="url(#placeholderGradient2)"
-          strokeWidth="2.5"
+          strokeWidth="2"
           strokeLinecap="round"
-          opacity="0.6"
+          opacity="0.5"
         />
       </svg>
       
