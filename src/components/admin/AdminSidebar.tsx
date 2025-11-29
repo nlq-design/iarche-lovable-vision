@@ -1,4 +1,4 @@
-import { Home, BarChart3, Sparkles, FileText, FolderOpen, Tag, MessageCircle, Users, Mail, Send, Shield, Settings } from 'lucide-react';
+import { Home, BarChart3, Sparkles, FileText, FolderOpen, Tag, MessageCircle, Users, Mail, Send, Shield, Settings, Database } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -55,6 +55,7 @@ const navigationItems = [
     items: [
       { title: 'Dashboard sécurité', url: '/admin/security-dashboard', icon: Shield },
       { title: 'Logs d\'audit', url: '/admin/audit-logs', icon: Shield },
+      { title: 'Backups', url: '/admin/backups', icon: Database },
       { title: 'Paramètres de sécurité', url: '/admin/settings', icon: Settings },
     ]
   }

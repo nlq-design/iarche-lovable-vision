@@ -63,23 +63,70 @@ const Admin = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      // Vérifier d'abord si le compte n'est pas verrouillé
+      const checkResponse = await supabase.functions.invoke('check-login-attempt', {
+        body: { email, success: false, failure_reason: 'pre_check' }
+      });
 
-    if (error) {
+      if (checkResponse.data?.locked) {
+        toast({
+          title: 'Compte verrouillé',
+          description: checkResponse.data.message,
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Tentative de connexion
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      // Enregistrer la tentative
+      await supabase.functions.invoke('check-login-attempt', {
+        body: {
+          email,
+          success: !error,
+          failure_reason: error?.message
+        }
+      });
+
+      if (error) {
+        const checkResult = await supabase.functions.invoke('check-login-attempt', {
+          body: { email, success: false, failure_reason: 'pre_check' }
+        });
+
+        let errorMessage = 'Email ou mot de passe incorrect';
+        if (checkResult.data?.attempts_remaining !== undefined) {
+          errorMessage += `. ${checkResult.data.attempts_remaining} tentative(s) restante(s)`;
+        }
+        if (checkResult.data?.warning) {
+          errorMessage = checkResult.data.warning;
+        }
+
+        toast({
+          title: 'Erreur de connexion',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Connexion réussie',
+          description: 'Bienvenue dans le back-office',
+        });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
       toast({
-        title: 'Erreur de connexion',
-        description: error.message,
+        title: 'Erreur',
+        description: 'Une erreur est survenue lors de la connexion',
         variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'Connexion réussie',
-        description: 'Bienvenue dans le back-office',
-      });
     }
+
     setIsLoading(false);
   };
 
