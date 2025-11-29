@@ -163,46 +163,53 @@ const Actualites = () => {
                   to={`/actualites/${article.slug}`}
                   className="group"
                 >
-                  <Card 
-                    className="h-full hover:shadow-lg transition-shadow duration-300 bg-background border border-border rounded-lg overflow-hidden animate-fadeIn"
+                  <div 
+                    className="relative rounded-lg p-[2px] gradient-border-animated h-full animate-fadeIn"
                     style={{ animationDelay: `${0.3 + index * 0.1}s` }}
                   >
-                    {/* Image de couverture compacte */}
-                    {article.cover_image_url ? (
-                      <div className="h-40 overflow-hidden">
-                        <img
-                          src={article.cover_image_url}
-                          alt={article.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
+                    <Card 
+                      className="h-full bg-background border-0 rounded-lg overflow-hidden transition-all duration-300 group-hover:shadow-[0_10px_40px_hsla(var(--primary)/0.15)] group-hover:scale-[1.02] group-hover:-translate-y-0.5"
+                    >
+                      {/* Image de couverture compacte */}
+                      <div className="relative overflow-hidden">
+                        {article.cover_image_url ? (
+                          <div className="h-40 overflow-hidden relative">
+                            <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10" />
+                            <img
+                              src={article.cover_image_url}
+                              alt={article.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          </div>
+                        ) : (
+                          <ArticlePlaceholder className="h-40" />
+                        )}
                       </div>
-                    ) : (
-                      <ArticlePlaceholder className="h-40" />
-                    )}
 
-                    <CardHeader className="pb-2">
-                      <h2 className="text-base font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">
-                        {article.title}
-                      </h2>
-                    </CardHeader>
+                      <CardHeader className="pb-2">
+                        <h2 className="text-base font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">
+                          {article.title}
+                        </h2>
+                      </CardHeader>
 
-                    <CardContent className="space-y-2">
-                      {article.excerpt && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {article.excerpt}
-                        </p>
-                      )}
-                      {/* Date discrète en bas */}
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 pt-1">
-                        <Calendar className="h-3 w-3" aria-hidden="true" />
-                        {new Date(article.published_at || article.created_at).toLocaleDateString('fr-FR', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
+                      <CardContent className="space-y-2">
+                        {article.excerpt && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {article.excerpt}
+                          </p>
+                        )}
+                        {/* Date discrète en bas */}
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 pt-1">
+                          <Calendar className="h-3 w-3" aria-hidden="true" />
+                          {new Date(article.published_at || article.created_at).toLocaleDateString('fr-FR', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </NavLink>
               ))}
             </div>
