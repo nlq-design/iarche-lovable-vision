@@ -112,49 +112,40 @@ const Solutions = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {saasSolutions.map((solution, index) => (
-                <div
+                <Card 
                   key={solution.name}
-                  className="relative rounded-lg p-[2px] gradient-border-animated animate-fadeIn group"
-                  style={{ 
-                    visibility: 'hidden',
-                    animationDelay: `${0.4 + index * 0.1}s`,
-                    animationFillMode: 'forwards',
-                    willChange: 'opacity, visibility'
-                  }}
+                  className="animate-fadeIn hover:shadow-lg transition-shadow duration-300"
+                  style={{ animationDelay: `${0.4 + index * 0.1}s` }}
                 >
-                  <Card 
-                    className="h-full border-0 transition-all duration-300 group-hover:shadow-[0_10px_40px_hsla(var(--primary)/0.15)] group-hover:scale-[1.02] group-hover:-translate-y-0.5"
-                  >
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-xl text-foreground">
-                            {solution.name}
-                          </CardTitle>
-                          <CardDescription className="text-sm mt-1">
-                            {solution.tagline}
-                          </CardDescription>
-                        </div>
-                        <Badge 
-                          variant={solution.status === 'Disponible' ? 'default' : 'secondary'}
-                          className="shrink-0"
-                        >
-                          {solution.status}
-                        </Badge>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-xl text-foreground">
+                          {solution.name}
+                        </CardTitle>
+                        <CardDescription className="text-sm mt-1">
+                          {solution.tagline}
+                        </CardDescription>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground mb-4">
-                        {solution.description}
-                      </p>
-                      {solution.link && (
-                        <IArcheLink href={solution.link}>
-                          En savoir plus
-                        </IArcheLink>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
+                      <Badge 
+                        variant={solution.status === 'Disponible' ? 'default' : 'secondary'}
+                        className="shrink-0"
+                      >
+                        {solution.status}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground mb-4">
+                      {solution.description}
+                    </p>
+                    {solution.link && (
+                      <IArcheLink href={solution.link}>
+                        En savoir plus
+                      </IArcheLink>
+                    )}
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>
@@ -166,34 +157,25 @@ const Solutions = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {customProjects.map((project, index) => (
-                <div
+                <Card 
                   key={index}
-                  className="relative rounded-lg p-[2px] gradient-border-animated animate-fadeIn group"
-                  style={{ 
-                    visibility: 'hidden',
-                    animationDelay: `${1.0 + index * 0.1}s`,
-                    animationFillMode: 'forwards',
-                    willChange: 'opacity, visibility'
-                  }}
+                  className="animate-fadeIn hover:shadow-lg transition-shadow duration-300"
+                  style={{ animationDelay: `${1.0 + index * 0.1}s` }}
                 >
-                  <Card 
-                    className="h-full border-0 transition-all duration-300 group-hover:shadow-[0_10px_40px_hsla(var(--primary)/0.15)] group-hover:scale-[1.02] group-hover:-translate-y-0.5"
-                  >
-                    <CardHeader>
-                      <Badge variant="secondary" className="w-fit mb-2">
-                        {project.secteur}
-                      </Badge>
-                      <CardTitle className="text-lg text-foreground">
-                        {project.realisation}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">
-                        {project.description}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
+                  <CardHeader>
+                    <Badge variant="secondary" className="w-fit mb-2">
+                      {project.secteur}
+                    </Badge>
+                    <CardTitle className="text-lg text-foreground">
+                      {project.realisation}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      {project.description}
+                    </p>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>
