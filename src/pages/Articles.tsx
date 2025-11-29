@@ -55,7 +55,7 @@ const Articles = () => {
       .from('articles')
       .select('id, title, slug, excerpt, cover_image_url, published_at, created_at')
       .eq('published', true)
-      .eq('resource_type', 'actualite');
+      .eq('resource_type', 'article');
 
     // Apply filters
     if (selectedCategory || selectedTag) {
@@ -73,7 +73,7 @@ const Articles = () => {
           article_tags(tag_id)
         `)
         .eq('published', true)
-        .eq('resource_type', 'actualite');
+        .eq('resource_type', 'article');
 
       if (filteredArticles) {
         const filtered = filteredArticles.filter((article: any) => {
