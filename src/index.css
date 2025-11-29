@@ -118,6 +118,13 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 
+  /* Strong tags dans le contenu des articles utilisent le bleu IArche */
+  article strong,
+  .prose strong {
+    color: hsl(var(--primary));
+    font-weight: 600;
+  }
+
   /* Focus global IArche - utilise la charte graphique */
   *:focus-visible {
     outline: 2px solid hsl(var(--accent));

@@ -13,7 +13,7 @@ const AuthorCard = ({
   photo = '/logo-iarche.svg',
   nom = 'Nicolas LARA',
   fonction = 'CEO & Fondateur IArche',
-  linkedin = 'https://linkedin.com/in/nicolaslara',
+  linkedin = 'https://www.linkedin.com/in/nicolas-lara-queralta/',
   site = 'https://iarche.fr'
 }: AuthorCardProps) => {
   
