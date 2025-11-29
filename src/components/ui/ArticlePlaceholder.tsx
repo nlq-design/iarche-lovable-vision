@@ -2,9 +2,10 @@ import { memo, useEffect, useRef } from 'react';
 
 interface ArticlePlaceholderProps {
   className?: string;
+  size?: 'default' | 'large';
 }
 
-const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) => {
+const ArticlePlaceholder = memo(({ className = '', size = 'default' }: ArticlePlaceholderProps) => {
   const path1Ref = useRef<SVGPathElement>(null);
   const path2Ref = useRef<SVGPathElement>(null);
 
@@ -82,7 +83,9 @@ const ArticlePlaceholder = memo(({ className = '' }: ArticlePlaceholderProps) =>
       
       {/* Logo IArche centré avec gradient animé */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-3xl md:text-4xl font-bold tracking-tight hero-gradient-text">
+        <span className={`font-bold tracking-tight hero-gradient-text ${
+          size === 'large' ? 'text-4xl md:text-5xl' : 'text-3xl md:text-4xl'
+        }`}>
           IArche
         </span>
       </div>
