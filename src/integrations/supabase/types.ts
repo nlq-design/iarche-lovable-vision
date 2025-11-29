@@ -494,6 +494,38 @@ export type Database = {
         }
         Relationships: []
       }
+      faqs: {
+        Row: {
+          article_id: string
+          created_at: string | null
+          id: string
+          questions: Json
+          updated_at: string | null
+        }
+        Insert: {
+          article_id: string
+          created_at?: string | null
+          id?: string
+          questions: Json
+          updated_at?: string | null
+        }
+        Update: {
+          article_id?: string
+          created_at?: string | null
+          id?: string
+          questions?: Json
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faqs_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: true
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           company: string | null

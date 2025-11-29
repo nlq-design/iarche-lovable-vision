@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Save, Eye, History, Calendar as CalendarIcon, Upload, FileText } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, Eye, History, Calendar as CalendarIcon, Upload, FileText, Sparkles } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -22,6 +22,12 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FAQPreviewModal } from '@/components/admin/FAQPreviewModal';
+
+interface FAQItem {
+  question: string;
+  answer: string;
+}
 
 const AdminArticleEditor = () => {
   const { id } = useParams();
@@ -36,6 +42,9 @@ const AdminArticleEditor = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [suggestingTags, setSuggestingTags] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
+  const [generatingFAQ, setGeneratingFAQ] = useState(false);
+  const [faqPreviewOpen, setFaqPreviewOpen] = useState(false);
+  const [generatedFAQ, setGeneratedFAQ] = useState<FAQItem[] | null>(null);
   
   // Déterminer le resource_type depuis la route
   const getResourceTypeFromPath = () => {
@@ -619,6 +628,72 @@ const AdminArticleEditor = () => {
     setIsLoading(false);
   };
 
+  const handleGenerateFAQ = async () => {
+    if (!id || !title || !content) {
+      toast({
+        title: "Contenu insuffisant",
+        description: "Sauvegardez l'article avant de générer la FAQ",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setGeneratingFAQ(true);
+    setFaqPreviewOpen(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-faq', {
+        body: {
+          article_id: id,
+          title,
+          content,
+          resource_type: resourceType
+        }
+      });
+
+      if (error) throw error;
+
+      if (data && data.questions) {
+        setGeneratedFAQ(data.questions);
+        toast({
+          title: "FAQ générée",
+          description: `${data.questions.length} questions créées automatiquement`
+        });
+      }
+    } catch (error) {
+      console.error('Error generating FAQ:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible de générer la FAQ",
+        variant: "destructive"
+      });
+      setFaqPreviewOpen(false);
+    } finally {
+      setGeneratingFAQ(false);
+    }
+  };
+
+  const handleSaveFAQ = () => {
+    if (generatedFAQ && generatedFAQ.length > 0) {
+      toast({
+        title: "FAQ enregistrée",
+        description: "La FAQ a été enregistrée avec succès"
+      });
+      setFaqPreviewOpen(false);
+      setGeneratedFAQ(null);
+    }
+  };
+
+  const handleRegenerateFAQ = async () => {
+    setGeneratedFAQ(null);
+    await handleGenerateFAQ();
+  };
+
+  const handleCloseFAQModal = () => {
+    setFaqPreviewOpen(false);
+    setGeneratedFAQ(null);
+  };
+
   if (authLoading || loadingArticle) {
     return (
       <AdminLayout>
@@ -1121,6 +1196,21 @@ const AdminArticleEditor = () => {
                     <Eye className="mr-2 h-4 w-4" />
                     Prévisualiser
                   </Button>
+                  {id && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleGenerateFAQ}
+                      disabled={isLoading || generatingFAQ}
+                    >
+                      {generatingFAQ ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="mr-2 h-4 w-4" />
+                      )}
+                      FAQ
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="outline"
@@ -1135,6 +1225,15 @@ const AdminArticleEditor = () => {
           </Card>
         </div>
       </div>
+
+      <FAQPreviewModal
+        isOpen={faqPreviewOpen}
+        faqData={generatedFAQ}
+        isGenerating={generatingFAQ}
+        onClose={handleCloseFAQModal}
+        onSave={handleSaveFAQ}
+        onRegenerate={handleRegenerateFAQ}
+      />
     </AdminLayout>
   );
 };

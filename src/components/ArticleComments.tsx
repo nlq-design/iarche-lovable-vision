@@ -121,39 +121,39 @@ export const ArticleComments = ({ articleId }: ArticleCommentsProps) => {
   };
 
   return (
-    <div className="space-y-8">
-      <Card className="bg-background/95 border-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground">
-            <MessageCircle className="h-5 w-5" />
+    <div className="space-y-6">
+      <Card className="bg-background/95 border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-foreground text-lg">
+            <MessageCircle className="h-4 w-4" />
             Commentaires ({comments.length})
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-0">
           {loading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <div className="flex justify-center py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
             </div>
           ) : comments.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
+            <p className="text-muted-foreground text-center py-6 text-sm">
               Aucun commentaire pour le moment. Soyez le premier à commenter !
             </p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {comments.map((comment) => (
                 <div
                   key={comment.id}
-                  className="p-4 rounded-lg border border-border bg-background/50"
+                  className="p-3 rounded-md border border-border/50 bg-background/30"
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-foreground">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-medium text-foreground text-sm">
                       {comment.author_name}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground/80">
                       {formatDate(comment.created_at)}
                     </span>
                   </div>
-                  <p className="text-foreground whitespace-pre-wrap">
+                  <p className="text-foreground text-sm leading-relaxed whitespace-pre-wrap">
                     {comment.content}
                   </p>
                 </div>
@@ -163,27 +163,28 @@ export const ArticleComments = ({ articleId }: ArticleCommentsProps) => {
         </CardContent>
       </Card>
 
-      <Card className="bg-background/95 border-border">
-        <CardHeader>
-          <CardTitle className="text-foreground">
+      <Card className="bg-background/95 border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-foreground text-base">
             Laisser un commentaire
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="pt-0">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="name">Nom *</Label>
+                <Label htmlFor="name" className="text-sm">Nom *</Label>
                 <Input
                   id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Votre nom"
                   required
+                  className="mt-1"
                 />
               </div>
               <div>
-                <Label htmlFor="email">Email *</Label>
+                <Label htmlFor="email" className="text-sm">Email *</Label>
                 <Input
                   id="email"
                   type="email"
@@ -191,27 +192,29 @@ export const ArticleComments = ({ articleId }: ArticleCommentsProps) => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="votre@email.fr"
                   required
+                  className="mt-1"
                 />
               </div>
             </div>
             <div>
-              <Label htmlFor="content">Commentaire *</Label>
+              <Label htmlFor="content" className="text-sm">Commentaire *</Label>
               <Textarea
                 id="content"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Votre commentaire..."
-                rows={4}
+                rows={3}
                 required
+                className="mt-1 resize-none"
               />
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Votre commentaire sera visible après modération.
             </p>
-            <Button type="submit" disabled={submitting}>
+            <Button type="submit" disabled={submitting} size="sm">
               {submitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
                   Envoi...
                 </>
               ) : (

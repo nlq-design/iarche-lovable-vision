@@ -178,6 +178,7 @@ Public cible : professionnels du secteur et décideurs`,
 
 const Redacia = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string>('custom');
+  const [resourceType, setResourceType] = useState<'article' | 'actualite' | 'cas-client'>('article');
   const [brief, setBrief] = useState('');
   const [tone, setTone] = useState<'expert' | 'vulgarise' | 'technique'>('expert');
   const [length, setLength] = useState<'court' | 'moyen' | 'long'>('moyen');
@@ -315,7 +316,8 @@ const Redacia = () => {
         tags: article.tags,
         meta_title: article.metaTitle,
         meta_description: article.metaDescription,
-        published: false
+        published: false,
+        resource_type: resourceType
       });
 
       if (error) throw error;
@@ -350,6 +352,24 @@ const Redacia = () => {
           <h2 className="text-lg font-semibold mb-4">Nouveau brief</h2>
           
           <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Type de ressource
+              </label>
+              <select
+                value={resourceType}
+                onChange={(e) => setResourceType(e.target.value as 'article' | 'actualite' | 'cas-client')}
+                className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-background"
+              >
+                <option value="article">Article (fond)</option>
+                <option value="actualite">Actualité</option>
+                <option value="cas-client">Cas client</option>
+              </select>
+              <p className="text-xs text-muted-foreground mt-2">
+                Le contenu généré sera automatiquement associé à ce type de ressource
+              </p>
+            </div>
+
             <div>
               <label className="block text-sm font-medium mb-2">
                 Type d'article
