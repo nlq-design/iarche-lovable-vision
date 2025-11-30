@@ -47,6 +47,8 @@ const Solutions = () => {
   return (
     <BackgroundLayout>
       <Helmet>
+        <html lang="fr" />
+        <link rel="alternate" hrefLang="fr" href="https://iarche.fr/solutions" />
         <title>Nos solutions · IArche · SaaS IA pour PME</title>
         <meta name="description" content="Solutions IA développées par IArche : Team 5 Connect, Lexia, Dialogue Plus. Ce qu'on conseille, on le construit aussi." />
         <link rel="canonical" href="https://iarche.fr/solutions" />

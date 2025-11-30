@@ -36,6 +36,8 @@ const ServiceDetail = () => {
   return (
     <BackgroundLayout>
       <Helmet>
+        <html lang="fr" />
+        <link rel="alternate" hrefLang="fr" href={getCanonicalUrl()} />
         <title>{service.title} · IArche · Services IA</title>
         <meta name="description" content={service.description} />
         <link rel="canonical" href={getCanonicalUrl()} />
