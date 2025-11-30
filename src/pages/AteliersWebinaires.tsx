@@ -172,6 +172,12 @@ const AteliersWebinaires = () => {
                             month: 'long',
                             year: 'numeric'
                           })}
+                          {/* Badge événement passé */}
+                          {new Date(item.event_date) < new Date() && (
+                            <Badge variant="secondary" className="ml-2">
+                              {item.type_evenement === 'webinaire' ? 'Replay' : 'Terminé'}
+                            </Badge>
+                          )}
                         </div>
                       )}
                       
