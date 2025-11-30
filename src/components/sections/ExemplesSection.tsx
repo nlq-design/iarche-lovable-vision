@@ -51,21 +51,21 @@ const ExemplesSection = () => {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="max-w-4xl mx-auto space-y-4 invisible animate-fadeIn [animation-delay:0.2s]">
+              <div className="max-w-4xl mx-auto space-y-3 invisible animate-fadeIn [animation-delay:0.2s]">
                 {casClients.map((casClient, index) => (
                   <NavLink key={casClient.id} to={`/cas-clients/${casClient.slug}`}>
                     <div className="relative rounded-lg p-[2px] bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_100%] hover:bg-[length:100%_100%] transition-all duration-500 cursor-pointer group">
                       <div 
-                        className="bg-background rounded-lg p-4 h-full"
+                        className="bg-background rounded-lg p-3 h-full"
                       >
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-1.5">
                           <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
                             {casClient.title}
                           </h3>
                           <p className="text-sm text-muted-foreground leading-relaxed">
                             {casClient.excerpt}
                           </p>
-                          <div className="pt-1">
+                          <div>
                             <GradientLink 
                               href={`/cas-clients/${casClient.slug}`}
                               onClick={() => trackCTAClick('voir_projet', 'exemples_section', casClient.slug)}
