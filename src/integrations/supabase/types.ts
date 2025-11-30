@@ -228,27 +228,37 @@ export type Database = {
           ai_source: string | null
           author: string | null
           author_id: string | null
+          certificat_delivre: boolean | null
           compteur_telechargements: number | null
           content: string
           cover_image_url: string | null
           created_at: string | null
+          cta_evenement_personnalise: string | null
           cta_personnalise: string | null
+          documents_telechargeables: Json | null
+          duree_heures: number | null
           event_date: string | null
           event_location: string | null
           excerpt: string | null
           faq: Json | null
           file_url: string | null
           format_fichier: string | null
+          heure_debut: string | null
           id: string
+          intervenants: Json | null
           langues_disponibles: string[] | null
           max_participants: number | null
           meta_description: string | null
           meta_title: string | null
           niveau: string | null
           nombre_pages: number | null
+          outils_requis: string[] | null
+          prerequis: string | null
           problematique: string | null
+          programme_detaille: Json | null
           published: boolean | null
           published_at: string | null
+          rappels_automatiques: boolean | null
           registration_open: boolean | null
           replay_url: string | null
           resource_type: string
@@ -256,6 +266,7 @@ export type Database = {
           scheduled_publish_at: string | null
           secteur_activite: string | null
           slug: string
+          sondage_post_evenement_url: string | null
           source_externe: Json | null
           status: string | null
           tags: string[] | null
@@ -263,6 +274,7 @@ export type Database = {
           taille_fichier_bytes: number | null
           thematiques: string[] | null
           title: string
+          type_evenement: string | null
           updated_at: string | null
           version_document: string | null
         }
@@ -271,27 +283,37 @@ export type Database = {
           ai_source?: string | null
           author?: string | null
           author_id?: string | null
+          certificat_delivre?: boolean | null
           compteur_telechargements?: number | null
           content: string
           cover_image_url?: string | null
           created_at?: string | null
+          cta_evenement_personnalise?: string | null
           cta_personnalise?: string | null
+          documents_telechargeables?: Json | null
+          duree_heures?: number | null
           event_date?: string | null
           event_location?: string | null
           excerpt?: string | null
           faq?: Json | null
           file_url?: string | null
           format_fichier?: string | null
+          heure_debut?: string | null
           id?: string
+          intervenants?: Json | null
           langues_disponibles?: string[] | null
           max_participants?: number | null
           meta_description?: string | null
           meta_title?: string | null
           niveau?: string | null
           nombre_pages?: number | null
+          outils_requis?: string[] | null
+          prerequis?: string | null
           problematique?: string | null
+          programme_detaille?: Json | null
           published?: boolean | null
           published_at?: string | null
+          rappels_automatiques?: boolean | null
           registration_open?: boolean | null
           replay_url?: string | null
           resource_type?: string
@@ -299,6 +321,7 @@ export type Database = {
           scheduled_publish_at?: string | null
           secteur_activite?: string | null
           slug: string
+          sondage_post_evenement_url?: string | null
           source_externe?: Json | null
           status?: string | null
           tags?: string[] | null
@@ -306,6 +329,7 @@ export type Database = {
           taille_fichier_bytes?: number | null
           thematiques?: string[] | null
           title: string
+          type_evenement?: string | null
           updated_at?: string | null
           version_document?: string | null
         }
@@ -314,27 +338,37 @@ export type Database = {
           ai_source?: string | null
           author?: string | null
           author_id?: string | null
+          certificat_delivre?: boolean | null
           compteur_telechargements?: number | null
           content?: string
           cover_image_url?: string | null
           created_at?: string | null
+          cta_evenement_personnalise?: string | null
           cta_personnalise?: string | null
+          documents_telechargeables?: Json | null
+          duree_heures?: number | null
           event_date?: string | null
           event_location?: string | null
           excerpt?: string | null
           faq?: Json | null
           file_url?: string | null
           format_fichier?: string | null
+          heure_debut?: string | null
           id?: string
+          intervenants?: Json | null
           langues_disponibles?: string[] | null
           max_participants?: number | null
           meta_description?: string | null
           meta_title?: string | null
           niveau?: string | null
           nombre_pages?: number | null
+          outils_requis?: string[] | null
+          prerequis?: string | null
           problematique?: string | null
+          programme_detaille?: Json | null
           published?: boolean | null
           published_at?: string | null
+          rappels_automatiques?: boolean | null
           registration_open?: boolean | null
           replay_url?: string | null
           resource_type?: string
@@ -342,6 +376,7 @@ export type Database = {
           scheduled_publish_at?: string | null
           secteur_activite?: string | null
           slug?: string
+          sondage_post_evenement_url?: string | null
           source_externe?: Json | null
           status?: string | null
           tags?: string[] | null
@@ -349,6 +384,7 @@ export type Database = {
           taille_fichier_bytes?: number | null
           thematiques?: string[] | null
           title?: string
+          type_evenement?: string | null
           updated_at?: string | null
           version_document?: string | null
         }

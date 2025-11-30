@@ -115,6 +115,21 @@ const AdminArticleEditor = () => {
   const [versionDocument, setVersionDocument] = useState<string>('1.0');
   const [ctaPersonnalise, setCtaPersonnalise] = useState<string>('');
   const [compteurTelechargements, setCompteurTelechargements] = useState<number>(0);
+  
+  // Champs spécifiques aux ateliers-webinaires
+  const [dureeHeures, setDureeHeures] = useState<number>(0);
+  const [heureDebut, setHeureDebut] = useState<string>('');
+  const [typeEvenement, setTypeEvenement] = useState<string>('');
+  const [prerequis, setPrerequis] = useState<string>('');
+  const [programmeDetaille, setProgrammeDetaille] = useState<Array<{ heure: string; sujet: string }>>([]);
+  const [intervenants, setIntervenants] = useState<Array<{ nom: string; fonction: string; photo_url: string }>>([]);
+  const [outilsRequis, setOutilsRequis] = useState<string[]>([]);
+  const [certificatDelivre, setCertificatDelivre] = useState<boolean>(false);
+  const [sondagePostEvenementUrl, setSondagePostEvenementUrl] = useState<string>('');
+  const [documentsTelechargeables, setDocumentsTelechargeables] = useState<Array<{ nom: string; file_url: string }>>([]);
+  const [rappelsAutomatiques, setRappelsAutomatiques] = useState<boolean>(false);
+  const [ctaEvenementPersonnalise, setCtaEvenementPersonnalise] = useState<string>('');
+  const [compteurInscrits, setCompteurInscrits] = useState<number>(0);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -133,6 +148,24 @@ const AdminArticleEditor = () => {
       loadCategoriesAndTags();
     }
   }, [user, isAdmin]);
+  
+  // Charger le compteur d'inscrits pour les ateliers-webinaires
+  useEffect(() => {
+    const loadInscriptionsCount = async () => {
+      if (id && resourceType === 'atelier-webinaire') {
+        const { data, error } = await supabase.rpc('count_atelier_inscriptions', { atelier_uuid: id });
+        if (!error && typeof data === 'number') {
+          setCompteurInscrits(data);
+        }
+      }
+    };
+    
+    loadInscriptionsCount();
+    
+    // Rafraîchir toutes les 5 secondes
+    const interval = setInterval(loadInscriptionsCount, 5000);
+    return () => clearInterval(interval);
+  }, [id, resourceType]);
 
   // Auto-save toutes les 30 secondes
   useEffect(() => {
@@ -223,6 +256,30 @@ const AdminArticleEditor = () => {
       setVersionDocument(data.version_document || '1.0');
       setCtaPersonnalise(data.cta_personnalise || '');
       setCompteurTelechargements(data.compteur_telechargements || 0);
+      setDureeHeures(data.duree_heures || 0);
+      setHeureDebut(data.heure_debut || '');
+      setTypeEvenement(data.type_evenement || '');
+      setPrerequis(data.prerequis || '');
+      setProgrammeDetaille(
+        Array.isArray(data.programme_detaille) 
+          ? data.programme_detaille as Array<{ heure: string; sujet: string }> 
+          : []
+      );
+      setIntervenants(
+        Array.isArray(data.intervenants) 
+          ? data.intervenants as Array<{ nom: string; fonction: string; photo_url: string }> 
+          : []
+      );
+      setOutilsRequis(data.outils_requis || []);
+      setCertificatDelivre(data.certificat_delivre || false);
+      setSondagePostEvenementUrl(data.sondage_post_evenement_url || '');
+      setDocumentsTelechargeables(
+        Array.isArray(data.documents_telechargeables) 
+          ? data.documents_telechargeables as Array<{ nom: string; file_url: string }> 
+          : []
+      );
+      setRappelsAutomatiques(data.rappels_automatiques || false);
+      setCtaEvenementPersonnalise(data.cta_evenement_personnalise || '');
 
       // Charger les catégories de l'article
       const { data: articleCategories } = await supabase
@@ -299,6 +356,18 @@ const AdminArticleEditor = () => {
       thematiques: thematiques.length > 0 ? thematiques : null,
       version_document: versionDocument || '1.0',
       cta_personnalise: ctaPersonnalise || null,
+      duree_heures: dureeHeures > 0 ? dureeHeures : null,
+      heure_debut: heureDebut || null,
+      type_evenement: typeEvenement || null,
+      prerequis: prerequis || null,
+      programme_detaille: programmeDetaille.length > 0 ? programmeDetaille : null,
+      intervenants: intervenants.length > 0 ? intervenants : null,
+      outils_requis: outilsRequis.length > 0 ? outilsRequis : null,
+      certificat_delivre: certificatDelivre,
+      sondage_post_evenement_url: sondagePostEvenementUrl || null,
+      documents_telechargeables: documentsTelechargeables.length > 0 ? documentsTelechargeables : null,
+      rappels_automatiques: rappelsAutomatiques,
+      cta_evenement_personnalise: ctaEvenementPersonnalise || null,
     };
 
     try {
@@ -566,6 +635,18 @@ const AdminArticleEditor = () => {
       thematiques: thematiques.length > 0 ? thematiques : null,
       version_document: versionDocument || '1.0',
       cta_personnalise: ctaPersonnalise || null,
+      duree_heures: dureeHeures > 0 ? dureeHeures : null,
+      heure_debut: heureDebut || null,
+      type_evenement: typeEvenement || null,
+      prerequis: prerequis || null,
+      programme_detaille: programmeDetaille.length > 0 ? programmeDetaille : null,
+      intervenants: intervenants.length > 0 ? intervenants : null,
+      outils_requis: outilsRequis.length > 0 ? outilsRequis : null,
+      certificat_delivre: certificatDelivre,
+      sondage_post_evenement_url: sondagePostEvenementUrl || null,
+      documents_telechargeables: documentsTelechargeables.length > 0 ? documentsTelechargeables : null,
+      rappels_automatiques: rappelsAutomatiques,
+      cta_evenement_personnalise: ctaEvenementPersonnalise || null,
     };
 
     if (id) {
@@ -1165,82 +1246,180 @@ const AdminArticleEditor = () => {
                 )}
 
                 {resourceType === 'atelier-webinaire' && (
-                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                    <h3 className="font-semibold text-foreground">Informations événement</h3>
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg max-h-[600px] overflow-y-auto">
+                    <h3 className="font-semibold text-foreground sticky top-0 bg-muted/50 pb-2">Informations événement</h3>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="eventDate">Date de l'événement *</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn("w-full justify-start text-left font-normal", !eventDate && "text-muted-foreground")}
+                              disabled={isLoading}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {eventDate ? format(eventDate, "PPP", { locale: fr }) : "Choisir une date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={eventDate} onSelect={setEventDate} initialFocus className="pointer-events-auto" />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="heureDebut">Heure de début</Label>
+                        <Input id="heureDebut" type="time" value={heureDebut} onChange={(e) => setHeureDebut(e.target.value)} disabled={isLoading} />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="dureeHeures">Durée (heures)</Label>
+                        <Input id="dureeHeures" type="number" step="0.5" value={dureeHeures || ''} onChange={(e) => setDureeHeures(parseFloat(e.target.value) || 0)} disabled={isLoading} placeholder="Ex: 2" />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="typeEvenement">Type d'événement</Label>
+                        <Select value={typeEvenement} onValueChange={setTypeEvenement} disabled={isLoading}>
+                          <SelectTrigger><SelectValue placeholder="Sélectionner un type" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="presentiel">Présentiel</SelectItem>
+                            <SelectItem value="webinaire">Webinaire</SelectItem>
+                            <SelectItem value="hybride">Hybride</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="eventDate">Date de l'événement</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !eventDate && "text-muted-foreground"
-                            )}
-                            disabled={isLoading}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {eventDate ? format(eventDate, "PPP 'à' HH:mm", { locale: fr }) : "Choisir une date"}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={eventDate}
-                            onSelect={setEventDate}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <Label htmlFor="eventLocation">Lieu</Label>
+                      <Input id="eventLocation" value={eventLocation} onChange={(e) => setEventLocation(e.target.value)} disabled={isLoading} placeholder="Ex: Visio, Bayonne, Paris..." />
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="eventLocation">Lieu de l'événement</Label>
-                      <Input
-                        id="eventLocation"
-                        value={eventLocation}
-                        onChange={(e) => setEventLocation(e.target.value)}
-                        disabled={isLoading}
-                        placeholder="Ex: Visio, Bayonne, Paris..."
-                      />
-                    </div>
-
+                    
                     <div className="space-y-2">
                       <Label htmlFor="maxParticipants">Nombre maximum de participants</Label>
-                      <Input
-                        id="maxParticipants"
-                        type="number"
-                        value={maxParticipants}
-                        onChange={(e) => setMaxParticipants(parseInt(e.target.value))}
-                        disabled={isLoading}
-                        min="1"
-                      />
+                      <Input id="maxParticipants" type="number" value={maxParticipants} onChange={(e) => setMaxParticipants(parseInt(e.target.value))} disabled={isLoading} min="1" />
                     </div>
-
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="prerequis">Prérequis</Label>
+                      <Textarea id="prerequis" value={prerequis} onChange={(e) => setPrerequis(e.target.value)} rows={3} disabled={isLoading} placeholder="Connaissances ou matériel requis..." />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Outils requis</Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {['Laptop', 'Connexion internet', 'Compte GitHub', 'IDE installé'].map((outil) => (
+                          <div key={outil} className="flex items-center space-x-2">
+                            <Checkbox id={`outil-${outil}`} checked={outilsRequis.includes(outil)} onCheckedChange={(checked) => { if (checked) setOutilsRequis([...outilsRequis, outil]); else setOutilsRequis(outilsRequis.filter(o => o !== outil)); }} disabled={isLoading} />
+                            <label htmlFor={`outil-${outil}`} className="text-sm cursor-pointer">{outil}</label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label>Programme détaillé</Label>
+                        <Button type="button" variant="outline" size="sm" onClick={() => setProgrammeDetaille([...programmeDetaille, { heure: '', sujet: '' }])} disabled={isLoading}>+ Ajouter</Button>
+                      </div>
+                      {programmeDetaille.map((item, index) => (
+                        <Card key={index} className="p-3">
+                          <div className="grid grid-cols-[100px_1fr_auto] gap-2 items-center">
+                            <Input placeholder="10:00" value={item.heure} onChange={(e) => { const newProg = [...programmeDetaille]; newProg[index].heure = e.target.value; setProgrammeDetaille(newProg); }} disabled={isLoading} />
+                            <Input placeholder="Sujet..." value={item.sujet} onChange={(e) => { const newProg = [...programmeDetaille]; newProg[index].sujet = e.target.value; setProgrammeDetaille(newProg); }} disabled={isLoading} />
+                            <Button type="button" variant="outline" size="icon" onClick={() => setProgrammeDetaille(programmeDetaille.filter((_, i) => i !== index))} disabled={isLoading}>×</Button>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label>Intervenants</Label>
+                        <Button type="button" variant="outline" size="sm" onClick={() => setIntervenants([...intervenants, { nom: '', fonction: '', photo_url: '' }])} disabled={isLoading}>+ Ajouter</Button>
+                      </div>
+                      {intervenants.map((intervenant, index) => (
+                        <Card key={index} className="p-3 space-y-2">
+                          <Input placeholder="Nom" value={intervenant.nom} onChange={(e) => { const newInt = [...intervenants]; newInt[index].nom = e.target.value; setIntervenants(newInt); }} disabled={isLoading} />
+                          <Input placeholder="Fonction" value={intervenant.fonction} onChange={(e) => { const newInt = [...intervenants]; newInt[index].fonction = e.target.value; setIntervenants(newInt); }} disabled={isLoading} />
+                          <div className="flex gap-2">
+                            <Input placeholder="Photo URL" value={intervenant.photo_url} onChange={(e) => { const newInt = [...intervenants]; newInt[index].photo_url = e.target.value; setIntervenants(newInt); }} disabled={isLoading} />
+                            <Button type="button" variant="outline" size="icon" onClick={() => setIntervenants(intervenants.filter((_, i) => i !== index))} disabled={isLoading}>×</Button>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label>Documents à télécharger</Label>
+                        <Button type="button" variant="outline" size="sm" onClick={() => setDocumentsTelechargeables([...documentsTelechargeables, { nom: '', file_url: '' }])} disabled={isLoading}>+ Ajouter</Button>
+                      </div>
+                      {documentsTelechargeables.map((doc, index) => (
+                        <Card key={index} className="p-3">
+                          <div className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
+                            <Input placeholder="Nom du document" value={doc.nom} onChange={(e) => { const newDocs = [...documentsTelechargeables]; newDocs[index].nom = e.target.value; setDocumentsTelechargeables(newDocs); }} disabled={isLoading} />
+                            <Input placeholder="URL" value={doc.file_url} onChange={(e) => { const newDocs = [...documentsTelechargeables]; newDocs[index].file_url = e.target.value; setDocumentsTelechargeables(newDocs); }} disabled={isLoading} />
+                            <Button type="button" variant="outline" size="icon" onClick={() => setDocumentsTelechargeables(documentsTelechargeables.filter((_, i) => i !== index))} disabled={isLoading}>×</Button>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                    
                     <div className="flex items-center space-x-2">
-                      <Switch
-                        id="registrationOpen"
-                        checked={registrationOpen}
-                        onCheckedChange={setRegistrationOpen}
-                        disabled={isLoading}
-                      />
-                      <Label htmlFor="registrationOpen" className="cursor-pointer">
-                        Inscriptions ouvertes
-                      </Label>
+                      <Switch id="registrationOpen" checked={registrationOpen} onCheckedChange={setRegistrationOpen} disabled={isLoading} />
+                      <Label htmlFor="registrationOpen" className="cursor-pointer">Inscriptions ouvertes</Label>
                     </div>
-
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch id="certificatDelivre" checked={certificatDelivre} onCheckedChange={setCertificatDelivre} disabled={isLoading} />
+                      <Label htmlFor="certificatDelivre" className="cursor-pointer">Certificat délivré</Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch id="rappelsAutomatiques" checked={rappelsAutomatiques} onCheckedChange={setRappelsAutomatiques} disabled={isLoading} />
+                      <Label htmlFor="rappelsAutomatiques" className="cursor-pointer">Rappels automatiques (J-3, J-1, H-2)</Label>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="ctaEvenementPersonnalise">CTA personnalisé</Label>
+                      <Input id="ctaEvenementPersonnalise" value={ctaEvenementPersonnalise} onChange={(e) => setCtaEvenementPersonnalise(e.target.value)} disabled={isLoading} placeholder="Défaut: S'inscrire à la session" />
+                    </div>
+                    
                     <div className="space-y-2">
                       <Label htmlFor="replayUrl">URL du replay (optionnel)</Label>
-                      <Input
-                        id="replayUrl"
-                        type="url"
-                        value={replayUrl}
-                        onChange={(e) => setReplayUrl(e.target.value)}
-                        disabled={isLoading}
-                        placeholder="https://..."
-                      />
+                      <Input id="replayUrl" type="url" value={replayUrl} onChange={(e) => setReplayUrl(e.target.value)} disabled={isLoading} placeholder="https://..." />
                     </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="sondagePostEvenementUrl">URL sondage post-événement (optionnel)</Label>
+                      <Input id="sondagePostEvenementUrl" type="url" value={sondagePostEvenementUrl} onChange={(e) => setSondagePostEvenementUrl(e.target.value)} disabled={isLoading} placeholder="https://..." />
+                    </div>
+                    
+                    {/* Compteur inscrits temps réel (admin only) */}
+                    {id && (
+                      <div className="p-4 bg-accent/10 rounded-lg border-2 border-accent/30">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-foreground">Inscriptions en temps réel</p>
+                            <p className="text-xs text-muted-foreground mt-1">Mis à jour toutes les 5 secondes</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-3xl font-bold text-accent">{compteurInscrits}</p>
+                            <p className="text-xs text-muted-foreground">/ {maxParticipants} places</p>
+                          </div>
+                        </div>
+                        {compteurInscrits >= maxParticipants && (
+                          <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-800 font-medium text-center">
+                            ⚠️ COMPLET - Liste d'attente activée automatiquement
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 

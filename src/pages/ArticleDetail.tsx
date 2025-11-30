@@ -57,6 +57,19 @@ interface Article {
   version_document: string | null;
   cta_personnalise: string | null;
   compteur_telechargements: number | null;
+  duree_heures: number | null;
+  heure_debut: string | null;
+  type_evenement: string | null;
+  prerequis: string | null;
+  programme_detaille: any;
+  intervenants: any;
+  outils_requis: string[] | null;
+  certificat_delivre: boolean | null;
+  sondage_post_evenement_url: string | null;
+  documents_telechargeables: any;
+  rappels_automatiques: boolean | null;
+  cta_evenement_personnalise: string | null;
+  max_participants: number | null;
 }
 
 const ArticleDetail = () => {
@@ -68,6 +81,7 @@ const ArticleDetail = () => {
   const [article, setArticle] = useState<Article | null>(null);
   const [faq, setFaq] = useState<Array<{ question: string; answer: string }>>([]);
   const [loading, setLoading] = useState(true);
+  const [inscriptionsCount, setInscriptionsCount] = useState<number>(0);
 
   useEffect(() => {
     if (slug) {
@@ -89,6 +103,21 @@ const ArticleDetail = () => {
     // Load FAQ if article is loaded
     if (article?.id) {
       loadFAQ();
+    }
+    
+    // Load inscriptions count for ateliers-webinaires
+    if (article?.id && article?.resource_type === 'atelier-webinaire') {
+      const loadInscriptionsCount = async () => {
+        const { data } = await supabase.rpc('count_atelier_inscriptions', { atelier_uuid: article.id });
+        if (typeof data === 'number') {
+          setInscriptionsCount(data);
+        }
+      };
+      loadInscriptionsCount();
+      
+      // Rafraîchir toutes les 10 secondes
+      const interval = setInterval(loadInscriptionsCount, 10000);
+      return () => clearInterval(interval);
     }
   }, [article?.id]);
 
@@ -706,6 +735,120 @@ const ArticleDetail = () => {
                   )}
                 </div>
               )}
+              
+              {/* Informations atelier-webinaire (après le contenu) */}
+              {article.resource_type === 'atelier-webinaire' && (
+                <div className="mt-8 space-y-6 animate-fadeIn">
+                  {/* Informations principales */}
+                  <div className="p-6 bg-muted/30 border border-border rounded-xl space-y-4">
+                    <h3 className="text-lg font-semibold text-foreground">Détails de l'événement</h3>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {article.duree_heures && (
+                        <div className="flex flex-col">
+                          <span className="text-xs text-muted-foreground mb-1">Durée</span>
+                          <span className="text-sm font-medium text-foreground">{article.duree_heures}h</span>
+                        </div>
+                      )}
+                      
+                      {article.heure_debut && (
+                        <div className="flex flex-col">
+                          <span className="text-xs text-muted-foreground mb-1">Heure de début</span>
+                          <span className="text-sm font-medium text-foreground">{article.heure_debut}</span>
+                        </div>
+                      )}
+                      
+                      {article.type_evenement && (
+                        <div className="flex flex-col">
+                          <span className="text-xs text-muted-foreground mb-1">Type</span>
+                          <Badge variant="secondary" className="text-sm w-fit">
+                            {article.type_evenement === 'presentiel' && 'Présentiel'}
+                            {article.type_evenement === 'webinaire' && 'Webinaire'}
+                            {article.type_evenement === 'hybride' && 'Hybride'}
+                          </Badge>
+                        </div>
+                      )}
+                      
+                      {article.certificat_delivre && (
+                        <div className="flex flex-col">
+                          <span className="text-xs text-muted-foreground mb-1">Certificat</span>
+                          <Badge variant="default" className="text-sm w-fit">✓ Certificat délivré</Badge>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Prérequis */}
+                  {article.prerequis && (
+                    <div className="p-6 bg-muted/30 border border-border rounded-xl">
+                      <h4 className="text-sm font-semibold text-foreground mb-3">Prérequis</h4>
+                      <p className="text-base text-muted-foreground leading-relaxed">{article.prerequis}</p>
+                    </div>
+                  )}
+                  
+                  {/* Outils requis */}
+                  {article.outils_requis && article.outils_requis.length > 0 && (
+                    <div className="p-6 bg-muted/30 border border-border rounded-xl">
+                      <h4 className="text-sm font-semibold text-foreground mb-3">Outils requis</h4>
+                      <div className="flex gap-2 flex-wrap">
+                        {article.outils_requis.map((outil) => (
+                          <Badge key={outil} variant="outline" className="text-sm">{outil}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Programme détaillé */}
+                  {article.programme_detaille && Array.isArray(article.programme_detaille) && article.programme_detaille.length > 0 && (
+                    <div className="p-6 bg-muted/30 border border-border rounded-xl">
+                      <h4 className="text-sm font-semibold text-foreground mb-4">Programme détaillé</h4>
+                      <div className="space-y-3">
+                        {article.programme_detaille.map((item: any, index: number) => (
+                          <div key={index} className="flex gap-4 items-start">
+                            <span className="text-sm font-medium text-accent min-w-[60px]">{item.heure}</span>
+                            <span className="text-sm text-foreground">{item.sujet}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Intervenants */}
+                  {article.intervenants && Array.isArray(article.intervenants) && article.intervenants.length > 0 && (
+                    <div className="p-6 bg-muted/30 border border-border rounded-xl">
+                      <h4 className="text-sm font-semibold text-foreground mb-4">Intervenants</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {article.intervenants.map((intervenant: any, index: number) => (
+                          <div key={index} className="flex gap-4 items-center p-4 bg-background/50 rounded-lg">
+                            {intervenant.photo_url && (
+                              <img src={intervenant.photo_url} alt={intervenant.nom} className="w-16 h-16 rounded-full object-cover" />
+                            )}
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">{intervenant.nom}</p>
+                              <p className="text-xs text-muted-foreground">{intervenant.fonction}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Documents à télécharger */}
+                  {article.documents_telechargeables && Array.isArray(article.documents_telechargeables) && article.documents_telechargeables.length > 0 && (
+                    <div className="p-6 bg-muted/30 border border-border rounded-xl">
+                      <h4 className="text-sm font-semibold text-foreground mb-4">Documents à télécharger</h4>
+                      <div className="space-y-2">
+                        {article.documents_telechargeables.map((doc: any, index: number) => (
+                          <a key={index} href={doc.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:text-accent transition-colors">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            <span className="text-sm font-medium">{doc.nom}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Table des matières - sidebar droite (uniquement pour articles) */}
@@ -738,10 +881,60 @@ const ArticleDetail = () => {
             </div>
           )}
 
-          {/* 5. CTA - Formulaire spécifique pour solutions */}
+          {/* 5. CTA - Logique selon resource_type */}
           {article.resource_type === 'solution' ? (
             <div className="my-12">
               <SolutionContactForm solutionName={article.title} />
+            </div>
+          ) : article.resource_type === 'atelier-webinaire' ? (
+            <div className="my-12 animate-fadeIn [animation-delay:0.6s]">
+              {/* Si inscriptions ouvertes et places disponibles */}
+              {article.registration_open && inscriptionsCount < (article.max_participants || 30) ? (
+                <div className="text-center p-8 bg-accent/5 border-2 border-accent/20 rounded-xl">
+                  <p className="text-lg font-semibold text-foreground mb-2">
+                    {article.cta_evenement_personnalise || "S'inscrire à la session"}
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    {(article.max_participants || 30) - inscriptionsCount} places restantes
+                  </p>
+                  <GradientLink href="/contact" className="text-base">
+                    Je m'inscris →
+                  </GradientLink>
+                </div>
+              ) : inscriptionsCount >= (article.max_participants || 30) ? (
+                /* Si complet - liste d'attente */
+                <div className="text-center p-8 bg-red-50 border-2 border-red-200 rounded-xl">
+                  <p className="text-lg font-bold text-red-800 mb-2">
+                    🚫 Événement complet ({inscriptionsCount}/{article.max_participants || 30} inscrits)
+                  </p>
+                  <p className="text-sm text-red-700 mb-6">
+                    Rejoignez la liste d'attente pour être prévenu en cas de désistement
+                  </p>
+                  <GradientLink href="/contact" className="text-base">
+                    Rejoindre la liste d'attente →
+                  </GradientLink>
+                </div>
+              ) : article.replay_url ? (
+                /* Si replay disponible */
+                <div className="text-center p-8 bg-primary/5 border-2 border-primary/20 rounded-xl">
+                  <p className="text-lg font-semibold text-foreground mb-2">
+                    📺 Replay disponible
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    Inscriptions fermées - Visionnez le replay de cette session
+                  </p>
+                  <a href={article.replay_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-base font-medium hero-gradient-text hover:opacity-80 transition-opacity">
+                    Voir le replay →
+                  </a>
+                </div>
+              ) : (
+                /* Inscriptions fermées sans replay */
+                <div className="text-center p-8 bg-muted/30 border border-border rounded-xl">
+                  <p className="text-lg font-medium text-muted-foreground">
+                    Inscriptions fermées
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center my-12 animate-fadeIn [animation-delay:0.6s]">

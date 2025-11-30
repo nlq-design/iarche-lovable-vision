@@ -5,6 +5,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { NavLink } from '@/components/NavLink';
 import { Loader2, Calendar } from 'lucide-react';
@@ -27,6 +28,9 @@ interface AtelierWebinaire {
   cover_image_url: string | null;
   published_at: string | null;
   created_at: string;
+  max_participants: number | null;
+  registration_open: boolean | null;
+  inscriptions_count?: number;
 }
 
 const AteliersWebinaires = () => {
@@ -47,15 +51,24 @@ const AteliersWebinaires = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('articles')
-      .select('id, title, slug, excerpt, cover_image_url, published_at, created_at')
+      .select('id, title, slug, excerpt, cover_image_url, published_at, created_at, max_participants, registration_open')
       .eq('published', true)
       .eq('resource_type', 'atelier-webinaire')
       .order('published_at', { ascending: false });
 
     if (error) {
       console.error('Erreur lors du chargement des ateliers et webinaires:', error);
+      setAteliersWebinaires([]);
     } else {
-      setAteliersWebinaires(data || []);
+      // Charger le compteur pour chaque atelier
+      const ateliersWithCount = await Promise.all((data || []).map(async (atelier) => {
+        const { data: countData } = await supabase.rpc('count_atelier_inscriptions', { atelier_uuid: atelier.id });
+        return {
+          ...atelier,
+          inscriptions_count: typeof countData === 'number' ? countData : 0
+        };
+      }));
+      setAteliersWebinaires(ateliersWithCount);
     }
     setLoading(false);
   };
@@ -145,6 +158,21 @@ const AteliersWebinaires = () => {
                           {item.excerpt}
                         </p>
                       )}
+                      
+                      {/* Badge Complet si places atteintes */}
+                      {item.max_participants && item.inscriptions_count !== undefined && item.inscriptions_count >= item.max_participants && (
+                        <Badge variant="destructive" className="text-xs">
+                          🚫 COMPLET ({item.inscriptions_count}/{item.max_participants})
+                        </Badge>
+                      )}
+                      
+                      {/* Places disponibles si pas complet */}
+                      {item.max_participants && item.inscriptions_count !== undefined && item.inscriptions_count < item.max_participants && item.registration_open && (
+                        <Badge variant="secondary" className="text-xs">
+                          {item.max_participants - item.inscriptions_count} places disponibles
+                        </Badge>
+                      )}
+                      
                       {/* Date discrète en bas */}
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 pt-1">
                         <Calendar className="h-3 w-3" aria-hidden="true" />
