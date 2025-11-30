@@ -54,3 +54,6 @@ verify_jwt = true
 [functions.enrich-content-seo]
 verify_jwt = true
 
+[functions.enrich-all-resources]
+verify_jwt = true
+

@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 import { 
   Loader2, 
   Smartphone, 
@@ -23,7 +24,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   Copy,
-  Download
+  Download,
+  Sparkles
 } from 'lucide-react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import {
@@ -58,6 +60,10 @@ const AdminSettings = () => {
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [showRecoveryCodes, setShowRecoveryCodes] = useState(false);
   const [enrollmentStep, setEnrollmentStep] = useState<'initial' | 'verify' | 'complete'>('initial');
+
+  // SEO Enrichment States
+  const [enriching, setEnriching] = useState(false);
+  const [enrichmentResults, setEnrichmentResults] = useState<any>(null);
 
   useEffect(() => {
     loadSessions();
@@ -289,6 +295,47 @@ const AdminSettings = () => {
     });
   };
 
+  const handleEnrichAllResources = async () => {
+    setEnriching(true);
+    setEnrichmentResults(null);
+
+    try {
+      toast({
+        title: 'Enrichissement en cours',
+        description: 'Le processus peut prendre plusieurs minutes...',
+      });
+
+      const { data, error } = await supabase.functions.invoke('enrich-all-resources');
+
+      if (error) {
+        console.error('Enrichment error:', error);
+        toast({
+          title: 'Erreur',
+          description: error.message || 'Impossible de lancer l\'enrichissement',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setEnrichmentResults(data.results);
+      
+      toast({
+        title: 'Enrichissement terminé',
+        description: `${data.results.enriched} ressources enrichies, ${data.results.skipped} déjà enrichies, ${data.results.failed} échecs`,
+      });
+
+    } catch (error: any) {
+      console.error('Enrichment error:', error);
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Erreur lors de l\'enrichissement',
+        variant: 'destructive',
+      });
+    } finally {
+      setEnriching(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <Helmet>
@@ -299,17 +346,18 @@ const AdminSettings = () => {
       <div className="px-6 py-8">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold text-foreground mb-1">
-            Paramètres de sécurité
+            Paramètres admin
           </h1>
           <p className="text-muted-foreground">
-            Gérez vos sessions actives et configurez l'authentification à deux facteurs
+            Gérez la sécurité, les sessions et les outils SEO
           </p>
         </div>
 
         <Tabs defaultValue="sessions" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsList className="grid w-full grid-cols-3 max-w-2xl">
             <TabsTrigger value="sessions">Sessions actives</TabsTrigger>
             <TabsTrigger value="2fa">Authentification 2FA</TabsTrigger>
+            <TabsTrigger value="seo">SEO Enrichissement</TabsTrigger>
           </TabsList>
 
           {/* Sessions Tab */}
@@ -644,6 +692,103 @@ const AdminSettings = () => {
                     </Button>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* SEO Tab */}
+          <TabsContent value="seo" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Enrichissement SEO automatique</CardTitle>
+                <CardDescription>
+                  Appliquer l'enrichissement SEO à toutes les ressources existantes (articles, actualités, cas-clients, livres-blancs, ateliers-webinaires)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    Cette opération va analyser et enrichir automatiquement toutes les ressources publiées avec des balises <strong>&lt;strong&gt;</strong> sur les mots-clés importants. 
+                    Le processus peut prendre plusieurs minutes selon le nombre de ressources.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-4">
+                    <Button
+                      onClick={handleEnrichAllResources}
+                      disabled={enriching}
+                      size="lg"
+                      className="w-full sm:w-auto"
+                    >
+                      {enriching ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Enrichissement en cours...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Lancer l'enrichissement SEO
+                        </>
+                      )}
+                    </Button>
+
+                    {enrichmentResults && (
+                      <Card className="bg-muted/30">
+                        <CardHeader>
+                          <CardTitle className="text-lg">Résultats de l'enrichissement</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="text-center p-4 bg-background rounded-lg border border-border">
+                              <div className="text-2xl font-bold text-foreground">{enrichmentResults.total}</div>
+                              <div className="text-xs text-muted-foreground mt-1">Total</div>
+                            </div>
+                            <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                              <div className="text-2xl font-bold text-green-700">{enrichmentResults.enriched}</div>
+                              <div className="text-xs text-green-600 mt-1">Enrichies</div>
+                            </div>
+                            <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                              <div className="text-2xl font-bold text-yellow-700">{enrichmentResults.skipped}</div>
+                              <div className="text-xs text-yellow-600 mt-1">Déjà enrichies</div>
+                            </div>
+                            <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
+                              <div className="text-2xl font-bold text-red-700">{enrichmentResults.failed}</div>
+                              <div className="text-xs text-red-600 mt-1">Échecs</div>
+                            </div>
+                          </div>
+
+                          {enrichmentResults.details && enrichmentResults.details.length > 0 && (
+                            <div className="max-h-96 overflow-y-auto space-y-2">
+                              <h4 className="text-sm font-semibold text-foreground">Détails par ressource</h4>
+                              {enrichmentResults.details.map((detail: any, index: number) => (
+                                <div
+                                  key={index}
+                                  className={cn(
+                                    "text-sm p-3 rounded-md",
+                                    detail.status === 'success' && "bg-green-50 text-green-800 border border-green-200",
+                                    detail.status === 'skipped' && "bg-yellow-50 text-yellow-800 border border-yellow-200",
+                                    detail.status === 'failed' && "bg-red-50 text-red-800 border border-red-200"
+                                  )}
+                                >
+                                  <div className="font-medium">{detail.slug}</div>
+                                  {detail.reason && (
+                                    <div className="text-xs mt-1 opacity-80">{detail.reason}</div>
+                                  )}
+                                  {detail.resourceType && (
+                                    <Badge variant="outline" className="mt-1 text-xs">{detail.resourceType}</Badge>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
