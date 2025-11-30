@@ -28,6 +28,7 @@ const Index = () => {
     <>
       <Helmet>
         <html lang="fr" />
+        <link rel="alternate" hrefLang="fr" href="https://iarche.fr/" />
         {/* Primary Meta Tags */}
         <title>IArche · Agence IA Bayonne | Conseil & Intégration PME</title>
         <meta name="description" content="Agence IA à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME. Sud-Ouest et toute la France." />

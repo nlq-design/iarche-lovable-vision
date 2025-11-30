@@ -244,6 +244,8 @@ const ArticleDetail = () => {
   return (
     <BackgroundLayout>
       <Helmet>
+        <html lang="fr" />
+        <link rel="alternate" hrefLang="fr" href={getCanonicalUrl()} />
         <title>{article.title} · IArche</title>
         <meta
           name="description"

@@ -74,6 +74,8 @@ const Services = () => {
   return (
     <BackgroundLayout>
       <Helmet>
+        <html lang="fr" />
+        <link rel="alternate" hrefLang="fr" href="https://iarche.fr/services" />
         <title>Nos services · IArche · Agence IA Bayonne</title>
         <meta name="description" content="Audit IA, développement, accompagnement et conformité. Services adaptés aux PME. Agence basée à Bayonne." />
         <link rel="canonical" href="https://iarche.fr/services" />
