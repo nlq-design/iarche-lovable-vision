@@ -45,6 +45,7 @@ interface AtelierInscriptionFormProps {
   typeEvenement: string | null;
   maxParticipants: number;
   inscriptionsCount: number;
+  showParticipantsCount?: boolean;
 }
 
 const AtelierInscriptionForm = ({ 
@@ -56,6 +57,7 @@ const AtelierInscriptionForm = ({
   typeEvenement,
   maxParticipants,
   inscriptionsCount,
+  showParticipantsCount = true,
 }: AtelierInscriptionFormProps) => {
   const { toast } = useToast();
   const { trackCTAClick } = useCTATracking();
@@ -247,15 +249,17 @@ const AtelierInscriptionForm = ({
             </div>
           )}
 
-          <div className="flex items-start gap-3">
-            <Users className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-foreground">Places disponibles</p>
-              <p className="text-sm text-muted-foreground">
-                {placesRestantes} place{placesRestantes > 1 ? 's' : ''} restante{placesRestantes > 1 ? 's' : ''} sur {maxParticipants}
-              </p>
+          {showParticipantsCount && (
+            <div className="flex items-start gap-3">
+              <Users className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">Places disponibles</p>
+                <p className="text-sm text-muted-foreground">
+                  {placesRestantes} place{placesRestantes > 1 ? 's' : ''} restante{placesRestantes > 1 ? 's' : ''} sur {maxParticipants}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

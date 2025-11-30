@@ -136,6 +136,7 @@ const AdminArticleEditor = () => {
   const [rappelsAutomatiques, setRappelsAutomatiques] = useState<boolean>(false);
   const [ctaEvenementPersonnalise, setCtaEvenementPersonnalise] = useState<string>('');
   const [compteurInscrits, setCompteurInscrits] = useState<number>(0);
+  const [showParticipantsCount, setShowParticipantsCount] = useState<boolean>(true);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -181,6 +182,7 @@ const AdminArticleEditor = () => {
       setEventLocation(data.event_location || '');
       setRegistrationOpen(data.registration_open ?? true);
       setMaxParticipants(data.max_participants || 30);
+      setShowParticipantsCount(data.show_participants_count ?? true);
       setReplayUrl('');
       setFileUrl(data.file_url || '');
       setRessourcesComplementaires(
@@ -348,6 +350,7 @@ const AdminArticleEditor = () => {
       setEventLocation(data.event_location || '');
       setRegistrationOpen(data.registration_open ?? true);
       setMaxParticipants(data.max_participants || 30);
+      setShowParticipantsCount(data.show_participants_count ?? true);
       setReplayUrl(data.replay_url || '');
       setFileUrl(data.file_url || '');
       setRessourcesComplementaires(
@@ -738,6 +741,7 @@ const AdminArticleEditor = () => {
       event_location: eventLocation || null,
       registration_open: registrationOpen,
       max_participants: maxParticipants,
+      show_participants_count: showParticipantsCount,
       replay_url: replayUrl || null,
       file_url: fileUrl || null,
       ressources_complementaires: ressourcesComplementaires.length > 0 ? ressourcesComplementaires : null,
@@ -1460,6 +1464,11 @@ const AdminArticleEditor = () => {
                     <div className="space-y-2">
                       <Label htmlFor="maxParticipants">Nombre maximum de participants</Label>
                       <Input id="maxParticipants" type="number" value={maxParticipants} onChange={(e) => setMaxParticipants(parseInt(e.target.value))} disabled={isLoading} min="1" />
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Switch id="showParticipantsCount" checked={showParticipantsCount} onCheckedChange={setShowParticipantsCount} disabled={isLoading} />
+                      <Label htmlFor="showParticipantsCount" className="cursor-pointer">Afficher le nombre de places restantes</Label>
                     </div>
                     
                     <div className="space-y-2">
