@@ -50,6 +50,8 @@ const SolutionContactForm = ({ solutionName }: SolutionContactFormProps) => {
           email: validatedData.email,
           company: validatedData.company || null,
           source: 'contact',
+          source_context: solutionName,
+          message: validatedData.message,
           consent_marketing: false
         }]);
 
@@ -86,6 +88,7 @@ const SolutionContactForm = ({ solutionName }: SolutionContactFormProps) => {
             phone: null,
             source: 'solution_detail',
             source_context: solutionName,
+            message: validatedData.message,
           },
         });
       } catch (notifError) {
