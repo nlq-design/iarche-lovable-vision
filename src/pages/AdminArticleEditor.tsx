@@ -733,11 +733,37 @@ const AdminArticleEditor = () => {
     console.log('💾 ID article:', id);
     console.log('💾 Est nouvelle création:', !id);
 
+    // 🎯 Enrichissement SEO automatique du contenu
+    let enrichedContent = content;
+    try {
+      console.log('🔍 Enrichissement SEO automatique en cours...');
+      const { data: enrichData, error: enrichError } = await supabase.functions.invoke('enrich-content-seo', {
+        body: { 
+          content,
+          resourceType 
+        }
+      });
+
+      if (enrichError) {
+        console.warn('⚠️ Enrichissement SEO échoué, utilisation du contenu original:', enrichError);
+      } else if (enrichData?.enrichedContent) {
+        enrichedContent = enrichData.enrichedContent;
+        console.log('✅ Contenu enrichi automatiquement avec des mots-clés SEO');
+        toast({
+          title: 'Enrichissement SEO appliqué',
+          description: 'Les mots-clés importants ont été automatiquement mis en valeur',
+        });
+      }
+    } catch (enrichmentError) {
+      console.warn('⚠️ Erreur lors de l\'enrichissement SEO:', enrichmentError);
+      // Fallback silencieux : on continue avec le contenu original
+    }
+
     const articleData: any = {
       title,
       slug,
       excerpt: excerpt || null,
-      content,
+      content: enrichedContent, // 🎯 Utilisation du contenu enrichi
       cover_image_url: coverImageUrl || null,
       status,
       published: status === 'published',
