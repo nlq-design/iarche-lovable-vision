@@ -164,9 +164,9 @@ const AteliersWebinaires = () => {
                       {/* Type d'événement */}
                       {item.type_evenement && (
                         <Badge variant="outline" className="text-xs capitalize">
-                          {item.type_evenement === 'presentiel' && '📍 Présentiel'}
-                          {item.type_evenement === 'webinaire' && '💻 Webinaire'}
-                          {item.type_evenement === 'hybride' && '🔄 Hybride'}
+                          {item.type_evenement === 'presentiel' && 'Présentiel'}
+                          {item.type_evenement === 'webinaire' && 'Webinaire'}
+                          {item.type_evenement === 'hybride' && 'Hybride'}
                         </Badge>
                       )}
                       
