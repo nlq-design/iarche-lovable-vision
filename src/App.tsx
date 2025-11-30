@@ -34,7 +34,6 @@ const ArticleVersionHistory = lazy(() => import("./pages/ArticleVersionHistory")
 const AdminCategories = lazy(() => import("./pages/AdminCategories"));
 const AdminTags = lazy(() => import("./pages/AdminTags"));
 const AdminComments = lazy(() => import('./pages/AdminComments'));
-const AdminNewsletters = lazy(() => import('./pages/AdminNewsletters'));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const Redacia = lazy(() => import("./pages/admin/Redacia"));
 const RedacNews = lazy(() => import("./pages/admin/RedacNews"));
@@ -51,6 +50,8 @@ const AdminAteliersWebinaires = lazy(() => import("./pages/admin/AdminAteliersWe
 const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
 const AdminContacts = lazy(() => import("./pages/admin/AdminContacts"));
 const AdminAtelierInscriptions = lazy(() => import("./pages/admin/AdminAtelierInscriptions"));
+const AdminLivreBlancsInscriptions = lazy(() => import("./pages/admin/AdminLivreBlancsInscriptions"));
+const AdminNewsletters = lazy(() => import("./pages/admin/AdminNewsletters"));
 const AdminFAQs = lazy(() => import("./pages/admin/AdminFAQs"));
 const PerformanceMonitoring = lazy(() => import("./pages/admin/PerformanceMonitoring"));
 const CTAAnalytics = lazy(() => import("./pages/admin/CTAAnalytics"));
@@ -162,6 +163,11 @@ const App = () => (
           <Route path="/admin/atelier-inscriptions" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><AdminAtelierInscriptions /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/livre-blanc-inscriptions" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminLivreBlancsInscriptions /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/redacia" element={

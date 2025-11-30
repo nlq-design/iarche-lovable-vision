@@ -48,9 +48,10 @@ const navigationItems = [
     items: [
       { title: 'Commentaires', url: '/admin/comments', icon: MessageCircle },
       { title: 'FAQs', url: '/admin/faqs', icon: HelpCircle },
+      { title: 'Leads (consolidé)', url: '/admin/leads', icon: Users },
       { title: 'Contacts', url: '/admin/contacts', icon: Mail },
-      { title: 'Leads', url: '/admin/leads', icon: Users },
-      { title: 'Inscriptions ateliers', url: '/admin/atelier-inscriptions', icon: UserCheck },
+      { title: 'Livres blancs', url: '/admin/livre-blanc-inscriptions', icon: FileText },
+      { title: 'Ateliers', url: '/admin/atelier-inscriptions', icon: UserCheck },
     ]
   },
   {
