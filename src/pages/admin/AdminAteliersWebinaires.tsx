@@ -153,7 +153,7 @@ const AdminAteliersWebinaires = () => {
                           </span>
                         )}
                         <span>
-                          {new Date(article.published_at || article.created_at).toLocaleDateString('fr-FR')}
+                          {new Date(article.created_at).toLocaleDateString('fr-FR')}
                         </span>
                       </div>
                     </div>
