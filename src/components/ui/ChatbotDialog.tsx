@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Loader2, Sparkles } from 'lucide-react';
+import { Send, Loader2, Sparkles, Copy, Check } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -19,7 +20,9 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Scroll to bottom when new messages arrive
@@ -122,6 +125,27 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
     }
   };
 
+  const copyToClipboard = async (text: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIndex(index);
+      toast({
+        title: "Réponse copiée",
+        description: "Le texte a été copié dans le presse-papier",
+        duration: 2000,
+      });
+      setTimeout(() => setCopiedIndex(null), 2000);
+    } catch (error) {
+      console.error('Erreur lors de la copie:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de copier le texte",
+        variant: "destructive",
+        duration: 2000,
+      });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[650px] h-[650px] flex flex-col p-0 border-accent/20">
@@ -163,13 +187,26 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
                 >
                   <div
-                    className={`rounded-2xl px-4 py-3 max-w-[85%] shadow-sm ${
+                    className={`rounded-2xl px-4 py-3 max-w-[85%] shadow-sm relative group ${
                       message.role === 'user'
                         ? 'bg-gradient-to-br from-primary to-primary/90 text-white'
                         : 'bg-muted/80 text-foreground border border-border/50'
                     }`}
                   >
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                    {message.role === 'assistant' && message.content && (
+                      <button
+                        onClick={() => copyToClipboard(message.content, index)}
+                        className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1.5 rounded-lg bg-background border border-border shadow-md hover:bg-accent hover:text-accent-foreground"
+                        aria-label="Copier la réponse"
+                      >
+                        {copiedIndex === index ? (
+                          <Check className="w-3.5 h-3.5 text-green-600" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
