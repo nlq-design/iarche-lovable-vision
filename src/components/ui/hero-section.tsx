@@ -107,12 +107,12 @@ const HeroSection = () => {
         {/* Ancrage géographique */}
         <div className="absolute bottom-16 left-0 right-0 text-center z-10 invisible animate-fadeIn [animation-delay:0.4s]">
           <p className="text-sm mb-3 text-text-subtle">
-            Bayonne · France · <a 
+            Bayonne · France<span className="hidden md:inline"> · <a 
               href="mailto:nlq@iarche.fr" 
               className="hover:underline focus:underline focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded transition-all duration-200"
             >
               nlq@iarche.fr
-            </a>
+            </a></span>
           </p>
           <GradientLink
             onClick={() => {
