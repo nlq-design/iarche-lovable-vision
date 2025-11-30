@@ -42,8 +42,8 @@ const Header = () => {
               className={({ isActive }) => 
                 `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded px-2 py-1 ${
                   isActive 
-                    ? 'text-primary font-semibold' 
-                    : 'text-primary hover:text-primary/80'
+                    ? 'hero-gradient-text font-semibold' 
+                    : 'hero-gradient-text'
                 }`
               }
             >
@@ -164,8 +164,8 @@ const Header = () => {
                 className={({ isActive }) => 
                   `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded px-2 py-1 ${
                     isActive 
-                      ? 'text-primary font-semibold' 
-                      : 'text-primary hover:text-primary/80'
+                      ? 'hero-gradient-text font-semibold' 
+                      : 'hero-gradient-text'
                   }`
                 }
               >
