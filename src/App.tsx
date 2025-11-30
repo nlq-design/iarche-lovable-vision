@@ -50,6 +50,7 @@ const AdminLivresBlancs = lazy(() => import("./pages/admin/AdminLivresBlancs"));
 const AdminAteliersWebinaires = lazy(() => import("./pages/admin/AdminAteliersWebinaires"));
 const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
 const AdminContacts = lazy(() => import("./pages/admin/AdminContacts"));
+const AdminAtelierInscriptions = lazy(() => import("./pages/admin/AdminAtelierInscriptions"));
 const AdminFAQs = lazy(() => import("./pages/admin/AdminFAQs"));
 const PerformanceMonitoring = lazy(() => import("./pages/admin/PerformanceMonitoring"));
 const CTAAnalytics = lazy(() => import("./pages/admin/CTAAnalytics"));
@@ -156,6 +157,11 @@ const App = () => (
           <Route path="/admin/contacts" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><AdminContacts /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/atelier-inscriptions" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminAtelierInscriptions /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/redacia" element={
