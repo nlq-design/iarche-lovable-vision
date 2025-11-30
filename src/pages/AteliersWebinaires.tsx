@@ -33,6 +33,7 @@ interface AtelierWebinaire {
   show_participants_count: boolean | null;
   type_evenement: string | null;
   event_location: string | null;
+  event_date: string | null;
   inscriptions_count?: number;
 }
 
@@ -54,7 +55,7 @@ const AteliersWebinaires = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('articles')
-      .select('id, title, slug, excerpt, cover_image_url, published_at, created_at, max_participants, registration_open, show_participants_count, type_evenement, event_location')
+      .select('id, title, slug, excerpt, cover_image_url, published_at, created_at, max_participants, registration_open, show_participants_count, type_evenement, event_location, event_date')
       .eq('published', true)
       .eq('resource_type', 'atelier-webinaire')
       .order('published_at', { ascending: false });
@@ -162,6 +163,18 @@ const AteliersWebinaires = () => {
                         </p>
                       )}
                       
+                      {/* Date de l'événement */}
+                      {item.event_date && (
+                        <div className="flex items-center gap-1.5 text-sm font-medium text-primary">
+                          <Calendar className="h-4 w-4" aria-hidden="true" />
+                          {new Date(item.event_date).toLocaleDateString('fr-FR', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })}
+                        </div>
+                      )}
+                      
                       {/* Type d'événement */}
                       {item.type_evenement && (
                         <Badge variant="outline" className="text-xs capitalize">
@@ -192,15 +205,6 @@ const AteliersWebinaires = () => {
                         </Badge>
                       )}
                       
-                      {/* Date discrète en bas */}
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 pt-1">
-                        <Calendar className="h-3 w-3" aria-hidden="true" />
-                        {new Date(item.published_at || item.created_at).toLocaleDateString('fr-FR', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                      </div>
                     </CardContent>
                   </Card>
                 </NavLink>
