@@ -66,7 +66,7 @@ const AdminLivreBlancsInscriptions = () => {
         consent_marketing,
         source_id,
         created_at,
-        articles:source_id (
+        articles!source_id (
           title
         )
       `)
