@@ -8,8 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, FileText, MessageCircle, Eye, Users, TrendingUp, PenSquare, Mail, Settings } from 'lucide-react';
-import { NavLink } from '@/components/NavLink';
+import { Loader2, FileText, MessageCircle, Eye, Users, TrendingUp } from 'lucide-react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { PublicationTrendChart, EngagementPieChart } from '@/components/admin/AnalyticsCharts';
 import { format, subDays } from 'date-fns';
@@ -464,94 +463,52 @@ const Admin = () => {
                 </Card>
               </div>
 
-              {/* Quick Actions + Activité récente */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Quick Actions */}
-                <Card className="bg-background/95 border-border lg:col-span-1">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-foreground">Actions rapides</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <NavLink to="/admin/redacia">
-                      <Button variant="outline" className="w-full justify-start">
-                        <PenSquare className="mr-3 h-4 w-4" />
-                        Nouveau contenu
-                      </Button>
-                    </NavLink>
-                    <NavLink to="/admin/leads">
-                      <Button variant="outline" className="w-full justify-start">
-                        <Users className="mr-3 h-4 w-4" />
-                        Voir les leads
-                      </Button>
-                    </NavLink>
-                    <NavLink to="/admin/advanced-stats">
-                      <Button variant="outline" className="w-full justify-start">
-                        <TrendingUp className="mr-3 h-4 w-4" />
-                        Analytics avancées
-                      </Button>
-                    </NavLink>
-                    <NavLink to="/admin/newsletters">
-                      <Button variant="outline" className="w-full justify-start">
-                        <Mail className="mr-3 h-4 w-4" />
-                        Newsletter
-                      </Button>
-                    </NavLink>
-                    <NavLink to="/admin/parametres-securite">
-                      <Button variant="outline" className="w-full justify-start">
-                        <Settings className="mr-3 h-4 w-4" />
-                        Paramètres
-                      </Button>
-                    </NavLink>
-                  </CardContent>
-                </Card>
-
-                {/* Activité récente */}
-                <Card className="bg-background/95 border-border lg:col-span-2">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-foreground">Activité récente</CardTitle>
-                    <CardDescription>
-                      {stats.pendingComments > 0 && (
-                        <span className="text-accent font-medium">
-                          {stats.pendingComments} commentaire{stats.pendingComments > 1 ? 's' : ''} en attente
-                        </span>
-                      )}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {recentActivity.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-8">
-                        Aucune activité récente
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {recentActivity.map((activity: any) => (
-                          <div
-                            key={activity.id}
-                            className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-accent/5 transition-colors"
-                          >
-                            <div className="mt-0.5">
-                              {getActivityIcon(activity.type)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm text-foreground line-clamp-1">
-                                {activity.title}
-                              </p>
-                              {activity.source && (
-                                <p className="text-xs text-muted-foreground">
-                                  Source: {activity.source}
-                                </p>
-                              )}
-                            </div>
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
-                              {getRelativeTime(activity.timestamp)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+              {/* Activité récente */}
+              <Card className="bg-background/95 border-border">
+                <CardHeader>
+                  <CardTitle className="text-lg text-foreground">Activité récente</CardTitle>
+                  <CardDescription>
+                    {stats.pendingComments > 0 && (
+                      <span className="text-accent font-medium">
+                        {stats.pendingComments} commentaire{stats.pendingComments > 1 ? 's' : ''} en attente
+                      </span>
                     )}
-                  </CardContent>
-                </Card>
-              </div>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {recentActivity.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">
+                      Aucune activité récente
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {recentActivity.map((activity: any) => (
+                        <div
+                          key={activity.id}
+                          className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-accent/5 transition-colors"
+                        >
+                          <div className="mt-0.5">
+                            {getActivityIcon(activity.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-foreground line-clamp-1">
+                              {activity.title}
+                            </p>
+                            {activity.source && (
+                              <p className="text-xs text-muted-foreground">
+                                Source: {activity.source}
+                              </p>
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {getRelativeTime(activity.timestamp)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </>
           )}
         </div>
