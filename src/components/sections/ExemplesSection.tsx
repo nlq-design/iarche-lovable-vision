@@ -26,10 +26,11 @@ const ExemplesSection = () => {
     try {
       const { data, error } = await supabase
         .from('articles')
-        .select('id, title, slug, excerpt, content')
+        .select('id, title, slug, excerpt, content, created_at')
         .eq('resource_type', 'cas-client')
         .eq('published', true)
-        .order('published_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(4);
 
       if (error) throw error;
       setCasClients(data || []);
