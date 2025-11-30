@@ -51,3 +51,6 @@ verify_jwt = false
 [functions.check-performance-threshold]
 verify_jwt = true
 
+[functions.enrich-content-seo]
+verify_jwt = true
+
