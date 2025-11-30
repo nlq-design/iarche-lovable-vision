@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import GradientLink from '@/components/ui/GradientLink';
+import LogoIArcheSVG from '@/components/ui/LogoIArcheSVG';
 import { ChevronDown } from 'lucide-react';
 import { useCTATracking } from '@/hooks/useCTATracking';
 
@@ -31,8 +32,9 @@ const Header = () => {
           <button 
             onClick={() => navigate('/')}
             className="flex items-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D15A3E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF9F7] rounded"
+            aria-label="Retour à l'accueil"
           >
-            <span className="text-3xl font-semibold hero-gradient-text">IArche</span>
+            <LogoIArcheSVG width={120} height={48} className="w-[120px] h-auto" />
           </button>
 
           {/* Navigation Desktop */}
