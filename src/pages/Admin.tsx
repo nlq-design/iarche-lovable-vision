@@ -20,167 +20,13 @@ const Admin = () => {
   const { user, isAdmin, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // États pour le formulaire de connexion
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      // Vérifier d'abord si le compte n'est pas verrouillé
-      const checkResponse = await supabase.functions.invoke('check-login-attempt', {
-        body: { email, success: false, failure_reason: 'pre_check' }
-      });
-
-      if (checkResponse.data?.locked) {
-        toast({
-          title: 'Compte verrouillé',
-          description: checkResponse.data.message,
-          variant: 'destructive',
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Tentative de connexion
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      // Enregistrer la tentative
-      await supabase.functions.invoke('check-login-attempt', {
-        body: {
-          email,
-          success: !error,
-          failure_reason: error?.message
-        }
-      });
-
-      if (error) {
-        const checkResult = await supabase.functions.invoke('check-login-attempt', {
-          body: { email, success: false, failure_reason: 'pre_check' }
-        });
-
-        let errorMessage = 'Email ou mot de passe incorrect';
-        if (checkResult.data?.attempts_remaining !== undefined) {
-          errorMessage += `. ${checkResult.data.attempts_remaining} tentative(s) restante(s)`;
-        }
-        if (checkResult.data?.warning) {
-          errorMessage = checkResult.data.warning;
-        }
-
-        toast({
-          title: 'Erreur de connexion',
-          description: errorMessage,
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Connexion réussie',
-          description: 'Bienvenue dans le back-office',
-        });
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Une erreur est survenue lors de la connexion',
-        variant: 'destructive',
-      });
-    }
-
-    setIsLoading(false);
-  };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-sm text-muted-foreground">Chargement...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-muted/30">
-        <Helmet>
-          <title>Connexion Admin - IArche</title>
-          <meta name="robots" content="noindex, nofollow" />
-        </Helmet>
-        <div className="min-h-screen flex items-center justify-center px-6 py-12">
-          <Card className="w-full max-w-md bg-background/95 border-border">
-            <CardHeader>
-              <CardTitle className="text-2xl text-foreground">Back-office IArche</CardTitle>
-              <CardDescription>Connectez-vous pour gérer les articles</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Mot de passe</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Connexion...
-                    </>
-                  ) : (
-                    'Se connecter'
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center px-6">
-        <Card className="max-w-md bg-background/95 border-border">
-          <CardHeader>
-            <CardTitle className="text-destructive">Accès refusé</CardTitle>
-            <CardDescription>
-              Vous n'avez pas les permissions nécessaires pour accéder au back-office.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => navigate('/')} className="w-full">
-              Retour à l'accueil
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // États pour le dashboard
+  
+  // États pour le dashboard (doivent être déclarés inconditionnellement)
   const [stats, setStats] = useState({
     totalArticles: 0,
     publishedArticles: 0,
@@ -194,6 +40,7 @@ const Admin = () => {
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [dashboardLoading, setDashboardLoading] = useState(true);
 
+  // Charger les stats du dashboard quand user est admin
   useEffect(() => {
     if (user && isAdmin) {
       loadDashboardStats();
@@ -350,6 +197,163 @@ const Admin = () => {
     const diffInDays = Math.floor(diffInHours / 24);
     return `il y a ${diffInDays}j`;
   };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      // Vérifier d'abord si le compte n'est pas verrouillé
+      const checkResponse = await supabase.functions.invoke('check-login-attempt', {
+        body: { email, success: false, failure_reason: 'pre_check' }
+      });
+
+      if (checkResponse.data?.locked) {
+        toast({
+          title: 'Compte verrouillé',
+          description: checkResponse.data.message,
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Tentative de connexion
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      // Enregistrer la tentative
+      await supabase.functions.invoke('check-login-attempt', {
+        body: {
+          email,
+          success: !error,
+          failure_reason: error?.message
+        }
+      });
+
+      if (error) {
+        const checkResult = await supabase.functions.invoke('check-login-attempt', {
+          body: { email, success: false, failure_reason: 'pre_check' }
+        });
+
+        let errorMessage = 'Email ou mot de passe incorrect';
+        if (checkResult.data?.attempts_remaining !== undefined) {
+          errorMessage += `. ${checkResult.data.attempts_remaining} tentative(s) restante(s)`;
+        }
+        if (checkResult.data?.warning) {
+          errorMessage = checkResult.data.warning;
+        }
+
+        toast({
+          title: 'Erreur de connexion',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Connexion réussie',
+          description: 'Bienvenue dans le back-office',
+        });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Une erreur est survenue lors de la connexion',
+        variant: 'destructive',
+      });
+    }
+
+    setIsLoading(false);
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-sm text-muted-foreground">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-muted/30">
+        <Helmet>
+          <title>Connexion Admin - IArche</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+        <div className="min-h-screen flex items-center justify-center px-6 py-12">
+          <Card className="w-full max-w-md bg-background/95 border-border">
+            <CardHeader>
+              <CardTitle className="text-2xl text-foreground">Back-office IArche</CardTitle>
+              <CardDescription>Connectez-vous pour gérer les articles</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Mot de passe</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Connexion...
+                    </>
+                  ) : (
+                    'Se connecter'
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center px-6">
+        <Card className="max-w-md bg-background/95 border-border">
+          <CardHeader>
+            <CardTitle className="text-destructive">Accès refusé</CardTitle>
+            <CardDescription>
+              Vous n'avez pas les permissions nécessaires pour accéder au back-office.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate('/')} className="w-full">
+              Retour à l'accueil
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <AdminLayout>
