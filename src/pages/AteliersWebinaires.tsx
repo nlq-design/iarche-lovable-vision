@@ -9,6 +9,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { NavLink } from '@/components/NavLink';
 import { Loader2, Calendar } from 'lucide-react';
 import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
+import { usePagination } from '@/hooks/usePagination';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 
 interface AtelierWebinaire {
   id: string;
@@ -23,6 +32,12 @@ interface AtelierWebinaire {
 const AteliersWebinaires = () => {
   const [ateliersWebinaires, setAteliersWebinaires] = useState<AtelierWebinaire[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Pagination
+  const { currentItems, currentPage, totalPages, setPage, nextPage, previousPage } = usePagination({
+    items: ateliersWebinaires,
+    itemsPerPage: 9,
+  });
 
   useEffect(() => {
     loadAteliersWebinaires();
@@ -93,8 +108,9 @@ const AteliersWebinaires = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {ateliersWebinaires.map((item, index) => (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {currentItems.map((item, index) => (
                 <NavLink
                   key={item.id}
                   to={`/ateliers-webinaires/${item.slug}`}
@@ -141,8 +157,44 @@ const AteliersWebinaires = () => {
                     </CardContent>
                   </Card>
                 </NavLink>
-              ))}
-            </div>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-12 flex justify-center">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={previousPage}
+                          className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                        />
+                      </PaginationItem>
+                      
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => setPage(page)}
+                            isActive={currentPage === page}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ))}
+                      
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={nextPage}
+                          className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </section>
       </main>
