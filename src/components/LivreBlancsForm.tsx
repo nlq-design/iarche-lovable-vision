@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import GradientLink from '@/components/ui/GradientLink';
 import { useCTATracking } from '@/hooks/useCTATracking';
-import { Download, CheckCircle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 
 // Schema de validation Zod
 const livreBlancsFormSchema = z.object({
@@ -37,14 +37,13 @@ type LivreBlancsFormData = z.infer<typeof livreBlancsFormSchema>;
 interface LivreBlancsFormProps {
   articleId: string;
   articleTitle: string;
-  fileUrl: string;
 }
 
-const LivreBlancsForm = ({ articleId, articleTitle, fileUrl }: LivreBlancsFormProps) => {
+const LivreBlancsForm = ({ articleId, articleTitle }: LivreBlancsFormProps) => {
   const { toast } = useToast();
   const { trackCTAClick, getSessionId } = useCTATracking();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDownloadReady, setIsDownloadReady] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [formData, setFormData] = useState<LivreBlancsFormData>({
     name: '',
     email: '',
@@ -120,12 +119,12 @@ const LivreBlancsForm = ({ articleId, articleTitle, fileUrl }: LivreBlancsFormPr
         console.warn('Failed to update download counter:', counterError);
       }
 
-      // Afficher le bouton de téléchargement
-      setIsDownloadReady(true);
+      // Marquer comme succès
+      setIsSuccess(true);
 
       toast({
-        title: "Merci !",
-        description: "Vous pouvez maintenant télécharger le document.",
+        title: "✅ Inscription confirmée",
+        description: "Vous allez recevoir le livre blanc par email sous quelques instants.",
       });
 
       // Push GTM event
@@ -156,29 +155,19 @@ const LivreBlancsForm = ({ articleId, articleTitle, fileUrl }: LivreBlancsFormPr
     }
   };
 
-  // Si téléchargement prêt, afficher seulement le bouton
-  if (isDownloadReady) {
+  // Si inscription réussie, afficher message de confirmation
+  if (isSuccess) {
     return (
       <div className="bg-primary/5 rounded-lg p-8 border-2 border-primary/20 text-center animate-fadeIn">
         <CheckCircle className="w-16 h-16 text-primary mx-auto mb-4" />
         <h3 className="text-2xl font-bold text-foreground mb-2">
-          Merci pour votre demande !
+          Merci pour votre inscription !
         </h3>
-        <p className="text-muted-foreground mb-6">
-          Votre téléchargement est prêt
+        <p className="text-muted-foreground mb-4">
+          Vous allez recevoir le livre blanc <strong>"{articleTitle}"</strong> par email sous quelques instants.
         </p>
-        <a
-          href={fileUrl}
-          download
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
-        >
-          <Download className="w-5 h-5" />
-          Télécharger le document
-        </a>
-        <p className="text-xs text-muted-foreground mt-4">
-          Un email de confirmation vous a été envoyé
+        <p className="text-xs text-muted-foreground">
+          Pensez à vérifier vos courriers indésirables si vous ne recevez pas l'email rapidement.
         </p>
       </div>
     );
@@ -188,10 +177,10 @@ const LivreBlancsForm = ({ articleId, articleTitle, fileUrl }: LivreBlancsFormPr
   return (
     <div className="bg-secondary/30 rounded-lg p-8 border border-border animate-fadeIn">
       <h3 className="text-2xl font-bold text-foreground mb-2">
-        Télécharger le document
+        Recevoir ce livre blanc
       </h3>
       <p className="text-muted-foreground mb-6">
-        Remplissez ce formulaire pour accéder au téléchargement
+        Remplissez ce formulaire pour recevoir le document par email
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -270,7 +259,7 @@ const LivreBlancsForm = ({ articleId, articleTitle, fileUrl }: LivreBlancsFormPr
           disabled={isSubmitting}
           className="w-full justify-center text-base py-3"
         >
-          {isSubmitting ? 'Envoi en cours...' : 'Accéder au téléchargement'}
+          {isSubmitting ? 'Envoi en cours...' : 'Recevoir le livre blanc'}
         </GradientLink>
 
         <p className="text-xs text-muted-foreground text-center">

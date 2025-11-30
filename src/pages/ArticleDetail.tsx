@@ -887,12 +887,11 @@ const ArticleDetail = () => {
             <div className="my-12">
               <SolutionContactForm solutionName={article.title} />
             </div>
-          ) : article.resource_type === 'livre-blanc' && article.file_url ? (
+          ) : article.resource_type === 'livre-blanc' ? (
             <div className="my-12 animate-fadeIn [animation-delay:0.6s]">
               <LivreBlancsForm 
                 articleId={article.id}
                 articleTitle={article.title}
-                fileUrl={article.file_url}
               />
             </div>
           ) : article.resource_type === 'atelier-webinaire' ? (
