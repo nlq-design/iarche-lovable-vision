@@ -31,6 +31,7 @@ interface AtelierWebinaire {
   max_participants: number | null;
   registration_open: boolean | null;
   show_participants_count: boolean | null;
+  type_evenement: string | null;
   inscriptions_count?: number;
 }
 
@@ -52,7 +53,7 @@ const AteliersWebinaires = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('articles')
-      .select('id, title, slug, excerpt, cover_image_url, published_at, created_at, max_participants, registration_open, show_participants_count')
+      .select('id, title, slug, excerpt, cover_image_url, published_at, created_at, max_participants, registration_open, show_participants_count, type_evenement')
       .eq('published', true)
       .eq('resource_type', 'atelier-webinaire')
       .order('published_at', { ascending: false });
@@ -158,6 +159,15 @@ const AteliersWebinaires = () => {
                         <p className="text-sm text-muted-foreground line-clamp-2">
                           {item.excerpt}
                         </p>
+                      )}
+                      
+                      {/* Type d'événement */}
+                      {item.type_evenement && (
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {item.type_evenement === 'presentiel' && '📍 Présentiel'}
+                          {item.type_evenement === 'webinaire' && '💻 Webinaire'}
+                          {item.type_evenement === 'hybride' && '🔄 Hybride'}
+                        </Badge>
                       )}
                       
                       {/* Badge Complet si places atteintes et visibilité activée */}
