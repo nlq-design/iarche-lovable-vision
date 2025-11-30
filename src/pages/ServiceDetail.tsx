@@ -158,7 +158,11 @@ const ServiceDetail = () => {
               {service.livrables.map((livrable, idx) => (
                 <li key={idx} className="flex items-start gap-3 text-muted-foreground">
                   <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" aria-hidden="true" />
-                  <span>{livrable}</span>
+                  <span 
+                    className="prose prose-lg max-w-none
+                      prose-strong:font-semibold prose-strong:text-[hsl(var(--primary))] prose-strong:px-1 prose-strong:py-0.5 prose-strong:rounded prose-strong:bg-gradient-to-r prose-strong:from-primary/8 prose-strong:via-primary/12 prose-strong:to-primary/8"
+                    dangerouslySetInnerHTML={{ __html: livrable }}
+                  />
                 </li>
               ))}
             </ul>
@@ -167,7 +171,10 @@ const ServiceDetail = () => {
           {/* Pour qui */}
           <section className="mb-12 animate-fadeIn [animation-delay:0.4s]">
             <h2 className="text-2xl font-bold text-foreground mb-6">Pour qui ?</h2>
-            <p className="text-lg text-muted-foreground">
+            <p 
+              className="text-lg text-muted-foreground prose prose-lg max-w-none
+                prose-strong:font-semibold prose-strong:text-[hsl(var(--primary))] prose-strong:px-1 prose-strong:py-0.5 prose-strong:rounded prose-strong:bg-gradient-to-r prose-strong:from-primary/8 prose-strong:via-primary/12 prose-strong:to-primary/8"
+            >
               {service.pourQui}
             </p>
           </section>
@@ -192,7 +199,10 @@ const ServiceDetail = () => {
                   <h3 className="text-lg font-semibold text-foreground mb-2">
                     {etape.etape}
                   </h3>
-                  <p className="text-muted-foreground">
+                  <p 
+                    className="text-muted-foreground prose prose-lg max-w-none
+                      prose-strong:font-semibold prose-strong:text-[hsl(var(--primary))] prose-strong:px-1 prose-strong:py-0.5 prose-strong:rounded prose-strong:bg-gradient-to-r prose-strong:from-primary/8 prose-strong:via-primary/12 prose-strong:to-primary/8"
+                  >
                     {etape.description}
                   </p>
                 </div>
@@ -209,7 +219,10 @@ const ServiceDetail = () => {
                   <h3 className="text-lg font-semibold text-foreground mb-2">
                     {cas.titre}
                   </h3>
-                  <p className="text-muted-foreground">
+                  <p 
+                    className="text-muted-foreground prose prose-lg max-w-none
+                      prose-strong:font-semibold prose-strong:text-[hsl(var(--primary))] prose-strong:px-1 prose-strong:py-0.5 prose-strong:rounded prose-strong:bg-gradient-to-r prose-strong:from-primary/8 prose-strong:via-primary/12 prose-strong:to-primary/8"
+                  >
                     {cas.description}
                   </p>
                 </div>
