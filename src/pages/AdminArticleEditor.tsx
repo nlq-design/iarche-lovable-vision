@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Save, Eye, History, Calendar as CalendarIcon, Upload, FileText, Sparkles, ChevronDown } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, Eye, History, Calendar as CalendarIcon, Upload, FileText, Sparkles, ChevronDown, Copy, SplitSquareHorizontal, X } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { LazyQuill } from '@/components/admin/LazyQuill';
 import { Switch } from '@/components/ui/switch';
@@ -23,6 +23,9 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { FAQPreviewModal } from '@/components/admin/FAQPreviewModal';
+import { LivePreviewPanel } from '@/components/admin/LivePreviewPanel';
+import { ContentTemplateSelector } from '@/components/admin/ContentTemplateSelector';
+import { ArticleStatsInline } from '@/components/admin/ArticleStatsInline';
 
 interface FAQItem {
   question: string;
@@ -48,6 +51,9 @@ const AdminArticleEditor = () => {
   const [autoGenerateFAQ, setAutoGenerateFAQ] = useState(false);
   const [existingFAQ, setExistingFAQ] = useState<FAQItem[] | null>(null);
   const [faqMode, setFaqMode] = useState<'new' | 'add'>('new');
+  const [showLivePreview, setShowLivePreview] = useState(false);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(!id);
+  const [isDuplicating, setIsDuplicating] = useState(false);
   
   // Déterminer le resource_type depuis la route
   const getResourceTypeFromPath = () => {
@@ -78,7 +84,7 @@ const AdminArticleEditor = () => {
   const [excerpt, setExcerpt] = useState('');
   const [content, setContent] = useState('');
   const [coverImageUrl, setCoverImageUrl] = useState('');
-  const [published, setPublished] = useState(false);
+  const [status, setStatus] = useState<'draft' | 'in-review' | 'scheduled' | 'published' | 'archived'>('draft');
   const [scheduledPublishAt, setScheduledPublishAt] = useState<Date | undefined>();
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -140,8 +146,119 @@ const AdminArticleEditor = () => {
   useEffect(() => {
     if (id && user && isAdmin) {
       loadArticle();
+    } else if (!id && user && isAdmin) {
+      // Check for duplication query param
+      const params = new URLSearchParams(location.search);
+      const duplicateId = params.get('duplicate');
+      if (duplicateId) {
+        setIsDuplicating(true);
+        loadArticleForDuplication(duplicateId);
+      }
     }
   }, [id, user, isAdmin]);
+
+  const loadArticleForDuplication = async (sourceId: string) => {
+    setLoadingArticle(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('id', sourceId)
+        .single();
+
+      if (error) throw error;
+
+      // Pre-fill form with duplicated data
+      setTitle(`${data.title} (copie)`);
+      setSlug('');
+      setExcerpt(data.excerpt || '');
+      setContent(data.content);
+      setCoverImageUrl(data.cover_image_url || '');
+      setStatus('draft');
+      setResourceType(data.resource_type || 'actualite');
+      setEventDate(data.event_date ? new Date(data.event_date) : undefined);
+      setEventLocation(data.event_location || '');
+      setRegistrationOpen(data.registration_open ?? true);
+      setMaxParticipants(data.max_participants || 30);
+      setReplayUrl('');
+      setFileUrl(data.file_url || '');
+      setRessourcesComplementaires(
+        Array.isArray(data.ressources_complementaires) 
+          ? data.ressources_complementaires as Array<{ titre: string; url: string }> 
+          : []
+      );
+      setActualiteType(data.actualite_type || '');
+      setSourceExterne(
+        data.source_externe && typeof data.source_externe === 'object' && 'nom' in data.source_externe && 'url' in data.source_externe
+          ? data.source_externe as { nom: string; url: string }
+          : { nom: '', url: '' }
+      );
+      setSecteurActivite(data.secteur_activite || '');
+      setTailleEntreprise(data.taille_entreprise || '');
+      setProblematique(data.problematique || '');
+      setNombrePages(data.nombre_pages || 0);
+      setFormatFichier(data.format_fichier || 'pdf');
+      setLanguesDisponibles(data.langues_disponibles || ['fr']);
+      setNiveau(data.niveau || '');
+      setThematiques(data.thematiques || []);
+      setVersionDocument(data.version_document || '1.0');
+      setCtaPersonnalise(data.cta_personnalise || '');
+      setDureeHeures(data.duree_heures || 0);
+      setHeureDebut(data.heure_debut || '');
+      setTypeEvenement(data.type_evenement || '');
+      setPrerequis(data.prerequis || '');
+      setProgrammeDetaille(
+        Array.isArray(data.programme_detaille) 
+          ? data.programme_detaille as Array<{ heure: string; sujet: string }> 
+          : []
+      );
+      setIntervenants(
+        Array.isArray(data.intervenants) 
+          ? data.intervenants as Array<{ nom: string; fonction: string; photo_url: string }> 
+          : []
+      );
+      setOutilsRequis(data.outils_requis || []);
+      setCertificatDelivre(data.certificat_delivre || false);
+      setSondagePostEvenementUrl('');
+      setDocumentsTelechargeables(
+        Array.isArray(data.documents_telechargeables) 
+          ? data.documents_telechargeables as Array<{ nom: string; file_url: string }> 
+          : []
+      );
+      setRappelsAutomatiques(data.rappels_automatiques || false);
+      setCtaEvenementPersonnalise(data.cta_evenement_personnalise || '');
+
+      // Load categories and tags
+      const { data: articleCategories } = await supabase
+        .from('article_categories')
+        .select('category_id')
+        .eq('article_id', sourceId);
+      setSelectedCategories(articleCategories?.map(ac => ac.category_id) || []);
+
+      const { data: articleTags } = await supabase
+        .from('article_tags')
+        .select('tag_id')
+        .eq('article_id', sourceId);
+      setSelectedTags(articleTags?.map(at => at.tag_id) || []);
+
+      toast({
+        title: 'Article dupliqué',
+        description: 'Modifiez et enregistrez pour créer la copie',
+      });
+    } catch (error) {
+      console.error('Error duplicating:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de dupliquer l\'article',
+        variant: 'destructive',
+      });
+      navigate('/admin');
+    } finally {
+      setLoadingArticle(false);
+      setIsDuplicating(false);
+    }
+  };
 
   useEffect(() => {
     if (user && isAdmin) {
@@ -176,14 +293,14 @@ const AdminArticleEditor = () => {
     }, 30000); // 30 secondes
 
     return () => clearInterval(autoSaveInterval);
-  }, [id, hasChanges, title, slug, excerpt, content, coverImageUrl, published, scheduledPublishAt, selectedCategories, selectedTags, resourceType, eventDate, eventLocation, registrationOpen, maxParticipants, replayUrl, fileUrl, ressourcesComplementaires]);
+  }, [id, hasChanges, title, slug, excerpt, content, coverImageUrl, status, scheduledPublishAt, selectedCategories, selectedTags, resourceType, eventDate, eventLocation, registrationOpen, maxParticipants, replayUrl, fileUrl, ressourcesComplementaires]);
 
   // Marquer comme modifié lors des changements
   useEffect(() => {
     if (id && !loadingArticle) {
       setHasChanges(true);
     }
-  }, [title, excerpt, content, coverImageUrl, published, scheduledPublishAt, selectedCategories, selectedTags, resourceType, eventDate, eventLocation, registrationOpen, maxParticipants, replayUrl, fileUrl, ressourcesComplementaires]);
+  }, [title, excerpt, content, coverImageUrl, status, scheduledPublishAt, selectedCategories, selectedTags, resourceType, eventDate, eventLocation, registrationOpen, maxParticipants, replayUrl, fileUrl, ressourcesComplementaires]);
 
   const loadCategoriesAndTags = async () => {
     // Charger les catégories
@@ -224,7 +341,7 @@ const AdminArticleEditor = () => {
       setExcerpt(data.excerpt || '');
       setContent(data.content);
       setCoverImageUrl(data.cover_image_url || '');
-      setPublished(data.published);
+      setStatus(data.status as 'draft' | 'in-review' | 'scheduled' | 'published' | 'archived' || (data.published ? 'published' : 'draft'));
       setScheduledPublishAt(data.scheduled_publish_at ? new Date(data.scheduled_publish_at) : undefined);
       setResourceType(data.resource_type || 'actualite');
       setEventDate(data.event_date ? new Date(data.event_date) : undefined);
@@ -333,7 +450,8 @@ const AdminArticleEditor = () => {
       excerpt: excerpt || null,
       content,
       cover_image_url: coverImageUrl || null,
-      published,
+      status,
+      published: status === 'published',
       scheduled_publish_at: scheduledPublishAt ? scheduledPublishAt.toISOString() : null,
       resource_type: resourceType,
       event_date: eventDate ? eventDate.toISOString() : null,
@@ -610,8 +728,9 @@ const AdminArticleEditor = () => {
       excerpt: excerpt || null,
       content,
       cover_image_url: coverImageUrl || null,
-      published,
-      published_at: published ? new Date().toISOString() : null,
+      status,
+      published: status === 'published',
+      published_at: status === 'published' ? new Date().toISOString() : null,
       scheduled_publish_at: scheduledPublishAt ? scheduledPublishAt.toISOString() : null,
       resource_type: resourceType,
       author_id: user.id,
@@ -684,7 +803,7 @@ const AdminArticleEditor = () => {
 
       // Check if article is being published for the first time
       const wasUnpublished = currentArticle && !currentArticle.published;
-      const isBeingPublished = published && wasUnpublished;
+      const isBeingPublished = status === 'published' && wasUnpublished;
 
       // Mettre à jour l'article
       const { error } = await supabase
@@ -931,15 +1050,54 @@ const AdminArticleEditor = () => {
                 </span>
               )}
             </div>
-            {id && (
-              <NavLink to={`/admin/articles/${id}/history`}>
-                <Button variant="outline" size="sm">
-                  <History className="mr-2 h-4 w-4" />
-                  Historique
-                </Button>
-              </NavLink>
-            )}
+            <div className="flex items-center gap-2">
+              {id && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const path = location.pathname.replace(`/${id}`, '/new');
+                      navigate(`${path}?duplicate=${id}`);
+                    }}
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    Dupliquer
+                  </Button>
+                  <NavLink to={`/admin/articles/${id}/history`}>
+                    <Button variant="outline" size="sm">
+                      <History className="mr-2 h-4 w-4" />
+                      Historique
+                    </Button>
+                  </NavLink>
+                </>
+              )}
+              <Button
+                variant={showLivePreview ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setShowLivePreview(!showLivePreview)}
+              >
+                {showLivePreview ? <X className="mr-2 h-4 w-4" /> : <SplitSquareHorizontal className="mr-2 h-4 w-4" />}
+                {showLivePreview ? 'Masquer' : 'Aperçu'}
+              </Button>
+            </div>
           </div>
+
+          {id && <ArticleStatsInline articleId={id} resourceType={resourceType} />}
+
+          {showTemplateSelector && !id && (
+            <ContentTemplateSelector
+              resourceType={resourceType}
+              onSelectTemplate={(template) => {
+                setTitle(template.data.title);
+                setExcerpt(template.data.excerpt);
+                setContent(template.data.content);
+                setShowTemplateSelector(false);
+                toast({ title: 'Template appliqué' });
+              }}
+              onClose={() => setShowTemplateSelector(false)}
+            />
+          )}
 
           <Card className="bg-background/95 border-border">
             <CardHeader>
@@ -1760,19 +1918,27 @@ const AdminArticleEditor = () => {
                   />
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="published"
-                    checked={published}
-                    onCheckedChange={(checked) => {
-                      setPublished(checked);
-                      if (checked) setScheduledPublishAt(undefined);
-                    }}
-                    disabled={isLoading}
-                  />
-                  <Label htmlFor="published" className="cursor-pointer">
-                    Publier l'article immédiatement
-                  </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Statut de l'article</Label>
+                  <Select value={status} onValueChange={(value) => setStatus(value as typeof status)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">🖊️ Brouillon</SelectItem>
+                      <SelectItem value="in-review">👀 En relecture</SelectItem>
+                      <SelectItem value="scheduled">📅 Programmé</SelectItem>
+                      <SelectItem value="published">✅ Publié</SelectItem>
+                      <SelectItem value="archived">📦 Archivé</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {status === 'draft' && 'Article en cours de rédaction, non visible publiquement'}
+                    {status === 'in-review' && 'Article en attente de validation'}
+                    {status === 'scheduled' && 'Article programmé pour publication automatique'}
+                    {status === 'published' && 'Article visible publiquement sur le site'}
+                    {status === 'archived' && 'Article archivé, non visible publiquement'}
+                  </p>
                 </div>
 
                 {!id && ['article', 'actualite', 'cas-client'].includes(resourceType) && (
@@ -1789,7 +1955,7 @@ const AdminArticleEditor = () => {
                   </div>
                 )}
 
-                {!published && (
+                {status === 'scheduled' && (
                   <div className="space-y-2">
                     <Label>Publication programmée (optionnel)</Label>
                     <Popover>
@@ -1916,6 +2082,25 @@ const AdminArticleEditor = () => {
         onSave={handleSaveFAQ}
         onRegenerate={handleRegenerateFAQ}
       />
+
+      {/* Split-screen preview panel */}
+      {showLivePreview && (
+        <div className="fixed top-0 right-0 w-1/2 h-screen">
+          <LivePreviewPanel
+            title={title}
+            content={content}
+            excerpt={excerpt}
+            coverImageUrl={coverImageUrl}
+            resourceType={resourceType}
+            faq={existingFAQ || []}
+            eventDate={eventDate}
+            eventLocation={eventLocation}
+            dureeHeures={dureeHeures}
+            nombrePages={nombrePages}
+            formatFichier={formatFichier}
+          />
+        </div>
+      )}
     </AdminLayout>
   );
 };
