@@ -50,7 +50,7 @@ const LivresBlancs = () => {
       .select('id, title, slug, excerpt, cover_image_url, published_at, created_at')
       .eq('published', true)
       .eq('resource_type', 'livre-blanc')
-      .order('published_at', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Erreur lors du chargement des livres blancs:', error);
@@ -148,7 +148,7 @@ const LivresBlancs = () => {
                       {/* Date discrète en bas */}
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 pt-1">
                         <Calendar className="h-3 w-3" aria-hidden="true" />
-                        {new Date(livreBlanc.published_at || livreBlanc.created_at).toLocaleDateString('fr-FR', {
+                        {new Date(livreBlanc.created_at).toLocaleDateString('fr-FR', {
                           day: 'numeric',
                           month: 'short',
                           year: 'numeric'

@@ -105,7 +105,7 @@ const Articles = () => {
       return;
     }
 
-    const { data, error } = await query.order('published_at', { ascending: false });
+    const { data, error } = await query.order('created_at', { ascending: false });
 
     if (!error && data) {
       setArticles(data);
@@ -252,10 +252,10 @@ const Articles = () => {
                           {article.excerpt}
                         </p>
                       )}
-                      {/* Date discrète en bas */}
+                       {/* Date discrète en bas */}
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 pt-1">
                         <Calendar className="h-3 w-3" aria-hidden="true" />
-                        {new Date(article.published_at || article.created_at).toLocaleDateString('fr-FR', {
+                        {new Date(article.created_at).toLocaleDateString('fr-FR', {
                           day: 'numeric',
                           month: 'short',
                           year: 'numeric'
