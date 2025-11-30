@@ -57,23 +57,63 @@ const AteliersWebinaires = () => {
       .from('articles')
       .select('id, title, slug, excerpt, cover_image_url, published_at, created_at, max_participants, registration_open, show_participants_count, type_evenement, event_location, event_date')
       .eq('published', true)
-      .eq('resource_type', 'atelier-webinaire')
-      .order('event_date', { ascending: false });
-
+      .eq('resource_type', 'atelier-webinaire');
+    
     if (error) {
-      console.error('Erreur lors du chargement des ateliers et webinaires:', error);
-      setAteliersWebinaires([]);
-    } else {
-      // Charger le compteur pour chaque atelier
-      const ateliersWithCount = await Promise.all((data || []).map(async (atelier) => {
-        const { data: countData } = await supabase.rpc('count_atelier_inscriptions', { atelier_uuid: atelier.id });
-        return {
-          ...atelier,
-          inscriptions_count: typeof countData === 'number' ? countData : 0
-        };
-      }));
-      setAteliersWebinaires(ateliersWithCount);
+      console.error('Erreur lors du chargement des ateliers:', error);
+      setLoading(false);
+      return;
     }
+
+    if (!data) {
+      setAteliersWebinaires([]);
+      setLoading(false);
+      return;
+    }
+
+    // Séparer les événements à venir et passés
+    const now = new Date();
+    const upcoming: AtelierWebinaire[] = [];
+    const past: AtelierWebinaire[] = [];
+
+    for (const item of data) {
+      const eventDate = item.event_date ? new Date(item.event_date) : null;
+      
+      // Récupérer le nombre d'inscriptions
+      const { data: countData } = await supabase.rpc('count_atelier_inscriptions', { 
+        atelier_uuid: item.id 
+      });
+      
+      const articleWithCount = {
+        ...item,
+        inscriptions_count: countData || 0
+      };
+
+      if (eventDate && eventDate >= now) {
+        upcoming.push(articleWithCount);
+      } else {
+        past.push(articleWithCount);
+      }
+    }
+
+    // Trier les événements à venir du plus proche au plus lointain
+    upcoming.sort((a, b) => {
+      const dateA = a.event_date ? new Date(a.event_date).getTime() : 0;
+      const dateB = b.event_date ? new Date(b.event_date).getTime() : 0;
+      return dateA - dateB; // Croissant
+    });
+
+    // Trier les événements passés du plus récent au plus ancien
+    past.sort((a, b) => {
+      const dateA = a.event_date ? new Date(a.event_date).getTime() : 0;
+      const dateB = b.event_date ? new Date(b.event_date).getTime() : 0;
+      return dateB - dateA; // Décroissant
+    });
+
+    // Combiner : à venir d'abord, puis passés
+    const sortedData = [...upcoming, ...past];
+
+    setAteliersWebinaires(sortedData);
     setLoading(false);
   };
 
