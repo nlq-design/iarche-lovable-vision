@@ -104,6 +104,17 @@ const AdminArticleEditor = () => {
   const [secteurActivite, setSecteurActivite] = useState<string>('');
   const [tailleEntreprise, setTailleEntreprise] = useState<string>('');
   const [problematique, setProblematique] = useState('');
+  
+  // Champs spécifiques aux livres blancs
+  const [nombrePages, setNombrePages] = useState<number>(0);
+  const [formatFichier, setFormatFichier] = useState<string>('pdf');
+  const [tailleFichierBytes, setTailleFichierBytes] = useState<number>(0);
+  const [languesDisponibles, setLanguesDisponibles] = useState<string[]>(['fr']);
+  const [niveau, setNiveau] = useState<string>('');
+  const [thematiques, setThematiques] = useState<string[]>([]);
+  const [versionDocument, setVersionDocument] = useState<string>('1.0');
+  const [ctaPersonnalise, setCtaPersonnalise] = useState<string>('');
+  const [compteurTelechargements, setCompteurTelechargements] = useState<number>(0);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -203,6 +214,15 @@ const AdminArticleEditor = () => {
       setSecteurActivite(data.secteur_activite || '');
       setTailleEntreprise(data.taille_entreprise || '');
       setProblematique(data.problematique || '');
+      setNombrePages(data.nombre_pages || 0);
+      setFormatFichier(data.format_fichier || 'pdf');
+      setTailleFichierBytes(data.taille_fichier_bytes || 0);
+      setLanguesDisponibles(data.langues_disponibles || ['fr']);
+      setNiveau(data.niveau || '');
+      setThematiques(data.thematiques || []);
+      setVersionDocument(data.version_document || '1.0');
+      setCtaPersonnalise(data.cta_personnalise || '');
+      setCompteurTelechargements(data.compteur_telechargements || 0);
 
       // Charger les catégories de l'article
       const { data: articleCategories } = await supabase
@@ -271,6 +291,14 @@ const AdminArticleEditor = () => {
       secteur_activite: secteurActivite || null,
       taille_entreprise: tailleEntreprise || null,
       problematique: problematique || null,
+      nombre_pages: nombrePages > 0 ? nombrePages : null,
+      format_fichier: formatFichier,
+      taille_fichier_bytes: tailleFichierBytes > 0 ? tailleFichierBytes : null,
+      langues_disponibles: languesDisponibles.length > 0 ? languesDisponibles : ['fr'],
+      niveau: niveau || null,
+      thematiques: thematiques.length > 0 ? thematiques : null,
+      version_document: versionDocument || '1.0',
+      cta_personnalise: ctaPersonnalise || null,
     };
 
     try {
@@ -530,6 +558,14 @@ const AdminArticleEditor = () => {
       secteur_activite: secteurActivite || null,
       taille_entreprise: tailleEntreprise || null,
       problematique: problematique || null,
+      nombre_pages: nombrePages > 0 ? nombrePages : null,
+      format_fichier: formatFichier,
+      taille_fichier_bytes: tailleFichierBytes > 0 ? tailleFichierBytes : null,
+      langues_disponibles: languesDisponibles.length > 0 ? languesDisponibles : ['fr'],
+      niveau: niveau || null,
+      thematiques: thematiques.length > 0 ? thematiques : null,
+      version_document: versionDocument || '1.0',
+      cta_personnalise: ctaPersonnalise || null,
     };
 
     if (id) {
@@ -908,63 +944,221 @@ const AdminArticleEditor = () => {
                 </div>
 
                 {resourceType === 'livre-blanc' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="fileUpload">Fichier PDF</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        id="fileUpload"
-                        type="file"
-                        accept=".pdf"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    <h3 className="font-semibold text-foreground">Informations livre blanc</h3>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="fileUpload">Fichier PDF/ePub *</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="fileUpload"
+                          type="file"
+                          accept=".pdf,.epub"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
 
-                          if (file.size > 20 * 1024 * 1024) {
-                            toast({
-                              title: 'Fichier trop volumineux',
-                              description: 'La taille maximale est de 20 MB',
-                              variant: 'destructive'
-                            });
-                            return;
-                          }
+                            if (file.size > 20 * 1024 * 1024) {
+                              toast({
+                                title: 'Fichier trop volumineux',
+                                description: 'La taille maximale est de 20 MB',
+                                variant: 'destructive'
+                              });
+                              return;
+                            }
 
-                          setUploadingFile(true);
-                          const fileExt = file.name.split('.').pop();
-                          const fileName = `${Math.random()}.${fileExt}`;
-                          const filePath = `${fileName}`;
+                            setUploadingFile(true);
+                            
+                            // Auto-calculer taille fichier
+                            setTailleFichierBytes(file.size);
+                            
+                            // Détecter format
+                            const fileExt = file.name.split('.').pop()?.toLowerCase();
+                            if (fileExt === 'pdf') setFormatFichier('pdf');
+                            else if (fileExt === 'epub') setFormatFichier('epub');
+                            
+                            const fileName = `${Math.random()}.${fileExt}`;
+                            const filePath = `${fileName}`;
 
-                          const { error: uploadError, data } = await supabase.storage
-                            .from('livres-blancs')
-                            .upload(filePath, file);
-
-                          if (uploadError) {
-                            toast({
-                              title: 'Erreur d\'upload',
-                              description: uploadError.message,
-                              variant: 'destructive'
-                            });
-                          } else {
-                            const { data: { publicUrl } } = supabase.storage
+                            const { error: uploadError } = await supabase.storage
                               .from('livres-blancs')
-                              .getPublicUrl(filePath);
-                            setFileUrl(publicUrl);
-                            toast({
-                              title: 'Fichier uploadé',
-                              description: 'Le fichier a été uploadé avec succès'
-                            });
-                          }
-                          setUploadingFile(false);
-                        }}
-                        disabled={isLoading || uploadingFile}
-                      />
-                      {uploadingFile && <Loader2 className="h-4 w-4 animate-spin" />}
+                              .upload(filePath, file);
+
+                            if (uploadError) {
+                              toast({
+                                title: 'Erreur d\'upload',
+                                description: uploadError.message,
+                                variant: 'destructive'
+                              });
+                            } else {
+                              const { data: { publicUrl } } = supabase.storage
+                                .from('livres-blancs')
+                                .getPublicUrl(filePath);
+                              setFileUrl(publicUrl);
+                              toast({
+                                title: 'Fichier uploadé',
+                                description: `Fichier uploadé avec succès (${(file.size / 1024 / 1024).toFixed(2)} MB)`
+                              });
+                            }
+                            setUploadingFile(false);
+                          }}
+                          disabled={isLoading || uploadingFile}
+                        />
+                        {uploadingFile && <Loader2 className="h-4 w-4 animate-spin" />}
+                      </div>
+                      {fileUrl && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <FileText className="h-4 w-4" />
+                            <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary">
+                              Voir le fichier
+                            </a>
+                            {tailleFichierBytes > 0 && (
+                              <span>({(tailleFichierBytes / 1024 / 1024).toFixed(2)} MB)</span>
+                            )}
+                          </div>
+                          {/* Aperçu PDF */}
+                          {formatFichier === 'pdf' && fileUrl && (
+                            <div className="mt-2">
+                              <Label>Aperçu PDF</Label>
+                              <iframe 
+                                src={fileUrl} 
+                                className="w-full h-96 border border-border rounded-lg mt-2"
+                                title="Aperçu PDF"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    {fileUrl && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <FileText className="h-4 w-4" />
-                        <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary">
-                          Voir le fichier
-                        </a>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="nombrePages">Nombre de pages</Label>
+                        <Input
+                          id="nombrePages"
+                          type="number"
+                          value={nombrePages || ''}
+                          onChange={(e) => setNombrePages(parseInt(e.target.value) || 0)}
+                          disabled={isLoading}
+                          min="1"
+                          placeholder="Ex: 25"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="formatFichier">Format</Label>
+                        <Select value={formatFichier} onValueChange={setFormatFichier} disabled={isLoading}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pdf">PDF</SelectItem>
+                            <SelectItem value="epub">ePub</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="niveau">Niveau</Label>
+                        <Select value={niveau} onValueChange={setNiveau} disabled={isLoading}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner un niveau" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="debutant">Débutant</SelectItem>
+                            <SelectItem value="intermediaire">Intermédiaire</SelectItem>
+                            <SelectItem value="expert">Expert</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="versionDocument">Version</Label>
+                        <Input
+                          id="versionDocument"
+                          value={versionDocument}
+                          onChange={(e) => setVersionDocument(e.target.value)}
+                          disabled={isLoading}
+                          placeholder="Ex: v1.0, v1.1"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Langues disponibles</Label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {['fr', 'en', 'es'].map((langue) => (
+                          <div key={langue} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`langue-${langue}`}
+                              checked={languesDisponibles.includes(langue)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setLanguesDisponibles([...languesDisponibles, langue]);
+                                } else {
+                                  setLanguesDisponibles(languesDisponibles.filter(l => l !== langue));
+                                }
+                              }}
+                              disabled={isLoading}
+                            />
+                            <label htmlFor={`langue-${langue}`} className="text-sm cursor-pointer">
+                              {langue === 'fr' && '🇫🇷 Français'}
+                              {langue === 'en' && '🇬🇧 Anglais'}
+                              {langue === 'es' && '🇪🇸 Espagnol'}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Thématiques</Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {['IA Générative', 'Automatisation', 'Conformité', 'Data', 'Autre'].map((thematique) => (
+                          <div key={thematique} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`thematique-${thematique}`}
+                              checked={thematiques.includes(thematique)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setThematiques([...thematiques, thematique]);
+                                } else {
+                                  setThematiques(thematiques.filter(t => t !== thematique));
+                                }
+                              }}
+                              disabled={isLoading}
+                            />
+                            <label htmlFor={`thematique-${thematique}`} className="text-sm cursor-pointer">
+                              {thematique}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="ctaPersonnalise">CTA personnalisé (optionnel)</Label>
+                      <Input
+                        id="ctaPersonnalise"
+                        value={ctaPersonnalise}
+                        onChange={(e) => setCtaPersonnalise(e.target.value)}
+                        disabled={isLoading}
+                        placeholder="Défaut: Télécharger le guide"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Texte du bouton de téléchargement
+                      </p>
+                    </div>
+                    
+                    {/* Statistiques téléchargements (admin only, lecture seule) */}
+                    {id && (
+                      <div className="p-3 bg-muted/30 rounded-lg border border-border">
+                        <p className="text-sm font-medium text-foreground">
+                          📊 Téléchargements : <span className="text-primary">{compteurTelechargements}</span>
+                        </p>
                       </div>
                     )}
                   </div>
