@@ -30,7 +30,7 @@ const Header = () => {
           {/* Logo IArche */}
           <button 
             onClick={() => navigate('/')}
-            className="flex items-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D15A3E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF9F7] rounded"
+            className="flex items-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded"
           >
             <span className="text-3xl font-semibold hero-gradient-text">IArche</span>
           </button>
@@ -40,7 +40,7 @@ const Header = () => {
             <NavLink 
               to="/services"
               className={({ isActive }) => 
-                `text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded px-2 py-1 ${
+                `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded px-2 py-1 ${
                   isActive 
                     ? 'text-primary font-semibold' 
                     : 'text-primary hover:text-primary/80'
@@ -52,7 +52,7 @@ const Header = () => {
             <NavLink 
               to="/solutions"
               className={({ isActive }) => 
-                `text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded px-2 py-1 ${
+                `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded px-2 py-1 ${
                   isActive 
                     ? 'hero-gradient-text font-semibold' 
                     : 'hero-gradient-text'
@@ -70,7 +70,7 @@ const Header = () => {
                   setResourcesOpen(false);
                 }}
                 onMouseEnter={() => setResourcesOpen(true)}
-                className="flex items-center gap-1 text-sm text-accent hover:text-accent/80 transition-colors focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded px-2 py-1"
+                className="flex items-center gap-1 text-sm text-accent hover:text-accent/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 rounded px-2 py-1"
               >
                 Ressources
                 <ChevronDown 
@@ -140,7 +140,7 @@ const Header = () => {
 
           {/* Bouton Hamburger Mobile */}
           <button 
-            className="md:hidden p-2 text-foreground hover:text-primary focus:text-primary focus:outline-none focus:ring-2 focus:ring-primary rounded transition-colors"
+            className="md:hidden p-2 text-foreground hover:text-primary focus:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
           >
@@ -162,7 +162,7 @@ const Header = () => {
                 to="/services"
                 onClick={() => setMobileMenuOpen(false)}
                 className={({ isActive }) => 
-                  `text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded px-2 py-1 ${
+                  `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded px-2 py-1 ${
                     isActive 
                       ? 'text-primary font-semibold' 
                       : 'text-primary hover:text-primary/80'
@@ -175,7 +175,7 @@ const Header = () => {
                 to="/solutions"
                 onClick={() => setMobileMenuOpen(false)}
                 className={({ isActive }) => 
-                  `text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded px-2 py-1 ${
+                  `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded px-2 py-1 ${
                     isActive 
                       ? 'hero-gradient-text font-semibold' 
                       : 'hero-gradient-text'
