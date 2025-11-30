@@ -538,20 +538,43 @@ const ArticleDetail = () => {
                 {article.excerpt}
               </p>
             )}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground animate-fadeIn [animation-delay:0.3s]">
-              <Calendar className="h-4 w-4" aria-hidden="true" />
-              {formatDate(article.published_at || article.created_at)}
+            <div className="flex items-center justify-between gap-4 animate-fadeIn [animation-delay:0.3s]">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" aria-hidden="true" />
+                {formatDate(article.published_at || article.created_at)}
+              </div>
               
-              {/* Type d'actualité badge */}
-              {article.resource_type === 'actualite' && article.actualite_type && (
-                <Badge variant="outline" className="ml-2">
-                  {article.actualite_type === 'annonce' && 'Annonce'}
-                  {article.actualite_type === 'partenariat' && 'Partenariat'}
-                  {article.actualite_type === 'evenement' && 'Événement'}
-                  {article.actualite_type === 'communique' && 'Communiqué'}
-                </Badge>
+              {/* CTA dans le header selon type */}
+              {article.resource_type === 'solution' && (
+                <GradientLink 
+                  href="/contact" 
+                  className="text-sm"
+                  onClick={() => trackCTAClick('demander_presentation', 'solution_detail_header', article.slug)}
+                >
+                  Demander une présentation
+                </GradientLink>
+              )}
+              
+              {(article.resource_type === 'article' || article.resource_type === 'actualite' || article.resource_type === 'cas-client') && (
+                <GradientLink 
+                  href="/newsletter" 
+                  className="text-sm"
+                  onClick={() => trackCTAClick('newsletter_header', `${article.resource_type}_detail_header`, article.slug)}
+                >
+                  S'inscrire à la Newsletter
+                </GradientLink>
               )}
             </div>
+            
+            {/* Type d'actualité badge */}
+            {article.resource_type === 'actualite' && article.actualite_type && (
+              <Badge variant="outline" className="mt-2">
+                {article.actualite_type === 'annonce' && 'Annonce'}
+                {article.actualite_type === 'partenariat' && 'Partenariat'}
+                {article.actualite_type === 'evenement' && 'Événement'}
+                {article.actualite_type === 'communique' && 'Communiqué'}
+              </Badge>
+            )}
             
             {/* Date de l'événement si type événement */}
             {article.resource_type === 'actualite' && article.actualite_type === 'evenement' && article.event_date && (
@@ -800,9 +823,34 @@ const ArticleDetail = () => {
             </div>
           </div>
 
-          {/* 4. FAQ (si présente) - AVANT le CTA */}
+          {/* CTA avant FAQ selon type */}
+          {article.resource_type === 'solution' && (
+            <div className="text-center my-12 animate-fadeIn [animation-delay:0.5s]">
+              <GradientLink 
+                href="/contact" 
+                className="text-lg"
+                onClick={() => trackCTAClick('demander_presentation', 'solution_detail_before_faq', article.slug)}
+              >
+                Demander une présentation
+              </GradientLink>
+            </div>
+          )}
+          
+          {(article.resource_type === 'article' || article.resource_type === 'actualite' || article.resource_type === 'cas-client') && (
+            <div className="text-center my-12 animate-fadeIn [animation-delay:0.5s]">
+              <GradientLink 
+                href="/contact" 
+                className="text-lg"
+                onClick={() => trackCTAClick('nous_contacter', `${article.resource_type}_detail_before_faq`, article.slug)}
+              >
+                Nous contacter
+              </GradientLink>
+            </div>
+          )}
+
+          {/* 4. FAQ (si présente) - APRÈS le CTA */}
           {faq && faq.length > 0 && (
-            <div className="mb-12 animate-fadeIn [animation-delay:0.5s]">
+            <div className="mb-12 animate-fadeIn [animation-delay:0.6s]">
               <ArticleFAQ articleId={article.id} />
             </div>
           )}

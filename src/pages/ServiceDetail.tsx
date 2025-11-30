@@ -142,6 +142,17 @@ const ServiceDetail = () => {
             </p>
           </section>
 
+          {/* CTA intermédiaire */}
+          <div className="text-center my-12 animate-fadeIn [animation-delay:0.45s]">
+            <GradientLink 
+              href="" 
+              className="text-lg"
+              onClick={() => trackCTAClick('prendre_rendez_vous', 'service_detail', slug || '')}
+            >
+              Prendre rendez-vous
+            </GradientLink>
+          </div>
+
           {/* Méthodologie */}
           <section className="mb-12 animate-fadeIn [animation-delay:0.5s]">
             <h2 className="text-2xl font-bold text-foreground mb-6">Méthodologie</h2>
