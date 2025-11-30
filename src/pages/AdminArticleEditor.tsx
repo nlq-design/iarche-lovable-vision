@@ -94,6 +94,7 @@ const AdminArticleEditor = () => {
   const [replayUrl, setReplayUrl] = useState('');
   const [fileUrl, setFileUrl] = useState('');
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [ressourcesComplementaires, setRessourcesComplementaires] = useState<Array<{ titre: string; url: string }>>([]);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -122,14 +123,14 @@ const AdminArticleEditor = () => {
     }, 30000); // 30 secondes
 
     return () => clearInterval(autoSaveInterval);
-  }, [id, hasChanges, title, slug, excerpt, content, coverImageUrl, published, scheduledPublishAt, selectedCategories, selectedTags, resourceType, eventDate, eventLocation, registrationOpen, maxParticipants, replayUrl, fileUrl]);
+  }, [id, hasChanges, title, slug, excerpt, content, coverImageUrl, published, scheduledPublishAt, selectedCategories, selectedTags, resourceType, eventDate, eventLocation, registrationOpen, maxParticipants, replayUrl, fileUrl, ressourcesComplementaires]);
 
   // Marquer comme modifié lors des changements
   useEffect(() => {
     if (id && !loadingArticle) {
       setHasChanges(true);
     }
-  }, [title, excerpt, content, coverImageUrl, published, scheduledPublishAt, selectedCategories, selectedTags, resourceType, eventDate, eventLocation, registrationOpen, maxParticipants, replayUrl, fileUrl]);
+  }, [title, excerpt, content, coverImageUrl, published, scheduledPublishAt, selectedCategories, selectedTags, resourceType, eventDate, eventLocation, registrationOpen, maxParticipants, replayUrl, fileUrl, ressourcesComplementaires]);
 
   const loadCategoriesAndTags = async () => {
     // Charger les catégories
@@ -179,6 +180,11 @@ const AdminArticleEditor = () => {
       setMaxParticipants(data.max_participants || 30);
       setReplayUrl(data.replay_url || '');
       setFileUrl(data.file_url || '');
+      setRessourcesComplementaires(
+        Array.isArray(data.ressources_complementaires) 
+          ? data.ressources_complementaires as Array<{ titre: string; url: string }> 
+          : []
+      );
 
       // Charger les catégories de l'article
       const { data: articleCategories } = await supabase
@@ -241,6 +247,7 @@ const AdminArticleEditor = () => {
       max_participants: maxParticipants,
       replay_url: replayUrl || null,
       file_url: fileUrl || null,
+      ressources_complementaires: ressourcesComplementaires.length > 0 ? ressourcesComplementaires : null,
     };
 
     try {
@@ -488,6 +495,13 @@ const AdminArticleEditor = () => {
       scheduled_publish_at: scheduledPublishAt ? scheduledPublishAt.toISOString() : null,
       resource_type: resourceType,
       author_id: user.id,
+      event_date: eventDate ? eventDate.toISOString() : null,
+      event_location: eventLocation || null,
+      registration_open: registrationOpen,
+      max_participants: maxParticipants,
+      replay_url: replayUrl || null,
+      file_url: fileUrl || null,
+      ressources_complementaires: ressourcesComplementaires.length > 0 ? ressourcesComplementaires : null,
     };
 
     if (id) {
@@ -1121,6 +1135,82 @@ const AdminArticleEditor = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Ressources complémentaires - uniquement pour les articles */}
+                {resourceType === 'article' && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>Ressources complémentaires</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setRessourcesComplementaires([...ressourcesComplementaires, { titre: '', url: '' }])}
+                        disabled={isLoading}
+                      >
+                        + Ajouter une ressource
+                      </Button>
+                    </div>
+                    
+                    {ressourcesComplementaires.length > 0 ? (
+                      <div className="space-y-3">
+                        {ressourcesComplementaires.map((ressource, index) => (
+                          <Card key={index} className="p-4">
+                            <div className="space-y-3">
+                              <div className="space-y-2">
+                                <Label htmlFor={`ressource-titre-${index}`}>Titre</Label>
+                                <Input
+                                  id={`ressource-titre-${index}`}
+                                  value={ressource.titre}
+                                  onChange={(e) => {
+                                    const newRessources = [...ressourcesComplementaires];
+                                    newRessources[index].titre = e.target.value;
+                                    setRessourcesComplementaires(newRessources);
+                                  }}
+                                  placeholder="Titre de la ressource"
+                                  disabled={isLoading}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`ressource-url-${index}`}>URL</Label>
+                                <div className="flex gap-2">
+                                  <Input
+                                    id={`ressource-url-${index}`}
+                                    type="url"
+                                    value={ressource.url}
+                                    onChange={(e) => {
+                                      const newRessources = [...ressourcesComplementaires];
+                                      newRessources[index].url = e.target.value;
+                                      setRessourcesComplementaires(newRessources);
+                                    }}
+                                    placeholder="https://..."
+                                    disabled={isLoading}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => {
+                                      const newRessources = ressourcesComplementaires.filter((_, i) => i !== index);
+                                      setRessourcesComplementaires(newRessources);
+                                    }}
+                                    disabled={isLoading}
+                                  >
+                                    ×
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Aucune ressource complémentaire ajoutée. Cliquez sur "+ Ajouter une ressource" pour en ajouter.
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="content">Contenu *</Label>

@@ -20,6 +20,8 @@ import SolutionContactForm from '@/components/SolutionContactForm';
 import AuthorCard from '@/components/ui/AuthorCard';
 import RelatedArticles from '@/components/ui/RelatedArticles';
 import { useCTATracking } from '@/hooks/useCTATracking';
+import { TableOfContents } from '@/components/ui/TableOfContents';
+import { RessourcesComplementaires } from '@/components/ui/RessourcesComplementaires';
 import 'react-quill/dist/quill.snow.css';
 
 interface Article {
@@ -40,6 +42,7 @@ interface Article {
   file_url: string | null;
   replay_url: string | null;
   tags: string[] | null;
+  ressources_complementaires: any;
 }
 
 const ArticleDetail = () => {
@@ -495,34 +498,51 @@ const ArticleDetail = () => {
             </div>
           </header>
 
-          {/* 3. Layout avec AuthorCard float + Contenu */}
-          <div className="flow-root">
-            {/* Encadré auteur - float left, visible desktop uniquement */}
-            <AuthorCard 
-              showAuthorLabel={
-                article.resource_type === 'article' || 
-                article.resource_type === 'actualite' || 
-                article.resource_type === 'cas-client'
-              }
-            />
+          {/* 3. Layout avec AuthorCard + TOC (si article) + Contenu */}
+          <div className="flex gap-8">
+            {/* Contenu principal */}
+            <div className="flex-1 min-w-0">
+              <div className="flow-root">
+                {/* Encadré auteur - float left, visible desktop uniquement */}
+                <AuthorCard 
+                  showAuthorLabel={
+                    article.resource_type === 'article' || 
+                    article.resource_type === 'actualite' || 
+                    article.resource_type === 'cas-client'
+                  }
+                />
 
-            {/* 4. Corps du contenu - s'adapte avec l'encadré */}
-            <div
-              className="prose prose-lg max-w-none text-left
-                prose-headings:text-foreground prose-headings:text-left
-                prose-h1:text-[32px] prose-h1:font-bold
-                prose-h2:text-[24px] prose-h2:font-semibold
-                prose-p:text-[#374151] prose-p:leading-[1.75] prose-p:text-left
-                prose-a:text-accent hover:prose-a:text-accent/80
-                prose-strong:text-foreground
-                prose-ul:text-[#374151]
-                prose-ol:text-[#374151]
-                prose-blockquote:border-l-accent
-                prose-blockquote:text-muted-foreground
-                animate-fadeIn [animation-delay:0.4s]
-                ql-editor"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
-            />
+                {/* 4. Corps du contenu - s'adapte avec l'encadré */}
+                <article
+                  className="prose prose-lg max-w-none text-left
+                    prose-headings:text-foreground prose-headings:text-left
+                    prose-h1:text-[32px] prose-h1:font-bold
+                    prose-h2:text-[24px] prose-h2:font-semibold
+                    prose-p:text-[#374151] prose-p:leading-[1.75] prose-p:text-left
+                    prose-a:text-accent hover:prose-a:text-accent/80
+                    prose-strong:text-foreground
+                    prose-ul:text-[#374151]
+                    prose-ol:text-[#374151]
+                    prose-blockquote:border-l-accent
+                    prose-blockquote:text-muted-foreground
+                    animate-fadeIn [animation-delay:0.4s]
+                    ql-editor"
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.content) }}
+                />
+              </div>
+
+              {/* Ressources complémentaires (après le contenu, uniquement pour articles) */}
+              {article.resource_type === 'article' && article.ressources_complementaires && (
+                <RessourcesComplementaires ressources={article.ressources_complementaires} />
+              )}
+            </div>
+
+            {/* Table des matières - sidebar droite (uniquement pour articles) */}
+            {article.resource_type === 'article' && (
+              <aside className="hidden lg:block w-64 flex-shrink-0">
+                <TableOfContents content={article.content} />
+              </aside>
+            )}
           </div>
 
           {/* Version mobile de l'auteur (horizontal compact) */}

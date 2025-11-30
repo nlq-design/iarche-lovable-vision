@@ -244,6 +244,7 @@ export type Database = {
           registration_open: boolean | null
           replay_url: string | null
           resource_type: string
+          ressources_complementaires: Json | null
           scheduled_publish_at: string | null
           slug: string
           status: string | null
@@ -272,6 +273,7 @@ export type Database = {
           registration_open?: boolean | null
           replay_url?: string | null
           resource_type?: string
+          ressources_complementaires?: Json | null
           scheduled_publish_at?: string | null
           slug: string
           status?: string | null
@@ -300,6 +302,7 @@ export type Database = {
           registration_open?: boolean | null
           replay_url?: string | null
           resource_type?: string
+          ressources_complementaires?: Json | null
           scheduled_publish_at?: string | null
           slug?: string
           status?: string | null
