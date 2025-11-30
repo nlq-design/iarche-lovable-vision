@@ -554,7 +554,7 @@ const ArticleDetail = () => {
             <div className="flex items-center justify-between gap-4 animate-fadeIn [animation-delay:0.3s]">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" aria-hidden="true" />
-                {formatDate(article.published_at || article.created_at)}
+                {formatDate(article.created_at)}
               </div>
               
               {/* CTA dans le header selon type */}
