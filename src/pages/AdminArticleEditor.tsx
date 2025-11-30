@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,8 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, Save, Eye, History, Calendar as CalendarIcon, Upload, FileText, Sparkles, ChevronDown } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { LazyQuill } from '@/components/admin/LazyQuill';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
@@ -1125,11 +1124,9 @@ const AdminArticleEditor = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="content">Contenu *</Label>
-                  <ReactQuill
-                    theme="snow"
+                  <LazyQuill
                     value={content}
                     onChange={setContent}
-                    className="bg-background"
                     modules={{
                       toolbar: [
                         [{ header: [1, 2, 3, false] }],
@@ -1139,6 +1136,7 @@ const AdminArticleEditor = () => {
                         ['clean'],
                       ],
                     }}
+                    placeholder="Rédigez votre article ici..."
                   />
                 </div>
 
