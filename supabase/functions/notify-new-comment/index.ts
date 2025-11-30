@@ -157,8 +157,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Envoyer l'email aux admins
     const emailResponse = await resend.emails.send({
-      from: "IArche <onboarding@resend.dev>", // Remplacez par votre domaine vérifié
+      from: "IArche Notifications <notifications@iarche.fr>",
       to: adminEmails,
+      replyTo: 'nlq@iarche.fr',
       subject: `Nouveau commentaire en attente - ${safeArticleTitle}`,
       html: `
         <h1>Nouveau commentaire en attente de modération</h1>

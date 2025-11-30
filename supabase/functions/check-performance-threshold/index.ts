@@ -320,8 +320,9 @@ const handler = async (req: Request): Promise<Response> => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: "IArche Performance <onboarding@resend.dev>",
+        from: "IArche Performance <performance@iarche.fr>",
         to: ["nlq@iarche.fr"],
+        replyTo: "nlq@iarche.fr",
         subject: `${criticalViolations.length > 0 ? '🚨 CRITIQUE' : '⚠️ Alerte'} Performance ${metric.environment.toUpperCase()} · ${violations.length} métrique${violations.length > 1 ? 's' : ''} hors seuil`,
         html: emailHTML,
       }),
