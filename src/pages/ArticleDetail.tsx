@@ -263,6 +263,39 @@ const ArticleDetail = () => {
           <meta property="og:image" content={article.cover_image_url} />
         )}
         
+        {/* Schema.org BreadcrumbList */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Accueil",
+                "item": "https://iarche.fr/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": location.pathname.startsWith('/solutions/') ? 'Solutions' :
+                       location.pathname.startsWith('/articles/') ? 'Articles' :
+                       location.pathname.startsWith('/actualites/') ? 'Actualités' :
+                       location.pathname.startsWith('/cas-clients/') ? 'Cas clients' :
+                       location.pathname.startsWith('/livres-blancs/') ? 'Livres blancs' :
+                       location.pathname.startsWith('/ateliers-webinaires/') ? 'Ateliers & Webinaires' : 'Ressources',
+                "item": `https://iarche.fr${getBackPath()}`
+              },
+              {
+                "@type": "ListItem",
+                "position": 3,
+                "name": article.title,
+                "item": getCanonicalUrl()
+              }
+            ]
+          })}
+        </script>
+
         {/* Schema.org Article */}
         <script type="application/ld+json">
           {JSON.stringify({

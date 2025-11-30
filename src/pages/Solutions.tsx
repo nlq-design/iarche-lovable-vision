@@ -56,6 +56,28 @@ const Solutions = () => {
         <meta property="og:description" content="Solutions IA développées par IArche : Team 5 Connect, Lexia, Dialogue Plus." />
         <meta property="og:url" content="https://iarche.fr/solutions" />
         <meta property="og:type" content="website" />
+
+        {/* Schema.org BreadcrumbList */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Accueil",
+                "item": "https://iarche.fr/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Solutions",
+                "item": "https://iarche.fr/solutions"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
       
       <Header />

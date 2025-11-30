@@ -133,6 +133,28 @@ const AteliersWebinaires = () => {
         />
         <meta property="og:url" content="https://iarche.fr/ateliers-webinaires" />
         <meta property="og:type" content="website" />
+
+        {/* Schema.org BreadcrumbList */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Accueil",
+                "item": "https://iarche.fr/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Ateliers & Webinaires",
+                "item": "https://iarche.fr/ateliers-webinaires"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       <Header />
