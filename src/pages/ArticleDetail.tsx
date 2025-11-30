@@ -498,7 +498,13 @@ const ArticleDetail = () => {
           {/* 3. Layout avec AuthorCard float + Contenu */}
           <div className="flow-root">
             {/* Encadré auteur - float left, visible desktop uniquement */}
-            <AuthorCard />
+            <AuthorCard 
+              showAuthorLabel={
+                article.resource_type === 'article' || 
+                article.resource_type === 'actualite' || 
+                article.resource_type === 'cas-client'
+              }
+            />
 
             {/* 4. Corps du contenu - s'adapte avec l'encadré */}
             <div

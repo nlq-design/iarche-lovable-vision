@@ -10,6 +10,7 @@ interface AuthorCardProps {
   fonction?: string;
   linkedin?: string;
   site?: string;
+  showAuthorLabel?: boolean;
 }
 
 const AuthorCard = ({
@@ -17,7 +18,8 @@ const AuthorCard = ({
   nom = 'Nicolas LARA',
   fonction = 'Fondateur IArche',
   linkedin = 'https://www.linkedin.com/in/nicolas-lara-queralta/',
-  site = 'https://iarche.fr'
+  site = 'https://iarche.fr',
+  showAuthorLabel = true
 }: AuthorCardProps) => {
   const { trackCTAClick } = useCTATracking();
   const navigate = useNavigate();
@@ -67,10 +69,12 @@ const AuthorCard = ({
 
           {/* Info centrale */}
           <div className="flex-1 min-w-0">
-            <div className="text-xs uppercase text-[#6B7280] tracking-wider mb-1 font-semibold">
-              Auteur
-            </div>
-            <div className="text-sm font-semibold text-[#111827] mb-0.5 truncate">
+            {showAuthorLabel && (
+              <div className="text-xs uppercase text-[#6B7280] tracking-wider mb-1 font-semibold">
+                Auteur
+              </div>
+            )}
+            <div className={`text-sm font-semibold text-[#111827] mb-0.5 truncate ${!showAuthorLabel ? 'mt-1' : ''}`}>
               {nom}
             </div>
             <div className="text-xs text-[#6B7280] truncate">
@@ -146,9 +150,11 @@ const AuthorCard = ({
         hidden
       ">
         {/* Label "Auteur" */}
-        <div className="text-[11px] uppercase text-[#6B7280] tracking-wider mb-3 font-semibold">
-          Auteur
-        </div>
+        {showAuthorLabel && (
+          <div className="text-[11px] uppercase text-[#6B7280] tracking-wider mb-3 font-semibold">
+            Auteur
+          </div>
+        )}
 
         {/* Photo */}
         <div className="flex justify-center mb-3">
