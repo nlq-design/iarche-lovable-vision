@@ -90,6 +90,7 @@ const AdminArticleEditor = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [availableCategories, setAvailableCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [availableTags, setAvailableTags] = useState<Array<{ id: string; name: string }>>([]);
+  const [customCreatedAt, setCustomCreatedAt] = useState<Date | undefined>();
   
   // Champs spécifiques aux types de contenu
   const [resourceType, setResourceType] = useState<string>(() => !id ? getResourceTypeFromPath() : 'actualite');
@@ -230,6 +231,7 @@ const AdminArticleEditor = () => {
       );
       setRappelsAutomatiques(data.rappels_automatiques || false);
       setCtaEvenementPersonnalise(data.cta_evenement_personnalise || '');
+      setCustomCreatedAt(data.created_at ? new Date(data.created_at) : undefined);
 
       // Load categories and tags
       const { data: articleCategories } = await supabase
@@ -400,6 +402,7 @@ const AdminArticleEditor = () => {
       );
       setRappelsAutomatiques(data.rappels_automatiques || false);
       setCtaEvenementPersonnalise(data.cta_evenement_personnalise || '');
+      setCustomCreatedAt(data.created_at ? new Date(data.created_at) : undefined);
 
       // Charger les catégories de l'article
       const { data: articleCategories } = await supabase
@@ -736,6 +739,7 @@ const AdminArticleEditor = () => {
       published_at: status === 'published' ? new Date().toISOString() : null,
       scheduled_publish_at: scheduledPublishAt ? scheduledPublishAt.toISOString() : null,
       resource_type: resourceType,
+      ...(customCreatedAt && !id ? { created_at: customCreatedAt.toISOString() } : {}),
       author_id: user.id,
       event_date: eventDate ? eventDate.toISOString() : null,
       event_location: eventLocation || null,
@@ -1185,6 +1189,44 @@ const AdminArticleEditor = () => {
                     placeholder="https://..."
                   />
                 </div>
+
+                {!id && (
+                  <div className="space-y-2">
+                    <Label>Date de création personnalisée</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !customCreatedAt && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {customCreatedAt ? (
+                            format(customCreatedAt, "PPP", { locale: fr })
+                          ) : (
+                            <span>Date du jour (par défaut)</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={customCreatedAt}
+                          onSelect={setCustomCreatedAt}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <p className="text-xs text-muted-foreground">
+                      {customCreatedAt 
+                        ? "Cette date remplacera la date du jour" 
+                        : "Si aucune date n'est choisie, la date du jour sera utilisée"}
+                    </p>
+                  </div>
+                )}
 
                 {resourceType === 'livre-blanc' && (
                   <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
