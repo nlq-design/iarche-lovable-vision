@@ -39,6 +39,8 @@ const resourceTypeToPath: Record<string, string> = {
   'cas-client': '/cas-clients',
   'livre-blanc': '/livres-blancs',
   'atelier-webinaire': '/ateliers-webinaires',
+  'service': '/services',
+  'solution': '/solutions',
 }
 
 serve(async (req) => {
