@@ -747,19 +747,14 @@ const AdminArticleEditor = () => {
       author_id: user.id,
     };
 
-    // Ajouter created_at seulement pour les nouvelles créations avec date personnalisée
+    // Ajouter created_at : toujours le spécifier explicitement pour éviter que le DEFAULT now() l'écrase
     if (customCreatedAt) {
-      if (!id) {
-        // Nouvelle création : utiliser la date personnalisée
-        articleData.created_at = customCreatedAt.toISOString();
-        console.log('✅ Date personnalisée appliquée pour création:', articleData.created_at);
-      } else {
-        // Mise à jour : modifier created_at seulement si une date est sélectionnée
-        articleData.created_at = customCreatedAt.toISOString();
-        console.log('✅ Date modifiée pour article existant:', articleData.created_at);
-      }
-    } else if (!id) {
-      console.log('ℹ️ Pas de date personnalisée, utilisation de la date du jour (défaut DB)');
+      articleData.created_at = customCreatedAt.toISOString();
+      console.log('✅ Date personnalisée appliquée:', articleData.created_at);
+    } else {
+      // Passer explicitement la date du jour pour éviter le DEFAULT now() de PostgreSQL
+      articleData.created_at = new Date().toISOString();
+      console.log('ℹ️ Date du jour appliquée explicitement:', articleData.created_at);
     }
 
     // Ajouter les autres champs
