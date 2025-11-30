@@ -60,7 +60,6 @@ const AdminLeads = () => {
     const { data, error } = await supabase
       .from('leads')
       .select('*')
-      .neq('source', 'contact')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -257,12 +256,12 @@ const AdminLeads = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">Gestion des leads</h1>
             <p className="text-muted-foreground">
-              Leads capturés via newsletter, livres blancs et ateliers (contacts exclus)
+              Leads capturés via formulaires de contact, newsletter, livres blancs et ateliers
             </p>
           </div>
 
           {/* Statistiques */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Total</CardTitle>
@@ -293,6 +292,14 @@ const AdminLeads = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold text-purple-600">{stats.livreBlanc}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Contacts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold text-orange-600">{stats.contact}</p>
               </CardContent>
             </Card>
             <Card>
@@ -338,6 +345,7 @@ const AdminLeads = () => {
                       <SelectItem value="newsletter">Newsletter</SelectItem>
                       <SelectItem value="atelier-webinaire">Atelier/Webinaire</SelectItem>
                       <SelectItem value="livre-blanc">Livre blanc</SelectItem>
+                      <SelectItem value="contact">Contact</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -42,6 +42,22 @@ const SolutionContactForm = ({ solutionName }: SolutionContactFormProps) => {
     try {
       const validatedData = contactSchema.parse(formData);
       
+      // Créer le lead
+      const { error: leadError } = await supabase
+        .from('leads')
+        .insert([{
+          name: validatedData.name,
+          email: validatedData.email,
+          company: validatedData.company || null,
+          source: 'contact',
+          consent_marketing: false
+        }]);
+
+      if (leadError && leadError.code !== '23505') {
+        console.warn('Failed to create lead:', leadError);
+      }
+
+      // Créer le contact
       const { data: contactData, error } = await supabase
         .from('contacts')
         .insert([{
