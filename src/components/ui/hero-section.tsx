@@ -1,10 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import GradientLink from '@/components/ui/GradientLink';
 import { ChevronDown } from 'lucide-react';
 import { useAnimationPause } from '@/hooks/useAnimationPause';
+import { useCTATracking } from '@/hooks/useCTATracking';
+import ChatbotDialog from './ChatbotDialog';
 
 const HeroSection = () => {
   const heroRef = useAnimationPause<HTMLDivElement>();
+  const { trackCTAClick } = useCTATracking();
+  const [chatbotOpen, setChatbotOpen] = useState(false);
   
   useEffect(() => {
     // Calcul précis des longueurs de path pour animation fluide
@@ -116,13 +120,15 @@ const HeroSection = () => {
           </p>
           <GradientLink
             onClick={() => {
-              const footer = document.querySelector('footer');
-              footer?.scrollIntoView({ behavior: 'smooth' });
+              setChatbotOpen(true);
+              trackCTAClick('une_question', 'hero_section');
             }}
             className="inline-flex items-center gap-2 cursor-pointer"
           >
             Une question ?
           </GradientLink>
+          
+          <ChatbotDialog open={chatbotOpen} onOpenChange={setChatbotOpen} />
         </div>
       </div>
   );
