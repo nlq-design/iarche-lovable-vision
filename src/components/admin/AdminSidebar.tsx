@@ -1,4 +1,4 @@
-import { Home, BarChart3, Sparkles, FileText, FolderOpen, Tag, MessageCircle, Users, Mail, Send, Shield, Settings, Database, HelpCircle, Activity, MousePointerClick } from 'lucide-react';
+import { Home, BarChart3, Sparkles, FileText, FolderOpen, Tag, MessageCircle, Users, Mail, Send, Shield, Settings, Database, HelpCircle, Activity, MousePointerClick, UserCheck } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -50,6 +50,7 @@ const navigationItems = [
       { title: 'FAQs', url: '/admin/faqs', icon: HelpCircle },
       { title: 'Contacts', url: '/admin/contacts', icon: Mail },
       { title: 'Leads', url: '/admin/leads', icon: Users },
+      { title: 'Inscriptions ateliers', url: '/admin/atelier-inscriptions', icon: UserCheck },
     ]
   },
   {
