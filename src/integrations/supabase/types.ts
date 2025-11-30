@@ -668,6 +668,7 @@ export type Database = {
           name: string
           phone: string | null
           source: string
+          source_context: string | null
           source_id: string | null
         }
         Insert: {
@@ -679,6 +680,7 @@ export type Database = {
           name: string
           phone?: string | null
           source: string
+          source_context?: string | null
           source_id?: string | null
         }
         Update: {
@@ -690,6 +692,7 @@ export type Database = {
           name?: string
           phone?: string | null
           source?: string
+          source_context?: string | null
           source_id?: string | null
         }
         Relationships: []

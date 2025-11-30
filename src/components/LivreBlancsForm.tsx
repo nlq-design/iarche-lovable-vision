@@ -66,7 +66,7 @@ const LivreBlancsForm = ({ articleId, articleTitle }: LivreBlancsFormProps) => {
       await trackCTAClick('livre_blanc_download', 'livre_blanc_detail', articleTitle);
       
       // Créer le lead
-      const { error: leadError } = await supabase
+      const { data: leadData, error: leadError } = await supabase
         .from('leads')
         .insert([{
           name: validatedData.name,
@@ -75,8 +75,11 @@ const LivreBlancsForm = ({ articleId, articleTitle }: LivreBlancsFormProps) => {
           phone: validatedData.phone || null,
           source: 'livre-blanc',
           source_id: articleId,
+          source_context: articleTitle,
           consent_marketing: validatedData.consent_marketing,
-        }]);
+        }])
+        .select()
+        .single();
 
       if (leadError && leadError.code !== '23505') {
         console.error('Failed to create lead:', leadError);
@@ -84,21 +87,23 @@ const LivreBlancsForm = ({ articleId, articleTitle }: LivreBlancsFormProps) => {
       }
 
       // Envoyer notification email admin
-      try {
-        await supabase.functions.invoke('send-lead-notification', {
-          body: {
-            lead_id: articleId,
-            name: validatedData.name,
-            email: validatedData.email,
-            company: validatedData.company,
-            phone: validatedData.phone,
-            source: 'livre-blanc',
-            source_context: articleTitle,
-          },
-        });
-      } catch (notifError) {
-        console.warn('Failed to send lead notification:', notifError);
-        // Ne pas bloquer si la notification échoue
+      if (leadData) {
+        try {
+          await supabase.functions.invoke('send-lead-notification', {
+            body: {
+              lead_id: leadData.id,
+              name: validatedData.name,
+              email: validatedData.email,
+              company: validatedData.company,
+              phone: validatedData.phone,
+              source: 'livre-blanc',
+              source_context: articleTitle,
+            },
+          });
+        } catch (notifError) {
+          console.warn('Failed to send lead notification:', notifError);
+          // Ne pas bloquer si la notification échoue
+        }
       }
 
       // Incrémenter le compteur de téléchargements
