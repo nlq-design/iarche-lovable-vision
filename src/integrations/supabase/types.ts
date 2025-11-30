@@ -940,6 +940,14 @@ export type Database = {
         Returns: undefined
       }
       cleanup_login_attempts: { Args: never; Returns: undefined }
+      cleanup_orphan_data: {
+        Args: never
+        Returns: {
+          orphan_article_views: number
+          orphan_atelier_inscriptions: number
+          orphan_comments: number
+        }[]
+      }
       cleanup_rate_limit_requests: { Args: never; Returns: undefined }
       count_atelier_inscriptions: {
         Args: { atelier_uuid: string }
@@ -953,6 +961,15 @@ export type Database = {
         Returns: boolean
       }
       unlock_expired_accounts: { Args: never; Returns: undefined }
+      validate_resource_type: {
+        Args: never
+        Returns: {
+          article_id: string
+          issue: string
+          resource_type: string
+          title: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"
