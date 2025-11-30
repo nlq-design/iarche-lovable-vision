@@ -101,6 +101,7 @@ const AtelierInscriptionForm = ({
           phone: validatedData.phone || null,
           source: 'atelier-webinaire',
           source_id: articleId,
+          source_context: articleTitle,
           consent_marketing: validatedData.consent_marketing,
         }])
         .select()
@@ -127,27 +128,29 @@ const AtelierInscriptionForm = ({
       }
 
       // Envoyer notification email avec détails de l'événement
-      try {
-        await supabase.functions.invoke('send-lead-notification', {
-          body: {
-            lead_id: articleId,
-            name: validatedData.name,
-            email: validatedData.email,
-            company: validatedData.company,
-            phone: validatedData.phone,
-            source: 'atelier-webinaire',
-            source_context: articleTitle,
-            event_details: {
-              date: eventDate,
-              location: eventLocation,
-              heure_debut: heureDebut,
-              type_evenement: typeEvenement,
+      if (leadData) {
+        try {
+          await supabase.functions.invoke('send-lead-notification', {
+            body: {
+              lead_id: leadData.id,
+              name: validatedData.name,
+              email: validatedData.email,
+              company: validatedData.company,
+              phone: validatedData.phone,
+              source: 'atelier-webinaire',
+              source_context: articleTitle,
+              event_details: {
+                date: eventDate,
+                location: eventLocation,
+                heure_debut: heureDebut,
+                type_evenement: typeEvenement,
+              },
             },
-          },
-        });
-      } catch (notifError) {
-        console.warn('Failed to send lead notification:', notifError);
-        // Ne pas bloquer si la notification échoue
+          });
+        } catch (notifError) {
+          console.warn('Failed to send lead notification:', notifError);
+          // Ne pas bloquer si la notification échoue
+        }
       }
 
       // Marquer comme succès

@@ -42,15 +42,18 @@ const Contact = () => {
       const contextParam = searchParams.get('context');
       
       // Créer le lead
-      const { error: leadError } = await supabase
+      const { data: leadData, error: leadError } = await supabase
         .from('leads')
         .insert([{
           name: validatedData.name,
           email: validatedData.email,
           company: validatedData.company || null,
           source: 'contact',
+          source_context: contextParam || null,
           consent_marketing: false
-        }]);
+        }])
+        .select()
+        .single();
 
       if (leadError && leadError.code !== '23505') {
         console.warn('Failed to create lead:', leadError);
@@ -71,21 +74,23 @@ const Contact = () => {
       if (error) throw error;
 
       // Envoyer notification email pour le nouveau lead
-      try {
-        await supabase.functions.invoke('send-lead-notification', {
-          body: {
-            lead_id: contactData.id,
-            name: validatedData.name,
-            email: validatedData.email,
-            company: validatedData.company,
-            phone: null, // Les contacts ne capturent pas le téléphone
-            source: sourceParam,
-            source_context: contextParam,
-          },
-        });
-      } catch (notifError) {
-        console.warn('Failed to send lead notification:', notifError);
-        // Ne pas bloquer si la notification échoue
+      if (leadData) {
+        try {
+          await supabase.functions.invoke('send-lead-notification', {
+            body: {
+              lead_id: leadData.id,
+              name: validatedData.name,
+              email: validatedData.email,
+              company: validatedData.company,
+              phone: null, // Les contacts ne capturent pas le téléphone
+              source: 'contact',
+              source_context: contextParam,
+            },
+          });
+        } catch (notifError) {
+          console.warn('Failed to send lead notification:', notifError);
+          // Ne pas bloquer si la notification échoue
+        }
       }
 
       toast({

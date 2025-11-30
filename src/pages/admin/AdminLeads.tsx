@@ -23,6 +23,7 @@ interface Lead {
   consent_marketing: boolean;
   source: string;
   source_id: string | null;
+  source_context: string | null;
   created_at: string;
 }
 
@@ -163,13 +164,14 @@ const AdminLeads = () => {
   };
 
   const exportToCSV = () => {
-    const headers = ['Nom', 'Email', 'Entreprise', 'Téléphone', 'Source', 'Consentement marketing', 'Date de création'];
+    const headers = ['Nom', 'Email', 'Entreprise', 'Téléphone', 'Source', 'Contexte', 'Consentement marketing', 'Date de création'];
     const csvData = filteredLeads.map((lead) => [
       lead.name,
       lead.email,
       lead.company || '',
       lead.phone || '',
       lead.source,
+      lead.source_context || '',
       lead.consent_marketing ? 'Oui' : 'Non',
       new Date(lead.created_at).toLocaleDateString('fr-FR'),
     ]);
@@ -413,6 +415,9 @@ const AdminLeads = () => {
                           <span className="font-semibold text-sm text-foreground">Source</span>
                         </th>
                         <th className="px-4 py-3 text-left">
+                          <span className="font-semibold text-sm text-foreground">Contexte</span>
+                        </th>
+                        <th className="px-4 py-3 text-left">
                           <button
                             onClick={() => handleSort('created_at')}
                             className="flex items-center gap-2 font-semibold text-sm text-foreground hover:text-primary"
@@ -476,6 +481,15 @@ const AdminLeads = () => {
                             <Badge className={getSourceBadgeColor(lead.source)}>
                               {getSourceLabel(lead.source)}
                             </Badge>
+                          </td>
+                          <td className="px-4 py-3">
+                            {lead.source_context ? (
+                              <span className="text-sm text-muted-foreground max-w-[200px] truncate block" title={lead.source_context}>
+                                {lead.source_context}
+                              </span>
+                            ) : (
+                              <span className="text-sm text-muted-foreground/50">-</span>
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">

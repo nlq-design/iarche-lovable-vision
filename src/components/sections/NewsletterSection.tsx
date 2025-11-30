@@ -25,14 +25,17 @@ const NewsletterSection = () => {
       await trackCTAClick('newsletter_inscription', 'newsletter_section_homepage', email);
       
       // Créer le lead
-      const { error: leadError } = await supabase
+      const { data: leadData, error: leadError } = await supabase
         .from('leads')
         .insert([{
           name: validatedData.email.split('@')[0], // Nom basique depuis l'email
           email: validatedData.email,
           source: 'newsletter',
+          source_context: email,
           consent_marketing: true
-        }]);
+        }])
+        .select()
+        .single();
 
       if (leadError && leadError.code !== '23505') {
         console.warn('Failed to create lead:', leadError);
@@ -48,6 +51,24 @@ const NewsletterSection = () => {
           throw new Error('Cet email est déjà inscrit');
         }
         throw dbError;
+      }
+
+      // Envoyer notification email admin
+      if (leadData) {
+        try {
+          await supabase.functions.invoke('send-lead-notification', {
+            body: {
+              lead_id: leadData.id,
+              name: validatedData.email.split('@')[0],
+              email: validatedData.email,
+              source: 'newsletter',
+              source_context: email,
+            },
+          });
+        } catch (notifError) {
+          console.warn('Failed to send lead notification:', notifError);
+          // Ne pas bloquer si la notification échoue
+        }
       }
 
       toast({
