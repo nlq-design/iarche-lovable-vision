@@ -1,17 +1,21 @@
 # Plan des adresses email IArche
 
-## 📧 Adresses email à créer sur `iarche.fr`
+## ✅ Configuration Active depuis le 2025-11-30
+
+Le domaine **iarche.fr** est vérifié sur Resend et les 6 edge functions utilisent maintenant les adresses @iarche.fr avec `reply_to: 'nlq@iarche.fr'` configuré.
+
+## 📧 Adresses email @iarche.fr (ACTIVES)
 
 ### Emails de service (utilisés par les edge functions)
 
-| Adresse | Usage | Edge Function | Destinataires |
-|---------|-------|---------------|---------------|
-| `notifications@iarche.fr` | Notifications de nouveaux leads | `send-lead-notification` | `nlq@iarche.fr` |
-| `notifications@iarche.fr` | Notifications nouveaux commentaires | `notify-new-comment` | `nlq@iarche.fr` |
-| `newsletter@iarche.fr` | Envoi des newsletters | `send-newsletter` | Abonnés newsletter |
-| `security@iarche.fr` | Alertes de sécurité | `send-security-alert` | `nlq@iarche.fr` |
-| `analytics@iarche.fr` | Alertes analytics CTA | `check-cta-conversion` | `nlq@iarche.fr` |
-| `performance@iarche.fr` | Alertes performance | `check-performance-threshold` | `nlq@iarche.fr` |
+| Adresse | Usage | Edge Function | Destinataires | Statut |
+|---------|-------|---------------|---------------|--------|
+| `notifications@iarche.fr` | Notifications de nouveaux leads | `send-lead-notification` | `nlq@iarche.fr` | ✅ Actif |
+| `notifications@iarche.fr` | Notifications nouveaux commentaires | `notify-new-comment` | `nlq@iarche.fr` | ✅ Actif |
+| `newsletter@iarche.fr` | Envoi des newsletters | `send-newsletter` | Abonnés newsletter | ✅ Actif |
+| `security@iarche.fr` | Alertes de sécurité | `send-security-alert` | `nlq@iarche.fr` | ✅ Actif |
+| `analytics@iarche.fr` | Alertes analytics CTA | `check-cta-conversion` | `nlq@iarche.fr` | ✅ Actif |
+| `performance@iarche.fr` | Alertes performance | `check-performance-threshold` | `nlq@iarche.fr` | ✅ Actif |
 
 ### Emails principaux (utilisés manuellement)
 
@@ -24,18 +28,25 @@
 
 ---
 
-## 🎯 Recommandation simplifiée
+## 🎯 Configuration Actuelle
 
-### Configuration minimale (démarrage)
+### ✅ Configuration réalisée (2025-11-30)
+
+1. **Domaine vérifié sur Resend** : `iarche.fr` ✅
+2. **DNS configurés** : SPF, DKIM (3 enregistrements) ✅
+3. **6 Edge Functions migrées** : Toutes utilisent maintenant `@iarche.fr` ✅
+4. **Reply-To configuré** : Tous les emails permettent de répondre à `nlq@iarche.fr` ✅
+
+### 📬 Boîtes mail nécessaires
 
 **Tu n'as besoin de créer QUE 2 boîtes mail réelles** :
 
 1. **`nlq@iarche.fr`** → Boîte principale (tu la consultes)
 2. **Utiliser Resend uniquement pour l'envoi** → Les adresses `notifications@`, `security@`, etc. n'ont pas besoin de boîtes mail réelles, elles servent juste d'expéditeur
 
-**Redirections à configurer** :
+**Redirections recommandées** :
 - `contact@iarche.fr` → Redirige vers `nlq@iarche.fr`
-- `support@iarche.fr` → Redirige vers `nlq@iarche.fr` (si créé)
+- `support@iarche.fr` → Redirige vers `nlq@iarche.fr` (optionnel)
 
 ### Configuration avancée (futur)
 
@@ -45,18 +56,20 @@ Quand le volume augmente, tu peux créer des boîtes séparées :
 
 ---
 
-## ⚙️ Configuration Resend
+## ⚙️ Configuration Resend (TERMINÉE)
 
-### Après vérification du domaine
+### ✅ Domaine vérifié et actif
 
 **Les emails de service** (`notifications@`, `security@`, etc.) :
-- ✅ Pas besoin de créer de vraies boîtes mail
+- ✅ Configurés et opérationnels depuis le 2025-11-30
+- ✅ Pas besoin de créer de vraies boîtes mail pour ces adresses
 - ✅ Servent uniquement d'expéditeur via Resend
-- ✅ Resend gère l'envoi automatiquement
+- ✅ Tous les emails incluent `reply_to: 'nlq@iarche.fr'` pour les réponses
 
 **Important** :
 - Resend ne gère PAS la **réception** des emails
 - Pour recevoir des emails sur `contact@iarche.fr`, configure une boîte mail chez ton hébergeur (OVH, Gandi, etc.) ou utilise Google Workspace / Microsoft 365
+- Les destinataires peuvent répondre directement aux emails, les réponses arrivent à `nlq@iarche.fr`
 
 ---
 
@@ -113,13 +126,25 @@ Si tu veux que les destinataires puissent répondre :
 
 ---
 
-## ✅ Prochaines étapes
+## ✅ Statut de la configuration
 
-1. **Maintenant** : Configure les DNS sur ton registrar
-2. **Attends 2-48h** : Vérification du domaine sur Resend
-3. **Une fois vérifié** : Demande la mise à jour des 6 edge functions
-4. **Test final** : Déclenche un lead pour vérifier l'envoi
+| Étape | Statut | Date |
+|-------|--------|------|
+| Configuration DNS sur registrar | ✅ Terminé | 2025-11-30 |
+| Vérification du domaine sur Resend | ✅ Vérifié | 2025-11-30 |
+| Mise à jour des 6 edge functions | ✅ Terminé | 2025-11-30 |
+| Ajout du champ `reply_to` | ✅ Terminé | 2025-11-30 |
+| Tests d'envoi | ⏳ À faire | - |
+
+### 🧪 Tests recommandés
+
+Pour vérifier le bon fonctionnement :
+1. Tester l'envoi d'un lead via formulaire contact
+2. Créer un commentaire en attente de modération
+3. Vérifier la réception des emails à `nlq@iarche.fr`
+4. Tester la fonction "Répondre" dans les emails reçus
 
 ---
 
-**Créé le** : 2025-11-30
+**Créé le** : 2025-11-30  
+**Mis à jour le** : 2025-11-30 (Configuration terminée)
