@@ -121,7 +121,7 @@ const NewsletterSection = () => {
                 name="email"
                 placeholder="votre@email.fr"
                 required
-                className="w-full border-border rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-accent focus:border-accent transition-all"
+                className="w-full border-border rounded-lg px-4 py-3 text-base focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent transition-all"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -140,7 +140,7 @@ const NewsletterSection = () => {
             En vous inscrivant, vous acceptez notre{' '}
             <a 
               href="/confidentialite" 
-              className="text-accent hover:underline focus:underline focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 rounded"
+              className="text-accent hover:underline focus:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 rounded"
             >
               politique de confidentialité
             </a>
