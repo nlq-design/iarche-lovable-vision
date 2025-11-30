@@ -15,6 +15,28 @@ const ConditionsGenerales = () => {
         <meta property="og:description" content="Conditions générales de vente des services IArche. Prestations, tarifs, paiement." />
         <meta property="og:url" content="https://iarche.fr/conditions-generales" />
         <meta property="og:type" content="website" />
+
+        {/* Schema.org BreadcrumbList */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Accueil",
+                "item": "https://iarche.fr/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Conditions générales",
+                "item": "https://iarche.fr/conditions-generales"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
       
       <Header />

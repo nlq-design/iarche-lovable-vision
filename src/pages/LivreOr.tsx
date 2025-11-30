@@ -17,6 +17,28 @@ const LivreOr = () => {
         <meta property="og:url" content="https://iarche.fr/livre-or" />
         <meta property="og:type" content="website" />
 
+        {/* Schema.org BreadcrumbList */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Accueil",
+                "item": "https://iarche.fr/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Livre d'Or",
+                "item": "https://iarche.fr/livre-or"
+              }
+            ]
+          })}
+        </script>
+
         {/* Schema.org Organization with AggregateRating */}
         <script type="application/ld+json">
           {JSON.stringify({

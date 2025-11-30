@@ -15,6 +15,28 @@ const MentionsLegales = () => {
         <meta property="og:description" content="Mentions légales du site IArche. Éditeur, hébergeur, propriété intellectuelle." />
         <meta property="og:url" content="https://iarche.fr/mentions-legales" />
         <meta property="og:type" content="website" />
+
+        {/* Schema.org BreadcrumbList */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Accueil",
+                "item": "https://iarche.fr/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Mentions légales",
+                "item": "https://iarche.fr/mentions-legales"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
       
       <Header />

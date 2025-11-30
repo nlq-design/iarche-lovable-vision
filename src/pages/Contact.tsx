@@ -146,6 +146,28 @@ const Contact = () => {
         <meta property="og:url" content="https://iarche.fr/contact" />
         <meta property="og:type" content="website" />
         
+        {/* Schema.org BreadcrumbList */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Accueil",
+                "item": "https://iarche.fr/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Contact",
+                "item": "https://iarche.fr/contact"
+              }
+            ]
+          })}
+        </script>
+
         {/* Schema.org LocalBusiness */}
         <script type="application/ld+json">
           {JSON.stringify({
