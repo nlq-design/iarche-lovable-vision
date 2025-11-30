@@ -55,44 +55,59 @@ const AdminLivreBlancsInscriptions = () => {
 
   const loadInscriptions = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    
+    // Charger les leads avec source='livre-blanc'
+    const { data: leadsData, error: leadsError } = await supabase
       .from('leads')
-      .select(`
-        id,
-        name,
-        email,
-        company,
-        phone,
-        consent_marketing,
-        source_id,
-        created_at,
-        articles!source_id (
-          title
-        )
-      `)
+      .select('id, name, email, company, phone, consent_marketing, source_id, created_at')
       .eq('source', 'livre-blanc')
       .order('created_at', { ascending: false });
 
-    if (error) {
+    if (leadsError) {
       toast({
         title: 'Erreur',
         description: 'Impossible de charger les inscriptions',
         variant: 'destructive',
       });
-    } else {
-      const transformedData = (data || []).map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        email: item.email,
-        company: item.company,
-        phone: item.phone,
-        consent_marketing: item.consent_marketing,
-        source_id: item.source_id,
-        created_at: item.created_at,
-        article: item.articles || null,
-      }));
-      setInscriptions(transformedData);
+      setLoading(false);
+      return;
     }
+
+    // Charger les articles correspondants
+    const articleIds = leadsData
+      ?.filter(lead => lead.source_id)
+      .map(lead => lead.source_id) || [];
+    
+    let articlesMap: Record<string, { title: string }> = {};
+    
+    if (articleIds.length > 0) {
+      const { data: articlesData } = await supabase
+        .from('articles')
+        .select('id, title')
+        .in('id', articleIds);
+      
+      if (articlesData) {
+        articlesMap = articlesData.reduce((acc, article) => {
+          acc[article.id] = { title: article.title };
+          return acc;
+        }, {} as Record<string, { title: string }>);
+      }
+    }
+
+    // Joindre les données
+    const transformedData = (leadsData || []).map((lead) => ({
+      id: lead.id,
+      name: lead.name,
+      email: lead.email,
+      company: lead.company,
+      phone: lead.phone,
+      consent_marketing: lead.consent_marketing,
+      source_id: lead.source_id,
+      created_at: lead.created_at,
+      article: lead.source_id ? articlesMap[lead.source_id] || null : null,
+    }));
+    
+    setInscriptions(transformedData);
     setLoading(false);
   };
 
