@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Sparkles } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Message {
@@ -126,10 +126,16 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[650px] h-[650px] flex flex-col p-0 border-accent/20">
         <DialogHeader className="px-6 py-5 border-b border-border/50 bg-gradient-to-r from-primary/5 to-accent/5">
-          <DialogTitle className="text-2xl font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            IArche Assistant
+          <DialogTitle className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <span className="text-2xl font-semibold hero-gradient-text">IArche</span>
+              <span className="text-lg font-normal text-muted-foreground ml-2">Assistant</span>
+            </div>
           </DialogTitle>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mt-1">
             Posez vos questions sur l'IA et nos services
           </p>
         </DialogHeader>
@@ -138,11 +144,11 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-center">
               <div className="space-y-4 animate-fade-in">
-                <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                  <span className="text-2xl text-white">🤖</span>
+                <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-xl animate-pulse">
+                  <Sparkles className="w-10 h-10 text-white" strokeWidth={2} />
                 </div>
                 <p className="text-lg font-medium text-foreground">
-                  Bonjour ! Je suis l'assistant IArche.
+                  Bonjour ! Je suis l'assistant <span className="hero-gradient-text font-semibold">IArche</span>.
                 </p>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
                   Je peux vous renseigner sur nos services IA, nos solutions, et répondre à toutes vos questions sur l'intelligence artificielle.
