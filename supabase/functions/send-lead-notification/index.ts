@@ -16,6 +16,7 @@ interface LeadNotificationRequest {
   phone?: string;
   source: string;
   source_context?: string;
+  message?: string;
   event_details?: {
     date: string | null;
     location: string | null;
@@ -30,7 +31,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { lead_id, name, email, company, phone, source, source_context, event_details }: LeadNotificationRequest = await req.json();
+    const { lead_id, name, email, company, phone, source, source_context, message, event_details }: LeadNotificationRequest = await req.json();
 
     console.log('Sending lead notification for:', lead_id);
 
@@ -41,6 +42,14 @@ Deno.serve(async (req) => {
                         source === 'solution_detail' ? 'Contact Solution' : source;
 
     const contextInfo = source_context ? `<p><strong>Contexte:</strong> ${source_context}</p>` : '';
+    
+    // Si un message est fourni, l'ajouter à l'email
+    const messageInfo = message ? `
+      <h3 style="color: hsl(218, 47%, 20%); font-size: 18px; margin-top: 25px;">💬 Message</h3>
+      <div style="background: #FAF9F7; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid hsl(12, 60%, 53%);">
+        <p style="margin: 0; white-space: pre-wrap; color: #374151;">${message}</p>
+      </div>
+    ` : '';
 
     // Si c'est un atelier, ajouter les détails de l'événement
     let eventDetailsHtml = '';
@@ -74,6 +83,8 @@ Deno.serve(async (req) => {
           <h3 style="color: hsl(218, 47%, 20%); font-size: 18px; margin-top: 25px;">📍 Source</h3>
           <p style="margin: 10px 0;"><strong>Type:</strong> ${sourceLabel}</p>
           ${contextInfo}
+          
+          ${messageInfo}
           
           ${eventDetailsHtml}
 
