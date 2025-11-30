@@ -18,7 +18,7 @@ const Footer = () => {
                 href="https://linkedin.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                className="text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 aria-label="LinkedIn"
               >
                 <Linkedin className="w-5 h-5" aria-hidden="true" />
@@ -27,7 +27,7 @@ const Footer = () => {
                 href="https://instagram.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                className="text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 aria-label="Instagram"
               >
                 <Instagram className="w-5 h-5" aria-hidden="true" />
@@ -36,7 +36,7 @@ const Footer = () => {
                 href="https://tiktok.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                className="text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 aria-label="TikTok"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -47,7 +47,7 @@ const Footer = () => {
                 href="https://facebook.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                className="text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 aria-label="Facebook"
               >
                 <Facebook className="w-5 h-5" aria-hidden="true" />
@@ -62,7 +62,7 @@ const Footer = () => {
               <li>
                 <NavLink 
                   to="/services" 
-                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 >
                   Services
                 </NavLink>
@@ -70,7 +70,7 @@ const Footer = () => {
               <li>
                 <NavLink 
                   to="/solutions" 
-                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 >
                   Nos solutions
                 </NavLink>
@@ -78,7 +78,7 @@ const Footer = () => {
               <li>
                 <NavLink 
                   to="/contact" 
-                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 >
                   Contact
                 </NavLink>
@@ -93,7 +93,7 @@ const Footer = () => {
               <li>
                 <NavLink 
                   to="/actualites" 
-                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 >
                   Actualités
                 </NavLink>
@@ -101,7 +101,7 @@ const Footer = () => {
               <li>
                 <NavLink 
                   to="/articles" 
-                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 >
                   Articles
                 </NavLink>
@@ -109,7 +109,7 @@ const Footer = () => {
               <li>
                 <NavLink 
                   to="/cas-clients" 
-                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 >
                   Cas clients
                 </NavLink>
@@ -117,7 +117,7 @@ const Footer = () => {
               <li>
                 <NavLink 
                   to="/livres-blancs" 
-                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 >
                   Livres blancs
                 </NavLink>
@@ -125,7 +125,7 @@ const Footer = () => {
               <li>
                 <NavLink 
                   to="/ateliers-webinaires" 
-                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 >
                   Ateliers & Webinaires
                 </NavLink>
@@ -133,7 +133,7 @@ const Footer = () => {
               <li>
                 <NavLink 
                   to="/newsletter" 
-                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 >
                   Newsletters
                 </NavLink>
@@ -148,7 +148,7 @@ const Footer = () => {
               <li>
                 <NavLink 
                   to="/livre-or" 
-                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 >
                   Livre d'Or
                 </NavLink>
@@ -156,7 +156,7 @@ const Footer = () => {
               <li>
                 <NavLink 
                   to="/mentions-legales" 
-                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 >
                   Mentions légales
                 </NavLink>
@@ -164,7 +164,7 @@ const Footer = () => {
               <li>
                 <NavLink 
                   to="/conditions-generales" 
-                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 >
                   CGU
                 </NavLink>
@@ -172,7 +172,7 @@ const Footer = () => {
               <li>
                 <NavLink 
                   to="/confidentialite" 
-                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-1 focus:ring-offset-foreground rounded transition-colors duration-200"
+                  className="text-sm text-white/70 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 >
                   Confidentialité
                 </NavLink>
