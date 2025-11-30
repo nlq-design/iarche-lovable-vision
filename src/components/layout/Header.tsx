@@ -91,35 +91,35 @@ const Header = () => {
                   <NavLink
                     to="/actualites"
                     onClick={() => setResourcesOpen(false)}
-                    className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
+                    className="block px-4 py-2 text-sm hero-gradient-text hover:bg-muted transition-colors"
                   >
                     Actualités
                   </NavLink>
                   <NavLink
                     to="/articles"
                     onClick={() => setResourcesOpen(false)}
-                    className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
+                    className="block px-4 py-2 text-sm hero-gradient-text hover:bg-muted transition-colors"
                   >
                     Articles
                   </NavLink>
                   <NavLink
                     to="/cas-clients"
                     onClick={() => setResourcesOpen(false)}
-                    className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
+                    className="block px-4 py-2 text-sm hero-gradient-text hover:bg-muted transition-colors"
                   >
                     Cas clients
                   </NavLink>
                   <NavLink
                     to="/livres-blancs"
                     onClick={() => setResourcesOpen(false)}
-                    className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
+                    className="block px-4 py-2 text-sm hero-gradient-text hover:bg-muted transition-colors"
                   >
                     Livres blancs
                   </NavLink>
                   <NavLink
                     to="/ateliers-webinaires"
                     onClick={() => setResourcesOpen(false)}
-                    className="block px-4 py-2 text-sm text-foreground hover:bg-muted hover:text-accent transition-colors"
+                    className="block px-4 py-2 text-sm hero-gradient-text hover:bg-muted transition-colors"
                   >
                     Ateliers & Webinaires
                   </NavLink>
@@ -198,35 +198,35 @@ const Header = () => {
                   <NavLink 
                     to="/actualites"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-sm text-foreground hover:text-accent transition-colors px-2 py-1"
+                    className="text-sm hero-gradient-text transition-colors px-2 py-1"
                   >
                     Actualités
                   </NavLink>
                   <NavLink 
                     to="/articles"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-sm text-foreground hover:text-accent transition-colors px-2 py-1"
+                    className="text-sm hero-gradient-text transition-colors px-2 py-1"
                   >
                     Articles
                   </NavLink>
                   <NavLink 
                     to="/cas-clients"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-sm text-foreground hover:text-accent transition-colors px-2 py-1"
+                    className="text-sm hero-gradient-text transition-colors px-2 py-1"
                   >
                     Cas clients
                   </NavLink>
                   <NavLink 
                     to="/livres-blancs"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-sm text-foreground hover:text-accent transition-colors px-2 py-1"
+                    className="text-sm hero-gradient-text transition-colors px-2 py-1"
                   >
                     Livres blancs
                   </NavLink>
                   <NavLink 
                     to="/ateliers-webinaires"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-sm text-foreground hover:text-accent transition-colors px-2 py-1"
+                    className="text-sm hero-gradient-text transition-colors px-2 py-1"
                   >
                     Ateliers & Webinaires
                   </NavLink>
