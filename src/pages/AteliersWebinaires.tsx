@@ -30,6 +30,7 @@ interface AtelierWebinaire {
   created_at: string;
   max_participants: number | null;
   registration_open: boolean | null;
+  show_participants_count: boolean | null;
   inscriptions_count?: number;
 }
 
@@ -51,7 +52,7 @@ const AteliersWebinaires = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('articles')
-      .select('id, title, slug, excerpt, cover_image_url, published_at, created_at, max_participants, registration_open')
+      .select('id, title, slug, excerpt, cover_image_url, published_at, created_at, max_participants, registration_open, show_participants_count')
       .eq('published', true)
       .eq('resource_type', 'atelier-webinaire')
       .order('published_at', { ascending: false });
@@ -159,15 +160,15 @@ const AteliersWebinaires = () => {
                         </p>
                       )}
                       
-                      {/* Badge Complet si places atteintes */}
-                      {item.max_participants && item.inscriptions_count !== undefined && item.inscriptions_count >= item.max_participants && (
+                      {/* Badge Complet si places atteintes et visibilité activée */}
+                      {item.show_participants_count && item.max_participants && item.inscriptions_count !== undefined && item.inscriptions_count >= item.max_participants && (
                         <Badge variant="destructive" className="text-xs">
                           🚫 COMPLET ({item.inscriptions_count}/{item.max_participants})
                         </Badge>
                       )}
                       
-                      {/* Places disponibles si pas complet */}
-                      {item.max_participants && item.inscriptions_count !== undefined && item.inscriptions_count < item.max_participants && item.registration_open && (
+                      {/* Places disponibles si pas complet et visibilité activée */}
+                      {item.show_participants_count && item.max_participants && item.inscriptions_count !== undefined && item.inscriptions_count < item.max_participants && item.registration_open && (
                         <Badge variant="secondary" className="text-xs">
                           {item.max_participants - item.inscriptions_count} places disponibles
                         </Badge>
