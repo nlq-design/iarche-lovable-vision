@@ -95,6 +95,10 @@ const AdminArticleEditor = () => {
   const [fileUrl, setFileUrl] = useState('');
   const [uploadingFile, setUploadingFile] = useState(false);
   const [ressourcesComplementaires, setRessourcesComplementaires] = useState<Array<{ titre: string; url: string }>>([]);
+  
+  // Champs spécifiques aux actualités
+  const [actualiteType, setActualiteType] = useState<string>('');
+  const [sourceExterne, setSourceExterne] = useState<{ nom: string; url: string }>({ nom: '', url: '' });
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -185,6 +189,12 @@ const AdminArticleEditor = () => {
           ? data.ressources_complementaires as Array<{ titre: string; url: string }> 
           : []
       );
+      setActualiteType(data.actualite_type || '');
+      setSourceExterne(
+        data.source_externe && typeof data.source_externe === 'object' && 'nom' in data.source_externe && 'url' in data.source_externe
+          ? data.source_externe as { nom: string; url: string }
+          : { nom: '', url: '' }
+      );
 
       // Charger les catégories de l'article
       const { data: articleCategories } = await supabase
@@ -248,6 +258,8 @@ const AdminArticleEditor = () => {
       replay_url: replayUrl || null,
       file_url: fileUrl || null,
       ressources_complementaires: ressourcesComplementaires.length > 0 ? ressourcesComplementaires : null,
+      actualite_type: actualiteType || null,
+      source_externe: (sourceExterne.nom && sourceExterne.url) ? sourceExterne : null,
     };
 
     try {
@@ -502,6 +514,8 @@ const AdminArticleEditor = () => {
       replay_url: replayUrl || null,
       file_url: fileUrl || null,
       ressources_complementaires: ressourcesComplementaires.length > 0 ? ressourcesComplementaires : null,
+      actualite_type: actualiteType || null,
+      source_externe: (sourceExterne.nom && sourceExterne.url) ? sourceExterne : null,
     };
 
     if (id) {
@@ -1019,6 +1033,82 @@ const AdminArticleEditor = () => {
                         placeholder="https://..."
                       />
                     </div>
+                  </div>
+                )}
+
+                {/* Champs spécifiques aux actualités */}
+                {resourceType === 'actualite' && (
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    <h3 className="font-semibold text-foreground">Informations actualité</h3>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="actualiteType">Type d'actualité</Label>
+                      <Select value={actualiteType} onValueChange={setActualiteType} disabled={isLoading}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner un type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="annonce">Annonce</SelectItem>
+                          <SelectItem value="partenariat">Partenariat</SelectItem>
+                          <SelectItem value="evenement">Événement</SelectItem>
+                          <SelectItem value="communique">Communiqué</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {actualiteType === 'evenement' && (
+                      <div className="space-y-2">
+                        <Label htmlFor="eventDate">Date de l'événement</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !eventDate && "text-muted-foreground"
+                              )}
+                              disabled={isLoading}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {eventDate ? format(eventDate, "PPP 'à' HH:mm", { locale: fr }) : "Choisir une date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={eventDate}
+                              onSelect={setEventDate}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="sourceExterneNom">Source externe (optionnel)</Label>
+                      <Input
+                        id="sourceExterneNom"
+                        value={sourceExterne.nom}
+                        onChange={(e) => setSourceExterne({ ...sourceExterne, nom: e.target.value })}
+                        disabled={isLoading}
+                        placeholder="Nom de la source (ex: Le Monde, TechCrunch...)"
+                      />
+                    </div>
+
+                    {sourceExterne.nom && (
+                      <div className="space-y-2">
+                        <Label htmlFor="sourceExterneUrl">URL de la source</Label>
+                        <Input
+                          id="sourceExterneUrl"
+                          type="url"
+                          value={sourceExterne.url}
+                          onChange={(e) => setSourceExterne({ ...sourceExterne, url: e.target.value })}
+                          disabled={isLoading}
+                          placeholder="https://..."
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 

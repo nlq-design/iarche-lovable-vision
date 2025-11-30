@@ -224,6 +224,7 @@ export type Database = {
       }
       articles: {
         Row: {
+          actualite_type: string | null
           ai_source: string | null
           author: string | null
           author_id: string | null
@@ -247,12 +248,14 @@ export type Database = {
           ressources_complementaires: Json | null
           scheduled_publish_at: string | null
           slug: string
+          source_externe: Json | null
           status: string | null
           tags: string[] | null
           title: string
           updated_at: string | null
         }
         Insert: {
+          actualite_type?: string | null
           ai_source?: string | null
           author?: string | null
           author_id?: string | null
@@ -276,12 +279,14 @@ export type Database = {
           ressources_complementaires?: Json | null
           scheduled_publish_at?: string | null
           slug: string
+          source_externe?: Json | null
           status?: string | null
           tags?: string[] | null
           title: string
           updated_at?: string | null
         }
         Update: {
+          actualite_type?: string | null
           ai_source?: string | null
           author?: string | null
           author_id?: string | null
@@ -305,6 +310,7 @@ export type Database = {
           ressources_complementaires?: Json | null
           scheduled_publish_at?: string | null
           slug?: string
+          source_externe?: Json | null
           status?: string | null
           tags?: string[] | null
           title?: string

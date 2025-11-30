@@ -43,6 +43,8 @@ interface Article {
   replay_url: string | null;
   tags: string[] | null;
   ressources_complementaires: any;
+  actualite_type: string | null;
+  source_externe: any;
 }
 
 const ArticleDetail = () => {
@@ -495,7 +497,25 @@ const ArticleDetail = () => {
             <div className="flex items-center gap-2 text-sm text-muted-foreground animate-fadeIn [animation-delay:0.3s]">
               <Calendar className="h-4 w-4" aria-hidden="true" />
               {formatDate(article.published_at || article.created_at)}
+              
+              {/* Type d'actualité badge */}
+              {article.resource_type === 'actualite' && article.actualite_type && (
+                <Badge variant="outline" className="ml-2">
+                  {article.actualite_type === 'annonce' && 'Annonce'}
+                  {article.actualite_type === 'partenariat' && 'Partenariat'}
+                  {article.actualite_type === 'evenement' && 'Événement'}
+                  {article.actualite_type === 'communique' && 'Communiqué'}
+                </Badge>
+              )}
             </div>
+            
+            {/* Date de l'événement si type événement */}
+            {article.resource_type === 'actualite' && article.actualite_type === 'evenement' && article.event_date && (
+              <div className="flex items-center gap-2 text-sm text-accent mt-2 animate-fadeIn [animation-delay:0.35s]">
+                <Calendar className="h-4 w-4" aria-hidden="true" />
+                <strong>Date de l'événement :</strong> {formatDate(article.event_date)}
+              </div>
+            )}
           </header>
 
           {/* 3. Layout avec AuthorCard + TOC (si article) + Contenu */}
@@ -534,6 +554,24 @@ const ArticleDetail = () => {
               {/* Ressources complémentaires (après le contenu, uniquement pour articles) */}
               {article.resource_type === 'article' && article.ressources_complementaires && (
                 <RessourcesComplementaires ressources={article.ressources_complementaires} />
+              )}
+              
+              {/* Source externe (après le contenu, uniquement pour actualités) */}
+              {article.resource_type === 'actualite' && article.source_externe && article.source_externe.nom && article.source_externe.url && (
+                <div className="mt-8 p-4 bg-muted/30 border border-border rounded-lg animate-fadeIn">
+                  <p className="text-sm text-muted-foreground mb-2">Source externe :</p>
+                  <a 
+                    href={article.source_externe.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:text-accent font-medium flex items-center gap-2 transition-colors"
+                  >
+                    {article.source_externe.nom}
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </div>
               )}
             </div>
 
