@@ -950,13 +950,15 @@ const ArticleDetail = () => {
             <ArticleComments articleId={article.id} />
           </div>
 
-          {/* 7. Articles similaires */}
-          <RelatedArticles 
-            currentArticleId={article.id}
-            resourceType={article.resource_type}
-            tags={article.tags || []}
-            limit={3}
-          />
+          {/* 7. Articles similaires (uniquement pour les ressources) */}
+          {!['service', 'solution'].includes(article.resource_type) && (
+            <RelatedArticles 
+              currentArticleId={article.id}
+              resourceType={article.resource_type}
+              tags={article.tags || []}
+              limit={3}
+            />
+          )}
 
           {/* 8. Bouton retour en bas */}
           <div className="pt-8 border-t border-border/30">
