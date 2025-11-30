@@ -17,6 +17,7 @@ import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
 import GradientLink from '@/components/ui/GradientLink';
 import { Badge } from '@/components/ui/badge';
 import SolutionContactForm from '@/components/SolutionContactForm';
+import LivreBlancsForm from '@/components/LivreBlancsForm';
 import AuthorCard from '@/components/ui/AuthorCard';
 import RelatedArticles from '@/components/ui/RelatedArticles';
 import { useCTATracking } from '@/hooks/useCTATracking';
@@ -885,6 +886,14 @@ const ArticleDetail = () => {
           {article.resource_type === 'solution' ? (
             <div className="my-12">
               <SolutionContactForm solutionName={article.title} />
+            </div>
+          ) : article.resource_type === 'livre-blanc' && article.file_url ? (
+            <div className="my-12 animate-fadeIn [animation-delay:0.6s]">
+              <LivreBlancsForm 
+                articleId={article.id}
+                articleTitle={article.title}
+                fileUrl={article.file_url}
+              />
             </div>
           ) : article.resource_type === 'atelier-webinaire' ? (
             <div className="my-12 animate-fadeIn [animation-delay:0.6s]">
