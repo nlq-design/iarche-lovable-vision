@@ -72,6 +72,7 @@ interface Article {
   rappels_automatiques: boolean | null;
   cta_evenement_personnalise: string | null;
   max_participants: number | null;
+  show_participants_count: boolean | null;
 }
 
 const ArticleDetail = () => {
@@ -829,8 +830,9 @@ const ArticleDetail = () => {
                   eventLocation={article.event_location}
                   heureDebut={article.heure_debut}
                   typeEvenement={article.type_evenement}
-                  maxParticipants={article.max_participants || 30}
-                  inscriptionsCount={inscriptionsCount}
+              maxParticipants={article.max_participants || 30}
+              inscriptionsCount={inscriptionsCount}
+              showParticipantsCount={article.show_participants_count ?? true}
                 />
               ) : inscriptionsCount >= (article.max_participants || 30) ? (
                 /* Si complet - liste d'attente */

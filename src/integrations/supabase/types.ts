@@ -265,6 +265,7 @@ export type Database = {
           ressources_complementaires: Json | null
           scheduled_publish_at: string | null
           secteur_activite: string | null
+          show_participants_count: boolean | null
           slug: string
           sondage_post_evenement_url: string | null
           source_externe: Json | null
@@ -320,6 +321,7 @@ export type Database = {
           ressources_complementaires?: Json | null
           scheduled_publish_at?: string | null
           secteur_activite?: string | null
+          show_participants_count?: boolean | null
           slug: string
           sondage_post_evenement_url?: string | null
           source_externe?: Json | null
@@ -375,6 +377,7 @@ export type Database = {
           ressources_complementaires?: Json | null
           scheduled_publish_at?: string | null
           secteur_activite?: string | null
+          show_participants_count?: boolean | null
           slug?: string
           sondage_post_evenement_url?: string | null
           source_externe?: Json | null
