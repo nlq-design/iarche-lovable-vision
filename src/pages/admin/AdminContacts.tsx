@@ -9,9 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Download, Mail, Building2, Calendar, Trash2, MessageSquare } from 'lucide-react';
+import { Loader2, Search, Download, Mail, Building2, Calendar, Trash2, MessageSquare, Eye } from 'lucide-react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Badge } from '@/components/ui/badge';
+import { ContactDetailModal } from '@/components/admin/ContactDetailModal';
 
 interface Contact {
   id: string;
@@ -34,6 +35,8 @@ const AdminContacts = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -322,6 +325,9 @@ const AdminContacts = () => {
                         <th className="px-4 py-3 text-left">
                           <span className="font-semibold text-sm text-foreground">Date</span>
                         </th>
+                        <th className="px-4 py-3 text-center w-20">
+                          <span className="font-semibold text-sm text-foreground">Actions</span>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -374,6 +380,20 @@ const AdminContacts = () => {
                               })}
                             </div>
                           </td>
+                          <td className="px-4 py-3">
+                            <div className="flex justify-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedContact(contact);
+                                  setDetailModalOpen(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -384,6 +404,12 @@ const AdminContacts = () => {
           </Card>
         </div>
       </div>
+
+      <ContactDetailModal
+        contact={selectedContact}
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
+      />
     </AdminLayout>
   );
 };

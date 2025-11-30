@@ -8,11 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Download, Filter, Mail, Phone, Building2, Calendar, ArrowUpDown, Trash2 } from 'lucide-react';
+import { Loader2, Search, Download, Filter, Mail, Phone, Building2, Calendar, ArrowUpDown, Trash2, Eye } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { LeadDetailModal } from '@/components/admin/LeadDetailModal';
 
 interface Lead {
   id: string;
@@ -40,6 +41,8 @@ const AdminLeads = () => {
   const [sortField, setSortField] = useState<'created_at' | 'name' | 'email'>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -431,6 +434,9 @@ const AdminLeads = () => {
                             <ArrowUpDown className="h-4 w-4" />
                           </button>
                         </th>
+                        <th className="px-4 py-3 text-center w-20">
+                          <span className="font-semibold text-sm text-foreground">Actions</span>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -515,6 +521,20 @@ const AdminLeads = () => {
                               })}
                             </div>
                           </td>
+                          <td className="px-4 py-3">
+                            <div className="flex justify-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedLead(lead);
+                                  setDetailModalOpen(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -525,6 +545,12 @@ const AdminLeads = () => {
           </Card>
         </div>
       </div>
+
+      <LeadDetailModal
+        lead={selectedLead}
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
+      />
     </AdminLayout>
   );
 };

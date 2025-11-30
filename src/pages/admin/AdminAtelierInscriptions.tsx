@@ -9,9 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Download, Mail, Calendar, Trash2, Building2, Phone, User } from 'lucide-react';
+import { Loader2, Search, Download, Mail, Calendar, Trash2, Building2, Phone, User, Eye } from 'lucide-react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Badge } from '@/components/ui/badge';
+import { AtelierInscriptionDetailModal } from '@/components/admin/AtelierInscriptionDetailModal';
 
 interface AtelierInscription {
   id: string;
@@ -39,6 +40,8 @@ const AdminAtelierInscriptions = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedInscription, setSelectedInscription] = useState<AtelierInscription | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -331,6 +334,9 @@ const AdminAtelierInscriptions = () => {
                         <th className="px-4 py-3 text-left">
                           <span className="font-semibold text-sm text-foreground">Date inscription</span>
                         </th>
+                        <th className="px-4 py-3 text-center w-20">
+                          <span className="font-semibold text-sm text-foreground">Actions</span>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -402,6 +408,20 @@ const AdminAtelierInscriptions = () => {
                               })}
                             </div>
                           </td>
+                          <td className="px-4 py-3">
+                            <div className="flex justify-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedInscription(inscription);
+                                  setDetailModalOpen(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -412,6 +432,12 @@ const AdminAtelierInscriptions = () => {
           </Card>
         </div>
       </div>
+
+      <AtelierInscriptionDetailModal
+        inscription={selectedInscription}
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
+      />
     </AdminLayout>
   );
 };
