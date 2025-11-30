@@ -197,17 +197,16 @@ const AteliersWebinaires = () => {
                         </p>
                       )}
                       
-                      {/* Badge Complet si places atteintes et visibilité activée */}
-                      {item.show_participants_count && item.max_participants && item.inscriptions_count !== undefined && item.inscriptions_count >= item.max_participants && (
-                        <Badge variant="destructive" className="text-xs">
-                          🚫 COMPLET ({item.inscriptions_count}/{item.max_participants})
-                        </Badge>
-                      )}
-                      
-                      {/* Places disponibles si pas complet et visibilité activée */}
-                      {item.show_participants_count && item.max_participants && item.inscriptions_count !== undefined && item.inscriptions_count < item.max_participants && item.registration_open && (
-                        <Badge variant="secondary" className="text-xs">
-                          {item.max_participants - item.inscriptions_count} places disponibles
+                      {/* Compteur d'inscrits - uniquement pour événements à venir */}
+                      {item.event_date && new Date(item.event_date) >= new Date() && item.show_participants_count && item.max_participants && item.inscriptions_count !== undefined && (
+                        <Badge 
+                          variant={item.inscriptions_count >= item.max_participants ? "destructive" : "secondary"}
+                          className="text-xs"
+                        >
+                          {item.inscriptions_count >= item.max_participants 
+                            ? `Complet (${item.inscriptions_count}/${item.max_participants})` 
+                            : `${item.inscriptions_count}/${item.max_participants} · ${item.max_participants - item.inscriptions_count} places restantes`
+                          }
                         </Badge>
                       )}
                       
