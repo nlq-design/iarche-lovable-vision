@@ -698,7 +698,7 @@ const ArticleDetail = () => {
                     prose-h2:text-[24px] prose-h2:font-semibold
                     prose-p:text-[#374151] prose-p:leading-[1.75] prose-p:text-left
                     prose-a:text-accent hover:prose-a:text-accent/80
-                    prose-strong:text-foreground
+                    prose-strong:font-semibold prose-strong:text-[hsl(var(--primary))] prose-strong:px-1 prose-strong:py-0.5 prose-strong:rounded prose-strong:bg-gradient-to-r prose-strong:from-primary/8 prose-strong:via-primary/12 prose-strong:to-primary/8
                     prose-ul:text-[#374151]
                     prose-ol:text-[#374151]
                     prose-blockquote:border-l-accent
