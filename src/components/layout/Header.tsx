@@ -70,7 +70,7 @@ const Header = () => {
                   setResourcesOpen(false);
                 }}
                 onMouseEnter={() => setResourcesOpen(true)}
-                className="flex items-center gap-1 text-sm text-accent hover:text-accent/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 rounded px-2 py-1"
+                className="flex items-center gap-1 text-sm hero-gradient-text transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 rounded px-2 py-1"
               >
                 Ressources
                 <ChevronDown 
@@ -190,7 +190,7 @@ const Header = () => {
                 <NavLink 
                   to="/actualites"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-sm text-accent font-semibold px-2 py-1 hover:text-accent/80 transition-colors"
+                  className="text-sm hero-gradient-text font-semibold px-2 py-1 transition-colors"
                 >
                   Ressources
                 </NavLink>
