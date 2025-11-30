@@ -46,6 +46,34 @@ const ServiceDetail = () => {
         <meta property="og:url" content={getCanonicalUrl()} />
         <meta property="og:type" content="website" />
 
+        {/* Schema.org BreadcrumbList */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Accueil",
+                "item": "https://iarche.fr/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Services",
+                "item": "https://iarche.fr/services"
+              },
+              {
+                "@type": "ListItem",
+                "position": 3,
+                "name": service.title,
+                "item": getCanonicalUrl()
+              }
+            ]
+          })}
+        </script>
+
         {/* Schema.org Service */}
         <script type="application/ld+json">
           {JSON.stringify({
@@ -63,7 +91,7 @@ const ServiceDetail = () => {
               "@type": "Country",
               "name": "France"
             },
-            "serviceOutput": service.livrables.join(", "),
+            "serviceOutput": service.livrables,
             "audience": {
               "@type": "Audience",
               "audienceType": service.pourQui

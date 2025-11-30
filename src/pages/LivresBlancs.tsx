@@ -76,6 +76,28 @@ const LivresBlancs = () => {
         />
         <meta property="og:url" content="https://iarche.fr/livres-blancs" />
         <meta property="og:type" content="website" />
+
+        {/* Schema.org BreadcrumbList */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Accueil",
+                "item": "https://iarche.fr/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Livres blancs",
+                "item": "https://iarche.fr/livres-blancs"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       <Header />

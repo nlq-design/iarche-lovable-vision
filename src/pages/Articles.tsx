@@ -139,6 +139,28 @@ const Articles = () => {
         />
         <meta property="og:url" content="https://iarche.fr/articles" />
         <meta property="og:type" content="website" />
+
+        {/* Schema.org BreadcrumbList */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Accueil",
+                "item": "https://iarche.fr/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Articles",
+                "item": "https://iarche.fr/articles"
+              }
+            ]
+          })}
+        </script>
       </Helmet>
 
       <Header />
