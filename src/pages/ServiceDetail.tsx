@@ -145,7 +145,7 @@ const ServiceDetail = () => {
           {/* CTA intermédiaire */}
           <div className="text-center my-12 animate-fadeIn [animation-delay:0.45s]">
             <GradientLink 
-              href="" 
+              href="https://cal.com/iarche/audit-conseil" 
               className="text-lg"
               onClick={() => trackCTAClick('prendre_rendez_vous', 'service_detail', slug || '')}
             >
