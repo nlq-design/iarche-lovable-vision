@@ -15,7 +15,7 @@ interface AuthorCardProps {
 
 const AuthorCard = ({
   photo = '/images/nicolas-lara.jpg',
-  nom = 'Nicolas LARA',
+  nom = 'Nicolas',
   fonction = 'Fondateur IArche',
   linkedin = 'https://www.linkedin.com/in/nicolas-lara-queralta/',
   site = 'https://iarche.fr',
