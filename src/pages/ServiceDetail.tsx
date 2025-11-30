@@ -252,7 +252,7 @@ const ServiceDetail = () => {
           {/* CTA final */}
           <div className="text-center mt-16 invisible animate-fadeIn [animation-delay:0.8s]">
             <p className="text-lg text-foreground mb-6">
-              Prêt à démarrer ce service ?
+              En savoir plus
             </p>
             <GradientLink 
               href="/contact" 
