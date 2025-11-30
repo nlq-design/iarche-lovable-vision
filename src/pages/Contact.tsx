@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, Mail, Linkedin } from 'lucide-react';
+import { MapPin, Mail, Phone, Linkedin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { contactSchema, type ContactFormData } from '@/schemas/contact';
@@ -324,6 +324,19 @@ const Contact = () => {
                         className="text-muted-foreground hover:text-accent transition-colors"
                       >
                         nlq@iarche.fr
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <Phone className="w-6 h-6 text-accent shrink-0 mt-1" aria-hidden="true" />
+                    <div>
+                      <p className="font-semibold text-foreground mb-1">Téléphone</p>
+                      <a 
+                        href="tel:+33661741381" 
+                        className="text-muted-foreground hover:text-accent transition-colors"
+                      >
+                        06 61 74 13 81
                       </a>
                     </div>
                   </div>
