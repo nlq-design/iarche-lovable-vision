@@ -367,12 +367,6 @@ const Contact = () => {
                   </div>
                 </div>
               </div>
-
-              <div className="bg-secondary/50 rounded-lg p-6 border border-border">
-                <p className="text-sm text-muted-foreground">
-                  <strong className="text-foreground">Temps de réponse :</strong> Nous nous engageons à répondre à toutes les demandes sous 24h ouvrées.
-                </p>
-              </div>
             </div>
           </div>
         </section>
