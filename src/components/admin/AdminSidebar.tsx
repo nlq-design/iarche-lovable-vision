@@ -19,7 +19,6 @@ const navigationItems = [
     group: 'Vue d\'ensemble',
     items: [
       { title: 'Tableau de bord', url: '/admin', icon: Home, exact: true },
-      { title: 'Statistiques', url: '/admin/dashboard', icon: BarChart3 },
       { title: 'Stats avancées', url: '/admin/advanced-stats', icon: BarChart3 },
       { title: 'Performance', url: '/admin/performance-monitoring', icon: Activity },
       { title: 'Analytics CTAs', url: '/admin/cta-analytics', icon: MousePointerClick },
@@ -28,7 +27,7 @@ const navigationItems = [
   {
     group: 'Contenu',
     items: [
-      { title: 'Articles (fond)', url: '/admin/articles', icon: FileText },
+      { title: 'Articles', url: '/admin/articles', icon: FileText },
       { title: 'Actualités', url: '/admin/actualites', icon: FileText },
       { title: 'Cas clients', url: '/admin/cas-clients', icon: FileText },
       { title: 'Livres blancs', url: '/admin/livres-blancs', icon: FileText },
@@ -46,18 +45,18 @@ const navigationItems = [
   {
     group: 'Engagement',
     items: [
-      { title: 'Commentaires', url: '/admin/comments', icon: MessageCircle },
-      { title: 'FAQs', url: '/admin/faqs', icon: HelpCircle },
       { title: 'Leads (consolidé)', url: '/admin/leads', icon: Users },
       { title: 'Contacts', url: '/admin/contacts', icon: Mail },
-      { title: 'Livres blancs', url: '/admin/livre-blanc-inscriptions', icon: FileText },
-      { title: 'Ateliers', url: '/admin/atelier-inscriptions', icon: UserCheck },
+      { title: 'Inscriptions Livres blancs', url: '/admin/livre-blanc-inscriptions', icon: FileText },
+      { title: 'Inscriptions Ateliers', url: '/admin/atelier-inscriptions', icon: UserCheck },
+      { title: 'Commentaires', url: '/admin/comments', icon: MessageCircle },
+      { title: 'FAQs', url: '/admin/faqs', icon: HelpCircle },
     ]
   },
   {
     group: 'Communication',
     items: [
-      { title: 'Abonnés', url: '/admin/newsletters', icon: Users },
+      { title: 'Abonnés Newsletter', url: '/admin/newsletters', icon: Users },
       { title: 'RedacNews', url: '/admin/redacnews', icon: Send },
     ]
   },
@@ -97,10 +96,10 @@ export function AdminSidebar() {
           return (
             <SidebarGroup
               key={section.group}
-              className="mb-2"
+              className="mb-1"
             >
               {!isCollapsed && (
-                <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3 mb-2">
+                <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3 mb-1">
                   {section.group}
                 </SidebarGroupLabel>
               )}
@@ -116,7 +115,7 @@ export function AdminSidebar() {
                           <NavLink
                             to={item.url}
                             end={item.exact ? true : undefined}
-                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors"
+                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/50 transition-colors"
                             activeClassName="bg-primary/10 text-primary font-medium"
                           >
                             <item.icon className="h-4 w-4 flex-shrink-0" />
