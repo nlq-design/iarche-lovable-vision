@@ -748,9 +748,16 @@ const AdminArticleEditor = () => {
     };
 
     // Ajouter created_at seulement pour les nouvelles créations avec date personnalisée
-    if (!id && customCreatedAt) {
-      articleData.created_at = customCreatedAt.toISOString();
-      console.log('✅ Date personnalisée appliquée:', articleData.created_at);
+    if (customCreatedAt) {
+      if (!id) {
+        // Nouvelle création : utiliser la date personnalisée
+        articleData.created_at = customCreatedAt.toISOString();
+        console.log('✅ Date personnalisée appliquée pour création:', articleData.created_at);
+      } else {
+        // Mise à jour : modifier created_at seulement si une date est sélectionnée
+        articleData.created_at = customCreatedAt.toISOString();
+        console.log('✅ Date modifiée pour article existant:', articleData.created_at);
+      }
     } else if (!id) {
       console.log('ℹ️ Pas de date personnalisée, utilisation de la date du jour (défaut DB)');
     }
@@ -1208,43 +1215,61 @@ const AdminArticleEditor = () => {
                   />
                 </div>
 
-                {!id && (
-                  <div className="space-y-2">
-                    <Label>Date de création personnalisée</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !customCreatedAt && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {customCreatedAt ? (
-                            format(customCreatedAt, "PPP", { locale: fr })
-                          ) : (
-                            <span>Date du jour (par défaut)</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={customCreatedAt}
-                          onSelect={setCustomCreatedAt}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <p className="text-xs text-muted-foreground">
-                      {customCreatedAt 
-                        ? "Cette date remplacera la date du jour" 
+                <div className="space-y-2">
+                  <Label>Date de création {id ? '' : 'personnalisée'}</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !customCreatedAt && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {customCreatedAt ? (
+                          format(customCreatedAt, "PPP", { locale: fr })
+                        ) : (
+                          <span>{id ? 'Aucune date personnalisée' : 'Date du jour (par défaut)'}</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={customCreatedAt}
+                        onSelect={(date) => {
+                          console.log('📅 Date sélectionnée:', date);
+                          setCustomCreatedAt(date);
+                        }}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-xs text-muted-foreground">
+                    {customCreatedAt 
+                      ? `Date sélectionnée : ${format(customCreatedAt, "PPP", { locale: fr })}` 
+                      : id 
+                        ? "Modifiez la date de création si nécessaire"
                         : "Si aucune date n'est choisie, la date du jour sera utilisée"}
-                    </p>
-                  </div>
-                )}
+                  </p>
+                  {customCreatedAt && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        console.log('🔄 Réinitialisation de la date');
+                        setCustomCreatedAt(undefined);
+                      }}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Réinitialiser la date
+                    </Button>
+                  )}
+                </div>
 
                 {resourceType === 'livre-blanc' && (
                   <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
