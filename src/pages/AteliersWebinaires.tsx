@@ -58,7 +58,7 @@ const AteliersWebinaires = () => {
       .select('id, title, slug, excerpt, cover_image_url, published_at, created_at, max_participants, registration_open, show_participants_count, type_evenement, event_location, event_date')
       .eq('published', true)
       .eq('resource_type', 'atelier-webinaire')
-      .order('published_at', { ascending: false });
+      .order('event_date', { ascending: false });
 
     if (error) {
       console.error('Erreur lors du chargement des ateliers et webinaires:', error);
