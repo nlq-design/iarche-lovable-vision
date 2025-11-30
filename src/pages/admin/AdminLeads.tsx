@@ -24,6 +24,7 @@ interface Lead {
   source: string;
   source_id: string | null;
   source_context: string | null;
+  message: string | null;
   created_at: string;
 }
 
@@ -164,7 +165,7 @@ const AdminLeads = () => {
   };
 
   const exportToCSV = () => {
-    const headers = ['Nom', 'Email', 'Entreprise', 'Téléphone', 'Source', 'Contexte', 'Consentement marketing', 'Date de création'];
+    const headers = ['Nom', 'Email', 'Entreprise', 'Téléphone', 'Source', 'Contexte', 'Message', 'Consentement marketing', 'Date de création'];
     const csvData = filteredLeads.map((lead) => [
       lead.name,
       lead.email,
@@ -172,6 +173,7 @@ const AdminLeads = () => {
       lead.phone || '',
       lead.source,
       lead.source_context || '',
+      lead.message || '',
       lead.consent_marketing ? 'Oui' : 'Non',
       new Date(lead.created_at).toLocaleDateString('fr-FR'),
     ]);
@@ -418,6 +420,9 @@ const AdminLeads = () => {
                           <span className="font-semibold text-sm text-foreground">Contexte</span>
                         </th>
                         <th className="px-4 py-3 text-left">
+                          <span className="font-semibold text-sm text-foreground">Message</span>
+                        </th>
+                        <th className="px-4 py-3 text-left">
                           <button
                             onClick={() => handleSort('created_at')}
                             className="flex items-center gap-2 font-semibold text-sm text-foreground hover:text-primary"
@@ -486,6 +491,15 @@ const AdminLeads = () => {
                             {lead.source_context ? (
                               <span className="text-sm text-muted-foreground max-w-[200px] truncate block" title={lead.source_context}>
                                 {lead.source_context}
+                              </span>
+                            ) : (
+                              <span className="text-sm text-muted-foreground/50">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {lead.message ? (
+                              <span className="text-sm text-muted-foreground max-w-[300px] truncate block" title={lead.message}>
+                                {lead.message}
                               </span>
                             ) : (
                               <span className="text-sm text-muted-foreground/50">-</span>

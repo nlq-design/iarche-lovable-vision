@@ -665,6 +665,7 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
+          message: string | null
           name: string
           phone: string | null
           source: string
@@ -677,6 +678,7 @@ export type Database = {
           created_at?: string | null
           email: string
           id?: string
+          message?: string | null
           name: string
           phone?: string | null
           source: string
@@ -689,6 +691,7 @@ export type Database = {
           created_at?: string | null
           email?: string
           id?: string
+          message?: string | null
           name?: string
           phone?: string | null
           source?: string

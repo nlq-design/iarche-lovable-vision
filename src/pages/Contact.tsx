@@ -50,6 +50,7 @@ const Contact = () => {
           company: validatedData.company || null,
           source: 'contact',
           source_context: contextParam || null,
+          message: validatedData.message,
           consent_marketing: false
         }])
         .select()
@@ -85,6 +86,7 @@ const Contact = () => {
               phone: null, // Les contacts ne capturent pas le téléphone
               source: 'contact',
               source_context: contextParam,
+              message: validatedData.message,
             },
           });
         } catch (notifError) {
