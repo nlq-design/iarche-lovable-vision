@@ -728,7 +728,12 @@ const AdminArticleEditor = () => {
 
     setIsLoading(true);
 
-    const articleData = {
+    // Debug: Log custom date
+    console.log('💾 Sauvegarde article - Date personnalisée:', customCreatedAt);
+    console.log('💾 ID article:', id);
+    console.log('💾 Est nouvelle création:', !id);
+
+    const articleData: any = {
       title,
       slug,
       excerpt: excerpt || null,
@@ -739,8 +744,19 @@ const AdminArticleEditor = () => {
       published_at: status === 'published' ? new Date().toISOString() : null,
       scheduled_publish_at: scheduledPublishAt ? scheduledPublishAt.toISOString() : null,
       resource_type: resourceType,
-      ...(customCreatedAt && !id ? { created_at: customCreatedAt.toISOString() } : {}),
       author_id: user.id,
+    };
+
+    // Ajouter created_at seulement pour les nouvelles créations avec date personnalisée
+    if (!id && customCreatedAt) {
+      articleData.created_at = customCreatedAt.toISOString();
+      console.log('✅ Date personnalisée appliquée:', articleData.created_at);
+    } else if (!id) {
+      console.log('ℹ️ Pas de date personnalisée, utilisation de la date du jour (défaut DB)');
+    }
+
+    // Ajouter les autres champs
+    Object.assign(articleData, {
       event_date: eventDate ? eventDate.toISOString() : null,
       event_location: eventLocation || null,
       registration_open: registrationOpen,
@@ -774,7 +790,9 @@ const AdminArticleEditor = () => {
       documents_telechargeables: documentsTelechargeables.length > 0 ? documentsTelechargeables : null,
       rappels_automatiques: rappelsAutomatiques,
       cta_evenement_personnalise: ctaEvenementPersonnalise || null,
-    };
+    });
+
+    console.log('📦 Données article finales:', articleData);
 
     if (id) {
       // Sauvegarder une version avant la mise à jour
