@@ -69,8 +69,9 @@ Deno.serve(async (req) => {
     `;
 
     const { data, error } = await resend.emails.send({
-      from: 'IArche Notifications <onboarding@resend.dev>',
-      to: ['nlq@nlq.fr'], // Temporaire: mode test Resend (envoie uniquement à l'email du compte)
+      from: 'IArche Notifications <notifications@iarche.fr>',
+      to: ['nlq@iarche.fr'],
+      reply_to: 'nlq@iarche.fr',
       subject: `🎯 Nouveau Lead: ${name} (${sourceLabel})`,
       html: emailHtml,
     });

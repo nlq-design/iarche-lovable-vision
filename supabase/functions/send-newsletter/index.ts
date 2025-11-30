@@ -110,8 +110,9 @@ const handler = async (req: Request): Promise<Response> => {
     // Send emails to all subscribers
     const emailPromises = subscribers.map((subscriber) =>
       resend.emails.send({
-        from: "IArche <onboarding@resend.dev>",
+        from: "IArche Newsletter <newsletter@iarche.fr>",
         to: [subscriber.email],
+        replyTo: 'nlq@iarche.fr',
         subject: `Nouvel article : ${article.title}`,
         html: `
           <h1>Nouvel article sur IArche</h1>

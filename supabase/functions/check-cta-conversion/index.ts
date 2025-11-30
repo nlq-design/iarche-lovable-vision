@@ -182,8 +182,9 @@ Deno.serve(async (req) => {
     `;
 
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: 'IArche Analytics <onboarding@resend.dev>',
+      from: 'IArche Analytics <analytics@iarche.fr>',
       to: ['nlq@iarche.fr'],
+      reply_to: 'nlq@iarche.fr',
       subject: `⚠️ Alerte: ${lowConversionCTAs.length} CTA${lowConversionCTAs.length > 1 ? 's' : ''} à faible conversion`,
       html: emailHtml,
     });

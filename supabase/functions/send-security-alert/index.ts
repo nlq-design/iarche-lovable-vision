@@ -72,8 +72,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Envoyer l'alerte par email
     await resend.emails.send({
-      from: "IArche Security <onboarding@resend.dev>",
+      from: "IArche Security <security@iarche.fr>",
       to: adminEmails,
+      replyTo: 'nlq@iarche.fr',
       subject: `[${severityLabels[alert.severity]}] Alerte de sécurité : ${alert.title}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
