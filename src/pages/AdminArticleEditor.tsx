@@ -99,6 +99,11 @@ const AdminArticleEditor = () => {
   // Champs spécifiques aux actualités
   const [actualiteType, setActualiteType] = useState<string>('');
   const [sourceExterne, setSourceExterne] = useState<{ nom: string; url: string }>({ nom: '', url: '' });
+  
+  // Champs spécifiques aux cas clients
+  const [secteurActivite, setSecteurActivite] = useState<string>('');
+  const [tailleEntreprise, setTailleEntreprise] = useState<string>('');
+  const [problematique, setProblematique] = useState('');
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -195,6 +200,9 @@ const AdminArticleEditor = () => {
           ? data.source_externe as { nom: string; url: string }
           : { nom: '', url: '' }
       );
+      setSecteurActivite(data.secteur_activite || '');
+      setTailleEntreprise(data.taille_entreprise || '');
+      setProblematique(data.problematique || '');
 
       // Charger les catégories de l'article
       const { data: articleCategories } = await supabase
@@ -260,6 +268,9 @@ const AdminArticleEditor = () => {
       ressources_complementaires: ressourcesComplementaires.length > 0 ? ressourcesComplementaires : null,
       actualite_type: actualiteType || null,
       source_externe: (sourceExterne.nom && sourceExterne.url) ? sourceExterne : null,
+      secteur_activite: secteurActivite || null,
+      taille_entreprise: tailleEntreprise || null,
+      problematique: problematique || null,
     };
 
     try {
@@ -516,6 +527,9 @@ const AdminArticleEditor = () => {
       ressources_complementaires: ressourcesComplementaires.length > 0 ? ressourcesComplementaires : null,
       actualite_type: actualiteType || null,
       source_externe: (sourceExterne.nom && sourceExterne.url) ? sourceExterne : null,
+      secteur_activite: secteurActivite || null,
+      taille_entreprise: tailleEntreprise || null,
+      problematique: problematique || null,
     };
 
     if (id) {
@@ -1109,6 +1123,59 @@ const AdminArticleEditor = () => {
                         />
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Champs spécifiques aux cas clients */}
+                {resourceType === 'cas-client' && (
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    <h3 className="font-semibold text-foreground">Informations cas client</h3>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="secteurActivite">Secteur d'activité</Label>
+                      <Select value={secteurActivite} onValueChange={setSecteurActivite} disabled={isLoading}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner un secteur" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="industrie">Industrie</SelectItem>
+                          <SelectItem value="services">Services</SelectItem>
+                          <SelectItem value="sante">Santé</SelectItem>
+                          <SelectItem value="finance">Finance</SelectItem>
+                          <SelectItem value="btp">BTP</SelectItem>
+                          <SelectItem value="transport">Transport</SelectItem>
+                          <SelectItem value="commerce">Commerce</SelectItem>
+                          <SelectItem value="autre">Autre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="tailleEntreprise">Taille de l'entreprise</Label>
+                      <Select value={tailleEntreprise} onValueChange={setTailleEntreprise} disabled={isLoading}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner une taille" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tpe">TPE (moins de 10 salariés)</SelectItem>
+                          <SelectItem value="pme">PME (10 à 249 salariés)</SelectItem>
+                          <SelectItem value="eti">ETI (250 à 4999 salariés)</SelectItem>
+                          <SelectItem value="grande-entreprise">Grande entreprise (5000+ salariés)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="problematique">Problématique</Label>
+                      <Textarea
+                        id="problematique"
+                        value={problematique}
+                        onChange={(e) => setProblematique(e.target.value)}
+                        rows={4}
+                        disabled={isLoading}
+                        placeholder="Quelle était la problématique principale du client ?"
+                      />
+                    </div>
                   </div>
                 )}
 

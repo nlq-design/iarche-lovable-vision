@@ -45,6 +45,9 @@ interface Article {
   ressources_complementaires: any;
   actualite_type: string | null;
   source_externe: any;
+  secteur_activite: string | null;
+  taille_entreprise: string | null;
+  problematique: string | null;
 }
 
 const ArticleDetail = () => {
@@ -517,6 +520,49 @@ const ArticleDetail = () => {
               </div>
             )}
           </header>
+
+          {/* Informations cas client - avant le contenu */}
+          {article.resource_type === 'cas-client' && (article.secteur_activite || article.taille_entreprise || article.problematique) && (
+            <div className="mb-8 p-6 bg-muted/30 border border-border rounded-xl space-y-4 animate-fadeIn [animation-delay:0.4s]">
+              {(article.secteur_activite || article.taille_entreprise) && (
+                <div className="flex flex-wrap gap-4">
+                  {article.secteur_activite && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-sm">
+                        {article.secteur_activite === 'industrie' && 'Industrie'}
+                        {article.secteur_activite === 'services' && 'Services'}
+                        {article.secteur_activite === 'sante' && 'Santé'}
+                        {article.secteur_activite === 'finance' && 'Finance'}
+                        {article.secteur_activite === 'btp' && 'BTP'}
+                        {article.secteur_activite === 'transport' && 'Transport'}
+                        {article.secteur_activite === 'commerce' && 'Commerce'}
+                        {article.secteur_activite === 'autre' && 'Autre'}
+                      </Badge>
+                    </div>
+                  )}
+                  {article.taille_entreprise && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-sm">
+                        {article.taille_entreprise === 'tpe' && 'TPE'}
+                        {article.taille_entreprise === 'pme' && 'PME'}
+                        {article.taille_entreprise === 'eti' && 'ETI'}
+                        {article.taille_entreprise === 'grande-entreprise' && 'Grande entreprise'}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {article.problematique && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-foreground">Problématique</h3>
+                  <p className="text-base text-muted-foreground leading-relaxed">
+                    {article.problematique}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 3. Layout avec AuthorCard + TOC (si article) + Contenu */}
           <div className="flex gap-8">
