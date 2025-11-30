@@ -228,18 +228,24 @@ export type Database = {
           ai_source: string | null
           author: string | null
           author_id: string | null
+          compteur_telechargements: number | null
           content: string
           cover_image_url: string | null
           created_at: string | null
+          cta_personnalise: string | null
           event_date: string | null
           event_location: string | null
           excerpt: string | null
           faq: Json | null
           file_url: string | null
+          format_fichier: string | null
           id: string
+          langues_disponibles: string[] | null
           max_participants: number | null
           meta_description: string | null
           meta_title: string | null
+          niveau: string | null
+          nombre_pages: number | null
           problematique: string | null
           published: boolean | null
           published_at: string | null
@@ -254,26 +260,35 @@ export type Database = {
           status: string | null
           tags: string[] | null
           taille_entreprise: string | null
+          taille_fichier_bytes: number | null
+          thematiques: string[] | null
           title: string
           updated_at: string | null
+          version_document: string | null
         }
         Insert: {
           actualite_type?: string | null
           ai_source?: string | null
           author?: string | null
           author_id?: string | null
+          compteur_telechargements?: number | null
           content: string
           cover_image_url?: string | null
           created_at?: string | null
+          cta_personnalise?: string | null
           event_date?: string | null
           event_location?: string | null
           excerpt?: string | null
           faq?: Json | null
           file_url?: string | null
+          format_fichier?: string | null
           id?: string
+          langues_disponibles?: string[] | null
           max_participants?: number | null
           meta_description?: string | null
           meta_title?: string | null
+          niveau?: string | null
+          nombre_pages?: number | null
           problematique?: string | null
           published?: boolean | null
           published_at?: string | null
@@ -288,26 +303,35 @@ export type Database = {
           status?: string | null
           tags?: string[] | null
           taille_entreprise?: string | null
+          taille_fichier_bytes?: number | null
+          thematiques?: string[] | null
           title: string
           updated_at?: string | null
+          version_document?: string | null
         }
         Update: {
           actualite_type?: string | null
           ai_source?: string | null
           author?: string | null
           author_id?: string | null
+          compteur_telechargements?: number | null
           content?: string
           cover_image_url?: string | null
           created_at?: string | null
+          cta_personnalise?: string | null
           event_date?: string | null
           event_location?: string | null
           excerpt?: string | null
           faq?: Json | null
           file_url?: string | null
+          format_fichier?: string | null
           id?: string
+          langues_disponibles?: string[] | null
           max_participants?: number | null
           meta_description?: string | null
           meta_title?: string | null
+          niveau?: string | null
+          nombre_pages?: number | null
           problematique?: string | null
           published?: boolean | null
           published_at?: string | null
@@ -322,8 +346,11 @@ export type Database = {
           status?: string | null
           tags?: string[] | null
           taille_entreprise?: string | null
+          taille_fichier_bytes?: number | null
+          thematiques?: string[] | null
           title?: string
           updated_at?: string | null
+          version_document?: string | null
         }
         Relationships: []
       }
