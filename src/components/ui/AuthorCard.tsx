@@ -54,11 +54,15 @@ const AuthorCard = ({
         <div className="flex items-center gap-4">
           {/* Photo */}
           <div className="relative p-[2px] rounded-full bg-gradient-to-br from-primary via-accent to-primary shadow-lg flex-shrink-0">
-            <img 
-              src={photo} 
-              alt={nom}
-              className="w-14 h-14 rounded-full object-cover bg-background"
-            />
+            <picture>
+              <source srcSet="/images/nicolas-lara.webp" type="image/webp" />
+              <img 
+                src={photo} 
+                alt={nom}
+                loading="lazy"
+                className="w-14 h-14 rounded-full object-cover bg-background"
+              />
+            </picture>
           </div>
 
           {/* Info centrale */}
@@ -149,11 +153,15 @@ const AuthorCard = ({
         {/* Photo */}
         <div className="flex justify-center mb-3">
           <div className="relative p-[2px] rounded-full bg-gradient-to-br from-primary via-accent to-primary shadow-lg">
-            <img 
-              src={photo} 
-              alt={nom}
-              className="w-16 h-16 rounded-full object-cover bg-background"
-            />
+            <picture>
+              <source srcSet="/images/nicolas-lara.webp" type="image/webp" />
+              <img 
+                src={photo} 
+                alt={nom}
+                loading="lazy"
+                className="w-16 h-16 rounded-full object-cover bg-background"
+              />
+            </picture>
           </div>
         </div>
 
