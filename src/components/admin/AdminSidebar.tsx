@@ -48,6 +48,7 @@ const navigationItems = [
     items: [
       { title: 'Commentaires', url: '/admin/comments', icon: MessageCircle },
       { title: 'FAQs', url: '/admin/faqs', icon: HelpCircle },
+      { title: 'Contacts', url: '/admin/contacts', icon: Mail },
       { title: 'Leads', url: '/admin/leads', icon: Users },
     ]
   },

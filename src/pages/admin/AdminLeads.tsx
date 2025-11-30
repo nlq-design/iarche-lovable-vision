@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Download, Filter, Mail, Phone, Building2, Calendar, ArrowUpDown } from 'lucide-react';
+import { Loader2, Search, Download, Filter, Mail, Phone, Building2, Calendar, ArrowUpDown, Trash2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +37,7 @@ const AdminLeads = () => {
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [sortField, setSortField] = useState<'created_at' | 'name' | 'email'>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -58,6 +60,7 @@ const AdminLeads = () => {
     const { data, error } = await supabase
       .from('leads')
       .select('*')
+      .neq('source', 'contact')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -113,6 +116,50 @@ const AdminLeads = () => {
     } else {
       setSortField(field);
       setSortOrder('desc');
+    }
+  };
+
+  const toggleSelection = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredLeads.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredLeads.map(l => l.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    
+    if (!confirm(`Supprimer ${selectedIds.size} lead(s) sélectionné(s) ?`)) return;
+
+    const { error } = await supabase
+      .from('leads')
+      .delete()
+      .in('id', Array.from(selectedIds));
+
+    if (error) {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de supprimer les leads',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Succès',
+        description: `${selectedIds.size} lead(s) supprimé(s)`,
+      });
+      setSelectedIds(new Set());
+      loadLeads();
     }
   };
 
@@ -210,12 +257,12 @@ const AdminLeads = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">Gestion des leads</h1>
             <p className="text-muted-foreground">
-              Visualisez et exportez tous les leads capturés via le site
+              Leads capturés via newsletter, livres blancs et ateliers (contacts exclus)
             </p>
           </div>
 
           {/* Statistiques */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Total</CardTitle>
@@ -250,14 +297,6 @@ const AdminLeads = () => {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Contact</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-orange-600">{stats.contact}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Consentement</CardTitle>
               </CardHeader>
               <CardContent>
@@ -269,8 +308,8 @@ const AdminLeads = () => {
           {/* Filtres et actions */}
           <Card className="mb-6">
             <CardContent className="pt-6">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
+              <div className="flex flex-col md:flex-row gap-4 items-center">
+                <div className="flex-1 w-full">
                   <Label htmlFor="search" className="sr-only">
                     Rechercher
                   </Label>
@@ -299,14 +338,21 @@ const AdminLeads = () => {
                       <SelectItem value="newsletter">Newsletter</SelectItem>
                       <SelectItem value="atelier-webinaire">Atelier/Webinaire</SelectItem>
                       <SelectItem value="livre-blanc">Livre blanc</SelectItem>
-                      <SelectItem value="contact">Contact</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <Button onClick={exportToCSV} disabled={filteredLeads.length === 0}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export CSV ({filteredLeads.length})
-                </Button>
+                <div className="flex gap-2">
+                  {selectedIds.size > 0 && (
+                    <Button variant="destructive" onClick={handleBulkDelete}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Supprimer ({selectedIds.size})
+                    </Button>
+                  )}
+                  <Button onClick={exportToCSV} disabled={filteredLeads.length === 0}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export CSV ({filteredLeads.length})
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -325,6 +371,12 @@ const AdminLeads = () => {
                   <table className="w-full">
                     <thead className="bg-muted/50">
                       <tr>
+                        <th className="px-4 py-3 text-left w-12">
+                          <Checkbox
+                            checked={selectedIds.size === filteredLeads.length}
+                            onCheckedChange={toggleSelectAll}
+                          />
+                        </th>
                         <th className="px-4 py-3 text-left">
                           <button
                             onClick={() => handleSort('name')}
@@ -366,6 +418,12 @@ const AdminLeads = () => {
                     <tbody className="divide-y divide-border">
                       {filteredLeads.map((lead) => (
                         <tr key={lead.id} className="hover:bg-muted/50 transition-colors">
+                          <td className="px-4 py-3">
+                            <Checkbox
+                              checked={selectedIds.has(lead.id)}
+                              onCheckedChange={() => toggleSelection(lead.id)}
+                            />
+                          </td>
                           <td className="px-4 py-3">
                             <div className="flex flex-col">
                               <span className="font-medium text-foreground">{lead.name}</span>
