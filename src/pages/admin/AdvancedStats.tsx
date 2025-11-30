@@ -1,11 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, TrendingUp, TrendingDown, Users, FileText, MessageCircle, Eye } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { MiniChartSkeleton } from '@/components/admin/ChartSkeleton';
+
+// Lazy load heavy chart components
+const PublicationTrendChart = lazy(() => import('@/components/admin/AnalyticsCharts').then(m => ({ default: m.PublicationTrendChart })));
+const EngagementPieChart = lazy(() => import('@/components/admin/AnalyticsCharts').then(m => ({ default: m.EngagementPieChart })));
+const TopArticlesBarChart = lazy(() => import('@/components/admin/AnalyticsCharts').then(m => ({ default: m.TopArticlesBarChart })));
 
 interface Stats {
   totalArticles: number;
@@ -227,15 +232,9 @@ const AdvancedStats = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={publicationTrends}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="month" stroke="#6b7280" fontSize={12} />
-                  <YAxis stroke="#6b7280" fontSize={12} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="articles" stroke="#1A2B4A" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<MiniChartSkeleton />}>
+                <PublicationTrendChart data={publicationTrends} />
+              </Suspense>
             </CardContent>
           </Card>
 
@@ -248,25 +247,9 @@ const AdvancedStats = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={engagementData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {engagementData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<MiniChartSkeleton />}>
+                <EngagementPieChart data={engagementData} />
+              </Suspense>
             </CardContent>
           </Card>
         </div>
@@ -277,22 +260,9 @@ const AdvancedStats = () => {
             <CardTitle>Top 10 des articles les plus vus</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={topArticles} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis type="number" stroke="#6b7280" fontSize={12} />
-                <YAxis 
-                  type="category" 
-                  dataKey="title" 
-                  stroke="#6b7280" 
-                  fontSize={12}
-                  width={200}
-                  tickFormatter={(value) => value.length > 30 ? value.substring(0, 27) + '...' : value}
-                />
-                <Tooltip />
-                <Bar dataKey="views" fill="#1A2B4A" />
-              </BarChart>
-            </ResponsiveContainer>
+            <Suspense fallback={<MiniChartSkeleton />}>
+              <TopArticlesBarChart data={topArticles} />
+            </Suspense>
           </CardContent>
         </Card>
       </div>

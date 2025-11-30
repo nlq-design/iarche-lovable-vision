@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,10 +8,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Activity, TrendingUp, Package, Zap, FileText, Plus, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { MiniChartSkeleton } from '@/components/admin/ChartSkeleton';
+
+// Lazy load heavy chart components
+const LighthouseChart = lazy(() => import('@/components/admin/PerformanceCharts').then(m => ({ default: m.LighthouseChart })));
+const CoreWebVitalsChart = lazy(() => import('@/components/admin/PerformanceCharts').then(m => ({ default: m.CoreWebVitalsChart })));
+const BundleSizeChart = lazy(() => import('@/components/admin/PerformanceCharts').then(m => ({ default: m.BundleSizeChart })));
 
 interface PerformanceMetric {
   id: string;
@@ -555,19 +560,9 @@ const PerformanceMonitoring = () => {
               <CardDescription>10 dernières mesures (0-100)</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={lighthouseData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="Performance" stroke="hsl(var(--primary))" strokeWidth={2} />
-                  <Line type="monotone" dataKey="Accessibilité" stroke="hsl(var(--accent))" strokeWidth={2} />
-                  <Line type="monotone" dataKey="Best Practices" stroke="#10b981" strokeWidth={2} />
-                  <Line type="monotone" dataKey="SEO" stroke="#f59e0b" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<MiniChartSkeleton />}>
+                <LighthouseChart data={lighthouseData} />
+              </Suspense>
             </CardContent>
           </Card>
         </TabsContent>
@@ -579,18 +574,9 @@ const PerformanceMonitoring = () => {
               <CardDescription>FCP, LCP, TTI en secondes (10 dernières mesures)</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={coreWebVitalsData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="FCP" stroke="hsl(var(--primary))" strokeWidth={2} />
-                  <Line type="monotone" dataKey="LCP" stroke="hsl(var(--accent))" strokeWidth={2} />
-                  <Line type="monotone" dataKey="TTI" stroke="#10b981" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<MiniChartSkeleton />}>
+                <CoreWebVitalsChart data={coreWebVitalsData} />
+              </Suspense>
             </CardContent>
           </Card>
         </TabsContent>
@@ -602,18 +588,9 @@ const PerformanceMonitoring = () => {
               <CardDescription>Tailles en KB (10 dernières mesures)</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={bundleSizeData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="JS" fill="hsl(var(--primary))" />
-                  <Bar dataKey="CSS" fill="hsl(var(--accent))" />
-                  <Bar dataKey="Total" fill="#10b981" />
-                </BarChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<MiniChartSkeleton />}>
+                <BundleSizeChart data={bundleSizeData} />
+              </Suspense>
             </CardContent>
           </Card>
         </TabsContent>

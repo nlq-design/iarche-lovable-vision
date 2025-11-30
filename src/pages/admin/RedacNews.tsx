@@ -1,12 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Loader2, Mail, Trash2, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import ReactQuill from 'react-quill';
+import { LazyQuill } from '@/components/admin/LazyQuill';
 import DOMPurify from 'dompurify';
-import 'react-quill/dist/quill.snow.css';
 
 interface Newsletter {
   id: string;
@@ -233,13 +232,12 @@ const RedacNews = () => {
                 Contenu *
               </label>
               <div className="border border-border rounded-lg overflow-hidden">
-                <ReactQuill
+                <LazyQuill
                   value={content}
                   onChange={setContent}
                   modules={quillModules}
-                  theme="snow"
-                  className="bg-background"
                   placeholder="Rédigez le contenu de votre newsletter..."
+                  className="bg-background"
                 />
               </div>
             </div>

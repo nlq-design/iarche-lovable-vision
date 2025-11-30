@@ -1,11 +1,16 @@
 import { Helmet } from 'react-helmet-async';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, TrendingUp, MousePointerClick, Users, ArrowRight } from 'lucide-react';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { MiniChartSkeleton } from '@/components/admin/ChartSkeleton';
+
+// Lazy load heavy chart components
+const CTAClicksBarChart = lazy(() => import('@/components/admin/CTACharts').then(m => ({ default: m.CTAClicksBarChart })));
+const SourcesPieChart = lazy(() => import('@/components/admin/CTACharts').then(m => ({ default: m.SourcesPieChart })));
+const ConversionLineChart = lazy(() => import('@/components/admin/CTACharts').then(m => ({ default: m.ConversionLineChart })));
 
 interface CTAClick {
   id: string;
@@ -280,16 +285,9 @@ const CTAAnalytics = () => {
                 <CardTitle>Top 10 CTAs les plus cliqués</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={topCTAsData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="count" fill="#2D4263" name="Clics" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <Suspense fallback={<MiniChartSkeleton />}>
+                  <CTAClicksBarChart data={topCTAsData} />
+                </Suspense>
               </CardContent>
             </Card>
 
@@ -298,25 +296,9 @@ const CTAAnalytics = () => {
                 <CardTitle>Répartition par section</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <PieChart>
-                    <Pie
-                      data={sourcePageData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                      outerRadius={120}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {sourcePageData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <Suspense fallback={<MiniChartSkeleton />}>
+                  <SourcesPieChart data={sourcePageData} />
+                </Suspense>
               </CardContent>
             </Card>
           </TabsContent>
@@ -331,25 +313,9 @@ const CTAAnalytics = () => {
                 </p>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <PieChart>
-                    <Pie
-                      data={contactSourceData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                      outerRadius={120}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {contactSourceData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
+                <Suspense fallback={<MiniChartSkeleton />}>
+                  <SourcesPieChart data={contactSourceData} />
+                </Suspense>
               </CardContent>
             </Card>
 
@@ -377,16 +343,9 @@ const CTAAnalytics = () => {
                 <CardTitle>Evolution des clics CTAs</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={timelineData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="clicks" stroke="#2D4263" strokeWidth={2} name="Clics" />
-                  </LineChart>
-                </ResponsiveContainer>
+                <Suspense fallback={<MiniChartSkeleton />}>
+                  <ConversionLineChart data={timelineData} />
+                </Suspense>
               </CardContent>
             </Card>
           </TabsContent>
@@ -398,16 +357,9 @@ const CTAAnalytics = () => {
                 <CardTitle>Top 10 Contextes les plus performants</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={contextPerformanceData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="count" fill="#D15A3E" name="Clics" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <Suspense fallback={<MiniChartSkeleton />}>
+                  <CTAClicksBarChart data={contextPerformanceData} />
+                </Suspense>
               </CardContent>
             </Card>
 
