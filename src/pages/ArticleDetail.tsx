@@ -18,6 +18,7 @@ import GradientLink from '@/components/ui/GradientLink';
 import { Badge } from '@/components/ui/badge';
 import SolutionContactForm from '@/components/SolutionContactForm';
 import LivreBlancsForm from '@/components/LivreBlancsForm';
+import AtelierInscriptionForm from '@/components/AtelierInscriptionForm';
 import AuthorCard from '@/components/ui/AuthorCard';
 import RelatedArticles from '@/components/ui/RelatedArticles';
 import { useCTATracking } from '@/hooks/useCTATracking';
@@ -821,17 +822,16 @@ const ArticleDetail = () => {
             <div className="my-12 animate-fadeIn [animation-delay:0.6s]">
               {/* Si inscriptions ouvertes et places disponibles */}
               {article.registration_open && inscriptionsCount < (article.max_participants || 30) ? (
-                <div className="text-center p-8 bg-accent/5 border-2 border-accent/20 rounded-xl">
-                  <p className="text-lg font-semibold text-foreground mb-2">
-                    {article.cta_evenement_personnalise || "S'inscrire à la session"}
-                  </p>
-                  <p className="text-sm text-muted-foreground mb-6">
-                    {(article.max_participants || 30) - inscriptionsCount} places restantes
-                  </p>
-                  <GradientLink href="/contact" className="text-base">
-                    Je m'inscris →
-                  </GradientLink>
-                </div>
+                <AtelierInscriptionForm
+                  articleId={article.id}
+                  articleTitle={article.title}
+                  eventDate={article.event_date}
+                  eventLocation={article.event_location}
+                  heureDebut={article.heure_debut}
+                  typeEvenement={article.type_evenement}
+                  maxParticipants={article.max_participants || 30}
+                  inscriptionsCount={inscriptionsCount}
+                />
               ) : inscriptionsCount >= (article.max_participants || 30) ? (
                 /* Si complet - liste d'attente */
                 <div className="text-center p-8 bg-red-50 border-2 border-red-200 rounded-xl">
