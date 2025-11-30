@@ -3,6 +3,7 @@ import { Linkedin, Globe, Share2 } from 'lucide-react';
 import GradientLink from './GradientLink';
 import { useCTATracking } from '@/hooks/useCTATracking';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthorCardProps {
   photo?: string;
@@ -23,16 +24,45 @@ const AuthorCard = ({
 }: AuthorCardProps) => {
   const { trackCTAClick } = useCTATracking();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const handleShare = async () => {
+    const currentUrl = window.location.href;
+    const currentSlug = window.location.pathname.split('/').pop() || 'unknown';
+    
+    // Track CTA click
+    trackCTAClick('partager_article', 'author_card', currentSlug);
+    
+    // Try Web Share API (mobile)
     if (navigator.share) {
       try {
         await navigator.share({
           title: document.title,
-          url: window.location.href
+          url: currentUrl
+        });
+        toast({
+          title: "Partagé avec succès",
+          description: "Merci de partager ce contenu !",
         });
       } catch (err) {
-        console.log('Partage annulé');
+        if ((err as Error).name !== 'AbortError') {
+          console.log('Erreur partage:', err);
+        }
+      }
+    } else {
+      // Fallback: Copy to clipboard (desktop)
+      try {
+        await navigator.clipboard.writeText(currentUrl);
+        toast({
+          title: "Lien copié !",
+          description: "L'URL a été copiée dans le presse-papier.",
+        });
+      } catch (err) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de copier le lien.",
+          variant: "destructive",
+        });
       }
     }
   };
