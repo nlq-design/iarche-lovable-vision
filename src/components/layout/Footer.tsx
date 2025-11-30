@@ -12,7 +12,15 @@ const Footer = () => {
           <div>
             <h3 className="text-sm font-semibold mb-3">IArche</h3>
             <p className="text-sm text-white/70 mb-1">Bayonne · France</p>
-            <p className="text-sm text-white/70 mb-3">nlq@iarche.fr</p>
+            <p className="text-sm text-white/70 mb-1">nlq@iarche.fr</p>
+            <p className="text-sm text-white/70 mb-3">
+              <a 
+                href="tel:+33661741381" 
+                className="hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
+              >
+                06 61 74 13 81
+              </a>
+            </p>
             <div className="flex items-center gap-3">
               <a 
                 href="https://linkedin.com" 
