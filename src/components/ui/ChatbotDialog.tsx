@@ -124,9 +124,9 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] h-[600px] flex flex-col p-0">
-        <DialogHeader className="px-6 py-4 border-b border-border">
-          <DialogTitle className="text-xl font-semibold text-primary">
+      <DialogContent className="sm:max-w-[650px] h-[650px] flex flex-col p-0 border-accent/20">
+        <DialogHeader className="px-6 py-5 border-b border-border/50 bg-gradient-to-r from-primary/5 to-accent/5">
+          <DialogTitle className="text-2xl font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             IArche Assistant
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
@@ -134,15 +134,18 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
           </p>
         </DialogHeader>
 
-        <ScrollArea ref={scrollAreaRef} className="flex-1 px-6 py-4">
+        <ScrollArea ref={scrollAreaRef} className="flex-1 px-6 py-4 bg-background/50">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-center">
-              <div className="space-y-3">
-                <p className="text-muted-foreground">
+              <div className="space-y-4 animate-fade-in">
+                <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <span className="text-2xl text-white">🤖</span>
+                </div>
+                <p className="text-lg font-medium text-foreground">
                   Bonjour ! Je suis l'assistant IArche.
                 </p>
-                <p className="text-sm text-muted-foreground/80">
-                  Comment puis-je vous aider aujourd'hui ?
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  Je peux vous renseigner sur nos services IA, nos solutions, et répondre à toutes vos questions sur l'intelligence artificielle.
                 </p>
               </div>
             </div>
@@ -151,23 +154,23 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
               {messages.map((message, index) => (
                 <div
                   key={index}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
                 >
                   <div
-                    className={`rounded-lg px-4 py-2 max-w-[80%] ${
+                    className={`rounded-2xl px-4 py-3 max-w-[85%] shadow-sm ${
                       message.role === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-foreground'
+                        ? 'bg-gradient-to-br from-primary to-primary/90 text-white'
+                        : 'bg-muted/80 text-foreground border border-border/50'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                   </div>
                 </div>
               ))}
               {isLoading && messages[messages.length - 1]?.content === '' && (
-                <div className="flex justify-start">
-                  <div className="bg-muted rounded-lg px-4 py-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                <div className="flex justify-start animate-fade-in">
+                  <div className="bg-muted/80 rounded-2xl px-4 py-3 border border-border/50">
+                    <Loader2 className="w-4 h-4 animate-spin text-accent" />
                   </div>
                 </div>
               )}
@@ -175,21 +178,21 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
           )}
         </ScrollArea>
 
-        <div className="border-t border-border p-4">
-          <div className="flex gap-2">
+        <div className="border-t border-border/50 p-4 bg-background">
+          <div className="flex gap-3">
             <Textarea
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Posez votre question..."
-              className="resize-none min-h-[60px] focus-visible:ring-accent"
+              className="resize-none min-h-[64px] focus-visible:ring-accent focus-visible:ring-2 focus-visible:border-accent transition-all"
               disabled={isLoading}
             />
             <Button
               onClick={sendMessage}
               disabled={!inputValue.trim() || isLoading}
               size="icon"
-              className="shrink-0 h-[60px] w-[60px] bg-primary hover:bg-primary/90"
+              className="shrink-0 h-[64px] w-[64px] bg-gradient-to-br from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-300 shadow-md hover:shadow-lg"
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -198,8 +201,8 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
               )}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Appuyez sur Entrée pour envoyer, Shift+Entrée pour une nouvelle ligne
+          <p className="text-xs text-muted-foreground/70 mt-2.5">
+            <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground text-xs">Entrée</kbd> pour envoyer · <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground text-xs">Shift+Entrée</kbd> pour nouvelle ligne
           </p>
         </div>
       </DialogContent>
