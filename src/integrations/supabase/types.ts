@@ -240,6 +240,7 @@ export type Database = {
           max_participants: number | null
           meta_description: string | null
           meta_title: string | null
+          problematique: string | null
           published: boolean | null
           published_at: string | null
           registration_open: boolean | null
@@ -247,10 +248,12 @@ export type Database = {
           resource_type: string
           ressources_complementaires: Json | null
           scheduled_publish_at: string | null
+          secteur_activite: string | null
           slug: string
           source_externe: Json | null
           status: string | null
           tags: string[] | null
+          taille_entreprise: string | null
           title: string
           updated_at: string | null
         }
@@ -271,6 +274,7 @@ export type Database = {
           max_participants?: number | null
           meta_description?: string | null
           meta_title?: string | null
+          problematique?: string | null
           published?: boolean | null
           published_at?: string | null
           registration_open?: boolean | null
@@ -278,10 +282,12 @@ export type Database = {
           resource_type?: string
           ressources_complementaires?: Json | null
           scheduled_publish_at?: string | null
+          secteur_activite?: string | null
           slug: string
           source_externe?: Json | null
           status?: string | null
           tags?: string[] | null
+          taille_entreprise?: string | null
           title: string
           updated_at?: string | null
         }
@@ -302,6 +308,7 @@ export type Database = {
           max_participants?: number | null
           meta_description?: string | null
           meta_title?: string | null
+          problematique?: string | null
           published?: boolean | null
           published_at?: string | null
           registration_open?: boolean | null
@@ -309,10 +316,12 @@ export type Database = {
           resource_type?: string
           ressources_complementaires?: Json | null
           scheduled_publish_at?: string | null
+          secteur_activite?: string | null
           slug?: string
           source_externe?: Json | null
           status?: string | null
           tags?: string[] | null
+          taille_entreprise?: string | null
           title?: string
           updated_at?: string | null
         }
