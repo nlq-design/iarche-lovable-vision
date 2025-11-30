@@ -33,7 +33,7 @@ const AuthorCard = ({
     // Track CTA click
     trackCTAClick('partager_article', 'author_card', currentSlug);
     
-    // Try Web Share API (mobile)
+    // Try Web Share API first (mobile native)
     if (navigator.share) {
       try {
         await navigator.share({
@@ -44,26 +44,30 @@ const AuthorCard = ({
           title: "Partagé avec succès",
           description: "Merci de partager ce contenu !",
         });
+        return;
       } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          console.log('Erreur partage:', err);
+        // If user cancels, do nothing
+        if ((err as Error).name === 'AbortError') {
+          return;
         }
+        // If permission denied or not allowed, fallback to clipboard
+        console.log('Web Share failed, using clipboard fallback');
       }
-    } else {
-      // Fallback: Copy to clipboard (desktop)
-      try {
-        await navigator.clipboard.writeText(currentUrl);
-        toast({
-          title: "Lien copié !",
-          description: "L'URL a été copiée dans le presse-papier.",
-        });
-      } catch (err) {
-        toast({
-          title: "Erreur",
-          description: "Impossible de copier le lien.",
-          variant: "destructive",
-        });
-      }
+    }
+    
+    // Fallback: Copy to clipboard (desktop or if Web Share fails)
+    try {
+      await navigator.clipboard.writeText(currentUrl);
+      toast({
+        title: "Lien copié !",
+        description: "L'URL a été copiée dans le presse-papier.",
+      });
+    } catch (err) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de copier le lien.",
+        variant: "destructive",
+      });
     }
   };
 
