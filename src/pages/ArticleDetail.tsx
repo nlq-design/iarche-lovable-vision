@@ -497,8 +497,10 @@ const ArticleDetail = () => {
 
           {/* 3. Layout avec AuthorCard float + Contenu */}
           <div className="flow-root">
-            {/* Encadré auteur - float left, visible desktop uniquement */}
-            <AuthorCard />
+            {/* Encadré auteur - float left, visible desktop uniquement - seulement pour articles/actualités/cas-clients */}
+            {(article.resource_type === 'article' || article.resource_type === 'actualite' || article.resource_type === 'cas-client') && (
+              <AuthorCard />
+            )}
 
             {/* 4. Corps du contenu - s'adapte avec l'encadré */}
             <div
@@ -519,20 +521,22 @@ const ArticleDetail = () => {
             />
           </div>
 
-          {/* Version mobile de l'auteur (horizontal compact) */}
-          <div className="md:hidden mt-8 mb-8 p-4 bg-[#F8F9FA] border border-[#E5E7EB] rounded-xl animate-fadeIn">
-            <div className="flex items-center gap-4">
-              <img 
-                src="/logo-iarche.svg" 
-                alt="Nicolas LARA"
-                className="w-12 h-12 rounded-full object-cover border-2 border-[#E5E7EB] flex-shrink-0"
-              />
-              <div className="flex-1">
-                <div className="text-sm font-semibold text-[#111827]">Nicolas LARA</div>
-                <div className="text-xs text-[#6B7280]">CEO & Fondateur IArche</div>
+          {/* Version mobile de l'auteur (horizontal compact) - seulement pour articles/actualités/cas-clients */}
+          {(article.resource_type === 'article' || article.resource_type === 'actualite' || article.resource_type === 'cas-client') && (
+            <div className="md:hidden mt-8 mb-8 p-4 bg-[#F8F9FA] border border-[#E5E7EB] rounded-xl animate-fadeIn">
+              <div className="flex items-center gap-4">
+                <img 
+                  src="/logo-iarche.svg" 
+                  alt="Nicolas LARA"
+                  className="w-12 h-12 rounded-full object-cover border-2 border-[#E5E7EB] flex-shrink-0"
+                />
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-[#111827]">Nicolas LARA</div>
+                  <div className="text-xs text-[#6B7280]">CEO & Fondateur IArche</div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* 4. FAQ (si présente) - AVANT le CTA */}
           {faq && faq.length > 0 && (
