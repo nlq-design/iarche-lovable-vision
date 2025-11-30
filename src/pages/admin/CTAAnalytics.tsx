@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, TrendingUp, MousePointerClick, Users, ArrowRight } from 'lucide-react';
+import { Loader2, TrendingUp, MousePointerClick, Users, ArrowRight, ArrowLeft } from 'lucide-react';
 import { MiniChartSkeleton } from '@/components/admin/ChartSkeleton';
+import { NavLink } from '@/components/NavLink';
 
 // Lazy load heavy chart components
 const CTAClicksBarChart = lazy(() => import('@/components/admin/CTACharts').then(m => ({ default: m.CTAClicksBarChart })));
@@ -196,6 +197,13 @@ const CTAAnalytics = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
+            <NavLink 
+              to="/admin" 
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Retour au Dashboard
+            </NavLink>
             <h1 className="text-3xl font-bold text-foreground">Analytics CTAs</h1>
             <p className="text-muted-foreground mt-1">
               Suivi des performances des Call-To-Action

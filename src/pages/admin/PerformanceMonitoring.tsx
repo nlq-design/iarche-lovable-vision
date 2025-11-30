@@ -8,10 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Activity, TrendingUp, Package, Zap, FileText, Plus, Download } from 'lucide-react';
+import { Activity, TrendingUp, Package, Zap, FileText, Plus, Download, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { MiniChartSkeleton } from '@/components/admin/ChartSkeleton';
+import { NavLink } from '@/components/NavLink';
 
 // Lazy load heavy chart components
 const LighthouseChart = lazy(() => import('@/components/admin/PerformanceCharts').then(m => ({ default: m.LighthouseChart })));
@@ -239,6 +240,13 @@ const PerformanceMonitoring = () => {
     <div className="p-8 space-y-6">
       <div className="flex justify-between items-center">
         <div>
+          <NavLink 
+            to="/admin" 
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Retour au Dashboard
+          </NavLink>
           <h1 className="text-3xl font-bold mb-2">Monitoring Performance</h1>
           <p className="text-muted-foreground">Suivi des métriques Lighthouse et bundle size</p>
         </div>
