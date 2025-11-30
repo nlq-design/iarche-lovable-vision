@@ -17,133 +17,131 @@ Ce guide explique comment configurer le domaine `iarche.fr` sur Resend pour envo
 
 ## Étape 2️⃣ : Configurer les enregistrements DNS
 
-### Où ajouter les DNS ?
+### 📋 Enregistrements DNS exacts fournis par Resend
 
-Connecte-toi à ton registrar (OVH, Gandi, Cloudflare, etc.) et va dans la section **DNS/Zone DNS**.
+Voici les **enregistrements DNS réels** affichés dans ton dashboard Resend pour `iarche.fr` :
 
-### Enregistrements à ajouter
-
-Resend va te fournir **exactement ces enregistrements** (les valeurs peuvent varier) :
-
-#### A) SPF Record (TXT)
-**Objectif** : Autorise Resend à envoyer des emails pour ton domaine
+#### 1. DKIM (Signature des emails)
 
 ```
 Type: TXT
-Name: @ (ou iarche.fr)
+Name: resend._domainkey
+Value: p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCzO/L2XYt4HR9DsJQNuHGsmrJtygK9fbV26WhQvb+mYSm7UTfbQzCTGf7fg23VU1do0DC1/GrOLcAyBfi5ZoFG3pM7jd7kpE/dMZbx6SUUAZiLp5MwNOy5JA0JLQSGo6UYgXdJGfnZVcj06415dQDXqYtWw8wcOok4QnQYUykimwIDAQAB
+TTL: Auto
+```
+
+#### 2. SPF - MX Record (Autorisation d'envoi)
+
+```
+Type: MX
+Name: send
+Value: feedback-smtp.eu-west-1.amazonses.com
+TTL: Auto
+Priority: 10
+```
+
+#### 3. SPF - TXT Record (Politique SPF)
+
+```
+Type: TXT
+Name: send
 Value: v=spf1 include:amazonses.com ~all
-TTL: 3600
+TTL: Auto
 ```
 
-#### B) DKIM Records (3× TXT)
-**Objectif** : Signatures cryptographiques pour authentifier tes emails
-
-Resend te donnera **3 enregistrements DKIM** à ajouter :
+#### 4. MX Record (Réception - OPTIONNEL)
 
 ```
-Type: TXT
-Name: resend._domainkey.iarche.fr
-Value: [longue chaîne fournie par Resend - commençant par p=MII...]
-TTL: 3600
-
-Type: TXT
-Name: resend2._domainkey.iarche.fr
-Value: [longue chaîne fournie par Resend]
-TTL: 3600
-
-Type: TXT
-Name: resend3._domainkey.iarche.fr
-Value: [longue chaîne fournie par Resend]
-TTL: 3600
+Type: MX
+Name: @
+Value: inbound-smtp.eu-west-1.amazonaws.com
+TTL: Auto
+Priority: 10
 ```
 
-⚠️ **IMPORTANT** : Copie-colle exactement les valeurs fournies par Resend (elles font ~300 caractères).
+⚠️ **Note importante** : L'enregistrement MX sur `@` est nécessaire **UNIQUEMENT** si tu veux recevoir des emails via Resend. Pour IArche, tu peux **l'ignorer** car tu recevras les emails via ta boîte mail classique `nlq@iarche.fr`.
 
-#### C) DMARC Record (TXT) - Optionnel mais recommandé
-**Objectif** : Politique de gestion des emails non authentifiés
+---
 
-```
-Type: TXT
-Name: _dmarc.iarche.fr (ou _dmarc)
-Value: v=DMARC1; p=quarantine; rua=mailto:nlq@iarche.fr; pct=100; adkim=s; aspf=s
-TTL: 3600
-```
+### 🔧 Où ajouter ces enregistrements ?
 
-**Explication des paramètres DMARC** :
-- `p=quarantine` : Met en quarantaine les emails suspects (tu peux utiliser `p=reject` pour plus de sécurité)
-- `rua=mailto:nlq@iarche.fr` : Adresse pour recevoir les rapports d'authentification
-- `pct=100` : Applique la politique à 100% des emails
-- `adkim=s` : DKIM strict
-- `aspf=s` : SPF strict
+Connecte-toi à l'interface de ton **registrar de domaine** (là où tu as acheté `iarche.fr`) :
+
+- **OVH** : [Manager OVH](https://www.ovh.com/manager/) → Nom de domaine → iarche.fr → Zone DNS
+- **Gandi** : [Gandi Admin](https://admin.gandi.net/) → Domaines → iarche.fr → Enregistrements DNS
+- **Namecheap** : [Namecheap Dashboard](https://ap.www.namecheap.com/) → Domain List → iarche.fr → Advanced DNS
+- **GoDaddy** : [GoDaddy DNS Management](https://dcc.godaddy.com/) → Domains → iarche.fr → DNS
+
+### 📝 Instructions étape par étape :
+
+1. **Accède à la zone DNS** de ton domaine `iarche.fr`
+2. **Ajoute les 3 enregistrements obligatoires** :
+   - ✅ 1 TXT pour DKIM (`resend._domainkey`)
+   - ✅ 1 MX pour SPF (`send`)
+   - ✅ 1 TXT pour SPF (`send`)
+3. **Ignore l'enregistrement MX sur `@`** (réception email non nécessaire)
+4. **Sauvegarde les modifications**
+5. **Attends la propagation DNS** (généralement 1-2h, jusqu'à 48h maximum)
 
 ---
 
 ## Étape 3️⃣ : Vérifier la propagation DNS
 
-### Délai de propagation
-- **Minimum** : 15 minutes
-- **Maximum** : 48 heures (généralement < 2 heures)
+### ⏱️ Délai de propagation
+- **Minimum** : 15-30 minutes
+- **Généralement** : 1-2 heures
+- **Maximum** : 48 heures
 
-### Outils de vérification
+### 🔍 Outils de vérification
 
-1. **Vérifier SPF** :
+1. **DNSChecker.org** (recommandé) :
    ```
-   https://mxtoolbox.com/spf.aspx?domain=iarche.fr
+   https://dnschecker.org
    ```
+   Entre `resend._domainkey.iarche.fr` et sélectionne "TXT"
 
-2. **Vérifier DKIM** :
+2. **MXToolbox** :
    ```
-   https://mxtoolbox.com/dkim.aspx?domain=iarche.fr&selector=resend
+   https://mxtoolbox.com/SuperTool.aspx
    ```
+   Entre `iarche.fr` et teste les différents enregistrements
 
-3. **Vérifier DMARC** :
-   ```
-   https://mxtoolbox.com/dmarc.aspx?domain=iarche.fr
-   ```
-
-4. **Commandes DNS** (depuis un terminal) :
+3. **Commandes terminal** (pour utilisateurs avancés) :
    ```bash
-   # Vérifier SPF
-   dig TXT iarche.fr +short
-   
    # Vérifier DKIM
    dig TXT resend._domainkey.iarche.fr +short
    
-   # Vérifier DMARC
-   dig TXT _dmarc.iarche.fr +short
+   # Vérifier SPF TXT
+   dig TXT send.iarche.fr +short
+   
+   # Vérifier SPF MX
+   dig MX send.iarche.fr +short
    ```
 
-### Statut sur Resend
+### ✅ Statut sur Resend
 
-Sur [resend.com/domains](https://resend.com/domains), le statut de ton domaine doit passer de :
-- ❌ **Pending** → ✅ **Verified**
+Sur [resend.com/domains](https://resend.com/domains), vérifie que :
+- Le domaine `iarche.fr` affiche **"Verified"** ✅
+- Les 3 enregistrements DNS affichent des **coches vertes** ✅
 
 ---
 
-## Étape 4️⃣ : Mettre à jour les Edge Functions
+## Étape 4️⃣ : Edge Functions (DÉJÀ CONFIGURÉES ✅)
 
-Une fois le domaine **vérifié** ✅, les 6 edge functions suivantes doivent être mises à jour :
+### ✅ Configuration terminée le 2025-11-30
 
-### Fonctions à modifier
+Les 6 edge functions sont **déjà mises à jour** pour utiliser les adresses `@iarche.fr` :
 
-| Edge Function | Adresse actuelle | Nouvelle adresse |
+| Edge Function | Adresse email | Champ `reply_to` |
 |---|---|---|
-| `send-lead-notification` | `onboarding@resend.dev` | `notifications@iarche.fr` |
-| `notify-new-comment` | `onboarding@resend.dev` | `notifications@iarche.fr` |
-| `send-newsletter` | `onboarding@resend.dev` | `newsletter@iarche.fr` |
-| `send-security-alert` | `onboarding@resend.dev` | `security@iarche.fr` |
-| `check-cta-conversion` | `onboarding@resend.dev` | `analytics@iarche.fr` |
-| `check-performance-threshold` | `onboarding@resend.dev` | `performance@iarche.fr` |
+| `send-lead-notification` | `notifications@iarche.fr` | ✅ `nlq@iarche.fr` |
+| `notify-new-comment` | `notifications@iarche.fr` | ✅ `nlq@iarche.fr` |
+| `send-newsletter` | `newsletter@iarche.fr` | ✅ `nlq@iarche.fr` |
+| `send-security-alert` | `security@iarche.fr` | ✅ `nlq@iarche.fr` |
+| `check-cta-conversion` | `analytics@iarche.fr` | ✅ `nlq@iarche.fr` |
+| `check-performance-threshold` | `performance@iarche.fr` | ✅ `nlq@iarche.fr` |
 
-### Commande à lancer
-
-**⚠️ NE PAS EXÉCUTER AVANT QUE LE DOMAINE SOIT VÉRIFIÉ ✅**
-
-Une fois vérifié, demande à Lovable de mettre à jour toutes les fonctions avec :
-
-```
-"Mettre à jour les 6 edge functions pour utiliser les emails @iarche.fr maintenant que le domaine est vérifié"
-```
+**Aucune action supplémentaire requise** - les emails s'enverront automatiquement depuis ces adresses dès que le domaine sera vérifié sur Resend.
 
 ---
 
