@@ -16,6 +16,12 @@ interface LeadNotificationRequest {
   phone?: string;
   source: string;
   source_context?: string;
+  event_details?: {
+    date: string | null;
+    location: string | null;
+    heure_debut: string | null;
+    type_evenement: string | null;
+  };
 }
 
 Deno.serve(async (req) => {
@@ -24,7 +30,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { lead_id, name, email, company, phone, source, source_context }: LeadNotificationRequest = await req.json();
+    const { lead_id, name, email, company, phone, source, source_context, event_details }: LeadNotificationRequest = await req.json();
 
     console.log('Sending lead notification for:', lead_id);
 
@@ -35,6 +41,19 @@ Deno.serve(async (req) => {
                         source === 'solution_detail' ? 'Contact Solution' : source;
 
     const contextInfo = source_context ? `<p><strong>Contexte:</strong> ${source_context}</p>` : '';
+
+    // Si c'est un atelier, ajouter les détails de l'événement
+    let eventDetailsHtml = '';
+    if (source === 'atelier-webinaire' && event_details) {
+      eventDetailsHtml = `
+        <h3 style="color: hsl(218, 47%, 20%); font-size: 18px; margin-top: 25px;">📅 Détails de l'événement</h3>
+        <div style="background: #FAF9F7; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid hsl(12, 60%, 53%);">
+          ${event_details.date ? `<p style="margin: 5px 0;"><strong>Date:</strong> ${new Date(event_details.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}${event_details.heure_debut ? ` à ${event_details.heure_debut}` : ''}</p>` : ''}
+          ${event_details.location ? `<p style="margin: 5px 0;"><strong>Lieu:</strong> ${event_details.location}</p>` : ''}
+          ${event_details.type_evenement ? `<p style="margin: 5px 0;"><strong>Format:</strong> ${event_details.type_evenement}</p>` : ''}
+        </div>
+      `;
+    }
 
     const emailHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #FAF9F7;">
@@ -55,6 +74,8 @@ Deno.serve(async (req) => {
           <h3 style="color: hsl(218, 47%, 20%); font-size: 18px; margin-top: 25px;">📍 Source</h3>
           <p style="margin: 10px 0;"><strong>Type:</strong> ${sourceLabel}</p>
           ${contextInfo}
+          
+          ${eventDetailsHtml}
 
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #E5E7EB; text-align: center;">
             <p style="color: #6B7280; font-size: 14px; margin: 0;">
