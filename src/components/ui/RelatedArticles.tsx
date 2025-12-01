@@ -88,9 +88,10 @@ const RelatedArticles: React.FC<RelatedArticlesProps> = ({
   return (
     <section className="mt-16 mb-12">
       <div className="max-w-6xl mx-auto px-4">
-        <h2 className="text-2xl font-semibold text-primary mb-8 text-center">
+        <h2 className="text-2xl font-semibold text-primary mb-2 text-center">
           Articles similaires
         </h2>
+        <div className="w-20 h-1 mx-auto mb-8 rounded-full bg-gradient-to-r from-primary via-accent to-primary"></div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {articles.map((article, index) => (
