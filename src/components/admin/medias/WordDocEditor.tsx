@@ -24,13 +24,15 @@ interface SectionData {
   tableData: string[][];
 }
 
-// IArche brand colors (from BrandBook V2) - HEX without #
-const colors = {
-  primary: '1A2B4A',      // Bleu Nuit HSL(218, 47%, 20%)
-  accent: 'D15A3E',       // Terracotta HSL(12, 60%, 53%)
-  foreground: '2D2D2D',   // Anthracite
-  textMuted: '6B7280',    // Muted text
-  border: 'E8E4DD',       // Border color
+// IArche brand colors for Word documents (HEX without # for docx library)
+// Source: src/components/admin/medias/pdf/tokens.ts
+const WORD_COLORS = {
+  bleuNuit: '1A2B4A',      // hsl(218, 47%, 20%) - Primary
+  terracotta: 'D15A3E',    // hsl(12, 60%, 53%) - Accent
+  foreground: '2D2D2D',    // hsl(0, 0%, 18%) - Text
+  muted: '6B7280',         // hsl(220, 9%, 46%) - Muted text
+  border: 'E8E4DD',        // hsl(36, 18%, 89%) - Borders
+  subtle: '666666',        // hsl(0, 0%, 40%) - Subtle text
 };
 
 const templateConfigs: Record<string, { name: string; defaultSections: SectionData[] }> = {
@@ -135,7 +137,7 @@ export const WordDocEditor = ({ templateId, onBack }: WordDocEditorProps) => {
               text: 'IArche',
               bold: true,
               size: 48,
-              color: colors.accent,
+              color: WORD_COLORS.terracotta,
             }),
           ],
           spacing: { after: 200 },
@@ -146,7 +148,7 @@ export const WordDocEditor = ({ templateId, onBack }: WordDocEditorProps) => {
               text: 'L\'IA se construit avec vous',
               italics: true,
               size: 24,
-              color: colors.primary,
+              color: WORD_COLORS.bleuNuit,
             }),
           ],
           spacing: { after: 400 },
@@ -212,13 +214,13 @@ export const WordDocEditor = ({ templateId, onBack }: WordDocEditorProps) => {
             new TableRow({
               children: row.map((cell) => 
                 new TableCell({
-                  children: [new Paragraph({
-                    children: [new TextRun({
-                      text: cell,
-                      bold: rowIndex === 0,
-                      color: rowIndex === 0 ? colors.primary : undefined,
+                    children: [new Paragraph({
+                      children: [new TextRun({
+                        text: cell,
+                        bold: rowIndex === 0,
+                        color: rowIndex === 0 ? WORD_COLORS.bleuNuit : undefined,
+                      })],
                     })],
-                  })],
                   width: { size: 100 / row.length, type: WidthType.PERCENTAGE },
                 })
               ),
@@ -240,7 +242,7 @@ export const WordDocEditor = ({ templateId, onBack }: WordDocEditorProps) => {
           children: [
             new TextRun({
               text: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-              color: colors.accent,
+              color: WORD_COLORS.terracotta,
             }),
           ],
           spacing: { before: 400 },
@@ -248,9 +250,9 @@ export const WordDocEditor = ({ templateId, onBack }: WordDocEditorProps) => {
         new Paragraph({
           children: [
             new TextRun({
-              text: 'IArche - Agence IA | Bayonne, France | iarche.fr | contact@iarche.fr',
+              text: 'IArche - Agence IA | Bayonne, France | iarche.fr | nlq@iarche.fr',
               size: 20,
-              color: colors.primary,
+              color: WORD_COLORS.bleuNuit,
             }),
           ],
           alignment: AlignmentType.CENTER,
