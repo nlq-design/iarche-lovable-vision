@@ -19,7 +19,10 @@ const SolutionsCTASection = () => {
             
             <div className="max-w-3xl mx-auto text-center invisible animate-fadeIn [animation-delay:0.2s] relative z-10">
               <div className="inline-flex items-center group-hover:opacity-80 transition-opacity text-xl md:text-2xl font-semibold">
-                <span className="hero-gradient-text">Nos Solutions IArche</span>
+                <span className="hero-gradient-text relative">
+                  Nos Solutions IArche
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-primary via-accent to-primary transform scale-x-0 origin-left transition-transform duration-300 group-hover:scale-x-100" aria-hidden="true" />
+                </span>
                 <ArrowRight className="ml-3 size-6 transition-transform group-hover:translate-x-1" aria-hidden="true" />
               </div>
             </div>

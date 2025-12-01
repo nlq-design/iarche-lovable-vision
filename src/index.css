@@ -154,21 +154,8 @@ All colors MUST be HSL.
     border-radius: 0.25rem;
   }
 
-  /* Soulignement des liens dans les paragraphes pour l'accessibilité */
-  p a,
-  article a:not(.no-underline),
-  .prose a:not(.no-underline) {
-    text-decoration: underline;
-    text-decoration-color: hsl(var(--accent));
-    text-underline-offset: 2px;
-    transition: text-decoration-color 0.2s ease;
-  }
-
-  p a:hover,
-  article a:not(.no-underline):hover,
-  .prose a:not(.no-underline):hover {
-    text-decoration-color: hsl(var(--primary));
-  }
+  /* Liens dans le contenu éditorial - pas de soulignement permanent */
+  /* L'underline animé au hover est géré par les composants GradientLink et IArcheLink */
 }
 
 /* Accessibilité : Reduced Motion */

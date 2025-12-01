@@ -32,9 +32,21 @@ const IArcheLink: React.FC<IArcheLinkProps> = ({
     ${className}
   `;
 
+  // Underline animé au hover
+  const underlineClasses = `
+    absolute bottom-0 left-0 w-full h-0.5
+    bg-gradient-to-r from-primary via-accent to-primary
+    transform scale-x-0 origin-left
+    transition-transform duration-300
+    group-hover:scale-x-100
+  `;
+
   const content = (
     <>
-      <span>{children}</span>
+      <span className="relative">
+        {children}
+        <span className={underlineClasses} aria-hidden="true" />
+      </span>
       {showArrow && (
         <ArrowRight 
           className="w-4 h-4 text-accent transition-transform duration-300 group-hover:translate-x-1" 
