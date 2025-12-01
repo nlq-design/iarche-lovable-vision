@@ -83,13 +83,19 @@ const ArticlePlaceholder = memo(({ className = '', size = 'default' }: ArticlePl
         />
       </svg>
       
-      {/* Logo IArche centré avec gradient animé */}
-      <div className="absolute inset-0 flex items-center justify-center">
+      {/* Logo IArche centré avec gradient animé + barre décorative */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className={`font-bold tracking-tight hero-gradient-text ${
           size === 'large' ? 'text-4xl md:text-5xl' : 'text-3xl md:text-4xl'
         }`}>
           IArche
         </span>
+        <div 
+          className={`rounded-full bg-gradient-to-r from-primary via-accent to-primary mt-2 ${
+            size === 'large' ? 'w-20 h-1' : 'w-12 h-0.5'
+          }`}
+          aria-hidden="true"
+        />
       </div>
     </div>
   );
