@@ -12,6 +12,7 @@ interface SlideData {
 interface CarouselPDFProps {
   slides: SlideData[];
   format?: 'linkedin' | 'instagram';
+  startTheme?: 'dark' | 'light';
 }
 
 const styles = StyleSheet.create({
@@ -228,68 +229,40 @@ const MeshBackground = ({ isDark, width, height }: { isDark: boolean; width: num
   );
 };
 
-// Corner arches decoration component (SVG)
+// Corner arches decoration component (SVG) - More visible version
 const ArchesDecoration = ({ isDark, width, height }: { isDark: boolean; width: number; height: number }) => {
   const strokeColor = isDark ? '#FFFFFF' : IARCHE_COLORS.terracotta;
-  const opacity = isDark ? 0.2 : 0.35;
-  const cornerSize = 100;
+  const opacity = isDark ? 0.25 : 0.4;
+  const cornerSize = 120;
   
   return (
     <Svg style={styles.backgroundLayer} viewBox={`0 0 ${width} ${height}`}>
-      {/* Top-right corner arch - main */}
+      {/* Top-right corner arch - L shape */}
       <Path 
-        d={`M${width},0 L${width},${cornerSize}`}
+        d={`M${width - cornerSize} 0 L${width} 0 L${width} ${cornerSize}`}
         fill="none" 
         stroke={strokeColor} 
-        strokeWidth={2.5} 
+        strokeWidth={3} 
         opacity={opacity}
       />
+      {/* Bottom-left corner arch - inverted L shape */}
       <Path 
-        d={`M${width - cornerSize},0 L${width},0`}
+        d={`M0 ${height - cornerSize} L0 ${height} L${cornerSize} ${height}`}
         fill="none" 
         stroke={strokeColor} 
-        strokeWidth={2.5} 
+        strokeWidth={3} 
         opacity={opacity}
       />
-      {/* Bottom-left corner arch - main */}
+      {/* Secondary arches (inner, smaller) */}
       <Path 
-        d={`M0,${height} L0,${height - cornerSize}`}
-        fill="none" 
-        stroke={strokeColor} 
-        strokeWidth={2.5} 
-        opacity={opacity}
-      />
-      <Path 
-        d={`M${cornerSize},${height} L0,${height}`}
-        fill="none" 
-        stroke={strokeColor} 
-        strokeWidth={2.5} 
-        opacity={opacity}
-      />
-      {/* Secondary arches (smaller, more subtle) */}
-      <Path 
-        d={`M${width},15 L${width},${cornerSize - 25}`}
+        d={`M${width - cornerSize + 20} 20 L${width - 20} 20 L${width - 20} ${cornerSize - 20}`}
         fill="none" 
         stroke={strokeColor} 
         strokeWidth={1.5} 
         opacity={opacity * 0.5}
       />
       <Path 
-        d={`M${width - cornerSize + 25},15 L${width - 15},15`}
-        fill="none" 
-        stroke={strokeColor} 
-        strokeWidth={1.5} 
-        opacity={opacity * 0.5}
-      />
-      <Path 
-        d={`M15,${height - 15} L15,${height - cornerSize + 25}`}
-        fill="none" 
-        stroke={strokeColor} 
-        strokeWidth={1.5} 
-        opacity={opacity * 0.5}
-      />
-      <Path 
-        d={`M${cornerSize - 25},${height - 15} L15,${height - 15}`}
+        d={`M20 ${height - cornerSize + 20} L20 ${height - 20} L${cornerSize - 20} ${height - 20}`}
         fill="none" 
         stroke={strokeColor} 
         strokeWidth={1.5} 
@@ -318,23 +291,23 @@ const GradientBar = ({ width, height, style }: { width: number; height: number; 
   </Svg>
 );
 
-// Header bar (full width gradient)
+// Header bar (full width gradient) - using solid colors since SVG gradients can be unreliable
 const HeaderBar = ({ width }: { width: number }) => (
-  <Svg viewBox={`0 0 ${width} 3`} style={{ width: width - 120, height: 3, marginTop: 8 }}>
-    <Defs>
-      <LinearGradient id="headerBarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-        <Stop offset="0%" stopColor={IARCHE_COLORS.bleuNuit} />
-        <Stop offset="50%" stopColor={IARCHE_COLORS.terracotta} />
-        <Stop offset="100%" stopColor={IARCHE_COLORS.bleuNuit} />
-      </LinearGradient>
-    </Defs>
-    <Rect 
-      width={width} 
-      height={3} 
-      rx={1.5} 
-      fill="url(#headerBarGrad)" 
-    />
-  </Svg>
+  <View style={{ flexDirection: 'row', width: width - 120, height: 3, marginTop: 8, borderRadius: 1.5, overflow: 'hidden' }}>
+    <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.bleuNuit }} />
+    <View style={{ flex: 1, backgroundColor: '#2A4A6A' }} />
+    <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.terracotta }} />
+    <View style={{ flex: 1, backgroundColor: '#2A4A6A' }} />
+    <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.bleuNuit }} />
+  </View>
+);
+
+// Small bar under logo
+const LogoBar = ({ isDark }: { isDark: boolean }) => (
+  <View style={{ flexDirection: 'row', width: 48, height: 2, marginTop: 6, borderRadius: 1, overflow: 'hidden' }}>
+    <View style={{ flex: 1, backgroundColor: isDark ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit, opacity: isDark ? 0.6 : 1 }} />
+    <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.terracotta }} />
+  </View>
 );
 
 // Footer separator bar
@@ -356,16 +329,26 @@ const FooterBar = ({ width, isDark }: { width: number; isDark: boolean }) => (
   </Svg>
 );
 
-export const CarouselPDF = ({ slides, format = 'linkedin' }: CarouselPDFProps) => {
+export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }: CarouselPDFProps) => {
   const dimensions = format === 'linkedin' 
     ? PDF_FORMATS.carouselLinkedIn 
     : PDF_FORMATS.carouselInstagram;
   const { width, height } = dimensions;
 
+  // Theme alternation based on startTheme
+  const getSlideTheme = (slideIndex: number): boolean => {
+    // slideIndex is 0-based
+    if (startTheme === 'dark') {
+      return slideIndex % 2 === 0; // 0,2,4 = dark, 1,3,5 = light
+    } else {
+      return slideIndex % 2 !== 0; // 0,2,4 = light, 1,3,5 = dark
+    }
+  };
+
   return (
     <Document>
       {slides.map((slide, index) => {
-        const isDark = index % 2 === 0;
+        const isDark = getSlideTheme(index);
         const isFirst = index === 0;
         const isLast = index === slides.length - 1;
         const showSectionNumber = !isFirst && !isLast;
@@ -384,11 +367,14 @@ export const CarouselPDF = ({ slides, format = 'linkedin' }: CarouselPDFProps) =
             
             {/* Main content */}
             <View style={styles.content}>
-              {/* Header with logo and bar */}
+              {/* Header with logo, bar under logo, and header bar */}
               <View style={styles.header}>
-                <Text style={[styles.logoText, isDark ? styles.logoTextDark : styles.logoTextLight]}>
-                  IArche
-                </Text>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={[styles.logoText, isDark ? styles.logoTextDark : styles.logoTextLight]}>
+                    IArche
+                  </Text>
+                  <LogoBar isDark={isDark} />
+                </View>
                 <HeaderBar width={width} />
               </View>
 
