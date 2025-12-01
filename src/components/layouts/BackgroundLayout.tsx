@@ -53,9 +53,9 @@ const BackgroundLayout = ({ children, className = '' }: BackgroundLayoutProps) =
         </div>
 
         {/* Contenu principal passé en children - au-dessus des quadrillages */}
-        <div className="relative z-10">
+        <main className="relative z-10">
           {children}
-        </div>
+        </main>
 
       </div>
   );
