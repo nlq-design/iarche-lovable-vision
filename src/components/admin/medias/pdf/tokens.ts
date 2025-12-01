@@ -1,5 +1,3 @@
-import { Font } from '@react-pdf/renderer';
-
 // ============================================
 // IARCHE BRAND COLORS - Exact hex values
 // ============================================
@@ -23,74 +21,57 @@ export const IARCHE_COLORS = {
 } as const;
 
 // ============================================
-// TYPOGRAPHY - Manrope font registration
+// TYPOGRAPHY - Using built-in Helvetica (reliable PDF font)
+// Note: Manrope causes font encoding errors in @react-pdf/renderer
 // ============================================
-Font.register({
-  family: 'Manrope',
-  fonts: [
-    { 
-      src: 'https://fonts.gstatic.com/s/manrope/v15/xn7gYHE41ni1AdIRggexSg.woff2', 
-      fontWeight: 400 
-    },
-    { 
-      src: 'https://fonts.gstatic.com/s/manrope/v15/xn7gYHE41ni1AdIRggqxSg.woff2', 
-      fontWeight: 600 
-    },
-    { 
-      src: 'https://fonts.gstatic.com/s/manrope/v15/xn7gYHE41ni1AdIRggOxSg.woff2', 
-      fontWeight: 700 
-    },
-  ],
-});
-
 export const TYPOGRAPHY = {
   h1: { 
-    fontFamily: 'Manrope', 
+    fontFamily: 'Helvetica-Bold', 
     fontSize: 32, 
     fontWeight: 700 as const,
     color: IARCHE_COLORS.foreground,
   },
   h2: { 
-    fontFamily: 'Manrope', 
+    fontFamily: 'Helvetica-Bold', 
     fontSize: 24, 
     fontWeight: 700 as const,
     color: IARCHE_COLORS.foreground,
   },
   h3: { 
-    fontFamily: 'Manrope', 
+    fontFamily: 'Helvetica-Bold', 
     fontSize: 18, 
     fontWeight: 600 as const,
     color: IARCHE_COLORS.foreground,
   },
   body: { 
-    fontFamily: 'Manrope', 
+    fontFamily: 'Helvetica', 
     fontSize: 12, 
     fontWeight: 400 as const, 
     lineHeight: 1.6,
     color: IARCHE_COLORS.foreground,
   },
   caption: { 
-    fontFamily: 'Manrope', 
+    fontFamily: 'Helvetica', 
     fontSize: 10, 
     fontWeight: 400 as const, 
     color: IARCHE_COLORS.subtle,
   },
   // PDF-specific larger sizes
   pdfTitle: {
-    fontFamily: 'Manrope',
+    fontFamily: 'Helvetica-Bold',
     fontSize: 64,
     fontWeight: 700 as const,
     color: IARCHE_COLORS.white,
   },
   pdfSubtitle: {
-    fontFamily: 'Manrope',
+    fontFamily: 'Helvetica',
     fontSize: 22,
     fontWeight: 500 as const,
     color: IARCHE_COLORS.white,
     opacity: 0.6,
   },
   pdfBody: {
-    fontFamily: 'Manrope',
+    fontFamily: 'Helvetica',
     fontSize: 28,
     fontWeight: 400 as const,
     lineHeight: 1.6,
@@ -98,7 +79,7 @@ export const TYPOGRAPHY = {
     opacity: 0.85,
   },
   pdfHighlight: {
-    fontFamily: 'Manrope',
+    fontFamily: 'Helvetica-Bold',
     fontSize: 80,
     fontWeight: 700 as const,
     color: IARCHE_COLORS.terracotta,
