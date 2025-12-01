@@ -25,7 +25,8 @@ const Services = () => {
       ],
       pourQui: 'Pour ceux qui veulent avancer sur l\'IA sans partir dans tous les sens.',
       cta: 'Demander un audit',
-      ctaLink: '/contact'
+      ctaLink: '/contact',
+      ctaDetail: 'Découvrir l\'audit IA'
     },
     {
       id: 'developpement',
@@ -39,7 +40,8 @@ const Services = () => {
       ],
       pourQui: 'TPE, PME, indépendants, collectivités — l\'IA s\'adresse à tous.',
       cta: 'Discuter de votre projet',
-      ctaLink: '/contact'
+      ctaLink: '/contact',
+      ctaDetail: 'Voir nos développements'
     },
     {
       id: 'accompagnement',
@@ -53,7 +55,8 @@ const Services = () => {
       ],
       pourQui: 'Acculturer, accompagner, rendre autonome — pour tous ceux qui veulent intégrer l\'IA durablement.',
       cta: 'Planifier un accompagnement',
-      ctaLink: '/contact'
+      ctaLink: '/contact',
+      ctaDetail: 'Explorer l\'accompagnement'
     },
     {
       id: 'conformite',
@@ -67,7 +70,8 @@ const Services = () => {
       ],
       pourQui: 'Entreprises soumises aux obligations réglementaires et/ou anticipant les futures exigences de l\'AI Act.',
       cta: 'Auditer ma conformité',
-      ctaLink: '/contact'
+      ctaLink: '/contact',
+      ctaDetail: 'Comprendre la conformité IA'
     }
   ];
 
@@ -210,7 +214,7 @@ const Services = () => {
                       href={`/services/${service.id}`}
                       onClick={() => trackCTAClick('en_savoir_plus_service', 'services_page', service.id)}
                     >
-                      En savoir plus
+                      {service.ctaDetail}
                     </IArcheLink>
                   </div>
                 </CardContent>
