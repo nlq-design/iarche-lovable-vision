@@ -1,6 +1,6 @@
-import { Image, View, StyleSheet } from '@react-pdf/renderer';
+import { View, Text, Svg, Rect, Line, Defs, LinearGradient, Stop, StyleSheet } from '@react-pdf/renderer';
 import type { Style } from '@react-pdf/types';
-import { BASE64_ASSETS } from './base64Assets';
+import { IARCHE_COLORS } from './tokens';
 
 const styles = StyleSheet.create({
   logoContainer: {
@@ -14,12 +14,6 @@ const styles = StyleSheet.create({
 // Logo variants
 type LogoVariant = 'gradient' | 'white' | 'terracotta';
 
-const logoSources: Record<LogoVariant, string> = {
-  gradient: BASE64_ASSETS.logoGradient,
-  white: BASE64_ASSETS.logoWhite,
-  terracotta: BASE64_ASSETS.logoTerracotta,
-};
-
 interface PDFImageLogoProps {
   /** Logo width in pixels */
   width?: number;
@@ -29,25 +23,35 @@ interface PDFImageLogoProps {
 }
 
 /**
- * IArche logo using base64 SVG for reliable PDF rendering
+ * IArche logo using Text element for reliable PDF rendering
+ * No Image component = no Buffer issues
  */
 export const PDFImageLogo = ({ 
   width = 160, 
   variant = 'gradient',
   style 
 }: PDFImageLogoProps) => {
-  const height = width / 3.5; // Aspect ratio for text logo
+  const fontSize = width / 4.5;
+  
+  // Get color based on variant
+  const getColor = () => {
+    switch (variant) {
+      case 'white': return IARCHE_COLORS.white;
+      case 'terracotta': return IARCHE_COLORS.terracotta;
+      default: return IARCHE_COLORS.bleuNuit; // Gradient fallback to solid
+    }
+  };
   
   return (
     <View style={[styles.logoContainer, style]}>
-      <Image
-        src={logoSources[variant]}
-        style={{
-          width,
-          height,
-          objectFit: 'contain',
-        }}
-      />
+      <Text style={{
+        fontSize,
+        fontWeight: 700,
+        fontFamily: 'Manrope',
+        color: getColor(),
+      }}>
+        IArche
+      </Text>
     </View>
   );
 };
@@ -60,13 +64,6 @@ export const PDFBarSizes = {
   xl: { width: 128, height: 6 },
 } as const;
 
-const barSources: Record<keyof typeof PDFBarSizes, string> = {
-  sm: BASE64_ASSETS.barSm,
-  md: BASE64_ASSETS.barMd,
-  lg: BASE64_ASSETS.barLg,
-  xl: BASE64_ASSETS.barXl,
-};
-
 interface PDFImageBarProps {
   /** Bar size: sm, md, lg, xl */
   size?: keyof typeof PDFBarSizes;
@@ -78,7 +75,8 @@ interface PDFImageBarProps {
 }
 
 /**
- * Decorative gradient bar using base64 SVG for reliable PDF rendering
+ * Decorative gradient bar using View elements for reliable PDF rendering
+ * Approximates BleuNuit → Terracotta → BleuNuit gradient with 5 segments
  */
 export const PDFImageBar = ({ 
   size = 'md',
@@ -90,19 +88,21 @@ export const PDFImageBar = ({
   const finalWidth = width ?? defaultSize.width;
   const finalHeight = height ?? defaultSize.height;
   
-  // Use full-width bar for custom large widths
-  const src = width && width > 128 ? BASE64_ASSETS.barFull : barSources[size];
-  
   return (
     <View style={[styles.barContainer, style]}>
-      <Image
-        src={src}
-        style={{
-          width: finalWidth,
-          height: finalHeight,
-          objectFit: 'cover',
-        }}
-      />
+      <View style={{ 
+        flexDirection: 'row', 
+        width: finalWidth, 
+        height: finalHeight, 
+        borderRadius: finalHeight / 2, 
+        overflow: 'hidden' 
+      }}>
+        <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.bleuNuit }} />
+        <View style={{ flex: 1, backgroundColor: '#2A4A6A' }} />
+        <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.terracotta }} />
+        <View style={{ flex: 1, backgroundColor: '#2A4A6A' }} />
+        <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.bleuNuit }} />
+      </View>
     </View>
   );
 };
@@ -122,31 +122,53 @@ interface PDFPatternBackgroundProps {
   pageHeight: number;
   /** Opacity of the pattern */
   opacity?: number;
+  /** Is dark theme */
+  isDark?: boolean;
 }
 
 /**
- * Mesh pattern background - rendered as subtle diagonal lines via SVG
+ * Mesh pattern background using SVG Lines - no Image component
  */
 export const PDFPatternBackground = ({
   pageWidth,
   pageHeight,
   opacity = 0.06,
+  isDark = true,
 }: PDFPatternBackgroundProps) => {
-  // Create a simple mesh pattern as base64 SVG
+  const strokeColor = isDark ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
   const spacing = 50;
-  const lines: string[] = [];
+  const lines = [];
   
   // Generate diagonal lines
   for (let i = -pageHeight; i < pageWidth + pageHeight; i += spacing) {
-    lines.push(`<line x1="${i}" y1="0" x2="${i + pageHeight}" y2="${pageHeight}" stroke="#888" stroke-width="0.5" opacity="${opacity}"/>`);
-    lines.push(`<line x1="${i + pageHeight}" y1="0" x2="${i}" y2="${pageHeight}" stroke="#888" stroke-width="0.5" opacity="${opacity}"/>`);
+    lines.push(
+      <Line 
+        key={`d1-${i}`}
+        x1={i} 
+        y1={0} 
+        x2={i + pageHeight} 
+        y2={pageHeight} 
+        stroke={strokeColor} 
+        strokeWidth={0.5} 
+        opacity={opacity}
+      />
+    );
+    lines.push(
+      <Line 
+        key={`d2-${i}`}
+        x1={i + pageHeight} 
+        y1={0} 
+        x2={i} 
+        y2={pageHeight} 
+        stroke={strokeColor} 
+        strokeWidth={0.5} 
+        opacity={opacity}
+      />
+    );
   }
   
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pageWidth}" height="${pageHeight}" viewBox="0 0 ${pageWidth} ${pageHeight}">${lines.join('')}</svg>`;
-  const dataUri = `data:image/svg+xml;base64,${btoa(svg)}`;
-  
   return (
-    <View
+    <Svg
       style={{
         position: 'absolute',
         top: 0,
@@ -154,18 +176,13 @@ export const PDFPatternBackground = ({
         width: pageWidth,
         height: pageHeight,
       }}
+      viewBox={`0 0 ${pageWidth} ${pageHeight}`}
     >
-      <Image
-        src={dataUri}
-        style={{
-          width: pageWidth,
-          height: pageHeight,
-        }}
-      />
-    </View>
+      {lines}
+    </Svg>
   );
 };
 
-// Export sources for direct use
-export const PDFLogoSources = logoSources;
-export const PDFBarSources = barSources;
+// Export sources (empty for compatibility)
+export const PDFLogoSources = {};
+export const PDFBarSources = {};

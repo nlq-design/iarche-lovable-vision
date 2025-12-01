@@ -254,11 +254,12 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
             size={[width, height]} 
             style={isDark ? styles.pageDark : styles.pageLight}
           >
-            {/* Mesh background pattern - using PNG */}
+            {/* Mesh background pattern */}
             <PDFPatternBackground 
               pageWidth={width} 
               pageHeight={height} 
-              opacity={isDark ? 0.06 : 0.08} 
+              opacity={isDark ? 0.06 : 0.08}
+              isDark={isDark}
             />
             
             {/* Corner arches decoration */}
