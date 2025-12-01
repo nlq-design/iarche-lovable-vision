@@ -21,6 +21,7 @@ import LivreBlancsForm from '@/components/LivreBlancsForm';
 import AtelierInscriptionForm from '@/components/AtelierInscriptionForm';
 import AuthorCard from '@/components/ui/AuthorCard';
 import RelatedArticles from '@/components/ui/RelatedArticles';
+import GradientTitle from '@/components/ui/GradientTitle';
 import { useCTATracking } from '@/hooks/useCTATracking';
 import { TableOfContents } from '@/components/ui/TableOfContents';
 import { RessourcesComplementaires } from '@/components/ui/RessourcesComplementaires';
@@ -578,10 +579,11 @@ const ArticleDetail = () => {
               </div>
             )}
             
-            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
-              {article.title}
-            </h1>
-            <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary animate-fadeIn [animation-delay:0.15s]"></div>
+            <div className="animate-fadeIn [animation-delay:0.1s] mb-6">
+              <GradientTitle size="lg" as="h1">
+                {article.title}
+              </GradientTitle>
+            </div>
             {article.excerpt && (
               <p className="text-lg text-muted-foreground mb-4 animate-fadeIn [animation-delay:0.2s]">
                 {article.excerpt}
