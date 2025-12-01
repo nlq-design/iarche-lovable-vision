@@ -34,14 +34,6 @@ const GradientLink: React.FC<GradientLinkProps> = ({
 
   const gradientTextClasses = 'hero-gradient-text';
 
-  const underlineClasses = `
-    absolute bottom-0 left-0 right-0 h-0.5
-    bg-gradient-to-r from-primary via-accent to-primary
-    bg-[length:200%_100%]
-    scale-x-0 group-hover:scale-x-100
-    transition-transform duration-300 ease-out
-    origin-left
-  `;
 
   // Séparer texte et icône si les enfants sont multiples
   const childrenArray = React.Children.toArray(children);
@@ -51,13 +43,9 @@ const GradientLink: React.FC<GradientLinkProps> = ({
     <>
       <span className={gradientTextClasses}>{childrenArray[0]}</span>
       {childrenArray.slice(1)}
-      <span className={underlineClasses} aria-hidden="true" />
     </>
   ) : (
-    <>
-      <span className={gradientTextClasses}>{children}</span>
-      <span className={underlineClasses} aria-hidden="true" />
-    </>
+    <span className={gradientTextClasses}>{children}</span>
   );
 
   if (href) {
