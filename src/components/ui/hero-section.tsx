@@ -38,10 +38,11 @@ const HeroSection = () => {
         </div>
 
         <div className="container text-center z-10 relative px-6 py-20">
-          <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-semibold m-0 relative z-20 mb-20 md:mb-28 invisible animate-fadeIn [animation-delay:0.1s]">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-semibold m-0 relative z-20 mb-4 invisible animate-fadeIn [animation-delay:0.1s]">
             <span className="hero-gradient-text">IArche</span>
             <span className="sr-only">· Agence IA Bayonne | Conseil & Intégration PME</span>
           </h1>
+          <div className="w-32 h-1.5 mx-auto mb-20 md:mb-28 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 invisible animate-fadeIn [animation-delay:0.15s]"></div>
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-16 leading-relaxed invisible animate-fadeIn [animation-delay:0.2s]">
             L'IA se construit avec vous
           </p>
