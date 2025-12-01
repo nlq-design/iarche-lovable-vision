@@ -943,8 +943,12 @@ const ArticleDetail = () => {
                   <p className="text-sm text-muted-foreground mb-6">
                     Inscriptions fermées - Visionnez le replay de cette session
                   </p>
-                  <a href={article.replay_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-base font-medium hero-gradient-text hover:opacity-80 transition-opacity">
-                    Voir le replay →
+                  <a href={article.replay_url} target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-2 text-base font-medium transition-opacity">
+                    <span className="hero-gradient-text relative">
+                      Voir le replay
+                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-primary via-accent to-primary transform scale-x-0 origin-left transition-transform duration-300 group-hover:scale-x-100" aria-hidden="true" />
+                    </span>
+                    <span className="hero-gradient-text">→</span>
                   </a>
                 </div>
               ) : (
