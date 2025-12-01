@@ -334,53 +334,53 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
               {/* Content area */}
               <View style={isCentered ? styles.mainContentCentered : styles.mainContent}>
                 {/* Section number for content slides */}
-                {showSectionNumber && (
+                {showSectionNumber ? (
                   <View style={styles.sectionRow}>
                     <Text style={[styles.sectionNumber, isDark ? styles.sectionNumberDark : styles.sectionNumberLight]}>
                       {String(index).padStart(2, '0')}
                     </Text>
                     <View>
-                      {slide.title && (
+                      {slide.title && slide.title.length > 0 ? (
                         <Text style={isDark ? styles.titleDark : styles.titleLight}>
                           {slide.title}
                         </Text>
-                      )}
-                      {/* Bar lg under section title */}
+                      ) : null}
                       <PDFImageBar size="lg" style={{ marginTop: 12 }} />
                     </View>
                   </View>
-                )}
+                ) : null}
                 
                 {/* Title slide content */}
-                {slide.type === 'title' && (
-                  <>
-                    {slide.subtitle && (
+                {slide.type === 'title' ? (
+                  <View style={{ alignItems: 'center' }}>
+                    {slide.subtitle && slide.subtitle.length > 0 ? (
                       <Text style={isDark ? styles.subtitleDark : styles.subtitleLight}>
                         {slide.subtitle}
                       </Text>
-                    )}
-                    <Text style={isDark ? styles.titleDark : styles.titleLight}>
-                      {slide.title}
-                    </Text>
-                    {/* Bar xl under main title */}
+                    ) : null}
+                    {slide.title && slide.title.length > 0 ? (
+                      <Text style={isDark ? styles.titleDark : styles.titleLight}>
+                        {slide.title}
+                      </Text>
+                    ) : null}
                     <PDFImageBar size="xl" style={{ marginTop: 16 }} />
-                    {slide.content && (
+                    {slide.content && slide.content.length > 0 ? (
                       <Text style={[isDark ? styles.textDark : styles.textLight, { marginTop: 24, textAlign: 'center' }]}>
                         {slide.content}
                       </Text>
-                    )}
-                  </>
-                )}
+                    ) : null}
+                  </View>
+                ) : null}
                 
                 {/* Content text */}
-                {(slide.type === 'content') && slide.content && (
+                {slide.type === 'content' && slide.content && slide.content.length > 0 ? (
                   <Text style={[isDark ? styles.textDark : styles.textLight, { marginTop: 20 }]}>
                     {slide.content}
                   </Text>
-                )}
+                ) : null}
                 
                 {/* Bullets list in 2-column grid */}
-                {slide.type === 'bullets' && slide.bullets && slide.bullets.length > 0 && (
+                {slide.type === 'bullets' && slide.bullets && slide.bullets.length > 0 ? (
                   <View style={styles.bulletsContainer}>
                     {slide.bullets.map((bullet, idx) => (
                       <View key={idx} style={styles.bulletItem}>
@@ -393,21 +393,20 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
                       </View>
                     ))}
                   </View>
-                )}
+                ) : null}
                 
                 {/* CTA slide */}
-                {slide.type === 'cta' && (
-                  <>
-                    <Text style={styles.ctaText}>{slide.title}</Text>
-                    {/* Bar xl under CTA */}
+                {slide.type === 'cta' ? (
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={styles.ctaText}>{slide.title || 'Contact'}</Text>
                     <PDFImageBar size="xl" style={{ marginTop: 20, marginBottom: 20 }} />
-                    {slide.content && (
+                    {slide.content && slide.content.length > 0 ? (
                       <Text style={[styles.ctaSubtext, isDark ? styles.ctaSubtextDark : styles.ctaSubtextLight]}>
                         {slide.content}
                       </Text>
-                    )}
-                  </>
-                )}
+                    ) : null}
+                  </View>
+                ) : null}
               </View>
 
               {/* Footer */}

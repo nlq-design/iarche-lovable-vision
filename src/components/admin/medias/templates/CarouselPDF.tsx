@@ -296,42 +296,40 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
                       {String(index).padStart(2, '0')}
                     </Text>
                     <View style={{ alignItems: 'flex-start' }}>
-                      {slide.title && (
+                      {slide.title && slide.title.length > 0 ? (
                         <Text style={isDark ? styles.titleDark : styles.titleLight}>
                           {slide.title}
                         </Text>
-                      )}
-                      {/* Bar md (80×4) under section title */}
+                      ) : null}
                       <PDFImageBar size="md" style={{ marginTop: 8 }} />
                     </View>
                   </View>
                 ) : (
-                  <>
-                    {slide.subtitle && (
+                  <View style={{ alignItems: 'center' }}>
+                    {slide.subtitle && slide.subtitle.length > 0 ? (
                       <Text style={isDark ? styles.subtitleDark : styles.subtitleLight}>
                         {slide.subtitle}
                       </Text>
-                    )}
-                    {slide.title && (
+                    ) : null}
+                    {slide.title && slide.title.length > 0 ? (
                       <Text style={isDark ? styles.titleDark : styles.titleLight}>
                         {slide.title}
                       </Text>
-                    )}
-                    {/* Bar lg (96×4) under main title */}
+                    ) : null}
                     <PDFImageBar size="lg" style={{ marginTop: 12, marginBottom: 16 }} />
-                  </>
+                  </View>
                 )}
                 
-                {slide.content && (
+                {slide.content && slide.content.length > 0 ? (
                   <Text style={isDark ? styles.textDark : styles.textLight}>
                     {slide.content}
                   </Text>
-                )}
-                {slide.highlight && (
+                ) : null}
+                {slide.highlight && slide.highlight.length > 0 ? (
                   <Text style={isDark ? styles.highlightDark : styles.highlightLight}>
                     {slide.highlight}
                   </Text>
-                )}
+                ) : null}
               </View>
 
               {/* Footer with gradient bar separator */}
