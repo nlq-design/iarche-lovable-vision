@@ -16,7 +16,7 @@ const Footer = () => {
             <p className="text-sm text-white/80 mb-3">
               <a 
                 href="tel:+33661741381" 
-                className="hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
+                className="no-underline hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
               >
                 06 61 74 13 81
               </a>
