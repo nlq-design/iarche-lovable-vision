@@ -1,6 +1,14 @@
 import { Document, Page, View, Text, Image, StyleSheet, Svg, Line, Path } from '@react-pdf/renderer';
 import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
 
+// Import PNG assets as ES6 modules for react-pdf compatibility
+import logoGradient from '@/assets/pdf/logo-iarche-gradient.png';
+import logoWhite from '@/assets/pdf/logo-iarche-white.png';
+import barSm from '@/assets/pdf/bar-sm.png';
+import barMd from '@/assets/pdf/bar-md.png';
+import barLg from '@/assets/pdf/bar-lg.png';
+import barXl from '@/assets/pdf/bar-xl.png';
+
 interface SlideData {
   id: number;
   title: string;
@@ -14,14 +22,14 @@ interface CarouselPDFProps {
   format?: 'linkedin' | 'instagram';
 }
 
-// Asset paths
+// Asset paths using ES6 imports
 const ASSETS = {
-  logoGradient: '/assets/logo-iarche-gradient.png',
-  logoWhite: '/assets/logo-iarche-white.png',
-  barSm: '/assets/bar-sm.png',
-  barMd: '/assets/bar-md.png',
-  barLg: '/assets/bar-lg.png',
-  barXl: '/assets/bar-xl.png',
+  logoGradient,
+  logoWhite,
+  barSm,
+  barMd,
+  barLg,
+  barXl,
 };
 
 const styles = StyleSheet.create({
@@ -206,8 +214,8 @@ const styles = StyleSheet.create({
 // Mesh background pattern component
 const MeshBackground = ({ isDark, width, height }: { isDark: boolean; width: number; height: number }) => {
   const strokeColor = isDark ? '#FFFFFF' : IARCHE_COLORS.bleuNuit;
-  const opacity = isDark ? 0.03 : 0.04;
-  const spacing = 60;
+  const opacity = isDark ? 0.08 : 0.1; // Increased opacity for visibility
+  const spacing = 50;
   const lines = [];
   
   // Diagonal lines (top-left to bottom-right)
@@ -252,8 +260,8 @@ const MeshBackground = ({ isDark, width, height }: { isDark: boolean; width: num
 // Corner arches decoration component
 const ArchesDecoration = ({ isDark, width, height }: { isDark: boolean; width: number; height: number }) => {
   const strokeColor = isDark ? '#FFFFFF' : IARCHE_COLORS.terracotta;
-  const opacity = isDark ? 0.12 : 0.2;
-  const cornerSize = 100;
+  const opacity = isDark ? 0.25 : 0.4; // Increased opacity for visibility
+  const cornerSize = 120;
   
   return (
     <Svg style={styles.archesOverlay} viewBox={`0 0 ${width} ${height}`}>

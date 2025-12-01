@@ -1,6 +1,14 @@
 import { Document, Page, View, Text, Image, StyleSheet, Svg, Line, Path } from '@react-pdf/renderer';
 import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
 
+// Import PNG assets as ES6 modules for react-pdf compatibility
+import logoGradient from '@/assets/pdf/logo-iarche-gradient.png';
+import logoWhite from '@/assets/pdf/logo-iarche-white.png';
+import barSm from '@/assets/pdf/bar-sm.png';
+import barMd from '@/assets/pdf/bar-md.png';
+import barLg from '@/assets/pdf/bar-lg.png';
+import barXl from '@/assets/pdf/bar-xl.png';
+
 interface SlideData {
   id: number;
   type: 'title' | 'content' | 'bullets' | 'cta';
@@ -16,14 +24,14 @@ interface PresentationPDFProps {
 
 const { width: PAGE_WIDTH, height: PAGE_HEIGHT } = PDF_FORMATS.presentation;
 
-// Asset paths
+// Asset paths using ES6 imports
 const ASSETS = {
-  logoGradient: '/assets/logo-iarche-gradient.png',
-  logoWhite: '/assets/logo-iarche-white.png',
-  barSm: '/assets/bar-sm.png',
-  barMd: '/assets/bar-md.png',
-  barLg: '/assets/bar-lg.png',
-  barXl: '/assets/bar-xl.png',
+  logoGradient,
+  logoWhite,
+  barSm,
+  barMd,
+  barLg,
+  barXl,
 };
 
 const styles = StyleSheet.create({
@@ -250,8 +258,8 @@ const styles = StyleSheet.create({
 // Mesh background pattern
 const MeshBackground = ({ isDark }: { isDark: boolean }) => {
   const strokeColor = isDark ? '#FFFFFF' : IARCHE_COLORS.bleuNuit;
-  const opacity = isDark ? 0.02 : 0.03;
-  const spacing = 80;
+  const opacity = isDark ? 0.08 : 0.1; // Increased for visibility
+  const spacing = 60;
   const lines = [];
   
   for (let i = -PAGE_HEIGHT; i < PAGE_WIDTH + PAGE_HEIGHT; i += spacing) {
@@ -291,7 +299,7 @@ const MeshBackground = ({ isDark }: { isDark: boolean }) => {
 // Corner arches decoration
 const ArchesDecoration = ({ isDark }: { isDark: boolean }) => {
   const strokeColor = isDark ? '#FFFFFF' : IARCHE_COLORS.terracotta;
-  const opacity = isDark ? 0.1 : 0.18;
+  const opacity = isDark ? 0.2 : 0.35; // Increased for visibility
   const cornerSize = 140;
   
   return (
