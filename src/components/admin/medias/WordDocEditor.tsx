@@ -24,9 +24,13 @@ interface SectionData {
   tableData: string[][];
 }
 
+// IArche brand colors (from BrandBook V2) - HEX without #
 const colors = {
-  nightBlue: '233554',
-  terracotta: 'c96442',
+  primary: '1A2B4A',      // Bleu Nuit HSL(218, 47%, 20%)
+  accent: 'D15A3E',       // Terracotta HSL(12, 60%, 53%)
+  foreground: '2D2D2D',   // Anthracite
+  textMuted: '6B7280',    // Muted text
+  border: 'E8E4DD',       // Border color
 };
 
 const templateConfigs: Record<string, { name: string; defaultSections: SectionData[] }> = {
@@ -131,7 +135,7 @@ export const WordDocEditor = ({ templateId, onBack }: WordDocEditorProps) => {
               text: 'IArche',
               bold: true,
               size: 48,
-              color: colors.terracotta,
+              color: colors.accent,
             }),
           ],
           spacing: { after: 200 },
@@ -142,7 +146,7 @@ export const WordDocEditor = ({ templateId, onBack }: WordDocEditorProps) => {
               text: 'L\'IA se construit avec vous',
               italics: true,
               size: 24,
-              color: colors.nightBlue,
+              color: colors.primary,
             }),
           ],
           spacing: { after: 400 },
@@ -212,7 +216,7 @@ export const WordDocEditor = ({ templateId, onBack }: WordDocEditorProps) => {
                     children: [new TextRun({
                       text: cell,
                       bold: rowIndex === 0,
-                      color: rowIndex === 0 ? colors.nightBlue : undefined,
+                      color: rowIndex === 0 ? colors.primary : undefined,
                     })],
                   })],
                   width: { size: 100 / row.length, type: WidthType.PERCENTAGE },
@@ -236,7 +240,7 @@ export const WordDocEditor = ({ templateId, onBack }: WordDocEditorProps) => {
           children: [
             new TextRun({
               text: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-              color: colors.terracotta,
+              color: colors.accent,
             }),
           ],
           spacing: { before: 400 },
@@ -246,7 +250,7 @@ export const WordDocEditor = ({ templateId, onBack }: WordDocEditorProps) => {
             new TextRun({
               text: 'IArche - Agence IA | Bayonne, France | iarche.fr | contact@iarche.fr',
               size: 20,
-              color: colors.nightBlue,
+              color: colors.primary,
             }),
           ],
           alignment: AlignmentType.CENTER,
