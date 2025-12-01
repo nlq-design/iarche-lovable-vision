@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ArrowLeft, Download, Plus, Trash2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -69,6 +70,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
   const [sourceMode, setSourceMode] = useState<'libre' | 'article'>('libre');
   const [articles, setArticles] = useState<{ id: string; title: string; slug: string }[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<string>('');
+  const [startTheme, setStartTheme] = useState<'dark' | 'light'>('dark');
 
   useEffect(() => {
     const fetchArticles = async () => {
@@ -113,7 +115,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
   const handleExportPDF = async () => {
     setIsExporting(true);
     try {
-      const blob = await pdf(<CarouselPDF slides={slides} />).toBlob();
+      const blob = await pdf(<CarouselPDF slides={slides} startTheme={startTheme} />).toBlob();
       saveAs(blob, `carousel-iarche-${templateId}-${Date.now()}.pdf`);
       toast({ title: 'PDF exporté avec succès' });
     } catch (error) {
@@ -166,30 +168,57 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
           </Button>
         </div>
 
-        {/* Source selector */}
-        <div className="flex items-center gap-4">
-          <Label>Mode :</Label>
-          <Select value={sourceMode} onValueChange={(v) => setSourceMode(v as 'libre' | 'article')}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="libre">Création libre</SelectItem>
-              <SelectItem value="article">Depuis un article</SelectItem>
-            </SelectContent>
-          </Select>
-          {sourceMode === 'article' && (
-            <Select value={selectedArticle} onValueChange={(v) => { setSelectedArticle(v); loadFromArticle(v); }}>
-              <SelectTrigger className="w-64">
-                <SelectValue placeholder="Sélectionner un article" />
+        {/* Source selector and theme selector */}
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Label>Mode :</Label>
+            <Select value={sourceMode} onValueChange={(v) => setSourceMode(v as 'libre' | 'article')}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {articles.map(a => (
-                  <SelectItem key={a.id} value={a.id}>{a.title}</SelectItem>
-                ))}
+                <SelectItem value="libre">Création libre</SelectItem>
+                <SelectItem value="article">Depuis un article</SelectItem>
               </SelectContent>
             </Select>
-          )}
+            {sourceMode === 'article' && (
+              <Select value={selectedArticle} onValueChange={(v) => { setSelectedArticle(v); loadFromArticle(v); }}>
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder="Sélectionner un article" />
+                </SelectTrigger>
+                <SelectContent>
+                  {articles.map(a => (
+                    <SelectItem key={a.id} value={a.id}>{a.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          
+          {/* Theme selector */}
+          <div className="flex items-center gap-3">
+            <Label>Thème de départ :</Label>
+            <RadioGroup 
+              value={startTheme} 
+              onValueChange={(v) => setStartTheme(v as 'dark' | 'light')}
+              className="flex gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="dark" id="dark" />
+                <Label htmlFor="dark" className="flex items-center gap-2 cursor-pointer">
+                  <div className="w-5 h-5 rounded border" style={{ backgroundColor: '#1A2B4A' }} />
+                  <span className="text-sm">Bleu Nuit</span>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="light" id="light" />
+                <Label htmlFor="light" className="flex items-center gap-2 cursor-pointer">
+                  <div className="w-5 h-5 rounded border" style={{ backgroundColor: '#FAF9F7' }} />
+                  <span className="text-sm">Blanc Cassé</span>
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
