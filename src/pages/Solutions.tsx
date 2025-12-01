@@ -1,5 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import { NavLink } from '@/components/NavLink';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -94,6 +95,16 @@ const Solutions = () => {
             <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 animate-fadeIn [animation-delay:0.15s]"></div>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
               <span className="hero-gradient-text">IArche</span> déploie des solutions SaaS conçues à partir de besoins concrets identifiés sur le terrain.
+            </p>
+            <p className="text-base text-muted-foreground/80 max-w-2xl mx-auto mt-4 animate-fadeIn [animation-delay:0.25s]">
+              Chaque solution est issue de notre activité de développement sur mesure.{' '}
+              <NavLink 
+                to="/services/developpement" 
+                className="text-primary underline hover:text-accent transition-colors duration-200"
+                onClick={() => trackCTAClick('voir_service_developpement', 'solutions_page')}
+              >
+                Voir notre service Développement & Intégration →
+              </NavLink>
             </p>
           </div>
 
