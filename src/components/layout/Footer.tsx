@@ -6,8 +6,8 @@ const Footer = () => {
   return (
     <footer className="bg-foreground text-white">
       <div className="container mx-auto px-6 py-8">
-        {/* Grid 4 colonnes sur desktop, 2 sur tablette, 1 sur mobile */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        {/* Grid 5 colonnes sur desktop, 2 sur tablette, 1 sur mobile */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
           {/* Colonne 1 : IArche */}
           <div>
             <h3 className="text-sm font-semibold mb-3">IArche</h3>
@@ -63,14 +63,53 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Colonne 2 : Navigation principale */}
+          {/* Colonne 2 : Services */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3">Services</h3>
+            <ul className="space-y-1.5">
+              <li>
+                <NavLink 
+                  to="/services/audit" 
+                  className="text-sm text-white/80 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
+                >
+                  Audit & Conseil
+                </NavLink>
+              </li>
+              <li>
+                <NavLink 
+                  to="/services/developpement" 
+                  className="text-sm text-white/80 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
+                >
+                  Développement & Intégration
+                </NavLink>
+              </li>
+              <li>
+                <NavLink 
+                  to="/services/accompagnement" 
+                  className="text-sm text-white/80 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
+                >
+                  Accompagnement & Autonomie
+                </NavLink>
+              </li>
+              <li>
+                <NavLink 
+                  to="/services/conformite" 
+                  className="text-sm text-white/80 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
+                >
+                  Conformité & Réglementation
+                </NavLink>
+              </li>
+            </ul>
+          </div>
+
+          {/* Colonne 3 : Navigation principale */}
           <div>
             <h3 className="text-sm font-semibold mb-3">Navigation</h3>
             <ul className="space-y-1.5">
               <li>
                 <NavLink 
                   to="/services" 
-                    className="text-sm text-white/80 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
+                  className="text-sm text-white/80 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 >
                   Services
                 </NavLink>
@@ -78,23 +117,23 @@ const Footer = () => {
               <li>
                 <NavLink 
                   to="/solutions" 
-                    className="text-sm text-white/80 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
-                  >
-                    Nos solutions
+                  className="text-sm text-white/80 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
+                >
+                  Nos solutions
                 </NavLink>
               </li>
               <li>
                 <NavLink 
                   to="/contact" 
-                    className="text-sm text-white/80 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
-                  >
-                    Contact
+                  className="text-sm text-white/80 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
+                >
+                  Contact
                 </NavLink>
               </li>
             </ul>
           </div>
 
-          {/* Colonne 3 : Ressources */}
+          {/* Colonne 4 : Ressources */}
           <div>
             <h3 className="text-sm font-semibold mb-3">Ressources</h3>
             <ul className="space-y-1.5">
@@ -149,7 +188,7 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Colonne 4 : Informations légales */}
+          {/* Colonne 5 : Informations légales */}
           <div>
             <h3 className="text-sm font-semibold mb-3">Informations</h3>
             <ul className="space-y-1.5">

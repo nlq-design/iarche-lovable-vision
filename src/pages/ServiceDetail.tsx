@@ -249,6 +249,42 @@ const ServiceDetail = () => {
             </section>
           )}
 
+          {/* Lien contextuel vers Solutions (uniquement pour Développement) */}
+          {slug === 'developpement' && (
+            <section className="mb-12 invisible animate-fadeIn [animation-delay:0.75s]">
+              <div className="bg-secondary/30 rounded-lg p-6 border border-border text-center">
+                <p className="text-lg text-muted-foreground mb-4">
+                  Nous développons également nos propres solutions IA, testées en conditions réelles avant d'être proposées à nos clients.
+                </p>
+                <GradientLink 
+                  href="/solutions" 
+                  className="text-lg"
+                  onClick={() => trackCTAClick('decouvrir_solutions', 'service_detail', 'developpement')}
+                >
+                  Découvrir nos solutions
+                </GradientLink>
+              </div>
+            </section>
+          )}
+
+          {/* Lien contextuel vers Collaboria (uniquement pour Accompagnement) */}
+          {slug === 'accompagnement' && (
+            <section className="mb-12 invisible animate-fadeIn [animation-delay:0.75s]">
+              <div className="bg-secondary/30 rounded-lg p-6 border border-border text-center">
+                <p className="text-lg text-muted-foreground mb-4">
+                  Vous accompagnez vos équipes dans l'adoption de l'IA ? Découvrez Collaboria, notre plateforme collaborative multi-LLM.
+                </p>
+                <GradientLink 
+                  href="/solutions/collaboria" 
+                  className="text-lg"
+                  onClick={() => trackCTAClick('decouvrir_collaboria', 'service_detail', 'accompagnement')}
+                >
+                  En savoir plus sur Collaboria
+                </GradientLink>
+              </div>
+            </section>
+          )}
+
           {/* CTA final */}
           <div className="text-center mt-16 invisible animate-fadeIn [animation-delay:0.8s]">
             <p className="text-lg text-foreground mb-6">
