@@ -249,73 +249,91 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
             
             {/* Slide preview */}
             <Card className="overflow-hidden">
-              <div 
-                className="aspect-[4/5] p-8 flex flex-col justify-between"
-                style={{
-                  background: 'linear-gradient(135deg, hsl(218, 47%, 20%) 0%, hsl(218, 47%, 15%) 100%)'
-                }}
-              >
-                {/* Logo */}
-                <div className="text-center">
-                  <span 
-                    className="text-2xl font-bold"
+              {(() => {
+                const isDark = startTheme === 'dark' ? currentSlide % 2 === 0 : currentSlide % 2 !== 0;
+                return (
+                  <div 
+                    className="aspect-[4/5] p-8 flex flex-col justify-between relative"
                     style={{
-                      background: 'linear-gradient(270deg, hsl(218, 47%, 20%), hsl(12, 60%, 53%), hsl(218, 47%, 35%), hsl(12, 60%, 53%))',
-                      backgroundSize: '600% 600%',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text'
+                      background: isDark 
+                        ? 'linear-gradient(135deg, #1A2B4A 0%, #14203A 100%)'
+                        : '#FAF9F7'
                     }}
                   >
-                    IArche
-                  </span>
-                  <div className="w-12 h-0.5 mx-auto mt-1 bg-gradient-to-r from-primary to-accent" />
-                </div>
+                    {/* Arches decoration preview */}
+                    <div className="absolute top-0 right-0 w-20 h-20 pointer-events-none">
+                      <svg viewBox="0 0 80 80" className="w-full h-full">
+                        <path d="M0 0 L80 0 L80 80" fill="none" stroke={isDark ? 'rgba(255,255,255,0.2)' : 'rgba(209,90,62,0.3)'} strokeWidth="2" />
+                      </svg>
+                    </div>
+                    <div className="absolute bottom-0 left-0 w-20 h-20 pointer-events-none">
+                      <svg viewBox="0 0 80 80" className="w-full h-full">
+                        <path d="M0 0 L0 80 L80 80" fill="none" stroke={isDark ? 'rgba(255,255,255,0.2)' : 'rgba(209,90,62,0.3)'} strokeWidth="2" />
+                      </svg>
+                    </div>
 
-                {/* Content */}
-                <div className="flex-1 flex flex-col justify-center text-center space-y-4">
-                  {current?.subtitle && (
-                    <p className="text-sm uppercase tracking-wider text-white/60">{current.subtitle}</p>
-                  )}
-                  {current?.title && (
-                    <h2 className="text-2xl font-bold text-white">{current.title}</h2>
-                  )}
-                  {current?.content && (
-                    <p className="text-white/80 text-sm leading-relaxed">{current.content}</p>
-                  )}
-                  {current?.highlight && (
-                    <p 
-                      className="text-3xl font-bold mt-4"
-                      style={{ color: 'hsl(12, 60%, 53%)' }}
-                    >
-                      {current.highlight}
-                    </p>
-                  )}
-                </div>
+                    {/* Logo + bar */}
+                    <div className="text-center">
+                      <span 
+                        className="text-2xl font-bold"
+                        style={{
+                          color: isDark ? '#FFFFFF' : '#1A2B4A'
+                        }}
+                      >
+                        IArche
+                      </span>
+                      <div className="w-12 h-0.5 mx-auto mt-1 bg-gradient-to-r from-[#1A2B4A] to-[#D15A3E]" />
+                    </div>
 
-                {/* Footer */}
-                <div className="text-center">
-                  <p className="text-xs text-white/40">iarche.fr</p>
-                </div>
-              </div>
+                    {/* Content */}
+                    <div className="flex-1 flex flex-col justify-center text-center space-y-4">
+                      {current?.subtitle && (
+                        <p className={`text-sm uppercase tracking-wider ${isDark ? 'text-white/60' : 'text-[#1A2B4A]/50'}`}>{current.subtitle}</p>
+                      )}
+                      {current?.title && (
+                        <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-[#1A2B4A]'}`}>{current.title}</h2>
+                      )}
+                      {current?.content && (
+                        <p className={`text-sm leading-relaxed ${isDark ? 'text-white/80' : 'text-[#1A2B4A]/80'}`}>{current.content}</p>
+                      )}
+                      {current?.highlight && (
+                        <p 
+                          className="text-3xl font-bold mt-4"
+                          style={{ color: '#D15A3E' }}
+                        >
+                          {current.highlight}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="text-center">
+                      <p className={`text-xs ${isDark ? 'text-white/40' : 'text-[#1A2B4A]/40'}`}>iarche.fr</p>
+                    </div>
+                  </div>
+                );
+              })()}
             </Card>
 
-            {/* Slide thumbnails */}
+            {/* Slide thumbnails with theme alternation */}
             <div className="flex gap-2 overflow-x-auto pb-2">
-              {slides.map((slide, idx) => (
-                <button
-                  key={slide.id}
-                  onClick={() => setCurrentSlide(idx)}
-                  className={`flex-shrink-0 w-16 h-20 rounded border-2 transition-all ${
-                    idx === currentSlide ? 'border-primary' : 'border-border hover:border-primary/50'
-                  }`}
-                  style={{
-                    background: 'linear-gradient(135deg, hsl(218, 47%, 20%) 0%, hsl(218, 47%, 15%) 100%)'
-                  }}
-                >
-                  <span className="text-xs text-white/60">{idx + 1}</span>
-                </button>
-              ))}
+              {slides.map((slide, idx) => {
+                const thumbIsDark = startTheme === 'dark' ? idx % 2 === 0 : idx % 2 !== 0;
+                return (
+                  <button
+                    key={slide.id}
+                    onClick={() => setCurrentSlide(idx)}
+                    className={`flex-shrink-0 w-16 h-20 rounded border-2 transition-all flex items-center justify-center ${
+                      idx === currentSlide ? 'border-primary' : 'border-border hover:border-primary/50'
+                    }`}
+                    style={{
+                      background: thumbIsDark ? '#1A2B4A' : '#FAF9F7'
+                    }}
+                  >
+                    <span className={`text-xs ${thumbIsDark ? 'text-white/60' : 'text-[#1A2B4A]/60'}`}>{idx + 1}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 

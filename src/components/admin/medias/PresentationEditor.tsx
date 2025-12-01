@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ArrowLeft, Download, Plus, Trash2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -76,6 +77,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
   const [isExporting, setIsExporting] = useState(false);
   const [sourceMode, setSourceMode] = useState<'libre' | 'solution'>('libre');
   const [solutions, setSolutions] = useState<{ id: string; title: string }[]>([]);
+  const [startTheme, setStartTheme] = useState<'dark' | 'light'>('dark');
 
   useEffect(() => {
     const fetchSolutions = async () => {
@@ -137,7 +139,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
   const handleExportPDF = async () => {
     setIsExporting(true);
     try {
-      const blob = await pdf(<PresentationPDF slides={slides} />).toBlob();
+      const blob = await pdf(<PresentationPDF slides={slides} startTheme={startTheme} />).toBlob();
       saveAs(blob, `presentation-iarche-${templateId}-${Date.now()}.pdf`);
       toast({ title: 'PDF exporté avec succès' });
     } catch (error) {
@@ -170,18 +172,45 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
           </Button>
         </div>
 
-        {/* Source mode */}
-        <div className="flex items-center gap-4">
-          <Label>Mode :</Label>
-          <Select value={sourceMode} onValueChange={(v) => setSourceMode(v as 'libre' | 'solution')}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="libre">Création libre</SelectItem>
-              <SelectItem value="solution">Depuis une solution</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* Source mode and theme selector */}
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Label>Mode :</Label>
+            <Select value={sourceMode} onValueChange={(v) => setSourceMode(v as 'libre' | 'solution')}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="libre">Création libre</SelectItem>
+                <SelectItem value="solution">Depuis une solution</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Theme selector */}
+          <div className="flex items-center gap-3">
+            <Label>Thème de départ :</Label>
+            <RadioGroup 
+              value={startTheme} 
+              onValueChange={(v) => setStartTheme(v as 'dark' | 'light')}
+              className="flex gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="dark" id="pres-dark" />
+                <Label htmlFor="pres-dark" className="flex items-center gap-2 cursor-pointer">
+                  <div className="w-5 h-5 rounded border" style={{ backgroundColor: '#1A2B4A' }} />
+                  <span className="text-sm">Bleu Nuit</span>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="light" id="pres-light" />
+                <Label htmlFor="pres-light" className="flex items-center gap-2 cursor-pointer">
+                  <div className="w-5 h-5 rounded border" style={{ backgroundColor: '#FAF9F7' }} />
+                  <span className="text-sm">Blanc Cassé</span>
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -211,77 +240,91 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
             </div>
             
             <Card className="overflow-hidden">
-              <div 
-                className="aspect-video p-8 flex flex-col"
-                style={{
-                  background: current?.type === 'title' 
-                    ? 'linear-gradient(135deg, hsl(218, 47%, 20%) 0%, hsl(218, 47%, 15%) 100%)'
-                    : 'hsl(40, 20%, 97%)'
-                }}
-              >
-                {/* Header bar */}
-                <div className="flex items-center justify-between mb-6">
-                  <span 
-                    className="text-lg font-bold"
+              {(() => {
+                const isDark = startTheme === 'dark' ? currentSlide % 2 === 0 : currentSlide % 2 !== 0;
+                return (
+                  <div 
+                    className="aspect-video p-8 flex flex-col relative"
                     style={{
-                      background: 'linear-gradient(270deg, hsl(218, 47%, 20%), hsl(12, 60%, 53%))',
-                      backgroundClip: 'text',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent'
+                      background: isDark ? '#1A2B4A' : '#FAF9F7'
                     }}
                   >
-                    IArche
-                  </span>
-                  <div className="w-16 h-0.5 bg-gradient-to-r from-primary to-accent" />
-                </div>
+                    {/* Arches decoration preview */}
+                    <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none">
+                      <svg viewBox="0 0 64 64" className="w-full h-full">
+                        <path d="M0 0 L64 0 L64 64" fill="none" stroke={isDark ? 'rgba(255,255,255,0.2)' : 'rgba(209,90,62,0.3)'} strokeWidth="2" />
+                      </svg>
+                    </div>
+                    <div className="absolute bottom-0 left-0 w-16 h-16 pointer-events-none">
+                      <svg viewBox="0 0 64 64" className="w-full h-full">
+                        <path d="M0 0 L0 64 L64 64" fill="none" stroke={isDark ? 'rgba(255,255,255,0.2)' : 'rgba(209,90,62,0.3)'} strokeWidth="2" />
+                      </svg>
+                    </div>
 
-                {/* Content */}
-                <div className={`flex-1 flex flex-col ${current?.type === 'title' ? 'justify-center items-center text-center' : 'justify-start'}`}>
-                  {current?.subtitle && (
-                    <p className={`text-xs uppercase tracking-wider mb-2 ${current?.type === 'title' ? 'text-white/60' : 'text-muted-foreground'}`}>
-                      {current.subtitle}
-                    </p>
-                  )}
-                  <h2 className={`text-xl font-bold mb-4 ${current?.type === 'title' ? 'text-white' : 'text-foreground'}`}>
-                    {current?.title}
-                  </h2>
-                  {current?.content && (
-                    <p className={`text-sm leading-relaxed ${current?.type === 'title' ? 'text-white/80' : 'text-muted-foreground'}`}>
-                      {current.content}
-                    </p>
-                  )}
-                  {current?.bullets && current.bullets.length > 0 && (
-                    <ul className="space-y-2 mt-4">
-                      {current.bullets.map((bullet, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm">
-                          <span style={{ color: 'hsl(12, 60%, 53%)' }}>●</span>
-                          <span className={current?.type === 'title' ? 'text-white/80' : 'text-muted-foreground'}>{bullet}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
+                    {/* Header bar */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <span 
+                          className="text-lg font-bold"
+                          style={{ color: isDark ? '#FFFFFF' : '#1A2B4A' }}
+                        >
+                          IArche
+                        </span>
+                        <div className="w-10 h-0.5 mt-1 bg-gradient-to-r from-[#1A2B4A] to-[#D15A3E]" />
+                      </div>
+                      <div className="w-16 h-0.5 bg-gradient-to-r from-[#1A2B4A] via-[#D15A3E] to-[#1A2B4A]" />
+                    </div>
+
+                    {/* Content */}
+                    <div className={`flex-1 flex flex-col ${current?.type === 'title' ? 'justify-center items-center text-center' : 'justify-start'}`}>
+                      {current?.subtitle && (
+                        <p className={`text-xs uppercase tracking-wider mb-2 ${isDark ? 'text-white/60' : 'text-[#1A2B4A]/50'}`}>
+                          {current.subtitle}
+                        </p>
+                      )}
+                      <h2 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-[#1A2B4A]'}`}>
+                        {current?.title}
+                      </h2>
+                      {current?.content && (
+                        <p className={`text-sm leading-relaxed ${isDark ? 'text-white/80' : 'text-[#1A2B4A]/80'}`}>
+                          {current.content}
+                        </p>
+                      )}
+                      {current?.bullets && current.bullets.length > 0 && (
+                        <ul className="space-y-2 mt-4">
+                          {current.bullets.map((bullet, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm">
+                              <span style={{ color: '#D15A3E' }}>—</span>
+                              <span className={isDark ? 'text-white/80' : 'text-[#1A2B4A]/80'}>{bullet}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </Card>
 
-            {/* Thumbnails */}
+            {/* Thumbnails with theme alternation */}
             <div className="flex gap-2 overflow-x-auto pb-2">
-              {slides.map((slide, idx) => (
-                <button
-                  key={slide.id}
-                  onClick={() => setCurrentSlide(idx)}
-                  className={`flex-shrink-0 w-24 h-14 rounded border-2 transition-all flex items-center justify-center ${
-                    idx === currentSlide ? 'border-primary' : 'border-border hover:border-primary/50'
-                  }`}
-                  style={{
-                    background: slide.type === 'title' 
-                      ? 'linear-gradient(135deg, hsl(218, 47%, 20%) 0%, hsl(218, 47%, 15%) 100%)'
-                      : 'hsl(40, 20%, 97%)'
-                  }}
-                >
-                  <span className={`text-xs ${slide.type === 'title' ? 'text-white/60' : 'text-muted-foreground'}`}>{idx + 1}</span>
-                </button>
-              ))}
+              {slides.map((slide, idx) => {
+                const thumbIsDark = startTheme === 'dark' ? idx % 2 === 0 : idx % 2 !== 0;
+                return (
+                  <button
+                    key={slide.id}
+                    onClick={() => setCurrentSlide(idx)}
+                    className={`flex-shrink-0 w-24 h-14 rounded border-2 transition-all flex items-center justify-center ${
+                      idx === currentSlide ? 'border-primary' : 'border-border hover:border-primary/50'
+                    }`}
+                    style={{
+                      background: thumbIsDark ? '#1A2B4A' : '#FAF9F7'
+                    }}
+                  >
+                    <span className={`text-xs ${thumbIsDark ? 'text-white/60' : 'text-[#1A2B4A]/60'}`}>{idx + 1}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
