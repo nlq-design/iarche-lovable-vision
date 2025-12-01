@@ -5,6 +5,7 @@ interface GradientTitleProps {
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
+  textClassName?: string;
   as?: 'h1' | 'h2' | 'h3' | 'h4' | 'span';
   centered?: boolean;
 }
@@ -22,6 +23,7 @@ const GradientTitle: React.FC<GradientTitleProps> = ({
   children,
   size = 'lg',
   className = '',
+  textClassName = '',
   as: Component = 'h1',
   centered = true
 }) => {
@@ -49,7 +51,7 @@ const GradientTitle: React.FC<GradientTitleProps> = ({
 
   return (
     <div className={cn('flex flex-col', centered && 'items-center', className)}>
-      <Component className={cn('hero-gradient-text', config.text)}>
+      <Component className={cn('hero-gradient-text', config.text, textClassName)}>
         {children}
       </Component>
       <div 
