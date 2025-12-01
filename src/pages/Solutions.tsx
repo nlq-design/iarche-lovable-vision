@@ -16,31 +16,36 @@ const Solutions = () => {
       name: 'Collaboria',
       slug: 'collaboria',
       tagline: 'Plateforme collaborative IA',
-      description: 'Multi-LLM, benchmark, maîtrise des usages. Souveraine et conforme.'
+      description: 'Multi-LLM, benchmark, maîtrise des usages. Souveraine et conforme.',
+      ctaLabel: 'Découvrir Collaboria'
     },
     {
       name: 'Chatbot RAG Avancé',
       slug: 'dialogue-plus',
       tagline: 'Chatbot IA connecté à vos documents',
-      description: 'RAG avancé, 340+ modèles, benchmark intégré.'
+      description: 'RAG avancé, 340+ modèles, benchmark intégré.',
+      ctaLabel: 'Découvrir le Chatbot RAG'
     },
     {
       name: 'ERP Avocat',
       slug: 'lexia',
       tagline: 'ERP pour cabinets d\'avocats',
-      description: 'ERP pour cabinet d\'avocats boosté à l\'IA'
+      description: 'ERP pour cabinet d\'avocats boosté à l\'IA',
+      ctaLabel: 'Découvrir ERP Avocat'
     },
     {
       name: 'Datalia',
       slug: 'datalia',
       tagline: 'Extraction de données locales',
-      description: 'Prospection par mots-clés et zones. Licence à vie.'
+      description: 'Prospection par mots-clés et zones. Licence à vie.',
+      ctaLabel: 'Découvrir Datalia'
     },
     {
       name: 'Team 5 Connect',
       slug: 'team-5-connect',
       tagline: 'Gestion RH des équipes terrain',
-      description: 'Pointage, absences, conformité — BTP et industrie.'
+      description: 'Pointage, absences, conformité — BTP et industrie.',
+      ctaLabel: 'Découvrir Team 5 Connect'
     }
   ];
 
@@ -131,7 +136,7 @@ const Solutions = () => {
                       href={`/solutions/${solution.slug}`}
                       onClick={() => trackCTAClick('en_savoir_plus_solution', 'solutions_page', solution.slug)}
                     >
-                      En savoir plus
+                      {solution.ctaLabel}
                     </IArcheLink>
                   </CardContent>
                 </Card>
