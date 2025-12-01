@@ -12,6 +12,7 @@ interface SlideData {
 
 interface PresentationPDFProps {
   slides: SlideData[];
+  startTheme?: 'dark' | 'light';
 }
 
 const { width: PAGE_WIDTH, height: PAGE_HEIGHT } = PDF_FORMATS.presentation;
@@ -360,11 +361,20 @@ const FooterBar = ({ isDark }: { isDark: boolean }) => (
   </Svg>
 );
 
-export const PresentationPDF = ({ slides }: PresentationPDFProps) => {
+export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDFProps) => {
+  // Theme alternation based on startTheme
+  const getSlideTheme = (slideIndex: number): boolean => {
+    if (startTheme === 'dark') {
+      return slideIndex % 2 === 0; // 0,2,4 = dark, 1,3,5 = light
+    } else {
+      return slideIndex % 2 !== 0; // 0,2,4 = light, 1,3,5 = dark
+    }
+  };
+
   return (
     <Document>
       {slides.map((slide, index) => {
-        const isDark = slide.type === 'title' || slide.type === 'cta' || index % 2 === 0;
+        const isDark = getSlideTheme(index);
         const isCentered = slide.type === 'title' || slide.type === 'cta';
         const showSectionNumber = slide.type === 'content' || slide.type === 'bullets';
         
