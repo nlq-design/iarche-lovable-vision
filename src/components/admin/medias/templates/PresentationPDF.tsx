@@ -319,42 +319,44 @@ const ArchesDecoration = ({ isDark }: { isDark: boolean }) => {
   );
 };
 
-// Gradient bar component
+// Gradient bar component - pure hex colors for reliable PDF rendering
 const GradientBar = ({ width, height, style }: { width: number; height: number; style?: object }) => (
-  <Svg viewBox={`0 0 ${width} ${height}`} style={{ width, height, ...style }}>
-    <Defs>
-      <LinearGradient id="barGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-        <Stop offset="0%" stopColor={IARCHE_COLORS.bleuNuit} />
-        <Stop offset="50%" stopColor={IARCHE_COLORS.terracotta} />
-        <Stop offset="100%" stopColor={IARCHE_COLORS.bleuNuit} />
-      </LinearGradient>
-    </Defs>
-    <Rect width={width} height={height} rx={height / 2} fill="url(#barGrad)" />
-  </Svg>
+  <View style={{ flexDirection: 'row', width, height, borderRadius: height / 2, overflow: 'hidden', ...style }}>
+    <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.bleuNuit }} />
+    <View style={{ flex: 1, backgroundColor: '#3A5A7A' }} />
+    <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.terracotta }} />
+    <View style={{ flex: 1, backgroundColor: '#3A5A7A' }} />
+    <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.bleuNuit }} />
+  </View>
 );
 
-// Header bar
-const HeaderBar = () => (
-  <Svg viewBox="0 0 300 3" style={{ width: 300, height: 3, marginTop: 10 }}>
-    <Defs>
-      <LinearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-        <Stop offset="0%" stopColor={IARCHE_COLORS.bleuNuit} />
-        <Stop offset="50%" stopColor={IARCHE_COLORS.terracotta} />
-        <Stop offset="100%" stopColor={IARCHE_COLORS.bleuNuit} />
-      </LinearGradient>
-    </Defs>
-    <Rect width={300} height={3} rx={1.5} fill="url(#headerGrad)" />
-  </Svg>
+// Header bar - pure hex colors for reliable PDF rendering  
+const HeaderBar = ({ isDark }: { isDark: boolean }) => (
+  <View style={{ flexDirection: 'row', width: 300, height: 3, marginTop: 10, borderRadius: 1.5, overflow: 'hidden' }}>
+    <View style={{ flex: 1, backgroundColor: isDark ? '#2A3F5F' : IARCHE_COLORS.bleuNuit }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#4A5A7A' : '#3A5A7A' }} />
+    <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.terracotta }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#4A5A7A' : '#3A5A7A' }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#2A3F5F' : IARCHE_COLORS.bleuNuit }} />
+  </View>
 );
 
-// Footer bar - using solid colors for reliable rendering
+// Logo bar under "IArche" text
+const LogoBar = ({ isDark }: { isDark: boolean }) => (
+  <View style={{ flexDirection: 'row', width: 60, height: 2, marginTop: 6, borderRadius: 1, overflow: 'hidden' }}>
+    <View style={{ flex: 1, backgroundColor: isDark ? '#8899AA' : IARCHE_COLORS.bleuNuit }} />
+    <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.terracotta }} />
+  </View>
+);
+
+// Footer bar - pure hex colors for reliable PDF rendering
 const FooterBar = ({ isDark }: { isDark: boolean }) => (
   <View style={{ flexDirection: 'row', width: 1760, height: 2, marginBottom: 16, borderRadius: 1, overflow: 'hidden' }}>
-    <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : IARCHE_COLORS.bleuNuit, opacity: isDark ? 0.5 : 0.3 }} />
-    <View style={{ flex: 1, backgroundColor: isDark ? '#4A6A8A' : '#2A4A6A' }} />
-    <View style={{ flex: 2, backgroundColor: IARCHE_COLORS.terracotta, opacity: isDark ? 0.7 : 0.8 }} />
-    <View style={{ flex: 1, backgroundColor: isDark ? '#4A6A8A' : '#2A4A6A' }} />
-    <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : IARCHE_COLORS.bleuNuit, opacity: isDark ? 0.5 : 0.3 }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#3A4A6A' : '#8A9AAA' }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#5A6A8A' : '#6A7A9A' }} />
+    <View style={{ flex: 2, backgroundColor: IARCHE_COLORS.terracotta }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#5A6A8A' : '#6A7A9A' }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#3A4A6A' : '#8A9AAA' }} />
   </View>
 );
 
@@ -393,11 +395,14 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
                   <Text style={[styles.logoText, isDark ? styles.logoTextDark : styles.logoTextLight]}>
                     IArche
                   </Text>
-                  <HeaderBar />
+                  <LogoBar isDark={isDark} />
                 </View>
-                <Text style={styles.slideNumber}>
-                  {String(index + 1).padStart(2, '0')}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <HeaderBar isDark={isDark} />
+                  <Text style={[styles.slideNumber, { marginLeft: 20 }]}>
+                    {String(index + 1).padStart(2, '0')}
+                  </Text>
+                </View>
               </View>
 
               {/* Content area */}
