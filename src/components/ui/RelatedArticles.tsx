@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { NavLink } from '@/components/NavLink';
 import { Calendar } from 'lucide-react';
 import { Card } from './card';
+import GradientTitle from './GradientTitle';
 
 interface RelatedArticle {
   id: string;
@@ -114,9 +115,9 @@ const RelatedArticles: React.FC<RelatedArticlesProps> = ({
                 )}
 
                 <div className="p-5">
-                  <h3 className="text-base font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-accent transition-colors">
+                  <GradientTitle size="sm" as="h3" centered={false} textClassName="line-clamp-2" className="mb-2">
                     {article.title}
-                  </h3>
+                  </GradientTitle>
 
                   {article.excerpt && (
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2">

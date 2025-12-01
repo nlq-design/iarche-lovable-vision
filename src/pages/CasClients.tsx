@@ -155,9 +155,9 @@ const CasClients = () => {
                     )}
 
                     <CardHeader className="pb-2">
-                      <h2 className="text-base font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">
+                      <GradientTitle size="sm" as="h2" centered={false} textClassName="line-clamp-2">
                         {casClient.title}
-                      </h2>
+                      </GradientTitle>
                     </CardHeader>
 
                     <CardContent className="space-y-2">
