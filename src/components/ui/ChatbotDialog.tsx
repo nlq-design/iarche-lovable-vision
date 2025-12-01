@@ -154,7 +154,7 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <div className="flex items-center">
+            <div>
               <span className="text-2xl font-semibold hero-gradient-text">IArche</span>
               <span className="text-lg font-normal text-muted-foreground ml-2">Assistant</span>
             </div>

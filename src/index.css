@@ -154,19 +154,19 @@ All colors MUST be HSL.
     border-radius: 0.25rem;
   }
 
-  /* Soulignement des liens uniquement dans le contenu éditorial (corps d'article) */
-  .prose p a:not(.no-underline),
-  .prose li a:not(.no-underline),
-  .ql-editor a:not(.no-underline) {
+  /* Soulignement des liens dans les paragraphes pour l'accessibilité */
+  p a,
+  article a:not(.no-underline),
+  .prose a:not(.no-underline) {
     text-decoration: underline;
     text-decoration-color: hsl(var(--accent));
     text-underline-offset: 2px;
     transition: text-decoration-color 0.2s ease;
   }
 
-  .prose p a:not(.no-underline):hover,
-  .prose li a:not(.no-underline):hover,
-  .ql-editor a:not(.no-underline):hover {
+  p a:hover,
+  article a:not(.no-underline):hover,
+  .prose a:not(.no-underline):hover {
     text-decoration-color: hsl(var(--primary));
   }
 }
