@@ -347,18 +347,15 @@ const HeaderBar = () => (
   </Svg>
 );
 
-// Footer bar
+// Footer bar - using solid colors for reliable rendering
 const FooterBar = ({ isDark }: { isDark: boolean }) => (
-  <Svg viewBox="0 0 1760 2" style={{ width: 1760, height: 2, marginBottom: 16 }}>
-    <Defs>
-      <LinearGradient id="footerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-        <Stop offset="0%" stopColor={isDark ? 'rgba(255,255,255,0.1)' : IARCHE_COLORS.bleuNuit} stopOpacity={0.3} />
-        <Stop offset="50%" stopColor={IARCHE_COLORS.terracotta} stopOpacity={0.5} />
-        <Stop offset="100%" stopColor={isDark ? 'rgba(255,255,255,0.1)' : IARCHE_COLORS.bleuNuit} stopOpacity={0.3} />
-      </LinearGradient>
-    </Defs>
-    <Rect width={1760} height={2} rx={1} fill="url(#footerGrad)" />
-  </Svg>
+  <View style={{ flexDirection: 'row', width: 1760, height: 2, marginBottom: 16, borderRadius: 1, overflow: 'hidden' }}>
+    <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : IARCHE_COLORS.bleuNuit, opacity: isDark ? 0.5 : 0.3 }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#4A6A8A' : '#2A4A6A' }} />
+    <View style={{ flex: 2, backgroundColor: IARCHE_COLORS.terracotta, opacity: isDark ? 0.7 : 0.8 }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#4A6A8A' : '#2A4A6A' }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : IARCHE_COLORS.bleuNuit, opacity: isDark ? 0.5 : 0.3 }} />
+  </View>
 );
 
 export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDFProps) => {

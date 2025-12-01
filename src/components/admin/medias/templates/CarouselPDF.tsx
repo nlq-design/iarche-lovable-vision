@@ -310,23 +310,15 @@ const LogoBar = ({ isDark }: { isDark: boolean }) => (
   </View>
 );
 
-// Footer separator bar
+// Footer separator bar - using solid colors for reliable rendering
 const FooterBar = ({ width, isDark }: { width: number; isDark: boolean }) => (
-  <Svg viewBox={`0 0 ${width} 2`} style={{ width: width - 120, height: 2, marginBottom: 12 }}>
-    <Defs>
-      <LinearGradient id="footerBarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-        <Stop offset="0%" stopColor={isDark ? 'rgba(255,255,255,0.1)' : IARCHE_COLORS.bleuNuit} stopOpacity={isDark ? 0.3 : 0.2} />
-        <Stop offset="50%" stopColor={IARCHE_COLORS.terracotta} stopOpacity={isDark ? 0.5 : 0.6} />
-        <Stop offset="100%" stopColor={isDark ? 'rgba(255,255,255,0.1)' : IARCHE_COLORS.bleuNuit} stopOpacity={isDark ? 0.3 : 0.2} />
-      </LinearGradient>
-    </Defs>
-    <Rect 
-      width={width} 
-      height={2} 
-      rx={1} 
-      fill="url(#footerBarGrad)" 
-    />
-  </Svg>
+  <View style={{ flexDirection: 'row', width: width - 120, height: 2, marginBottom: 12, borderRadius: 1, overflow: 'hidden' }}>
+    <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : IARCHE_COLORS.bleuNuit, opacity: isDark ? 0.5 : 0.3 }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#4A6A8A' : '#2A4A6A' }} />
+    <View style={{ flex: 2, backgroundColor: IARCHE_COLORS.terracotta, opacity: isDark ? 0.7 : 0.8 }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#4A6A8A' : '#2A4A6A' }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : IARCHE_COLORS.bleuNuit, opacity: isDark ? 0.5 : 0.3 }} />
+  </View>
 );
 
 export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }: CarouselPDFProps) => {
