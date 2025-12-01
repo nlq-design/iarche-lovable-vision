@@ -300,11 +300,12 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
             size={[PAGE_WIDTH, PAGE_HEIGHT]} 
             style={isDark ? styles.pageDark : styles.pageLight}
           >
-            {/* Background elements - using PNG pattern */}
+            {/* Background elements */}
             <PDFPatternBackground 
               pageWidth={PAGE_WIDTH} 
               pageHeight={PAGE_HEIGHT} 
-              opacity={isDark ? 0.05 : 0.07} 
+              opacity={isDark ? 0.05 : 0.07}
+              isDark={isDark}
             />
             <ArchesDecoration isDark={isDark} />
 
