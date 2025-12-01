@@ -1,4 +1,4 @@
-import { Document, Page, View, Text, Image, StyleSheet, Svg, Line, Path } from '@react-pdf/renderer';
+import { Document, Page, View, Text, StyleSheet, Svg, Line, Path, Rect, Defs, LinearGradient, Stop } from '@react-pdf/renderer';
 import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
 
 interface SlideData {
@@ -14,25 +14,6 @@ interface CarouselPDFProps {
   format?: 'linkedin' | 'instagram';
 }
 
-// Get the base URL for public assets
-const getAssetUrl = (path: string) => {
-  // In production, use absolute URLs from public folder
-  if (typeof window !== 'undefined') {
-    return `${window.location.origin}${path}`;
-  }
-  return path;
-};
-
-// Asset paths - use public folder URLs for react-pdf compatibility
-const ASSETS = {
-  logoGradient: getAssetUrl('/assets/logo-iarche-gradient.png'),
-  logoWhite: getAssetUrl('/assets/logo-iarche-white.png'),
-  barSm: getAssetUrl('/assets/bar-sm.png'),
-  barMd: getAssetUrl('/assets/bar-md.png'),
-  barLg: getAssetUrl('/assets/bar-lg.png'),
-  barXl: getAssetUrl('/assets/bar-xl.png'),
-};
-
 const styles = StyleSheet.create({
   pageDark: {
     position: 'relative',
@@ -42,14 +23,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     backgroundColor: IARCHE_COLORS.blancCasse,
   },
-  meshBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-  },
-  archesOverlay: {
+  backgroundLayer: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -66,15 +40,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 30,
   },
-  logo: {
-    width: 140,
-    height: 56,
-    objectFit: 'contain',
+  // Logo text styles
+  logoText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
+    textAlign: 'center',
   },
-  barSm: {
-    width: 48,
-    height: 2,
-    marginTop: 12,
+  logoTextDark: {
+    color: IARCHE_COLORS.white,
+  },
+  logoTextLight: {
+    color: IARCHE_COLORS.bleuNuit,
   },
   mainContent: {
     flex: 1,
@@ -82,17 +59,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 30,
   },
-  // Numbered section indicator
-  sectionIndicator: {
+  // Section indicator with number
+  sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   sectionNumber: {
-    fontSize: 80,
+    fontSize: 72,
     fontWeight: 'bold',
-    opacity: 0.15,
-    marginRight: 16,
+    opacity: 0.2,
+    marginRight: 20,
     fontFamily: 'Helvetica-Bold',
   },
   sectionNumberDark: {
@@ -103,119 +80,112 @@ const styles = StyleSheet.create({
   },
   // Dark theme text
   subtitleDark: {
-    fontSize: 18,
+    fontSize: 16,
     color: IARCHE_COLORS.white,
     opacity: 0.5,
     textTransform: 'uppercase',
     letterSpacing: 4,
-    marginBottom: 12,
+    marginBottom: 10,
     fontFamily: 'Helvetica',
+    textAlign: 'center',
   },
   titleDark: {
-    fontSize: 42,
+    fontSize: 40,
     fontWeight: 'bold',
     color: IARCHE_COLORS.white,
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
     lineHeight: 1.2,
     fontFamily: 'Helvetica-Bold',
   },
   textDark: {
-    fontSize: 20,
+    fontSize: 18,
     color: IARCHE_COLORS.white,
     opacity: 0.8,
     textAlign: 'center',
     lineHeight: 1.6,
     fontFamily: 'Helvetica',
+    marginTop: 16,
   },
   highlightDark: {
-    fontSize: 56,
+    fontSize: 48,
     fontWeight: 'bold',
     color: IARCHE_COLORS.terracotta,
-    marginTop: 24,
+    marginTop: 20,
     fontFamily: 'Helvetica-Bold',
+    textAlign: 'center',
   },
   // Light theme text
   subtitleLight: {
-    fontSize: 18,
+    fontSize: 16,
     color: IARCHE_COLORS.subtle,
     textTransform: 'uppercase',
     letterSpacing: 4,
-    marginBottom: 12,
+    marginBottom: 10,
     fontFamily: 'Helvetica',
+    textAlign: 'center',
   },
   titleLight: {
-    fontSize: 42,
+    fontSize: 40,
     fontWeight: 'bold',
     color: IARCHE_COLORS.foreground,
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
     lineHeight: 1.2,
     fontFamily: 'Helvetica-Bold',
   },
   textLight: {
-    fontSize: 20,
+    fontSize: 18,
     color: IARCHE_COLORS.foreground,
     opacity: 0.85,
     textAlign: 'center',
     lineHeight: 1.6,
     fontFamily: 'Helvetica',
+    marginTop: 16,
   },
   highlightLight: {
-    fontSize: 56,
+    fontSize: 48,
     fontWeight: 'bold',
     color: IARCHE_COLORS.terracotta,
-    marginTop: 24,
+    marginTop: 20,
     fontFamily: 'Helvetica-Bold',
-  },
-  barLg: {
-    width: 96,
-    height: 4,
-    marginTop: 14,
-    marginBottom: 20,
+    textAlign: 'center',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderTopWidth: 1,
     paddingTop: 16,
   },
-  footerDark: {
-    borderTopColor: 'rgba(255,255,255,0.1)',
-  },
-  footerLight: {
-    borderTopColor: '#E8E4DD',
-  },
   footerTextDark: {
-    fontSize: 14,
+    fontSize: 13,
     color: IARCHE_COLORS.white,
     opacity: 0.4,
     fontFamily: 'Helvetica',
   },
   footerTextLight: {
-    fontSize: 14,
+    fontSize: 13,
     color: IARCHE_COLORS.subtle,
     fontFamily: 'Helvetica',
   },
   baselineDark: {
-    fontSize: 12,
+    fontSize: 11,
     color: IARCHE_COLORS.white,
     opacity: 0.3,
     fontFamily: 'Helvetica',
   },
   baselineLight: {
-    fontSize: 12,
+    fontSize: 11,
     color: IARCHE_COLORS.subtle,
     opacity: 0.7,
     fontFamily: 'Helvetica',
   },
 });
 
-// Mesh background pattern component
+// Mesh background pattern component (SVG)
 const MeshBackground = ({ isDark, width, height }: { isDark: boolean; width: number; height: number }) => {
   const strokeColor = isDark ? '#FFFFFF' : IARCHE_COLORS.bleuNuit;
-  const opacity = isDark ? 0.08 : 0.1; // Increased opacity for visibility
+  const opacity = isDark ? 0.06 : 0.08;
   const spacing = 50;
   const lines = [];
   
@@ -252,31 +222,45 @@ const MeshBackground = ({ isDark, width, height }: { isDark: boolean; width: num
   }
   
   return (
-    <Svg style={styles.meshBackground} viewBox={`0 0 ${width} ${height}`}>
+    <Svg style={styles.backgroundLayer} viewBox={`0 0 ${width} ${height}`}>
       {lines}
     </Svg>
   );
 };
 
-// Corner arches decoration component
+// Corner arches decoration component (SVG)
 const ArchesDecoration = ({ isDark, width, height }: { isDark: boolean; width: number; height: number }) => {
   const strokeColor = isDark ? '#FFFFFF' : IARCHE_COLORS.terracotta;
-  const opacity = isDark ? 0.25 : 0.4; // Increased opacity for visibility
-  const cornerSize = 120;
+  const opacity = isDark ? 0.2 : 0.35;
+  const cornerSize = 100;
   
   return (
-    <Svg style={styles.archesOverlay} viewBox={`0 0 ${width} ${height}`}>
-      {/* Top-right corner arch */}
+    <Svg style={styles.backgroundLayer} viewBox={`0 0 ${width} ${height}`}>
+      {/* Top-right corner arch - main */}
       <Path 
-        d={`M${width},0 L${width},${cornerSize} M${width - cornerSize},0 L${width},0`}
+        d={`M${width},0 L${width},${cornerSize}`}
         fill="none" 
         stroke={strokeColor} 
         strokeWidth={2.5} 
         opacity={opacity}
       />
-      {/* Bottom-left corner arch */}
       <Path 
-        d={`M0,${height} L0,${height - cornerSize} M${cornerSize},${height} L0,${height}`}
+        d={`M${width - cornerSize},0 L${width},0`}
+        fill="none" 
+        stroke={strokeColor} 
+        strokeWidth={2.5} 
+        opacity={opacity}
+      />
+      {/* Bottom-left corner arch - main */}
+      <Path 
+        d={`M0,${height} L0,${height - cornerSize}`}
+        fill="none" 
+        stroke={strokeColor} 
+        strokeWidth={2.5} 
+        opacity={opacity}
+      />
+      <Path 
+        d={`M${cornerSize},${height} L0,${height}`}
         fill="none" 
         stroke={strokeColor} 
         strokeWidth={2.5} 
@@ -284,14 +268,28 @@ const ArchesDecoration = ({ isDark, width, height }: { isDark: boolean; width: n
       />
       {/* Secondary arches (smaller, more subtle) */}
       <Path 
-        d={`M${width},20 L${width},${cornerSize - 20} M${width - cornerSize + 20},20 L${width - 20},20`}
+        d={`M${width},15 L${width},${cornerSize - 25}`}
         fill="none" 
         stroke={strokeColor} 
         strokeWidth={1.5} 
         opacity={opacity * 0.5}
       />
       <Path 
-        d={`M20,${height - 20} L20,${height - cornerSize + 20} M${cornerSize - 20},${height - 20} L20,${height - 20}`}
+        d={`M${width - cornerSize + 25},15 L${width - 15},15`}
+        fill="none" 
+        stroke={strokeColor} 
+        strokeWidth={1.5} 
+        opacity={opacity * 0.5}
+      />
+      <Path 
+        d={`M15,${height - 15} L15,${height - cornerSize + 25}`}
+        fill="none" 
+        stroke={strokeColor} 
+        strokeWidth={1.5} 
+        opacity={opacity * 0.5}
+      />
+      <Path 
+        d={`M${cornerSize - 25},${height - 15} L15,${height - 15}`}
         fill="none" 
         stroke={strokeColor} 
         strokeWidth={1.5} 
@@ -300,6 +298,63 @@ const ArchesDecoration = ({ isDark, width, height }: { isDark: boolean; width: n
     </Svg>
   );
 };
+
+// Gradient bar component (pure SVG - no PNG needed)
+const GradientBar = ({ width, height, style }: { width: number; height: number; style?: object }) => (
+  <Svg viewBox={`0 0 ${width} ${height}`} style={{ width, height, ...style }}>
+    <Defs>
+      <LinearGradient id="barGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <Stop offset="0%" stopColor={IARCHE_COLORS.bleuNuit} />
+        <Stop offset="50%" stopColor={IARCHE_COLORS.terracotta} />
+        <Stop offset="100%" stopColor={IARCHE_COLORS.bleuNuit} />
+      </LinearGradient>
+    </Defs>
+    <Rect 
+      width={width} 
+      height={height} 
+      rx={height / 2} 
+      fill="url(#barGradient)" 
+    />
+  </Svg>
+);
+
+// Header bar (full width gradient)
+const HeaderBar = ({ width }: { width: number }) => (
+  <Svg viewBox={`0 0 ${width} 3`} style={{ width: width - 120, height: 3, marginTop: 8 }}>
+    <Defs>
+      <LinearGradient id="headerBarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <Stop offset="0%" stopColor={IARCHE_COLORS.bleuNuit} />
+        <Stop offset="50%" stopColor={IARCHE_COLORS.terracotta} />
+        <Stop offset="100%" stopColor={IARCHE_COLORS.bleuNuit} />
+      </LinearGradient>
+    </Defs>
+    <Rect 
+      width={width} 
+      height={3} 
+      rx={1.5} 
+      fill="url(#headerBarGrad)" 
+    />
+  </Svg>
+);
+
+// Footer separator bar
+const FooterBar = ({ width, isDark }: { width: number; isDark: boolean }) => (
+  <Svg viewBox={`0 0 ${width} 2`} style={{ width: width - 120, height: 2, marginBottom: 12 }}>
+    <Defs>
+      <LinearGradient id="footerBarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <Stop offset="0%" stopColor={isDark ? 'rgba(255,255,255,0.1)' : IARCHE_COLORS.bleuNuit} stopOpacity={isDark ? 0.3 : 0.2} />
+        <Stop offset="50%" stopColor={IARCHE_COLORS.terracotta} stopOpacity={isDark ? 0.5 : 0.6} />
+        <Stop offset="100%" stopColor={isDark ? 'rgba(255,255,255,0.1)' : IARCHE_COLORS.bleuNuit} stopOpacity={isDark ? 0.3 : 0.2} />
+      </LinearGradient>
+    </Defs>
+    <Rect 
+      width={width} 
+      height={2} 
+      rx={1} 
+      fill="url(#footerBarGrad)" 
+    />
+  </Svg>
+);
 
 export const CarouselPDF = ({ slides, format = 'linkedin' }: CarouselPDFProps) => {
   const dimensions = format === 'linkedin' 
@@ -313,6 +368,7 @@ export const CarouselPDF = ({ slides, format = 'linkedin' }: CarouselPDFProps) =
         const isDark = index % 2 === 0;
         const isFirst = index === 0;
         const isLast = index === slides.length - 1;
+        const showSectionNumber = !isFirst && !isLast;
         
         return (
           <Page 
@@ -328,35 +384,47 @@ export const CarouselPDF = ({ slides, format = 'linkedin' }: CarouselPDFProps) =
             
             {/* Main content */}
             <View style={styles.content}>
-              {/* Header */}
+              {/* Header with logo and bar */}
               <View style={styles.header}>
-                <Image 
-                  src={isDark ? ASSETS.logoWhite : ASSETS.logoGradient} 
-                  style={styles.logo} 
-                />
-                <Image src={ASSETS.barSm} style={styles.barSm} />
+                <Text style={[styles.logoText, isDark ? styles.logoTextDark : styles.logoTextLight]}>
+                  IArche
+                </Text>
+                <HeaderBar width={width} />
               </View>
 
               {/* Content area */}
               <View style={styles.mainContent}>
-                {/* Section number indicator (not on first/last slides) */}
-                {!isFirst && !isLast && (
-                  <Text style={[styles.sectionNumber, isDark ? styles.sectionNumberDark : styles.sectionNumberLight]}>
-                    {String(index).padStart(2, '0')}
-                  </Text>
+                {/* Section number + title row */}
+                {showSectionNumber ? (
+                  <View style={styles.sectionRow}>
+                    <Text style={[styles.sectionNumber, isDark ? styles.sectionNumberDark : styles.sectionNumberLight]}>
+                      {String(index).padStart(2, '0')}
+                    </Text>
+                    <View style={{ alignItems: 'flex-start' }}>
+                      {slide.title && (
+                        <Text style={isDark ? styles.titleDark : styles.titleLight}>
+                          {slide.title}
+                        </Text>
+                      )}
+                      <GradientBar width={80} height={4} style={{ marginTop: 8 }} />
+                    </View>
+                  </View>
+                ) : (
+                  <>
+                    {slide.subtitle && (
+                      <Text style={isDark ? styles.subtitleDark : styles.subtitleLight}>
+                        {slide.subtitle}
+                      </Text>
+                    )}
+                    {slide.title && (
+                      <Text style={isDark ? styles.titleDark : styles.titleLight}>
+                        {slide.title}
+                      </Text>
+                    )}
+                    <GradientBar width={96} height={4} style={{ marginTop: 12, marginBottom: 16 }} />
+                  </>
                 )}
                 
-                {slide.subtitle && (
-                  <Text style={isDark ? styles.subtitleDark : styles.subtitleLight}>
-                    {slide.subtitle}
-                  </Text>
-                )}
-                {slide.title && (
-                  <Text style={isDark ? styles.titleDark : styles.titleLight}>
-                    {slide.title}
-                  </Text>
-                )}
-                <Image src={ASSETS.barLg} style={styles.barLg} />
                 {slide.content && (
                   <Text style={isDark ? styles.textDark : styles.textLight}>
                     {slide.content}
@@ -369,21 +437,24 @@ export const CarouselPDF = ({ slides, format = 'linkedin' }: CarouselPDFProps) =
                 )}
               </View>
 
-              {/* Footer */}
-              <View style={[styles.footer, isDark ? styles.footerDark : styles.footerLight]}>
-                <View>
-                  <Text style={isDark ? styles.footerTextDark : styles.footerTextLight}>
-                    iarche.fr
-                  </Text>
-                  {isLast && (
-                    <Text style={isDark ? styles.baselineDark : styles.baselineLight}>
-                      L'IA se construit avec vous
+              {/* Footer with gradient bar separator */}
+              <View>
+                <FooterBar width={width} isDark={isDark} />
+                <View style={styles.footer}>
+                  <View>
+                    <Text style={isDark ? styles.footerTextDark : styles.footerTextLight}>
+                      iarche.fr
                     </Text>
-                  )}
+                    {isLast && (
+                      <Text style={isDark ? styles.baselineDark : styles.baselineLight}>
+                        L'IA se construit avec vous
+                      </Text>
+                    )}
+                  </View>
+                  <Text style={isDark ? styles.footerTextDark : styles.footerTextLight}>
+                    {index + 1}/{slides.length}
+                  </Text>
                 </View>
-                <Text style={isDark ? styles.footerTextDark : styles.footerTextLight}>
-                  {index + 1}/{slides.length}
-                </Text>
               </View>
             </View>
           </Page>

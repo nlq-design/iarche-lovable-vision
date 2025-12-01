@@ -1,4 +1,4 @@
-import { Document, Page, View, Text, Image, StyleSheet, Svg, Line, Path } from '@react-pdf/renderer';
+import { Document, Page, View, Text, StyleSheet, Svg, Line, Path, Rect, Defs, LinearGradient, Stop } from '@react-pdf/renderer';
 import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
 
 interface SlideData {
@@ -16,24 +16,6 @@ interface PresentationPDFProps {
 
 const { width: PAGE_WIDTH, height: PAGE_HEIGHT } = PDF_FORMATS.presentation;
 
-// Get the base URL for public assets
-const getAssetUrl = (path: string) => {
-  if (typeof window !== 'undefined') {
-    return `${window.location.origin}${path}`;
-  }
-  return path;
-};
-
-// Asset paths - use public folder URLs for react-pdf compatibility
-const ASSETS = {
-  logoGradient: getAssetUrl('/assets/logo-iarche-gradient.png'),
-  logoWhite: getAssetUrl('/assets/logo-iarche-white.png'),
-  barSm: getAssetUrl('/assets/bar-sm.png'),
-  barMd: getAssetUrl('/assets/bar-md.png'),
-  barLg: getAssetUrl('/assets/bar-lg.png'),
-  barXl: getAssetUrl('/assets/bar-xl.png'),
-};
-
 const styles = StyleSheet.create({
   pageDark: {
     width: PAGE_WIDTH,
@@ -47,14 +29,7 @@ const styles = StyleSheet.create({
     backgroundColor: IARCHE_COLORS.blancCasse,
     position: 'relative',
   },
-  meshBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-  },
-  archesOverlay: {
+  backgroundLayer: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -72,43 +47,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 50,
-    borderBottomWidth: 1,
-    paddingBottom: 24,
-  },
-  headerDark: {
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-  },
-  headerLight: {
-    borderBottomColor: IARCHE_COLORS.border,
   },
   logoContainer: {
-    flexDirection: 'column',
     alignItems: 'flex-start',
   },
-  logo: {
-    width: 160,
-    height: 64,
-    objectFit: 'contain',
-  },
-  barMd: {
-    width: 80,
-    height: 4,
-    marginTop: 10,
-  },
-  slideNumberContainer: {
-    alignItems: 'flex-end',
-  },
-  slideNumberLarge: {
-    fontSize: 48,
+  logoText: {
+    fontSize: 32,
     fontWeight: 'bold',
     fontFamily: 'Helvetica-Bold',
   },
-  slideNumberDark: {
-    color: IARCHE_COLORS.terracotta,
-    opacity: 0.8,
+  logoTextDark: {
+    color: IARCHE_COLORS.white,
   },
-  slideNumberLight: {
+  logoTextLight: {
+    color: IARCHE_COLORS.bleuNuit,
+  },
+  slideNumber: {
+    fontSize: 24,
     color: IARCHE_COLORS.terracotta,
+    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
   },
   mainContent: {
     flex: 1,
@@ -119,18 +77,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Section with number indicator
-  sectionHeader: {
+  // Section row with number
+  sectionRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 30,
   },
   sectionNumber: {
     fontSize: 96,
     fontWeight: 'bold',
-    opacity: 0.1,
-    marginRight: 24,
-    marginTop: -20,
+    opacity: 0.15,
+    marginRight: 30,
     fontFamily: 'Helvetica-Bold',
   },
   sectionNumberDark: {
@@ -139,126 +96,134 @@ const styles = StyleSheet.create({
   sectionNumberLight: {
     color: IARCHE_COLORS.terracotta,
   },
-  sectionTitleContainer: {
-    flex: 1,
-  },
-  subtitle: {
-    fontSize: 24,
-    textTransform: 'uppercase',
-    letterSpacing: 5,
-    marginBottom: 16,
-    fontFamily: 'Helvetica',
-  },
-  subtitleDark: {
-    color: IARCHE_COLORS.white,
-    opacity: 0.5,
-  },
-  subtitleLight: {
-    color: IARCHE_COLORS.muted,
-  },
-  title: {
-    fontSize: 64,
+  // Dark theme text
+  titleDark: {
+    fontSize: 56,
     fontWeight: 'bold',
+    color: IARCHE_COLORS.white,
     marginBottom: 16,
-    lineHeight: 1.15,
+    lineHeight: 1.2,
     fontFamily: 'Helvetica-Bold',
   },
-  titleDark: {
+  subtitleDark: {
+    fontSize: 20,
     color: IARCHE_COLORS.white,
-  },
-  titleLight: {
-    color: IARCHE_COLORS.foreground,
-  },
-  titleCentered: {
-    textAlign: 'center',
-  },
-  barXl: {
-    width: 128,
-    height: 6,
-    marginBottom: 30,
-  },
-  barLg: {
-    width: 96,
-    height: 4,
-    marginTop: 12,
-    marginBottom: 30,
-  },
-  text: {
-    fontSize: 32,
-    lineHeight: 1.7,
-    maxWidth: 1400,
+    opacity: 0.6,
+    textTransform: 'uppercase',
+    letterSpacing: 4,
+    marginBottom: 16,
     fontFamily: 'Helvetica',
   },
   textDark: {
+    fontSize: 24,
     color: IARCHE_COLORS.white,
     opacity: 0.85,
+    lineHeight: 1.6,
+    fontFamily: 'Helvetica',
+  },
+  // Light theme text
+  titleLight: {
+    fontSize: 56,
+    fontWeight: 'bold',
+    color: IARCHE_COLORS.foreground,
+    marginBottom: 16,
+    lineHeight: 1.2,
+    fontFamily: 'Helvetica-Bold',
+  },
+  subtitleLight: {
+    fontSize: 20,
+    color: IARCHE_COLORS.subtle,
+    textTransform: 'uppercase',
+    letterSpacing: 4,
+    marginBottom: 16,
+    fontFamily: 'Helvetica',
   },
   textLight: {
-    color: IARCHE_COLORS.muted,
+    fontSize: 24,
+    color: IARCHE_COLORS.foreground,
+    opacity: 0.9,
+    lineHeight: 1.6,
+    fontFamily: 'Helvetica',
   },
-  textCentered: {
-    textAlign: 'center',
-  },
-  bulletList: {
+  // Bullet list styles
+  bulletsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     marginTop: 30,
   },
   bulletItem: {
+    width: '48%',
+    marginBottom: 24,
+    paddingRight: 20,
+  },
+  bulletRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 24,
   },
-  bulletDot: {
-    fontSize: 32,
+  bulletDash: {
+    fontSize: 20,
     color: IARCHE_COLORS.terracotta,
-    marginRight: 20,
-    marginTop: -4,
+    marginRight: 12,
+    fontFamily: 'Helvetica-Bold',
   },
   bulletText: {
-    fontSize: 32,
+    fontSize: 20,
     lineHeight: 1.5,
     flex: 1,
     fontFamily: 'Helvetica',
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 20,
-    borderTopWidth: 1,
-  },
-  footerDark: {
-    borderTopColor: 'rgba(255,255,255,0.1)',
-  },
-  footerLight: {
-    borderTopColor: '#E8E4DD',
-  },
-  footerText: {
-    fontSize: 18,
-    letterSpacing: 1,
-    fontFamily: 'Helvetica',
-  },
-  footerTextDark: {
+  bulletTextDark: {
     color: IARCHE_COLORS.white,
-    opacity: 0.4,
+    opacity: 0.9,
   },
-  footerTextLight: {
-    color: IARCHE_COLORS.subtle,
+  bulletTextLight: {
+    color: IARCHE_COLORS.foreground,
   },
-  // CTA specific styles
+  // CTA styles
   ctaText: {
     fontSize: 72,
     fontWeight: 'bold',
     color: IARCHE_COLORS.terracotta,
     textAlign: 'center',
-    marginTop: 20,
     fontFamily: 'Helvetica-Bold',
+  },
+  ctaSubtext: {
+    fontSize: 24,
+    textAlign: 'center',
+    marginTop: 20,
+    fontFamily: 'Helvetica',
+  },
+  ctaSubtextDark: {
+    color: IARCHE_COLORS.white,
+    opacity: 0.7,
+  },
+  ctaSubtextLight: {
+    color: IARCHE_COLORS.subtle,
+  },
+  // Footer
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 20,
+  },
+  footerTextDark: {
+    fontSize: 16,
+    color: IARCHE_COLORS.white,
+    opacity: 0.4,
+    fontFamily: 'Helvetica',
+  },
+  footerTextLight: {
+    fontSize: 16,
+    color: IARCHE_COLORS.subtle,
+    fontFamily: 'Helvetica',
   },
 });
 
 // Mesh background pattern
 const MeshBackground = ({ isDark }: { isDark: boolean }) => {
   const strokeColor = isDark ? '#FFFFFF' : IARCHE_COLORS.bleuNuit;
-  const opacity = isDark ? 0.08 : 0.1; // Increased for visibility
+  const opacity = isDark ? 0.05 : 0.07;
   const spacing = 60;
   const lines = [];
   
@@ -290,7 +255,7 @@ const MeshBackground = ({ isDark }: { isDark: boolean }) => {
   }
   
   return (
-    <Svg style={styles.meshBackground} viewBox={`0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}`}>
+    <Svg style={styles.backgroundLayer} viewBox={`0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}`}>
       {lines}
     </Svg>
   );
@@ -299,14 +264,21 @@ const MeshBackground = ({ isDark }: { isDark: boolean }) => {
 // Corner arches decoration
 const ArchesDecoration = ({ isDark }: { isDark: boolean }) => {
   const strokeColor = isDark ? '#FFFFFF' : IARCHE_COLORS.terracotta;
-  const opacity = isDark ? 0.2 : 0.35; // Increased for visibility
-  const cornerSize = 140;
+  const opacity = isDark ? 0.18 : 0.3;
+  const cornerSize = 120;
   
   return (
-    <Svg style={styles.archesOverlay} viewBox={`0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}`}>
+    <Svg style={styles.backgroundLayer} viewBox={`0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}`}>
       {/* Top-right corner */}
       <Path 
-        d={`M${PAGE_WIDTH},0 L${PAGE_WIDTH},${cornerSize} M${PAGE_WIDTH - cornerSize},0 L${PAGE_WIDTH},0`}
+        d={`M${PAGE_WIDTH},0 L${PAGE_WIDTH},${cornerSize}`}
+        fill="none" 
+        stroke={strokeColor} 
+        strokeWidth={3} 
+        opacity={opacity}
+      />
+      <Path 
+        d={`M${PAGE_WIDTH - cornerSize},0 L${PAGE_WIDTH},0`}
         fill="none" 
         stroke={strokeColor} 
         strokeWidth={3} 
@@ -314,7 +286,14 @@ const ArchesDecoration = ({ isDark }: { isDark: boolean }) => {
       />
       {/* Bottom-left corner */}
       <Path 
-        d={`M0,${PAGE_HEIGHT} L0,${PAGE_HEIGHT - cornerSize} M${cornerSize},${PAGE_HEIGHT} L0,${PAGE_HEIGHT}`}
+        d={`M0,${PAGE_HEIGHT} L0,${PAGE_HEIGHT - cornerSize}`}
+        fill="none" 
+        stroke={strokeColor} 
+        strokeWidth={3} 
+        opacity={opacity}
+      />
+      <Path 
+        d={`M${cornerSize},${PAGE_HEIGHT} L0,${PAGE_HEIGHT}`}
         fill="none" 
         stroke={strokeColor} 
         strokeWidth={3} 
@@ -322,131 +301,185 @@ const ArchesDecoration = ({ isDark }: { isDark: boolean }) => {
       />
       {/* Secondary arches */}
       <Path 
-        d={`M${PAGE_WIDTH},30 L${PAGE_WIDTH},${cornerSize - 30} M${PAGE_WIDTH - cornerSize + 30},30 L${PAGE_WIDTH - 30},30`}
+        d={`M${PAGE_WIDTH},20 L${PAGE_WIDTH},${cornerSize - 30}`}
         fill="none" 
         stroke={strokeColor} 
-        strokeWidth={1.5} 
+        strokeWidth={2} 
         opacity={opacity * 0.5}
       />
       <Path 
-        d={`M30,${PAGE_HEIGHT - 30} L30,${PAGE_HEIGHT - cornerSize + 30} M${cornerSize - 30},${PAGE_HEIGHT - 30} L30,${PAGE_HEIGHT - 30}`}
+        d={`M${PAGE_WIDTH - cornerSize + 30},20 L${PAGE_WIDTH - 20},20`}
         fill="none" 
         stroke={strokeColor} 
-        strokeWidth={1.5} 
+        strokeWidth={2} 
         opacity={opacity * 0.5}
       />
     </Svg>
   );
 };
 
+// Gradient bar component
+const GradientBar = ({ width, height, style }: { width: number; height: number; style?: object }) => (
+  <Svg viewBox={`0 0 ${width} ${height}`} style={{ width, height, ...style }}>
+    <Defs>
+      <LinearGradient id="barGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <Stop offset="0%" stopColor={IARCHE_COLORS.bleuNuit} />
+        <Stop offset="50%" stopColor={IARCHE_COLORS.terracotta} />
+        <Stop offset="100%" stopColor={IARCHE_COLORS.bleuNuit} />
+      </LinearGradient>
+    </Defs>
+    <Rect width={width} height={height} rx={height / 2} fill="url(#barGrad)" />
+  </Svg>
+);
+
+// Header bar
+const HeaderBar = () => (
+  <Svg viewBox="0 0 300 3" style={{ width: 300, height: 3, marginTop: 10 }}>
+    <Defs>
+      <LinearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <Stop offset="0%" stopColor={IARCHE_COLORS.bleuNuit} />
+        <Stop offset="50%" stopColor={IARCHE_COLORS.terracotta} />
+        <Stop offset="100%" stopColor={IARCHE_COLORS.bleuNuit} />
+      </LinearGradient>
+    </Defs>
+    <Rect width={300} height={3} rx={1.5} fill="url(#headerGrad)" />
+  </Svg>
+);
+
+// Footer bar
+const FooterBar = ({ isDark }: { isDark: boolean }) => (
+  <Svg viewBox="0 0 1760 2" style={{ width: 1760, height: 2, marginBottom: 16 }}>
+    <Defs>
+      <LinearGradient id="footerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <Stop offset="0%" stopColor={isDark ? 'rgba(255,255,255,0.1)' : IARCHE_COLORS.bleuNuit} stopOpacity={0.3} />
+        <Stop offset="50%" stopColor={IARCHE_COLORS.terracotta} stopOpacity={0.5} />
+        <Stop offset="100%" stopColor={isDark ? 'rgba(255,255,255,0.1)' : IARCHE_COLORS.bleuNuit} stopOpacity={0.3} />
+      </LinearGradient>
+    </Defs>
+    <Rect width={1760} height={2} rx={1} fill="url(#footerGrad)" />
+  </Svg>
+);
+
 export const PresentationPDF = ({ slides }: PresentationPDFProps) => {
   return (
     <Document>
       {slides.map((slide, index) => {
-        const isDark = slide.type === 'title' || slide.type === 'cta';
+        const isDark = slide.type === 'title' || slide.type === 'cta' || index % 2 === 0;
         const isCentered = slide.type === 'title' || slide.type === 'cta';
         const showSectionNumber = slide.type === 'content' || slide.type === 'bullets';
-
+        
         return (
           <Page 
             key={slide.id} 
             size={[PAGE_WIDTH, PAGE_HEIGHT]} 
             style={isDark ? styles.pageDark : styles.pageLight}
           >
-            {/* Mesh background */}
+            {/* Background elements */}
             <MeshBackground isDark={isDark} />
-            
-            {/* Corner arches */}
             <ArchesDecoration isDark={isDark} />
 
             {/* Main content */}
             <View style={styles.content}>
               {/* Header */}
-              <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
+              <View style={styles.header}>
                 <View style={styles.logoContainer}>
-                  <Image 
-                    src={isDark ? ASSETS.logoWhite : ASSETS.logoGradient} 
-                    style={styles.logo} 
-                  />
-                  <Image src={ASSETS.barMd} style={styles.barMd} />
-                </View>
-                <View style={styles.slideNumberContainer}>
-                  <Text style={[styles.slideNumberLarge, isDark ? styles.slideNumberDark : styles.slideNumberLight]}>
-                    {String(index + 1).padStart(2, '0')}
+                  <Text style={[styles.logoText, isDark ? styles.logoTextDark : styles.logoTextLight]}>
+                    IArche
                   </Text>
+                  <HeaderBar />
                 </View>
+                <Text style={styles.slideNumber}>
+                  {String(index + 1).padStart(2, '0')}
+                </Text>
               </View>
 
-              {/* Main content */}
+              {/* Content area */}
               <View style={isCentered ? styles.mainContentCentered : styles.mainContent}>
-                {showSectionNumber ? (
-                  // Content/bullets slides with section number
-                  <View style={styles.sectionHeader}>
+                {/* Section number for content slides */}
+                {showSectionNumber && (
+                  <View style={styles.sectionRow}>
                     <Text style={[styles.sectionNumber, isDark ? styles.sectionNumberDark : styles.sectionNumberLight]}>
                       {String(index).padStart(2, '0')}
                     </Text>
-                    <View style={styles.sectionTitleContainer}>
-                      {slide.subtitle && (
-                        <Text style={[styles.subtitle, isDark ? styles.subtitleDark : styles.subtitleLight]}>
-                          {slide.subtitle}
+                    <View>
+                      {slide.title && (
+                        <Text style={isDark ? styles.titleDark : styles.titleLight}>
+                          {slide.title}
                         </Text>
                       )}
-                      <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}>
-                        {slide.title}
-                      </Text>
-                      <Image src={ASSETS.barLg} style={styles.barLg} />
+                      <GradientBar width={100} height={5} style={{ marginTop: 12 }} />
                     </View>
                   </View>
-                ) : (
-                  // Title/CTA slides centered
+                )}
+                
+                {/* Title slide content */}
+                {slide.type === 'title' && (
                   <>
                     {slide.subtitle && (
-                      <Text style={[styles.subtitle, isDark ? styles.subtitleDark : styles.subtitleLight]}>
+                      <Text style={isDark ? styles.subtitleDark : styles.subtitleLight}>
                         {slide.subtitle}
                       </Text>
                     )}
-                    <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight, isCentered && styles.titleCentered]}>
+                    <Text style={isDark ? styles.titleDark : styles.titleLight}>
                       {slide.title}
                     </Text>
-                    <Image src={ASSETS.barXl} style={styles.barXl} />
+                    <GradientBar width={128} height={6} style={{ marginTop: 16 }} />
+                    {slide.content && (
+                      <Text style={[isDark ? styles.textDark : styles.textLight, { marginTop: 24, textAlign: 'center' }]}>
+                        {slide.content}
+                      </Text>
+                    )}
                   </>
                 )}
-
-                {slide.content && (
-                  <Text style={[styles.text, isDark ? styles.textDark : styles.textLight, isCentered && styles.textCentered]}>
+                
+                {/* Content text */}
+                {(slide.type === 'content') && slide.content && (
+                  <Text style={[isDark ? styles.textDark : styles.textLight, { marginTop: 20 }]}>
                     {slide.content}
                   </Text>
                 )}
-
-                {slide.bullets && slide.bullets.length > 0 && (
-                  <View style={styles.bulletList}>
+                
+                {/* Bullets list in 2-column grid */}
+                {slide.type === 'bullets' && slide.bullets && slide.bullets.length > 0 && (
+                  <View style={styles.bulletsContainer}>
                     {slide.bullets.map((bullet, idx) => (
                       <View key={idx} style={styles.bulletItem}>
-                        <Text style={styles.bulletDot}>●</Text>
-                        <Text style={[styles.bulletText, isDark ? styles.textDark : styles.textLight]}>
-                          {bullet}
-                        </Text>
+                        <View style={styles.bulletRow}>
+                          <Text style={styles.bulletDash}>—</Text>
+                          <Text style={[styles.bulletText, isDark ? styles.bulletTextDark : styles.bulletTextLight]}>
+                            {bullet}
+                          </Text>
+                        </View>
                       </View>
                     ))}
                   </View>
                 )}
-
-                {/* CTA highlight */}
+                
+                {/* CTA slide */}
                 {slide.type === 'cta' && (
-                  <Text style={styles.ctaText}>
-                    Parlons de votre projet →
-                  </Text>
+                  <>
+                    <Text style={styles.ctaText}>{slide.title}</Text>
+                    <GradientBar width={160} height={6} style={{ marginTop: 20, marginBottom: 20 }} />
+                    {slide.content && (
+                      <Text style={[styles.ctaSubtext, isDark ? styles.ctaSubtextDark : styles.ctaSubtextLight]}>
+                        {slide.content}
+                      </Text>
+                    )}
+                  </>
                 )}
               </View>
 
               {/* Footer */}
-              <View style={[styles.footer, isDark ? styles.footerDark : styles.footerLight]}>
-                <Text style={[styles.footerText, isDark ? styles.footerTextDark : styles.footerTextLight]}>
-                  {slide.type === 'cta' ? "L'IA se construit avec vous" : 'IArche · Agence IA'}
-                </Text>
-                <Text style={[styles.footerText, isDark ? styles.footerTextDark : styles.footerTextLight]}>
-                  {index + 1}/{slides.length}
-                </Text>
+              <View>
+                <FooterBar isDark={isDark} />
+                <View style={styles.footer}>
+                  <Text style={isDark ? styles.footerTextDark : styles.footerTextLight}>
+                    IArche · L'IA se construit avec vous
+                  </Text>
+                  <Text style={isDark ? styles.footerTextDark : styles.footerTextLight}>
+                    {index + 1}/{slides.length}
+                  </Text>
+                </View>
               </View>
             </View>
           </Page>
