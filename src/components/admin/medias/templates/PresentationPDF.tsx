@@ -1,12 +1,5 @@
-import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
-import { 
-  PDFImageLogo,
-  PDFImageBarSized,
-  PDFMeshBackground, 
-  PDFArches,
-  IARCHE_COLORS,
-  PDF_FORMATS,
-} from '../pdf';
+import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer';
+import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
 
 interface SlideData {
   id: number;
@@ -23,6 +16,16 @@ interface PresentationPDFProps {
 
 const { width: PAGE_WIDTH, height: PAGE_HEIGHT } = PDF_FORMATS.presentation;
 
+// Asset paths in /public/assets/
+const ASSETS = {
+  logoGradient: '/assets/logo-iarche-gradient.png',
+  logoWhite: '/assets/logo-iarche-white.png',
+  barSm: '/assets/bar-sm.png',
+  barMd: '/assets/bar-md.png',
+  barLg: '/assets/bar-lg.png',
+  barXl: '/assets/bar-xl.png',
+};
+
 const styles = StyleSheet.create({
   // Dark page (title, cta)
   pageDark: {
@@ -30,6 +33,7 @@ const styles = StyleSheet.create({
     height: PAGE_HEIGHT,
     backgroundColor: IARCHE_COLORS.bleuNuit,
     position: 'relative',
+    padding: 100,
   },
   // Light page (content, bullets)
   pageLight: {
@@ -37,15 +41,7 @@ const styles = StyleSheet.create({
     height: PAGE_HEIGHT,
     backgroundColor: IARCHE_COLORS.blancCasse,
     position: 'relative',
-  },
-  // Content container
-  content: {
-    flex: 1,
     padding: 100,
-    display: 'flex',
-    flexDirection: 'column',
-    position: 'relative',
-    zIndex: 10,
   },
   // Header bar
   header: {
@@ -53,20 +49,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 60,
+    borderBottomWidth: 1,
+    paddingBottom: 30,
   },
   headerDark: {
-    borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.1)',
-    paddingBottom: 30,
   },
   headerLight: {
-    borderBottomWidth: 1,
     borderBottomColor: IARCHE_COLORS.border,
-    paddingBottom: 30,
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  logo: {
+    width: 180,
+    height: 72,
+    objectFit: 'contain',
+  },
+  barXl: {
+    width: 128,
+    height: 6,
+  },
+  barLg: {
+    width: 96,
+    height: 4,
+    marginTop: 16,
   },
   // Main content
   mainContent: {
@@ -152,6 +160,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E8E4DD',
   },
   footerText: {
     fontSize: 20,
@@ -181,77 +191,60 @@ export const PresentationPDF = ({ slides }: PresentationPDFProps) => {
 
         return (
           <Page key={slide.id} size={[PAGE_WIDTH, PAGE_HEIGHT]} style={pageStyle}>
-            {/* Mesh background pattern */}
-            <PDFMeshBackground 
-              pageWidth={PAGE_WIDTH} 
-              pageHeight={PAGE_HEIGHT}
-              opacity={isDark ? 0.02 : 0.03}
-            />
-            
-            {/* Decorative arch lines */}
-            <PDFArches 
-              position="both"
-              pageWidth={PAGE_WIDTH}
-              pageHeight={PAGE_HEIGHT}
-              opacity={0.3}
-            />
-
-            {/* Content */}
-            <View style={styles.content}>
-              {/* Header with PNG logo */}
-              <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
-                <View style={styles.logoContainer}>
-                  <PDFImageLogo width={180} />
-                </View>
-                <PDFImageBarSized size="xl" />
+            {/* Header with PNG logo */}
+            <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
+              <View style={styles.logoContainer}>
+                <Image 
+                  src={isDark ? ASSETS.logoWhite : ASSETS.logoGradient} 
+                  style={styles.logo} 
+                />
               </View>
+              <Image src={ASSETS.barXl} style={styles.barXl} />
+            </View>
 
-              {/* Main content */}
-              <View style={isDark ? styles.mainContentCentered : styles.mainContent}>
-                {slide.subtitle && (
-                  <Text style={[styles.subtitle, isDark ? styles.subtitleDark : styles.subtitleLight]}>
-                    {slide.subtitle}
-                  </Text>
-                )}
-                
-                <View style={isDark ? styles.titleContainerCentered : styles.titleContainer}>
-                  <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}>
-                    {slide.title}
-                  </Text>
-                  <View style={{ marginTop: 16 }}>
-                    <PDFImageBarSized size="lg" />
-                  </View>
-                </View>
-
-                {slide.content && (
-                  <Text style={[styles.text, isDark ? styles.textDark : styles.textLight]}>
-                    {slide.content}
-                  </Text>
-                )}
-
-                {slide.bullets && slide.bullets.length > 0 && (
-                  <View style={styles.bulletList}>
-                    {slide.bullets.map((bullet, idx) => (
-                      <View key={idx} style={styles.bulletItem}>
-                        <Text style={styles.bulletDot}>●</Text>
-                        <Text style={[styles.bulletText, isDark ? styles.textDark : styles.textLight]}>
-                          {bullet}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-
-              {/* Footer */}
-              <View style={styles.footer}>
-                <Text style={[styles.footerText, isDark ? styles.footerTextDark : styles.footerTextLight]}>
-                  iarche.fr
+            {/* Main content */}
+            <View style={isDark ? styles.mainContentCentered : styles.mainContent}>
+              {slide.subtitle && (
+                <Text style={[styles.subtitle, isDark ? styles.subtitleDark : styles.subtitleLight]}>
+                  {slide.subtitle}
                 </Text>
-                <Text style={[styles.slideNumber, isDark ? styles.footerTextDark : styles.footerTextLight]}>
-                  {index + 1}/{slides.length}
+              )}
+              
+              <View style={isDark ? styles.titleContainerCentered : styles.titleContainer}>
+                <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}>
+                  {slide.title}
                 </Text>
+                <Image src={ASSETS.barLg} style={styles.barLg} />
               </View>
+
+              {slide.content && (
+                <Text style={[styles.text, isDark ? styles.textDark : styles.textLight]}>
+                  {slide.content}
+                </Text>
+              )}
+
+              {slide.bullets && slide.bullets.length > 0 && (
+                <View style={styles.bulletList}>
+                  {slide.bullets.map((bullet, idx) => (
+                    <View key={idx} style={styles.bulletItem}>
+                      <Text style={styles.bulletDot}>●</Text>
+                      <Text style={[styles.bulletText, isDark ? styles.textDark : styles.textLight]}>
+                        {bullet}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            {/* Footer */}
+            <View style={styles.footer}>
+              <Text style={[styles.footerText, isDark ? styles.footerTextDark : styles.footerTextLight]}>
+                IArche · L'IA se construit avec vous
+              </Text>
+              <Text style={[styles.slideNumber, isDark ? styles.footerTextDark : styles.footerTextLight]}>
+                {index + 1}/{slides.length}
+              </Text>
             </View>
           </Page>
         );

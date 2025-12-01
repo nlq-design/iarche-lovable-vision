@@ -1,13 +1,5 @@
-import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
-import { 
-  PDFImageLogo,
-  PDFImageBarSized,
-  PDFMeshBackground, 
-  PDFArches,
-  IARCHE_COLORS,
-  TYPOGRAPHY,
-  PDF_FORMATS,
-} from '../pdf';
+import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer';
+import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
 
 interface SlideData {
   id: number;
@@ -23,135 +15,144 @@ interface CarouselPDFProps {
 }
 
 const styles = StyleSheet.create({
-  page: {
-    position: 'relative',
-  },
+  // Dark theme
   pageDark: {
-    backgroundColor: IARCHE_COLORS.bleuNuit,
-  },
-  pageLight: {
-    backgroundColor: IARCHE_COLORS.blancCasse,
-  },
-  content: {
-    flex: 1,
-    padding: 80,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
     position: 'relative',
-    zIndex: 10,
+    backgroundColor: IARCHE_COLORS.bleuNuit,
+    padding: 60,
+  },
+  // Light theme
+  pageLight: {
+    position: 'relative',
+    backgroundColor: IARCHE_COLORS.blancCasse,
+    padding: 60,
   },
   header: {
     alignItems: 'center',
+    marginBottom: 40,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 12,
+  logo: {
+    width: 140,
+    height: 56,
+    objectFit: 'contain',
   },
-  mainContent: {
+  barSm: {
+    width: 48,
+    height: 2,
+    marginTop: 12,
+  },
+  content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 60,
+    paddingHorizontal: 40,
   },
-  titleContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  // Dark theme text styles
+  // Dark theme text
   subtitleDark: {
-    fontSize: 22,
+    fontSize: 20,
     color: IARCHE_COLORS.white,
     opacity: 0.6,
     textTransform: 'uppercase',
     letterSpacing: 4,
-    marginBottom: 20,
+    marginBottom: 16,
     fontFamily: 'Helvetica',
   },
   titleDark: {
-    fontSize: 64,
+    fontSize: 48,
     fontWeight: 'bold',
     color: IARCHE_COLORS.white,
     textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: 1.15,
+    marginBottom: 12,
+    lineHeight: 1.2,
     fontFamily: 'Helvetica-Bold',
   },
   textDark: {
-    fontSize: 28,
+    fontSize: 24,
     color: IARCHE_COLORS.white,
     opacity: 0.85,
     textAlign: 'center',
     lineHeight: 1.6,
-    maxWidth: 900,
     fontFamily: 'Helvetica',
   },
   highlightDark: {
-    fontSize: 80,
+    fontSize: 64,
     fontWeight: 'bold',
     color: IARCHE_COLORS.terracotta,
-    marginTop: 40,
+    marginTop: 32,
     fontFamily: 'Helvetica-Bold',
   },
-  // Light theme text styles
+  // Light theme text
   subtitleLight: {
-    fontSize: 22,
+    fontSize: 20,
     color: IARCHE_COLORS.subtle,
     textTransform: 'uppercase',
     letterSpacing: 4,
-    marginBottom: 20,
+    marginBottom: 16,
     fontFamily: 'Helvetica',
   },
   titleLight: {
-    fontSize: 64,
+    fontSize: 48,
     fontWeight: 'bold',
     color: IARCHE_COLORS.foreground,
     textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: 1.15,
+    marginBottom: 12,
+    lineHeight: 1.2,
     fontFamily: 'Helvetica-Bold',
   },
   textLight: {
-    fontSize: 28,
+    fontSize: 24,
     color: IARCHE_COLORS.foreground,
     textAlign: 'center',
     lineHeight: 1.6,
-    maxWidth: 900,
     fontFamily: 'Helvetica',
   },
   highlightLight: {
-    fontSize: 80,
+    fontSize: 64,
     fontWeight: 'bold',
     color: IARCHE_COLORS.terracotta,
-    marginTop: 40,
+    marginTop: 32,
     fontFamily: 'Helvetica-Bold',
   },
+  barLg: {
+    width: 96,
+    height: 4,
+    marginTop: 16,
+    marginBottom: 24,
+  },
   footer: {
+    position: 'absolute',
+    bottom: 40,
+    left: 60,
+    right: 60,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E8E4DD',
+    paddingTop: 16,
   },
   footerTextDark: {
-    fontSize: 18,
+    fontSize: 16,
     color: IARCHE_COLORS.white,
-    opacity: 0.4,
-    letterSpacing: 2,
+    opacity: 0.5,
     fontFamily: 'Helvetica',
   },
   footerTextLight: {
-    fontSize: 18,
+    fontSize: 16,
     color: IARCHE_COLORS.subtle,
-    letterSpacing: 2,
-    fontFamily: 'Helvetica',
-  },
-  slideNumber: {
-    fontSize: 14,
-    color: IARCHE_COLORS.subtle,
-    position: 'absolute',
-    bottom: 40,
-    right: 60,
     fontFamily: 'Helvetica',
   },
 });
+
+// Asset paths in /public/assets/
+const ASSETS = {
+  logoGradient: '/assets/logo-iarche-gradient.png',
+  logoWhite: '/assets/logo-iarche-white.png',
+  barSm: '/assets/bar-sm.png',
+  barMd: '/assets/bar-md.png',
+  barLg: '/assets/bar-lg.png',
+  barXl: '/assets/bar-xl.png',
+};
 
 export const CarouselPDF = ({ slides, format = 'linkedin' }: CarouselPDFProps) => {
   const dimensions = format === 'linkedin' 
@@ -161,76 +162,54 @@ export const CarouselPDF = ({ slides, format = 'linkedin' }: CarouselPDFProps) =
   return (
     <Document>
       {slides.map((slide, index) => {
-        // Alternate between dark and light themes
         const isDark = index % 2 === 0;
         
         return (
           <Page 
             key={slide.id} 
             size={[dimensions.width, dimensions.height]} 
-            style={[styles.page, isDark ? styles.pageDark : styles.pageLight]}
+            style={isDark ? styles.pageDark : styles.pageLight}
           >
-            {/* Mesh background pattern */}
-            <PDFMeshBackground 
-              pageWidth={dimensions.width} 
-              pageHeight={dimensions.height}
-              opacity={isDark ? 0.03 : 0.05}
-            />
-            
-            {/* Decorative arch lines */}
-            <PDFArches 
-              position="both"
-              pageWidth={dimensions.width}
-              pageHeight={dimensions.height}
-              opacity={0.3}
-            />
-            
-            {/* Main content */}
+            {/* Header */}
+            <View style={styles.header}>
+              <Image 
+                src={isDark ? ASSETS.logoWhite : ASSETS.logoGradient} 
+                style={styles.logo} 
+              />
+              <Image src={ASSETS.barSm} style={styles.barSm} />
+            </View>
+
+            {/* Content */}
             <View style={styles.content}>
-              {/* Header with PNG logo */}
-              <View style={styles.header}>
-                <View style={styles.logoContainer}>
-                  <PDFImageLogo width={180} />
-                </View>
-                <PDFImageBarSized size="sm" />
-              </View>
-
-              {/* Main content area */}
-              <View style={styles.mainContent}>
-                {slide.subtitle && (
-                  <Text style={isDark ? styles.subtitleDark : styles.subtitleLight}>
-                    {slide.subtitle}
-                  </Text>
-                )}
-                {slide.title && (
-                  <View style={styles.titleContainer}>
-                    <Text style={isDark ? styles.titleDark : styles.titleLight}>
-                      {slide.title}
-                    </Text>
-                    <PDFImageBarSized size="lg" />
-                  </View>
-                )}
-                {slide.content && (
-                  <Text style={isDark ? styles.textDark : styles.textLight}>
-                    {slide.content}
-                  </Text>
-                )}
-                {slide.highlight && (
-                  <Text style={isDark ? styles.highlightDark : styles.highlightLight}>
-                    {slide.highlight}
-                  </Text>
-                )}
-              </View>
-
-              {/* Footer */}
-              <View style={styles.footer}>
-                <Text style={isDark ? styles.footerTextDark : styles.footerTextLight}>
-                  iarche.fr
+              {slide.subtitle && (
+                <Text style={isDark ? styles.subtitleDark : styles.subtitleLight}>
+                  {slide.subtitle}
                 </Text>
-              </View>
-              
-              {/* Slide number */}
-              <Text style={styles.slideNumber}>
+              )}
+              {slide.title && (
+                <Text style={isDark ? styles.titleDark : styles.titleLight}>
+                  {slide.title}
+                </Text>
+              )}
+              <Image src={ASSETS.barLg} style={styles.barLg} />
+              {slide.content && (
+                <Text style={isDark ? styles.textDark : styles.textLight}>
+                  {slide.content}
+                </Text>
+              )}
+              {slide.highlight && (
+                <Text style={isDark ? styles.highlightDark : styles.highlightLight}>
+                  {slide.highlight}
+                </Text>
+              )}
+            </View>
+
+            {/* Footer */}
+            <View style={styles.footer}>
+              <Text style={isDark ? styles.footerTextDark : styles.footerTextLight}>
+                iarche.fr
+              </Text>
+              <Text style={isDark ? styles.footerTextDark : styles.footerTextLight}>
                 {index + 1}/{slides.length}
               </Text>
             </View>
