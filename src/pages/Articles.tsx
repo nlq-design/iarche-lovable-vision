@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { NavLink } from '@/components/NavLink';
 import { Loader2, Calendar } from 'lucide-react';
 import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
+import GradientTitle from '@/components/ui/GradientTitle';
 import { usePagination } from '@/hooks/usePagination';
 import {
   Pagination,
@@ -170,10 +171,9 @@ const Articles = () => {
         <section className="max-w-6xl mx-auto px-6 py-4">
           {/* En-tête dynamique - Style Timeline */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
+            <GradientTitle size="lg" className="mb-6 animate-fadeIn [animation-delay:0.1s]">
               Articles
-            </h1>
-            <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary animate-fadeIn [animation-delay:0.15s]"></div>
+            </GradientTitle>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.3s]">
               Veille tech, cas d'usage et réglementation IA
             </p>
