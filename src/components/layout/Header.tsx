@@ -33,7 +33,7 @@ const Header = () => {
             className="flex flex-col items-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded"
           >
             <span className="text-3xl font-semibold hero-gradient-text">IArche</span>
-            <div className="w-24 h-1 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 mt-1"></div>
+            <div className="w-16 h-0.5 rounded-full bg-gradient-to-r from-primary via-accent to-primary mt-1"></div>
           </button>
 
           {/* Navigation Desktop */}
