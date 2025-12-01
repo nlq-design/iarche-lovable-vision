@@ -1,4 +1,13 @@
-import { Document, Page, View, Text, StyleSheet, Svg, Defs, LinearGradient, Stop, Line, Rect, Path } from '@react-pdf/renderer';
+import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
+import { 
+  PDFLogoText, 
+  PDFGradientBar, 
+  PDFMeshBackground, 
+  PDFArches,
+  IARCHE_COLORS,
+  TYPOGRAPHY,
+  PDF_FORMATS,
+} from '../pdf';
 
 interface SlideData {
   id: number;
@@ -13,51 +22,22 @@ interface PresentationPDFProps {
   slides: SlideData[];
 }
 
-// IArche brand colors (from BrandBook V2)
-const colors = {
-  primary: '#1A2B4A',
-  primaryLight: '#233554',
-  accent: '#D15A3E',
-  accentLight: '#c96442',
-  background: '#FAF9F7',
-  foreground: '#2D2D2D',
-  secondary: '#F5F3EF',
-  border: '#E8E4DD',
-  textSubtle: '#666666',
-  textMuted: '#6B7280',
-  white: '#FFFFFF',
-};
+const { width: PAGE_WIDTH, height: PAGE_HEIGHT } = PDF_FORMATS.presentation;
 
 const styles = StyleSheet.create({
   // Dark page (title, cta)
   pageDark: {
-    width: 1920,
-    height: 1080,
-    backgroundColor: colors.primary,
+    width: PAGE_WIDTH,
+    height: PAGE_HEIGHT,
+    backgroundColor: IARCHE_COLORS.bleuNuit,
     position: 'relative',
   },
   // Light page (content, bullets)
   pageLight: {
-    width: 1920,
-    height: 1080,
-    backgroundColor: colors.background,
+    width: PAGE_WIDTH,
+    height: PAGE_HEIGHT,
+    backgroundColor: IARCHE_COLORS.blancCasse,
     position: 'relative',
-  },
-  // Grid overlay
-  gridOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-  },
-  // SVG lines decoration
-  svgDecoration: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
   },
   // Content container
   content: {
@@ -82,16 +62,12 @@ const styles = StyleSheet.create({
   },
   headerLight: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: IARCHE_COLORS.border,
     paddingBottom: 30,
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  decorativeLineHeader: {
-    width: 160,
-    height: 4,
   },
   // Main content
   mainContent: {
@@ -108,40 +84,48 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 5,
     marginBottom: 24,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Manrope',
+    fontWeight: 500,
   },
   subtitleDark: {
-    color: colors.white,
+    color: IARCHE_COLORS.white,
     opacity: 0.6,
   },
   subtitleLight: {
-    color: colors.textMuted,
+    color: IARCHE_COLORS.muted,
   },
   title: {
     fontSize: 72,
     fontWeight: 'bold',
     marginBottom: 40,
     lineHeight: 1.15,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Manrope',
   },
   titleDark: {
-    color: colors.white,
+    color: IARCHE_COLORS.white,
   },
   titleLight: {
-    color: colors.foreground,
+    color: IARCHE_COLORS.foreground,
+  },
+  titleContainer: {
+    alignItems: 'flex-start',
+  },
+  titleContainerCentered: {
+    alignItems: 'center',
   },
   text: {
     fontSize: 36,
     lineHeight: 1.6,
     maxWidth: 1400,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Manrope',
+    marginTop: 24,
   },
   textDark: {
-    color: colors.white,
+    color: IARCHE_COLORS.white,
     opacity: 0.85,
   },
   textLight: {
-    color: colors.textMuted,
+    color: IARCHE_COLORS.muted,
   },
   // Bullets
   bulletList: {
@@ -154,7 +138,7 @@ const styles = StyleSheet.create({
   },
   bulletDot: {
     fontSize: 36,
-    color: colors.accent,
+    color: IARCHE_COLORS.terracotta,
     marginRight: 24,
     marginTop: -6,
   },
@@ -162,163 +146,66 @@ const styles = StyleSheet.create({
     fontSize: 36,
     lineHeight: 1.4,
     flex: 1,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Manrope',
   },
   // Footer
   footer: {
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingTop: 20,
   },
   footerText: {
     fontSize: 20,
     letterSpacing: 2,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Manrope',
   },
   footerTextDark: {
-    color: colors.white,
+    color: IARCHE_COLORS.white,
     opacity: 0.4,
   },
   footerTextLight: {
-    color: colors.textSubtle,
+    color: IARCHE_COLORS.subtle,
     opacity: 0.6,
   },
+  slideNumber: {
+    ...TYPOGRAPHY.caption,
+    fontSize: 18,
+  },
 });
-
-// Grid pattern for light pages
-const GridPatternLight = () => (
-  <Svg viewBox="0 0 1920 1080" style={[styles.gridOverlay, { opacity: 0.03 }]}>
-    {Array.from({ length: 50 }).map((_, i) => (
-      <Line
-        key={`l1-${i}`}
-        x1={i * 60}
-        y1={0}
-        x2={i * 60 + 1080}
-        y2={1080}
-        stroke={colors.border}
-        strokeWidth={1}
-      />
-    ))}
-    {Array.from({ length: 50 }).map((_, i) => (
-      <Line
-        key={`l2-${i}`}
-        x1={1920 - i * 60}
-        y1={0}
-        x2={1920 - i * 60 - 1080}
-        y2={1080}
-        stroke={colors.border}
-        strokeWidth={1}
-      />
-    ))}
-  </Svg>
-);
-
-// Grid pattern for dark pages
-const GridPatternDark = () => (
-  <Svg viewBox="0 0 1920 1080" style={[styles.gridOverlay, { opacity: 0.02 }]}>
-    {Array.from({ length: 50 }).map((_, i) => (
-      <Line
-        key={`d1-${i}`}
-        x1={i * 60}
-        y1={0}
-        x2={i * 60 + 1080}
-        y2={1080}
-        stroke={colors.white}
-        strokeWidth={1}
-      />
-    ))}
-    {Array.from({ length: 50 }).map((_, i) => (
-      <Line
-        key={`d2-${i}`}
-        x1={1920 - i * 60}
-        y1={0}
-        x2={1920 - i * 60 - 1080}
-        y2={1080}
-        stroke={colors.white}
-        strokeWidth={1}
-      />
-    ))}
-  </Svg>
-);
-
-// SVG Arch lines
-const ArchLines = ({ isDark }: { isDark: boolean }) => (
-  <Svg viewBox="0 0 1920 1080" style={styles.svgDecoration}>
-    <Defs>
-      <LinearGradient id="archG1" x1="0%" y1="0%" x2="100%" y2="100%">
-        <Stop offset="0%" stopColor={isDark ? colors.primaryLight : colors.primary} stopOpacity={0.5} />
-        <Stop offset="100%" stopColor={colors.accent} stopOpacity={0.5} />
-      </LinearGradient>
-      <LinearGradient id="archG2" x1="100%" y1="0%" x2="0%" y2="100%">
-        <Stop offset="0%" stopColor={colors.accent} stopOpacity={0.5} />
-        <Stop offset="100%" stopColor={isDark ? colors.primaryLight : colors.primary} stopOpacity={0.5} />
-      </LinearGradient>
-    </Defs>
-    {/* Top-right arch */}
-    <Path
-      d="M 1920 80 L 1500 80 Q 1490 80 1490 90 L 1490 300 Q 1490 310 1480 310 L 1300 310"
-      stroke="url(#archG1)"
-      strokeWidth={3}
-      fill="none"
-    />
-    {/* Bottom-left arch */}
-    <Path
-      d="M 0 1000 L 420 1000 Q 430 1000 430 990 L 430 770 Q 430 760 440 760 L 620 760"
-      stroke="url(#archG2)"
-      strokeWidth={3}
-      fill="none"
-    />
-  </Svg>
-);
-
-// Logo component (using Text instead of SVG Text for compatibility)
-const LogoGradient = () => (
-  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-    <Text style={{
-      fontSize: 42,
-      fontWeight: 'bold',
-      color: colors.accent,
-      fontFamily: 'Helvetica-Bold',
-    }}>
-      IArche
-    </Text>
-  </View>
-);
-
-// Decorative bar with gradient
-const DecorativeBarHeader = () => (
-  <Svg viewBox="0 0 160 4" style={styles.decorativeLineHeader}>
-    <Defs>
-      <LinearGradient id="barGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-        <Stop offset="0%" stopColor={colors.primary} />
-        <Stop offset="50%" stopColor={colors.accent} />
-        <Stop offset="100%" stopColor={colors.primary} />
-      </LinearGradient>
-    </Defs>
-    <Rect x="0" y="0" width="160" height="4" rx="2" fill="url(#barGrad)" />
-  </Svg>
-);
 
 export const PresentationPDF = ({ slides }: PresentationPDFProps) => {
   return (
     <Document>
-      {slides.map((slide) => {
+      {slides.map((slide, index) => {
         const isDark = slide.type === 'title' || slide.type === 'cta';
         const pageStyle = isDark ? styles.pageDark : styles.pageLight;
 
         return (
-          <Page key={slide.id} size={[1920, 1080]} style={pageStyle}>
-            {/* Background decorations */}
-            {isDark ? <GridPatternDark /> : <GridPatternLight />}
-            <ArchLines isDark={isDark} />
+          <Page key={slide.id} size={[PAGE_WIDTH, PAGE_HEIGHT]} style={pageStyle}>
+            {/* Mesh background pattern */}
+            <PDFMeshBackground 
+              pageWidth={PAGE_WIDTH} 
+              pageHeight={PAGE_HEIGHT}
+              opacity={isDark ? 0.02 : 0.03}
+            />
+            
+            {/* Decorative arch lines */}
+            <PDFArches 
+              position="both"
+              pageWidth={PAGE_WIDTH}
+              pageHeight={PAGE_HEIGHT}
+              opacity={0.3}
+            />
 
             {/* Content */}
             <View style={styles.content}>
               {/* Header */}
               <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
                 <View style={styles.logoContainer}>
-                  <LogoGradient />
+                  <PDFLogoText size="md" />
                 </View>
-                <DecorativeBarHeader />
+                <PDFGradientBar size="xl" />
               </View>
 
               {/* Main content */}
@@ -329,9 +216,12 @@ export const PresentationPDF = ({ slides }: PresentationPDFProps) => {
                   </Text>
                 )}
                 
-                <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}>
-                  {slide.title}
-                </Text>
+                <View style={isDark ? styles.titleContainerCentered : styles.titleContainer}>
+                  <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}>
+                    {slide.title}
+                  </Text>
+                  <PDFGradientBar size="lg" />
+                </View>
 
                 {slide.content && (
                   <Text style={[styles.text, isDark ? styles.textDark : styles.textLight]}>
@@ -357,6 +247,9 @@ export const PresentationPDF = ({ slides }: PresentationPDFProps) => {
               <View style={styles.footer}>
                 <Text style={[styles.footerText, isDark ? styles.footerTextDark : styles.footerTextLight]}>
                   iarche.fr
+                </Text>
+                <Text style={[styles.slideNumber, isDark ? styles.footerTextDark : styles.footerTextLight]}>
+                  {index + 1}/{slides.length}
                 </Text>
               </View>
             </View>
