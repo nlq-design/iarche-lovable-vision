@@ -599,7 +599,7 @@ const ArticleDetail = () => {
                   className="text-sm"
                   onClick={() => trackCTAClick('demander_presentation', 'solution_detail_header', article.slug)}
                 >
-                  Demander une présentation de {article.title}
+                  Demander une présentation
                 </GradientLink>
               )}
               
@@ -864,7 +864,7 @@ const ArticleDetail = () => {
                 className="text-lg"
                 onClick={() => trackCTAClick('demander_presentation', 'solution_detail_before_faq', article.slug)}
               >
-                Demander une présentation de {article.title}
+                Demander une présentation
               </GradientLink>
             </div>
           )}
