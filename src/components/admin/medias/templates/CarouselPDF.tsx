@@ -1,14 +1,6 @@
 import { Document, Page, View, Text, Image, StyleSheet, Svg, Line, Path } from '@react-pdf/renderer';
 import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
 
-// Import PNG assets as ES6 modules for react-pdf compatibility
-import logoGradient from '@/assets/pdf/logo-iarche-gradient.png';
-import logoWhite from '@/assets/pdf/logo-iarche-white.png';
-import barSm from '@/assets/pdf/bar-sm.png';
-import barMd from '@/assets/pdf/bar-md.png';
-import barLg from '@/assets/pdf/bar-lg.png';
-import barXl from '@/assets/pdf/bar-xl.png';
-
 interface SlideData {
   id: number;
   title: string;
@@ -22,14 +14,23 @@ interface CarouselPDFProps {
   format?: 'linkedin' | 'instagram';
 }
 
-// Asset paths using ES6 imports
+// Get the base URL for public assets
+const getAssetUrl = (path: string) => {
+  // In production, use absolute URLs from public folder
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}${path}`;
+  }
+  return path;
+};
+
+// Asset paths - use public folder URLs for react-pdf compatibility
 const ASSETS = {
-  logoGradient,
-  logoWhite,
-  barSm,
-  barMd,
-  barLg,
-  barXl,
+  logoGradient: getAssetUrl('/assets/logo-iarche-gradient.png'),
+  logoWhite: getAssetUrl('/assets/logo-iarche-white.png'),
+  barSm: getAssetUrl('/assets/bar-sm.png'),
+  barMd: getAssetUrl('/assets/bar-md.png'),
+  barLg: getAssetUrl('/assets/bar-lg.png'),
+  barXl: getAssetUrl('/assets/bar-xl.png'),
 };
 
 const styles = StyleSheet.create({
