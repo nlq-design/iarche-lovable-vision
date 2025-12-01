@@ -210,8 +210,7 @@ const Contact = () => {
             <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
               Contact
             </h1>
-            {/* Ligne décorative gradient */}
-            <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 animate-fadeIn [animation-delay:0.15s]"></div>
+            <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary animate-fadeIn [animation-delay:0.15s]"></div>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
               Une question ? Un projet ? Parlons-en.
             </p>
