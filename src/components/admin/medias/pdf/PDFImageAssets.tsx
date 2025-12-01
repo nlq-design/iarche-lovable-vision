@@ -1,15 +1,6 @@
 import { Image, View, StyleSheet } from '@react-pdf/renderer';
 import type { Style } from '@react-pdf/types';
-
-// Import all PNG assets
-import logoGradient from '@/assets/pdf/logo-iarche-gradient.png';
-import logoWhite from '@/assets/pdf/logo-iarche-white.png';
-import logoTerracotta from '@/assets/pdf/logo-iarche-terracotta.png';
-import barSm from '@/assets/pdf/bar-sm.png';
-import barMd from '@/assets/pdf/bar-md.png';
-import barLg from '@/assets/pdf/bar-lg.png';
-import barXl from '@/assets/pdf/bar-xl.png';
-import patternMesh from '@/assets/pdf/pattern-mesh.png';
+import { BASE64_ASSETS } from './base64Assets';
 
 const styles = StyleSheet.create({
   logoContainer: {
@@ -24,9 +15,9 @@ const styles = StyleSheet.create({
 type LogoVariant = 'gradient' | 'white' | 'terracotta';
 
 const logoSources: Record<LogoVariant, string> = {
-  gradient: logoGradient,
-  white: logoWhite,
-  terracotta: logoTerracotta,
+  gradient: BASE64_ASSETS.logoGradient,
+  white: BASE64_ASSETS.logoWhite,
+  terracotta: BASE64_ASSETS.logoTerracotta,
 };
 
 interface PDFImageLogoProps {
@@ -38,16 +29,14 @@ interface PDFImageLogoProps {
 }
 
 /**
- * IArche logo using pre-rendered PNG with gradient/solid color
- * Reliable rendering across all PDF viewers
+ * IArche logo using base64 SVG for reliable PDF rendering
  */
 export const PDFImageLogo = ({ 
   width = 160, 
   variant = 'gradient',
   style 
 }: PDFImageLogoProps) => {
-  // Maintain aspect ratio based on actual image dimensions
-  const height = width / 2.5;
+  const height = width / 3.5; // Aspect ratio for text logo
   
   return (
     <View style={[styles.logoContainer, style]}>
@@ -72,10 +61,10 @@ export const PDFBarSizes = {
 } as const;
 
 const barSources: Record<keyof typeof PDFBarSizes, string> = {
-  sm: barSm,
-  md: barMd,
-  lg: barLg,
-  xl: barXl,
+  sm: BASE64_ASSETS.barSm,
+  md: BASE64_ASSETS.barMd,
+  lg: BASE64_ASSETS.barLg,
+  xl: BASE64_ASSETS.barXl,
 };
 
 interface PDFImageBarProps {
@@ -89,8 +78,7 @@ interface PDFImageBarProps {
 }
 
 /**
- * Decorative gradient bar using pre-rendered PNG
- * Sizes follow GradientTitle.tsx specifications
+ * Decorative gradient bar using base64 SVG for reliable PDF rendering
  */
 export const PDFImageBar = ({ 
   size = 'md',
@@ -102,10 +90,13 @@ export const PDFImageBar = ({
   const finalWidth = width ?? defaultSize.width;
   const finalHeight = height ?? defaultSize.height;
   
+  // Use full-width bar for custom large widths
+  const src = width && width > 128 ? BASE64_ASSETS.barFull : barSources[size];
+  
   return (
     <View style={[styles.barContainer, style]}>
       <Image
-        src={barSources[size]}
+        src={src}
         style={{
           width: finalWidth,
           height: finalHeight,
@@ -134,13 +125,26 @@ interface PDFPatternBackgroundProps {
 }
 
 /**
- * Tileable mesh pattern background using PNG
+ * Mesh pattern background - rendered as subtle diagonal lines via SVG
  */
 export const PDFPatternBackground = ({
   pageWidth,
   pageHeight,
-  opacity = 1,
+  opacity = 0.06,
 }: PDFPatternBackgroundProps) => {
+  // Create a simple mesh pattern as base64 SVG
+  const spacing = 50;
+  const lines: string[] = [];
+  
+  // Generate diagonal lines
+  for (let i = -pageHeight; i < pageWidth + pageHeight; i += spacing) {
+    lines.push(`<line x1="${i}" y1="0" x2="${i + pageHeight}" y2="${pageHeight}" stroke="#888" stroke-width="0.5" opacity="${opacity}"/>`);
+    lines.push(`<line x1="${i + pageHeight}" y1="0" x2="${i}" y2="${pageHeight}" stroke="#888" stroke-width="0.5" opacity="${opacity}"/>`);
+  }
+  
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pageWidth}" height="${pageHeight}" viewBox="0 0 ${pageWidth} ${pageHeight}">${lines.join('')}</svg>`;
+  const dataUri = `data:image/svg+xml;base64,${btoa(svg)}`;
+  
   return (
     <View
       style={{
@@ -149,22 +153,19 @@ export const PDFPatternBackground = ({
         left: 0,
         width: pageWidth,
         height: pageHeight,
-        opacity,
       }}
     >
       <Image
-        src={patternMesh}
+        src={dataUri}
         style={{
           width: pageWidth,
           height: pageHeight,
-          objectFit: 'cover',
         }}
       />
     </View>
   );
 };
 
-// Export all logo sources for direct use if needed
+// Export sources for direct use
 export const PDFLogoSources = logoSources;
 export const PDFBarSources = barSources;
-export const PDFPatternSource = patternMesh;
