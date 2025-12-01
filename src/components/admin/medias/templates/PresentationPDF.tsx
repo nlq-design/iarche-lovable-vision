@@ -1,11 +1,10 @@
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import { 
-  PDFLogoText, 
-  PDFGradientBar, 
+  PDFImageLogo,
+  PDFImageBarSized,
   PDFMeshBackground, 
   PDFArches,
   IARCHE_COLORS,
-  TYPOGRAPHY,
   PDF_FORMATS,
 } from '../pdf';
 
@@ -84,8 +83,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 5,
     marginBottom: 24,
-    fontFamily: 'Manrope',
-    fontWeight: 500,
+    fontFamily: 'Helvetica',
   },
   subtitleDark: {
     color: IARCHE_COLORS.white,
@@ -97,9 +95,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 72,
     fontWeight: 'bold',
-    marginBottom: 40,
+    marginBottom: 20,
     lineHeight: 1.15,
-    fontFamily: 'Manrope',
+    fontFamily: 'Helvetica-Bold',
   },
   titleDark: {
     color: IARCHE_COLORS.white,
@@ -117,7 +115,7 @@ const styles = StyleSheet.create({
     fontSize: 36,
     lineHeight: 1.6,
     maxWidth: 1400,
-    fontFamily: 'Manrope',
+    fontFamily: 'Helvetica',
     marginTop: 24,
   },
   textDark: {
@@ -146,7 +144,7 @@ const styles = StyleSheet.create({
     fontSize: 36,
     lineHeight: 1.4,
     flex: 1,
-    fontFamily: 'Manrope',
+    fontFamily: 'Helvetica',
   },
   // Footer
   footer: {
@@ -158,7 +156,7 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 20,
     letterSpacing: 2,
-    fontFamily: 'Manrope',
+    fontFamily: 'Helvetica',
   },
   footerTextDark: {
     color: IARCHE_COLORS.white,
@@ -169,8 +167,8 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   slideNumber: {
-    ...TYPOGRAPHY.caption,
     fontSize: 18,
+    fontFamily: 'Helvetica',
   },
 });
 
@@ -200,12 +198,12 @@ export const PresentationPDF = ({ slides }: PresentationPDFProps) => {
 
             {/* Content */}
             <View style={styles.content}>
-              {/* Header */}
+              {/* Header with PNG logo */}
               <View style={[styles.header, isDark ? styles.headerDark : styles.headerLight]}>
                 <View style={styles.logoContainer}>
-                  <PDFLogoText size="md" />
+                  <PDFImageLogo width={180} />
                 </View>
-                <PDFGradientBar size="xl" />
+                <PDFImageBarSized size="xl" />
               </View>
 
               {/* Main content */}
@@ -220,7 +218,9 @@ export const PresentationPDF = ({ slides }: PresentationPDFProps) => {
                   <Text style={[styles.title, isDark ? styles.titleDark : styles.titleLight]}>
                     {slide.title}
                   </Text>
-                  <PDFGradientBar size="lg" />
+                  <View style={{ marginTop: 16 }}>
+                    <PDFImageBarSized size="lg" />
+                  </View>
                 </View>
 
                 {slide.content && (

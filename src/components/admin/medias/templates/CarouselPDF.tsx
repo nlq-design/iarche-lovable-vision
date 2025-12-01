@@ -1,7 +1,7 @@
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import { 
-  PDFLogoText, 
-  PDFGradientBar, 
+  PDFImageLogo,
+  PDFImageBarSized,
   PDFMeshBackground, 
   PDFArches,
   IARCHE_COLORS,
@@ -46,6 +46,7 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
+    marginBottom: 12,
   },
   mainContent: {
     flex: 1,
@@ -53,76 +54,102 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 60,
   },
+  titleContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
   // Dark theme text styles
   subtitleDark: {
-    ...TYPOGRAPHY.pdfSubtitle,
+    fontSize: 22,
+    color: IARCHE_COLORS.white,
+    opacity: 0.6,
     textTransform: 'uppercase',
     letterSpacing: 4,
     marginBottom: 20,
+    fontFamily: 'Helvetica',
   },
   titleDark: {
-    ...TYPOGRAPHY.pdfTitle,
+    fontSize: 64,
+    fontWeight: 'bold',
+    color: IARCHE_COLORS.white,
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 16,
     lineHeight: 1.15,
+    fontFamily: 'Helvetica-Bold',
   },
   textDark: {
-    ...TYPOGRAPHY.pdfBody,
+    fontSize: 28,
+    color: IARCHE_COLORS.white,
+    opacity: 0.85,
     textAlign: 'center',
+    lineHeight: 1.6,
     maxWidth: 900,
+    fontFamily: 'Helvetica',
   },
   highlightDark: {
-    ...TYPOGRAPHY.pdfHighlight,
+    fontSize: 80,
+    fontWeight: 'bold',
+    color: IARCHE_COLORS.terracotta,
     marginTop: 40,
+    fontFamily: 'Helvetica-Bold',
   },
   // Light theme text styles
   subtitleLight: {
-    ...TYPOGRAPHY.pdfSubtitle,
+    fontSize: 22,
     color: IARCHE_COLORS.subtle,
-    opacity: 1,
     textTransform: 'uppercase',
     letterSpacing: 4,
     marginBottom: 20,
+    fontFamily: 'Helvetica',
   },
   titleLight: {
-    ...TYPOGRAPHY.pdfTitle,
+    fontSize: 64,
+    fontWeight: 'bold',
     color: IARCHE_COLORS.foreground,
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 16,
     lineHeight: 1.15,
+    fontFamily: 'Helvetica-Bold',
   },
   textLight: {
-    ...TYPOGRAPHY.pdfBody,
+    fontSize: 28,
     color: IARCHE_COLORS.foreground,
-    opacity: 1,
     textAlign: 'center',
+    lineHeight: 1.6,
     maxWidth: 900,
+    fontFamily: 'Helvetica',
   },
   highlightLight: {
-    ...TYPOGRAPHY.pdfHighlight,
+    fontSize: 80,
+    fontWeight: 'bold',
+    color: IARCHE_COLORS.terracotta,
     marginTop: 40,
+    fontFamily: 'Helvetica-Bold',
   },
   footer: {
     alignItems: 'center',
     paddingTop: 20,
   },
   footerTextDark: {
-    ...TYPOGRAPHY.caption,
+    fontSize: 18,
     color: IARCHE_COLORS.white,
     opacity: 0.4,
     letterSpacing: 2,
+    fontFamily: 'Helvetica',
   },
   footerTextLight: {
-    ...TYPOGRAPHY.caption,
+    fontSize: 18,
     color: IARCHE_COLORS.subtle,
     letterSpacing: 2,
+    fontFamily: 'Helvetica',
   },
   slideNumber: {
-    ...TYPOGRAPHY.caption,
+    fontSize: 14,
     color: IARCHE_COLORS.subtle,
     position: 'absolute',
     bottom: 40,
     right: 60,
+    fontFamily: 'Helvetica',
   },
 });
 
@@ -160,12 +187,12 @@ export const CarouselPDF = ({ slides, format = 'linkedin' }: CarouselPDFProps) =
             
             {/* Main content */}
             <View style={styles.content}>
-              {/* Header with logo */}
+              {/* Header with PNG logo */}
               <View style={styles.header}>
                 <View style={styles.logoContainer}>
-                  <PDFLogoText size="md" />
-                  <PDFGradientBar size="sm" />
+                  <PDFImageLogo width={180} />
                 </View>
+                <PDFImageBarSized size="sm" />
               </View>
 
               {/* Main content area */}
@@ -176,18 +203,15 @@ export const CarouselPDF = ({ slides, format = 'linkedin' }: CarouselPDFProps) =
                   </Text>
                 )}
                 {slide.title && (
-                  <>
+                  <View style={styles.titleContainer}>
                     <Text style={isDark ? styles.titleDark : styles.titleLight}>
                       {slide.title}
                     </Text>
-                    <PDFGradientBar size="lg" />
-                  </>
+                    <PDFImageBarSized size="lg" />
+                  </View>
                 )}
                 {slide.content && (
-                  <Text style={[
-                    isDark ? styles.textDark : styles.textLight,
-                    { marginTop: 24 }
-                  ]}>
+                  <Text style={isDark ? styles.textDark : styles.textLight}>
                     {slide.content}
                   </Text>
                 )}
