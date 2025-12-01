@@ -56,8 +56,8 @@ const styles = StyleSheet.create({
   slideNumber: {
     fontSize: 24,
     color: IARCHE_COLORS.terracotta,
-    fontWeight: 700,
-    fontFamily: 'Manrope',
+    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
   },
   mainContent: {
     flex: 1,
@@ -76,10 +76,10 @@ const styles = StyleSheet.create({
   },
   sectionNumber: {
     fontSize: 96,
-    fontWeight: 700,
+    fontWeight: 'bold',
     opacity: 0.15,
     marginRight: 30,
-    fontFamily: 'Manrope',
+    fontFamily: 'Helvetica-Bold',
   },
   sectionNumberDark: {
     color: IARCHE_COLORS.white,
@@ -90,11 +90,11 @@ const styles = StyleSheet.create({
   // Dark theme text
   titleDark: {
     fontSize: 56,
-    fontWeight: 700,
+    fontWeight: 'bold',
     color: IARCHE_COLORS.white,
     marginBottom: 16,
     lineHeight: 1.2,
-    fontFamily: 'Manrope',
+    fontFamily: 'Helvetica-Bold',
   },
   subtitleDark: {
     fontSize: 20,
@@ -103,25 +103,25 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 4,
     marginBottom: 16,
-    fontFamily: 'Manrope',
-    fontWeight: 400,
+    fontFamily: 'Helvetica',
+    fontWeight: 'normal',
   },
   textDark: {
     fontSize: 24,
     color: IARCHE_COLORS.white,
     opacity: 0.85,
     lineHeight: 1.6,
-    fontFamily: 'Manrope',
-    fontWeight: 400,
+    fontFamily: 'Helvetica',
+    fontWeight: 'normal',
   },
   // Light theme text
   titleLight: {
     fontSize: 56,
-    fontWeight: 700,
+    fontWeight: 'bold',
     color: IARCHE_COLORS.foreground,
     marginBottom: 16,
     lineHeight: 1.2,
-    fontFamily: 'Manrope',
+    fontFamily: 'Helvetica-Bold',
   },
   subtitleLight: {
     fontSize: 20,
@@ -129,16 +129,16 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 4,
     marginBottom: 16,
-    fontFamily: 'Manrope',
-    fontWeight: 400,
+    fontFamily: 'Helvetica',
+    fontWeight: 'normal',
   },
   textLight: {
     fontSize: 24,
     color: IARCHE_COLORS.foreground,
     opacity: 0.9,
     lineHeight: 1.6,
-    fontFamily: 'Manrope',
-    fontWeight: 400,
+    fontFamily: 'Helvetica',
+    fontWeight: 'normal',
   },
   // Bullet list styles
   bulletsContainer: {
@@ -159,15 +159,15 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: IARCHE_COLORS.terracotta,
     marginRight: 12,
-    fontFamily: 'Manrope',
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
+    fontWeight: 'bold',
   },
   bulletText: {
     fontSize: 20,
     lineHeight: 1.5,
     flex: 1,
-    fontFamily: 'Manrope',
-    fontWeight: 400,
+    fontFamily: 'Helvetica',
+    fontWeight: 'normal',
   },
   bulletTextDark: {
     color: IARCHE_COLORS.white,
@@ -179,17 +179,17 @@ const styles = StyleSheet.create({
   // CTA styles
   ctaText: {
     fontSize: 72,
-    fontWeight: 700,
+    fontWeight: 'bold',
     color: IARCHE_COLORS.terracotta,
     textAlign: 'center',
-    fontFamily: 'Manrope',
+    fontFamily: 'Helvetica-Bold',
   },
   ctaSubtext: {
     fontSize: 24,
     textAlign: 'center',
     marginTop: 20,
-    fontFamily: 'Manrope',
-    fontWeight: 400,
+    fontFamily: 'Helvetica',
+    fontWeight: 'normal',
   },
   ctaSubtextDark: {
     color: IARCHE_COLORS.white,
@@ -209,14 +209,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: IARCHE_COLORS.white,
     opacity: 0.4,
-    fontFamily: 'Manrope',
-    fontWeight: 400,
+    fontFamily: 'Helvetica',
+    fontWeight: 'normal',
   },
   footerTextLight: {
     fontSize: 16,
     color: IARCHE_COLORS.subtle,
-    fontFamily: 'Manrope',
-    fontWeight: 400,
+    fontFamily: 'Helvetica',
+    fontWeight: 'normal',
   },
 });
 

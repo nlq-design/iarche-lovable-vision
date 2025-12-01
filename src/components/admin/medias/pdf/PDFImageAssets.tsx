@@ -46,8 +46,8 @@ export const PDFImageLogo = ({
     <View style={[styles.logoContainer, style]}>
       <Text style={{
         fontSize,
-        fontWeight: 700,
-        fontFamily: 'Manrope',
+        fontWeight: 'bold',
+        fontFamily: 'Helvetica-Bold',
         color: getColor(),
       }}>
         IArche
