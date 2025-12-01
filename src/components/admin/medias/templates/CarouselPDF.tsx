@@ -272,52 +272,44 @@ const ArchesDecoration = ({ isDark, width, height }: { isDark: boolean; width: n
   );
 };
 
-// Gradient bar component (pure SVG - no PNG needed)
+// Gradient bar component - pure hex colors for reliable PDF rendering
 const GradientBar = ({ width, height, style }: { width: number; height: number; style?: object }) => (
-  <Svg viewBox={`0 0 ${width} ${height}`} style={{ width, height, ...style }}>
-    <Defs>
-      <LinearGradient id="barGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-        <Stop offset="0%" stopColor={IARCHE_COLORS.bleuNuit} />
-        <Stop offset="50%" stopColor={IARCHE_COLORS.terracotta} />
-        <Stop offset="100%" stopColor={IARCHE_COLORS.bleuNuit} />
-      </LinearGradient>
-    </Defs>
-    <Rect 
-      width={width} 
-      height={height} 
-      rx={height / 2} 
-      fill="url(#barGradient)" 
-    />
-  </Svg>
-);
-
-// Header bar (full width gradient) - using solid colors since SVG gradients can be unreliable
-const HeaderBar = ({ width }: { width: number }) => (
-  <View style={{ flexDirection: 'row', width: width - 120, height: 3, marginTop: 8, borderRadius: 1.5, overflow: 'hidden' }}>
+  <View style={{ flexDirection: 'row', width, height, borderRadius: height / 2, overflow: 'hidden', ...style }}>
     <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.bleuNuit }} />
-    <View style={{ flex: 1, backgroundColor: '#2A4A6A' }} />
+    <View style={{ flex: 1, backgroundColor: '#3A5A7A' }} />
     <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.terracotta }} />
-    <View style={{ flex: 1, backgroundColor: '#2A4A6A' }} />
+    <View style={{ flex: 1, backgroundColor: '#3A5A7A' }} />
     <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.bleuNuit }} />
   </View>
 );
 
-// Small bar under logo
+// Header bar (full width) - pure hex colors for reliable PDF rendering
+const HeaderBar = ({ width, isDark }: { width: number; isDark: boolean }) => (
+  <View style={{ flexDirection: 'row', width: width - 120, height: 3, marginTop: 8, borderRadius: 1.5, overflow: 'hidden' }}>
+    <View style={{ flex: 1, backgroundColor: isDark ? '#2A3F5F' : IARCHE_COLORS.bleuNuit }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#4A5A7A' : '#3A5A7A' }} />
+    <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.terracotta }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#4A5A7A' : '#3A5A7A' }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#2A3F5F' : IARCHE_COLORS.bleuNuit }} />
+  </View>
+);
+
+// Small bar under logo - pure hex colors
 const LogoBar = ({ isDark }: { isDark: boolean }) => (
   <View style={{ flexDirection: 'row', width: 48, height: 2, marginTop: 6, borderRadius: 1, overflow: 'hidden' }}>
-    <View style={{ flex: 1, backgroundColor: isDark ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit, opacity: isDark ? 0.6 : 1 }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#8899AA' : IARCHE_COLORS.bleuNuit }} />
     <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.terracotta }} />
   </View>
 );
 
-// Footer separator bar - using solid colors for reliable rendering
+// Footer separator bar - pure hex colors for reliable PDF rendering
 const FooterBar = ({ width, isDark }: { width: number; isDark: boolean }) => (
   <View style={{ flexDirection: 'row', width: width - 120, height: 2, marginBottom: 12, borderRadius: 1, overflow: 'hidden' }}>
-    <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : IARCHE_COLORS.bleuNuit, opacity: isDark ? 0.5 : 0.3 }} />
-    <View style={{ flex: 1, backgroundColor: isDark ? '#4A6A8A' : '#2A4A6A' }} />
-    <View style={{ flex: 2, backgroundColor: IARCHE_COLORS.terracotta, opacity: isDark ? 0.7 : 0.8 }} />
-    <View style={{ flex: 1, backgroundColor: isDark ? '#4A6A8A' : '#2A4A6A' }} />
-    <View style={{ flex: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : IARCHE_COLORS.bleuNuit, opacity: isDark ? 0.5 : 0.3 }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#3A4A6A' : '#8A9AAA' }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#5A6A8A' : '#6A7A9A' }} />
+    <View style={{ flex: 2, backgroundColor: IARCHE_COLORS.terracotta }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#5A6A8A' : '#6A7A9A' }} />
+    <View style={{ flex: 1, backgroundColor: isDark ? '#3A4A6A' : '#8A9AAA' }} />
   </View>
 );
 
@@ -367,7 +359,7 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
                   </Text>
                   <LogoBar isDark={isDark} />
                 </View>
-                <HeaderBar width={width} />
+                <HeaderBar width={width} isDark={isDark} />
               </View>
 
               {/* Content area */}
