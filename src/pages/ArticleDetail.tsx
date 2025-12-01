@@ -599,7 +599,10 @@ const ArticleDetail = () => {
                   className="text-sm"
                   onClick={() => trackCTAClick('demander_presentation', 'solution_detail_header', article.slug)}
                 >
-                  Demander une présentation
+                  {article.slug === 'collaboria' ? 'Demander une présentation de Collaboria' :
+                   article.slug === 'team-5-connect' ? 'Demander une présentation de Team 5 Connect' :
+                   article.slug === 'datalia' ? 'Demander une présentation de Datalia' :
+                   'Demander une présentation'}
                 </GradientLink>
               )}
               
@@ -864,7 +867,10 @@ const ArticleDetail = () => {
                 className="text-lg"
                 onClick={() => trackCTAClick('demander_presentation', 'solution_detail_before_faq', article.slug)}
               >
-                Demander une présentation
+                {article.slug === 'collaboria' ? 'Demander une présentation de Collaboria' :
+                 article.slug === 'team-5-connect' ? 'Demander une présentation de Team 5 Connect' :
+                 article.slug === 'datalia' ? 'Demander une présentation de Datalia' :
+                 'Demander une présentation'}
               </GradientLink>
             </div>
           )}
