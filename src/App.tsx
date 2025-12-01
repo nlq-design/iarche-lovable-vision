@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ScrollToTop from "./components/utils/ScrollToTop";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import CharteGraphique from "./pages/CharteGraphique";
 import Services from "./pages/Services";
 import ServiceDetail from "./pages/ServiceDetail";
 import Solutions from "./pages/Solutions";
@@ -112,6 +113,7 @@ const App = () => (
           <Route path="/mentions-legales" element={<MentionsLegales />} />
           <Route path="/conditions-generales" element={<ConditionsGenerales />} />
           <Route path="/confidentialite" element={<Confidentialite />} />
+          <Route path="/charte-graphique" element={<CharteGraphique />} />
           
           {/* Admin - Lazy loaded avec Suspense */}
           <Route path="/admin" element={<Admin />} />
