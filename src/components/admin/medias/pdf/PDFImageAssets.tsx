@@ -1,8 +1,15 @@
-import { Image, View, StyleSheet, Styles } from '@react-pdf/renderer';
+import { Image, View, StyleSheet } from '@react-pdf/renderer';
+import type { Style } from '@react-pdf/types';
 
-// Import PNG assets
+// Import all PNG assets
 import logoGradient from '@/assets/pdf/logo-iarche-gradient.png';
-import barGradient from '@/assets/pdf/bar-decorative-gradient.png';
+import logoWhite from '@/assets/pdf/logo-iarche-white.png';
+import logoTerracotta from '@/assets/pdf/logo-iarche-terracotta.png';
+import barSm from '@/assets/pdf/bar-sm.png';
+import barMd from '@/assets/pdf/bar-md.png';
+import barLg from '@/assets/pdf/bar-lg.png';
+import barXl from '@/assets/pdf/bar-xl.png';
+import patternMesh from '@/assets/pdf/pattern-mesh.png';
 
 const styles = StyleSheet.create({
   logoContainer: {
@@ -13,23 +20,39 @@ const styles = StyleSheet.create({
   },
 });
 
+// Logo variants
+type LogoVariant = 'gradient' | 'white' | 'terracotta';
+
+const logoSources: Record<LogoVariant, string> = {
+  gradient: logoGradient,
+  white: logoWhite,
+  terracotta: logoTerracotta,
+};
+
 interface PDFImageLogoProps {
   /** Logo width in pixels */
   width?: number;
+  /** Logo variant: gradient (default), white, or terracotta */
+  variant?: LogoVariant;
+  style?: Style;
 }
 
 /**
- * IArche logo using pre-rendered PNG with gradient
+ * IArche logo using pre-rendered PNG with gradient/solid color
  * Reliable rendering across all PDF viewers
  */
-export const PDFImageLogo = ({ width = 160 }: PDFImageLogoProps) => {
-  // Maintain aspect ratio (1024x512 = 2:1)
-  const height = width / 2;
+export const PDFImageLogo = ({ 
+  width = 160, 
+  variant = 'gradient',
+  style 
+}: PDFImageLogoProps) => {
+  // Maintain aspect ratio based on actual image dimensions
+  const height = width / 2.5;
   
   return (
-    <View style={styles.logoContainer}>
+    <View style={[styles.logoContainer, style]}>
       <Image
-        src={logoGradient}
+        src={logoSources[variant]}
         style={{
           width,
           height,
@@ -40,12 +63,29 @@ export const PDFImageLogo = ({ width = 160 }: PDFImageLogoProps) => {
   );
 };
 
+// Bar size configuration matching design system
+export const PDFBarSizes = {
+  sm: { width: 48, height: 2 },
+  md: { width: 80, height: 4 },
+  lg: { width: 96, height: 4 },
+  xl: { width: 128, height: 6 },
+} as const;
+
+const barSources: Record<keyof typeof PDFBarSizes, string> = {
+  sm: barSm,
+  md: barMd,
+  lg: barLg,
+  xl: barXl,
+};
+
 interface PDFImageBarProps {
-  /** Bar width in pixels */
+  /** Bar size: sm, md, lg, xl */
+  size?: keyof typeof PDFBarSizes;
+  /** Custom width override */
   width?: number;
-  /** Bar height in pixels */
+  /** Custom height override */
   height?: number;
-  style?: Styles;
+  style?: Style;
 }
 
 /**
@@ -53,17 +93,22 @@ interface PDFImageBarProps {
  * Sizes follow GradientTitle.tsx specifications
  */
 export const PDFImageBar = ({ 
-  width = 96, 
-  height = 8,
+  size = 'md',
+  width,
+  height,
   style
 }: PDFImageBarProps) => {
+  const defaultSize = PDFBarSizes[size];
+  const finalWidth = width ?? defaultSize.width;
+  const finalHeight = height ?? defaultSize.height;
+  
   return (
     <View style={[styles.barContainer, style]}>
       <Image
-        src={barGradient}
+        src={barSources[size]}
         style={{
-          width,
-          height,
+          width: finalWidth,
+          height: finalHeight,
           objectFit: 'cover',
         }}
       />
@@ -71,18 +116,55 @@ export const PDFImageBar = ({
   );
 };
 
-// Pre-configured bar sizes matching design system
-export const PDFBarSizes = {
-  sm: { width: 48, height: 4 },
-  md: { width: 80, height: 6 },
-  lg: { width: 96, height: 8 },
-  xl: { width: 128, height: 10 },
-} as const;
-
+// Shorthand component for sized bars
 export const PDFImageBarSized = ({ 
   size = 'md',
   style
-}: { size?: keyof typeof PDFBarSizes; style?: Styles }) => {
-  const { width, height } = PDFBarSizes[size];
-  return <PDFImageBar width={width} height={height} style={style} />;
+}: { size?: keyof typeof PDFBarSizes; style?: Style }) => {
+  return <PDFImageBar size={size} style={style} />;
 };
+
+interface PDFPatternBackgroundProps {
+  /** Page width */
+  pageWidth: number;
+  /** Page height */
+  pageHeight: number;
+  /** Opacity of the pattern */
+  opacity?: number;
+}
+
+/**
+ * Tileable mesh pattern background using PNG
+ */
+export const PDFPatternBackground = ({
+  pageWidth,
+  pageHeight,
+  opacity = 1,
+}: PDFPatternBackgroundProps) => {
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: pageWidth,
+        height: pageHeight,
+        opacity,
+      }}
+    >
+      <Image
+        src={patternMesh}
+        style={{
+          width: pageWidth,
+          height: pageHeight,
+          objectFit: 'cover',
+        }}
+      />
+    </View>
+  );
+};
+
+// Export all logo sources for direct use if needed
+export const PDFLogoSources = logoSources;
+export const PDFBarSources = barSources;
+export const PDFPatternSource = patternMesh;
