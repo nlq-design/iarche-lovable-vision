@@ -93,7 +93,7 @@ const Solutions = () => {
             {/* Ligne décorative gradient */}
             <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary opacity-60 animate-fadeIn [animation-delay:0.15s]"></div>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
-              <span className="hero-gradient-text">IArche</span> édite des solutions développées à partir de besoins concrets identifiés en accompagnant nos clients.
+              <span className="hero-gradient-text">IArche</span> déploie des solutions SaaS conçues à partir de besoins concrets identifiés sur le terrain.
             </p>
           </div>
 
