@@ -7,7 +7,7 @@ export { PDFGradientBar } from './PDFGradientBar';
 export { PDFMeshBackground } from './PDFMeshBackground';
 export { PDFArches } from './PDFArches';
 
-// PNG-based components (reliable rendering) - RECOMMENDED
+// Base64 SVG components (reliable rendering) - RECOMMENDED
 export { 
   PDFImageLogo, 
   PDFImageBar, 
@@ -16,7 +16,6 @@ export {
   PDFPatternBackground,
   PDFLogoSources,
   PDFBarSources,
-  PDFPatternSource,
 } from './PDFImageAssets';
 
 // Design tokens
