@@ -8,7 +8,16 @@ export { PDFMeshBackground } from './PDFMeshBackground';
 export { PDFArches } from './PDFArches';
 
 // PNG-based components (reliable rendering) - RECOMMENDED
-export { PDFImageLogo, PDFImageBar, PDFImageBarSized, PDFBarSizes } from './PDFImageAssets';
+export { 
+  PDFImageLogo, 
+  PDFImageBar, 
+  PDFImageBarSized, 
+  PDFBarSizes,
+  PDFPatternBackground,
+  PDFLogoSources,
+  PDFBarSources,
+  PDFPatternSource,
+} from './PDFImageAssets';
 
 // Design tokens
 export { 
