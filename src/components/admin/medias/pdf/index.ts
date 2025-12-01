@@ -14,6 +14,7 @@ export {
   PDFImageBarSized, 
   PDFBarSizes,
   PDFPatternBackground,
+  PDFArchesDecoration,
   PDFLogoSources,
   PDFBarSources,
 } from './PDFImageAssets';

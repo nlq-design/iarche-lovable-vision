@@ -1,6 +1,6 @@
-import { Document, Page, View, Text, StyleSheet, Svg, Line, Path } from '@react-pdf/renderer';
-import { IARCHE_COLORS, PDF_FORMATS, TYPOGRAPHY } from '../pdf';
-import { PDFImageLogo, PDFImageBar, PDFPatternBackground, PDFBarSizes } from '../pdf/PDFImageAssets';
+import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
+import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
+import { PDFImageLogo, PDFImageBar, PDFPatternBackground, PDFArchesDecoration } from '../pdf/PDFImageAssets';
 
 interface SlideData {
   id: number;
@@ -182,49 +182,6 @@ const styles = StyleSheet.create({
   },
 });
 
-// Corner arches decoration component (SVG)
-const ArchesDecoration = ({ isDark, width, height }: { isDark: boolean; width: number; height: number }) => {
-  const strokeColor = isDark ? IARCHE_COLORS.white : IARCHE_COLORS.terracotta;
-  const opacity = isDark ? 0.25 : 0.4;
-  const cornerSize = 120;
-  
-  return (
-    <Svg style={styles.backgroundLayer} viewBox={`0 0 ${width} ${height}`}>
-      {/* Top-right corner arch - L shape */}
-      <Path 
-        d={`M${width - cornerSize} 0 L${width} 0 L${width} ${cornerSize}`}
-        fill="none" 
-        stroke={strokeColor} 
-        strokeWidth={3} 
-        opacity={opacity}
-      />
-      {/* Bottom-left corner arch - inverted L shape */}
-      <Path 
-        d={`M0 ${height - cornerSize} L0 ${height} L${cornerSize} ${height}`}
-        fill="none" 
-        stroke={strokeColor} 
-        strokeWidth={3} 
-        opacity={opacity}
-      />
-      {/* Secondary arches (inner, smaller) */}
-      <Path 
-        d={`M${width - cornerSize + 20} 20 L${width - 20} 20 L${width - 20} ${cornerSize - 20}`}
-        fill="none" 
-        stroke={strokeColor} 
-        strokeWidth={1.5} 
-        opacity={opacity * 0.5}
-      />
-      <Path 
-        d={`M20 ${height - cornerSize + 20} L20 ${height - 20} L${cornerSize - 20} ${height - 20}`}
-        fill="none" 
-        stroke={strokeColor} 
-        strokeWidth={1.5} 
-        opacity={opacity * 0.5}
-      />
-    </Svg>
-  );
-};
-
 export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }: CarouselPDFProps) => {
   const dimensions = format === 'linkedin' 
     ? PDF_FORMATS.carouselLinkedIn 
@@ -262,8 +219,8 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
               isDark={isDark}
             />
             
-            {/* Corner arches decoration */}
-            <ArchesDecoration isDark={isDark} width={width} height={height} />
+            {/* Corner arches decoration with gradient */}
+            <PDFArchesDecoration width={width} height={height} isDark={isDark} />
             
             {/* Main content */}
             <View style={styles.content}>

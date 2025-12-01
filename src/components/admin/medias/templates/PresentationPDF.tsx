@@ -1,6 +1,6 @@
-import { Document, Page, View, Text, StyleSheet, Svg, Path } from '@react-pdf/renderer';
+import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
-import { PDFImageLogo, PDFImageBar, PDFPatternBackground } from '../pdf/PDFImageAssets';
+import { PDFImageLogo, PDFImageBar, PDFPatternBackground, PDFArchesDecoration } from '../pdf/PDFImageAssets';
 
 interface SlideData {
   id: number;
@@ -220,63 +220,6 @@ const styles = StyleSheet.create({
   },
 });
 
-// Corner arches decoration
-const ArchesDecoration = ({ isDark }: { isDark: boolean }) => {
-  const strokeColor = isDark ? IARCHE_COLORS.white : IARCHE_COLORS.terracotta;
-  const opacity = isDark ? 0.18 : 0.3;
-  const cornerSize = 120;
-  
-  return (
-    <Svg style={styles.backgroundLayer} viewBox={`0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}`}>
-      {/* Top-right corner */}
-      <Path 
-        d={`M${PAGE_WIDTH},0 L${PAGE_WIDTH},${cornerSize}`}
-        fill="none" 
-        stroke={strokeColor} 
-        strokeWidth={3} 
-        opacity={opacity}
-      />
-      <Path 
-        d={`M${PAGE_WIDTH - cornerSize},0 L${PAGE_WIDTH},0`}
-        fill="none" 
-        stroke={strokeColor} 
-        strokeWidth={3} 
-        opacity={opacity}
-      />
-      {/* Bottom-left corner */}
-      <Path 
-        d={`M0,${PAGE_HEIGHT} L0,${PAGE_HEIGHT - cornerSize}`}
-        fill="none" 
-        stroke={strokeColor} 
-        strokeWidth={3} 
-        opacity={opacity}
-      />
-      <Path 
-        d={`M${cornerSize},${PAGE_HEIGHT} L0,${PAGE_HEIGHT}`}
-        fill="none" 
-        stroke={strokeColor} 
-        strokeWidth={3} 
-        opacity={opacity}
-      />
-      {/* Secondary arches */}
-      <Path 
-        d={`M${PAGE_WIDTH},20 L${PAGE_WIDTH},${cornerSize - 30}`}
-        fill="none" 
-        stroke={strokeColor} 
-        strokeWidth={2} 
-        opacity={opacity * 0.5}
-      />
-      <Path 
-        d={`M${PAGE_WIDTH - cornerSize + 30},20 L${PAGE_WIDTH - 20},20`}
-        fill="none" 
-        stroke={strokeColor} 
-        strokeWidth={2} 
-        opacity={opacity * 0.5}
-      />
-    </Svg>
-  );
-};
-
 export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDFProps) => {
   // Theme alternation based on startTheme
   const getSlideTheme = (slideIndex: number): boolean => {
@@ -307,7 +250,7 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
               opacity={isDark ? 0.05 : 0.07}
               isDark={isDark}
             />
-            <ArchesDecoration isDark={isDark} />
+            <PDFArchesDecoration width={PAGE_WIDTH} height={PAGE_HEIGHT} isDark={isDark} />
 
             {/* Main content */}
             <View style={styles.content}>
