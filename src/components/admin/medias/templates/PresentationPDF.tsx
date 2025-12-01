@@ -1,5 +1,6 @@
-import { Document, Page, View, Text, StyleSheet, Svg, Line, Path, Rect, Defs, LinearGradient, Stop } from '@react-pdf/renderer';
+import { Document, Page, View, Text, StyleSheet, Svg, Path } from '@react-pdf/renderer';
 import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
+import { PDFImageLogo, PDFImageBar, PDFPatternBackground } from '../pdf/PDFImageAssets';
 
 interface SlideData {
   id: number;
@@ -52,22 +53,11 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'flex-start',
   },
-  logoText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    fontFamily: 'Helvetica-Bold',
-  },
-  logoTextDark: {
-    color: IARCHE_COLORS.white,
-  },
-  logoTextLight: {
-    color: IARCHE_COLORS.bleuNuit,
-  },
   slideNumber: {
     fontSize: 24,
     color: IARCHE_COLORS.terracotta,
-    fontWeight: 'bold',
-    fontFamily: 'Helvetica-Bold',
+    fontWeight: 700,
+    fontFamily: 'Manrope',
   },
   mainContent: {
     flex: 1,
@@ -86,10 +76,10 @@ const styles = StyleSheet.create({
   },
   sectionNumber: {
     fontSize: 96,
-    fontWeight: 'bold',
+    fontWeight: 700,
     opacity: 0.15,
     marginRight: 30,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Manrope',
   },
   sectionNumberDark: {
     color: IARCHE_COLORS.white,
@@ -100,11 +90,11 @@ const styles = StyleSheet.create({
   // Dark theme text
   titleDark: {
     fontSize: 56,
-    fontWeight: 'bold',
+    fontWeight: 700,
     color: IARCHE_COLORS.white,
     marginBottom: 16,
     lineHeight: 1.2,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Manrope',
   },
   subtitleDark: {
     fontSize: 20,
@@ -113,23 +103,25 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 4,
     marginBottom: 16,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Manrope',
+    fontWeight: 400,
   },
   textDark: {
     fontSize: 24,
     color: IARCHE_COLORS.white,
     opacity: 0.85,
     lineHeight: 1.6,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Manrope',
+    fontWeight: 400,
   },
   // Light theme text
   titleLight: {
     fontSize: 56,
-    fontWeight: 'bold',
+    fontWeight: 700,
     color: IARCHE_COLORS.foreground,
     marginBottom: 16,
     lineHeight: 1.2,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Manrope',
   },
   subtitleLight: {
     fontSize: 20,
@@ -137,14 +129,16 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 4,
     marginBottom: 16,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Manrope',
+    fontWeight: 400,
   },
   textLight: {
     fontSize: 24,
     color: IARCHE_COLORS.foreground,
     opacity: 0.9,
     lineHeight: 1.6,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Manrope',
+    fontWeight: 400,
   },
   // Bullet list styles
   bulletsContainer: {
@@ -165,13 +159,15 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: IARCHE_COLORS.terracotta,
     marginRight: 12,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Manrope',
+    fontWeight: 700,
   },
   bulletText: {
     fontSize: 20,
     lineHeight: 1.5,
     flex: 1,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Manrope',
+    fontWeight: 400,
   },
   bulletTextDark: {
     color: IARCHE_COLORS.white,
@@ -183,16 +179,17 @@ const styles = StyleSheet.create({
   // CTA styles
   ctaText: {
     fontSize: 72,
-    fontWeight: 'bold',
+    fontWeight: 700,
     color: IARCHE_COLORS.terracotta,
     textAlign: 'center',
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Manrope',
   },
   ctaSubtext: {
     fontSize: 24,
     textAlign: 'center',
     marginTop: 20,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Manrope',
+    fontWeight: 400,
   },
   ctaSubtextDark: {
     color: IARCHE_COLORS.white,
@@ -212,59 +209,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: IARCHE_COLORS.white,
     opacity: 0.4,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Manrope',
+    fontWeight: 400,
   },
   footerTextLight: {
     fontSize: 16,
     color: IARCHE_COLORS.subtle,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Manrope',
+    fontWeight: 400,
   },
 });
 
-// Mesh background pattern
-const MeshBackground = ({ isDark }: { isDark: boolean }) => {
-  const strokeColor = isDark ? '#FFFFFF' : IARCHE_COLORS.bleuNuit;
-  const opacity = isDark ? 0.05 : 0.07;
-  const spacing = 60;
-  const lines = [];
-  
-  for (let i = -PAGE_HEIGHT; i < PAGE_WIDTH + PAGE_HEIGHT; i += spacing) {
-    lines.push(
-      <Line 
-        key={`d1-${i}`}
-        x1={i} 
-        y1={0} 
-        x2={i + PAGE_HEIGHT} 
-        y2={PAGE_HEIGHT} 
-        stroke={strokeColor} 
-        strokeWidth={0.5} 
-        opacity={opacity}
-      />
-    );
-    lines.push(
-      <Line 
-        key={`d2-${i}`}
-        x1={i + PAGE_HEIGHT} 
-        y1={0} 
-        x2={i} 
-        y2={PAGE_HEIGHT} 
-        stroke={strokeColor} 
-        strokeWidth={0.5} 
-        opacity={opacity}
-      />
-    );
-  }
-  
-  return (
-    <Svg style={styles.backgroundLayer} viewBox={`0 0 ${PAGE_WIDTH} ${PAGE_HEIGHT}`}>
-      {lines}
-    </Svg>
-  );
-};
-
 // Corner arches decoration
 const ArchesDecoration = ({ isDark }: { isDark: boolean }) => {
-  const strokeColor = isDark ? '#FFFFFF' : IARCHE_COLORS.terracotta;
+  const strokeColor = isDark ? IARCHE_COLORS.white : IARCHE_COLORS.terracotta;
   const opacity = isDark ? 0.18 : 0.3;
   const cornerSize = 120;
   
@@ -319,47 +277,6 @@ const ArchesDecoration = ({ isDark }: { isDark: boolean }) => {
   );
 };
 
-// Gradient bar component - pure hex colors for reliable PDF rendering
-const GradientBar = ({ width, height, style }: { width: number; height: number; style?: object }) => (
-  <View style={{ flexDirection: 'row', width, height, borderRadius: height / 2, overflow: 'hidden', ...style }}>
-    <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.bleuNuit }} />
-    <View style={{ flex: 1, backgroundColor: '#3A5A7A' }} />
-    <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.terracotta }} />
-    <View style={{ flex: 1, backgroundColor: '#3A5A7A' }} />
-    <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.bleuNuit }} />
-  </View>
-);
-
-// Header bar - pure hex colors for reliable PDF rendering  
-const HeaderBar = ({ isDark }: { isDark: boolean }) => (
-  <View style={{ flexDirection: 'row', width: 300, height: 3, marginTop: 10, borderRadius: 1.5, overflow: 'hidden' }}>
-    <View style={{ flex: 1, backgroundColor: isDark ? '#2A3F5F' : IARCHE_COLORS.bleuNuit }} />
-    <View style={{ flex: 1, backgroundColor: isDark ? '#4A5A7A' : '#3A5A7A' }} />
-    <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.terracotta }} />
-    <View style={{ flex: 1, backgroundColor: isDark ? '#4A5A7A' : '#3A5A7A' }} />
-    <View style={{ flex: 1, backgroundColor: isDark ? '#2A3F5F' : IARCHE_COLORS.bleuNuit }} />
-  </View>
-);
-
-// Logo bar under "IArche" text
-const LogoBar = ({ isDark }: { isDark: boolean }) => (
-  <View style={{ flexDirection: 'row', width: 60, height: 2, marginTop: 6, borderRadius: 1, overflow: 'hidden' }}>
-    <View style={{ flex: 1, backgroundColor: isDark ? '#8899AA' : IARCHE_COLORS.bleuNuit }} />
-    <View style={{ flex: 1, backgroundColor: IARCHE_COLORS.terracotta }} />
-  </View>
-);
-
-// Footer bar - pure hex colors for reliable PDF rendering
-const FooterBar = ({ isDark }: { isDark: boolean }) => (
-  <View style={{ flexDirection: 'row', width: 1760, height: 2, marginBottom: 16, borderRadius: 1, overflow: 'hidden' }}>
-    <View style={{ flex: 1, backgroundColor: isDark ? '#3A4A6A' : '#8A9AAA' }} />
-    <View style={{ flex: 1, backgroundColor: isDark ? '#5A6A8A' : '#6A7A9A' }} />
-    <View style={{ flex: 2, backgroundColor: IARCHE_COLORS.terracotta }} />
-    <View style={{ flex: 1, backgroundColor: isDark ? '#5A6A8A' : '#6A7A9A' }} />
-    <View style={{ flex: 1, backgroundColor: isDark ? '#3A4A6A' : '#8A9AAA' }} />
-  </View>
-);
-
 export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDFProps) => {
   // Theme alternation based on startTheme
   const getSlideTheme = (slideIndex: number): boolean => {
@@ -383,8 +300,12 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
             size={[PAGE_WIDTH, PAGE_HEIGHT]} 
             style={isDark ? styles.pageDark : styles.pageLight}
           >
-            {/* Background elements */}
-            <MeshBackground isDark={isDark} />
+            {/* Background elements - using PNG pattern */}
+            <PDFPatternBackground 
+              pageWidth={PAGE_WIDTH} 
+              pageHeight={PAGE_HEIGHT} 
+              opacity={isDark ? 0.05 : 0.07} 
+            />
             <ArchesDecoration isDark={isDark} />
 
             {/* Main content */}
@@ -392,14 +313,18 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
               {/* Header */}
               <View style={styles.header}>
                 <View style={styles.logoContainer}>
-                  <Text style={[styles.logoText, isDark ? styles.logoTextDark : styles.logoTextLight]}>
-                    IArche
-                  </Text>
-                  <LogoBar isDark={isDark} />
+                  {/* Logo PNG - white for dark, gradient for light */}
+                  <PDFImageLogo 
+                    width={140} 
+                    variant={isDark ? 'white' : 'gradient'} 
+                  />
+                  {/* Small bar under logo - sm size */}
+                  <PDFImageBar size="sm" style={{ marginTop: 6 }} />
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <HeaderBar isDark={isDark} />
-                  <Text style={[styles.slideNumber, { marginLeft: 20 }]}>
+                  {/* Header bar - lg size */}
+                  <PDFImageBar size="lg" width={300} height={3} style={{ marginRight: 20 }} />
+                  <Text style={styles.slideNumber}>
                     {String(index + 1).padStart(2, '0')}
                   </Text>
                 </View>
@@ -419,7 +344,8 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
                           {slide.title}
                         </Text>
                       )}
-                      <GradientBar width={100} height={5} style={{ marginTop: 12 }} />
+                      {/* Bar lg under section title */}
+                      <PDFImageBar size="lg" style={{ marginTop: 12 }} />
                     </View>
                   </View>
                 )}
@@ -435,7 +361,8 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
                     <Text style={isDark ? styles.titleDark : styles.titleLight}>
                       {slide.title}
                     </Text>
-                    <GradientBar width={128} height={6} style={{ marginTop: 16 }} />
+                    {/* Bar xl under main title */}
+                    <PDFImageBar size="xl" style={{ marginTop: 16 }} />
                     {slide.content && (
                       <Text style={[isDark ? styles.textDark : styles.textLight, { marginTop: 24, textAlign: 'center' }]}>
                         {slide.content}
@@ -471,7 +398,8 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
                 {slide.type === 'cta' && (
                   <>
                     <Text style={styles.ctaText}>{slide.title}</Text>
-                    <GradientBar width={160} height={6} style={{ marginTop: 20, marginBottom: 20 }} />
+                    {/* Bar xl under CTA */}
+                    <PDFImageBar size="xl" style={{ marginTop: 20, marginBottom: 20 }} />
                     {slide.content && (
                       <Text style={[styles.ctaSubtext, isDark ? styles.ctaSubtextDark : styles.ctaSubtextLight]}>
                         {slide.content}
@@ -483,7 +411,8 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
 
               {/* Footer */}
               <View>
-                <FooterBar isDark={isDark} />
+                {/* Footer bar - xl size */}
+                <PDFImageBar size="xl" width={PAGE_WIDTH - 160} height={2} style={{ marginBottom: 16 }} />
                 <View style={styles.footer}>
                   <Text style={isDark ? styles.footerTextDark : styles.footerTextLight}>
                     IArche · L'IA se construit avec vous
