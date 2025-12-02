@@ -17,6 +17,7 @@ import {
   IARCHE_FONTS,
   ThemeType,
 } from '@/components/admin/medias/html';
+import { LogoPositionSelector, LogoPosition, getLogoPositionStyles } from '@/components/admin/medias/shared';
 
 type ThumbnailFormat = 'standard' | 'youtube';
 type EventType = 'webinaire' | 'atelier' | 'replay';
@@ -41,6 +42,7 @@ export default function ThumbnailEditor() {
   const [format, setFormat] = useState<ThumbnailFormat>('standard');
   const [theme, setTheme] = useState<ThemeType>('dark');
   const [eventType, setEventType] = useState<EventType>('webinaire');
+  const [logoPosition, setLogoPosition] = useState<LogoPosition>('top-left');
   
   // Content fields
   const [titre, setTitre] = useState('Intégrer l\'IA dans votre PME');
@@ -149,6 +151,12 @@ export default function ThumbnailEditor() {
                 </Select>
               </div>
 
+              {/* Logo Position */}
+              <LogoPositionSelector
+                value={logoPosition}
+                onChange={setLogoPosition}
+              />
+
               {/* Content */}
               <div className="space-y-2">
                 <Label>Titre</Label>
@@ -228,15 +236,19 @@ export default function ThumbnailEditor() {
                     canalisationOpacity={0.4}
                     canalisationStrokeWidth={format === 'standard' ? 7 : 5}
                   >
+                    {/* Logo positionné */}
+                    <div style={getLogoPositionStyles(logoPosition)}>
+                      <HTMLLogo size="xl" theme={theme} />
+                    </div>
+
                     <div style={{
                       display: 'flex', 
                       flexDirection: 'column', 
                       justifyContent: 'space-between',
                       height: '100%',
                     }}>
-                      {/* Header */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <HTMLLogo size="xl" theme={theme} />
+                      {/* Header - Badge only */}
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start' }}>
                         <span style={{
                           fontFamily: IARCHE_FONTS.primary,
                           fontSize: '20px',

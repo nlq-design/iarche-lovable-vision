@@ -19,6 +19,7 @@ import {
   IARCHE_FONTS,
   ThemeType,
 } from '@/components/admin/medias/html';
+import { LogoPositionSelector, LogoPosition, getLogoPositionStyles } from '@/components/admin/medias/shared';
 
 type StoryTemplate = 'annonce' | 'chiffre';
 
@@ -32,6 +33,7 @@ export default function StoryEditor() {
   
   const [template, setTemplate] = useState<StoryTemplate>('annonce');
   const [theme, setTheme] = useState<ThemeType>('dark');
+  const [logoPosition, setLogoPosition] = useState<LogoPosition>('top-left');
   
   // Annonce fields
   const [badge, setBadge] = useState('Nouveauté');
@@ -251,6 +253,12 @@ export default function StoryEditor() {
                 </Select>
               </div>
 
+              {/* Logo Position */}
+              <LogoPositionSelector
+                value={logoPosition}
+                onChange={setLogoPosition}
+              />
+
               {/* Template-specific fields */}
               {template === 'annonce' && (
                 <>
@@ -318,6 +326,10 @@ export default function StoryEditor() {
                     canalisationOpacity={0.5}
                     canalisationStrokeWidth={8}
                   >
+                    {/* Logo positionné */}
+                    <div style={getLogoPositionStyles(logoPosition)}>
+                      <HTMLLogo size="xl" theme={theme} />
+                    </div>
                     {renderStoryContent()}
                   </HTMLBaseTemplate>
                 </div>
