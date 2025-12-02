@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { exportToPNG } from '@/lib/exportPng';
+import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -20,6 +21,23 @@ import {
 } from '@/components/admin/medias/html';
 
 type OGTemplate = 'page' | 'article' | 'solution';
+
+type PresetTemplate = {
+  id: string;
+  label: string;
+  pageTitle: string;
+  pageTagline: string;
+  articleTitle: string;
+  articleCategory: string;
+};
+
+const PRESET_TEMPLATES: PresetTemplate[] = [
+  { id: 'services', label: 'Page Services', pageTitle: 'Services', pageTagline: 'Audit, Développement, Formation IA', articleTitle: 'Nos services IA pour PME', articleCategory: 'Services' },
+  { id: 'solutions', label: 'Page Solutions', pageTitle: 'Solutions', pageTagline: 'Des solutions IA clé en main', articleTitle: 'Découvrez nos solutions', articleCategory: 'Solutions' },
+  { id: 'guide', label: 'Article Guide', pageTitle: 'Ressources', pageTagline: 'Guides et conseils IA', articleTitle: 'Guide complet : Intégrer l\'IA dans votre PME', articleCategory: 'Guide' },
+  { id: 'actualite', label: 'Actualité', pageTitle: 'Actualités', pageTagline: 'Les dernières nouvelles IArche', articleTitle: 'IArche lance sa nouvelle plateforme', articleCategory: 'Actualité' },
+  { id: 'cas-client', label: 'Cas Client', pageTitle: 'Cas Clients', pageTagline: 'Nos success stories', articleTitle: 'Comment notre client a triplé sa productivité', articleCategory: 'Cas Client' },
+];
 
 const OG_WIDTH = 1200;
 const OG_HEIGHT = 630;
@@ -39,6 +57,13 @@ export default function OpenGraphEditor() {
   
   const [template, setTemplate] = useState<OGTemplate>('page');
   const [theme, setTheme] = useState<ThemeType>('dark');
+  const [preset, setPreset] = useState<string>('');
+  
+  // Typography states
+  const [titleFontSize, setTitleFontSize] = useState(72);
+  const [titleBold, setTitleBold] = useState(true);
+  const [titleItalic, setTitleItalic] = useState(false);
+  const [titleAlignment, setTitleAlignment] = useState<TextAlignment>('center');
   
   // Page fields
   const [pageTitle, setPageTitle] = useState('Services');
@@ -51,6 +76,17 @@ export default function OpenGraphEditor() {
   
   // Solution fields
   const [selectedSolution, setSelectedSolution] = useState(SOLUTIONS[0].id);
+
+  const applyPreset = (presetId: string) => {
+    const selectedPreset = PRESET_TEMPLATES.find(p => p.id === presetId);
+    if (selectedPreset) {
+      setPageTitle(selectedPreset.pageTitle);
+      setPageTagline(selectedPreset.pageTagline);
+      setArticleTitle(selectedPreset.articleTitle);
+      setArticleCategory(selectedPreset.articleCategory);
+    }
+    setPreset(presetId);
+  };
 
   const handleExport = async () => {
     try {
@@ -75,17 +111,18 @@ export default function OpenGraphEditor() {
             display: 'flex', 
             flexDirection: 'column', 
             justifyContent: 'center',
-            alignItems: 'center',
+            alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
             height: '100%',
             gap: '32px',
-            textAlign: 'center',
+            textAlign: titleAlignment,
           }}>
             <HTMLLogo size="xl" theme={theme} />
             <HTMLGradientBar size="lg" />
             <h1 style={{
               fontFamily: IARCHE_FONTS.primary,
-              fontSize: '72px',
-              fontWeight: 700,
+              fontSize: `${titleFontSize}px`,
+              fontWeight: titleBold ? 700 : 400,
+              fontStyle: titleItalic ? 'italic' : 'normal',
               color: textColor,
               margin: 0,
             }}>
@@ -93,7 +130,7 @@ export default function OpenGraphEditor() {
             </h1>
             <p style={{
               fontFamily: IARCHE_FONTS.primary,
-              fontSize: '28px',
+              fontSize: `${titleFontSize * 0.39}px`,
               fontWeight: 400,
               color: subtextColor,
               margin: 0,
@@ -135,12 +172,14 @@ export default function OpenGraphEditor() {
               flexDirection: 'column', 
               gap: '24px',
               maxWidth: '85%',
+              textAlign: titleAlignment,
             }}>
               <HTMLGradientBar size="lg" />
               <h1 style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: '52px',
-                fontWeight: 700,
+                fontSize: `${titleFontSize * 0.72}px`,
+                fontWeight: titleBold ? 700 : 400,
+                fontStyle: titleItalic ? 'italic' : 'normal',
                 color: textColor,
                 margin: 0,
                 lineHeight: 1.15,
@@ -209,12 +248,13 @@ export default function OpenGraphEditor() {
               </div>
               
               {/* Text */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', textAlign: titleAlignment }}>
                 <HTMLGradientBar size="lg" />
                 <h1 style={{
                   fontFamily: IARCHE_FONTS.primary,
-                  fontSize: '64px',
-                  fontWeight: 700,
+                  fontSize: `${titleFontSize * 0.89}px`,
+                  fontWeight: titleBold ? 700 : 400,
+                  fontStyle: titleItalic ? 'italic' : 'normal',
                   color: textColor,
                   margin: 0,
                 }}>
@@ -222,7 +262,7 @@ export default function OpenGraphEditor() {
                 </h1>
                 <p style={{
                   fontFamily: IARCHE_FONTS.primary,
-                  fontSize: '28px',
+                  fontSize: `${titleFontSize * 0.39}px`,
                   fontWeight: 400,
                   color: subtextColor,
                   margin: 0,
@@ -276,6 +316,21 @@ export default function OpenGraphEditor() {
               <CardTitle>Paramètres</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Preset templates */}
+              <div className="space-y-2">
+                <Label>Templates pré-remplis</Label>
+                <Select value={preset} onValueChange={applyPreset}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir un template..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRESET_TEMPLATES.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Template */}
               <div className="space-y-2">
                 <Label>Template</Label>
@@ -301,6 +356,21 @@ export default function OpenGraphEditor() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Typography controls */}
+              <TypographyControls
+                label="Typographie titre"
+                fontSize={titleFontSize}
+                onFontSizeChange={setTitleFontSize}
+                isBold={titleBold}
+                onBoldChange={setTitleBold}
+                isItalic={titleItalic}
+                onItalicChange={setTitleItalic}
+                alignment={titleAlignment}
+                onAlignmentChange={setTitleAlignment}
+                minFontSize={48}
+                maxFontSize={96}
+              />
 
               {/* Template-specific fields */}
               {template === 'page' && (
