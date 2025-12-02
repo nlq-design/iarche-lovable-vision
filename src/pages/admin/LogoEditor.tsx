@@ -20,11 +20,13 @@ import { BarSize } from '@/components/admin/medias/html/tokens';
 type LogoSize = '500' | '250' | '100';
 type ExportMode = 'logo' | 'logo-bar' | 'full';
 
-const LOGO_SIZES: Record<LogoSize, { width: number; label: string; barSize: BarSize }> = {
-  '500': { width: 500, label: '500px (Grande)', barSize: 'xl' },
-  '250': { width: 250, label: '250px (Moyenne)', barSize: 'lg' },
-  '100': { width: 100, label: '100px (Petite)', barSize: 'sm' },
+const LOGO_SIZES: Record<LogoSize, { width: number; label: string }> = {
+  '500': { width: 500, label: '500px (Grande)' },
+  '250': { width: 250, label: '250px (Moyenne)' },
+  '100': { width: 100, label: '100px (Petite)' },
 };
+
+const BAR_SIZE_OPTIONS: BarSize[] = ['sm', 'md', 'lg', 'xl'];
 
 const EXPORT_MODES: Record<ExportMode, { label: string }> = {
   'logo': { label: 'Seul' },
@@ -67,6 +69,7 @@ interface LogoPreviewCardProps {
   exportMode: ExportMode;
   onModeChange: (mode: ExportMode) => void;
   barSize: BarSize;
+  onBarSizeChange: (size: BarSize) => void;
   onDownload: () => void;
   isExporting: boolean;
   sizeLabel: string;
@@ -79,6 +82,7 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
   exportMode,
   onModeChange,
   barSize,
+  onBarSizeChange,
   onDownload, 
   isExporting,
   sizeLabel,
@@ -118,7 +122,26 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
           ))}
         </RadioGroup>
 
-        <div 
+        {(exportMode === 'logo-bar' || exportMode === 'full') && (
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground">Barre :</Label>
+            <div className="flex gap-1">
+              {BAR_SIZE_OPTIONS.map((size) => (
+                <Button
+                  key={size}
+                  variant={barSize === size ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => onBarSizeChange(size)}
+                >
+                  {size.toUpperCase()}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div
           ref={exportRef}
           className="aspect-[3/2] rounded-lg overflow-hidden relative"
           style={{ backgroundColor: variant.bgColor }}
@@ -172,6 +195,12 @@ export default function LogoEditor() {
     terracotta: 'logo-bar',
   });
   
+  const [barSizes, setBarSizes] = useState<Record<LogoVariant, BarSize>>({
+    gradient: 'xl',
+    white: 'lg',
+    terracotta: 'lg',
+  });
+  
   const gradientRef = useRef<HTMLDivElement>(null);
   const whiteRef = useRef<HTMLDivElement>(null);
   const terracottaRef = useRef<HTMLDivElement>(null);
@@ -184,6 +213,10 @@ export default function LogoEditor() {
 
   const updateExportMode = (variant: LogoVariant, mode: ExportMode) => {
     setExportModes(prev => ({ ...prev, [variant]: mode }));
+  };
+
+  const updateBarSize = (variant: LogoVariant, barSize: BarSize) => {
+    setBarSizes(prev => ({ ...prev, [variant]: barSize }));
   };
 
   const resizeAndExport = async (src: string, targetWidth: number): Promise<Blob | null> => {
@@ -323,9 +356,6 @@ export default function LogoEditor() {
                   ))}
                 </SelectContent>
               </Select>
-              <span className="text-sm text-muted-foreground">
-                Barre : {LOGO_SIZES[size].barSize.toUpperCase()}
-              </span>
             </div>
           </CardContent>
         </Card>
@@ -338,7 +368,8 @@ export default function LogoEditor() {
               variant={variant}
               exportMode={exportModes[key]}
               onModeChange={(mode) => updateExportMode(key, mode)}
-              barSize={LOGO_SIZES[size].barSize}
+              barSize={barSizes[key]}
+              onBarSizeChange={(size) => updateBarSize(key, size)}
               onDownload={() => handleExportSingle(key)}
               isExporting={isExporting}
               sizeLabel={`${LOGO_SIZES[size].width}px`}
