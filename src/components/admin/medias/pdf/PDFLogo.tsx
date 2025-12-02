@@ -1,8 +1,8 @@
 import { Svg, Defs, LinearGradient, Stop, Text, View } from '@react-pdf/renderer';
-import { LOGO_SIZES, IARCHE_COLORS } from './tokens';
+import { LOGO_SIZES_PDF, IARCHE_COLORS } from './tokens';
 
 interface PDFLogoProps {
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 /**
@@ -10,7 +10,7 @@ interface PDFLogoProps {
  * Gradient frozen at 50% of animation cycle: BleuNuit → Terracotta → BleuNuit
  */
 export const PDFLogo = ({ size = 'md' }: PDFLogoProps) => {
-  const config = LOGO_SIZES[size];
+  const config = LOGO_SIZES_PDF[size];
   
   return (
     <View style={{ alignItems: 'center' }}>
