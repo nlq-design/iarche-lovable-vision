@@ -455,7 +455,7 @@ const FormEditor = () => {
   }, [id]);
 
   const loadForm = async (formId: string) => {
-    setLoading(false);
+    setLoading(true);
     const data = await getFormById(formId);
     if (data) {
       setForm(data);
@@ -500,7 +500,11 @@ const FormEditor = () => {
   };
 
   const addField = (type: FieldType) => {
-    if (!form) return;
+    console.log('addField called with type:', type, 'form:', form);
+    if (!form) {
+      console.log('addField: form is null, returning');
+      return;
+    }
     
     const fieldInfo = FIELD_TYPE_INFO[type];
     const newField: FormField = {
@@ -513,6 +517,7 @@ const FormEditor = () => {
         : undefined,
     };
 
+    console.log('addField: creating new field:', newField);
     setForm({ ...form, fields: [...form.fields, newField] });
     setSelectedFieldId(newField.id);
   };
