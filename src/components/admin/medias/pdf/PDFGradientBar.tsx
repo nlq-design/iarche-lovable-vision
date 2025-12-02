@@ -10,12 +10,17 @@ interface PDFGradientBarProps {
   width?: number;
   /** Custom height override */
   height?: number;
+  /** Dark theme (Bleu Nuit background) - adapts gradient colors for visibility */
+  isDark?: boolean;
   style?: object;
 }
 
 /**
  * Decorative gradient bar following IArche brand guidelines
- * Gradient: BleuNuit → Terracotta → BleuNuit
+ * 
+ * Gradient adapts to background:
+ * - Light background: BleuNuit → Terracotta → BleuNuit
+ * - Dark background: White → Terracotta → White (for visibility)
  * 
  * Uses native react-pdf SVG components for reliable rendering.
  * Each bar gets a unique gradient ID to prevent conflicts.
@@ -29,7 +34,8 @@ interface PDFGradientBarProps {
 export const PDFGradientBar = ({ 
   size = 'md', 
   width: customWidth, 
-  height: customHeight, 
+  height: customHeight,
+  isDark = false,
   style = {} 
 }: PDFGradientBarProps) => {
   const defaultSize = BAR_SIZES[size];
@@ -38,6 +44,10 @@ export const PDFGradientBar = ({
   
   // Generate unique ID for this gradient to avoid conflicts
   const gradientId = `barGradient-${barGradientCounter++}`;
+  
+  // Adapt colors based on background theme
+  const edgeColor = isDark ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
+  const centerColor = IARCHE_COLORS.terracotta;
   
   return (
     <Svg 
@@ -51,9 +61,9 @@ export const PDFGradientBar = ({
     >
       <Defs>
         <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-          <Stop offset="0%" stopColor={IARCHE_COLORS.bleuNuit} />
-          <Stop offset="50%" stopColor={IARCHE_COLORS.terracotta} />
-          <Stop offset="100%" stopColor={IARCHE_COLORS.bleuNuit} />
+          <Stop offset="0%" stopColor={edgeColor} />
+          <Stop offset="50%" stopColor={centerColor} />
+          <Stop offset="100%" stopColor={edgeColor} />
         </LinearGradient>
       </Defs>
       <Rect 
