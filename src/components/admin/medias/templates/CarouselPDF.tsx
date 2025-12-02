@@ -248,9 +248,9 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
                     width={120} 
                     variant={isDark ? 'terracotta' : 'gradient'} 
                   />
-                  {/* Bar under logo - only if showBar */}
+                  {/* Bar under logo - width matches logo */}
                   {showBar && (
-                    <PDFGradientBar size={barSize} style={{ marginTop: 6 }} />
+                    <PDFGradientBar size={barSize} width={120} isDark={isDark} style={{ marginTop: 6 }} />
                   )}
                 </View>
                 {/* Header bar - only if showBar */}
@@ -258,7 +258,8 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
                   <PDFGradientBar 
                     size="xl" 
                     width={width - 120} 
-                    height={3} 
+                    height={3}
+                    isDark={isDark}
                     style={{ marginTop: 8 }} 
                   />
                 )}
@@ -277,7 +278,7 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
                           {slide.title}
                         </Text>
                       ) : null}
-                      {showBar && <PDFGradientBar size={barSize} style={{ marginTop: 8 }} />}
+                      {showBar && <PDFGradientBar size={barSize} isDark={isDark} style={{ marginTop: 8 }} />}
                     </View>
                   </View>
                 ) : (
@@ -292,7 +293,7 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
                         {slide.title}
                       </Text>
                     ) : null}
-                    {showBar && <PDFGradientBar size={barSize} style={{ marginTop: 12, marginBottom: 16 }} />}
+                    {showBar && <PDFGradientBar size={barSize} isDark={isDark} style={{ marginTop: 12, marginBottom: 16 }} />}
                   </View>
                 )}
                 
@@ -314,7 +315,8 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
                   <PDFGradientBar 
                     size="xl" 
                     width={width - 120} 
-                    height={2} 
+                    height={2}
+                    isDark={isDark}
                     style={{ marginBottom: 12 }} 
                   />
                 )}
