@@ -90,7 +90,8 @@ export const useForms = () => {
           title,
           slug,
           fields: [] as unknown as Json,
-          settings: DEFAULT_FORM_SETTINGS as unknown as Json
+          settings: DEFAULT_FORM_SETTINGS as unknown as Json,
+          is_active: true
         })
         .select()
         .single();
@@ -163,7 +164,8 @@ export const useForms = () => {
           slug: newSlug,
           description: original.description,
           fields: original.fields as unknown as Json,
-          settings: original.settings as unknown as Json
+          settings: original.settings as unknown as Json,
+          is_active: true
         })
         .select()
         .single();
