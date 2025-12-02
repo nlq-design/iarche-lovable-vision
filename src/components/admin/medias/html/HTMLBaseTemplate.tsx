@@ -2,6 +2,7 @@ import React, { forwardRef } from 'react';
 import { IARCHE_COLORS, IARCHE_FONTS, ThemeType } from './tokens';
 import { HTMLMeshBackground } from './HTMLMeshBackground';
 import { HTMLArches } from './HTMLArches';
+import { HTMLCanalisationLines } from './HTMLCanalisationLines';
 
 interface HTMLBaseTemplateProps {
   width: number;
@@ -9,7 +10,10 @@ interface HTMLBaseTemplateProps {
   theme?: ThemeType;
   showMesh?: boolean;
   showArches?: boolean;
+  showCanalisations?: boolean;
   archSize?: number;
+  canalisationOpacity?: number;
+  canalisationStrokeWidth?: number;
   padding?: number;
   children: React.ReactNode;
   className?: string;
@@ -17,7 +21,7 @@ interface HTMLBaseTemplateProps {
 
 /**
  * Template de base pour tous les visuels HTML/PNG
- * Inclut: fond, maillé, arches décoratives
+ * Inclut: fond, maillé, arches/canalisations décoratives
  */
 export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps>(
   (
@@ -27,7 +31,10 @@ export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps
       theme = 'light',
       showMesh = true,
       showArches = true,
+      showCanalisations = false,
       archSize,
+      canalisationOpacity = 0.5,
+      canalisationStrokeWidth = 7,
       padding = 40,
       children,
       className = '',
@@ -57,8 +64,19 @@ export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps
         {/* Mesh background pattern */}
         {showMesh && <HTMLMeshBackground theme={theme} />}
         
-        {/* Decorative arches in corners */}
-        {showArches && (
+        {/* Full canalisation lines (hero-style) */}
+        {showCanalisations && (
+          <HTMLCanalisationLines
+            width={width}
+            height={height}
+            theme={theme}
+            opacity={canalisationOpacity}
+            strokeWidth={canalisationStrokeWidth}
+          />
+        )}
+        
+        {/* Decorative arches in corners (simpler alternative) */}
+        {showArches && !showCanalisations && (
           <HTMLArches 
             position="both" 
             theme={theme} 
