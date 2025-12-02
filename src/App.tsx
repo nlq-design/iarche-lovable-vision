@@ -57,6 +57,7 @@ const AdminFAQs = lazy(() => import("./pages/admin/AdminFAQs"));
 const PerformanceMonitoring = lazy(() => import("./pages/admin/PerformanceMonitoring"));
 const CTAAnalytics = lazy(() => import("./pages/admin/CTAAnalytics"));
 const AdminMedias = lazy(() => import("./pages/admin/AdminMedias"));
+const BannerEditor = lazy(() => import("./pages/admin/BannerEditor"));
 const GenerateAssets = lazy(() => import("./pages/admin/GenerateAssets"));
 const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"));
 
@@ -317,6 +318,11 @@ const App = () => (
           <Route path="/admin/medias" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><AdminMedias /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/medias/banner" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><BannerEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/generate-assets" element={
