@@ -12,7 +12,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ArrowLeft, Download, Plus, Trash2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { PresentationPDF } from './templates/PresentationPDF';
+import { PresentationPDF, ExportMode, BarSize } from './templates/PresentationPDF';
+import { ExportModeControls } from './ExportModeControls';
 
 interface PresentationEditorProps {
   templateId: string;
@@ -26,44 +27,46 @@ interface SlideData {
   subtitle: string;
   content: string;
   bullets: string[];
+  exportMode?: ExportMode;
+  barSize?: BarSize;
 }
 
 const templateConfigs: Record<string, { name: string; defaultSlides: SlideData[] }> = {
   pitch: {
     name: 'Pitch Commercial',
     defaultSlides: [
-      { id: 1, type: 'title', title: 'IArche', subtitle: 'L\'IA se construit avec vous', content: '', bullets: [] },
-      { id: 2, type: 'content', title: 'Qui sommes-nous ?', subtitle: '', content: 'IArche est une agence IA installée à Bayonne. On accompagne les dirigeants de PME dans l\'intégration concrète de l\'intelligence artificielle.', bullets: [] },
-      { id: 3, type: 'bullets', title: 'Nos services', subtitle: '', content: '', bullets: ['Audit IA', 'Développement sur-mesure', 'Formation', 'Conformité RGPD'] },
-      { id: 4, type: 'bullets', title: 'Nos solutions', subtitle: '', content: '', bullets: ['Collaboria', 'Datalia', 'Team 5 Connect', 'Lexia', 'Dialogue Plus'] },
-      { id: 5, type: 'content', title: 'Notre méthodologie', subtitle: '', content: 'Une approche pragmatique centrée sur vos besoins réels et votre ROI.', bullets: [] },
-      { id: 6, type: 'bullets', title: 'Pourquoi IArche ?', subtitle: '', content: '', bullets: ['Expertise IA reconnue', 'Proximité & engagement local', 'Solutions éprouvées', 'Accompagnement sur-mesure'] },
-      { id: 7, type: 'content', title: 'Ils nous font confiance', subtitle: '', content: 'PME, ETI et grands groupes nous accompagnent dans leur transformation IA.', bullets: [] },
-      { id: 8, type: 'cta', title: 'Prêt à démarrer ?', subtitle: 'Prenez rendez-vous', content: 'cal.com/iarche/audit-conseil', bullets: [] },
+      { id: 1, type: 'title', title: 'IArche', subtitle: 'L\'IA se construit avec vous', content: '', bullets: [], exportMode: 'full', barSize: 'lg' },
+      { id: 2, type: 'content', title: 'Qui sommes-nous ?', subtitle: '', content: 'IArche est une agence IA installée à Bayonne. On accompagne les dirigeants de PME dans l\'intégration concrète de l\'intelligence artificielle.', bullets: [], exportMode: 'full', barSize: 'lg' },
+      { id: 3, type: 'bullets', title: 'Nos services', subtitle: '', content: '', bullets: ['Audit IA', 'Développement sur-mesure', 'Formation', 'Conformité RGPD'], exportMode: 'full', barSize: 'lg' },
+      { id: 4, type: 'bullets', title: 'Nos solutions', subtitle: '', content: '', bullets: ['Collaboria', 'Datalia', 'Team 5 Connect', 'Lexia', 'Dialogue Plus'], exportMode: 'full', barSize: 'lg' },
+      { id: 5, type: 'content', title: 'Notre méthodologie', subtitle: '', content: 'Une approche pragmatique centrée sur vos besoins réels et votre ROI.', bullets: [], exportMode: 'full', barSize: 'lg' },
+      { id: 6, type: 'bullets', title: 'Pourquoi IArche ?', subtitle: '', content: '', bullets: ['Expertise IA reconnue', 'Proximité & engagement local', 'Solutions éprouvées', 'Accompagnement sur-mesure'], exportMode: 'full', barSize: 'lg' },
+      { id: 7, type: 'content', title: 'Ils nous font confiance', subtitle: '', content: 'PME, ETI et grands groupes nous accompagnent dans leur transformation IA.', bullets: [], exportMode: 'full', barSize: 'lg' },
+      { id: 8, type: 'cta', title: 'Prêt à démarrer ?', subtitle: 'Prenez rendez-vous', content: 'cal.com/iarche/audit-conseil', bullets: [], exportMode: 'full', barSize: 'lg' },
     ]
   },
   project: {
     name: 'Présentation Projet',
     defaultSlides: [
-      { id: 1, type: 'title', title: '', subtitle: 'Proposition de projet', content: '', bullets: [] },
-      { id: 2, type: 'content', title: 'Contexte', subtitle: '', content: 'Décrivez le contexte du projet...', bullets: [] },
-      { id: 3, type: 'bullets', title: 'Vos enjeux', subtitle: '', content: '', bullets: ['Enjeu 1', 'Enjeu 2', 'Enjeu 3'] },
-      { id: 4, type: 'content', title: 'Notre solution', subtitle: '', content: 'Présentez la solution proposée...', bullets: [] },
-      { id: 5, type: 'bullets', title: 'Fonctionnalités clés', subtitle: '', content: '', bullets: ['Fonctionnalité 1', 'Fonctionnalité 2', 'Fonctionnalité 3'] },
-      { id: 6, type: 'content', title: 'Planning', subtitle: '', content: 'Détaillez les phases du projet...', bullets: [] },
-      { id: 7, type: 'content', title: 'Budget', subtitle: '', content: 'À partir de X €', bullets: [] },
-      { id: 8, type: 'cta', title: 'Prochaines étapes', subtitle: '', content: 'Contactez-nous pour démarrer', bullets: [] },
+      { id: 1, type: 'title', title: '', subtitle: 'Proposition de projet', content: '', bullets: [], exportMode: 'full', barSize: 'lg' },
+      { id: 2, type: 'content', title: 'Contexte', subtitle: '', content: 'Décrivez le contexte du projet...', bullets: [], exportMode: 'full', barSize: 'lg' },
+      { id: 3, type: 'bullets', title: 'Vos enjeux', subtitle: '', content: '', bullets: ['Enjeu 1', 'Enjeu 2', 'Enjeu 3'], exportMode: 'full', barSize: 'lg' },
+      { id: 4, type: 'content', title: 'Notre solution', subtitle: '', content: 'Présentez la solution proposée...', bullets: [], exportMode: 'full', barSize: 'lg' },
+      { id: 5, type: 'bullets', title: 'Fonctionnalités clés', subtitle: '', content: '', bullets: ['Fonctionnalité 1', 'Fonctionnalité 2', 'Fonctionnalité 3'], exportMode: 'full', barSize: 'lg' },
+      { id: 6, type: 'content', title: 'Planning', subtitle: '', content: 'Détaillez les phases du projet...', bullets: [], exportMode: 'full', barSize: 'lg' },
+      { id: 7, type: 'content', title: 'Budget', subtitle: '', content: 'À partir de X €', bullets: [], exportMode: 'full', barSize: 'lg' },
+      { id: 8, type: 'cta', title: 'Prochaines étapes', subtitle: '', content: 'Contactez-nous pour démarrer', bullets: [], exportMode: 'full', barSize: 'lg' },
     ]
   },
   report: {
     name: 'Rapport / Bilan',
     defaultSlides: [
-      { id: 1, type: 'title', title: 'Rapport d\'activité', subtitle: '', content: '', bullets: [] },
-      { id: 2, type: 'content', title: 'Synthèse', subtitle: '', content: 'Résumé exécutif...', bullets: [] },
-      { id: 3, type: 'bullets', title: 'Réalisations', subtitle: '', content: '', bullets: ['Réalisation 1', 'Réalisation 2', 'Réalisation 3'] },
-      { id: 4, type: 'content', title: 'Résultats', subtitle: '', content: 'Détaillez les résultats obtenus...', bullets: [] },
-      { id: 5, type: 'bullets', title: 'Prochaines étapes', subtitle: '', content: '', bullets: ['Action 1', 'Action 2', 'Action 3'] },
-      { id: 6, type: 'cta', title: 'Questions ?', subtitle: '', content: 'contact@iarche.fr', bullets: [] },
+      { id: 1, type: 'title', title: 'Rapport d\'activité', subtitle: '', content: '', bullets: [], exportMode: 'full', barSize: 'lg' },
+      { id: 2, type: 'content', title: 'Synthèse', subtitle: '', content: 'Résumé exécutif...', bullets: [], exportMode: 'full', barSize: 'lg' },
+      { id: 3, type: 'bullets', title: 'Réalisations', subtitle: '', content: '', bullets: ['Réalisation 1', 'Réalisation 2', 'Réalisation 3'], exportMode: 'full', barSize: 'lg' },
+      { id: 4, type: 'content', title: 'Résultats', subtitle: '', content: 'Détaillez les résultats obtenus...', bullets: [], exportMode: 'full', barSize: 'lg' },
+      { id: 5, type: 'bullets', title: 'Prochaines étapes', subtitle: '', content: '', bullets: ['Action 1', 'Action 2', 'Action 3'], exportMode: 'full', barSize: 'lg' },
+      { id: 6, type: 'cta', title: 'Questions ?', subtitle: '', content: 'contact@iarche.fr', bullets: [], exportMode: 'full', barSize: 'lg' },
     ]
   }
 };
@@ -121,7 +124,9 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
       title: 'Nouveau slide',
       subtitle: '',
       content: '',
-      bullets: []
+      bullets: [],
+      exportMode: 'full',
+      barSize: 'lg'
     };
     setSlides(prev => [...prev, newSlide]);
     setCurrentSlide(slides.length);
@@ -151,6 +156,12 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
   };
 
   const current = slides[currentSlide];
+  const currentExportMode = current?.exportMode || 'full';
+  const currentBarSize = current?.barSize || 'lg';
+  
+  // Preview: determine if bar/canalisations should show based on current slide's export mode
+  const showBarInPreview = currentExportMode === 'with-bar' || currentExportMode === 'full';
+  const showCanalisationsInPreview = currentExportMode === 'full';
 
   return (
     <AdminLayout>
@@ -249,17 +260,21 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                       background: isDark ? '#1A2B4A' : '#FAF9F7'
                     }}
                   >
-                    {/* Arches decoration preview */}
-                    <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none">
-                      <svg viewBox="0 0 64 64" className="w-full h-full">
-                        <path d="M0 0 L64 0 L64 64" fill="none" stroke={isDark ? 'rgba(255,255,255,0.2)' : 'rgba(209,90,62,0.3)'} strokeWidth="2" />
-                      </svg>
-                    </div>
-                    <div className="absolute bottom-0 left-0 w-16 h-16 pointer-events-none">
-                      <svg viewBox="0 0 64 64" className="w-full h-full">
-                        <path d="M0 0 L0 64 L64 64" fill="none" stroke={isDark ? 'rgba(255,255,255,0.2)' : 'rgba(209,90,62,0.3)'} strokeWidth="2" />
-                      </svg>
-                    </div>
+                    {/* Canalisations decoration preview - only if 'full' mode */}
+                    {showCanalisationsInPreview && (
+                      <>
+                        <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none">
+                          <svg viewBox="0 0 64 64" className="w-full h-full">
+                            <path d="M0 0 L64 0 L64 64" fill="none" stroke={isDark ? 'rgba(255,255,255,0.2)' : 'rgba(209,90,62,0.3)'} strokeWidth="2" />
+                          </svg>
+                        </div>
+                        <div className="absolute bottom-0 left-0 w-16 h-16 pointer-events-none">
+                          <svg viewBox="0 0 64 64" className="w-full h-full">
+                            <path d="M0 0 L0 64 L64 64" fill="none" stroke={isDark ? 'rgba(255,255,255,0.2)' : 'rgba(209,90,62,0.3)'} strokeWidth="2" />
+                          </svg>
+                        </div>
+                      </>
+                    )}
 
                     {/* Header bar */}
                     <div className="flex items-center justify-between mb-6">
@@ -270,9 +285,13 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                         >
                           IArche
                         </span>
-                        <div className="w-10 h-0.5 mt-1 bg-gradient-to-r from-[#1A2B4A] to-[#D15A3E]" />
+                        {showBarInPreview && (
+                          <div className="w-10 h-0.5 mt-1 bg-gradient-to-r from-[#1A2B4A] to-[#D15A3E]" />
+                        )}
                       </div>
-                      <div className="w-16 h-0.5 bg-gradient-to-r from-[#1A2B4A] via-[#D15A3E] to-[#1A2B4A]" />
+                      {showBarInPreview && (
+                        <div className="w-16 h-0.5 bg-gradient-to-r from-[#1A2B4A] via-[#D15A3E] to-[#1A2B4A]" />
+                      )}
                     </div>
 
                     {/* Content */}
@@ -285,6 +304,9 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                       <h2 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-[#1A2B4A]'}`}>
                         {current?.title}
                       </h2>
+                      {showBarInPreview && current?.title && (
+                        <div className="w-20 h-0.5 mb-4 bg-gradient-to-r from-[#1A2B4A] to-[#D15A3E]" />
+                      )}
                       {current?.content && (
                         <p className={`text-sm leading-relaxed ${isDark ? 'text-white/80' : 'text-[#1A2B4A]/80'}`}>
                           {current.content}
@@ -346,6 +368,16 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
 
             <Card>
               <CardContent className="p-4 space-y-4">
+                {/* Export mode controls for current slide */}
+                <ExportModeControls
+                  exportMode={currentExportMode}
+                  onExportModeChange={(mode) => handleSlideChange('exportMode', mode)}
+                  barSize={currentBarSize}
+                  onBarSizeChange={(size) => handleSlideChange('barSize', size)}
+                  showBarSizeSelector={currentExportMode !== 'simple'}
+                  compact
+                />
+
                 <div className="space-y-2">
                   <Label>Type de slide</Label>
                   <Select value={current?.type} onValueChange={(v) => handleSlideChange('type', v)}>
@@ -386,7 +418,12 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                 )}
                 {current?.type === 'bullets' && (
                   <div className="space-y-2">
-                    <Label>Points</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Points clés</Label>
+                      <Button variant="ghost" size="sm" onClick={addBullet}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                     {current.bullets.map((bullet, idx) => (
                       <div key={idx} className="flex gap-2">
                         <Input 
@@ -398,10 +435,6 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                         </Button>
                       </div>
                     ))}
-                    <Button variant="outline" size="sm" onClick={addBullet}>
-                      <Plus className="h-4 w-4 mr-1" />
-                      Ajouter un point
-                    </Button>
                   </div>
                 )}
               </CardContent>

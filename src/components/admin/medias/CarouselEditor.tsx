@@ -12,7 +12,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ArrowLeft, Download, Plus, Trash2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { CarouselPDF } from './templates/CarouselPDF';
+import { CarouselPDF, ExportMode, BarSize } from './templates/CarouselPDF';
+import { ExportModeControls } from './ExportModeControls';
 
 interface CarouselEditorProps {
   templateId: string;
@@ -25,37 +26,39 @@ interface SlideData {
   subtitle: string;
   content: string;
   highlight?: string;
+  exportMode?: ExportMode;
+  barSize?: BarSize;
 }
 
 const templateConfigs: Record<string, { name: string; defaultSlides: SlideData[] }> = {
   solution: {
     name: 'Annonce Solution',
     defaultSlides: [
-      { id: 1, title: 'IArche présente', subtitle: '', content: '', highlight: '' },
-      { id: 2, title: 'Le problème', subtitle: '', content: 'Décrivez le problème que résout cette solution', highlight: '' },
-      { id: 3, title: 'Notre solution', subtitle: '', content: 'Présentez votre solution', highlight: '' },
-      { id: 4, title: 'Les bénéfices', subtitle: '', content: 'Listez les avantages clés', highlight: '' },
-      { id: 5, title: 'Passez à l\'action', subtitle: '', content: 'Call-to-action', highlight: 'iarche.fr' },
+      { id: 1, title: 'IArche présente', subtitle: '', content: '', highlight: '', exportMode: 'full', barSize: 'md' },
+      { id: 2, title: 'Le problème', subtitle: '', content: 'Décrivez le problème que résout cette solution', highlight: '', exportMode: 'full', barSize: 'md' },
+      { id: 3, title: 'Notre solution', subtitle: '', content: 'Présentez votre solution', highlight: '', exportMode: 'full', barSize: 'md' },
+      { id: 4, title: 'Les bénéfices', subtitle: '', content: 'Listez les avantages clés', highlight: '', exportMode: 'full', barSize: 'md' },
+      { id: 5, title: 'Passez à l\'action', subtitle: '', content: 'Call-to-action', highlight: 'iarche.fr', exportMode: 'full', barSize: 'md' },
     ]
   },
   article: {
     name: 'Partage Article',
     defaultSlides: [
-      { id: 1, title: '', subtitle: 'Article IArche', content: '', highlight: '' },
-      { id: 2, title: 'Point clé 1', subtitle: '', content: '', highlight: '' },
-      { id: 3, title: 'Point clé 2', subtitle: '', content: '', highlight: '' },
-      { id: 4, title: 'Point clé 3', subtitle: '', content: '', highlight: '' },
-      { id: 5, title: 'En résumé', subtitle: '', content: '', highlight: '' },
-      { id: 6, title: 'Lire l\'article complet', subtitle: '', content: '', highlight: 'iarche.fr/articles' },
+      { id: 1, title: '', subtitle: 'Article IArche', content: '', highlight: '', exportMode: 'full', barSize: 'md' },
+      { id: 2, title: 'Point clé 1', subtitle: '', content: '', highlight: '', exportMode: 'full', barSize: 'md' },
+      { id: 3, title: 'Point clé 2', subtitle: '', content: '', highlight: '', exportMode: 'full', barSize: 'md' },
+      { id: 4, title: 'Point clé 3', subtitle: '', content: '', highlight: '', exportMode: 'full', barSize: 'md' },
+      { id: 5, title: 'En résumé', subtitle: '', content: '', highlight: '', exportMode: 'full', barSize: 'md' },
+      { id: 6, title: 'Lire l\'article complet', subtitle: '', content: '', highlight: 'iarche.fr/articles', exportMode: 'full', barSize: 'md' },
     ]
   },
   stats: {
     name: 'Chiffres Clés',
     defaultSlides: [
-      { id: 1, title: 'Les chiffres qui comptent', subtitle: 'IArche en quelques données', content: '', highlight: '' },
-      { id: 2, title: '', subtitle: '', content: '', highlight: '85%' },
-      { id: 3, title: '', subtitle: '', content: '', highlight: '+200%' },
-      { id: 4, title: 'Source & Contact', subtitle: '', content: '', highlight: 'iarche.fr' },
+      { id: 1, title: 'Les chiffres qui comptent', subtitle: 'IArche en quelques données', content: '', highlight: '', exportMode: 'full', barSize: 'md' },
+      { id: 2, title: '', subtitle: '', content: '', highlight: '85%', exportMode: 'full', barSize: 'md' },
+      { id: 3, title: '', subtitle: '', content: '', highlight: '+200%', exportMode: 'full', barSize: 'md' },
+      { id: 4, title: 'Source & Contact', subtitle: '', content: '', highlight: 'iarche.fr', exportMode: 'full', barSize: 'md' },
     ]
   }
 };
@@ -85,7 +88,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
     fetchArticles();
   }, []);
 
-  const handleSlideChange = (field: keyof SlideData, value: string) => {
+  const handleSlideChange = (field: keyof SlideData, value: string | ExportMode | BarSize) => {
     setSlides(prev => prev.map((slide, idx) => 
       idx === currentSlide ? { ...slide, [field]: value } : slide
     ));
@@ -97,7 +100,9 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
       title: 'Nouveau slide',
       subtitle: '',
       content: '',
-      highlight: ''
+      highlight: '',
+      exportMode: 'full',
+      barSize: 'md'
     };
     setSlides(prev => [...prev, newSlide]);
     setCurrentSlide(slides.length);
@@ -134,19 +139,24 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
       .single();
     
     if (data) {
-      // Parse content to extract key points (simplified)
       const contentText = data.content.replace(/<[^>]*>/g, ' ').substring(0, 500);
       setSlides([
-        { id: 1, title: data.title, subtitle: 'Article IArche', content: '', highlight: '' },
-        { id: 2, title: 'En bref', subtitle: '', content: data.excerpt || '', highlight: '' },
-        { id: 3, title: 'Points clés', subtitle: '', content: contentText.substring(0, 150) + '...', highlight: '' },
-        { id: 4, title: 'Lire l\'article', subtitle: '', content: '', highlight: 'iarche.fr/articles' },
+        { id: 1, title: data.title, subtitle: 'Article IArche', content: '', highlight: '', exportMode: 'full', barSize: 'md' },
+        { id: 2, title: 'En bref', subtitle: '', content: data.excerpt || '', highlight: '', exportMode: 'full', barSize: 'md' },
+        { id: 3, title: 'Points clés', subtitle: '', content: contentText.substring(0, 150) + '...', highlight: '', exportMode: 'full', barSize: 'md' },
+        { id: 4, title: 'Lire l\'article', subtitle: '', content: '', highlight: 'iarche.fr/articles', exportMode: 'full', barSize: 'md' },
       ]);
       toast({ title: 'Article chargé' });
     }
   };
 
   const current = slides[currentSlide];
+  const currentExportMode = current?.exportMode || 'full';
+  const currentBarSize = current?.barSize || 'md';
+
+  // Preview: determine if bar/canalisations should show based on current slide's export mode
+  const showBarInPreview = currentExportMode === 'with-bar' || currentExportMode === 'full';
+  const showCanalisationsInPreview = currentExportMode === 'full';
 
   return (
     <AdminLayout>
@@ -260,17 +270,21 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                         : '#FAF9F7'
                     }}
                   >
-                    {/* Arches decoration preview */}
-                    <div className="absolute top-0 right-0 w-20 h-20 pointer-events-none">
-                      <svg viewBox="0 0 80 80" className="w-full h-full">
-                        <path d="M0 0 L80 0 L80 80" fill="none" stroke={isDark ? 'rgba(255,255,255,0.2)' : 'rgba(209,90,62,0.3)'} strokeWidth="2" />
-                      </svg>
-                    </div>
-                    <div className="absolute bottom-0 left-0 w-20 h-20 pointer-events-none">
-                      <svg viewBox="0 0 80 80" className="w-full h-full">
-                        <path d="M0 0 L0 80 L80 80" fill="none" stroke={isDark ? 'rgba(255,255,255,0.2)' : 'rgba(209,90,62,0.3)'} strokeWidth="2" />
-                      </svg>
-                    </div>
+                    {/* Canalisations decoration preview - only if 'full' mode */}
+                    {showCanalisationsInPreview && (
+                      <>
+                        <div className="absolute top-0 right-0 w-20 h-20 pointer-events-none">
+                          <svg viewBox="0 0 80 80" className="w-full h-full">
+                            <path d="M0 0 L80 0 L80 80" fill="none" stroke={isDark ? 'rgba(255,255,255,0.2)' : 'rgba(209,90,62,0.3)'} strokeWidth="2" />
+                          </svg>
+                        </div>
+                        <div className="absolute bottom-0 left-0 w-20 h-20 pointer-events-none">
+                          <svg viewBox="0 0 80 80" className="w-full h-full">
+                            <path d="M0 0 L0 80 L80 80" fill="none" stroke={isDark ? 'rgba(255,255,255,0.2)' : 'rgba(209,90,62,0.3)'} strokeWidth="2" />
+                          </svg>
+                        </div>
+                      </>
+                    )}
 
                     {/* Logo + bar */}
                     <div className="text-center">
@@ -282,7 +296,9 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                       >
                         IArche
                       </span>
-                      <div className="w-12 h-0.5 mx-auto mt-1 bg-gradient-to-r from-[#1A2B4A] to-[#D15A3E]" />
+                      {showBarInPreview && (
+                        <div className="w-12 h-0.5 mx-auto mt-1 bg-gradient-to-r from-[#1A2B4A] to-[#D15A3E]" />
+                      )}
                     </div>
 
                     {/* Content */}
@@ -292,6 +308,9 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                       )}
                       {current?.title && (
                         <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-[#1A2B4A]'}`}>{current.title}</h2>
+                      )}
+                      {showBarInPreview && current?.title && (
+                        <div className="w-16 h-0.5 mx-auto bg-gradient-to-r from-[#1A2B4A] to-[#D15A3E]" />
                       )}
                       {current?.content && (
                         <p className={`text-sm leading-relaxed ${isDark ? 'text-white/80' : 'text-[#1A2B4A]/80'}`}>{current.content}</p>
@@ -308,6 +327,9 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
 
                     {/* Footer */}
                     <div className="text-center">
+                      {showBarInPreview && (
+                        <div className="w-full h-px mb-2 bg-gradient-to-r from-[#1A2B4A] to-[#D15A3E] opacity-50" />
+                      )}
                       <p className={`text-xs ${isDark ? 'text-white/40' : 'text-[#1A2B4A]/40'}`}>iarche.fr</p>
                     </div>
                   </div>
@@ -355,6 +377,16 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
 
             <Card>
               <CardContent className="p-4 space-y-4">
+                {/* Export mode controls for current slide */}
+                <ExportModeControls
+                  exportMode={currentExportMode}
+                  onExportModeChange={(mode) => handleSlideChange('exportMode', mode)}
+                  barSize={currentBarSize}
+                  onBarSizeChange={(size) => handleSlideChange('barSize', size)}
+                  showBarSizeSelector={currentExportMode !== 'simple'}
+                  compact
+                />
+
                 <div className="space-y-2">
                   <Label>Sous-titre (optionnel)</Label>
                   <Input 

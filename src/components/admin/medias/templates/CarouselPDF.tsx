@@ -3,12 +3,17 @@ import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
 import { PDFImageLogo, PDFImageBar, PDFPatternBackground } from '../pdf/PDFImageAssets';
 import { PDFCanalisationLines } from '../pdf/PDFCanalisationLines';
 
+export type ExportMode = 'simple' | 'with-bar' | 'full';
+export type BarSize = 'sm' | 'md' | 'lg' | 'xl';
+
 interface SlideData {
   id: number;
   title: string;
   subtitle: string;
   content: string;
   highlight?: string;
+  exportMode?: ExportMode;
+  barSize?: BarSize;
 }
 
 interface CarouselPDFProps {
@@ -52,7 +57,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 30,
   },
-  // Section indicator with number
   sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -71,7 +75,6 @@ const styles = StyleSheet.create({
   sectionNumberLight: {
     color: IARCHE_COLORS.terracotta,
   },
-  // Dark theme text
   subtitleDark: {
     fontSize: 16,
     color: IARCHE_COLORS.white,
@@ -110,7 +113,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica-Bold',
     textAlign: 'center',
   },
-  // Light theme text
   subtitleLight: {
     fontSize: 16,
     color: IARCHE_COLORS.subtle,
@@ -189,12 +191,11 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
     : PDF_FORMATS.carouselInstagram;
   const { width, height } = dimensions;
 
-  // Theme alternation based on startTheme
   const getSlideTheme = (slideIndex: number): boolean => {
     if (startTheme === 'dark') {
-      return slideIndex % 2 === 0; // 0,2,4 = dark, 1,3,5 = light
+      return slideIndex % 2 === 0;
     } else {
-      return slideIndex % 2 !== 0; // 0,2,4 = light, 1,3,5 = dark
+      return slideIndex % 2 !== 0;
     }
   };
 
@@ -206,13 +207,19 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
         const isLast = index === slides.length - 1;
         const showSectionNumber = !isFirst && !isLast;
         
+        // Per-slide export mode (default to 'full' for backward compatibility)
+        const exportMode = slide.exportMode || 'full';
+        const barSize = slide.barSize || 'md';
+        const showBar = exportMode === 'with-bar' || exportMode === 'full';
+        const showCanalisations = exportMode === 'full';
+        
         return (
           <Page 
             key={slide.id} 
             size={[width, height]} 
             style={isDark ? styles.pageDark : styles.pageLight}
           >
-            {/* Mesh background pattern */}
+            {/* Mesh background pattern - always shown */}
             <PDFPatternBackground 
               pageWidth={width} 
               pageHeight={height} 
@@ -220,40 +227,44 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
               isDark={isDark}
             />
             
-            {/* Canalisation lines - matching hero animation (frozen at 6s) */}
-            <PDFCanalisationLines 
-              width={width} 
-              height={height} 
-              isDark={isDark}
-              opacity={0.6}
-              strokeWidth={7}
-            />
+            {/* Canalisation lines - only in 'full' mode */}
+            {showCanalisations && (
+              <PDFCanalisationLines 
+                width={width} 
+                height={height} 
+                isDark={isDark}
+                opacity={0.6}
+                strokeWidth={7}
+              />
+            )}
             
             {/* Main content */}
             <View style={styles.content}>
-              {/* Header with logo PNG and bar PNG */}
+              {/* Header with logo PNG and optional bar PNG */}
               <View style={styles.header}>
                 <View style={styles.logoContainer}>
-                  {/* Logo PNG - terracotta on dark slides, gradient on light slides */}
                   <PDFImageLogo 
                     width={120} 
                     variant={isDark ? 'terracotta' : 'gradient'} 
                   />
-                  {/* Small bar under logo - sm size (48×2) */}
-                  <PDFImageBar size="sm" style={{ marginTop: 6 }} />
+                  {/* Bar under logo - only if showBar */}
+                  {showBar && (
+                    <PDFImageBar size={barSize} style={{ marginTop: 6 }} />
+                  )}
                 </View>
-                {/* Header bar - xl size */}
-                <PDFImageBar 
-                  size="xl" 
-                  width={width - 120} 
-                  height={3} 
-                  style={{ marginTop: 8 }} 
-                />
+                {/* Header bar - only if showBar */}
+                {showBar && (
+                  <PDFImageBar 
+                    size="xl" 
+                    width={width - 120} 
+                    height={3} 
+                    style={{ marginTop: 8 }} 
+                  />
+                )}
               </View>
 
               {/* Content area */}
               <View style={styles.mainContent}>
-                {/* Section number + title row */}
                 {showSectionNumber ? (
                   <View style={styles.sectionRow}>
                     <Text style={[styles.sectionNumber, isDark ? styles.sectionNumberDark : styles.sectionNumberLight]}>
@@ -265,7 +276,7 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
                           {slide.title}
                         </Text>
                       ) : null}
-                      <PDFImageBar size="md" style={{ marginTop: 8 }} />
+                      {showBar && <PDFImageBar size={barSize} style={{ marginTop: 8 }} />}
                     </View>
                   </View>
                 ) : (
@@ -280,7 +291,7 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
                         {slide.title}
                       </Text>
                     ) : null}
-                    <PDFImageBar size="lg" style={{ marginTop: 12, marginBottom: 16 }} />
+                    {showBar && <PDFImageBar size={barSize} style={{ marginTop: 12, marginBottom: 16 }} />}
                   </View>
                 )}
                 
@@ -296,15 +307,16 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
                 ) : null}
               </View>
 
-              {/* Footer with gradient bar separator */}
+              {/* Footer with optional gradient bar separator */}
               <View>
-                {/* Footer bar - xl size */}
-                <PDFImageBar 
-                  size="xl" 
-                  width={width - 120} 
-                  height={2} 
-                  style={{ marginBottom: 12 }} 
-                />
+                {showBar && (
+                  <PDFImageBar 
+                    size="xl" 
+                    width={width - 120} 
+                    height={2} 
+                    style={{ marginBottom: 12 }} 
+                  />
+                )}
                 <View style={styles.footer}>
                   <View>
                     <Text style={isDark ? styles.footerTextDark : styles.footerTextLight}>
