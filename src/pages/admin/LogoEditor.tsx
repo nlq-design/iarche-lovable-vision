@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { COLORS } from '@/components/admin/medias/shared/tokens';
+import { HTMLMeshBackground } from '@/components/admin/medias/html/HTMLMeshBackground';
+import { HTMLCanalisationLines } from '@/components/admin/medias/html/HTMLCanalisationLines';
 
 type LogoSize = '500' | '250' | '100';
 
@@ -26,6 +28,7 @@ const LOGO_VARIANTS = {
     label: 'Logo Dégradé',
     description: 'Version principale avec dégradé Bleu Nuit → Terracotta',
     bgColor: COLORS.blancCasse,
+    theme: 'light' as const,
     filename: 'logo-iarche-gradient',
   },
   white: {
@@ -33,6 +36,7 @@ const LOGO_VARIANTS = {
     label: 'Logo Blanc',
     description: 'Pour fonds sombres',
     bgColor: COLORS.bleuNuit,
+    theme: 'dark' as const,
     filename: 'logo-iarche-white',
   },
   terracotta: {
@@ -40,11 +44,89 @@ const LOGO_VARIANTS = {
     label: 'Logo Terracotta',
     description: 'Version monochrome accent',
     bgColor: COLORS.blancCasse,
+    theme: 'light' as const,
     filename: 'logo-iarche-terracotta',
   },
 };
 
 type LogoVariant = keyof typeof LOGO_VARIANTS;
+
+// Preview component with mesh and canalisation lines
+const LogoPreviewCard = ({ 
+  variant, 
+  variantKey,
+  onDownload, 
+  isExporting,
+  sizeLabel,
+}: { 
+  variant: typeof LOGO_VARIANTS[LogoVariant];
+  variantKey: LogoVariant;
+  onDownload: () => void;
+  isExporting: boolean;
+  sizeLabel: string;
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState({ width: 300, height: 200 });
+
+  useEffect(() => {
+    if (containerRef.current) {
+      const { offsetWidth, offsetHeight } = containerRef.current;
+      setDimensions({ width: offsetWidth, height: offsetHeight });
+    }
+  }, []);
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg">{variant.label}</CardTitle>
+        <CardDescription>{variant.description}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Preview with mesh and canalisation lines */}
+        <div 
+          ref={containerRef}
+          className="aspect-[3/2] rounded-lg overflow-hidden relative border border-border"
+          style={{ backgroundColor: variant.bgColor }}
+        >
+          {/* Mesh background */}
+          <HTMLMeshBackground 
+            theme={variant.theme} 
+            opacity={0.05}
+          />
+          
+          {/* Canalisation lines */}
+          <HTMLCanalisationLines
+            width={dimensions.width}
+            height={dimensions.height}
+            theme={variant.theme}
+            opacity={0.4}
+            strokeWidth={3}
+          />
+          
+          {/* Logo centered */}
+          <div className="absolute inset-0 flex items-center justify-center p-6 z-10">
+            <img 
+              src={variant.src} 
+              alt={variant.label}
+              className="max-w-[70%] max-h-[70%] object-contain"
+            />
+          </div>
+        </div>
+        
+        {/* Download Button */}
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          disabled={isExporting}
+          onClick={onDownload}
+        >
+          <Download className="h-4 w-4" />
+          Télécharger PNG ({sizeLabel})
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
 
 export default function LogoEditor() {
   const navigate = useNavigate();
@@ -172,36 +254,14 @@ export default function LogoEditor() {
         {/* Logo Variants Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {(Object.entries(LOGO_VARIANTS) as [LogoVariant, typeof LOGO_VARIANTS[LogoVariant]][]).map(([key, variant]) => (
-            <Card key={key} className="overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">{variant.label}</CardTitle>
-                <CardDescription>{variant.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Preview */}
-                <div 
-                  className="aspect-[3/2] rounded-lg flex items-center justify-center p-6 border border-border"
-                  style={{ backgroundColor: variant.bgColor }}
-                >
-                  <img 
-                    src={variant.src} 
-                    alt={variant.label}
-                    className="max-w-full max-h-full object-contain"
-                  />
-                </div>
-                
-                {/* Download Button */}
-                <Button
-                  variant="outline"
-                  className="w-full gap-2"
-                  disabled={isExporting}
-                  onClick={() => handleExportSingle(key)}
-                >
-                  <Download className="h-4 w-4" />
-                  Télécharger PNG ({LOGO_SIZES[size].width}px)
-                </Button>
-              </CardContent>
-            </Card>
+            <LogoPreviewCard
+              key={key}
+              variantKey={key}
+              variant={variant}
+              onDownload={() => handleExportSingle(key)}
+              isExporting={isExporting}
+              sizeLabel={`${LOGO_SIZES[size].width}px`}
+            />
           ))}
         </div>
 
