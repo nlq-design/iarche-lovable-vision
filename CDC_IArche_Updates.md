@@ -1,12 +1,75 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.13**  
+**Version mise à jour : V6.14**  
 **Date : 2 Décembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.13 MODULE MÉDIAS - MODES D'EXPORT UNIFIÉS — MISE À JOUR V6.14 ✅
+
+#### Extension du pattern LogoEditor à tous les éditeurs de médias
+
+**Contexte :**
+Le système de modes d'export individuels développé pour LogoEditor (simple/+barre/complet) est étendu à l'ensemble des éditeurs PNG et PDF pour une expérience unifiée.
+
+**1. Composant partagé ExportModeControls**
+
+**Fichier créé :** `src/components/admin/medias/ExportModeControls.tsx`
+
+Composant réutilisable offrant :
+- Sélecteur de mode d'export (RadioGroup)
+- Sélecteur de taille de barre (ButtonGroup)
+- Deux variantes : normale et compacte
+
+| Mode | Label | Description |
+|------|-------|-------------|
+| `simple` | Simple | Contenu uniquement |
+| `with-bar` | + Barre | Avec barre décorative |
+| `full` | Complet | Tous les éléments visuels (mesh + canalisations) |
+
+**2. Éditeurs PNG mis à jour**
+
+| Éditeur | Route | Modes d'export | Barre configurable |
+|---------|-------|----------------|-------------------|
+| BannerEditor | `/admin/medias/banner` | ✅ simple/+barre/complet | ✅ sm/md/lg/xl |
+| StoryEditor | `/admin/medias/story` | ✅ simple/+barre/complet | ✅ sm/md/lg/xl |
+| PostEditor | `/admin/medias/post` | 🔄 À implémenter | 🔄 |
+| ThumbnailEditor | `/admin/medias/thumbnail` | 🔄 À implémenter | 🔄 |
+| OpenGraphEditor | `/admin/medias/opengraph` | 🔄 À implémenter | 🔄 |
+| HeaderEmailEditor | `/admin/medias/header-email` | 🔄 À implémenter | 🔄 |
+
+**3. Logique conditionnelle d'affichage**
+
+```tsx
+// Barre visible si mode = 'with-bar' ou 'full'
+{(exportMode === 'with-bar' || exportMode === 'full') && (
+  <HTMLGradientBar size={barSize} />
+)}
+
+// Canalisations visibles uniquement si mode = 'full'
+<HTMLCanalisationLines showCanalisations={exportMode === 'full'} />
+```
+
+**4. Persistance dans templates**
+
+Les états `exportMode` et `barSize` sont sauvegardés/chargés dans les templates personnalisés via `getCurrentData()` et `loadTemplateData()`.
+
+**5. Éditeurs PDF (CarouselPDF, PresentationPDF)**
+
+Pattern à implémenter avec options **par slide** :
+- Mode d'export individuel par slide
+- Taille de barre individuelle par slide
+- Preview dynamique reflétant les choix
+
+**Fichiers modifiés :**
+- `src/components/admin/medias/ExportModeControls.tsx` (créé)
+- `src/pages/admin/BannerEditor.tsx`
+- `src/pages/admin/StoryEditor.tsx`
+
+---
 
 ### 0.12 MODULE LOGO EDITOR - EXPORTS CONFIGURABLES — MISE À JOUR V6.13 ✅
 
