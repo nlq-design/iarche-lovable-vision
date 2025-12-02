@@ -65,6 +65,12 @@ const StoryEditor = lazy(() => import("./pages/admin/StoryEditor"));
 const OpenGraphEditor = lazy(() => import("./pages/admin/OpenGraphEditor"));
 const HeaderEmailEditor = lazy(() => import("./pages/admin/HeaderEmailEditor"));
 const GenerateAssets = lazy(() => import("./pages/admin/GenerateAssets"));
+const LogoEditor = lazy(() => import("./pages/admin/LogoEditor"));
+const FaviconEditor = lazy(() => import("./pages/admin/FaviconEditor"));
+const CharteEditor = lazy(() => import("./pages/admin/CharteEditor"));
+const QRCodeEditor = lazy(() => import("./pages/admin/QRCodeEditor"));
+const HeaderDocEditor = lazy(() => import("./pages/admin/HeaderDocEditor"));
+const FooterEmailEditor = lazy(() => import("./pages/admin/FooterEmailEditor"));
 const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"));
 
 // QueryClient avec cache optimisé
@@ -364,6 +370,36 @@ const App = () => (
           <Route path="/admin/medias/generate-assets" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><GenerateAssets /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/medias/logo" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><LogoEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/medias/favicon" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><FaviconEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/medias/charte" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><CharteEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/medias/qrcode" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><QRCodeEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/medias/header-doc" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><HeaderDocEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/medias/footer-email" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><FooterEmailEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           
