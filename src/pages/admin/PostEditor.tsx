@@ -19,7 +19,6 @@ import {
   IARCHE_FONTS,
   ThemeType,
 } from '@/components/admin/medias/html';
-import { LogoPositionSelector, LogoPosition, getLogoPositionStyles } from '@/components/admin/medias/shared';
 
 type PostFormat = 'square' | 'landscape';
 type PostTemplate = 'annonce' | 'chiffre' | 'temoignage' | 'conseil';
@@ -38,7 +37,6 @@ export default function PostEditor() {
   const [format, setFormat] = useState<PostFormat>('square');
   const [template, setTemplate] = useState<PostTemplate>('annonce');
   const [theme, setTheme] = useState<ThemeType>('dark');
-  const [logoPosition, setLogoPosition] = useState<LogoPosition>('top-left');
   
   // Annonce fields
   const [badge, setBadge] = useState('Nouveauté');
@@ -462,12 +460,6 @@ export default function PostEditor() {
                 </Select>
               </div>
 
-              {/* Logo Position */}
-              <LogoPositionSelector
-                value={logoPosition}
-                onChange={setLogoPosition}
-              />
-
               {/* Template-specific fields */}
               {renderFields()}
             </CardContent>
@@ -504,10 +496,6 @@ export default function PostEditor() {
                     canalisationOpacity={0.4}
                     canalisationStrokeWidth={format === 'square' ? 6 : 5}
                   >
-                    {/* Logo positionné */}
-                    <div style={getLogoPositionStyles(logoPosition)}>
-                      <HTMLLogo size="lg" theme={theme} />
-                    </div>
                     {renderPostContent()}
                   </HTMLBaseTemplate>
                 </div>

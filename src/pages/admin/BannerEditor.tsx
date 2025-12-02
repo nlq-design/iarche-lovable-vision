@@ -18,7 +18,6 @@ import {
   IARCHE_FONTS,
   ThemeType,
 } from '@/components/admin/medias/html';
-import { LogoPositionSelector, LogoPosition, getLogoPositionStyles } from '@/components/admin/medias/shared';
 
 const BANNER_WIDTH = 1584;
 const BANNER_HEIGHT = 396;
@@ -40,7 +39,6 @@ export default function BannerEditor() {
   
   const [template, setTemplate] = useState<BannerTemplate>('entreprise');
   const [theme, setTheme] = useState<ThemeType>('dark');
-  const [logoPosition, setLogoPosition] = useState<LogoPosition>('top-left');
   
   // Entreprise fields
   const [tagline, setTagline] = useState("L'IA se construit avec vous");
@@ -236,12 +234,6 @@ export default function BannerEditor() {
                 </Select>
               </div>
 
-              {/* Logo Position */}
-              <LogoPositionSelector
-                value={logoPosition}
-                onChange={setLogoPosition}
-              />
-
               {/* Template-specific fields */}
               {template === 'entreprise' && (
                 <div className="space-y-2">
@@ -321,10 +313,6 @@ export default function BannerEditor() {
                     canalisationOpacity={0.4}
                     canalisationStrokeWidth={5}
                   >
-                    {/* Logo positionné */}
-                    <div style={getLogoPositionStyles(logoPosition)}>
-                      <HTMLLogo size="lg" theme={theme} />
-                    </div>
                     {renderBannerContent()}
                   </HTMLBaseTemplate>
                 </div>
