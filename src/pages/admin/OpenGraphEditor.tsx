@@ -18,6 +18,7 @@ import {
   IARCHE_FONTS,
   ThemeType,
 } from '@/components/admin/medias/html';
+import { LogoPositionSelector, LogoPosition, getLogoPositionStyles } from '@/components/admin/medias/shared';
 
 type OGTemplate = 'page' | 'article' | 'solution';
 
@@ -39,6 +40,7 @@ export default function OpenGraphEditor() {
   
   const [template, setTemplate] = useState<OGTemplate>('page');
   const [theme, setTheme] = useState<ThemeType>('dark');
+  const [logoPosition, setLogoPosition] = useState<LogoPosition>('top-left');
   
   // Page fields
   const [pageTitle, setPageTitle] = useState('Services');
@@ -302,6 +304,12 @@ export default function OpenGraphEditor() {
                 </Select>
               </div>
 
+              {/* Logo Position */}
+              <LogoPositionSelector
+                value={logoPosition}
+                onChange={setLogoPosition}
+              />
+
               {/* Template-specific fields */}
               {template === 'page' && (
                 <>
@@ -383,6 +391,10 @@ export default function OpenGraphEditor() {
                     canalisationOpacity={0.4}
                     canalisationStrokeWidth={5}
                   >
+                    {/* Logo positionné */}
+                    <div style={getLogoPositionStyles(logoPosition)}>
+                      <HTMLLogo size="lg" theme={theme} />
+                    </div>
                     {renderOGContent()}
                   </HTMLBaseTemplate>
                 </div>
