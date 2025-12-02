@@ -426,7 +426,11 @@ const FormEditor = () => {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -523,7 +527,11 @@ const FormEditor = () => {
   };
 
   const updateField = (fieldId: string, updates: Partial<FormField>) => {
-    if (!form) return;
+    console.log('updateField called:', fieldId, updates);
+    if (!form) {
+      console.log('updateField: form is null');
+      return;
+    }
     setForm({
       ...form,
       fields: form.fields.map(f => f.id === fieldId ? { ...f, ...updates } : f)
