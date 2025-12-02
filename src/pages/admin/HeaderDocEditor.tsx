@@ -143,11 +143,16 @@ export default function HeaderDocEditor() {
                   }}
                 >
                   <div className="flex items-start justify-between">
-                    {/* Logo */}
+                    {/* Logo gradient */}
                     <div>
                       <h1 
                         className="text-3xl font-bold"
-                        style={{ color: COLORS.bleuNuit }}
+                        style={{ 
+                          background: `linear-gradient(90deg, ${COLORS.bleuNuit} 0%, ${COLORS.terracotta} 50%, ${COLORS.bleuNuit} 100%)`,
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text',
+                        }}
                       >
                         IArche
                       </h1>
