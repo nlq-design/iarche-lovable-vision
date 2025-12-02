@@ -60,6 +60,7 @@ const AdminMedias = lazy(() => import("./pages/admin/AdminMedias"));
 const BannerEditor = lazy(() => import("./pages/admin/BannerEditor"));
 const PostEditor = lazy(() => import("./pages/admin/PostEditor"));
 const SignatureEditor = lazy(() => import("./pages/admin/SignatureEditor"));
+const ThumbnailEditor = lazy(() => import("./pages/admin/ThumbnailEditor"));
 const GenerateAssets = lazy(() => import("./pages/admin/GenerateAssets"));
 const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"));
 
@@ -335,6 +336,11 @@ const App = () => (
           <Route path="/admin/medias/signature" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><SignatureEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/medias/thumbnail" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><ThumbnailEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/generate-assets" element={

@@ -77,7 +77,7 @@ const visualTemplates = [
     dimensions: '1920×1080 / 1280×720px',
     icon: Video,
     route: '/admin/medias/thumbnail',
-    ready: false,
+    ready: true,
   },
   { 
     id: 'story', 
