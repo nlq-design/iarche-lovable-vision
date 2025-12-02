@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { COLORS } from '@/components/admin/medias/shared/tokens';
+import { HTMLGradientBar } from '@/components/admin/medias/html/HTMLGradientBar';
 
 export default function FooterEmailEditor() {
   const navigate = useNavigate();
@@ -25,13 +26,29 @@ export default function FooterEmailEditor() {
 
   // Generate HTML code
   const generateHTML = () => {
+    // Inline SVG gradient bar for email compatibility
+    const gradientBarSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="4" viewBox="0 0 96 4">
+      <defs>
+        <linearGradient id="barGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#1A2B4A"/>
+          <stop offset="50%" stop-color="#D15A3E"/>
+          <stop offset="100%" stop-color="#1A2B4A"/>
+        </linearGradient>
+      </defs>
+      <rect width="96" height="4" rx="2" fill="url(#barGrad)"/>
+    </svg>`;
+    const gradientBarBase64 = btoa(gradientBarSVG);
+    
     return `<!--[if mso]>
 <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" align="center">
 <tr><td>
 <![endif]-->
 <table role="presentation" style="max-width:600px;width:100%;margin:0 auto;font-family:Arial,Helvetica,sans-serif;border-collapse:collapse;">
   <tr>
-    <td style="padding:24px 0;border-top:3px solid #D15A3E;">
+    <td style="padding:24px 0;">
+      <!-- Gradient Bar -->
+      <img src="data:image/svg+xml;base64,${gradientBarBase64}" alt="" width="96" height="4" style="display:block;margin-bottom:16px;">
+      
       <!-- Logo -->
       <table role="presentation" width="100%">
         <tr>
@@ -194,13 +211,18 @@ export default function FooterEmailEditor() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground mb-2">Desktop</p>
                   <div className="border rounded-lg bg-white p-6" style={{ maxWidth: '600px' }}>
-                    <div style={{ borderTop: `3px solid ${COLORS.terracotta}`, paddingTop: '24px' }}>
+                    <div style={{ paddingTop: '24px' }}>
+                      {/* Gradient bar at top */}
+                      <HTMLGradientBar size="lg" />
+                      
                       {/* Logo */}
-                      <a href="#" style={{ textDecoration: 'none' }}>
-                        <span style={{ fontSize: '24px', fontWeight: 'bold', color: COLORS.bleuNuit }}>
-                          IArche
-                        </span>
-                      </a>
+                      <div style={{ marginTop: '16px' }}>
+                        <a href="#" style={{ textDecoration: 'none' }}>
+                          <span style={{ fontSize: '24px', fontWeight: 'bold', color: COLORS.bleuNuit }}>
+                            IArche
+                          </span>
+                        </a>
+                      </div>
 
                       {/* Contact */}
                       <div style={{ marginTop: '16px' }}>
@@ -259,11 +281,16 @@ export default function FooterEmailEditor() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground mb-2">Mobile</p>
                   <div className="border rounded-lg bg-white p-4" style={{ maxWidth: '320px' }}>
-                    <div style={{ borderTop: `3px solid ${COLORS.terracotta}`, paddingTop: '16px' }}>
+                    <div style={{ paddingTop: '16px' }}>
+                      {/* Gradient bar at top */}
+                      <HTMLGradientBar size="md" />
+                      
                       {/* Logo */}
-                      <span style={{ fontSize: '20px', fontWeight: 'bold', color: COLORS.bleuNuit }}>
-                        IArche
-                      </span>
+                      <div style={{ marginTop: '12px' }}>
+                        <span style={{ fontSize: '20px', fontWeight: 'bold', color: COLORS.bleuNuit }}>
+                          IArche
+                        </span>
+                      </div>
 
                       {/* Contact */}
                       <div style={{ marginTop: '12px' }}>
