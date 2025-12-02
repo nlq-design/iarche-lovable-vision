@@ -68,7 +68,7 @@ const visualTemplates = [
     dimensions: '600×200px',
     icon: Mail,
     route: '/admin/medias/signature',
-    ready: false,
+    ready: true,
   },
   { 
     id: 'thumbnail', 
