@@ -1,6 +1,7 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { ArrowLeft, Download } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { MediaTemplate } from '@/hooks/useMediaTemplates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,6 +42,7 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
 
 const HeaderEmailEditor: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const previewRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -90,6 +92,14 @@ const HeaderEmailEditor: React.FC = () => {
     if (data.titleAlignment !== undefined) setTitleAlignment(data.titleAlignment as TextAlignment);
     if (data.formData) setFormData(data.formData as typeof formData);
   }, []);
+
+  // Load template from navigation state
+  useEffect(() => {
+    const state = location.state as { loadTemplate?: MediaTemplate } | null;
+    if (state?.loadTemplate?.template_data) {
+      loadTemplateData(state.loadTemplate.template_data);
+    }
+  }, [location.state, loadTemplateData]);
 
   const handleExport = async () => {
     setIsExporting(true);

@@ -1,6 +1,7 @@
-import React, { useRef, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Download, Calendar, Clock, User } from 'lucide-react';
+import { MediaTemplate } from '@/hooks/useMediaTemplates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -56,6 +57,7 @@ const SCALE = 0.3;
 
 export default function ThumbnailEditor() {
   const navigate = useNavigate();
+  const location = useLocation();
   const thumbnailRef = useRef<HTMLDivElement>(null);
   
   const [format, setFormat] = useState<ThumbnailFormat>('standard');
@@ -117,6 +119,14 @@ export default function ThumbnailEditor() {
     if (data.speakerFonction !== undefined) setSpeakerFonction(data.speakerFonction as string);
     if (data.showSpeaker !== undefined) setShowSpeaker(data.showSpeaker as boolean);
   }, []);
+
+  // Load template from navigation state
+  useEffect(() => {
+    const state = location.state as { loadTemplate?: MediaTemplate } | null;
+    if (state?.loadTemplate?.template_data) {
+      loadTemplateData(state.loadTemplate.template_data);
+    }
+  }, [location.state, loadTemplateData]);
 
   const handleExport = async () => {
     try {
