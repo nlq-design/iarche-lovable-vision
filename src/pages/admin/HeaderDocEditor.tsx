@@ -10,6 +10,7 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import { toPng } from 'html-to-image';
 import { saveAs } from 'file-saver';
 import { COLORS, FONTS } from '@/components/admin/medias/shared/tokens';
+import { HTMLGradientBar } from '@/components/admin/medias/html/HTMLGradientBar';
 
 export default function HeaderDocEditor() {
   const navigate = useNavigate();
@@ -151,13 +152,10 @@ export default function HeaderDocEditor() {
                     </div>
                   </div>
 
-                  {/* Separator line */}
-                  <div 
-                    className="h-0.5 mt-6 rounded-full"
-                    style={{ 
-                      background: `linear-gradient(90deg, ${COLORS.bleuNuit} 0%, ${COLORS.terracotta} 100%)` 
-                    }}
-                  />
+                  {/* Gradient bar separator */}
+                  <div className="mt-6">
+                    <HTMLGradientBar size="xl" />
+                  </div>
                 </div>
 
                 {/* Simulated document body */}
