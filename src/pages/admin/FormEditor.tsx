@@ -365,6 +365,31 @@ const FieldConfig = ({
         </>
       )}
 
+      {(field.type === 'text' || field.type === 'textarea') && (
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>Min caractères</Label>
+            <Input
+              type="number"
+              value={field.minLength ?? ''}
+              onChange={(e) => onChange({ minLength: e.target.value ? Number(e.target.value) : undefined })}
+              className="mt-1.5"
+              min={0}
+            />
+          </div>
+          <div>
+            <Label>Max caractères</Label>
+            <Input
+              type="number"
+              value={field.maxLength ?? ''}
+              onChange={(e) => onChange({ maxLength: e.target.value ? Number(e.target.value) : undefined })}
+              className="mt-1.5"
+              min={0}
+            />
+          </div>
+        </div>
+      )}
+
       <div>
         <Label>Largeur</Label>
         <Select
