@@ -93,8 +93,31 @@ Cette baseline exprime :
 
 **Spécifications de la barre décorative :**
 
-| Contexte | Largeur barre | Épaisseur | Marge supérieure |
-|----------|---------------|-----------|------------------|
+| Taille | Largeur | Épaisseur | Contexte |
+|--------|---------|-----------|----------|
+| sm | 48px | 2px | Placeholder cards, petits formats |
+| md | 80px | 4px | Header, formats moyens |
+| lg | 96px | 4px | Formats intermédiaires |
+| xl | 128px | 6px | Hero, grands formats |
+
+### 2.3 Logo Editor - Exports configurables
+
+**Route admin :** `/admin/medias/logo`
+
+**Modes d'export (sélectionnables individuellement par variante) :**
+- **Seul** : Logo PNG uniquement
+- **+ Barre** : Logo + barre décorative gradient
+- **Complet** : Logo + barre + mesh background + lignes canalisation
+
+**Variantes disponibles :**
+- Gradient (principal, fond Blanc Cassé)
+- Blanc (fonds sombres, fond Bleu Nuit)
+- Terracotta (accent, fond Blanc Cassé)
+
+**Taille de barre configurable :** sm / md / lg / xl (indépendant de la taille d'export logo)
+
+| Contexte d'usage historique | Largeur barre | Épaisseur | Marge supérieure |
+|-----------------------------|---------------|-----------|------------------|
 | Hero (xl) | w-32 (128px) | h-1.5 (6px) | mt-2 |
 | Header | w-16 (64px) | h-1 (4px) | mt-1 |
 | Placeholder cards | w-12 (48px) | h-0.5 (2px) | mt-2 |

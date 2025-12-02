@@ -1,12 +1,62 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.12**  
+**Version mise à jour : V6.13**  
 **Date : 2 Décembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.12 MODULE LOGO EDITOR - EXPORTS CONFIGURABLES — MISE À JOUR V6.13 ✅
+
+#### Éditeur de logos avec modes d'export individuels et barre proportionnelle
+
+**Route :** `/admin/medias/logo`
+
+**Fonctionnalités :**
+
+**1. Trois variantes de logo disponibles :**
+- **Gradient** : Logo dégradé sur fond Blanc Cassé (principal)
+- **White** : Logo blanc sur fond Bleu Nuit (fonds sombres)
+- **Terracotta** : Logo terracotta sur fond Blanc Cassé (accent)
+
+**2. Trois modes d'export par variante (sélection individuelle) :**
+
+| Mode | Description | Contenu |
+|------|-------------|---------|
+| **Seul** | Logo PNG uniquement | PNG redimensionné directement |
+| **+ Barre** | Logo + barre décorative | Capturé via html-to-image |
+| **Complet** | Logo + barre + mesh + canalisations | Capturé via html-to-image |
+
+**3. Taille de barre configurable (sm/md/lg/xl) :**
+
+Chaque variante possède son propre sélecteur de taille de barre, indépendant de la taille d'export logo.
+
+| Taille | Dimensions |
+|--------|------------|
+| sm | 48 × 2px |
+| md | 80 × 4px |
+| lg | 96 × 4px |
+| xl | 128 × 6px |
+
+**4. Tailles d'export logo :**
+- 100px (Petite)
+- 250px (Moyenne)
+- 500px (Grande)
+
+**5. Export groupé :**
+Bouton "Télécharger tout (ZIP)" génère un archive avec les 3 variantes selon leurs modes et tailles de barre respectifs.
+
+**Architecture technique :**
+- Composant `HTMLGradientBar` (SVG vectoriel) pour qualité optimale à toute résolution
+- Capture via `html-to-image` pour modes "Barre" et "Complet"
+- Export direct PNG redimensionné pour mode "Seul"
+- États individuels par variante pour mode d'export ET taille de barre
+
+**Fichier :** `src/pages/admin/LogoEditor.tsx`
+
+---
 
 ### 0.11 MODULE MÉDIAS - HARMONISATION TOKENS & CANALISATIONS PNG — MISE À JOUR V6.12 ✅
 
