@@ -854,12 +854,6 @@ const ArticleDetail = () => {
               )}
             </div>
 
-            {/* Table des matières - sidebar droite (uniquement pour articles) */}
-            {article.resource_type === 'article' && (
-              <aside className="hidden lg:block w-64 flex-shrink-0">
-                <TableOfContents content={article.content} />
-              </aside>
-            )}
           </div>
 
           {/* CTA avant FAQ selon type */}
