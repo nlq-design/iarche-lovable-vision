@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { exportToPNG } from '@/lib/exportPng';
+import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -20,6 +21,24 @@ import {
 
 type ThumbnailFormat = 'standard' | 'youtube';
 type EventType = 'webinaire' | 'atelier' | 'replay';
+
+type PresetTemplate = {
+  id: string;
+  label: string;
+  titre: string;
+  sousTitre: string;
+  date: string;
+  heure: string;
+  eventType: EventType;
+};
+
+const PRESET_TEMPLATES: PresetTemplate[] = [
+  { id: 'webinaire-ia', label: 'Webinaire IA PME', titre: 'Intégrer l\'IA dans votre PME', sousTitre: 'Les étapes clés pour réussir votre transformation', date: '15 Janvier 2025', heure: '14h00', eventType: 'webinaire' },
+  { id: 'atelier-audit', label: 'Atelier Audit', titre: 'Audit IA : Diagnostiquez votre entreprise', sousTitre: 'Identifiez les opportunités d\'automatisation', date: '22 Janvier 2025', heure: '10h00', eventType: 'atelier' },
+  { id: 'replay-formation', label: 'Replay Formation', titre: 'Formation IA pour dirigeants', sousTitre: 'Comprendre et piloter l\'IA dans votre organisation', date: 'Disponible', heure: '2h30', eventType: 'replay' },
+  { id: 'webinaire-chatbot', label: 'Webinaire Chatbot', titre: 'Créer un chatbot IA performant', sousTitre: 'De la conception au déploiement', date: '5 Février 2025', heure: '11h00', eventType: 'webinaire' },
+  { id: 'atelier-donnees', label: 'Atelier Données', titre: 'Exploitez vos données avec l\'IA', sousTitre: 'Analyse et visualisation avancées', date: '12 Février 2025', heure: '14h30', eventType: 'atelier' },
+];
 
 const DIMENSIONS = {
   standard: { width: 1920, height: 1080 },
@@ -41,6 +60,13 @@ export default function ThumbnailEditor() {
   const [format, setFormat] = useState<ThumbnailFormat>('standard');
   const [theme, setTheme] = useState<ThemeType>('dark');
   const [eventType, setEventType] = useState<EventType>('webinaire');
+  const [preset, setPreset] = useState<string>('');
+  
+  // Typography states
+  const [titleFontSize, setTitleFontSize] = useState(72);
+  const [titleBold, setTitleBold] = useState(true);
+  const [titleItalic, setTitleItalic] = useState(false);
+  const [titleAlignment, setTitleAlignment] = useState<TextAlignment>('left');
   
   // Content fields
   const [titre, setTitre] = useState('Intégrer l\'IA dans votre PME');
@@ -52,6 +78,18 @@ export default function ThumbnailEditor() {
   const [speakerNom, setSpeakerNom] = useState('Nicolas Lara-Quétier');
   const [speakerFonction, setSpeakerFonction] = useState('CEO & Fondateur, IArche');
   const [showSpeaker, setShowSpeaker] = useState(true);
+
+  const applyPreset = (presetId: string) => {
+    const selectedPreset = PRESET_TEMPLATES.find(p => p.id === presetId);
+    if (selectedPreset) {
+      setTitre(selectedPreset.titre);
+      setSousTitre(selectedPreset.sousTitre);
+      setDate(selectedPreset.date);
+      setHeure(selectedPreset.heure);
+      setEventType(selectedPreset.eventType);
+    }
+    setPreset(presetId);
+  };
 
   const handleExport = async () => {
     try {
@@ -69,13 +107,15 @@ export default function ThumbnailEditor() {
   const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
   const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(26,43,74,0.7)';
 
-  const badgeColor = eventType === 'replay' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.terracotta;
   const badgeBg = eventType === 'replay' 
     ? (theme === 'dark' ? 'rgba(255,255,255,0.9)' : IARCHE_COLORS.bleuNuit)
     : IARCHE_COLORS.terracotta;
   const badgeText = eventType === 'replay' 
     ? (theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.white)
     : IARCHE_COLORS.white;
+
+  const actualTitleSize = format === 'standard' ? titleFontSize : titleFontSize * 0.78;
+  const actualSubtitleSize = format === 'standard' ? titleFontSize * 0.44 : titleFontSize * 0.33;
 
   return (
     <AdminLayout>
@@ -106,6 +146,21 @@ export default function ThumbnailEditor() {
               <CardTitle>Paramètres</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Preset templates */}
+              <div className="space-y-2">
+                <Label>Templates pré-remplis</Label>
+                <Select value={preset} onValueChange={applyPreset}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir un template..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRESET_TEMPLATES.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Format */}
               <div className="space-y-2">
                 <Label>Format</Label>
@@ -148,6 +203,21 @@ export default function ThumbnailEditor() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Typography controls */}
+              <TypographyControls
+                label="Typographie titre"
+                fontSize={titleFontSize}
+                onFontSizeChange={setTitleFontSize}
+                isBold={titleBold}
+                onBoldChange={setTitleBold}
+                isItalic={titleItalic}
+                onItalicChange={setTitleItalic}
+                alignment={titleAlignment}
+                onAlignmentChange={setTitleAlignment}
+                minFontSize={48}
+                maxFontSize={96}
+              />
 
               {/* Content */}
               <div className="space-y-2">
@@ -258,12 +328,14 @@ export default function ThumbnailEditor() {
                         flexDirection: 'column', 
                         gap: '24px',
                         maxWidth: '70%',
+                        textAlign: titleAlignment,
                       }}>
                         <HTMLGradientBar size="xl" />
                         <h1 style={{
                           fontFamily: IARCHE_FONTS.primary,
-                          fontSize: format === 'standard' ? '72px' : '56px',
-                          fontWeight: 700,
+                          fontSize: `${actualTitleSize}px`,
+                          fontWeight: titleBold ? 700 : 400,
+                          fontStyle: titleItalic ? 'italic' : 'normal',
                           color: textColor,
                           margin: 0,
                           lineHeight: 1.1,
@@ -272,7 +344,7 @@ export default function ThumbnailEditor() {
                         </h1>
                         <p style={{
                           fontFamily: IARCHE_FONTS.primary,
-                          fontSize: format === 'standard' ? '32px' : '24px',
+                          fontSize: `${actualSubtitleSize}px`,
                           fontWeight: 400,
                           color: subtextColor,
                           margin: 0,

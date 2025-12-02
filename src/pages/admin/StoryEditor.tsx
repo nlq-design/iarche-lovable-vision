@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { exportToPNG } from '@/lib/exportPng';
+import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -22,6 +23,25 @@ import {
 
 type StoryTemplate = 'annonce' | 'chiffre';
 
+type PresetTemplate = {
+  id: string;
+  label: string;
+  badge: string;
+  titre: string;
+  ctaText: string;
+  chiffre: string;
+  contexte: string;
+  source: string;
+};
+
+const PRESET_TEMPLATES: PresetTemplate[] = [
+  { id: 'nouveaute', label: 'Nouveauté', badge: 'Nouveauté', titre: 'Découvrez notre nouvelle solution IA', ctaText: 'En savoir plus', chiffre: '92%', contexte: 'des entreprises accompagnées ont augmenté leur productivité', source: 'Résultats IArche 2024' },
+  { id: 'evenement', label: 'Événement', badge: 'Événement', titre: 'Webinaire exclusif sur l\'IA en entreprise', ctaText: 'S\'inscrire', chiffre: '+150', contexte: 'participants à nos ateliers cette année', source: 'Bilan IArche 2024' },
+  { id: 'conseil', label: 'Conseil du jour', badge: 'Conseil', titre: '3 étapes pour intégrer l\'IA dans votre PME', ctaText: 'Découvrir', chiffre: '3x', contexte: 'plus efficace avec l\'automatisation IA', source: 'Étude interne' },
+  { id: 'resultat', label: 'Résultat client', badge: 'Success Story', titre: 'Comment notre client a doublé sa productivité', ctaText: 'Voir le cas', chiffre: '+200%', contexte: 'de gain de productivité en 6 mois', source: 'Cas client 2024' },
+  { id: 'offre', label: 'Offre spéciale', badge: 'Offre limitée', titre: 'Audit IA gratuit pour les 10 prochaines PME', ctaText: 'En profiter', chiffre: '-50%', contexte: 'sur votre premier accompagnement', source: 'Offre valable en janvier' },
+];
+
 const STORY_WIDTH = 1080;
 const STORY_HEIGHT = 1920;
 const SCALE = 0.22;
@@ -32,6 +52,13 @@ export default function StoryEditor() {
   
   const [template, setTemplate] = useState<StoryTemplate>('annonce');
   const [theme, setTheme] = useState<ThemeType>('dark');
+  const [preset, setPreset] = useState<string>('');
+  
+  // Typography states
+  const [titleFontSize, setTitleFontSize] = useState(64);
+  const [titleBold, setTitleBold] = useState(true);
+  const [titleItalic, setTitleItalic] = useState(false);
+  const [titleAlignment, setTitleAlignment] = useState<TextAlignment>('center');
   
   // Annonce fields
   const [badge, setBadge] = useState('Nouveauté');
@@ -42,6 +69,19 @@ export default function StoryEditor() {
   const [chiffre, setChiffre] = useState('92%');
   const [contexte, setContexte] = useState('des entreprises accompagnées ont augmenté leur productivité');
   const [source, setSource] = useState('Résultats IArche 2024');
+
+  const applyPreset = (presetId: string) => {
+    const selectedPreset = PRESET_TEMPLATES.find(p => p.id === presetId);
+    if (selectedPreset) {
+      setBadge(selectedPreset.badge);
+      setTitre(selectedPreset.titre);
+      setCtaText(selectedPreset.ctaText);
+      setChiffre(selectedPreset.chiffre);
+      setContexte(selectedPreset.contexte);
+      setSource(selectedPreset.source);
+    }
+    setPreset(presetId);
+  };
 
   const handleExport = async () => {
     try {
@@ -66,9 +106,9 @@ export default function StoryEditor() {
             display: 'flex', 
             flexDirection: 'column', 
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
             height: '100%',
-            textAlign: 'center',
+            textAlign: titleAlignment,
           }}>
             {/* Header */}
             <HTMLLogo size="xl" theme={theme} />
@@ -78,7 +118,7 @@ export default function StoryEditor() {
               display: 'flex', 
               flexDirection: 'column', 
               gap: '40px', 
-              alignItems: 'center',
+              alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
               padding: '0 20px',
             }}>
               <span style={{
@@ -94,8 +134,9 @@ export default function StoryEditor() {
               <HTMLGradientBar size="xl" />
               <h1 style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: '64px',
-                fontWeight: 700,
+                fontSize: `${titleFontSize}px`,
+                fontWeight: titleBold ? 700 : 400,
+                fontStyle: titleItalic ? 'italic' : 'normal',
                 color: textColor,
                 margin: 0,
                 lineHeight: 1.15,
@@ -132,9 +173,9 @@ export default function StoryEditor() {
             display: 'flex', 
             flexDirection: 'column', 
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
             height: '100%',
-            textAlign: 'center',
+            textAlign: titleAlignment,
           }}>
             {/* Header */}
             <HTMLLogo size="xl" theme={theme} />
@@ -144,12 +185,13 @@ export default function StoryEditor() {
               display: 'flex', 
               flexDirection: 'column', 
               gap: '48px', 
-              alignItems: 'center',
+              alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
             }}>
               <div style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: '220px',
-                fontWeight: 800,
+                fontSize: `${titleFontSize * 3}px`,
+                fontWeight: titleBold ? 800 : 700,
+                fontStyle: titleItalic ? 'italic' : 'normal',
                 color: IARCHE_COLORS.terracotta,
                 lineHeight: 1,
               }}>
@@ -158,7 +200,7 @@ export default function StoryEditor() {
               <HTMLGradientBar size="xl" />
               <p style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: '36px',
+                fontSize: `${titleFontSize * 0.55}px`,
                 fontWeight: 500,
                 color: textColor,
                 margin: 0,
@@ -226,6 +268,21 @@ export default function StoryEditor() {
               <CardTitle>Paramètres</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Preset templates */}
+              <div className="space-y-2">
+                <Label>Templates pré-remplis</Label>
+                <Select value={preset} onValueChange={applyPreset}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir un template..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRESET_TEMPLATES.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Template */}
               <div className="space-y-2">
                 <Label>Template</Label>
@@ -250,6 +307,21 @@ export default function StoryEditor() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Typography controls */}
+              <TypographyControls
+                label="Typographie"
+                fontSize={titleFontSize}
+                onFontSizeChange={setTitleFontSize}
+                isBold={titleBold}
+                onBoldChange={setTitleBold}
+                isItalic={titleItalic}
+                onItalicChange={setTitleItalic}
+                alignment={titleAlignment}
+                onAlignmentChange={setTitleAlignment}
+                minFontSize={40}
+                maxFontSize={80}
+              />
 
               {/* Template-specific fields */}
               {template === 'annonce' && (

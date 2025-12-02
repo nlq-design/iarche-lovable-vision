@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { exportToPNG } from '@/lib/exportPng';
+import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -21,7 +22,23 @@ import {
 
 const BANNER_WIDTH = 1584;
 const BANNER_HEIGHT = 396;
-const SCALE = 0.4; // Preview scale
+const SCALE = 0.4;
+
+type PresetTemplate = {
+  id: string;
+  label: string;
+  tagline: string;
+  ceoName: string;
+  ceoTitle: string;
+};
+
+const PRESET_TEMPLATES: PresetTemplate[] = [
+  { id: 'default', label: 'Par défaut', tagline: "L'IA se construit avec vous", ceoName: 'Nicolas Lara-Quétier', ceoTitle: 'CEO & Fondateur' },
+  { id: 'innovation', label: 'Innovation', tagline: 'Transformez votre entreprise avec l\'IA', ceoName: 'Nicolas Lara-Quétier', ceoTitle: 'Expert IA & Consultant' },
+  { id: 'solutions', label: 'Solutions', tagline: 'Des solutions IA sur mesure pour PME', ceoName: 'Nicolas Lara-Quétier', ceoTitle: 'Fondateur IArche' },
+  { id: 'accompagnement', label: 'Accompagnement', tagline: 'Votre partenaire IA de confiance', ceoName: 'Nicolas Lara-Quétier', ceoTitle: 'CEO & Fondateur' },
+  { id: 'expert', label: 'Expert', tagline: 'L\'expertise IA au service de votre croissance', ceoName: 'Nicolas Lara-Quétier', ceoTitle: 'Expert en Intelligence Artificielle' },
+];
 
 const SOLUTIONS = [
   { id: 'collaboria', name: 'Collaboria', description: 'Plateforme collaborative IA pour équipes' },
@@ -39,6 +56,13 @@ export default function BannerEditor() {
   
   const [template, setTemplate] = useState<BannerTemplate>('entreprise');
   const [theme, setTheme] = useState<ThemeType>('dark');
+  const [preset, setPreset] = useState<string>('');
+  
+  // Typography states
+  const [titleFontSize, setTitleFontSize] = useState(32);
+  const [titleBold, setTitleBold] = useState(false);
+  const [titleItalic, setTitleItalic] = useState(false);
+  const [titleAlignment, setTitleAlignment] = useState<TextAlignment>('center');
   
   // Entreprise fields
   const [tagline, setTagline] = useState("L'IA se construit avec vous");
@@ -49,6 +73,16 @@ export default function BannerEditor() {
   // CEO fields
   const [ceoName, setCeoName] = useState('Nicolas Lara-Quétier');
   const [ceoTitle, setCeoTitle] = useState('CEO & Fondateur');
+
+  const applyPreset = (presetId: string) => {
+    const selectedPreset = PRESET_TEMPLATES.find(p => p.id === presetId);
+    if (selectedPreset) {
+      setTagline(selectedPreset.tagline);
+      setCeoName(selectedPreset.ceoName);
+      setCeoTitle(selectedPreset.ceoTitle);
+    }
+    setPreset(presetId);
+  };
 
   const handleExport = async () => {
     try {
@@ -73,16 +107,18 @@ export default function BannerEditor() {
             display: 'flex', 
             flexDirection: 'column', 
             justifyContent: 'center', 
-            alignItems: 'center',
+            alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
             height: '100%',
             gap: '24px',
+            textAlign: titleAlignment,
           }}>
             <HTMLLogo size="xl" theme={theme} />
             <HTMLGradientBar size="lg" />
             <p style={{
               fontFamily: IARCHE_FONTS.primary,
-              fontSize: '32px',
-              fontWeight: 400,
+              fontSize: `${titleFontSize}px`,
+              fontWeight: titleBold ? 700 : 400,
+              fontStyle: titleItalic ? 'italic' : 'normal',
               color: subtextColor,
               margin: 0,
               letterSpacing: '0.02em',
@@ -99,16 +135,18 @@ export default function BannerEditor() {
             display: 'flex', 
             flexDirection: 'column', 
             justifyContent: 'center', 
-            alignItems: 'center',
+            alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
             height: '100%',
             gap: '20px',
+            textAlign: titleAlignment,
           }}>
             <HTMLLogo size="lg" theme={theme} />
             <HTMLGradientBar size="md" />
             <h2 style={{
               fontFamily: IARCHE_FONTS.primary,
-              fontSize: '48px',
-              fontWeight: 700,
+              fontSize: `${titleFontSize + 16}px`,
+              fontWeight: titleBold ? 800 : 700,
+              fontStyle: titleItalic ? 'italic' : 'normal',
               color: textColor,
               margin: 0,
             }}>
@@ -116,7 +154,7 @@ export default function BannerEditor() {
             </h2>
             <p style={{
               fontFamily: IARCHE_FONTS.primary,
-              fontSize: '24px',
+              fontSize: `${titleFontSize - 8}px`,
               fontWeight: 400,
               color: subtextColor,
               margin: 0,
@@ -154,13 +192,15 @@ export default function BannerEditor() {
               display: 'flex', 
               flexDirection: 'column',
               gap: '16px',
+              textAlign: titleAlignment,
             }}>
               <HTMLLogo size="lg" theme={theme} />
               <HTMLGradientBar size="md" />
               <h2 style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: '36px',
-                fontWeight: 700,
+                fontSize: `${titleFontSize + 4}px`,
+                fontWeight: titleBold ? 800 : 700,
+                fontStyle: titleItalic ? 'italic' : 'normal',
                 color: textColor,
                 margin: 0,
               }}>
@@ -168,7 +208,7 @@ export default function BannerEditor() {
               </h2>
               <p style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: '24px',
+                fontSize: `${titleFontSize - 12}px`,
                 fontWeight: 400,
                 color: IARCHE_COLORS.terracotta,
                 margin: 0,
@@ -208,6 +248,21 @@ export default function BannerEditor() {
               <CardTitle>Paramètres</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Preset templates */}
+              <div className="space-y-2">
+                <Label>Templates pré-remplis</Label>
+                <Select value={preset} onValueChange={applyPreset}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir un template..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRESET_TEMPLATES.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Template selector */}
               <div className="space-y-2">
                 <Label>Template</Label>
@@ -233,6 +288,21 @@ export default function BannerEditor() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Typography controls */}
+              <TypographyControls
+                label="Typographie"
+                fontSize={titleFontSize}
+                onFontSizeChange={setTitleFontSize}
+                isBold={titleBold}
+                onBoldChange={setTitleBold}
+                isItalic={titleItalic}
+                onItalicChange={setTitleItalic}
+                alignment={titleAlignment}
+                onAlignmentChange={setTitleAlignment}
+                minFontSize={20}
+                maxFontSize={48}
+              />
 
               {/* Template-specific fields */}
               {template === 'entreprise' && (
