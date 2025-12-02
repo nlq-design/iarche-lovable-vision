@@ -59,7 +59,7 @@ const visualTemplates = [
     dimensions: '1200×1200 / 1200×627px',
     icon: Image,
     route: '/admin/medias/post',
-    ready: false,
+    ready: true,
   },
   { 
     id: 'signature', 
