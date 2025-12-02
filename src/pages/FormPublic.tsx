@@ -163,7 +163,7 @@ const FormPublic = () => {
     
     if (success) {
       trackEvent(form.id, 'submit');
-      await supabase.rpc('increment_form_submissions', { form_slug: slug });
+      // Note: increment_form_submissions est déjà appelé dans submitResponse
       setSubmitted(true);
       
       // Redirect if configured
