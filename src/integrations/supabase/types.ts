@@ -658,6 +658,127 @@ export type Database = {
           },
         ]
       }
+      form_analytics: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          field_id: string | null
+          form_id: string
+          id: string
+          session_id: string | null
+          step: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          field_id?: string | null
+          form_id: string
+          id?: string
+          session_id?: string | null
+          step?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          field_id?: string | null
+          form_id?: string
+          id?: string
+          session_id?: string | null
+          step?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_analytics_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_responses: {
+        Row: {
+          data: Json
+          form_id: string
+          id: string
+          is_complete: boolean | null
+          metadata: Json | null
+          partial_data: Json | null
+          submitted_at: string | null
+        }
+        Insert: {
+          data: Json
+          form_id: string
+          id?: string
+          is_complete?: boolean | null
+          metadata?: Json | null
+          partial_data?: Json | null
+          submitted_at?: string | null
+        }
+        Update: {
+          data?: Json
+          form_id?: string
+          id?: string
+          is_complete?: boolean | null
+          metadata?: Json | null
+          partial_data?: Json | null
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_responses_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forms: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          fields: Json | null
+          id: string
+          is_active: boolean | null
+          qr_code_url: string | null
+          settings: Json | null
+          slug: string
+          submissions_count: number | null
+          title: string
+          updated_at: string | null
+          views_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          fields?: Json | null
+          id?: string
+          is_active?: boolean | null
+          qr_code_url?: string | null
+          settings?: Json | null
+          slug: string
+          submissions_count?: number | null
+          title: string
+          updated_at?: string | null
+          views_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          fields?: Json | null
+          id?: string
+          is_active?: boolean | null
+          qr_code_url?: string | null
+          settings?: Json | null
+          slug?: string
+          submissions_count?: number | null
+          title?: string
+          updated_at?: string | null
+          views_count?: number | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           company: string | null
@@ -999,6 +1120,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_form_submissions: {
+        Args: { form_slug: string }
+        Returns: undefined
+      }
+      increment_form_views: { Args: { form_slug: string }; Returns: undefined }
       unlock_expired_accounts: { Args: never; Returns: undefined }
       validate_resource_type: {
         Args: never
