@@ -36,10 +36,10 @@ Composant réutilisable offrant :
 |---------|-------|----------------|-------------------|
 | BannerEditor | `/admin/medias/banner` | ✅ simple/+barre/complet | ✅ sm/md/lg/xl |
 | StoryEditor | `/admin/medias/story` | ✅ simple/+barre/complet | ✅ sm/md/lg/xl |
-| PostEditor | `/admin/medias/post` | 🔄 À implémenter | 🔄 |
-| ThumbnailEditor | `/admin/medias/thumbnail` | 🔄 À implémenter | 🔄 |
-| OpenGraphEditor | `/admin/medias/opengraph` | 🔄 À implémenter | 🔄 |
-| HeaderEmailEditor | `/admin/medias/header-email` | 🔄 À implémenter | 🔄 |
+| PostEditor | `/admin/medias/post` | ✅ simple/+barre/complet | ✅ sm/md/lg/xl |
+| ThumbnailEditor | `/admin/medias/thumbnail` | ✅ simple/+barre/complet | ✅ sm/md/lg/xl |
+| OpenGraphEditor | `/admin/medias/opengraph` | ✅ simple/+barre/complet | ✅ sm/md/lg/xl |
+| HeaderEmailEditor | `/admin/medias/header-email` | ✅ simple/+barre/complet | ✅ sm/md/lg/xl |
 
 **3. Logique conditionnelle d'affichage**
 

@@ -13,6 +13,8 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import { exportToPNG } from '@/lib/exportPng';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
+import ExportModeControls, { ExportMode } from '@/components/admin/medias/ExportModeControls';
+import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -61,6 +63,8 @@ export default function OpenGraphEditor() {
   const [template, setTemplate] = useState<OGTemplate>('page');
   const [theme, setTheme] = useState<ThemeType>('dark');
   const [preset, setPreset] = useState<string>('');
+  const [exportMode, setExportMode] = useState<ExportMode>('full');
+  const [barSize, setBarSize] = useState<BarSize>('lg');
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(72);
@@ -93,17 +97,19 @@ export default function OpenGraphEditor() {
 
   // Get current data for saving template
   const getCurrentData = useCallback(() => ({
-    template, theme, preset,
+    template, theme, preset, exportMode, barSize,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     pageTitle, pageTagline,
     articleTitle, articleDate, articleCategory,
     selectedSolution,
-  }), [template, theme, preset, titleFontSize, titleBold, titleItalic, titleAlignment, pageTitle, pageTagline, articleTitle, articleDate, articleCategory, selectedSolution]);
+  }), [template, theme, preset, exportMode, barSize, titleFontSize, titleBold, titleItalic, titleAlignment, pageTitle, pageTagline, articleTitle, articleDate, articleCategory, selectedSolution]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
     if (data.template) setTemplate(data.template as OGTemplate);
     if (data.theme) setTheme(data.theme as ThemeType);
+    if (data.exportMode) setExportMode(data.exportMode as ExportMode);
+    if (data.barSize) setBarSize(data.barSize as BarSize);
     if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
     if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
     if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
@@ -138,6 +144,7 @@ export default function OpenGraphEditor() {
 
   const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
   const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(26,43,74,0.7)';
+  const showBar = exportMode === 'with-bar' || exportMode === 'full';
 
   const renderOGContent = () => {
     switch (template) {
@@ -153,7 +160,7 @@ export default function OpenGraphEditor() {
             textAlign: titleAlignment,
           }}>
             <HTMLLogo size="xl" theme={theme} />
-            <HTMLGradientBar size="lg" />
+            {showBar && <HTMLGradientBar size={barSize} />}
             <h1 style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: `${titleFontSize}px`,
@@ -210,7 +217,7 @@ export default function OpenGraphEditor() {
               maxWidth: '85%',
               textAlign: titleAlignment,
             }}>
-              <HTMLGradientBar size="lg" />
+              {showBar && <HTMLGradientBar size={barSize} />}
               <h1 style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${titleFontSize * 0.72}px`,
@@ -285,7 +292,7 @@ export default function OpenGraphEditor() {
               
               {/* Text */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', textAlign: titleAlignment }}>
-                <HTMLGradientBar size="lg" />
+                {showBar && <HTMLGradientBar size={barSize} />}
                 <h1 style={{
                   fontFamily: IARCHE_FONTS.primary,
                   fontSize: `${titleFontSize * 0.89}px`,
@@ -457,6 +464,15 @@ export default function OpenGraphEditor() {
                 </div>
               )}
 
+              {/* Export Mode Controls */}
+              <ExportModeControls
+                exportMode={exportMode}
+                onExportModeChange={setExportMode}
+                barSize={barSize}
+                onBarSizeChange={setBarSize}
+                compact={true}
+              />
+
               {/* Saved Templates */}
               <div className="pt-4 border-t">
                 <SavedTemplatesPanel
@@ -494,7 +510,7 @@ export default function OpenGraphEditor() {
                     theme={theme}
                     padding={60}
                     showArches={false}
-                    showCanalisations={true}
+                    showCanalisations={exportMode === 'full'}
                     canalisationOpacity={0.4}
                     canalisationStrokeWidth={5}
                   >
