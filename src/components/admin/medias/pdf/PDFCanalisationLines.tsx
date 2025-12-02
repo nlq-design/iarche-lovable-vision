@@ -22,22 +22,30 @@ interface PDFCanalisationLinesProps {
  * - Line 1: Starts ~99% right, goes to ~30% left, then down to ~36% height, exits left
  * - Line 2: Starts left edge, goes to ~70% right, then down to ~98% height, exits right
  * 
- * Stroke: 2px, opacity: 0.5
+ * Colors match the gradient effect:
+ * - Dark theme: terracotta (line 1) + white/light (line 2) for visibility
+ * - Light theme: bleuNuit (line 1) + terracotta (line 2)
  */
 export const PDFCanalisationLines = ({
   width,
   height,
   isDark = true,
-  opacity = 0.5,
-  strokeWidth = 2,
+  opacity = 0.6,
+  strokeWidth = 7,
 }: PDFCanalisationLinesProps) => {
-  // Colors based on theme
-  const primaryColor = isDark ? IARCHE_COLORS.terracotta : IARCHE_COLORS.bleuNuit;
-  const secondaryColor = isDark ? IARCHE_COLORS.bleuNuitLight : IARCHE_COLORS.terracotta;
+  // Colors based on theme - ensuring visibility on both backgrounds
+  // On dark (bleu nuit) background: use terracotta and white
+  // On light (blanc cassé) background: use bleuNuit and terracotta
+  const line1Color = isDark ? IARCHE_COLORS.terracotta : IARCHE_COLORS.bleuNuit;
+  const line2Color = isDark ? IARCHE_COLORS.white : IARCHE_COLORS.terracotta;
+  
+  // Opacity adjustments for balance
+  const line1Opacity = opacity;
+  const line2Opacity = isDark ? opacity * 0.4 : opacity; // White more subtle on dark
   
   // ============================================
   // LINE 1: Right → Left → Down → Exit Left
-  // Proportions from viewBox 177×159
+  // Proportions from viewBox 177×159 with preserveAspectRatio="none"
   // ============================================
   const l1 = {
     startX: width * 0.994,      // 176/177 ≈ 99.4%
@@ -49,7 +57,7 @@ export const PDFCanalisationLines = ({
   };
   
   // Path with rounded corner (Q = quadratic bezier for smooth corner)
-  const cornerRadius1 = Math.min(width, height) * 0.015; // Small radius for clean corner
+  const cornerRadius1 = Math.min(width, height) * 0.012;
   const path1 = `
     M ${l1.startX} ${l1.startY}
     L ${l1.cornerX + cornerRadius1} ${l1.cornerY}
@@ -61,7 +69,7 @@ export const PDFCanalisationLines = ({
   
   // ============================================
   // LINE 2: Left → Right → Down → Exit Right
-  // Proportions from viewBox 176×59
+  // Proportions from viewBox 176×59 with preserveAspectRatio="none"
   // ============================================
   const l2 = {
     startX: 0,                  // Left edge
@@ -72,7 +80,7 @@ export const PDFCanalisationLines = ({
     endY: height * 0.983,       // 58/59 ≈ 98.3%
   };
   
-  const cornerRadius2 = Math.min(width, height) * 0.015;
+  const cornerRadius2 = Math.min(width, height) * 0.012;
   const path2 = `
     M ${l2.startX} ${l2.startY}
     L ${l2.cornerX - cornerRadius2} ${l2.cornerY}
@@ -93,30 +101,30 @@ export const PDFCanalisationLines = ({
       }}
       viewBox={`0 0 ${width} ${height}`}
     >
-      {/* Line 1 - Right to Left */}
+      {/* Line 1 - Right to Left (terracotta on dark, bleuNuit on light) */}
       <Path
         d={path1}
         fill="none"
-        stroke={primaryColor}
+        stroke={line1Color}
         strokeWidth={strokeWidth}
         strokeLinecap="round"
-        opacity={opacity}
+        opacity={line1Opacity}
       />
       
-      {/* Line 2 - Left to Right */}
+      {/* Line 2 - Left to Right (white on dark, terracotta on light) */}
       <Path
         d={path2}
         fill="none"
-        stroke={secondaryColor}
+        stroke={line2Color}
         strokeWidth={strokeWidth}
         strokeLinecap="round"
-        opacity={opacity}
+        opacity={line2Opacity}
       />
     </Svg>
   );
 };
 
 /**
- * Simplified version - same paths, different colors for themes
+ * Simplified version - same implementation
  */
 export const PDFCanalisationLinesSimple = PDFCanalisationLines;
