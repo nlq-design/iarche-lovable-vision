@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Save, Eye, Settings, Copy, QrCode, 
-  GripVertical, Trash2, Plus, ChevronDown, Download, Palette
+  GripVertical, Trash2, Plus, ChevronDown, Download, Palette, Image as ImageIcon, X
 } from 'lucide-react';
 import QRCode from 'react-qr-code';
 import {
@@ -855,6 +855,55 @@ const FormEditor = () => {
                       />
                     </div>
                   </div>
+                </div>
+                
+                {/* Logo */}
+                <div className="pt-4 border-t">
+                  <Label>Logo personnalisé</Label>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <Input
+                      value={form.settings.design.logo || ''}
+                      onChange={(e) => setForm({
+                        ...form,
+                        settings: {
+                          ...form.settings,
+                          design: { ...form.settings.design, logo: e.target.value }
+                        }
+                      })}
+                      placeholder="URL du logo (https://...)"
+                      className="flex-1"
+                    />
+                    {form.settings.design.logo && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setForm({
+                          ...form,
+                          settings: {
+                            ...form.settings,
+                            design: { ...form.settings.design, logo: undefined }
+                          }
+                        })}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  {form.settings.design.logo && (
+                    <div className="mt-3 p-4 bg-muted rounded-lg flex justify-center">
+                      <img 
+                        src={form.settings.design.logo} 
+                        alt="Logo preview" 
+                        className="h-12 object-contain"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Entrez l'URL d'une image hébergée (PNG, JPG, SVG)
+                  </p>
                 </div>
                 
                 <div className="pt-4 border-t space-y-4">
