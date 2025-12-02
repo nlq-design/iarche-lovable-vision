@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, FileText, Briefcase, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { exportToPNG } from '@/lib/exportPng';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
+import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -87,6 +88,31 @@ export default function OpenGraphEditor() {
     }
     setPreset(presetId);
   };
+
+  // Get current data for saving template
+  const getCurrentData = useCallback(() => ({
+    template, theme, preset,
+    titleFontSize, titleBold, titleItalic, titleAlignment,
+    pageTitle, pageTagline,
+    articleTitle, articleDate, articleCategory,
+    selectedSolution,
+  }), [template, theme, preset, titleFontSize, titleBold, titleItalic, titleAlignment, pageTitle, pageTagline, articleTitle, articleDate, articleCategory, selectedSolution]);
+
+  // Load template data
+  const loadTemplateData = useCallback((data: Record<string, unknown>) => {
+    if (data.template) setTemplate(data.template as OGTemplate);
+    if (data.theme) setTheme(data.theme as ThemeType);
+    if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
+    if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
+    if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
+    if (data.titleAlignment !== undefined) setTitleAlignment(data.titleAlignment as TextAlignment);
+    if (data.pageTitle !== undefined) setPageTitle(data.pageTitle as string);
+    if (data.pageTagline !== undefined) setPageTagline(data.pageTagline as string);
+    if (data.articleTitle !== undefined) setArticleTitle(data.articleTitle as string);
+    if (data.articleDate !== undefined) setArticleDate(data.articleDate as string);
+    if (data.articleCategory !== undefined) setArticleCategory(data.articleCategory as string);
+    if (data.selectedSolution !== undefined) setSelectedSolution(data.selectedSolution as string);
+  }, []);
 
   const handleExport = async () => {
     try {
@@ -420,6 +446,15 @@ export default function OpenGraphEditor() {
                   </Select>
                 </div>
               )}
+
+              {/* Saved Templates */}
+              <div className="pt-4 border-t">
+                <SavedTemplatesPanel
+                  editorType="opengraph"
+                  getCurrentData={getCurrentData}
+                  onLoadTemplate={loadTemplateData}
+                />
+              </div>
             </CardContent>
           </Card>
 

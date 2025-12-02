@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { exportToPNG } from '@/lib/exportPng';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
+import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -82,6 +83,29 @@ export default function StoryEditor() {
     }
     setPreset(presetId);
   };
+
+  // Get current data for saving template
+  const getCurrentData = useCallback(() => ({
+    template, theme, preset,
+    titleFontSize, titleBold, titleItalic, titleAlignment,
+    badge, titre, ctaText, chiffre, contexte, source,
+  }), [template, theme, preset, titleFontSize, titleBold, titleItalic, titleAlignment, badge, titre, ctaText, chiffre, contexte, source]);
+
+  // Load template data
+  const loadTemplateData = useCallback((data: Record<string, unknown>) => {
+    if (data.template) setTemplate(data.template as StoryTemplate);
+    if (data.theme) setTheme(data.theme as ThemeType);
+    if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
+    if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
+    if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
+    if (data.titleAlignment !== undefined) setTitleAlignment(data.titleAlignment as TextAlignment);
+    if (data.badge !== undefined) setBadge(data.badge as string);
+    if (data.titre !== undefined) setTitre(data.titre as string);
+    if (data.ctaText !== undefined) setCtaText(data.ctaText as string);
+    if (data.chiffre !== undefined) setChiffre(data.chiffre as string);
+    if (data.contexte !== undefined) setContexte(data.contexte as string);
+    if (data.source !== undefined) setSource(data.source as string);
+  }, []);
 
   const handleExport = async () => {
     try {
@@ -357,6 +381,15 @@ export default function StoryEditor() {
                   </div>
                 </>
               )}
+
+              {/* Saved Templates */}
+              <div className="pt-4 border-t">
+                <SavedTemplatesPanel
+                  editorType="story"
+                  getCurrentData={getCurrentData}
+                  onLoadTemplate={loadTemplateData}
+                />
+              </div>
             </CardContent>
           </Card>
 
