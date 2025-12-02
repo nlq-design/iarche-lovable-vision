@@ -74,6 +74,7 @@ const FooterEmailEditor = lazy(() => import("./pages/admin/FooterEmailEditor"));
 const AdminFormulaires = lazy(() => import("./pages/admin/AdminFormulaires"));
 const FormEditor = lazy(() => import("./pages/admin/FormEditor"));
 const FormResponses = lazy(() => import("./pages/admin/FormResponses"));
+const FormPublic = lazy(() => import("./pages/FormPublic"));
 const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"));
 
 // QueryClient avec cache optimisé
@@ -126,6 +127,13 @@ const App = () => (
           <Route path="/newsletter" element={<Newsletter />} />
           <Route path="/livre-or" element={<LivreOr />} />
           <Route path="/status" element={<Status />} />
+          
+          {/* Formulaires publics */}
+          <Route path="/f/:slug" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <FormPublic />
+            </Suspense>
+          } />
           
           {/* Pages légales */}
           <Route path="/mentions-legales" element={<MentionsLegales />} />
