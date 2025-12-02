@@ -723,9 +723,99 @@ Toutes les cards utilisent :
 
 ---
 
-## 15. CHECKLIST VALIDATION
+## 15. MODULE MÉDIAS - Génération PDF
 
-### 15.1 Éléments visuels obligatoires
+### 15.1 Description
+
+Module d'administration (`/admin/medias`) permettant de créer des contenus PDF conformes à la charte graphique IArche :
+- **Carrousels LinkedIn/Instagram**
+- **Présentations PDF (16:9)**
+- **Documents Word**
+
+**Fichiers principaux :**
+- `src/pages/admin/AdminMedias.tsx` - Page principale
+- `src/components/admin/medias/pdf/` - Composants PDF
+- `src/components/admin/medias/templates/` - Templates (CarouselPDF, PresentationPDF)
+
+### 15.2 Lignes Canalisation PDF (version statique)
+
+Reproduction figée (à 6 secondes) des lignes SVG animées du hero section.
+
+**Composant :** `src/components/admin/medias/pdf/PDFCanalisationLines.tsx`
+
+**Spécifications techniques :**
+
+| Propriété | Valeur |
+|-----------|--------|
+| Stroke width | **7px** |
+| Opacity | 0.6 |
+| Stroke linecap | round |
+| Coins | Quadratic Bezier (radius 1.2%) |
+
+**Tracé Ligne 1 (droite → gauche → bas → sortie gauche) :**
+
+| Point | Position X | Position Y |
+|-------|------------|------------|
+| Départ | 99.4% | 0.6% |
+| Coin | 29.1% | 0.6% |
+| Fin | 0% | 36.5% |
+
+**Tracé Ligne 2 (gauche → droite → bas → sortie droite) :**
+
+| Point | Position X | Position Y |
+|-------|------------|------------|
+| Départ | 0% | 1.7% |
+| Coin | 70.7% | 1.7% |
+| Fin | 100% | 98.3% |
+
+**Couleurs par thème :**
+
+| Thème | Ligne 1 | Ligne 2 |
+|-------|---------|---------|
+| **Bleu Nuit (dark)** | Terracotta (#D15A3E) | Terracotta (#D15A3E) |
+| **Blanc Cassé (light)** | Bleu Nuit (#1A2B4A) | Terracotta (#D15A3E) |
+
+### 15.3 Logo PDF
+
+**Composant :** `PDFImageLogo` (PNG)
+
+| Thème | Variante logo |
+|-------|---------------|
+| Bleu Nuit | `terracotta` (orange fixe) |
+| Blanc Cassé | `gradient` |
+
+### 15.4 Autres éléments PDF
+
+| Élément | Composant | Description |
+|---------|-----------|-------------|
+| Barre décorative | `PDFImageBar` | Tailles: sm (48×2), md (80×4), lg (96×4), xl (128×6) |
+| Motif diagonal | `PDFPatternBackground` | Quadrillage 45° avec lignes fines |
+| Typographie | Helvetica / Helvetica-Bold | Manrope non supporté par @react-pdf |
+
+### 15.5 Formats supportés
+
+| Format | Dimensions | Usage |
+|--------|------------|-------|
+| LinkedIn Carousel | 1080 × 1350 px | Posts carrousel LinkedIn |
+| Instagram Carousel | 1080 × 1080 px | Posts carrousel Instagram |
+| Présentation | 1920 × 1080 px | Slides 16:9 |
+| A4 | 595 × 842 px | Documents imprimables |
+
+### 15.6 Workflow de création
+
+1. Accéder à `/admin/medias`
+2. Choisir le type de média (Carrousel, Présentation, Word)
+3. Sélectionner un template
+4. Remplir le contenu des slides
+5. Choisir le thème de départ (Bleu Nuit ou Blanc Cassé)
+6. Prévisualiser en temps réel
+7. Exporter en PDF
+
+---
+
+## 16. CHECKLIST VALIDATION
+
+### 16.1 Éléments visuels obligatoires
 
 - [ ] Logo IArche avec gradient animé + barre décorative
 - [ ] Fond Blanc Cassé (#FAF9F7)
@@ -734,7 +824,7 @@ Toutes les cards utilisent :
 - [ ] Barre décorative sous chaque titre
 - [ ] Focus ring Terracotta (WCAG AAA)
 
-### 15.2 Animations obligatoires
+### 16.2 Animations obligatoires
 
 - [ ] Gradient text 8s sur logo IArche
 - [ ] PatternScroll 40s sur quadrillages
@@ -742,14 +832,22 @@ Toutes les cards utilisent :
 - [ ] PageTransition 0.4s entre pages
 - [ ] Canalisation lines 6s (hero/placeholder)
 
-### 15.3 Cohérence tokens
+### 16.3 Cohérence tokens
 
 - [ ] Toutes les couleurs via tokens CSS (pas de HEX hardcodé)
-- [ ] Typographie Manrope uniquement
+- [ ] Typographie Manrope uniquement (Helvetica pour PDF)
 - [ ] Border-radius via --radius token
 - [ ] Espacements via classes Tailwind standard
 
+### 16.4 Éléments PDF obligatoires
+
+- [ ] Lignes canalisation (7px, terracotta sur dark)
+- [ ] Logo PNG (terracotta sur dark, gradient sur light)
+- [ ] Barres décoratives proportionnelles
+- [ ] Motif diagonal en arrière-plan
+- [ ] Alternance thèmes dark/light entre slides
+
 ---
 
-**Document mis à jour le 1er Décembre 2025**  
-**Version 2.0 - Inclut GradientTitle, barre décorative, et spécifications complètes**
+**Document mis à jour le 2 Décembre 2025**  
+**Version 2.1 - Inclut Module Médias PDF et spécifications lignes canalisation**
