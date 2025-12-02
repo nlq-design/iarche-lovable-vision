@@ -208,12 +208,13 @@ export const PDFArchesDecoration = ({
   width,
   height,
   isDark = true,
-  cornerSize = 120,
+  cornerSize = 150,
 }: PDFArchesDecorationProps) => {
-  const opacity = isDark ? 0.4 : 0.6;
-  const secondaryOpacity = opacity * 0.5;
+  // High visibility for arches
+  const opacity = isDark ? 0.85 : 0.9;
+  const secondaryOpacity = isDark ? 0.5 : 0.6;
   
-  // Solid colors based on theme (gradient limitation in @react-pdf/renderer)
+  // Solid colors based on theme
   const primaryColor = isDark ? IARCHE_COLORS.terracotta : IARCHE_COLORS.bleuNuit;
   const secondaryColor = isDark ? IARCHE_COLORS.bleuNuitLight : IARCHE_COLORS.terracotta;
   
@@ -233,7 +234,7 @@ export const PDFArchesDecoration = ({
         d={`M${width - cornerSize} 0 L${width} 0 L${width} ${cornerSize}`}
         fill="none" 
         stroke={primaryColor}
-        strokeWidth={3} 
+        strokeWidth={4} 
         opacity={opacity}
       />
       
@@ -242,23 +243,23 @@ export const PDFArchesDecoration = ({
         d={`M0 ${height - cornerSize} L0 ${height} L${cornerSize} ${height}`}
         fill="none" 
         stroke={primaryColor}
-        strokeWidth={3} 
+        strokeWidth={4} 
         opacity={opacity}
       />
       
       {/* Secondary arches (inner, smaller) */}
       <Path 
-        d={`M${width - cornerSize + 20} 20 L${width - 20} 20 L${width - 20} ${cornerSize - 20}`}
+        d={`M${width - cornerSize + 25} 25 L${width - 25} 25 L${width - 25} ${cornerSize - 25}`}
         fill="none" 
         stroke={secondaryColor}
-        strokeWidth={1.5} 
+        strokeWidth={2} 
         opacity={secondaryOpacity}
       />
       <Path 
-        d={`M20 ${height - cornerSize + 20} L20 ${height - 20} L${cornerSize - 20} ${height - 20}`}
+        d={`M25 ${height - cornerSize + 25} L25 ${height - 25} L${cornerSize - 25} ${height - 25}`}
         fill="none" 
         stroke={secondaryColor}
-        strokeWidth={1.5} 
+        strokeWidth={2} 
         opacity={secondaryOpacity}
       />
     </Svg>
