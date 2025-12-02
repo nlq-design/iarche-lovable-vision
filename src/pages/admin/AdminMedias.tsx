@@ -104,7 +104,7 @@ const visualTemplates = [
     dimensions: '600×150px',
     icon: MailOpen,
     route: '/admin/medias/header-email',
-    ready: false,
+    ready: true,
   },
 ];
 
