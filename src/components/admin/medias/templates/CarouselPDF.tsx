@@ -1,6 +1,7 @@
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
-import { PDFImageLogo, PDFImageBar, PDFPatternBackground } from '../pdf/PDFImageAssets';
+import { PDFImageLogo, PDFPatternBackground } from '../pdf/PDFImageAssets';
+import { PDFGradientBar } from '../pdf/PDFGradientBar';
 import { PDFCanalisationLines } from '../pdf/PDFCanalisationLines';
 
 export type ExportMode = 'simple' | 'with-bar' | 'full';
@@ -249,12 +250,12 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
                   />
                   {/* Bar under logo - only if showBar */}
                   {showBar && (
-                    <PDFImageBar size={barSize} style={{ marginTop: 6 }} />
+                    <PDFGradientBar size={barSize} style={{ marginTop: 6 }} />
                   )}
                 </View>
                 {/* Header bar - only if showBar */}
                 {showBar && (
-                  <PDFImageBar 
+                  <PDFGradientBar 
                     size="xl" 
                     width={width - 120} 
                     height={3} 
@@ -276,7 +277,7 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
                           {slide.title}
                         </Text>
                       ) : null}
-                      {showBar && <PDFImageBar size={barSize} style={{ marginTop: 8 }} />}
+                      {showBar && <PDFGradientBar size={barSize} style={{ marginTop: 8 }} />}
                     </View>
                   </View>
                 ) : (
@@ -291,7 +292,7 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
                         {slide.title}
                       </Text>
                     ) : null}
-                    {showBar && <PDFImageBar size={barSize} style={{ marginTop: 12, marginBottom: 16 }} />}
+                    {showBar && <PDFGradientBar size={barSize} style={{ marginTop: 12, marginBottom: 16 }} />}
                   </View>
                 )}
                 
@@ -310,7 +311,7 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
               {/* Footer with optional gradient bar separator */}
               <View>
                 {showBar && (
-                  <PDFImageBar 
+                  <PDFGradientBar 
                     size="xl" 
                     width={width - 120} 
                     height={2} 
