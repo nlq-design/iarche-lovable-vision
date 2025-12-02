@@ -18,9 +18,9 @@ interface PDFGradientBarProps {
 /**
  * Decorative gradient bar following IArche brand guidelines
  * 
- * Gradient adapts to background:
+ * Gradient adapts to background for visibility:
  * - Light background: BleuNuit → Terracotta → BleuNuit
- * - Dark background: White → Terracotta → White (for visibility)
+ * - Dark background: BleuNuitLight → Terracotta → BleuNuitLight (lightened for visibility)
  * 
  * Uses native react-pdf SVG components for reliable rendering.
  * Each bar gets a unique gradient ID to prevent conflicts.
@@ -46,7 +46,8 @@ export const PDFGradientBar = ({
   const gradientId = `barGradient-${barGradientCounter++}`;
   
   // Adapt colors based on background theme
-  const edgeColor = isDark ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
+  // On dark background, use lightened BleuNuit for visibility
+  const edgeColor = isDark ? IARCHE_COLORS.bleuNuitLight : IARCHE_COLORS.bleuNuit;
   const centerColor = IARCHE_COLORS.terracotta;
   
   return (
