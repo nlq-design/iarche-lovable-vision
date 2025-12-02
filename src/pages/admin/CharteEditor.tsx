@@ -19,6 +19,25 @@ const PALETTE = [
   { name: 'Blanc', hex: '#FFFFFF', usage: 'Fond principal, cartes, modals' },
 ];
 
+// Gradients definition
+const GRADIENTS = [
+  { 
+    name: 'Barre décorative', 
+    css: 'linear-gradient(90deg, #1A2B4A 0%, #D15A3E 100%)',
+    usage: 'Barres horizontales, séparateurs'
+  },
+  { 
+    name: 'Texte animé', 
+    css: 'linear-gradient(270deg, #1A2B4A 0%, #D15A3E 33%, #1A2B4A 66%, #D15A3E 100%)',
+    usage: 'Logo IArche, titres héroïques'
+  },
+  { 
+    name: 'Fond sombre', 
+    css: 'linear-gradient(135deg, #1A2B4A 0%, #14203A 100%)',
+    usage: 'Sections sombres, hero backgrounds'
+  },
+];
+
 // PDF Styles
 const styles = StyleSheet.create({
   page: {
@@ -219,6 +238,54 @@ const ChartePDF = () => (
         </View>
       </View>
 
+      {/* Gradients Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Gradients</Text>
+        {GRADIENTS.map((gradient, index) => (
+          <View key={index} style={styles.colorRow}>
+            <View style={[styles.colorSwatch, { backgroundColor: '#1A2B4A' }]}>
+              <View style={{ 
+                width: '100%', 
+                height: '100%', 
+                backgroundColor: index === 0 ? '#D15A3E' : '#1A2B4A',
+                opacity: 0.5 
+              }} />
+            </View>
+            <View style={styles.colorInfo}>
+              <Text style={styles.colorName}>{gradient.name}</Text>
+              <Text style={styles.colorUsage}>{gradient.usage}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+
+      {/* CTAs Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>CTAs</Text>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <View style={{ 
+            paddingHorizontal: 16, 
+            paddingVertical: 8, 
+            backgroundColor: '#1A2B4A',
+            borderRadius: 4,
+          }}>
+            <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: 'bold' }}>Bouton primaire</Text>
+          </View>
+          <View style={{ 
+            paddingHorizontal: 16, 
+            paddingVertical: 8, 
+            borderWidth: 2,
+            borderColor: '#D15A3E',
+            borderRadius: 4,
+          }}>
+            <Text style={{ color: '#D15A3E', fontSize: 10, fontWeight: 'bold' }}>Bouton secondaire</Text>
+          </View>
+        </View>
+        <Text style={[styles.colorUsage, { marginTop: 8 }]}>
+          Texte CTA : "Découvrir →" avec flèche animée sur hover
+        </Text>
+      </View>
+
       {/* Do's and Don'ts */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Usages</Text>
@@ -353,6 +420,71 @@ export default function CharteEditor() {
                     <span className="text-sm text-muted-foreground">{item.value}</span>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Gradients Preview */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Gradients</CardTitle>
+              <CardDescription>Dégradés de marque</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {GRADIENTS.map((gradient, index) => (
+                <div key={index} className="space-y-1">
+                  <p className="text-sm font-medium">{gradient.name}</p>
+                  <div 
+                    className="h-6 rounded"
+                    style={{ background: gradient.css }}
+                  />
+                  <p className="text-xs text-muted-foreground">{gradient.usage}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* CTAs Preview */}
+          <Card>
+            <CardHeader>
+              <CardTitle>CTAs</CardTitle>
+              <CardDescription>Exemples de boutons</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-3">
+                <button 
+                  className="px-4 py-2 rounded text-sm font-medium text-white"
+                  style={{ backgroundColor: COLORS.bleuNuit }}
+                >
+                  Bouton primaire
+                </button>
+                <button 
+                  className="px-4 py-2 rounded text-sm font-medium border-2"
+                  style={{ borderColor: COLORS.terracotta, color: COLORS.terracotta }}
+                >
+                  Bouton secondaire
+                </button>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm">
+                  <span 
+                    className="font-medium"
+                    style={{ 
+                      background: `linear-gradient(270deg, ${COLORS.bleuNuit} 0%, ${COLORS.terracotta} 50%, ${COLORS.bleuNuit} 100%)`,
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}
+                  >
+                    Découvrir →
+                  </span>
+                  <span className="text-muted-foreground text-xs ml-2">(Gradient link)</span>
+                </p>
+                <p className="text-sm">
+                  <span style={{ color: COLORS.bleuNuit }}>
+                    En savoir plus <span style={{ color: COLORS.terracotta }}>→</span>
+                  </span>
+                  <span className="text-muted-foreground text-xs ml-2">(IArche link)</span>
+                </p>
               </div>
             </CardContent>
           </Card>
