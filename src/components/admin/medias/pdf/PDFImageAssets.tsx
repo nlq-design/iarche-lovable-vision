@@ -229,18 +229,18 @@ export const PDFArchesDecoration = ({
       }}
       viewBox={`0 0 ${width} ${height}`}
     >
-      {/* Top-right corner arch - L shape */}
+      {/* Top-left corner arch - L shape (matches website) */}
       <Path 
-        d={`M${width - cornerSize} 0 L${width} 0 L${width} ${cornerSize}`}
+        d={`M0 ${cornerSize} L0 0 L${cornerSize} 0`}
         fill="none" 
         stroke={primaryColor}
         strokeWidth={4} 
         opacity={opacity}
       />
       
-      {/* Bottom-left corner arch - inverted L shape */}
+      {/* Bottom-right corner arch - inverted L shape (matches website) */}
       <Path 
-        d={`M0 ${height - cornerSize} L0 ${height} L${cornerSize} ${height}`}
+        d={`M${width - cornerSize} ${height} L${width} ${height} L${width} ${height - cornerSize}`}
         fill="none" 
         stroke={primaryColor}
         strokeWidth={4} 
@@ -249,14 +249,14 @@ export const PDFArchesDecoration = ({
       
       {/* Secondary arches (inner, smaller) */}
       <Path 
-        d={`M${width - cornerSize + 25} 25 L${width - 25} 25 L${width - 25} ${cornerSize - 25}`}
+        d={`M25 ${cornerSize - 25} L25 25 L${cornerSize - 25} 25`}
         fill="none" 
         stroke={secondaryColor}
         strokeWidth={2} 
         opacity={secondaryOpacity}
       />
       <Path 
-        d={`M25 ${height - cornerSize + 25} L25 ${height - 25} L${cornerSize - 25} ${height - 25}`}
+        d={`M${width - cornerSize + 25} ${height - 25} L${width - 25} ${height - 25} L${width - 25} ${height - cornerSize + 25}`}
         fill="none" 
         stroke={secondaryColor}
         strokeWidth={2} 
