@@ -34,14 +34,14 @@ export const PDFCanalisationLines = ({
   strokeWidth = 7,
 }: PDFCanalisationLinesProps) => {
   // Colors based on theme - ensuring visibility on both backgrounds
-  // On dark (bleu nuit) background: use terracotta and white
-  // On light (blanc cassé) background: use bleuNuit and terracotta
+  // On dark (bleu nuit) background: both lines terracotta
+  // On light (blanc cassé) background: bleuNuit and terracotta
   const line1Color = isDark ? IARCHE_COLORS.terracotta : IARCHE_COLORS.bleuNuit;
-  const line2Color = isDark ? IARCHE_COLORS.white : IARCHE_COLORS.terracotta;
+  const line2Color = isDark ? IARCHE_COLORS.terracotta : IARCHE_COLORS.terracotta;
   
-  // Opacity adjustments for balance
+  // Same opacity for both lines
   const line1Opacity = opacity;
-  const line2Opacity = isDark ? opacity * 0.4 : opacity; // White more subtle on dark
+  const line2Opacity = opacity;
   
   // ============================================
   // LINE 1: Right → Left → Down → Exit Left
