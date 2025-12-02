@@ -86,7 +86,7 @@ const visualTemplates = [
     dimensions: '1080×1920px',
     icon: Smartphone,
     route: '/admin/medias/story',
-    ready: false,
+    ready: true,
   },
   { 
     id: 'og', 
