@@ -65,16 +65,29 @@ export const useForms = () => {
   // Récupère un formulaire par slug (pour page publique)
   const getFormBySlug = useCallback(async (slug: string): Promise<Form | null> => {
     try {
+      console.log('[getFormBySlug] Fetching form with slug:', slug);
       const { data, error } = await supabase
         .from('forms')
         .select('*')
         .eq('slug', slug)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      console.log('[getFormBySlug] Result:', { data, error });
+      
+      if (error) {
+        console.error('[getFormBySlug] Supabase error:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        console.log('[getFormBySlug] No form found');
+        return null;
+      }
+      
       return parseForm(data);
     } catch (error) {
+      console.error('[getFormBySlug] Error:', error);
       return null;
     }
   }, []);
