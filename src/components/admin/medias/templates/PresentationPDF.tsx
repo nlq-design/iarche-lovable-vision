@@ -276,7 +276,7 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
                     width={140} 
                     variant={isDark ? 'terracotta' : 'gradient'} 
                   />
-                  {showBar && <PDFImageBar size="sm" style={{ marginTop: 6 }} />}
+                  {showBar && <PDFImageBar size={barSize} style={{ marginTop: 6 }} />}
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   {showBar && (
