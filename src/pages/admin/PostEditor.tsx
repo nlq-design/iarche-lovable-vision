@@ -14,6 +14,8 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import { exportToPNG } from '@/lib/exportPng';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
+import ExportModeControls, { ExportMode } from '@/components/admin/medias/ExportModeControls';
+import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -97,6 +99,8 @@ export default function PostEditor() {
   const [template, setTemplate] = useState<PostTemplate>('annonce');
   const [theme, setTheme] = useState<ThemeType>('dark');
   const [preset, setPreset] = useState<PresetTemplate>('custom');
+  const [exportMode, setExportMode] = useState<ExportMode>('full');
+  const [barSize, setBarSize] = useState<BarSize>('lg');
 
   // Apply preset template
   const applyPreset = (presetKey: PresetTemplate) => {
@@ -158,20 +162,22 @@ export default function PostEditor() {
 
   // Get current data for saving template
   const getCurrentData = useCallback(() => ({
-    format, template, theme,
+    format, template, theme, exportMode, barSize,
     badge, title, description, cta,
     chiffre, contexte, source,
     citation, temoinNom, temoinFonction, temoinEntreprise,
     conseilNumero, conseilTitre, conseilContenu,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     descFontSize, descBold, descItalic, descAlignment,
-  }), [format, template, theme, badge, title, description, cta, chiffre, contexte, source, citation, temoinNom, temoinFonction, temoinEntreprise, conseilNumero, conseilTitre, conseilContenu, titleFontSize, titleBold, titleItalic, titleAlignment, descFontSize, descBold, descItalic, descAlignment]);
+  }), [format, template, theme, exportMode, barSize, badge, title, description, cta, chiffre, contexte, source, citation, temoinNom, temoinFonction, temoinEntreprise, conseilNumero, conseilTitre, conseilContenu, titleFontSize, titleBold, titleItalic, titleAlignment, descFontSize, descBold, descItalic, descAlignment]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
     if (data.format) setFormat(data.format as PostFormat);
     if (data.template) setTemplate(data.template as PostTemplate);
     if (data.theme) setTheme(data.theme as ThemeType);
+    if (data.exportMode) setExportMode(data.exportMode as ExportMode);
+    if (data.barSize) setBarSize(data.barSize as BarSize);
     if (data.badge !== undefined) setBadge(data.badge as string);
     if (data.title !== undefined) setTitle(data.title as string);
     if (data.description !== undefined) setDescription(data.description as string);
@@ -219,6 +225,7 @@ export default function PostEditor() {
   const { width, height } = DIMENSIONS[format];
   const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
   const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(26,43,74,0.7)';
+  const showBar = exportMode === 'with-bar' || exportMode === 'full';
 
   const renderPostContent = () => {
     switch (template) {
@@ -256,7 +263,7 @@ export default function PostEditor() {
               }}>
                 {title}
               </h1>
-              <HTMLGradientBar size="lg" />
+              {showBar && <HTMLGradientBar size={barSize} />}
               <p style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${descFontSize}px`,
@@ -308,7 +315,7 @@ export default function PostEditor() {
             }}>
               {chiffre}
             </div>
-            <HTMLGradientBar size="xl" />
+            {showBar && <HTMLGradientBar size={barSize} />}
             <p style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: `${descFontSize}px`,
@@ -359,7 +366,7 @@ export default function PostEditor() {
               }}>
                 {citation}
               </p>
-              <HTMLGradientBar size="md" />
+              {showBar && <HTMLGradientBar size={barSize} />}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: descAlignment }}>
                 <span style={{
                   fontFamily: IARCHE_FONTS.primary,
@@ -426,7 +433,7 @@ export default function PostEditor() {
               }}>
                 {conseilNumero}
               </div>
-              <HTMLGradientBar size="lg" />
+              {showBar && <HTMLGradientBar size={barSize} />}
               <h2 style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${titleFontSize}px`,
@@ -666,6 +673,15 @@ export default function PostEditor() {
                 maxFontSize={48}
               />
 
+              {/* Export Mode Controls */}
+              <ExportModeControls
+                exportMode={exportMode}
+                onExportModeChange={setExportMode}
+                barSize={barSize}
+                onBarSizeChange={setBarSize}
+                compact={true}
+              />
+
               {/* Saved Templates */}
               <div className="pt-4 border-t">
                 <SavedTemplatesPanel
@@ -704,7 +720,7 @@ export default function PostEditor() {
                     theme={theme}
                     padding={format === 'square' ? 80 : 60}
                     showArches={false}
-                    showCanalisations={true}
+                    showCanalisations={exportMode === 'full'}
                     canalisationOpacity={0.4}
                     canalisationStrokeWidth={format === 'square' ? 6 : 5}
                   >

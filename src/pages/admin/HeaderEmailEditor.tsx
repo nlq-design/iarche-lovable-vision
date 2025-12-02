@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
+import ExportModeControls, { ExportMode } from '@/components/admin/medias/ExportModeControls';
+import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -48,6 +50,8 @@ const HeaderEmailEditor: React.FC = () => {
 
   const [template, setTemplate] = useState<HeaderTemplate>('newsletter');
   const [preset, setPreset] = useState<string>('');
+  const [exportMode, setExportMode] = useState<ExportMode>('full');
+  const [barSize, setBarSize] = useState<BarSize>('md');
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(20);
@@ -78,14 +82,16 @@ const HeaderEmailEditor: React.FC = () => {
 
   // Get current data for saving template
   const getCurrentData = useCallback(() => ({
-    template, preset,
+    template, preset, exportMode, barSize,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     formData,
-  }), [template, preset, titleFontSize, titleBold, titleItalic, titleAlignment, formData]);
+  }), [template, preset, exportMode, barSize, titleFontSize, titleBold, titleItalic, titleAlignment, formData]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
     if (data.template) setTemplate(data.template as HeaderTemplate);
+    if (data.exportMode) setExportMode(data.exportMode as ExportMode);
+    if (data.barSize) setBarSize(data.barSize as BarSize);
     if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
     if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
     if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
@@ -117,6 +123,9 @@ const HeaderEmailEditor: React.FC = () => {
   };
 
   const renderPreview = () => {
+    const showBar = exportMode === 'with-bar' || exportMode === 'full';
+    const showCanalisations = exportMode === 'full';
+    
     switch (template) {
       case 'newsletter':
         return (
@@ -125,9 +134,9 @@ const HeaderEmailEditor: React.FC = () => {
             width={600}
             height={150}
             theme="dark"
-            showMesh={true}
+            showMesh={exportMode === 'full'}
             showArches={false}
-            showCanalisations={true}
+            showCanalisations={showCanalisations}
             canalisationOpacity={0.35}
             canalisationStrokeWidth={3}
             padding={24}
@@ -140,7 +149,7 @@ const HeaderEmailEditor: React.FC = () => {
             }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <HTMLLogo size="lg" theme="dark" />
-                <HTMLGradientBar size="md" />
+                {showBar && <HTMLGradientBar size={barSize} />}
               </div>
               <div style={{ 
                 display: 'flex', 
@@ -179,7 +188,7 @@ const HeaderEmailEditor: React.FC = () => {
             theme="light"
             showMesh={false}
             showArches={false}
-            showCanalisations={true}
+            showCanalisations={showCanalisations}
             canalisationOpacity={0.35}
             canalisationStrokeWidth={3}
             padding={24}
@@ -204,7 +213,7 @@ const HeaderEmailEditor: React.FC = () => {
               }}>
                 {formData.titre}
               </span>
-              <HTMLGradientBar size="lg" />
+              {showBar && <HTMLGradientBar size={barSize} />}
             </div>
           </HTMLBaseTemplate>
         );
@@ -218,7 +227,7 @@ const HeaderEmailEditor: React.FC = () => {
             theme="light"
             showMesh={false}
             showArches={false}
-            showCanalisations={true}
+            showCanalisations={showCanalisations}
             canalisationOpacity={0.25}
             canalisationStrokeWidth={2}
             padding={24}
@@ -230,9 +239,9 @@ const HeaderEmailEditor: React.FC = () => {
               height: '100%',
               gap: '16px',
             }}>
-              <HTMLGradientBar size="sm" />
+              {showBar && <HTMLGradientBar size={barSize} />}
               <HTMLLogo size="xl" theme="light" />
-              <HTMLGradientBar size="sm" reverse />
+              {showBar && <HTMLGradientBar size={barSize} reverse />}
             </div>
           </HTMLBaseTemplate>
         );
@@ -350,6 +359,15 @@ const HeaderEmailEditor: React.FC = () => {
                   )}
                 </>
               )}
+
+              {/* Export Mode Controls */}
+              <ExportModeControls
+                exportMode={exportMode}
+                onExportModeChange={setExportMode}
+                barSize={barSize}
+                onBarSizeChange={setBarSize}
+                compact={true}
+              />
 
               {/* Saved Templates */}
               <div className="pt-4 border-t">

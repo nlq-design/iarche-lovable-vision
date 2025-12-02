@@ -12,6 +12,8 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import { exportToPNG } from '@/lib/exportPng';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
+import ExportModeControls, { ExportMode } from '@/components/admin/medias/ExportModeControls';
+import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -64,6 +66,8 @@ export default function ThumbnailEditor() {
   const [theme, setTheme] = useState<ThemeType>('dark');
   const [eventType, setEventType] = useState<EventType>('webinaire');
   const [preset, setPreset] = useState<string>('');
+  const [exportMode, setExportMode] = useState<ExportMode>('full');
+  const [barSize, setBarSize] = useState<BarSize>('xl');
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(72);
@@ -96,17 +100,19 @@ export default function ThumbnailEditor() {
 
   // Get current data for saving template
   const getCurrentData = useCallback(() => ({
-    format, theme, eventType, preset,
+    format, theme, eventType, preset, exportMode, barSize,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     titre, sousTitre, date, heure,
     speakerNom, speakerFonction, showSpeaker,
-  }), [format, theme, eventType, preset, titleFontSize, titleBold, titleItalic, titleAlignment, titre, sousTitre, date, heure, speakerNom, speakerFonction, showSpeaker]);
+  }), [format, theme, eventType, preset, exportMode, barSize, titleFontSize, titleBold, titleItalic, titleAlignment, titre, sousTitre, date, heure, speakerNom, speakerFonction, showSpeaker]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
     if (data.format) setFormat(data.format as ThumbnailFormat);
     if (data.theme) setTheme(data.theme as ThemeType);
     if (data.eventType) setEventType(data.eventType as EventType);
+    if (data.exportMode) setExportMode(data.exportMode as ExportMode);
+    if (data.barSize) setBarSize(data.barSize as BarSize);
     if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
     if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
     if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
@@ -302,6 +308,15 @@ export default function ThumbnailEditor() {
                 </>
               )}
 
+              {/* Export Mode Controls */}
+              <ExportModeControls
+                exportMode={exportMode}
+                onExportModeChange={setExportMode}
+                barSize={barSize}
+                onBarSizeChange={setBarSize}
+                compact={true}
+              />
+
               {/* Saved Templates */}
               <div className="pt-4 border-t">
                 <SavedTemplatesPanel
@@ -340,7 +355,7 @@ export default function ThumbnailEditor() {
                     theme={theme}
                     padding={80}
                     showArches={false}
-                    showCanalisations={true}
+                    showCanalisations={exportMode === 'full'}
                     canalisationOpacity={0.4}
                     canalisationStrokeWidth={format === 'standard' ? 7 : 5}
                   >
