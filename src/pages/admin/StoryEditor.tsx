@@ -313,7 +313,10 @@ export default function StoryEditor() {
                     height={STORY_HEIGHT}
                     theme={theme}
                     padding={80}
-                    archSize={150}
+                    showArches={false}
+                    showCanalisations={true}
+                    canalisationOpacity={0.5}
+                    canalisationStrokeWidth={8}
                   >
                     {renderStoryContent()}
                   </HTMLBaseTemplate>

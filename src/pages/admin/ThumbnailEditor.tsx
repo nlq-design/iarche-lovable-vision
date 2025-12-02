@@ -223,9 +223,12 @@ export default function ThumbnailEditor() {
                     height={height}
                     theme={theme}
                     padding={80}
-                    archSize={200}
+                    showArches={false}
+                    showCanalisations={true}
+                    canalisationOpacity={0.4}
+                    canalisationStrokeWidth={format === 'standard' ? 7 : 5}
                   >
-                    <div style={{ 
+                    <div style={{
                       display: 'flex', 
                       flexDirection: 'column', 
                       justifyContent: 'space-between',

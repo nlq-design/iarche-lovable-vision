@@ -491,7 +491,10 @@ export default function PostEditor() {
                     height={height}
                     theme={theme}
                     padding={format === 'square' ? 80 : 60}
-                    archSize={format === 'square' ? 150 : 100}
+                    showArches={false}
+                    showCanalisations={true}
+                    canalisationOpacity={0.4}
+                    canalisationStrokeWidth={format === 'square' ? 6 : 5}
                   >
                     {renderPostContent()}
                   </HTMLBaseTemplate>
