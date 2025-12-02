@@ -1,6 +1,7 @@
 import { View, Text, Svg, Rect, Line, Path, Image, StyleSheet } from '@react-pdf/renderer';
 import type { Style } from '@react-pdf/types';
 import { IARCHE_COLORS } from './tokens';
+import { BASE64_ASSETS } from './base64Assets';
 
 // Logo PNG paths for different variants - use window.location.origin for absolute URLs
 const getLogoUrl = (variant: 'gradient' | 'white' | 'terracotta') => {
@@ -77,8 +78,8 @@ interface PDFImageBarProps {
 }
 
 /**
- * IArche gradient bar using SVG Rect with LinearGradient
- * True gradient from Bleu Nuit to Terracotta
+ * IArche gradient bar using Base64 SVG with LinearGradient
+ * True gradient from Bleu Nuit → Terracotta → Bleu Nuit
  */
 export const PDFImageBar = ({ 
   size = 'md', 
@@ -90,19 +91,27 @@ export const PDFImageBar = ({
   const barWidth = width || defaultSize.width;
   const barHeight = height || defaultSize.height;
   
-  // Solid terracotta color (gradient limitation in @react-pdf/renderer)
+  // Map size to Base64 asset key
+  const getBarAsset = () => {
+    if (width || height) {
+      // Custom size - use closest match or default to md
+      return BASE64_ASSETS.barMd;
+    }
+    switch (size) {
+      case 'sm': return BASE64_ASSETS.barSm;
+      case 'md': return BASE64_ASSETS.barMd;
+      case 'lg': return BASE64_ASSETS.barLg;
+      case 'xl': return BASE64_ASSETS.barXl;
+      default: return BASE64_ASSETS.barMd;
+    }
+  };
+  
   return (
     <View style={[styles.barContainer, style]}>
-      <Svg width={barWidth} height={barHeight} viewBox={`0 0 ${barWidth} ${barHeight}`}>
-        <Rect
-          x="0"
-          y="0"
-          width={barWidth}
-          height={barHeight}
-          fill={IARCHE_COLORS.terracotta}
-          rx={barHeight / 2}
-        />
-      </Svg>
+      <Image
+        src={getBarAsset()}
+        style={{ width: barWidth, height: barHeight, objectFit: 'fill' }}
+      />
     </View>
   );
 };
