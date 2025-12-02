@@ -733,6 +733,36 @@ export type Database = {
         }
         Relationships: []
       }
+      media_templates: {
+        Row: {
+          created_at: string
+          editor_type: string
+          id: string
+          name: string
+          template_data: Json
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          editor_type: string
+          id?: string
+          name: string
+          template_data: Json
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          editor_type?: string
+          id?: string
+          name?: string
+          template_data?: Json
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       newsletter_subscribers: {
         Row: {
           email: string

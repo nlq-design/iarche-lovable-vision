@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Calendar, Clock, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { exportToPNG } from '@/lib/exportPng';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
+import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -90,6 +91,32 @@ export default function ThumbnailEditor() {
     }
     setPreset(presetId);
   };
+
+  // Get current data for saving template
+  const getCurrentData = useCallback(() => ({
+    format, theme, eventType, preset,
+    titleFontSize, titleBold, titleItalic, titleAlignment,
+    titre, sousTitre, date, heure,
+    speakerNom, speakerFonction, showSpeaker,
+  }), [format, theme, eventType, preset, titleFontSize, titleBold, titleItalic, titleAlignment, titre, sousTitre, date, heure, speakerNom, speakerFonction, showSpeaker]);
+
+  // Load template data
+  const loadTemplateData = useCallback((data: Record<string, unknown>) => {
+    if (data.format) setFormat(data.format as ThumbnailFormat);
+    if (data.theme) setTheme(data.theme as ThemeType);
+    if (data.eventType) setEventType(data.eventType as EventType);
+    if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
+    if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
+    if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
+    if (data.titleAlignment !== undefined) setTitleAlignment(data.titleAlignment as TextAlignment);
+    if (data.titre !== undefined) setTitre(data.titre as string);
+    if (data.sousTitre !== undefined) setSousTitre(data.sousTitre as string);
+    if (data.date !== undefined) setDate(data.date as string);
+    if (data.heure !== undefined) setHeure(data.heure as string);
+    if (data.speakerNom !== undefined) setSpeakerNom(data.speakerNom as string);
+    if (data.speakerFonction !== undefined) setSpeakerFonction(data.speakerFonction as string);
+    if (data.showSpeaker !== undefined) setShowSpeaker(data.showSpeaker as boolean);
+  }, []);
 
   const handleExport = async () => {
     try {
@@ -264,6 +291,15 @@ export default function ThumbnailEditor() {
                   </div>
                 </>
               )}
+
+              {/* Saved Templates */}
+              <div className="pt-4 border-t">
+                <SavedTemplatesPanel
+                  editorType="thumbnail"
+                  getCurrentData={getCurrentData}
+                  onLoadTemplate={loadTemplateData}
+                />
+              </div>
             </CardContent>
           </Card>
 

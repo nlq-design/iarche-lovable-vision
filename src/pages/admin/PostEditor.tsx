@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { exportToPNG } from '@/lib/exportPng';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
+import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -152,6 +153,46 @@ export default function PostEditor() {
   const [descBold, setDescBold] = useState(false);
   const [descItalic, setDescItalic] = useState(false);
   const [descAlignment, setDescAlignment] = useState<TextAlignment>('center');
+
+  // Get current data for saving template
+  const getCurrentData = useCallback(() => ({
+    format, template, theme,
+    badge, title, description, cta,
+    chiffre, contexte, source,
+    citation, temoinNom, temoinFonction, temoinEntreprise,
+    conseilNumero, conseilTitre, conseilContenu,
+    titleFontSize, titleBold, titleItalic, titleAlignment,
+    descFontSize, descBold, descItalic, descAlignment,
+  }), [format, template, theme, badge, title, description, cta, chiffre, contexte, source, citation, temoinNom, temoinFonction, temoinEntreprise, conseilNumero, conseilTitre, conseilContenu, titleFontSize, titleBold, titleItalic, titleAlignment, descFontSize, descBold, descItalic, descAlignment]);
+
+  // Load template data
+  const loadTemplateData = useCallback((data: Record<string, unknown>) => {
+    if (data.format) setFormat(data.format as PostFormat);
+    if (data.template) setTemplate(data.template as PostTemplate);
+    if (data.theme) setTheme(data.theme as ThemeType);
+    if (data.badge !== undefined) setBadge(data.badge as string);
+    if (data.title !== undefined) setTitle(data.title as string);
+    if (data.description !== undefined) setDescription(data.description as string);
+    if (data.cta !== undefined) setCta(data.cta as string);
+    if (data.chiffre !== undefined) setChiffre(data.chiffre as string);
+    if (data.contexte !== undefined) setContexte(data.contexte as string);
+    if (data.source !== undefined) setSource(data.source as string);
+    if (data.citation !== undefined) setCitation(data.citation as string);
+    if (data.temoinNom !== undefined) setTemoinNom(data.temoinNom as string);
+    if (data.temoinFonction !== undefined) setTemoinFonction(data.temoinFonction as string);
+    if (data.temoinEntreprise !== undefined) setTemoinEntreprise(data.temoinEntreprise as string);
+    if (data.conseilNumero !== undefined) setConseilNumero(data.conseilNumero as string);
+    if (data.conseilTitre !== undefined) setConseilTitre(data.conseilTitre as string);
+    if (data.conseilContenu !== undefined) setConseilContenu(data.conseilContenu as string);
+    if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
+    if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
+    if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
+    if (data.titleAlignment !== undefined) setTitleAlignment(data.titleAlignment as TextAlignment);
+    if (data.descFontSize !== undefined) setDescFontSize(data.descFontSize as number);
+    if (data.descBold !== undefined) setDescBold(data.descBold as boolean);
+    if (data.descItalic !== undefined) setDescItalic(data.descItalic as boolean);
+    if (data.descAlignment !== undefined) setDescAlignment(data.descAlignment as TextAlignment);
+  }, []);
 
   const handleExport = async () => {
     try {
@@ -614,6 +655,15 @@ export default function PostEditor() {
                 minFontSize={16}
                 maxFontSize={48}
               />
+
+              {/* Saved Templates */}
+              <div className="pt-4 border-t">
+                <SavedTemplatesPanel
+                  editorType="post"
+                  getCurrentData={getCurrentData}
+                  onLoadTemplate={loadTemplateData}
+                />
+              </div>
             </CardContent>
           </Card>
 

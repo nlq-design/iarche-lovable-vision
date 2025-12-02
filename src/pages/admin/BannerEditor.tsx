@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { exportToPNG } from '@/lib/exportPng';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
+import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -83,6 +84,27 @@ export default function BannerEditor() {
     }
     setPreset(presetId);
   };
+
+  // Get current data for saving template
+  const getCurrentData = useCallback(() => ({
+    template, theme, preset,
+    titleFontSize, titleBold, titleItalic, titleAlignment,
+    tagline, selectedSolution, ceoName, ceoTitle,
+  }), [template, theme, preset, titleFontSize, titleBold, titleItalic, titleAlignment, tagline, selectedSolution, ceoName, ceoTitle]);
+
+  // Load template data
+  const loadTemplateData = useCallback((data: Record<string, unknown>) => {
+    if (data.template) setTemplate(data.template as BannerTemplate);
+    if (data.theme) setTheme(data.theme as ThemeType);
+    if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
+    if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
+    if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
+    if (data.titleAlignment !== undefined) setTitleAlignment(data.titleAlignment as TextAlignment);
+    if (data.tagline !== undefined) setTagline(data.tagline as string);
+    if (data.selectedSolution !== undefined) setSelectedSolution(data.selectedSolution as string);
+    if (data.ceoName !== undefined) setCeoName(data.ceoName as string);
+    if (data.ceoTitle !== undefined) setCeoTitle(data.ceoTitle as string);
+  }, []);
 
   const handleExport = async () => {
     try {
@@ -354,6 +376,15 @@ export default function BannerEditor() {
                   </div>
                 </>
               )}
+
+              {/* Saved Templates */}
+              <div className="pt-4 border-t">
+                <SavedTemplatesPanel
+                  editorType="banner"
+                  getCurrentData={getCurrentData}
+                  onLoadTemplate={loadTemplateData}
+                />
+              </div>
             </CardContent>
           </Card>
 

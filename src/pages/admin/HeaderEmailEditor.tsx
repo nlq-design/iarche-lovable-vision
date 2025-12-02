@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { ArrowLeft, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { exportToPNG } from '@/lib/exportPng';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
+import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -72,6 +73,23 @@ const HeaderEmailEditor: React.FC = () => {
     }
     setPreset(presetId);
   };
+
+  // Get current data for saving template
+  const getCurrentData = useCallback(() => ({
+    template, preset,
+    titleFontSize, titleBold, titleItalic, titleAlignment,
+    formData,
+  }), [template, preset, titleFontSize, titleBold, titleItalic, titleAlignment, formData]);
+
+  // Load template data
+  const loadTemplateData = useCallback((data: Record<string, unknown>) => {
+    if (data.template) setTemplate(data.template as HeaderTemplate);
+    if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
+    if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
+    if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
+    if (data.titleAlignment !== undefined) setTitleAlignment(data.titleAlignment as TextAlignment);
+    if (data.formData) setFormData(data.formData as typeof formData);
+  }, []);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -322,6 +340,15 @@ const HeaderEmailEditor: React.FC = () => {
                   )}
                 </>
               )}
+
+              {/* Saved Templates */}
+              <div className="pt-4 border-t">
+                <SavedTemplatesPanel
+                  editorType="header-email"
+                  getCurrentData={getCurrentData}
+                  onLoadTemplate={loadTemplateData}
+                />
+              </div>
             </CardContent>
           </Card>
 
