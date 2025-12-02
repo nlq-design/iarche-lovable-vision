@@ -157,6 +157,7 @@ export default function ThumbnailEditor() {
     ? (theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.white)
     : IARCHE_COLORS.white;
 
+  const showBar = exportMode === 'with-bar' || exportMode === 'full';
   const actualTitleSize = format === 'standard' ? titleFontSize : titleFontSize * 0.78;
   const actualSubtitleSize = format === 'standard' ? titleFontSize * 0.44 : titleFontSize * 0.33;
 
@@ -391,7 +392,7 @@ export default function ThumbnailEditor() {
                         maxWidth: '70%',
                         textAlign: titleAlignment,
                       }}>
-                        <HTMLGradientBar size="xl" />
+                        {showBar && <HTMLGradientBar size={barSize} />}
                         <h1 style={{
                           fontFamily: IARCHE_FONTS.primary,
                           fontSize: `${actualTitleSize}px`,
