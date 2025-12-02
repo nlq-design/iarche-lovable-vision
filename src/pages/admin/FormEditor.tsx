@@ -203,6 +203,22 @@ const FieldConfig = ({
   const fieldInfo = FIELD_TYPE_INFO[field.type];
   const hasOptions = ['radio', 'checkbox', 'select'].includes(field.type);
 
+  const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    console.log('Label input changed:', e.target.value);
+    onChange({ label: e.target.value });
+  };
+
+  const handlePlaceholderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    onChange({ placeholder: e.target.value });
+  };
+
+  const handleHelpTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    e.stopPropagation();
+    onChange({ helpText: e.target.value });
+  };
+
   const addOption = () => {
     const newOption = { id: generateId(), label: 'Nouvelle option', value: `option_${(field.options?.length || 0) + 1}` };
     onChange({ options: [...(field.options || []), newOption] });
@@ -220,13 +236,14 @@ const FieldConfig = ({
   };
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="space-y-6 p-4" onClick={(e) => e.stopPropagation()}>
       <div>
         <Label>Label</Label>
         <Input
           value={field.label}
-          onChange={(e) => onChange({ label: e.target.value })}
+          onChange={handleLabelChange}
           className="mt-1.5"
+          onPointerDown={(e) => e.stopPropagation()}
         />
       </div>
 
@@ -235,8 +252,9 @@ const FieldConfig = ({
           <Label>Placeholder</Label>
           <Input
             value={field.placeholder || ''}
-            onChange={(e) => onChange({ placeholder: e.target.value })}
+            onChange={handlePlaceholderChange}
             className="mt-1.5"
+            onPointerDown={(e) => e.stopPropagation()}
           />
         </div>
       )}
@@ -255,9 +273,10 @@ const FieldConfig = ({
         <Label>Texte d'aide</Label>
         <Textarea
           value={field.helpText || ''}
-          onChange={(e) => onChange({ helpText: e.target.value })}
+          onChange={handleHelpTextChange}
           className="mt-1.5"
           rows={2}
+          onPointerDown={(e) => e.stopPropagation()}
         />
       </div>
 
@@ -271,6 +290,7 @@ const FieldConfig = ({
                   value={option.label}
                   onChange={(e) => updateOption(index, { label: e.target.value, value: e.target.value.toLowerCase().replace(/\s+/g, '_') })}
                   className="flex-1"
+                  onPointerDown={(e) => e.stopPropagation()}
                 />
                 <Button
                   variant="ghost"
@@ -299,6 +319,7 @@ const FieldConfig = ({
                 value={field.min ?? ''}
                 onChange={(e) => onChange({ min: e.target.value ? Number(e.target.value) : undefined })}
                 className="mt-1.5"
+                onPointerDown={(e) => e.stopPropagation()}
               />
             </div>
             <div>
@@ -308,6 +329,7 @@ const FieldConfig = ({
                 value={field.max ?? ''}
                 onChange={(e) => onChange({ max: e.target.value ? Number(e.target.value) : undefined })}
                 className="mt-1.5"
+                onPointerDown={(e) => e.stopPropagation()}
               />
             </div>
           </div>
@@ -322,6 +344,7 @@ const FieldConfig = ({
               value={field.minLabel || ''}
               onChange={(e) => onChange({ minLabel: e.target.value })}
               className="mt-1.5"
+              onPointerDown={(e) => e.stopPropagation()}
             />
           </div>
           <div>
@@ -330,6 +353,7 @@ const FieldConfig = ({
               value={field.maxLabel || ''}
               onChange={(e) => onChange({ maxLabel: e.target.value })}
               className="mt-1.5"
+              onPointerDown={(e) => e.stopPropagation()}
             />
           </div>
         </div>
@@ -344,6 +368,7 @@ const FieldConfig = ({
               onChange={(e) => onChange({ accept: e.target.value })}
               placeholder=".pdf,.jpg,.png"
               className="mt-1.5"
+              onPointerDown={(e) => e.stopPropagation()}
             />
           </div>
           <div>
@@ -353,6 +378,7 @@ const FieldConfig = ({
               value={field.maxSize ?? ''}
               onChange={(e) => onChange({ maxSize: e.target.value ? Number(e.target.value) : undefined })}
               className="mt-1.5"
+              onPointerDown={(e) => e.stopPropagation()}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -375,6 +401,7 @@ const FieldConfig = ({
               onChange={(e) => onChange({ minLength: e.target.value ? Number(e.target.value) : undefined })}
               className="mt-1.5"
               min={0}
+              onPointerDown={(e) => e.stopPropagation()}
             />
           </div>
           <div>
@@ -385,6 +412,7 @@ const FieldConfig = ({
               onChange={(e) => onChange({ maxLength: e.target.value ? Number(e.target.value) : undefined })}
               className="mt-1.5"
               min={0}
+              onPointerDown={(e) => e.stopPropagation()}
             />
           </div>
         </div>
@@ -396,7 +424,7 @@ const FieldConfig = ({
           value={field.width || 'full'}
           onValueChange={(v) => onChange({ width: v as 'full' | 'half' | 'third' })}
         >
-          <SelectTrigger className="mt-1.5">
+          <SelectTrigger className="mt-1.5" onPointerDown={(e) => e.stopPropagation()}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
