@@ -66,6 +66,8 @@ const FormResponses = () => {
   const [selectedResponse, setSelectedResponse] = useState<FormResponse | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [responseToDelete, setResponseToDelete] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
     if (id) {
@@ -93,24 +95,25 @@ const FormResponses = () => {
       value => String(value).toLowerCase().includes(searchLower)
     );
     
-    if (dateFilter === 'all') return matchesSearch;
-    
     const responseDate = new Date(response.submitted_at);
     const now = new Date();
     
+    // Date filter
+    let matchesDate = true;
     if (dateFilter === 'today') {
-      return matchesSearch && responseDate.toDateString() === now.toDateString();
-    }
-    if (dateFilter === '7days') {
+      matchesDate = responseDate.toDateString() === now.toDateString();
+    } else if (dateFilter === '7days') {
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      return matchesSearch && responseDate >= weekAgo;
-    }
-    if (dateFilter === '30days') {
+      matchesDate = responseDate >= weekAgo;
+    } else if (dateFilter === '30days') {
       const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      return matchesSearch && responseDate >= monthAgo;
+      matchesDate = responseDate >= monthAgo;
+    } else if (dateFilter === 'custom') {
+      if (startDate) matchesDate = responseDate >= new Date(startDate);
+      if (endDate && matchesDate) matchesDate = responseDate <= new Date(endDate + 'T23:59:59');
     }
     
-    return matchesSearch;
+    return matchesSearch && matchesDate;
   });
 
   const toggleSelectAll = () => {
@@ -146,7 +149,17 @@ const FormResponses = () => {
 
   const handleExport = async (format: 'csv' | 'json') => {
     if (!id) return;
-    await exportResponses(id, { format, includeMetadata: true });
+    const url = await exportResponses(id, { format, includeMetadata: true });
+    if (url) {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${form?.title || 'responses'}-${new Date().toISOString().split('T')[0]}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast({ title: 'Export réussi', description: `Fichier ${format.toUpperCase()} téléchargé` });
+    }
   };
 
   const viewDetail = (response: FormResponse) => {
@@ -223,8 +236,27 @@ const FormResponses = () => {
               <SelectItem value="today">Aujourd'hui</SelectItem>
               <SelectItem value="7days">7 derniers jours</SelectItem>
               <SelectItem value="30days">30 derniers jours</SelectItem>
+              <SelectItem value="custom">Personnalisé</SelectItem>
             </SelectContent>
           </Select>
+          {dateFilter === 'custom' && (
+            <>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-[140px]"
+                placeholder="Du"
+              />
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-[140px]"
+                placeholder="Au"
+              />
+            </>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
