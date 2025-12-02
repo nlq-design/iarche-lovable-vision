@@ -8,10 +8,23 @@ import { Star } from 'lucide-react';
 
 const testimonials = [
   {
+    author: "Jeff JeGO",
+    company: "Agence Digitale Artisanale Prémium",
+    date: "Octobre 2025",
+    rating: 5,
+    content: "J'ai eu la chance de suivre la formation IA de Nicolas pendant trois jours. Et sincèrement, elle a été bien au-delà de mes espérances. Trois jours denses, précis, humains, et surtout incroyablement utiles. Dans mon métier de copywriter, cette formation a été un vrai tournant : non pas pour « écrire à ma place », mais pour m'aider à gagner un temps monstrueux tout en gardant ma signature et ma profondeur."
+  },
+  {
     author: "Marie Pecot",
     date: "Octobre 2025",
     rating: 5,
     content: "Formation très utile"
+  },
+  {
+    author: "Frédéric Barbot",
+    date: "Mars 2025",
+    rating: 5,
+    content: "Les formations proposées par Nicolas Lara sont très intéressantes et permettent de pouvoir comprendre comment utiliser l'IA dans le quotidien professionnel et gagner en productivité et qualité."
   },
   {
     author: "Floriane Garcia",
@@ -27,10 +40,28 @@ const testimonials = [
     content: "Je recommande fortement, cela m'a beaucoup aidé dans mon activité."
   },
   {
+    author: "Peio Sévilla",
+    date: "Décembre 2024",
+    rating: 5,
+    content: "Très bonne formation, je recommande vivement !"
+  },
+  {
+    author: "Clément Petrau",
+    date: "Décembre 2024",
+    rating: 5,
+    content: "Formation de qualité, cela m'a permis d'avoir une meilleure rentabilité et une meilleure organisation au sein de ma société !"
+  },
+  {
     author: "Nicolas Bruccoleri",
     date: "Décembre 2024",
     rating: 5,
     content: "Formation de qualité et très utile, je recommande !"
+  },
+  {
+    author: "Hervé Guillaumet",
+    date: "Décembre 2024",
+    rating: 5,
+    content: "J'ai récemment suivi une formation et je suis vraiment impressionné par la qualité et la pertinence des enseignements."
   }
 ];
 
