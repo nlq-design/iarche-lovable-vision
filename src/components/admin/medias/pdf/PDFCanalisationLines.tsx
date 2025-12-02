@@ -15,48 +15,19 @@ interface PDFCanalisationLinesProps {
 }
 
 /**
- * Interpolate between two hex colors
- */
-const interpolateColor = (color1: string, color2: string, factor: number): string => {
-  const hex1 = color1.replace('#', '');
-  const hex2 = color2.replace('#', '');
-  
-  const r1 = parseInt(hex1.substring(0, 2), 16);
-  const g1 = parseInt(hex1.substring(2, 4), 16);
-  const b1 = parseInt(hex1.substring(4, 6), 16);
-  
-  const r2 = parseInt(hex2.substring(0, 2), 16);
-  const g2 = parseInt(hex2.substring(2, 4), 16);
-  const b2 = parseInt(hex2.substring(4, 6), 16);
-  
-  const r = Math.round(r1 + (r2 - r1) * factor);
-  const g = Math.round(g1 + (g2 - g1) * factor);
-  const b = Math.round(b1 + (b2 - b1) * factor);
-  
-  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-};
-
-/**
- * Generate gradient segments for a line
- */
-const generateGradientSegments = (
-  startColor: string,
-  endColor: string,
-  numSegments: number = 6
-): string[] => {
-  const colors: string[] = [];
-  for (let i = 0; i < numSegments; i++) {
-    const factor = i / (numSegments - 1);
-    colors.push(interpolateColor(startColor, endColor, factor));
-  }
-  return colors;
-};
-
-/**
- * Canalisation lines matching the hero section animation (frozen at 6s = fully drawn)
+ * Exact reproduction of hero-section.tsx canalisation lines
  * 
- * Line 1 (top-left): Enters from right, goes down, exits left
- * Line 2 (bottom-right): Enters from left, goes down, exits right
+ * Website SVG specifications:
+ * - Line 1: viewBox="0 0 177 159", preserveAspectRatio="none"
+ *   Path: M176 1 L53.5359 1 C52.4313 1 51.5359 1.89543 51.5359 3 L51.5359 56 C51.5359 57.1046 50.6405 58 49.5359 58 L0 58
+ *   → Starts RIGHT edge, goes LEFT, curves DOWN, exits LEFT edge
+ * 
+ * - Line 2: viewBox="0 0 176 59", preserveAspectRatio="none"
+ *   Path: M0 1 L122.464 1 C123.569 1 124.464 1.89543 124.464 3 L124.464 56 C124.464 57.1046 125.36 58 126.464 58 L176 58
+ *   → Starts LEFT edge, goes RIGHT, curves DOWN, exits RIGHT edge
+ * 
+ * Stroke: 2px, opacity: 0.5
+ * Gradients: Line1 = BleuNuit→Terracotta, Line2 = Terracotta→BleuNuit
  */
 export const PDFCanalisationLines = ({
   width,
@@ -65,124 +36,104 @@ export const PDFCanalisationLines = ({
   opacity = 0.5,
   strokeWidth = 2,
 }: PDFCanalisationLinesProps) => {
-  // Responsive calculations
-  const minDim = Math.min(width, height);
-  const armLength = minDim * 0.22; // Length of horizontal/vertical arms
-  const offset = minDim * 0.04; // Distance from edge
-  const cornerRadius = 3; // Rounded corner radius
-  
   // Colors based on theme
   const bleuNuit = isDark ? IARCHE_COLORS.bleuNuitLight : IARCHE_COLORS.bleuNuit;
   const terracotta = IARCHE_COLORS.terracotta;
   
-  // Generate gradient segments (6 segments for smooth transition)
-  const segments1 = generateGradientSegments(bleuNuit, terracotta, 6);
-  const segments2 = generateGradientSegments(terracotta, bleuNuit, 6);
+  // ============================================
+  // LINE 1: Right → Left → Down → Exit Left
+  // Original viewBox: 0 0 177 159
+  // ============================================
+  const vb1 = { w: 177, h: 159 };
   
-  // === LINE 1: Top-left (entering) ===
-  // Shape: horizontal from right → corner → vertical down → horizontal to left edge
-  // M(start) → L(horizontal) → Q(corner) → L(vertical) → Q(corner) → L(end)
-  
-  const line1 = {
-    // Start point (right side of arm)
-    startX: armLength + offset,
-    startY: offset,
-    // Corner point
-    cornerX: offset + cornerRadius,
-    cornerY: offset,
-    // Vertical arm
-    verticalEndY: armLength * 0.4 + offset,
-    // End point
-    endX: offset,
-    endY: armLength * 0.4 + offset,
+  // Scale coordinates to page dimensions
+  const l1 = {
+    // Start point (right edge, near top)
+    startX: (176 / vb1.w) * width,
+    startY: (1 / vb1.h) * height,
+    // Horizontal end (before curve)
+    horizEndX: (53.5359 / vb1.w) * width,
+    horizEndY: (1 / vb1.h) * height,
+    // Curve control point 1
+    c1x: (52.4313 / vb1.w) * width,
+    c1y: (1 / vb1.h) * height,
+    // Curve end / vertical start
+    curveEndX: (51.5359 / vb1.w) * width,
+    curveEndY: (1.89543 / vb1.h) * height,
+    // Vertical line start (after first curve)
+    vertStartX: (51.5359 / vb1.w) * width,
+    vertStartY: (3 / vb1.h) * height,
+    // Vertical line end (before second curve)
+    vertEndX: (51.5359 / vb1.w) * width,
+    vertEndY: (56 / vb1.h) * height,
+    // Second curve control
+    c2x: (51.5359 / vb1.w) * width,
+    c2y: (57.1046 / vb1.h) * height,
+    // Second curve end
+    curve2EndX: (50.6405 / vb1.w) * width,
+    curve2EndY: (58 / vb1.h) * height,
+    // Final horizontal to left edge
+    endX: 0,
+    endY: (58 / vb1.h) * height,
   };
   
-  // Calculate segment points for Line 1
-  const line1Segments: { d: string; color: string }[] = [];
-  const totalLine1Length = (line1.startX - line1.cornerX) + (line1.verticalEndY - line1.cornerY);
-  const segmentLength1 = totalLine1Length / segments1.length;
+  // Build exact path for Line 1
+  const path1 = `
+    M ${l1.startX} ${l1.startY}
+    L ${l1.horizEndX} ${l1.horizEndY}
+    C ${l1.c1x} ${l1.c1y} ${l1.curveEndX} ${l1.curveEndY} ${l1.vertStartX} ${l1.vertStartY}
+    L ${l1.vertEndX} ${l1.vertEndY}
+    C ${l1.c2x} ${l1.c2y} ${l1.curve2EndX} ${l1.curve2EndY} ${l1.endX} ${l1.endY}
+  `.replace(/\s+/g, ' ').trim();
   
-  // Horizontal segment
-  const horizLength1 = line1.startX - line1.cornerX - cornerRadius;
-  const horizSegments1 = Math.ceil((horizLength1 / totalLine1Length) * segments1.length);
+  // ============================================
+  // LINE 2: Left → Right → Down → Exit Right
+  // Original viewBox: 0 0 176 59
+  // ============================================
+  const vb2 = { w: 176, h: 59 };
   
-  for (let i = 0; i < segments1.length; i++) {
-    const segStart = i * segmentLength1;
-    const segEnd = (i + 1) * segmentLength1;
-    
-    if (segEnd <= horizLength1) {
-      // Fully in horizontal section
-      const x1 = line1.startX - segStart;
-      const x2 = line1.startX - segEnd;
-      line1Segments.push({
-        d: `M ${x1} ${line1.startY} L ${x2} ${line1.startY}`,
-        color: segments1[i],
-      });
-    } else if (segStart >= horizLength1) {
-      // Fully in vertical section
-      const y1 = line1.cornerY + (segStart - horizLength1);
-      const y2 = line1.cornerY + (segEnd - horizLength1);
-      line1Segments.push({
-        d: `M ${line1.endX} ${Math.min(y1, line1.verticalEndY)} L ${line1.endX} ${Math.min(y2, line1.verticalEndY)}`,
-        color: segments1[i],
-      });
-    } else {
-      // Transition segment (includes corner)
-      const x1 = line1.startX - segStart;
-      const y2 = line1.cornerY + (segEnd - horizLength1);
-      line1Segments.push({
-        d: `M ${x1} ${line1.startY} L ${line1.cornerX + cornerRadius} ${line1.startY} Q ${line1.cornerX} ${line1.startY} ${line1.cornerX} ${line1.cornerY + cornerRadius} L ${line1.endX} ${Math.min(y2, line1.verticalEndY)}`,
-        color: segments1[i],
-      });
-    }
-  }
-  
-  // === LINE 2: Bottom-right (exiting) ===
-  const line2 = {
-    startX: width - armLength - offset,
-    startY: height - offset,
-    cornerX: width - offset - cornerRadius,
-    cornerY: height - offset,
-    verticalStartY: height - armLength * 0.4 - offset,
-    endX: width - offset,
-    endY: height - armLength * 0.4 - offset,
+  const l2 = {
+    // Start point (left edge, near top)
+    startX: 0,
+    startY: (1 / vb2.h) * height,
+    // Horizontal end (before curve)
+    horizEndX: (122.464 / vb2.w) * width,
+    horizEndY: (1 / vb2.h) * height,
+    // Curve control point 1
+    c1x: (123.569 / vb2.w) * width,
+    c1y: (1 / vb2.h) * height,
+    // Curve end / vertical start
+    curveEndX: (124.464 / vb2.w) * width,
+    curveEndY: (1.89543 / vb2.h) * height,
+    // Vertical line start
+    vertStartX: (124.464 / vb2.w) * width,
+    vertStartY: (3 / vb2.h) * height,
+    // Vertical line end
+    vertEndX: (124.464 / vb2.w) * width,
+    vertEndY: (56 / vb2.h) * height,
+    // Second curve control
+    c2x: (124.464 / vb2.w) * width,
+    c2y: (57.1046 / vb2.h) * height,
+    // Second curve end
+    curve2EndX: (125.36 / vb2.w) * width,
+    curve2EndY: (58 / vb2.h) * height,
+    // Final horizontal to right edge
+    endX: width,
+    endY: (58 / vb2.h) * height,
   };
   
-  // Calculate segment points for Line 2
-  const line2Segments: { d: string; color: string }[] = [];
-  const totalLine2Length = (line2.cornerX - line2.startX) + (line2.cornerY - line2.verticalStartY);
+  // Build exact path for Line 2
+  const path2 = `
+    M ${l2.startX} ${l2.startY}
+    L ${l2.horizEndX} ${l2.horizEndY}
+    C ${l2.c1x} ${l2.c1y} ${l2.curveEndX} ${l2.curveEndY} ${l2.vertStartX} ${l2.vertStartY}
+    L ${l2.vertEndX} ${l2.vertEndY}
+    C ${l2.c2x} ${l2.c2y} ${l2.curve2EndX} ${l2.curve2EndY} ${l2.endX} ${l2.endY}
+  `.replace(/\s+/g, ' ').trim();
   
-  for (let i = 0; i < segments2.length; i++) {
-    const segStart = i * (totalLine2Length / segments2.length);
-    const segEnd = (i + 1) * (totalLine2Length / segments2.length);
-    const horizLength2 = line2.cornerX - line2.startX - cornerRadius;
-    
-    if (segEnd <= horizLength2) {
-      // Fully in horizontal section
-      const x1 = line2.startX + segStart;
-      const x2 = line2.startX + segEnd;
-      line2Segments.push({
-        d: `M ${x1} ${line2.startY} L ${x2} ${line2.startY}`,
-        color: segments2[i],
-      });
-    } else if (segStart >= horizLength2) {
-      // Fully in vertical section
-      const y1 = line2.cornerY - (segStart - horizLength2);
-      const y2 = line2.cornerY - (segEnd - horizLength2);
-      line2Segments.push({
-        d: `M ${line2.endX} ${Math.max(y1, line2.verticalStartY)} L ${line2.endX} ${Math.max(y2, line2.verticalStartY)}`,
-        color: segments2[i],
-      });
-    } else {
-      // Transition segment (includes corner)
-      const x1 = line2.startX + segStart;
-      const y2 = line2.cornerY - (segEnd - horizLength2);
-      line2Segments.push({
-        d: `M ${x1} ${line2.startY} L ${line2.cornerX - cornerRadius} ${line2.startY} Q ${line2.cornerX} ${line2.startY} ${line2.cornerX} ${line2.cornerY - cornerRadius} L ${line2.endX} ${Math.max(y2, line2.verticalStartY)}`,
-        color: segments2[i],
-      });
-    }
-  }
+  // Unique gradient IDs for this instance
+  const gradId1 = `canalGrad1-${width}-${height}`;
+  const gradId2 = `canalGrad2-${width}-${height}`;
   
   return (
     <Svg
@@ -195,69 +146,117 @@ export const PDFCanalisationLines = ({
       }}
       viewBox={`0 0 ${width} ${height}`}
     >
-      {/* Line 1 - Top-left (Bleu Nuit → Terracotta) */}
-      {line1Segments.map((seg, idx) => (
-        <Path
-          key={`line1-${idx}`}
-          d={seg.d}
-          fill="none"
-          stroke={seg.color}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          opacity={opacity}
-        />
-      ))}
+      <Defs>
+        {/* Gradient 1: Bleu Nuit → Terracotta (diagonal) */}
+        <LinearGradient id={gradId1} x1="0%" y1="0%" x2="100%" y2="100%">
+          <Stop offset="0%" stopColor={bleuNuit} />
+          <Stop offset="100%" stopColor={terracotta} />
+        </LinearGradient>
+        
+        {/* Gradient 2: Terracotta → Bleu Nuit (inverse diagonal) */}
+        <LinearGradient id={gradId2} x1="100%" y1="0%" x2="0%" y2="100%">
+          <Stop offset="0%" stopColor={terracotta} />
+          <Stop offset="100%" stopColor={bleuNuit} />
+        </LinearGradient>
+      </Defs>
       
-      {/* Line 2 - Bottom-right (Terracotta → Bleu Nuit) */}
-      {line2Segments.map((seg, idx) => (
-        <Path
-          key={`line2-${idx}`}
-          d={seg.d}
-          fill="none"
-          stroke={seg.color}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          opacity={opacity}
-        />
-      ))}
+      {/* Line 1 - Right to Left (Bleu Nuit → Terracotta) */}
+      <Path
+        d={path1}
+        fill="none"
+        stroke={`url(#${gradId1})`}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        opacity={opacity}
+      />
+      
+      {/* Line 2 - Left to Right (Terracotta → Bleu Nuit) */}
+      <Path
+        d={path2}
+        fill="none"
+        stroke={`url(#${gradId2})`}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        opacity={opacity}
+      />
     </Svg>
   );
 };
 
 /**
- * Simplified version with solid gradient-like effect using two colors
- * Uses a single path per line with a midpoint color stop simulation
+ * Fallback version with solid colors if gradients don't render
+ * Uses the exact same paths but with solid stroke colors
  */
 export const PDFCanalisationLinesSimple = ({
   width,
   height,
   isDark = true,
-  opacity = 0.6,
+  opacity = 0.5,
   strokeWidth = 2,
 }: PDFCanalisationLinesProps) => {
-  const minDim = Math.min(width, height);
-  const armLength = minDim * 0.22;
-  const offset = minDim * 0.04;
-  const cornerRadius = 4;
-  
   const primaryColor = isDark ? IARCHE_COLORS.terracotta : IARCHE_COLORS.bleuNuit;
   const secondaryColor = isDark ? IARCHE_COLORS.bleuNuitLight : IARCHE_COLORS.terracotta;
   
-  // Line 1: Top-left L shape
-  const line1Path = `
-    M ${armLength + offset} ${offset}
-    L ${offset + cornerRadius} ${offset}
-    Q ${offset} ${offset} ${offset} ${offset + cornerRadius}
-    L ${offset} ${armLength * 0.4 + offset}
-  `;
+  // Same coordinate calculations as main component
+  const vb1 = { w: 177, h: 159 };
+  const l1 = {
+    startX: (176 / vb1.w) * width,
+    startY: (1 / vb1.h) * height,
+    horizEndX: (53.5359 / vb1.w) * width,
+    horizEndY: (1 / vb1.h) * height,
+    c1x: (52.4313 / vb1.w) * width,
+    c1y: (1 / vb1.h) * height,
+    curveEndX: (51.5359 / vb1.w) * width,
+    curveEndY: (1.89543 / vb1.h) * height,
+    vertStartX: (51.5359 / vb1.w) * width,
+    vertStartY: (3 / vb1.h) * height,
+    vertEndX: (51.5359 / vb1.w) * width,
+    vertEndY: (56 / vb1.h) * height,
+    c2x: (51.5359 / vb1.w) * width,
+    c2y: (57.1046 / vb1.h) * height,
+    curve2EndX: (50.6405 / vb1.w) * width,
+    curve2EndY: (58 / vb1.h) * height,
+    endX: 0,
+    endY: (58 / vb1.h) * height,
+  };
   
-  // Line 2: Bottom-right inverted L shape
-  const line2Path = `
-    M ${width - armLength - offset} ${height - offset}
-    L ${width - offset - cornerRadius} ${height - offset}
-    Q ${width - offset} ${height - offset} ${width - offset} ${height - offset - cornerRadius}
-    L ${width - offset} ${height - armLength * 0.4 - offset}
-  `;
+  const path1 = `
+    M ${l1.startX} ${l1.startY}
+    L ${l1.horizEndX} ${l1.horizEndY}
+    C ${l1.c1x} ${l1.c1y} ${l1.curveEndX} ${l1.curveEndY} ${l1.vertStartX} ${l1.vertStartY}
+    L ${l1.vertEndX} ${l1.vertEndY}
+    C ${l1.c2x} ${l1.c2y} ${l1.curve2EndX} ${l1.curve2EndY} ${l1.endX} ${l1.endY}
+  `.replace(/\s+/g, ' ').trim();
+  
+  const vb2 = { w: 176, h: 59 };
+  const l2 = {
+    startX: 0,
+    startY: (1 / vb2.h) * height,
+    horizEndX: (122.464 / vb2.w) * width,
+    horizEndY: (1 / vb2.h) * height,
+    c1x: (123.569 / vb2.w) * width,
+    c1y: (1 / vb2.h) * height,
+    curveEndX: (124.464 / vb2.w) * width,
+    curveEndY: (1.89543 / vb2.h) * height,
+    vertStartX: (124.464 / vb2.w) * width,
+    vertStartY: (3 / vb2.h) * height,
+    vertEndX: (124.464 / vb2.w) * width,
+    vertEndY: (56 / vb2.h) * height,
+    c2x: (124.464 / vb2.w) * width,
+    c2y: (57.1046 / vb2.h) * height,
+    curve2EndX: (125.36 / vb2.w) * width,
+    curve2EndY: (58 / vb2.h) * height,
+    endX: width,
+    endY: (58 / vb2.h) * height,
+  };
+  
+  const path2 = `
+    M ${l2.startX} ${l2.startY}
+    L ${l2.horizEndX} ${l2.horizEndY}
+    C ${l2.c1x} ${l2.c1y} ${l2.curveEndX} ${l2.curveEndY} ${l2.vertStartX} ${l2.vertStartY}
+    L ${l2.vertEndX} ${l2.vertEndY}
+    C ${l2.c2x} ${l2.c2y} ${l2.curve2EndX} ${l2.curve2EndY} ${l2.endX} ${l2.endY}
+  `.replace(/\s+/g, ' ').trim();
   
   return (
     <Svg
@@ -270,9 +269,9 @@ export const PDFCanalisationLinesSimple = ({
       }}
       viewBox={`0 0 ${width} ${height}`}
     >
-      {/* Line 1 - Primary color */}
+      {/* Line 1 - Solid primary color */}
       <Path
-        d={line1Path}
+        d={path1}
         fill="none"
         stroke={primaryColor}
         strokeWidth={strokeWidth}
@@ -280,14 +279,14 @@ export const PDFCanalisationLinesSimple = ({
         opacity={opacity}
       />
       
-      {/* Line 2 - Secondary color */}
+      {/* Line 2 - Solid secondary color */}
       <Path
-        d={line2Path}
+        d={path2}
         fill="none"
         stroke={secondaryColor}
         strokeWidth={strokeWidth}
         strokeLinecap="round"
-        opacity={opacity * 0.8}
+        opacity={opacity}
       />
     </Svg>
   );
