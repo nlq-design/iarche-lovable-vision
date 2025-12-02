@@ -47,18 +47,60 @@ const FormPublic = () => {
 
   useEffect(() => {
     const loadForm = async () => {
-      if (!slug) return;
-      
-      const formData = await getFormBySlug(slug);
-      if (formData) {
-        setForm(formData);
-        // Track view
-        trackEvent(formData.id, 'view');
-        // Increment views count
-        await supabase.rpc('increment_form_views', { form_slug: slug });
-      } else {
-        setError('Formulaire non trouvé');
+      if (!slug) {
+        console.log('[FormPublic] No slug provided');
+        setLoading(false);
+        return;
       }
+      
+      console.log('[FormPublic] Loading form with slug:', slug);
+      
+      try {
+        // Direct Supabase call with timeout
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 10000)
+        );
+        
+        console.log('[FormPublic] Making direct Supabase call...');
+        const queryPromise = supabase
+          .from('forms')
+          .select('*')
+          .eq('slug', slug)
+          .eq('is_active', true)
+          .maybeSingle();
+        
+        const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+        
+        console.log('[FormPublic] Supabase response:', { data, error });
+        
+        if (error) {
+          console.error('[FormPublic] Supabase error:', error);
+          setError('Erreur de chargement');
+          setLoading(false);
+          return;
+        }
+        
+        if (data) {
+          // Parse form data
+          const formData: Form = {
+            ...data,
+            fields: Array.isArray(data.fields) ? data.fields : [],
+            settings: data.settings || DEFAULT_FORM_SETTINGS
+          };
+          setForm(formData);
+          // Track view
+          trackEvent(formData.id, 'view');
+          // Increment views count
+          await supabase.rpc('increment_form_views', { form_slug: slug });
+        } else {
+          console.log('[FormPublic] Form not found');
+          setError('Formulaire non trouvé');
+        }
+      } catch (err) {
+        console.error('[FormPublic] Catch error:', err);
+        setError('Erreur de connexion');
+      }
+      
       setLoading(false);
     };
     
