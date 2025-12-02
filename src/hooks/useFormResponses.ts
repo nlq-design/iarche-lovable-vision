@@ -108,6 +108,8 @@ export const useFormResponses = () => {
         ...metadata
       };
 
+      console.log('Submitting form response:', { formId, responseData, metadata: responseMetadata });
+
       const { data: response, error } = await supabase
         .from('form_responses')
         .insert({
@@ -119,7 +121,15 @@ export const useFormResponses = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase insert error:', error);
+        toast({ 
+          title: 'Erreur de soumission', 
+          description: error.message || 'Une erreur est survenue', 
+          variant: 'destructive' 
+        });
+        return null;
+      }
 
       // Incrémenter le compteur de soumissions
       const { data: form } = await supabase
@@ -132,12 +142,18 @@ export const useFormResponses = () => {
         await supabase.rpc('increment_form_submissions', { form_slug: form.slug });
       }
 
+      toast({ title: 'Succès', description: 'Réponse enregistrée' });
       return parseResponse(response);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur soumission:', error);
+      toast({ 
+        title: 'Erreur de soumission', 
+        description: error?.message || 'Une erreur inattendue est survenue', 
+        variant: 'destructive' 
+      });
       return null;
     }
-  }, []);
+  }, [toast]);
 
   // Supprime une réponse
   const deleteResponse = useCallback(async (id: string): Promise<boolean> => {
