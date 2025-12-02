@@ -378,7 +378,10 @@ export default function OpenGraphEditor() {
                     height={OG_HEIGHT}
                     theme={theme}
                     padding={60}
-                    archSize={100}
+                    showArches={false}
+                    showCanalisations={true}
+                    canalisationOpacity={0.4}
+                    canalisationStrokeWidth={5}
                   >
                     {renderOGContent()}
                   </HTMLBaseTemplate>

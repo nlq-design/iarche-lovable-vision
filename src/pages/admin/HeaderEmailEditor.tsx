@@ -57,6 +57,9 @@ const HeaderEmailEditor: React.FC = () => {
             theme="dark"
             showMesh={true}
             showArches={false}
+            showCanalisations={true}
+            canalisationOpacity={0.35}
+            canalisationStrokeWidth={3}
             padding={24}
           >
             <div style={{ 
@@ -103,8 +106,10 @@ const HeaderEmailEditor: React.FC = () => {
             height={150}
             theme="light"
             showMesh={false}
-            showArches={true}
-            archSize={60}
+            showArches={false}
+            showCanalisations={true}
+            canalisationOpacity={0.35}
+            canalisationStrokeWidth={3}
             padding={24}
           >
             <div style={{ 
@@ -139,6 +144,9 @@ const HeaderEmailEditor: React.FC = () => {
             theme="light"
             showMesh={false}
             showArches={false}
+            showCanalisations={true}
+            canalisationOpacity={0.25}
+            canalisationStrokeWidth={2}
             padding={24}
           >
             <div style={{ 

@@ -308,7 +308,10 @@ export default function BannerEditor() {
                     height={BANNER_HEIGHT}
                     theme={theme}
                     padding={60}
-                    archSize={80}
+                    showArches={false}
+                    showCanalisations={true}
+                    canalisationOpacity={0.4}
+                    canalisationStrokeWidth={5}
                   >
                     {renderBannerContent()}
                   </HTMLBaseTemplate>
