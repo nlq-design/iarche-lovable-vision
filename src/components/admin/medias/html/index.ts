@@ -11,4 +11,5 @@ export { HTMLLogo } from './HTMLLogo';
 export { HTMLGradientBar } from './HTMLGradientBar';
 export { HTMLMeshBackground } from './HTMLMeshBackground';
 export { HTMLArches } from './HTMLArches';
+export { HTMLCanalisationLines } from './HTMLCanalisationLines';
 export { HTMLBaseTemplate } from './HTMLBaseTemplate';
