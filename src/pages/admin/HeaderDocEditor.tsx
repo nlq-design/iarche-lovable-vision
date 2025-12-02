@@ -5,17 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { toPng } from 'html-to-image';
 import { saveAs } from 'file-saver';
 import { COLORS, FONTS } from '@/components/admin/medias/shared/tokens';
 import { HTMLGradientBar } from '@/components/admin/medias/html/HTMLGradientBar';
+import type { BarSize } from '@/components/admin/medias/html/tokens';
 
 export default function HeaderDocEditor() {
   const navigate = useNavigate();
   const headerRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Bar size control
+  const [barSize, setBarSize] = useState<BarSize>('xl');
 
   // Editable fields
   const [address, setAddress] = useState('64100 Bayonne, France');
@@ -76,6 +81,28 @@ export default function HeaderDocEditor() {
               <CardDescription>Personnalisez les coordonnées</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Bar size control */}
+              <div className="space-y-2">
+                <Label>Taille de la barre</Label>
+                <RadioGroup
+                  value={barSize}
+                  onValueChange={(v) => setBarSize(v as BarSize)}
+                  className="flex gap-2"
+                >
+                  {(['sm', 'md', 'lg', 'xl'] as const).map((size) => (
+                    <div key={size} className="flex items-center">
+                      <RadioGroupItem value={size} id={`bar-${size}`} className="peer sr-only" />
+                      <Label
+                        htmlFor={`bar-${size}`}
+                        className="px-3 py-1.5 rounded-md border cursor-pointer text-sm peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground peer-data-[state=checked]:border-primary"
+                      >
+                        {size.toUpperCase()}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+              
               <div className="space-y-2">
                 <Label>Adresse</Label>
                 <Input value={address} onChange={(e) => setAddress(e.target.value)} />
@@ -154,7 +181,7 @@ export default function HeaderDocEditor() {
 
                   {/* Gradient bar separator */}
                   <div className="mt-6">
-                    <HTMLGradientBar size="xl" />
+                    <HTMLGradientBar size={barSize} />
                   </div>
                 </div>
 
