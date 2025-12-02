@@ -14,6 +14,7 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import { exportToPNG } from '@/lib/exportPng';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
+import ExportModeControls, { ExportMode } from '@/components/admin/medias/ExportModeControls';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -21,6 +22,7 @@ import {
   IARCHE_COLORS,
   IARCHE_FONTS,
   ThemeType,
+  BarSize,
 } from '@/components/admin/medias/html';
 
 type StoryTemplate = 'annonce' | 'chiffre';
@@ -56,6 +58,8 @@ export default function StoryEditor() {
   const [template, setTemplate] = useState<StoryTemplate>('annonce');
   const [theme, setTheme] = useState<ThemeType>('dark');
   const [preset, setPreset] = useState<string>('');
+  const [exportMode, setExportMode] = useState<ExportMode>('full');
+  const [barSize, setBarSize] = useState<BarSize>('xl');
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(64);
@@ -88,15 +92,17 @@ export default function StoryEditor() {
 
   // Get current data for saving template
   const getCurrentData = useCallback(() => ({
-    template, theme, preset,
+    template, theme, preset, exportMode, barSize,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     badge, titre, ctaText, chiffre, contexte, source,
-  }), [template, theme, preset, titleFontSize, titleBold, titleItalic, titleAlignment, badge, titre, ctaText, chiffre, contexte, source]);
+  }), [template, theme, preset, exportMode, barSize, titleFontSize, titleBold, titleItalic, titleAlignment, badge, titre, ctaText, chiffre, contexte, source]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
     if (data.template) setTemplate(data.template as StoryTemplate);
     if (data.theme) setTheme(data.theme as ThemeType);
+    if (data.exportMode) setExportMode(data.exportMode as ExportMode);
+    if (data.barSize) setBarSize(data.barSize as BarSize);
     if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
     if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
     if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
@@ -131,6 +137,8 @@ export default function StoryEditor() {
 
   const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
   const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(26,43,74,0.7)';
+  const showBar = exportMode === 'with-bar' || exportMode === 'full';
+  const showCanalisations = exportMode === 'full';
 
   const renderStoryContent = () => {
     switch (template) {
@@ -165,7 +173,7 @@ export default function StoryEditor() {
               }}>
                 {badge}
               </span>
-              <HTMLGradientBar size="xl" />
+              {showBar && <HTMLGradientBar size={barSize} />}
               <h1 style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${titleFontSize}px`,
@@ -231,7 +239,7 @@ export default function StoryEditor() {
               }}>
                 {chiffre}
               </div>
-              <HTMLGradientBar size="xl" />
+              {showBar && <HTMLGradientBar size={barSize} />}
               <p style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${titleFontSize * 0.55}px`,
@@ -357,6 +365,14 @@ export default function StoryEditor() {
                 maxFontSize={80}
               />
 
+              {/* Export mode controls */}
+              <ExportModeControls
+                exportMode={exportMode}
+                onExportModeChange={setExportMode}
+                barSize={barSize}
+                onBarSizeChange={setBarSize}
+              />
+
               {/* Template-specific fields */}
               {template === 'annonce' && (
                 <>
@@ -429,7 +445,7 @@ export default function StoryEditor() {
                     theme={theme}
                     padding={80}
                     showArches={false}
-                    showCanalisations={true}
+                    showCanalisations={showCanalisations}
                     canalisationOpacity={0.5}
                     canalisationStrokeWidth={8}
                   >
