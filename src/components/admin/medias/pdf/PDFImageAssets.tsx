@@ -1,6 +1,7 @@
 import { View, Text, Svg, Rect, Line, Path, Image, StyleSheet } from '@react-pdf/renderer';
 import type { Style } from '@react-pdf/types';
 import { IARCHE_COLORS } from './tokens';
+import { BASE64_ASSETS } from './base64Assets';
 
 // Logo PNG paths for different variants - use window.location.origin for absolute URLs
 const getLogoUrl = (variant: 'gradient' | 'white' | 'terracotta') => {
@@ -66,18 +67,6 @@ export const PDFBarSizes = {
   xl: { width: 128, height: 6 },
 } as const;
 
-// Bar PNG paths - use actual PNG files for reliable rendering
-const getBarUrl = (size: keyof typeof PDFBarSizes) => {
-  const basePath = typeof window !== 'undefined' ? window.location.origin : '';
-  const paths = {
-    sm: '/assets/bar-sm.png',
-    md: '/assets/bar-md.png',
-    lg: '/assets/bar-lg.png',
-    xl: '/assets/bar-xl.png',
-  };
-  return `${basePath}${paths[size]}`;
-};
-
 interface PDFImageBarProps {
   /** Bar size: sm, md, lg, xl */
   size?: keyof typeof PDFBarSizes;
@@ -89,7 +78,7 @@ interface PDFImageBarProps {
 }
 
 /**
- * IArche gradient bar using PNG images for reliable rendering
+ * IArche gradient bar using Base64 SVG with LinearGradient
  * True gradient from Bleu Nuit → Terracotta → Bleu Nuit
  */
 export const PDFImageBar = ({ 
@@ -102,10 +91,21 @@ export const PDFImageBar = ({
   const barWidth = width || defaultSize.width;
   const barHeight = height || defaultSize.height;
   
+  // Map size to Base64 asset key
+  const getBarAsset = () => {
+    switch (size) {
+      case 'sm': return BASE64_ASSETS.barSm;
+      case 'md': return BASE64_ASSETS.barMd;
+      case 'lg': return BASE64_ASSETS.barLg;
+      case 'xl': return BASE64_ASSETS.barXl;
+      default: return BASE64_ASSETS.barMd;
+    }
+  };
+  
   return (
     <View style={[styles.barContainer, style]}>
       <Image
-        src={getBarUrl(size)}
+        src={getBarAsset()}
         style={{ width: barWidth, height: barHeight, objectFit: 'fill' }}
       />
     </View>
