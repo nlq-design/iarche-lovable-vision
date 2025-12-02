@@ -224,15 +224,15 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
             
             {/* Main content */}
             <View style={styles.content}>
-              {/* Header with logo PNG and bar PNG */}
+              {/* Header with logo and bar */}
               <View style={styles.header}>
                 <View style={styles.logoContainer}>
-                  {/* Logo PNG - white for dark theme, gradient for light */}
+                  {/* Logo with gradient adapted to background */}
                   <PDFImageLogo 
                     width={120} 
-                    variant={isDark ? 'white' : 'gradient'} 
+                    theme={isDark ? 'dark' : 'light'} 
                   />
-                  {/* Small bar under logo - sm size (48×2) */}
+                  {/* Small bar under logo */}
                   <PDFImageBar size="sm" style={{ marginTop: 6 }} />
                 </View>
                 {/* Header bar - xl size */}

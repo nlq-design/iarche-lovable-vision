@@ -1,86 +1,64 @@
-import { View, Text, Svg, Rect, Line, Path, Defs, LinearGradient, Stop, G, StyleSheet } from '@react-pdf/renderer';
+import { View, Text, Svg, Rect, Line, Defs, LinearGradient, Stop, G, StyleSheet } from '@react-pdf/renderer';
 import type { Style } from '@react-pdf/types';
 import { IARCHE_COLORS } from './tokens';
 
 const styles = StyleSheet.create({
   logoContainer: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   barContainer: {
     alignItems: 'center',
   },
 });
 
-// Logo variants
-type LogoVariant = 'gradient' | 'white' | 'terracotta';
+// Logo variant types - now based on background theme
+type LogoTheme = 'dark' | 'light';
 
 interface PDFImageLogoProps {
   /** Logo width in pixels */
   width?: number;
-  /** Logo variant: gradient (default), white, or terracotta */
-  variant?: LogoVariant;
+  /** Theme: dark (on dark bg) or light (on light bg) */
+  theme?: LogoTheme;
   style?: Style;
 }
 
 /**
  * IArche logo using SVG Text with LinearGradient for true gradient effect
- * Matches the brand's gradient identity (Bleu Nuit ↔ Terracotta)
+ * - On dark background: White → Terracotta → White gradient
+ * - On light background: Bleu Nuit → Terracotta → Bleu Nuit gradient
  */
 export const PDFImageLogo = ({ 
-  width = 160, 
-  variant = 'gradient',
+  width = 120, 
+  theme = 'light',
   style 
 }: PDFImageLogoProps) => {
-  const height = width / 3.5;
-  const fontSize = width / 4.2;
+  const height = 40;
+  const fontSize = 28;
   
-  // For non-gradient variants, use simple text
-  if (variant !== 'gradient') {
-    const color = variant === 'white' ? IARCHE_COLORS.white : IARCHE_COLORS.terracotta;
-    return (
-      <View style={[styles.logoContainer, style]}>
-        <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-          <Text
-            x={width / 2}
-            y={height * 0.72}
-            textAnchor="middle"
-            style={{
-              fontSize,
-              fontFamily: 'Helvetica-Bold',
-              fontWeight: 'bold',
-            }}
-            fill={color}
-          >
-            IArche
-          </Text>
-        </Svg>
-      </View>
-    );
-  }
+  // Gradient colors based on background theme
+  const gradientColors = theme === 'dark' 
+    ? { start: IARCHE_COLORS.white, mid: IARCHE_COLORS.terracotta, end: IARCHE_COLORS.white }
+    : { start: IARCHE_COLORS.bleuNuit, mid: IARCHE_COLORS.terracotta, end: IARCHE_COLORS.bleuNuit };
   
-  // Gradient variant with true SVG LinearGradient
   return (
     <View style={[styles.logoContainer, style]}>
       <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         <Defs>
-          {/* IArche brand gradient: Bleu Nuit → Terracotta → Bleu Nuit */}
           <LinearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor={IARCHE_COLORS.bleuNuit} />
-            <Stop offset="35%" stopColor={IARCHE_COLORS.terracotta} />
-            <Stop offset="65%" stopColor={IARCHE_COLORS.terracotta} />
-            <Stop offset="100%" stopColor={IARCHE_COLORS.bleuNuit} />
+            <Stop offset="0%" stopColor={gradientColors.start} />
+            <Stop offset="50%" stopColor={gradientColors.mid} />
+            <Stop offset="100%" stopColor={gradientColors.end} />
           </LinearGradient>
         </Defs>
         <Text
-          x={width / 2}
-          y={height * 0.72}
-          textAnchor="middle"
+          x="0"
+          y="28"
+          fill="url(#logoGradient)"
           style={{
             fontSize,
             fontFamily: 'Helvetica-Bold',
             fontWeight: 'bold',
           }}
-          fill="url(#logoGradient)"
         >
           IArche
         </Text>
@@ -241,8 +219,9 @@ interface PDFArchesDecorationProps {
 }
 
 /**
- * Corner arches decoration with gradient strokes
- * Matches IArche's visual identity (L-shaped corners)
+ * Corner arches decoration with gradient strokes - L-shaped lines
+ * Matches IArche's visual identity from the website
+ * Uses Line elements forming right angles at corners
  */
 export const PDFArchesDecoration = ({
   width,
@@ -250,8 +229,7 @@ export const PDFArchesDecoration = ({
   isDark = true,
   cornerSize = 120,
 }: PDFArchesDecorationProps) => {
-  const opacity = isDark ? 0.35 : 0.5;
-  const secondaryOpacity = opacity * 0.5;
+  const opacity = isDark ? 0.3 : 0.4;
   
   return (
     <Svg
@@ -265,51 +243,61 @@ export const PDFArchesDecoration = ({
       viewBox={`0 0 ${width} ${height}`}
     >
       <Defs>
-        {/* Gradient for top-right arch */}
-        <LinearGradient id="archGradientTR" x1="0%" y1="0%" x2="100%" y2="100%">
+        {/* Gradient for top-right arch: Bleu Nuit → Terracotta */}
+        <LinearGradient id="archeGradient1" x1="0%" y1="0%" x2="100%" y2="100%">
           <Stop offset="0%" stopColor={IARCHE_COLORS.bleuNuit} />
           <Stop offset="100%" stopColor={IARCHE_COLORS.terracotta} />
         </LinearGradient>
-        {/* Gradient for bottom-left arch */}
-        <LinearGradient id="archGradientBL" x1="100%" y1="100%" x2="0%" y2="0%">
+        {/* Gradient for bottom-left arch: Terracotta → Bleu Nuit */}
+        <LinearGradient id="archeGradient2" x1="100%" y1="100%" x2="0%" y2="0%">
           <Stop offset="0%" stopColor={IARCHE_COLORS.terracotta} />
           <Stop offset="100%" stopColor={IARCHE_COLORS.bleuNuit} />
         </LinearGradient>
       </Defs>
       
-      {/* Top-right corner arch - L shape */}
-      <Path 
-        d={`M${width - cornerSize} 0 L${width} 0 L${width} ${cornerSize}`}
-        fill="none" 
-        stroke="url(#archGradientTR)"
-        strokeWidth={3} 
-        opacity={opacity}
-      />
+      {/* Top-right corner - inverted L shape */}
+      <G opacity={opacity}>
+        {/* Vertical line from top */}
+        <Line 
+          x1={width} 
+          y1={0} 
+          x2={width} 
+          y2={cornerSize} 
+          stroke="url(#archeGradient1)" 
+          strokeWidth={3} 
+        />
+        {/* Horizontal line */}
+        <Line 
+          x1={width} 
+          y1={cornerSize} 
+          x2={width - cornerSize} 
+          y2={cornerSize} 
+          stroke="url(#archeGradient1)" 
+          strokeWidth={3} 
+        />
+      </G>
       
-      {/* Bottom-left corner arch - inverted L shape */}
-      <Path 
-        d={`M0 ${height - cornerSize} L0 ${height} L${cornerSize} ${height}`}
-        fill="none" 
-        stroke="url(#archGradientBL)"
-        strokeWidth={3} 
-        opacity={opacity}
-      />
-      
-      {/* Secondary arches (inner, smaller) */}
-      <Path 
-        d={`M${width - cornerSize + 20} 20 L${width - 20} 20 L${width - 20} ${cornerSize - 20}`}
-        fill="none" 
-        stroke="url(#archGradientTR)"
-        strokeWidth={1.5} 
-        opacity={secondaryOpacity}
-      />
-      <Path 
-        d={`M20 ${height - cornerSize + 20} L20 ${height - 20} L${cornerSize - 20} ${height - 20}`}
-        fill="none" 
-        stroke="url(#archGradientBL)"
-        strokeWidth={1.5} 
-        opacity={secondaryOpacity}
-      />
+      {/* Bottom-left corner - L shape */}
+      <G opacity={opacity}>
+        {/* Vertical line from bottom */}
+        <Line 
+          x1={0} 
+          y1={height} 
+          x2={0} 
+          y2={height - cornerSize} 
+          stroke="url(#archeGradient2)" 
+          strokeWidth={3} 
+        />
+        {/* Horizontal line */}
+        <Line 
+          x1={0} 
+          y1={height - cornerSize} 
+          x2={cornerSize} 
+          y2={height - cornerSize} 
+          stroke="url(#archeGradient2)" 
+          strokeWidth={3} 
+        />
+      </G>
     </Svg>
   );
 };
