@@ -95,7 +95,7 @@ const visualTemplates = [
     dimensions: '1200×630px',
     icon: Globe,
     route: '/admin/medias/og',
-    ready: false,
+    ready: true,
   },
   { 
     id: 'header-email', 
