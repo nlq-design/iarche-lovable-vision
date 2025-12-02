@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { exportToPNG } from '@/lib/exportPng';
+import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -60,6 +61,18 @@ export default function PostEditor() {
   const [conseilTitre, setConseilTitre] = useState('Commencez petit');
   const [conseilContenu, setConseilContenu] = useState('Identifiez un cas d\'usage simple et mesurez les résultats avant de généraliser.');
 
+  // Typography controls - Title
+  const [titleFontSize, setTitleFontSize] = useState(56);
+  const [titleBold, setTitleBold] = useState(true);
+  const [titleItalic, setTitleItalic] = useState(false);
+  const [titleAlignment, setTitleAlignment] = useState<TextAlignment>('center');
+
+  // Typography controls - Description
+  const [descFontSize, setDescFontSize] = useState(24);
+  const [descBold, setDescBold] = useState(false);
+  const [descItalic, setDescItalic] = useState(false);
+  const [descAlignment, setDescAlignment] = useState<TextAlignment>('center');
+
   const handleExport = async () => {
     try {
       await exportToPNG(postRef, `post-${template}-${format}`, {
@@ -84,12 +97,12 @@ export default function PostEditor() {
             display: 'flex', 
             flexDirection: 'column', 
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start',
             height: '100%',
-            textAlign: 'center',
+            textAlign: titleAlignment,
           }}>
             <HTMLLogo size="lg" theme={theme} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start' }}>
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: '18px',
@@ -102,23 +115,27 @@ export default function PostEditor() {
               </span>
               <h1 style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: format === 'square' ? '56px' : '42px',
-                fontWeight: 700,
+                fontSize: `${titleFontSize}px`,
+                fontWeight: titleBold ? 700 : 400,
+                fontStyle: titleItalic ? 'italic' : 'normal',
                 color: textColor,
                 margin: 0,
                 lineHeight: 1.1,
+                textAlign: titleAlignment,
               }}>
                 {title}
               </h1>
               <HTMLGradientBar size="lg" />
               <p style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: '24px',
-                fontWeight: 400,
+                fontSize: `${descFontSize}px`,
+                fontWeight: descBold ? 600 : 400,
+                fontStyle: descItalic ? 'italic' : 'normal',
                 color: subtextColor,
                 margin: 0,
                 maxWidth: '80%',
                 lineHeight: 1.5,
+                textAlign: descAlignment,
               }}>
                 {description}
               </p>
@@ -462,6 +479,38 @@ export default function PostEditor() {
 
               {/* Template-specific fields */}
               {renderFields()}
+
+              {/* Typography Controls */}
+              {template === 'annonce' && (
+                <>
+                  <TypographyControls
+                    label="Typographie Titre"
+                    fontSize={titleFontSize}
+                    onFontSizeChange={setTitleFontSize}
+                    isBold={titleBold}
+                    onBoldChange={setTitleBold}
+                    isItalic={titleItalic}
+                    onItalicChange={setTitleItalic}
+                    alignment={titleAlignment}
+                    onAlignmentChange={setTitleAlignment}
+                    minFontSize={28}
+                    maxFontSize={72}
+                  />
+                  <TypographyControls
+                    label="Typographie Description"
+                    fontSize={descFontSize}
+                    onFontSizeChange={setDescFontSize}
+                    isBold={descBold}
+                    onBoldChange={setDescBold}
+                    isItalic={descItalic}
+                    onItalicChange={setDescItalic}
+                    alignment={descAlignment}
+                    onAlignmentChange={setDescAlignment}
+                    minFontSize={16}
+                    maxFontSize={48}
+                  />
+                </>
+              )}
             </CardContent>
           </Card>
 
