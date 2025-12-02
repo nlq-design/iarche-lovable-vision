@@ -1,6 +1,7 @@
-import React, { useRef, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Download, Image } from 'lucide-react';
+import { MediaTemplate } from '@/hooks/useMediaTemplates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,6 +54,7 @@ type BannerTemplate = 'entreprise' | 'solution' | 'ceo';
 
 export default function BannerEditor() {
   const navigate = useNavigate();
+  const location = useLocation();
   const bannerRef = useRef<HTMLDivElement>(null);
   
   const [template, setTemplate] = useState<BannerTemplate>('entreprise');
@@ -105,6 +107,14 @@ export default function BannerEditor() {
     if (data.ceoName !== undefined) setCeoName(data.ceoName as string);
     if (data.ceoTitle !== undefined) setCeoTitle(data.ceoTitle as string);
   }, []);
+
+  // Load template from navigation state
+  useEffect(() => {
+    const state = location.state as { loadTemplate?: MediaTemplate } | null;
+    if (state?.loadTemplate?.template_data) {
+      loadTemplateData(state.loadTemplate.template_data);
+    }
+  }, [location.state, loadTemplateData]);
 
   const handleExport = async () => {
     try {

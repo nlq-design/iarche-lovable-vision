@@ -1,6 +1,7 @@
-import React, { useRef, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Download, FileText, Briefcase, Globe } from 'lucide-react';
+import { MediaTemplate } from '@/hooks/useMediaTemplates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,6 +55,7 @@ const SOLUTIONS = [
 
 export default function OpenGraphEditor() {
   const navigate = useNavigate();
+  const location = useLocation();
   const ogRef = useRef<HTMLDivElement>(null);
   
   const [template, setTemplate] = useState<OGTemplate>('page');
@@ -113,6 +115,14 @@ export default function OpenGraphEditor() {
     if (data.articleCategory !== undefined) setArticleCategory(data.articleCategory as string);
     if (data.selectedSolution !== undefined) setSelectedSolution(data.selectedSolution as string);
   }, []);
+
+  // Load template from navigation state
+  useEffect(() => {
+    const state = location.state as { loadTemplate?: MediaTemplate } | null;
+    if (state?.loadTemplate?.template_data) {
+      loadTemplateData(state.loadTemplate.template_data);
+    }
+  }, [location.state, loadTemplateData]);
 
   const handleExport = async () => {
     try {
