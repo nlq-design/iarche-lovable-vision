@@ -1,4 +1,4 @@
-import { View, Text, Svg, Rect, Line, Path, Defs, LinearGradient, Stop, G, StyleSheet } from '@react-pdf/renderer';
+import { View, Text, Svg, Rect, Line, Path, StyleSheet } from '@react-pdf/renderer';
 import type { Style } from '@react-pdf/types';
 import { IARCHE_COLORS } from './tokens';
 
@@ -34,43 +34,16 @@ export const PDFImageLogo = ({
   const height = width / 3.5;
   const fontSize = width / 4.2;
   
-  // For non-gradient variants, use simple text
-  if (variant !== 'gradient') {
-    const color = variant === 'white' ? IARCHE_COLORS.white : IARCHE_COLORS.terracotta;
-    return (
-      <View style={[styles.logoContainer, style]}>
-        <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-          <Text
-            x={width / 2}
-            y={height * 0.72}
-            textAnchor="middle"
-            style={{
-              fontSize,
-              fontFamily: 'Helvetica-Bold',
-              fontWeight: 'bold',
-            }}
-            fill={color}
-          >
-            IArche
-          </Text>
-        </Svg>
-      </View>
-    );
-  }
+  // Solid colors based on variant (gradient limitation in @react-pdf/renderer)
+  const color = variant === 'white' 
+    ? IARCHE_COLORS.white 
+    : variant === 'terracotta' 
+      ? IARCHE_COLORS.terracotta 
+      : IARCHE_COLORS.bleuNuit; // gradient fallback to bleuNuit
   
-  // Gradient variant with true SVG LinearGradient
   return (
     <View style={[styles.logoContainer, style]}>
       <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-        <Defs>
-          {/* IArche brand gradient: Bleu Nuit → Terracotta → Bleu Nuit */}
-          <LinearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor={IARCHE_COLORS.bleuNuit} />
-            <Stop offset="35%" stopColor={IARCHE_COLORS.terracotta} />
-            <Stop offset="65%" stopColor={IARCHE_COLORS.terracotta} />
-            <Stop offset="100%" stopColor={IARCHE_COLORS.bleuNuit} />
-          </LinearGradient>
-        </Defs>
         <Text
           x={width / 2}
           y={height * 0.72}
@@ -80,7 +53,7 @@ export const PDFImageLogo = ({
             fontFamily: 'Helvetica-Bold',
             fontWeight: 'bold',
           }}
-          fill="url(#logoGradient)"
+          fill={color}
         >
           IArche
         </Text>
@@ -121,25 +94,16 @@ export const PDFImageBar = ({
   const barWidth = width || defaultSize.width;
   const barHeight = height || defaultSize.height;
   
-  // Unique ID for each bar's gradient to avoid conflicts
-  const gradientId = `barGradient-${size}-${barWidth}-${barHeight}`;
-  
+  // Solid terracotta color (gradient limitation in @react-pdf/renderer)
   return (
     <View style={[styles.barContainer, style]}>
       <Svg width={barWidth} height={barHeight} viewBox={`0 0 ${barWidth} ${barHeight}`}>
-        <Defs>
-          <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor={IARCHE_COLORS.bleuNuit} />
-            <Stop offset="50%" stopColor={IARCHE_COLORS.terracotta} />
-            <Stop offset="100%" stopColor={IARCHE_COLORS.bleuNuitLight} />
-          </LinearGradient>
-        </Defs>
         <Rect
           x="0"
           y="0"
           width={barWidth}
           height={barHeight}
-          fill={`url(#${gradientId})`}
+          fill={IARCHE_COLORS.terracotta}
           rx={barHeight / 2}
         />
       </Svg>
@@ -250,8 +214,12 @@ export const PDFArchesDecoration = ({
   isDark = true,
   cornerSize = 120,
 }: PDFArchesDecorationProps) => {
-  const opacity = isDark ? 0.35 : 0.5;
+  const opacity = isDark ? 0.4 : 0.6;
   const secondaryOpacity = opacity * 0.5;
+  
+  // Solid colors based on theme (gradient limitation in @react-pdf/renderer)
+  const primaryColor = isDark ? IARCHE_COLORS.terracotta : IARCHE_COLORS.bleuNuit;
+  const secondaryColor = isDark ? IARCHE_COLORS.bleuNuitLight : IARCHE_COLORS.terracotta;
   
   return (
     <Svg
@@ -264,24 +232,11 @@ export const PDFArchesDecoration = ({
       }}
       viewBox={`0 0 ${width} ${height}`}
     >
-      <Defs>
-        {/* Gradient for top-right arch */}
-        <LinearGradient id="archGradientTR" x1="0%" y1="0%" x2="100%" y2="100%">
-          <Stop offset="0%" stopColor={IARCHE_COLORS.bleuNuit} />
-          <Stop offset="100%" stopColor={IARCHE_COLORS.terracotta} />
-        </LinearGradient>
-        {/* Gradient for bottom-left arch */}
-        <LinearGradient id="archGradientBL" x1="100%" y1="100%" x2="0%" y2="0%">
-          <Stop offset="0%" stopColor={IARCHE_COLORS.terracotta} />
-          <Stop offset="100%" stopColor={IARCHE_COLORS.bleuNuit} />
-        </LinearGradient>
-      </Defs>
-      
       {/* Top-right corner arch - L shape */}
       <Path 
         d={`M${width - cornerSize} 0 L${width} 0 L${width} ${cornerSize}`}
         fill="none" 
-        stroke="url(#archGradientTR)"
+        stroke={primaryColor}
         strokeWidth={3} 
         opacity={opacity}
       />
@@ -290,7 +245,7 @@ export const PDFArchesDecoration = ({
       <Path 
         d={`M0 ${height - cornerSize} L0 ${height} L${cornerSize} ${height}`}
         fill="none" 
-        stroke="url(#archGradientBL)"
+        stroke={primaryColor}
         strokeWidth={3} 
         opacity={opacity}
       />
@@ -299,14 +254,14 @@ export const PDFArchesDecoration = ({
       <Path 
         d={`M${width - cornerSize + 20} 20 L${width - 20} 20 L${width - 20} ${cornerSize - 20}`}
         fill="none" 
-        stroke="url(#archGradientTR)"
+        stroke={secondaryColor}
         strokeWidth={1.5} 
         opacity={secondaryOpacity}
       />
       <Path 
         d={`M20 ${height - cornerSize + 20} L20 ${height - 20} L${cornerSize - 20} ${height - 20}`}
         fill="none" 
-        stroke="url(#archGradientBL)"
+        stroke={secondaryColor}
         strokeWidth={1.5} 
         opacity={secondaryOpacity}
       />
