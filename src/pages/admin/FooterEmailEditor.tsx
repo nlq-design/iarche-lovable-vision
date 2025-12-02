@@ -5,15 +5,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { COLORS } from '@/components/admin/medias/shared/tokens';
 import { HTMLGradientBar } from '@/components/admin/medias/html/HTMLGradientBar';
+import { IARCHE_SIZES, type BarSize } from '@/components/admin/medias/html/tokens';
 
 export default function FooterEmailEditor() {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+
+  // Bar size control
+  const [barSize, setBarSize] = useState<BarSize>('lg');
 
   // Editable fields
   const [name, setName] = useState('Nicolas');
@@ -26,8 +30,11 @@ export default function FooterEmailEditor() {
 
   // Generate HTML code
   const generateHTML = () => {
+    // Get bar dimensions from the selected size
+    const barDimensions = IARCHE_SIZES.bar[barSize];
+    
     // Inline SVG gradient bar for email compatibility
-    const gradientBarSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="4" viewBox="0 0 96 4">
+    const gradientBarSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="${barDimensions.width}" height="${barDimensions.height}" viewBox="0 0 ${barDimensions.width} ${barDimensions.height}">
       <defs>
         <linearGradient id="barGrad" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stop-color="#1A2B4A"/>
@@ -35,7 +42,7 @@ export default function FooterEmailEditor() {
           <stop offset="100%" stop-color="#1A2B4A"/>
         </linearGradient>
       </defs>
-      <rect width="96" height="4" rx="2" fill="url(#barGrad)"/>
+      <rect width="${barDimensions.width}" height="${barDimensions.height}" rx="${barDimensions.height / 2}" fill="url(#barGrad)"/>
     </svg>`;
     const gradientBarBase64 = btoa(gradientBarSVG);
     
@@ -47,7 +54,7 @@ export default function FooterEmailEditor() {
   <tr>
     <td style="padding:24px 0;">
       <!-- Gradient Bar -->
-      <img src="data:image/svg+xml;base64,${gradientBarBase64}" alt="" width="96" height="4" style="display:block;margin-bottom:16px;">
+      <img src="data:image/svg+xml;base64,${gradientBarBase64}" alt="" width="${barDimensions.width}" height="${barDimensions.height}" style="display:block;margin-bottom:16px;">
       
       <!-- Logo -->
       <table role="presentation" width="100%">
@@ -166,6 +173,28 @@ export default function FooterEmailEditor() {
               <CardDescription>Personnalisez le pied de page</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Bar size control */}
+              <div className="space-y-2">
+                <Label>Taille de la barre</Label>
+                <RadioGroup
+                  value={barSize}
+                  onValueChange={(v) => setBarSize(v as BarSize)}
+                  className="flex gap-2"
+                >
+                  {(['sm', 'md', 'lg', 'xl'] as const).map((size) => (
+                    <div key={size} className="flex items-center">
+                      <RadioGroupItem value={size} id={`footer-bar-${size}`} className="peer sr-only" />
+                      <Label
+                        htmlFor={`footer-bar-${size}`}
+                        className="px-3 py-1.5 rounded-md border cursor-pointer text-sm peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground peer-data-[state=checked]:border-primary"
+                      >
+                        {size.toUpperCase()}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Nom</Label>
@@ -213,7 +242,7 @@ export default function FooterEmailEditor() {
                   <div className="border rounded-lg bg-white p-6" style={{ maxWidth: '600px' }}>
                     <div style={{ paddingTop: '24px' }}>
                       {/* Gradient bar at top */}
-                      <HTMLGradientBar size="lg" />
+                      <HTMLGradientBar size={barSize} />
                       
                       {/* Logo */}
                       <div style={{ marginTop: '16px' }}>
@@ -282,8 +311,8 @@ export default function FooterEmailEditor() {
                   <p className="text-sm font-medium text-muted-foreground mb-2">Mobile</p>
                   <div className="border rounded-lg bg-white p-4" style={{ maxWidth: '320px' }}>
                     <div style={{ paddingTop: '16px' }}>
-                      {/* Gradient bar at top */}
-                      <HTMLGradientBar size="md" />
+                      {/* Gradient bar at top - one size smaller for mobile */}
+                      <HTMLGradientBar size={barSize === 'sm' ? 'sm' : barSize === 'md' ? 'sm' : barSize === 'lg' ? 'md' : 'lg'} />
                       
                       {/* Logo */}
                       <div style={{ marginTop: '12px' }}>
