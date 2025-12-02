@@ -256,8 +256,8 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
               width={PAGE_WIDTH} 
               height={PAGE_HEIGHT} 
               isDark={isDark}
-              opacity={isDark ? 0.5 : 0.6}
-              strokeWidth={2}
+              opacity={isDark ? 0.6 : 0.7}
+              strokeWidth={3}
             />
 
             {/* Main content */}
