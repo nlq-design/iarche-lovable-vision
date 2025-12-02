@@ -418,24 +418,48 @@ function SavedTemplatesGlobalView({ navigate }: { navigate: ReturnType<typeof us
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-lg font-semibold">Mes templates sauvegardés</h2>
           <p className="text-sm text-muted-foreground">
             {templates.length} template{templates.length > 1 ? 's' : ''} sauvegardé{templates.length > 1 ? 's' : ''}
           </p>
         </div>
-        <Select value={filterType} onValueChange={(v) => setFilterType(v as EditorType | 'all')}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Filtrer par type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les types</SelectItem>
-            {Object.entries(editorTypeConfig).map(([key, { label }]) => (
-              <SelectItem key={key} value={key}>{label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-3">
+          <Select value={filterType} onValueChange={(v) => setFilterType(v as EditorType | 'all')}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filtrer par type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les types</SelectItem>
+              {Object.entries(editorTypeConfig).map(([key, { label }]) => (
+                <SelectItem key={key} value={key}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {/* Quick create dropdown */}
+          <Select onValueChange={(route) => navigate(route)}>
+            <SelectTrigger className="w-[180px]">
+              <div className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                <span>Créer un template</span>
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(editorTypeConfig)
+                .filter(([key]) => !['carousel', 'presentation'].includes(key))
+                .map(([key, { label, route, icon: Icon }]) => (
+                  <SelectItem key={key} value={route}>
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4" />
+                      {label}
+                    </div>
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {filteredTemplates.length === 0 ? (
