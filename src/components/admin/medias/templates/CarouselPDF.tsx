@@ -1,6 +1,7 @@
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
-import { PDFImageLogo, PDFImageBar, PDFPatternBackground, PDFArchesDecoration } from '../pdf/PDFImageAssets';
+import { PDFImageLogo, PDFImageBar, PDFPatternBackground } from '../pdf/PDFImageAssets';
+import { PDFCanalisationLines } from '../pdf/PDFCanalisationLines';
 
 interface SlideData {
   id: number;
@@ -219,8 +220,14 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
               isDark={isDark}
             />
             
-            {/* Corner arches decoration with gradient */}
-            <PDFArchesDecoration width={width} height={height} isDark={isDark} />
+            {/* Canalisation lines - matching hero animation (frozen at 6s) */}
+            <PDFCanalisationLines 
+              width={width} 
+              height={height} 
+              isDark={isDark}
+              opacity={isDark ? 0.5 : 0.6}
+              strokeWidth={2}
+            />
             
             {/* Main content */}
             <View style={styles.content}>

@@ -1,6 +1,7 @@
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
-import { PDFImageLogo, PDFImageBar, PDFPatternBackground, PDFArchesDecoration } from '../pdf/PDFImageAssets';
+import { PDFImageLogo, PDFImageBar, PDFPatternBackground } from '../pdf/PDFImageAssets';
+import { PDFCanalisationLines } from '../pdf/PDFCanalisationLines';
 
 interface SlideData {
   id: number;
@@ -250,17 +251,24 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
               opacity={isDark ? 0.05 : 0.07}
               isDark={isDark}
             />
-            <PDFArchesDecoration width={PAGE_WIDTH} height={PAGE_HEIGHT} isDark={isDark} />
+            {/* Canalisation lines - matching hero animation (frozen at 6s) */}
+            <PDFCanalisationLines 
+              width={PAGE_WIDTH} 
+              height={PAGE_HEIGHT} 
+              isDark={isDark}
+              opacity={isDark ? 0.5 : 0.6}
+              strokeWidth={2}
+            />
 
             {/* Main content */}
             <View style={styles.content}>
               {/* Header */}
               <View style={styles.header}>
                 <View style={styles.logoContainer}>
-                  {/* Logo PNG - gradient on all slides */}
+                  {/* Logo PNG - terracotta on dark slides, gradient on light slides */}
                   <PDFImageLogo 
                     width={140} 
-                    variant="gradient" 
+                    variant={isDark ? 'terracotta' : 'gradient'} 
                   />
                   {/* Small bar under logo - sm size */}
                   <PDFImageBar size="sm" style={{ marginTop: 6 }} />
