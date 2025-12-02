@@ -4,8 +4,40 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { Button } from '@/components/ui/button';
+import { Star } from 'lucide-react';
+
+const testimonials = [
+  {
+    author: "Marie Pecot",
+    date: "Octobre 2025",
+    rating: 5,
+    content: "Formation très utile"
+  },
+  {
+    author: "Floriane Garcia",
+    company: "Maltôte Consulting",
+    date: "Mars 2025",
+    rating: 5,
+    content: "J'ai fait appel à Nicolas afin de me former à l'IA, la formation a été au delà de mes espérances."
+  },
+  {
+    author: "Shivan Emin",
+    date: "Décembre 2024",
+    rating: 5,
+    content: "Je recommande fortement, cela m'a beaucoup aidé dans mon activité."
+  },
+  {
+    author: "Nicolas Bruccoleri",
+    date: "Décembre 2024",
+    rating: 5,
+    content: "Formation de qualité et très utile, je recommande !"
+  }
+];
 
 const LivreOr = () => {
+  const averageRating = 5;
+  const reviewCount = testimonials.length;
+
   return (
     <BackgroundLayout>
       <Helmet>
@@ -49,58 +81,25 @@ const LivreOr = () => {
             "logo": "https://iarche.fr/logo-iarche.svg",
             "aggregateRating": {
               "@type": "AggregateRating",
-              "ratingValue": "5",
-              "reviewCount": "3",
+              "ratingValue": String(averageRating),
+              "reviewCount": String(reviewCount),
               "bestRating": "5",
               "worstRating": "1"
             },
-            "review": [
-              {
-                "@type": "Review",
-                "author": {
-                  "@type": "Person",
-                  "name": "Marie Dupont"
-                },
-                "datePublished": "2025-01-15",
-                "reviewBody": "Accompagnement de qualité pour l'intégration de l'IA dans nos processus. Équipe réactive et à l'écoute.",
-                "reviewRating": {
-                  "@type": "Rating",
-                  "ratingValue": "5",
-                  "bestRating": "5",
-                  "worstRating": "1"
-                }
+            "review": testimonials.map(t => ({
+              "@type": "Review",
+              "author": {
+                "@type": "Person",
+                "name": t.author
               },
-              {
-                "@type": "Review",
-                "author": {
-                  "@type": "Person",
-                  "name": "Jean Martin"
-                },
-                "datePublished": "2025-01-10",
-                "reviewBody": "Formation complète et pragmatique. Nos équipes ont rapidement monté en compétences sur l'IA.",
-                "reviewRating": {
-                  "@type": "Rating",
-                  "ratingValue": "5",
-                  "bestRating": "5",
-                  "worstRating": "1"
-                }
-              },
-              {
-                "@type": "Review",
-                "author": {
-                  "@type": "Person",
-                  "name": "Sophie Bernard"
-                },
-                "datePublished": "2025-01-05",
-                "reviewBody": "Audit pertinent et feuille de route claire pour structurer notre démarche IA. Très satisfaits.",
-                "reviewRating": {
-                  "@type": "Rating",
-                  "ratingValue": "5",
-                  "bestRating": "5",
-                  "worstRating": "1"
-                }
+              "reviewBody": t.content,
+              "reviewRating": {
+                "@type": "Rating",
+                "ratingValue": String(t.rating),
+                "bestRating": "5",
+                "worstRating": "1"
               }
-            ]
+            }))
           })}
         </script>
       </Helmet>
@@ -119,26 +118,58 @@ const LivreOr = () => {
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
               Ce que nos clients disent de nous
             </p>
+            
+            {/* Note globale */}
+            <div className="flex items-center justify-center gap-2 mt-4 animate-fadeIn [animation-delay:0.25s]">
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-5 w-5 fill-accent text-accent" />
+                ))}
+              </div>
+              <span className="text-lg font-semibold text-foreground">{averageRating}/5</span>
+              <span className="text-muted-foreground">({reviewCount} avis)</span>
+            </div>
           </div>
 
-          {/* Contenu placeholder */}
-          <div className="max-w-2xl mx-auto text-center space-y-8 animate-fadeIn [animation-delay:0.3s]">
-            <div className="bg-secondary/50 rounded-lg p-12 border border-border">
-              <p className="text-lg text-muted-foreground mb-6">
-                Les premiers témoignages arrivent bientôt.
-              </p>
-              <p className="text-base text-muted-foreground mb-8">
-                Vous avez travaillé avec nous ? Partagez votre expérience.
-              </p>
-              <a href="mailto:nlq@iarche.fr?subject=Témoignage client">
-                <Button 
-                  size="lg"
-                  className="bg-accent hover:bg-accent/90 text-white px-8 py-6 text-base"
-                >
-                  Laisser un avis
-                </Button>
-              </a>
-            </div>
+          {/* Témoignages */}
+          <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto animate-fadeIn [animation-delay:0.3s]">
+            {testimonials.map((testimonial, index) => (
+              <div 
+                key={index}
+                className="bg-secondary/50 rounded-lg p-6 border border-border hover:border-accent/30 transition-colors"
+              >
+                <div className="flex items-center gap-1 mb-3">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-accent text-accent" />
+                  ))}
+                </div>
+                <p className="text-foreground mb-4 italic">"{testimonial.content}"</p>
+                <div className="flex items-center justify-between text-sm">
+                  <div>
+                    <p className="font-medium text-foreground">{testimonial.author}</p>
+                    {testimonial.company && (
+                      <p className="text-muted-foreground">{testimonial.company}</p>
+                    )}
+                  </div>
+                  <p className="text-muted-foreground">{testimonial.date}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div className="max-w-2xl mx-auto text-center mt-12 animate-fadeIn [animation-delay:0.4s]">
+            <p className="text-muted-foreground mb-6">
+              Vous avez travaillé avec nous ? Partagez votre expérience.
+            </p>
+            <a href="mailto:nlq@iarche.fr?subject=Témoignage client">
+              <Button 
+                size="lg"
+                className="bg-accent hover:bg-accent/90 text-white px-8 py-6 text-base"
+              >
+                Laisser un avis
+              </Button>
+            </a>
           </div>
         </section>
       </main>
