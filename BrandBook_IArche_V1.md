@@ -877,15 +877,65 @@ Reproduction des lignes SVG animées du hero section, en version statique.
 | Header Email | 600 × 150 px | En-tête newsletter |
 | Signature | 600 × 200 px | Signature email |
 
-### 15.8 Workflow de création
+### 15.8 Modes d'export unifiés (ExportModeControls)
+
+Tous les éditeurs de médias utilisent un système de modes d'export unifié.
+
+**Composant :** `src/components/admin/medias/ExportModeControls.tsx`
+
+**Modes disponibles :**
+
+| Mode | Label | Contenu exporté |
+|------|-------|-----------------|
+| `simple` | Simple | Contenu uniquement (texte, logo si applicable) |
+| `with-bar` | + Barre | Contenu + barre décorative gradient |
+| `full` | Complet | Contenu + barre + mesh background + canalisations |
+
+**Tailles de barre configurables :**
+
+| Taille | Dimensions | Usage recommandé |
+|--------|------------|------------------|
+| sm | 48 × 2px | Petits formats (signature, header email) |
+| md | 80 × 4px | Formats moyens (posts, thumbnails) |
+| lg | 96 × 4px | Grands formats (banners, stories) |
+| xl | 128 × 6px | Très grands formats (présentations) |
+
+**Props du composant :**
+
+```tsx
+interface ExportModeControlsProps {
+  exportMode: 'simple' | 'with-bar' | 'full';
+  onExportModeChange: (mode: ExportMode) => void;
+  barSize: 'sm' | 'md' | 'lg' | 'xl';
+  onBarSizeChange: (size: BarSize) => void;
+  showBarSizeSelector?: boolean;  // Affiche sélecteur taille barre
+  compact?: boolean;              // Variante compacte
+}
+```
+
+**Utilisation dans les éditeurs :**
+
+```tsx
+<ExportModeControls
+  exportMode={exportMode}
+  onExportModeChange={setExportMode}
+  barSize={barSize}
+  onBarSizeChange={setBarSize}
+  compact={true}
+/>
+```
+
+### 15.9 Workflow de création
 
 1. Accéder à `/admin/medias`
 2. Choisir l'onglet (Documents PDF ou Visuels PNG)
 3. Sélectionner un template
 4. Remplir le contenu (titre, sous-titre, etc.)
 5. Choisir le thème de départ (Bleu Nuit ou Blanc Cassé)
-6. Prévisualiser en temps réel
-7. Exporter (PDF ou PNG)
+6. **Sélectionner le mode d'export (Simple / + Barre / Complet)**
+7. **Si barre activée, choisir la taille (sm/md/lg/xl)**
+8. Prévisualiser en temps réel
+9. Exporter (PDF ou PNG)
 
 ---
 
