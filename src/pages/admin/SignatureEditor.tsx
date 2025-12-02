@@ -31,6 +31,19 @@ export default function SignatureEditor() {
   const [tagline, setTagline] = useState("L'IA se construit avec vous");
 
   const generateHTML = () => {
+    // Inline SVG gradient logo for email compatibility
+    const gradientLogoSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="28" viewBox="0 0 80 28">
+      <defs>
+        <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#1A2B4A"/>
+          <stop offset="50%" stop-color="#D15A3E"/>
+          <stop offset="100%" stop-color="#1A2B4A"/>
+        </linearGradient>
+      </defs>
+      <text x="0" y="22" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="bold" fill="url(#logoGrad)">IArche</text>
+    </svg>`;
+    const gradientLogoBase64 = btoa(gradientLogoSVG);
+
     const phoneRow = telephone ? `
       <tr>
         <td style="padding: 2px 0;">
@@ -44,7 +57,9 @@ export default function SignatureEditor() {
       <table cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td style="padding-bottom: 8px;">
-            <span style="font-size: 24px; font-weight: bold; color: ${IARCHE_COLORS.terracotta};">IArche</span>
+            <a href="https://iarche.fr" style="text-decoration:none;display:block;">
+              <img src="data:image/svg+xml;base64,${gradientLogoBase64}" alt="IArche" width="80" height="28" style="display:block;">
+            </a>
           </td>
         </tr>
       </table>
@@ -198,7 +213,10 @@ export default function SignatureEditor() {
                           <span style={{ 
                             fontSize: '24px', 
                             fontWeight: 'bold', 
-                            color: IARCHE_COLORS.terracotta 
+                            background: `linear-gradient(90deg, ${IARCHE_COLORS.bleuNuit} 0%, ${IARCHE_COLORS.terracotta} 50%, ${IARCHE_COLORS.bleuNuit} 100%)`,
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
                           }}>
                             IArche
                           </span>
