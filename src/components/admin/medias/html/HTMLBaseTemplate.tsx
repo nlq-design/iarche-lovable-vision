@@ -1,0 +1,91 @@
+import React, { forwardRef } from 'react';
+import { IARCHE_COLORS, IARCHE_FONTS, ThemeType } from './tokens';
+import { HTMLMeshBackground } from './HTMLMeshBackground';
+import { HTMLArches } from './HTMLArches';
+
+interface HTMLBaseTemplateProps {
+  width: number;
+  height: number;
+  theme?: ThemeType;
+  showMesh?: boolean;
+  showArches?: boolean;
+  archSize?: number;
+  padding?: number;
+  children: React.ReactNode;
+  className?: string;
+}
+
+/**
+ * Template de base pour tous les visuels HTML/PNG
+ * Inclut: fond, maillé, arches décoratives
+ */
+export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps>(
+  (
+    {
+      width,
+      height,
+      theme = 'light',
+      showMesh = true,
+      showArches = true,
+      archSize,
+      padding = 40,
+      children,
+      className = '',
+    },
+    ref
+  ) => {
+    const backgroundColor = theme === 'dark' 
+      ? IARCHE_COLORS.bleuNuit 
+      : IARCHE_COLORS.blancCasse;
+
+    // Auto-calculate arch size based on smallest dimension
+    const calculatedArchSize = archSize ?? Math.min(width, height) * 0.15;
+
+    return (
+      <div
+        ref={ref}
+        className={className}
+        style={{
+          width: `${width}px`,
+          height: `${height}px`,
+          backgroundColor,
+          position: 'relative',
+          overflow: 'hidden',
+          fontFamily: IARCHE_FONTS.primary,
+        }}
+      >
+        {/* Mesh background pattern */}
+        {showMesh && <HTMLMeshBackground theme={theme} />}
+        
+        {/* Decorative arches in corners */}
+        {showArches && (
+          <HTMLArches 
+            position="both" 
+            theme={theme} 
+            size={calculatedArchSize}
+          />
+        )}
+        
+        {/* Content wrapper with padding */}
+        <div
+          style={{
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            padding: `${padding}px`,
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+            zIndex: 1,
+          }}
+        >
+          {children}
+        </div>
+      </div>
+    );
+  }
+);
+
+HTMLBaseTemplate.displayName = 'HTMLBaseTemplate';
+
+export default HTMLBaseTemplate;
