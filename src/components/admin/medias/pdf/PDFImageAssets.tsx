@@ -2,11 +2,15 @@ import { View, Text, Svg, Rect, Line, Path, Image, StyleSheet } from '@react-pdf
 import type { Style } from '@react-pdf/types';
 import { IARCHE_COLORS } from './tokens';
 
-// Logo PNG paths for different variants
-const LOGO_IMAGES = {
-  gradient: '/assets/logo-iarche-gradient.png',
-  white: '/assets/logo-iarche-white.png',
-  terracotta: '/assets/logo-iarche-terracotta.png',
+// Logo PNG paths for different variants - use window.location.origin for absolute URLs
+const getLogoUrl = (variant: 'gradient' | 'white' | 'terracotta') => {
+  const basePath = typeof window !== 'undefined' ? window.location.origin : '';
+  const paths = {
+    gradient: '/assets/logo-iarche-gradient.png',
+    white: '/assets/logo-iarche-white.png',
+    terracotta: '/assets/logo-iarche-terracotta.png',
+  };
+  return `${basePath}${paths[variant]}`;
 };
 
 const styles = StyleSheet.create({
@@ -47,7 +51,7 @@ export const PDFImageLogo = ({
   return (
     <View style={[styles.logoContainer, style]}>
       <Image
-        src={LOGO_IMAGES[variant]}
+        src={getLogoUrl(variant)}
         style={[styles.logoImage, { width, height }]}
       />
     </View>
