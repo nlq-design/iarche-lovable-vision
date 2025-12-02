@@ -71,6 +71,9 @@ const CharteEditor = lazy(() => import("./pages/admin/CharteEditor"));
 const QRCodeEditor = lazy(() => import("./pages/admin/QRCodeEditor"));
 const HeaderDocEditor = lazy(() => import("./pages/admin/HeaderDocEditor"));
 const FooterEmailEditor = lazy(() => import("./pages/admin/FooterEmailEditor"));
+const AdminFormulaires = lazy(() => import("./pages/admin/AdminFormulaires"));
+const FormEditor = lazy(() => import("./pages/admin/FormEditor"));
+const FormResponses = lazy(() => import("./pages/admin/FormResponses"));
 const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"));
 
 // QueryClient avec cache optimisé
@@ -400,6 +403,23 @@ const App = () => (
           <Route path="/admin/medias/footer-email" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><FooterEmailEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          
+          {/* Formulaires */}
+          <Route path="/admin/formulaires" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminFormulaires /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/formulaires/:id" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><FormEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/formulaires/:id/responses" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><FormResponses /></ProtectedAdminRoute>
             </Suspense>
           } />
           
