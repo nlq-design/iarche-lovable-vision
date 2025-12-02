@@ -1,10 +1,20 @@
-import { View, Text, Svg, Rect, Line, Path, StyleSheet } from '@react-pdf/renderer';
+import { View, Text, Svg, Rect, Line, Path, Image, StyleSheet } from '@react-pdf/renderer';
 import type { Style } from '@react-pdf/types';
 import { IARCHE_COLORS } from './tokens';
+
+// Logo PNG paths for different variants
+const LOGO_IMAGES = {
+  gradient: '/assets/logo-iarche-gradient.png',
+  white: '/assets/logo-iarche-white.png',
+  terracotta: '/assets/logo-iarche-terracotta.png',
+};
 
 const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
+  },
+  logoImage: {
+    objectFit: 'contain',
   },
   barContainer: {
     alignItems: 'center',
@@ -23,7 +33,7 @@ interface PDFImageLogoProps {
 }
 
 /**
- * IArche logo using SVG Text with LinearGradient for true gradient effect
+ * IArche logo using PNG images for true gradient rendering
  * Matches the brand's gradient identity (Bleu Nuit ↔ Terracotta)
  */
 export const PDFImageLogo = ({ 
@@ -31,33 +41,15 @@ export const PDFImageLogo = ({
   variant = 'gradient',
   style 
 }: PDFImageLogoProps) => {
+  // Maintain aspect ratio (logo is approximately 3.5:1)
   const height = width / 3.5;
-  const fontSize = width / 4.2;
-  
-  // Solid colors based on variant (gradient limitation in @react-pdf/renderer)
-  const color = variant === 'white' 
-    ? IARCHE_COLORS.white 
-    : variant === 'terracotta' 
-      ? IARCHE_COLORS.terracotta 
-      : IARCHE_COLORS.bleuNuit; // gradient fallback to bleuNuit
   
   return (
     <View style={[styles.logoContainer, style]}>
-      <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-        <Text
-          x={width / 2}
-          y={height * 0.72}
-          textAnchor="middle"
-          style={{
-            fontSize,
-            fontFamily: 'Helvetica-Bold',
-            fontWeight: 'bold',
-          }}
-          fill={color}
-        >
-          IArche
-        </Text>
-      </Svg>
+      <Image
+        src={LOGO_IMAGES[variant]}
+        style={[styles.logoImage, { width, height }]}
+      />
     </View>
   );
 };
