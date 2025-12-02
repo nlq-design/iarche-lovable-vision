@@ -13,6 +13,7 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import { exportToPNG } from '@/lib/exportPng';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
+import ExportModeControls, { ExportMode } from '@/components/admin/medias/ExportModeControls';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -20,6 +21,7 @@ import {
   IARCHE_COLORS,
   IARCHE_FONTS,
   ThemeType,
+  BarSize,
 } from '@/components/admin/medias/html';
 
 const BANNER_WIDTH = 1584;
@@ -60,6 +62,8 @@ export default function BannerEditor() {
   const [template, setTemplate] = useState<BannerTemplate>('entreprise');
   const [theme, setTheme] = useState<ThemeType>('dark');
   const [preset, setPreset] = useState<string>('');
+  const [exportMode, setExportMode] = useState<ExportMode>('full');
+  const [barSize, setBarSize] = useState<BarSize>('lg');
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(32);
@@ -89,15 +93,17 @@ export default function BannerEditor() {
 
   // Get current data for saving template
   const getCurrentData = useCallback(() => ({
-    template, theme, preset,
+    template, theme, preset, exportMode, barSize,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     tagline, selectedSolution, ceoName, ceoTitle,
-  }), [template, theme, preset, titleFontSize, titleBold, titleItalic, titleAlignment, tagline, selectedSolution, ceoName, ceoTitle]);
+  }), [template, theme, preset, exportMode, barSize, titleFontSize, titleBold, titleItalic, titleAlignment, tagline, selectedSolution, ceoName, ceoTitle]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
     if (data.template) setTemplate(data.template as BannerTemplate);
     if (data.theme) setTheme(data.theme as ThemeType);
+    if (data.exportMode) setExportMode(data.exportMode as ExportMode);
+    if (data.barSize) setBarSize(data.barSize as BarSize);
     if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
     if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
     if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
@@ -130,6 +136,8 @@ export default function BannerEditor() {
 
   const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
   const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(26,43,74,0.7)';
+  const showBar = exportMode === 'with-bar' || exportMode === 'full';
+  const showCanalisations = exportMode === 'full';
 
   const renderBannerContent = () => {
     switch (template) {
@@ -145,7 +153,7 @@ export default function BannerEditor() {
             textAlign: titleAlignment,
           }}>
             <HTMLLogo size="xl" theme={theme} />
-            <HTMLGradientBar size="lg" />
+            {showBar && <HTMLGradientBar size={barSize} />}
             <p style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: `${titleFontSize}px`,
@@ -173,7 +181,7 @@ export default function BannerEditor() {
             textAlign: titleAlignment,
           }}>
             <HTMLLogo size="lg" theme={theme} />
-            <HTMLGradientBar size="md" />
+            {showBar && <HTMLGradientBar size={barSize} />}
             <h2 style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: `${titleFontSize + 16}px`,
@@ -227,7 +235,7 @@ export default function BannerEditor() {
               textAlign: titleAlignment,
             }}>
               <HTMLLogo size="lg" theme={theme} />
-              <HTMLGradientBar size="md" />
+              {showBar && <HTMLGradientBar size={barSize} />}
               <h2 style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${titleFontSize + 4}px`,
@@ -336,6 +344,14 @@ export default function BannerEditor() {
                 maxFontSize={48}
               />
 
+              {/* Export mode controls */}
+              <ExportModeControls
+                exportMode={exportMode}
+                onExportModeChange={setExportMode}
+                barSize={barSize}
+                onBarSizeChange={setBarSize}
+              />
+
               {/* Template-specific fields */}
               {template === 'entreprise' && (
                 <div className="space-y-2">
@@ -420,7 +436,7 @@ export default function BannerEditor() {
                     theme={theme}
                     padding={60}
                     showArches={false}
-                    showCanalisations={true}
+                    showCanalisations={showCanalisations}
                     canalisationOpacity={0.4}
                     canalisationStrokeWidth={5}
                   >
