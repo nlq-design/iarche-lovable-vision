@@ -31,5 +31,6 @@ export {
   TYPOGRAPHY, 
   PDF_FORMATS, 
   BAR_SIZES, 
-  LOGO_SIZES 
+  LOGO_SIZES,
+  LOGO_SIZES_PDF,
 } from './tokens';

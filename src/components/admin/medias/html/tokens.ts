@@ -1,46 +1,59 @@
 /**
  * IArche Design System Tokens for HTML/PNG exports
- * Source unique de vérité - NE PAS DUPLIQUER
+ * Réexporte les tokens partagés + adaptations HTML spécifiques
  */
 
+// Import des tokens partagés
+import {
+  COLORS,
+  GRADIENTS,
+  FONTS,
+  BAR_SIZES,
+  LOGO_SIZES,
+  ARCH_SIZES,
+  EXPORT_FORMATS,
+} from '../shared/tokens';
+
+// Réexport pour compatibilité avec le code existant
 export const IARCHE_COLORS = {
-  bleuNuit: '#1A2B4A',
-  terracotta: '#D15A3E',
-  blancCasse: '#FAF9F7',
-  bleuNuitLight: 'rgba(26, 43, 74, 0.1)',
-  terracottaLight: 'rgba(209, 90, 62, 0.2)',
-  white: '#FFFFFF',
-  grey: '#666666',
-  greyLight: '#888888',
+  bleuNuit: COLORS.bleuNuit,
+  terracotta: COLORS.terracotta,
+  blancCasse: COLORS.blancCasse,
+  bleuNuitLight: COLORS.bleuNuitLight10,
+  terracottaLight: COLORS.terracottaLight20,
+  white: COLORS.white,
+  grey: COLORS.subtle,
+  greyLight: COLORS.muted,
+  foreground: COLORS.foreground,
+  secondary: COLORS.secondary,
+  border: COLORS.border,
 } as const;
 
 export const IARCHE_GRADIENTS = {
-  primary: 'linear-gradient(135deg, #1A2B4A 0%, #D15A3E 50%, #1A2B4A 100%)',
-  bar: 'linear-gradient(90deg, #1A2B4A 0%, #D15A3E 100%)',
-  barReverse: 'linear-gradient(90deg, #D15A3E 0%, #1A2B4A 100%)',
-  text: 'linear-gradient(270deg, #1A2B4A 0%, #D15A3E 33%, #1A2B4A 66%, #D15A3E 100%)',
+  primary: GRADIENTS.background.css,
+  bar: GRADIENTS.bar.css,
+  barReverse: GRADIENTS.barReverse.css,
+  text: GRADIENTS.text.css,
 } as const;
 
 export const IARCHE_FONTS = {
-  primary: "'Manrope', 'Helvetica Neue', Arial, sans-serif",
-  fallback: "Arial, 'Helvetica Neue', sans-serif",
+  primary: FONTS.html.primary,
+  fallback: FONTS.html.fallback,
 } as const;
 
 export const IARCHE_SIZES = {
-  bar: {
-    sm: { width: 48, height: 2 },
-    md: { width: 80, height: 4 },
-    lg: { width: 96, height: 4 },
-    xl: { width: 128, height: 6 },
-  },
+  bar: BAR_SIZES,
   logo: {
-    sm: 24,
-    md: 32,
-    lg: 48,
-    xl: 64,
+    sm: LOGO_SIZES.sm.fontSize,
+    md: LOGO_SIZES.md.fontSize,
+    lg: LOGO_SIZES.lg.fontSize,
+    xl: LOGO_SIZES.xl.fontSize,
   },
+  arch: ARCH_SIZES,
 } as const;
 
-export type ThemeType = 'dark' | 'light';
-export type BarSize = keyof typeof IARCHE_SIZES.bar;
-export type LogoSize = keyof typeof IARCHE_SIZES.logo;
+// Types
+export type { ThemeType, BarSize, LogoSize, ArchSize } from '../shared/tokens';
+
+// Réexport des formats pour référence
+export { EXPORT_FORMATS };

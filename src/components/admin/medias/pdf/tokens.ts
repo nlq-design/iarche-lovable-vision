@@ -1,77 +1,87 @@
-// ============================================
-// IARCHE BRAND COLORS - Exact hex values
-// ============================================
+/**
+ * IArche Design System Tokens for PDF exports
+ * Réexporte les tokens partagés + adaptations PDF spécifiques
+ */
+
+// Import des tokens partagés
+import {
+  COLORS,
+  GRADIENTS,
+  FONTS,
+  BAR_SIZES,
+  LOGO_SIZES,
+  EXPORT_FORMATS,
+} from '../shared/tokens';
+
+// Réexport pour compatibilité avec le code existant
 export const IARCHE_COLORS = {
   // Primary palette
-  bleuNuit: '#1A2B4A',      // hsl(218, 47%, 20%) - Primary
-  bleuNuitLight: '#233554', // Lighter variant
-  terracotta: '#D15A3E',    // hsl(12, 60%, 53%) - Accent
+  bleuNuit: COLORS.bleuNuit,
+  bleuNuitLight: '#233554', // Version hex pour PDF (pas de rgba)
+  terracotta: COLORS.terracotta,
   terracottaLight: '#c96442',
-  blancCasse: '#FAF9F7',    // hsl(40, 33%, 97%) - Background
+  blancCasse: COLORS.blancCasse,
   
   // Text colors
-  foreground: '#2D2D2D',    // hsl(0, 0%, 18%)
-  subtle: '#666666',        // hsl(0, 0%, 40%)
-  muted: '#6B7280',         // hsl(220, 9%, 46%)
-  white: '#FFFFFF',
+  foreground: COLORS.foreground,
+  subtle: COLORS.subtle,
+  muted: COLORS.muted,
+  white: COLORS.white,
   
   // Surface colors
-  secondary: '#F5F3EF',     // hsl(40, 24%, 95%)
-  border: '#E8E4DD',        // hsl(36, 18%, 89%)
+  secondary: COLORS.secondary,
+  border: COLORS.border,
 } as const;
 
-// ============================================
-// TYPOGRAPHY - Using built-in Helvetica (reliable PDF font)
-// Note: Manrope causes font encoding errors in @react-pdf/renderer
-// ============================================
+// Typography - PDF utilise Helvetica (limitation @react-pdf)
 export const TYPOGRAPHY = {
   h1: { 
-    fontFamily: 'Helvetica-Bold', 
+    fontFamily: FONTS.pdf.primary, 
     fontSize: 32, 
     fontWeight: 700 as const,
     color: IARCHE_COLORS.foreground,
   },
   h2: { 
-    fontFamily: 'Helvetica-Bold', 
+    fontFamily: FONTS.pdf.primary, 
     fontSize: 24, 
     fontWeight: 700 as const,
     color: IARCHE_COLORS.foreground,
   },
   h3: { 
-    fontFamily: 'Helvetica-Bold', 
+    fontFamily: FONTS.pdf.primary, 
     fontSize: 18, 
     fontWeight: 600 as const,
     color: IARCHE_COLORS.foreground,
   },
   body: { 
-    fontFamily: 'Helvetica', 
+    fontFamily: FONTS.pdf.secondary, 
     fontSize: 12, 
     fontWeight: 400 as const, 
     lineHeight: 1.6,
     color: IARCHE_COLORS.foreground,
   },
   caption: { 
-    fontFamily: 'Helvetica', 
+    fontFamily: FONTS.pdf.secondary, 
     fontSize: 10, 
     fontWeight: 400 as const, 
     color: IARCHE_COLORS.subtle,
   },
-  // PDF-specific larger sizes
+  // PDF-specific larger sizes for carousel/presentation
   pdfTitle: {
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: FONTS.pdf.primary,
     fontSize: 64,
     fontWeight: 700 as const,
     color: IARCHE_COLORS.white,
   },
   pdfSubtitle: {
-    fontFamily: 'Helvetica',
+    fontFamily: FONTS.pdf.secondary,
     fontSize: 22,
     fontWeight: 500 as const,
     color: IARCHE_COLORS.white,
     opacity: 0.6,
   },
   pdfBody: {
-    fontFamily: 'Helvetica',
+    fontFamily: FONTS.pdf.secondary,
     fontSize: 28,
     fontWeight: 400 as const,
     lineHeight: 1.6,
@@ -79,38 +89,38 @@ export const TYPOGRAPHY = {
     opacity: 0.85,
   },
   pdfHighlight: {
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: FONTS.pdf.primary,
     fontSize: 80,
     fontWeight: 700 as const,
     color: IARCHE_COLORS.terracotta,
   },
 } as const;
 
-// ============================================
-// DIMENSIONS - Format sizes
-// ============================================
+// Dimensions - réexport direct des tokens partagés
 export const PDF_FORMATS = {
-  carouselLinkedIn: { width: 1080, height: 1350 },
-  carouselInstagram: { width: 1080, height: 1080 },
-  presentation: { width: 1920, height: 1080 },
-  a4: { width: 595, height: 842 },
+  carouselLinkedIn: EXPORT_FORMATS.carouselLinkedIn,
+  carouselInstagram: EXPORT_FORMATS.carouselInstagram,
+  presentation: EXPORT_FORMATS.presentation,
+  a4: EXPORT_FORMATS.a4,
 } as const;
 
-// ============================================
-// DECORATIVE BAR SIZES
-// ============================================
-export const BAR_SIZES = {
-  sm: { width: 48, height: 2 },
-  md: { width: 80, height: 4 },
-  lg: { width: 96, height: 4 },
-  xl: { width: 128, height: 6 },
+// Barres décoratives - dimensions identiques PDF/PNG
+export { BAR_SIZES };
+
+// Logo sizes - réexport pour compatibilité
+export { LOGO_SIZES } from '../shared/tokens';
+
+// Logo sizes avec infos supplémentaires pour SVG PDF
+export const LOGO_SIZES_PDF = {
+  sm: { width: LOGO_SIZES.sm.width, fontSize: LOGO_SIZES.sm.fontSize, viewBox: '0 0 80 24' },
+  md: { width: LOGO_SIZES.md.width, fontSize: LOGO_SIZES.md.fontSize, viewBox: '0 0 110 32' },
+  lg: { width: LOGO_SIZES.lg.width, fontSize: LOGO_SIZES.lg.fontSize, viewBox: '0 0 160 48' },
+  xl: { width: LOGO_SIZES.xl.width, fontSize: LOGO_SIZES.xl.fontSize, viewBox: '0 0 210 64' },
 } as const;
 
-// ============================================
-// LOGO SIZES
-// ============================================
-export const LOGO_SIZES = {
-  sm: { width: 80, fontSize: 18, viewBox: '0 0 80 24' },
-  md: { width: 120, fontSize: 24, viewBox: '0 0 100 30' },
-  lg: { width: 160, fontSize: 32, viewBox: '0 0 120 36' },
+// Gradients - pour référence (PDF utilise images ou SVG)
+export const GRADIENT_STOPS = {
+  bar: GRADIENTS.bar.stops,
+  barReverse: GRADIENTS.barReverse.stops,
+  background: GRADIENTS.background.stops,
 } as const;
