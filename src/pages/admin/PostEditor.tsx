@@ -1,0 +1,509 @@
+import React, { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import AdminLayout from '@/components/layouts/AdminLayout';
+import { exportToPNG } from '@/lib/exportPng';
+import {
+  HTMLBaseTemplate,
+  HTMLLogo,
+  HTMLGradientBar,
+  IARCHE_COLORS,
+  IARCHE_FONTS,
+  ThemeType,
+} from '@/components/admin/medias/html';
+
+type PostFormat = 'square' | 'landscape';
+type PostTemplate = 'annonce' | 'chiffre' | 'temoignage' | 'conseil';
+
+const DIMENSIONS = {
+  square: { width: 1200, height: 1200 },
+  landscape: { width: 1200, height: 627 },
+};
+
+const SCALE = 0.35;
+
+export default function PostEditor() {
+  const navigate = useNavigate();
+  const postRef = useRef<HTMLDivElement>(null);
+  
+  const [format, setFormat] = useState<PostFormat>('square');
+  const [template, setTemplate] = useState<PostTemplate>('annonce');
+  const [theme, setTheme] = useState<ThemeType>('dark');
+  
+  // Annonce fields
+  const [badge, setBadge] = useState('Nouveauté');
+  const [title, setTitle] = useState('Titre de l\'annonce');
+  const [description, setDescription] = useState('Description courte de l\'annonce ou de la nouveauté à partager.');
+  const [cta, setCta] = useState('En savoir plus →');
+  
+  // Chiffre fields
+  const [chiffre, setChiffre] = useState('87%');
+  const [contexte, setContexte] = useState('des PME considèrent l\'IA comme prioritaire');
+  const [source, setSource] = useState('Source: Étude IArche 2024');
+  
+  // Témoignage fields
+  const [citation, setCitation] = useState('"L\'accompagnement IArche a transformé notre approche de l\'IA."');
+  const [temoinNom, setTemoinNom] = useState('Marie Dupont');
+  const [temoinFonction, setTemoinFonction] = useState('Directrice Générale');
+  const [temoinEntreprise, setTemoinEntreprise] = useState('Entreprise XYZ');
+  
+  // Conseil fields
+  const [conseilNumero, setConseilNumero] = useState('01');
+  const [conseilTitre, setConseilTitre] = useState('Commencez petit');
+  const [conseilContenu, setConseilContenu] = useState('Identifiez un cas d\'usage simple et mesurez les résultats avant de généraliser.');
+
+  const handleExport = async () => {
+    try {
+      await exportToPNG(postRef, `post-${template}-${format}`, {
+        pixelRatio: 2,
+        backgroundColor: theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse,
+      });
+      toast.success('Post exporté avec succès');
+    } catch (error) {
+      toast.error('Erreur lors de l\'export');
+    }
+  };
+
+  const { width, height } = DIMENSIONS[format];
+  const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
+  const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(26,43,74,0.7)';
+
+  const renderPostContent = () => {
+    switch (template) {
+      case 'annonce':
+        return (
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            height: '100%',
+            textAlign: 'center',
+          }}>
+            <HTMLLogo size="lg" theme={theme} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'center' }}>
+              <span style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: '18px',
+                fontWeight: 600,
+                color: IARCHE_COLORS.terracotta,
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+              }}>
+                {badge}
+              </span>
+              <h1 style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: format === 'square' ? '56px' : '42px',
+                fontWeight: 700,
+                color: textColor,
+                margin: 0,
+                lineHeight: 1.1,
+              }}>
+                {title}
+              </h1>
+              <HTMLGradientBar size="lg" />
+              <p style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: '24px',
+                fontWeight: 400,
+                color: subtextColor,
+                margin: 0,
+                maxWidth: '80%',
+                lineHeight: 1.5,
+              }}>
+                {description}
+              </p>
+            </div>
+            <span style={{
+              fontFamily: IARCHE_FONTS.primary,
+              fontSize: '20px',
+              fontWeight: 600,
+              color: IARCHE_COLORS.terracotta,
+            }}>
+              {cta}
+            </span>
+          </div>
+        );
+
+      case 'chiffre':
+        return (
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100%',
+            textAlign: 'center',
+            gap: '32px',
+          }}>
+            <HTMLLogo size="md" theme={theme} />
+            <div style={{
+              fontFamily: IARCHE_FONTS.primary,
+              fontSize: format === 'square' ? '180px' : '120px',
+              fontWeight: 800,
+              background: IARCHE_COLORS.terracotta,
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              color: 'transparent',
+              lineHeight: 1,
+            }}>
+              {chiffre}
+            </div>
+            <HTMLGradientBar size="xl" />
+            <p style={{
+              fontFamily: IARCHE_FONTS.primary,
+              fontSize: '28px',
+              fontWeight: 500,
+              color: textColor,
+              margin: 0,
+              maxWidth: '70%',
+              lineHeight: 1.4,
+            }}>
+              {contexte}
+            </p>
+            <span style={{
+              fontFamily: IARCHE_FONTS.primary,
+              fontSize: '14px',
+              fontWeight: 400,
+              color: subtextColor,
+              fontStyle: 'italic',
+            }}>
+              {source}
+            </span>
+          </div>
+        );
+
+      case 'temoignage':
+        return (
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            height: '100%',
+            textAlign: 'center',
+          }}>
+            <HTMLLogo size="md" theme={theme} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', alignItems: 'center' }}>
+              <p style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: format === 'square' ? '36px' : '28px',
+                fontWeight: 500,
+                color: textColor,
+                margin: 0,
+                maxWidth: '85%',
+                lineHeight: 1.5,
+                fontStyle: 'italic',
+              }}>
+                {citation}
+              </p>
+              <HTMLGradientBar size="md" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{
+                  fontFamily: IARCHE_FONTS.primary,
+                  fontSize: '24px',
+                  fontWeight: 700,
+                  color: textColor,
+                }}>
+                  {temoinNom}
+                </span>
+                <span style={{
+                  fontFamily: IARCHE_FONTS.primary,
+                  fontSize: '18px',
+                  fontWeight: 400,
+                  color: IARCHE_COLORS.terracotta,
+                }}>
+                  {temoinFonction}
+                </span>
+                <span style={{
+                  fontFamily: IARCHE_FONTS.primary,
+                  fontSize: '16px',
+                  fontWeight: 400,
+                  color: subtextColor,
+                }}>
+                  {temoinEntreprise}
+                </span>
+              </div>
+            </div>
+            <div style={{ height: '40px' }} />
+          </div>
+        );
+
+      case 'conseil':
+        return (
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            height: '100%',
+            textAlign: 'left',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+              <HTMLLogo size="md" theme={theme} />
+              <span style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: '16px',
+                fontWeight: 500,
+                color: subtextColor,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}>
+                Conseil IA
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: format === 'square' ? '120px' : '80px',
+                fontWeight: 800,
+                color: IARCHE_COLORS.terracotta,
+                lineHeight: 1,
+                opacity: 0.3,
+              }}>
+                {conseilNumero}
+              </div>
+              <HTMLGradientBar size="lg" />
+              <h2 style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: format === 'square' ? '48px' : '36px',
+                fontWeight: 700,
+                color: textColor,
+                margin: 0,
+                lineHeight: 1.2,
+              }}>
+                {conseilTitre}
+              </h2>
+              <p style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: '24px',
+                fontWeight: 400,
+                color: subtextColor,
+                margin: 0,
+                lineHeight: 1.5,
+                maxWidth: '90%',
+              }}>
+                {conseilContenu}
+              </p>
+            </div>
+            <span style={{
+              fontFamily: IARCHE_FONTS.primary,
+              fontSize: '16px',
+              fontWeight: 500,
+              color: subtextColor,
+            }}>
+              iarche.fr
+            </span>
+          </div>
+        );
+    }
+  };
+
+  const renderFields = () => {
+    switch (template) {
+      case 'annonce':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label>Badge</Label>
+              <Input value={badge} onChange={(e) => setBadge(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Titre</Label>
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+            </div>
+            <div className="space-y-2">
+              <Label>CTA</Label>
+              <Input value={cta} onChange={(e) => setCta(e.target.value)} />
+            </div>
+          </>
+        );
+      case 'chiffre':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label>Chiffre</Label>
+              <Input value={chiffre} onChange={(e) => setChiffre(e.target.value)} placeholder="87%" />
+            </div>
+            <div className="space-y-2">
+              <Label>Contexte</Label>
+              <Textarea value={contexte} onChange={(e) => setContexte(e.target.value)} rows={2} />
+            </div>
+            <div className="space-y-2">
+              <Label>Source</Label>
+              <Input value={source} onChange={(e) => setSource(e.target.value)} />
+            </div>
+          </>
+        );
+      case 'temoignage':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label>Citation</Label>
+              <Textarea value={citation} onChange={(e) => setCitation(e.target.value)} rows={3} />
+            </div>
+            <div className="space-y-2">
+              <Label>Nom</Label>
+              <Input value={temoinNom} onChange={(e) => setTemoinNom(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Fonction</Label>
+              <Input value={temoinFonction} onChange={(e) => setTemoinFonction(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Entreprise</Label>
+              <Input value={temoinEntreprise} onChange={(e) => setTemoinEntreprise(e.target.value)} />
+            </div>
+          </>
+        );
+      case 'conseil':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label>Numéro</Label>
+              <Input value={conseilNumero} onChange={(e) => setConseilNumero(e.target.value)} placeholder="01" />
+            </div>
+            <div className="space-y-2">
+              <Label>Titre</Label>
+              <Input value={conseilTitre} onChange={(e) => setConseilTitre(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Contenu</Label>
+              <Textarea value={conseilContenu} onChange={(e) => setConseilContenu(e.target.value)} rows={3} />
+            </div>
+          </>
+        );
+    }
+  };
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/admin/medias')}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Posts LinkedIn</h1>
+              <p className="text-muted-foreground">
+                {format === 'square' ? '1200×1200px' : '1200×627px'}
+              </p>
+            </div>
+          </div>
+          <Button onClick={handleExport} className="gap-2">
+            <Download className="h-4 w-4" />
+            Exporter PNG
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Paramètres</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Format selector */}
+              <div className="space-y-2">
+                <Label>Format</Label>
+                <Select value={format} onValueChange={(v) => setFormat(v as PostFormat)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="square">Carré (1200×1200)</SelectItem>
+                    <SelectItem value="landscape">Paysage (1200×627)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Template selector */}
+              <div className="space-y-2">
+                <Label>Template</Label>
+                <Tabs value={template} onValueChange={(v) => setTemplate(v as PostTemplate)}>
+                  <TabsList className="grid grid-cols-2 gap-1">
+                    <TabsTrigger value="annonce" className="text-xs">Annonce</TabsTrigger>
+                    <TabsTrigger value="chiffre" className="text-xs">Chiffre</TabsTrigger>
+                    <TabsTrigger value="temoignage" className="text-xs">Témoignage</TabsTrigger>
+                    <TabsTrigger value="conseil" className="text-xs">Conseil</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              {/* Theme selector */}
+              <div className="space-y-2">
+                <Label>Thème</Label>
+                <Select value={theme} onValueChange={(v) => setTheme(v as ThemeType)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dark">Bleu Nuit (sombre)</SelectItem>
+                    <SelectItem value="light">Blanc Cassé (clair)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Template-specific fields */}
+              {renderFields()}
+            </CardContent>
+          </Card>
+
+          {/* Preview */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Aperçu</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div 
+                className="overflow-auto rounded-lg border"
+                style={{ 
+                  maxWidth: '100%',
+                  backgroundColor: '#f0f0f0',
+                  padding: '16px',
+                }}
+              >
+                <div style={{ 
+                  transform: `scale(${SCALE})`, 
+                  transformOrigin: 'top left',
+                  width: width * SCALE,
+                  height: height * SCALE,
+                }}>
+                  <HTMLBaseTemplate
+                    ref={postRef}
+                    width={width}
+                    height={height}
+                    theme={theme}
+                    padding={format === 'square' ? 80 : 60}
+                    archSize={format === 'square' ? 150 : 100}
+                  >
+                    {renderPostContent()}
+                  </HTMLBaseTemplate>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Aperçu à {Math.round(SCALE * 100)}% — Export en taille réelle ({width}×{height}px)
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </AdminLayout>
+  );
+}
