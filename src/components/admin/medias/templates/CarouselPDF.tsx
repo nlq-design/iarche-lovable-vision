@@ -225,8 +225,8 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
               width={width} 
               height={height} 
               isDark={isDark}
-              opacity={isDark ? 0.5 : 0.6}
-              strokeWidth={2}
+              opacity={isDark ? 0.6 : 0.7}
+              strokeWidth={3}
             />
             
             {/* Main content */}
