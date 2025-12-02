@@ -21,7 +21,12 @@ import {
   Trash2,
   Pencil,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Wrench,
+  Palette,
+  QrCode,
+  FileImage,
+  MailPlus
 } from 'lucide-react';
 import { useMediaTemplates, EditorType, MediaTemplate } from '@/hooks/useMediaTemplates';
 import { format } from 'date-fns';
@@ -129,6 +134,51 @@ const visualTemplates = [
   },
 ];
 
+const toolsTemplates = [
+  { 
+    id: 'logo', 
+    name: 'Variations Logo', 
+    description: '4 déclinaisons (transparent, blanc, sombre, monochrome)',
+    icon: FileImage,
+    route: '/admin/medias/logo',
+  },
+  { 
+    id: 'favicon', 
+    name: 'Favicon Multi-Format', 
+    description: 'Pack complet ICO + PNG + Manifest',
+    icon: Globe,
+    route: '/admin/medias/favicon',
+  },
+  { 
+    id: 'charte', 
+    name: 'Charte Graphique', 
+    description: 'PDF A4 auto-généré',
+    icon: Palette,
+    route: '/admin/medias/charte',
+  },
+  { 
+    id: 'qrcode', 
+    name: 'QR Code Brandé', 
+    description: 'QR aux couleurs IArche',
+    icon: QrCode,
+    route: '/admin/medias/qrcode',
+  },
+  { 
+    id: 'header-doc', 
+    name: 'En-tête Document', 
+    description: 'PNG pour Word/Google Docs',
+    icon: FileText,
+    route: '/admin/medias/header-doc',
+  },
+  { 
+    id: 'footer-email', 
+    name: 'Footer Email HTML', 
+    description: 'Pied de page newsletter',
+    icon: MailPlus,
+    route: '/admin/medias/footer-email',
+  },
+];
+
 const AdminMedias = () => {
   const navigate = useNavigate();
   const [selectedMedia, setSelectedMedia] = useState<MediaType>(null);
@@ -167,12 +217,16 @@ const AdminMedias = () => {
         </div>
 
         <Tabs defaultValue="documents" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-xl">
+          <TabsList className="grid w-full grid-cols-4 max-w-2xl">
             <TabsTrigger value="documents" className="flex items-center gap-2">
               📄 Documents PDF
             </TabsTrigger>
             <TabsTrigger value="visuels" className="flex items-center gap-2">
               🖼️ Visuels PNG
+            </TabsTrigger>
+            <TabsTrigger value="outils" className="flex items-center gap-2">
+              <Wrench className="h-4 w-4" />
+              Outils
             </TabsTrigger>
             <TabsTrigger value="templates" className="flex items-center gap-2">
               <Bookmark className="h-4 w-4" />
@@ -320,20 +374,11 @@ const AdminMedias = () => {
                 return (
                   <Card 
                     key={template.id} 
-                    className={`cursor-pointer transition-all ${
-                      template.ready 
-                        ? 'hover:border-primary/50 hover:shadow-md' 
-                        : 'opacity-60 cursor-not-allowed'
-                    }`}
-                    onClick={() => template.ready && navigate(template.route)}
+                    className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
+                    onClick={() => navigate(template.route)}
                   >
                     <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-base">{template.name}</CardTitle>
-                        {!template.ready && (
-                          <Badge variant="outline" className="text-xs">Bientôt</Badge>
-                        )}
-                      </div>
+                      <CardTitle className="text-base">{template.name}</CardTitle>
                       <CardDescription>{template.description}</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -341,13 +386,43 @@ const AdminMedias = () => {
                         <IconComponent className="h-10 w-10 text-primary/30" />
                         <span className="text-xs text-muted-foreground">{template.dimensions}</span>
                       </div>
-                      <Button 
-                        className="w-full mt-4" 
-                        variant={template.ready ? "outline" : "ghost"}
-                        disabled={!template.ready}
-                      >
+                      <Button className="w-full mt-4" variant="outline">
                         <Plus className="h-4 w-4 mr-2" />
-                        {template.ready ? 'Créer' : 'Prochainement'}
+                        Créer
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </TabsContent>
+
+          {/* === OUTILS (Phase 3) === */}
+          <TabsContent value="outils" className="space-y-4">
+            <div>
+              <h2 className="text-lg font-semibold">Outils de marque</h2>
+              <p className="text-sm text-muted-foreground">Générateurs pour votre identité visuelle</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {toolsTemplates.map((template) => {
+                const IconComponent = template.icon;
+                return (
+                  <Card 
+                    key={template.id} 
+                    className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
+                    onClick={() => navigate(template.route)}
+                  >
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">{template.name}</CardTitle>
+                      <CardDescription>{template.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="aspect-video bg-gradient-to-br from-accent/10 to-primary/10 rounded-lg flex items-center justify-center">
+                        <IconComponent className="h-12 w-12 text-accent/40" />
+                      </div>
+                      <Button className="w-full mt-4" variant="outline">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Ouvrir
                       </Button>
                     </CardContent>
                   </Card>
