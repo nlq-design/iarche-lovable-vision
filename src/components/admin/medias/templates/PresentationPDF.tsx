@@ -257,10 +257,10 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
               {/* Header */}
               <View style={styles.header}>
                 <View style={styles.logoContainer}>
-                  {/* Logo PNG - white for dark, gradient for light */}
+                  {/* Logo PNG - gradient on all slides */}
                   <PDFImageLogo 
                     width={140} 
-                    variant={isDark ? 'white' : 'gradient'} 
+                    variant="gradient" 
                   />
                   {/* Small bar under logo - sm size */}
                   <PDFImageBar size="sm" style={{ marginTop: 6 }} />
