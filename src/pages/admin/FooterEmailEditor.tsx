@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { COLORS } from '@/components/admin/medias/shared/tokens';
@@ -182,20 +182,17 @@ export default function FooterEmailEditor() {
             </CardContent>
           </Card>
 
-          {/* Preview */}
+          {/* Preview - Desktop & Mobile côte à côte */}
           <Card>
             <CardHeader>
               <CardTitle>Aperçu</CardTitle>
-              <CardDescription>Rendu type Gmail/Outlook</CardDescription>
+              <CardDescription>Desktop et Mobile côte à côte</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="desktop">
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="desktop">Desktop</TabsTrigger>
-                  <TabsTrigger value="mobile">Mobile</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="desktop">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {/* Desktop Preview */}
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Desktop</p>
                   <div className="border rounded-lg bg-white p-6" style={{ maxWidth: '600px' }}>
                     <div style={{ borderTop: `3px solid ${COLORS.terracotta}`, paddingTop: '24px' }}>
                       {/* Logo */}
@@ -256,10 +253,12 @@ export default function FooterEmailEditor() {
                       </div>
                     </div>
                   </div>
-                </TabsContent>
+                </div>
 
-                <TabsContent value="mobile">
-                  <div className="border rounded-lg bg-white p-4 mx-auto" style={{ maxWidth: '320px' }}>
+                {/* Mobile Preview */}
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Mobile</p>
+                  <div className="border rounded-lg bg-white p-4" style={{ maxWidth: '320px' }}>
                     <div style={{ borderTop: `3px solid ${COLORS.terracotta}`, paddingTop: '16px' }}>
                       {/* Logo */}
                       <span style={{ fontSize: '20px', fontWeight: 'bold', color: COLORS.bleuNuit }}>
@@ -311,8 +310,8 @@ export default function FooterEmailEditor() {
                       </div>
                     </div>
                   </div>
-                </TabsContent>
-              </Tabs>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
