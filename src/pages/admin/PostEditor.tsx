@@ -23,6 +23,7 @@ import {
 
 type PostFormat = 'square' | 'landscape';
 type PostTemplate = 'annonce' | 'chiffre' | 'temoignage' | 'conseil';
+type PresetTemplate = 'custom' | 'citation' | 'statistique' | 'evenement' | 'question' | 'temoignage-client';
 
 const DIMENSIONS = {
   square: { width: 1200, height: 1200 },
@@ -31,6 +32,60 @@ const DIMENSIONS = {
 
 const SCALE = 0.35;
 
+// Pre-filled templates data
+const PRESET_TEMPLATES: Record<PresetTemplate, {
+  template: PostTemplate;
+  badge?: string;
+  title?: string;
+  description?: string;
+  cta?: string;
+  chiffre?: string;
+  contexte?: string;
+  source?: string;
+  citation?: string;
+  temoinNom?: string;
+  temoinFonction?: string;
+  temoinEntreprise?: string;
+  conseilNumero?: string;
+  conseilTitre?: string;
+  conseilContenu?: string;
+}> = {
+  custom: { template: 'annonce' },
+  citation: {
+    template: 'annonce',
+    badge: 'Citation',
+    title: '"L\'IA n\'est pas une destination, c\'est un voyage."',
+    description: 'Adoptez une approche progressive pour transformer votre entreprise.',
+    cta: 'Découvrir notre vision →',
+  },
+  statistique: {
+    template: 'chiffre',
+    chiffre: '73%',
+    contexte: 'des entreprises ayant adopté l\'IA constatent un ROI positif dès la première année',
+    source: 'Source: McKinsey Global Survey 2024',
+  },
+  evenement: {
+    template: 'annonce',
+    badge: 'Événement',
+    title: 'Webinaire IA & PME',
+    description: 'Rejoignez-nous le 15 janvier pour découvrir comment l\'IA peut transformer votre activité.',
+    cta: 'S\'inscrire gratuitement →',
+  },
+  question: {
+    template: 'conseil',
+    conseilNumero: '?',
+    conseilTitre: 'Êtes-vous prêt pour l\'IA ?',
+    conseilContenu: 'Faites le point sur votre maturité digitale et identifiez les opportunités d\'automatisation.',
+  },
+  'temoignage-client': {
+    template: 'temoignage',
+    citation: '"Grâce à IArche, nous avons automatisé 40% de nos tâches administratives en 3 mois."',
+    temoinNom: 'Jean-Pierre Martin',
+    temoinFonction: 'Directeur des Opérations',
+    temoinEntreprise: 'Groupe Industriel ABC',
+  },
+};
+
 export default function PostEditor() {
   const navigate = useNavigate();
   const postRef = useRef<HTMLDivElement>(null);
@@ -38,6 +93,31 @@ export default function PostEditor() {
   const [format, setFormat] = useState<PostFormat>('square');
   const [template, setTemplate] = useState<PostTemplate>('annonce');
   const [theme, setTheme] = useState<ThemeType>('dark');
+  const [preset, setPreset] = useState<PresetTemplate>('custom');
+
+  // Apply preset template
+  const applyPreset = (presetKey: PresetTemplate) => {
+    setPreset(presetKey);
+    if (presetKey === 'custom') return;
+    
+    const presetData = PRESET_TEMPLATES[presetKey];
+    setTemplate(presetData.template);
+    
+    if (presetData.badge) setBadge(presetData.badge);
+    if (presetData.title) setTitle(presetData.title);
+    if (presetData.description) setDescription(presetData.description);
+    if (presetData.cta) setCta(presetData.cta);
+    if (presetData.chiffre) setChiffre(presetData.chiffre);
+    if (presetData.contexte) setContexte(presetData.contexte);
+    if (presetData.source) setSource(presetData.source);
+    if (presetData.citation) setCitation(presetData.citation);
+    if (presetData.temoinNom) setTemoinNom(presetData.temoinNom);
+    if (presetData.temoinFonction) setTemoinFonction(presetData.temoinFonction);
+    if (presetData.temoinEntreprise) setTemoinEntreprise(presetData.temoinEntreprise);
+    if (presetData.conseilNumero) setConseilNumero(presetData.conseilNumero);
+    if (presetData.conseilTitre) setConseilTitre(presetData.conseilTitre);
+    if (presetData.conseilContenu) setConseilContenu(presetData.conseilContenu);
+  };
   
   // Annonce fields
   const [badge, setBadge] = useState('Nouveauté');
@@ -157,16 +237,17 @@ export default function PostEditor() {
             display: 'flex', 
             flexDirection: 'column', 
             justifyContent: 'center',
-            alignItems: 'center',
+            alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start',
             height: '100%',
-            textAlign: 'center',
+            textAlign: titleAlignment,
             gap: '32px',
           }}>
             <HTMLLogo size="md" theme={theme} />
             <div style={{
               fontFamily: IARCHE_FONTS.primary,
-              fontSize: format === 'square' ? '180px' : '120px',
-              fontWeight: 800,
+              fontSize: `${titleFontSize}px`,
+              fontWeight: titleBold ? 800 : 400,
+              fontStyle: titleItalic ? 'italic' : 'normal',
               background: IARCHE_COLORS.terracotta,
               WebkitBackgroundClip: 'text',
               backgroundClip: 'text',
@@ -179,12 +260,14 @@ export default function PostEditor() {
             <HTMLGradientBar size="xl" />
             <p style={{
               fontFamily: IARCHE_FONTS.primary,
-              fontSize: '28px',
-              fontWeight: 500,
+              fontSize: `${descFontSize}px`,
+              fontWeight: descBold ? 600 : 500,
+              fontStyle: descItalic ? 'italic' : 'normal',
               color: textColor,
               margin: 0,
               maxWidth: '70%',
               lineHeight: 1.4,
+              textAlign: descAlignment,
             }}>
               {contexte}
             </p>
@@ -206,30 +289,32 @@ export default function PostEditor() {
             display: 'flex', 
             flexDirection: 'column', 
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start',
             height: '100%',
-            textAlign: 'center',
+            textAlign: titleAlignment,
           }}>
             <HTMLLogo size="md" theme={theme} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start' }}>
               <p style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: format === 'square' ? '36px' : '28px',
-                fontWeight: 500,
+                fontSize: `${titleFontSize}px`,
+                fontWeight: titleBold ? 600 : 400,
                 color: textColor,
                 margin: 0,
                 maxWidth: '85%',
                 lineHeight: 1.5,
-                fontStyle: 'italic',
+                fontStyle: titleItalic ? 'italic' : 'normal',
+                textAlign: titleAlignment,
               }}>
                 {citation}
               </p>
               <HTMLGradientBar size="md" />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: descAlignment }}>
                 <span style={{
                   fontFamily: IARCHE_FONTS.primary,
-                  fontSize: '24px',
-                  fontWeight: 700,
+                  fontSize: `${descFontSize}px`,
+                  fontWeight: descBold ? 700 : 600,
+                  fontStyle: descItalic ? 'italic' : 'normal',
                   color: textColor,
                 }}>
                   {temoinNom}
@@ -262,9 +347,9 @@ export default function PostEditor() {
             display: 'flex', 
             flexDirection: 'column', 
             justifyContent: 'space-between',
-            alignItems: 'flex-start',
+            alignItems: titleAlignment === 'left' ? 'flex-start' : titleAlignment === 'right' ? 'flex-end' : 'center',
             height: '100%',
-            textAlign: 'left',
+            textAlign: titleAlignment,
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
               <HTMLLogo size="md" theme={theme} />
@@ -293,22 +378,26 @@ export default function PostEditor() {
               <HTMLGradientBar size="lg" />
               <h2 style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: format === 'square' ? '48px' : '36px',
-                fontWeight: 700,
+                fontSize: `${titleFontSize}px`,
+                fontWeight: titleBold ? 700 : 400,
+                fontStyle: titleItalic ? 'italic' : 'normal',
                 color: textColor,
                 margin: 0,
                 lineHeight: 1.2,
+                textAlign: titleAlignment,
               }}>
                 {conseilTitre}
               </h2>
               <p style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: '24px',
-                fontWeight: 400,
+                fontSize: `${descFontSize}px`,
+                fontWeight: descBold ? 600 : 400,
+                fontStyle: descItalic ? 'italic' : 'normal',
                 color: subtextColor,
                 margin: 0,
                 lineHeight: 1.5,
                 maxWidth: '90%',
+                textAlign: descAlignment,
               }}>
                 {conseilContenu}
               </p>
@@ -477,40 +566,54 @@ export default function PostEditor() {
                 </Select>
               </div>
 
+              {/* Preset Templates */}
+              <div className="space-y-2">
+                <Label>Templates pré-remplis</Label>
+                <Select value={preset} onValueChange={(v) => applyPreset(v as PresetTemplate)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="custom">Personnalisé</SelectItem>
+                    <SelectItem value="citation">📝 Citation inspirante</SelectItem>
+                    <SelectItem value="statistique">📊 Chiffre clé / Statistique</SelectItem>
+                    <SelectItem value="evenement">📅 Annonce événement</SelectItem>
+                    <SelectItem value="question">❓ Question engageante</SelectItem>
+                    <SelectItem value="temoignage-client">💬 Témoignage client</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Template-specific fields */}
               {renderFields()}
 
-              {/* Typography Controls */}
-              {template === 'annonce' && (
-                <>
-                  <TypographyControls
-                    label="Typographie Titre"
-                    fontSize={titleFontSize}
-                    onFontSizeChange={setTitleFontSize}
-                    isBold={titleBold}
-                    onBoldChange={setTitleBold}
-                    isItalic={titleItalic}
-                    onItalicChange={setTitleItalic}
-                    alignment={titleAlignment}
-                    onAlignmentChange={setTitleAlignment}
-                    minFontSize={28}
-                    maxFontSize={72}
-                  />
-                  <TypographyControls
-                    label="Typographie Description"
-                    fontSize={descFontSize}
-                    onFontSizeChange={setDescFontSize}
-                    isBold={descBold}
-                    onBoldChange={setDescBold}
-                    isItalic={descItalic}
-                    onItalicChange={setDescItalic}
-                    alignment={descAlignment}
-                    onAlignmentChange={setDescAlignment}
-                    minFontSize={16}
-                    maxFontSize={48}
-                  />
-                </>
-              )}
+              {/* Typography Controls - All templates */}
+              <TypographyControls
+                label={template === 'chiffre' ? 'Typographie Chiffre' : template === 'temoignage' ? 'Typographie Citation' : 'Typographie Titre'}
+                fontSize={titleFontSize}
+                onFontSizeChange={setTitleFontSize}
+                isBold={titleBold}
+                onBoldChange={setTitleBold}
+                isItalic={titleItalic}
+                onItalicChange={setTitleItalic}
+                alignment={titleAlignment}
+                onAlignmentChange={setTitleAlignment}
+                minFontSize={template === 'chiffre' ? 80 : 28}
+                maxFontSize={template === 'chiffre' ? 200 : 72}
+              />
+              <TypographyControls
+                label={template === 'temoignage' ? 'Typographie Nom' : 'Typographie Description'}
+                fontSize={descFontSize}
+                onFontSizeChange={setDescFontSize}
+                isBold={descBold}
+                onBoldChange={setDescBold}
+                isItalic={descItalic}
+                onItalicChange={setDescItalic}
+                alignment={descAlignment}
+                onAlignmentChange={setDescAlignment}
+                minFontSize={16}
+                maxFontSize={48}
+              />
             </CardContent>
           </Card>
 
