@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Save, Eye, Settings, Copy, QrCode, 
-  GripVertical, Trash2, Plus, ChevronDown
+  GripVertical, Trash2, Plus, ChevronDown, Download, Palette
 } from 'lucide-react';
+import QRCode from 'react-qr-code';
 import {
   DndContext,
   closestCenter,
@@ -673,9 +674,10 @@ const FormEditor = () => {
               <DialogTitle>Paramètres du formulaire</DialogTitle>
             </DialogHeader>
             <Tabs value={activeSettingsTab} onValueChange={setActiveSettingsTab}>
-              <TabsList className="grid grid-cols-4 w-full">
+              <TabsList className="grid grid-cols-5 w-full">
                 <TabsTrigger value="general">Général</TabsTrigger>
                 <TabsTrigger value="design">Design</TabsTrigger>
+                <TabsTrigger value="qrcode">QR Code</TabsTrigger>
                 <TabsTrigger value="notifications">Notifications</TabsTrigger>
                 <TabsTrigger value="rgpd">RGPD</TabsTrigger>
               </TabsList>
@@ -716,42 +718,284 @@ const FormEditor = () => {
               </TabsContent>
 
               <TabsContent value="design" className="space-y-4 mt-4">
-                <div className="flex items-center justify-between">
-                  <Label>Afficher barre gradient</Label>
-                  <Switch
-                    checked={form.settings.design.showGradientBar}
-                    onCheckedChange={(checked) => setForm({
-                      ...form,
-                      settings: {
-                        ...form.settings,
-                        design: { ...form.settings.design, showGradientBar: checked }
-                      }
-                    })}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Couleur principale</Label>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <input
+                        type="color"
+                        value={form.settings.design.colors.primary}
+                        onChange={(e) => setForm({
+                          ...form,
+                          settings: {
+                            ...form.settings,
+                            design: { 
+                              ...form.settings.design, 
+                              colors: { ...form.settings.design.colors, primary: e.target.value }
+                            }
+                          }
+                        })}
+                        className="h-10 w-14 rounded border cursor-pointer"
+                      />
+                      <Input
+                        value={form.settings.design.colors.primary}
+                        onChange={(e) => setForm({
+                          ...form,
+                          settings: {
+                            ...form.settings,
+                            design: { 
+                              ...form.settings.design, 
+                              colors: { ...form.settings.design.colors, primary: e.target.value }
+                            }
+                          }
+                        })}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Couleur secondaire</Label>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <input
+                        type="color"
+                        value={form.settings.design.colors.secondary}
+                        onChange={(e) => setForm({
+                          ...form,
+                          settings: {
+                            ...form.settings,
+                            design: { 
+                              ...form.settings.design, 
+                              colors: { ...form.settings.design.colors, secondary: e.target.value }
+                            }
+                          }
+                        })}
+                        className="h-10 w-14 rounded border cursor-pointer"
+                      />
+                      <Input
+                        value={form.settings.design.colors.secondary}
+                        onChange={(e) => setForm({
+                          ...form,
+                          settings: {
+                            ...form.settings,
+                            design: { 
+                              ...form.settings.design, 
+                              colors: { ...form.settings.design.colors, secondary: e.target.value }
+                            }
+                          }
+                        })}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Fond</Label>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <input
+                        type="color"
+                        value={form.settings.design.colors.background}
+                        onChange={(e) => setForm({
+                          ...form,
+                          settings: {
+                            ...form.settings,
+                            design: { 
+                              ...form.settings.design, 
+                              colors: { ...form.settings.design.colors, background: e.target.value }
+                            }
+                          }
+                        })}
+                        className="h-10 w-14 rounded border cursor-pointer"
+                      />
+                      <Input
+                        value={form.settings.design.colors.background}
+                        onChange={(e) => setForm({
+                          ...form,
+                          settings: {
+                            ...form.settings,
+                            design: { 
+                              ...form.settings.design, 
+                              colors: { ...form.settings.design.colors, background: e.target.value }
+                            }
+                          }
+                        })}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Texte</Label>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <input
+                        type="color"
+                        value={form.settings.design.colors.text}
+                        onChange={(e) => setForm({
+                          ...form,
+                          settings: {
+                            ...form.settings,
+                            design: { 
+                              ...form.settings.design, 
+                              colors: { ...form.settings.design.colors, text: e.target.value }
+                            }
+                          }
+                        })}
+                        className="h-10 w-14 rounded border cursor-pointer"
+                      />
+                      <Input
+                        value={form.settings.design.colors.text}
+                        onChange={(e) => setForm({
+                          ...form,
+                          settings: {
+                            ...form.settings,
+                            design: { 
+                              ...form.settings.design, 
+                              colors: { ...form.settings.design.colors, text: e.target.value }
+                            }
+                          }
+                        })}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <Label>Taille de la barre</Label>
-                  <Select
-                    value={form.settings.design.barSize}
-                    onValueChange={(v) => setForm({
-                      ...form,
-                      settings: {
-                        ...form.settings,
-                        design: { ...form.settings.design, barSize: v as any }
-                      }
-                    })}
-                  >
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sm">Petite</SelectItem>
-                      <SelectItem value="md">Moyenne</SelectItem>
-                      <SelectItem value="lg">Grande</SelectItem>
-                      <SelectItem value="xl">Très grande</SelectItem>
-                    </SelectContent>
-                  </Select>
+                
+                <div className="pt-4 border-t space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label>Afficher barre gradient</Label>
+                    <Switch
+                      checked={form.settings.design.showGradientBar}
+                      onCheckedChange={(checked) => setForm({
+                        ...form,
+                        settings: {
+                          ...form.settings,
+                          design: { ...form.settings.design, showGradientBar: checked }
+                        }
+                      })}
+                    />
+                  </div>
+                  {form.settings.design.showGradientBar && (
+                    <div>
+                      <Label>Taille de la barre</Label>
+                      <Select
+                        value={form.settings.design.barSize}
+                        onValueChange={(v) => setForm({
+                          ...form,
+                          settings: {
+                            ...form.settings,
+                            design: { ...form.settings.design, barSize: v as any }
+                          }
+                        })}
+                      >
+                        <SelectTrigger className="mt-1.5">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sm">Petite</SelectItem>
+                          <SelectItem value="md">Moyenne</SelectItem>
+                          <SelectItem value="lg">Grande</SelectItem>
+                          <SelectItem value="xl">Très grande</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <Label>Afficher lignes de canalisation</Label>
+                    <Switch
+                      checked={form.settings.design.showCanalisations || false}
+                      onCheckedChange={(checked) => setForm({
+                        ...form,
+                        settings: {
+                          ...form.settings,
+                          design: { ...form.settings.design, showCanalisations: checked }
+                        }
+                      })}
+                    />
+                  </div>
                 </div>
+              </TabsContent>
+
+              <TabsContent value="qrcode" className="space-y-4 mt-4">
+                {isNew ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <QrCode className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Sauvegardez d'abord le formulaire pour générer un QR Code</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="bg-white p-4 rounded-lg shadow-sm" id="qr-code-container">
+                        <QRCode
+                          value={`${window.location.origin}/f/${form.slug}`}
+                          size={200}
+                          level="H"
+                          fgColor={form.settings.design.colors.primary}
+                        />
+                      </div>
+                      <p className="text-sm text-muted-foreground text-center">
+                        {window.location.origin}/f/{form.slug}
+                      </p>
+                    </div>
+                    
+                    <div className="flex justify-center gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          const svg = document.querySelector('#qr-code-container svg');
+                          if (svg) {
+                            const svgData = new XMLSerializer().serializeToString(svg);
+                            const blob = new Blob([svgData], { type: 'image/svg+xml' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `qr-${form.slug}.svg`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          }
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        SVG
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          const svg = document.querySelector('#qr-code-container svg');
+                          if (svg) {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = 400;
+                            canvas.height = 400;
+                            const ctx = canvas.getContext('2d');
+                            const img = new Image();
+                            const svgData = new XMLSerializer().serializeToString(svg);
+                            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                            const url = URL.createObjectURL(svgBlob);
+                            img.onload = () => {
+                              ctx?.drawImage(img, 0, 0, 400, 400);
+                              const pngUrl = canvas.toDataURL('image/png');
+                              const a = document.createElement('a');
+                              a.href = pngUrl;
+                              a.download = `qr-${form.slug}.png`;
+                              a.click();
+                              URL.revokeObjectURL(url);
+                            };
+                            img.src = url;
+                          }
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        PNG
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/f/${form.slug}`);
+                          toast({ title: 'Lien copié' });
+                        }}
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copier lien
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="notifications" className="space-y-4 mt-4">
