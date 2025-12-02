@@ -1,12 +1,114 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.11**  
-**Date : 29 Janvier 2025**  
+**Version mise à jour : V6.12**  
+**Date : 2 Décembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.11 MODULE MÉDIAS - HARMONISATION TOKENS & CANALISATIONS PNG — MISE À JOUR V6.12 ✅
+
+#### Unification design system PDF/PNG et intégration lignes canalisation
+
+**Contexte :**
+- Module média (`/admin/medias`) générait PDF et PNG avec des tokens de design différents
+- Les visuels PNG utilisaient des "arches simplifiées" (coins) au lieu des vraies lignes canalisation
+- Besoin d'harmoniser le design system entre les deux formats pour cohérence visuelle
+
+**1. Tokens partagés (Single Source of Truth)**
+
+**Fichier créé :** `src/components/admin/medias/shared/tokens.ts`
+
+Tokens unifiés pour PDF et PNG :
+- **COLORS** : Palette IArche complète (bleuNuit, terracotta, blancCasse, variantes alpha)
+- **GRADIENTS** : Définitions bar, barReverse, background, text avec angles et stops
+- **FONTS** : html (Manrope) et pdf (Helvetica)
+- **BAR_SIZES** : sm (48×2), md (80×4), lg (96×4), xl (128×6)
+- **LOGO_SIZES** : sm (24px), md (32px), lg (48px), xl (64px)
+- **ARCH_SIZES** : sm (40), md (60), lg (80), xl (100)
+- **EXPORT_FORMATS** : Toutes les dimensions (carousel, banner, post, story, thumbnail, etc.)
+
+**Architecture :**
+```
+src/components/admin/medias/
+├── shared/
+│   ├── tokens.ts      ← Source unique de vérité
+│   └── index.ts       ← Export centralisé
+├── html/
+│   └── tokens.ts      ← Ré-exporte shared + adaptations HTML
+└── pdf/
+    └── tokens.ts      ← Ré-exporte shared + adaptations PDF (hex pour rgba)
+```
+
+**2. Lignes Canalisation HTML (HTMLCanalisationLines)**
+
+**Fichier créé :** `src/components/admin/medias/html/HTMLCanalisationLines.tsx`
+
+Reproduction exacte des lignes canalisation du hero section pour les visuels PNG :
+- Deux lignes avec tracés en "L" et "L inversé" formant une arche
+- Gradients SVG LinearGradient (Bleu Nuit ↔ Terracotta)
+- Coins arrondis avec courbes quadratiques (controlOffset proportionnel)
+- Props configurables : width, height, theme, opacity, strokeWidth
+
+**Spécifications techniques :**
+
+| Propriété | Valeur |
+|-----------|--------|
+| Ligne 1 | Entrée droite → coin haut-gauche → sortie bas-gauche |
+| Ligne 2 | Entrée gauche → coin haut-droite → sortie bas-droite |
+| Stroke linecap | round |
+| Coins | Courbes quadratiques Q(controlX, controlY) |
+
+**3. HTMLBaseTemplate étendu**
+
+**Fichier modifié :** `src/components/admin/medias/html/HTMLBaseTemplate.tsx`
+
+Nouvelles props ajoutées :
+- `showCanalisations?: boolean` — Active les lignes canalisation
+- `canalisationOpacity?: number` — Opacité (défaut: 0.5)
+- `canalisationStrokeWidth?: number` — Épaisseur trait (défaut: 6)
+
+Logique : Si `showCanalisations={true}`, les arches simplifiées sont automatiquement désactivées.
+
+**4. Éditeurs PNG mis à jour (6/7)**
+
+| Éditeur | Opacity | StrokeWidth | Notes |
+|---------|---------|-------------|-------|
+| BannerEditor | 0.4 | 5 | LinkedIn Banner 1584×396 |
+| PostEditor | 0.4 | 5-6 | Square 1200×1200, Landscape 1200×627 |
+| StoryEditor | 0.5 | 8 | Format vertical 1080×1920 |
+| ThumbnailEditor | 0.4 | 5-7 | Standard 1920×1080, 720p |
+| OpenGraphEditor | 0.4 | 5 | OG Image 1200×630 |
+| HeaderEmailEditor | 0.25-0.35 | 2-3 | Email header 600×150 |
+
+**Note :** SignatureEditor non modifié car utilise tables HTML pour compatibilité email.
+
+**Impact :**
+- Cohérence visuelle totale entre visuels PDF et PNG
+- Les lignes canalisation (signature visuelle IArche) apparaissent sur tous les formats
+- Maintenance simplifiée avec source unique de tokens
+- Proportions automatiquement adaptées selon format d'export
+
+**Fichiers créés :**
+- `src/components/admin/medias/shared/tokens.ts`
+- `src/components/admin/medias/shared/index.ts`
+- `src/components/admin/medias/html/HTMLCanalisationLines.tsx`
+
+**Fichiers modifiés :**
+- `src/components/admin/medias/html/tokens.ts`
+- `src/components/admin/medias/pdf/tokens.ts`
+- `src/components/admin/medias/html/index.ts`
+- `src/components/admin/medias/html/HTMLBaseTemplate.tsx`
+- `src/pages/admin/BannerEditor.tsx`
+- `src/pages/admin/PostEditor.tsx`
+- `src/pages/admin/StoryEditor.tsx`
+- `src/pages/admin/ThumbnailEditor.tsx`
+- `src/pages/admin/OpenGraphEditor.tsx`
+- `src/pages/admin/HeaderEmailEditor.tsx`
+
+---
 
 ### 0.8 SCHEMA.ORG SOFTWAREAPPLICATION - MISE À JOUR V6.9 ✅
 

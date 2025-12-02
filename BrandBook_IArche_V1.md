@@ -723,76 +723,115 @@ Toutes les cards utilisent :
 
 ---
 
-## 15. MODULE MÉDIAS - Génération PDF
+## 15. MODULE MÉDIAS - Génération PDF & PNG
 
 ### 15.1 Description
 
-Module d'administration (`/admin/medias`) permettant de créer des contenus PDF conformes à la charte graphique IArche :
-- **Carrousels LinkedIn/Instagram**
+Module d'administration (`/admin/medias`) permettant de créer des contenus PDF et PNG conformes à la charte graphique IArche :
+- **Carrousels LinkedIn/Instagram** (PDF)
 - **Présentations PDF (16:9)**
 - **Documents Word**
+- **Visuels PNG** : Banner, Post, Story, Thumbnail, OpenGraph, HeaderEmail, Signature
 
-**Fichiers principaux :**
-- `src/pages/admin/AdminMedias.tsx` - Page principale
-- `src/components/admin/medias/pdf/` - Composants PDF
-- `src/components/admin/medias/templates/` - Templates (CarouselPDF, PresentationPDF)
+**Architecture fichiers :**
+```
+src/components/admin/medias/
+├── shared/
+│   ├── tokens.ts      ← Source unique de vérité (couleurs, gradients, tailles)
+│   └── index.ts       ← Export centralisé
+├── html/              ← Composants pour PNG (via html-to-image)
+│   ├── tokens.ts
+│   ├── HTMLBaseTemplate.tsx
+│   ├── HTMLCanalisationLines.tsx
+│   ├── HTMLMeshBackground.tsx
+│   ├── HTMLGradientBar.tsx
+│   └── HTMLLogo.tsx
+├── pdf/               ← Composants pour PDF (@react-pdf/renderer)
+│   ├── tokens.ts
+│   ├── PDFCanalisationLines.tsx
+│   ├── PDFMeshBackground.tsx
+│   ├── PDFGradientBar.tsx
+│   └── PDFLogo.tsx
+└── templates/
+    ├── CarouselPDF.tsx
+    └── PresentationPDF.tsx
+```
 
-### 15.2 Lignes Canalisation PDF (version statique)
+### 15.2 Tokens partagés (Single Source of Truth)
 
-Reproduction figée (à 6 secondes) des lignes SVG animées du hero section.
+**Fichier :** `src/components/admin/medias/shared/tokens.ts`
 
-**Composant :** `src/components/admin/medias/pdf/PDFCanalisationLines.tsx`
+| Catégorie | Contenu |
+|-----------|---------|
+| **COLORS** | bleuNuit (#1A2B4A), terracotta (#D15A3E), blancCasse (#FAF9F7), variantes alpha |
+| **GRADIENTS** | bar (90°), barReverse, background (135°), text (270°) |
+| **FONTS** | html: Manrope, pdf: Helvetica |
+| **BAR_SIZES** | sm (48×2), md (80×4), lg (96×4), xl (128×6) |
+| **LOGO_SIZES** | sm (24px), md (32px), lg (48px), xl (64px) |
+| **EXPORT_FORMATS** | Toutes dimensions (carousel, banner, post, story, thumbnail, etc.) |
+
+### 15.3 Lignes Canalisation (signature visuelle)
+
+Reproduction des lignes SVG animées du hero section, en version statique.
+
+**PDF :** `src/components/admin/medias/pdf/PDFCanalisationLines.tsx`  
+**PNG :** `src/components/admin/medias/html/HTMLCanalisationLines.tsx`
 
 **Spécifications techniques :**
 
-| Propriété | Valeur |
-|-----------|--------|
-| Stroke width | **7px** |
-| Opacity | 0.6 |
-| Stroke linecap | round |
-| Coins | Quadratic Bezier (radius 1.2%) |
+| Propriété | PDF | PNG |
+|-----------|-----|-----|
+| Stroke width | 7px fixe | 3-8px (selon format) |
+| Opacity | 0.6 | 0.25-0.5 (selon format) |
+| Stroke linecap | round | round |
+| Coins | Quadratic Bezier | Quadratic Bezier |
 
-**Tracé Ligne 1 (droite → gauche → bas → sortie gauche) :**
+**Tracé des lignes :**
 
-| Point | Position X | Position Y |
-|-------|------------|------------|
-| Départ | 99.4% | 0.6% |
-| Coin | 29.1% | 0.6% |
-| Fin | 0% | 36.5% |
-
-**Tracé Ligne 2 (gauche → droite → bas → sortie droite) :**
-
-| Point | Position X | Position Y |
-|-------|------------|------------|
-| Départ | 0% | 1.7% |
-| Coin | 70.7% | 1.7% |
-| Fin | 100% | 98.3% |
+| Ligne | Tracé |
+|-------|-------|
+| Ligne 1 | Entrée droite → coin haut-gauche (30%) → sortie bas-gauche |
+| Ligne 2 | Entrée gauche → coin haut-droite (70%) → sortie bas-droite |
 
 **Couleurs par thème :**
 
 | Thème | Ligne 1 | Ligne 2 |
 |-------|---------|---------|
-| **Bleu Nuit (dark)** | Terracotta (#D15A3E) | Terracotta (#D15A3E) |
-| **Blanc Cassé (light)** | Bleu Nuit (#1A2B4A) | Terracotta (#D15A3E) |
+| **Bleu Nuit (dark)** | Terracotta | Terracotta |
+| **Blanc Cassé (light)** | Bleu Nuit | Terracotta |
 
-### 15.3 Logo PDF
+### 15.4 Éditeurs PNG avec Canalisations
 
-**Composant :** `PDFImageLogo` (PNG)
+| Éditeur | Route | Dimensions | Opacity | StrokeWidth |
+|---------|-------|------------|---------|-------------|
+| Banner LinkedIn | `/admin/medias/banner` | 1584×396 | 0.4 | 5 |
+| Post Square | `/admin/medias/post` | 1200×1200 | 0.4 | 6 |
+| Post Landscape | `/admin/medias/post` | 1200×627 | 0.4 | 5 |
+| Story | `/admin/medias/story` | 1080×1920 | 0.5 | 8 |
+| Thumbnail 1080p | `/admin/medias/thumbnail` | 1920×1080 | 0.4 | 7 |
+| Thumbnail 720p | `/admin/medias/thumbnail` | 1280×720 | 0.4 | 5 |
+| OpenGraph | `/admin/medias/opengraph` | 1200×630 | 0.4 | 5 |
+| Header Email | `/admin/medias/header-email` | 600×150 | 0.25-0.35 | 2-3 |
+| Signature | `/admin/medias/signature` | 600×200 | N/A (table HTML) | N/A |
 
-| Thème | Variante logo |
-|-------|---------------|
-| Bleu Nuit | `terracotta` (orange fixe) |
-| Blanc Cassé | `gradient` |
+### 15.5 Logo PDF/PNG
 
-### 15.4 Autres éléments PDF
+| Thème | Variante logo | Composant PDF | Composant HTML |
+|-------|---------------|---------------|----------------|
+| Bleu Nuit | Terracotta (orange fixe) | PDFImageLogo | HTMLLogo |
+| Blanc Cassé | Gradient | PDFImageLogo | HTMLLogo |
 
-| Élément | Composant | Description |
-|---------|-----------|-------------|
-| Barre décorative | `PDFImageBar` | Tailles: sm (48×2), md (80×4), lg (96×4), xl (128×6) |
-| Motif diagonal | `PDFPatternBackground` | Quadrillage 45° avec lignes fines |
-| Typographie | Helvetica / Helvetica-Bold | Manrope non supporté par @react-pdf |
+### 15.6 Autres éléments visuels
 
-### 15.5 Formats supportés
+| Élément | PDF | PNG | Description |
+|---------|-----|-----|-------------|
+| Barre décorative | PDFGradientBar | HTMLGradientBar | 4 tailles (sm/md/lg/xl) |
+| Motif diagonal | PDFMeshBackground | HTMLMeshBackground | Quadrillage 45° |
+| Arches coins | PDFArches | HTMLArches | Version simplifiée (coins uniquement) |
+
+### 15.7 Formats d'export
+
+**PDF :**
 
 | Format | Dimensions | Usage |
 |--------|------------|-------|
@@ -801,15 +840,29 @@ Reproduction figée (à 6 secondes) des lignes SVG animées du hero section.
 | Présentation | 1920 × 1080 px | Slides 16:9 |
 | A4 | 595 × 842 px | Documents imprimables |
 
-### 15.6 Workflow de création
+**PNG :**
+
+| Format | Dimensions | Usage |
+|--------|------------|-------|
+| Banner LinkedIn | 1584 × 396 px | Bannière profil/page |
+| Post Square | 1200 × 1200 px | Posts carrés |
+| Post Landscape | 1200 × 627 px | Posts paysage |
+| Story | 1080 × 1920 px | Stories verticales |
+| Thumbnail 1080p | 1920 × 1080 px | Miniatures YouTube |
+| Thumbnail 720p | 1280 × 720 px | Miniatures YouTube |
+| OpenGraph | 1200 × 630 px | Partage réseaux sociaux |
+| Header Email | 600 × 150 px | En-tête newsletter |
+| Signature | 600 × 200 px | Signature email |
+
+### 15.8 Workflow de création
 
 1. Accéder à `/admin/medias`
-2. Choisir le type de média (Carrousel, Présentation, Word)
+2. Choisir l'onglet (Documents PDF ou Visuels PNG)
 3. Sélectionner un template
-4. Remplir le contenu des slides
+4. Remplir le contenu (titre, sous-titre, etc.)
 5. Choisir le thème de départ (Bleu Nuit ou Blanc Cassé)
 6. Prévisualiser en temps réel
-7. Exporter en PDF
+7. Exporter (PDF ou PNG)
 
 ---
 
@@ -839,15 +892,16 @@ Reproduction figée (à 6 secondes) des lignes SVG animées du hero section.
 - [ ] Border-radius via --radius token
 - [ ] Espacements via classes Tailwind standard
 
-### 16.4 Éléments PDF obligatoires
+### 16.4 Éléments PDF/PNG obligatoires
 
-- [ ] Lignes canalisation (7px, terracotta sur dark)
-- [ ] Logo PNG (terracotta sur dark, gradient sur light)
-- [ ] Barres décoratives proportionnelles
-- [ ] Motif diagonal en arrière-plan
-- [ ] Alternance thèmes dark/light entre slides
+- [ ] Lignes canalisation (7px PDF, 3-8px PNG selon format)
+- [ ] Logo (terracotta sur dark, gradient sur light)
+- [ ] Barres décoratives proportionnelles (sm/md/lg/xl)
+- [ ] Motif diagonal mesh en arrière-plan
+- [ ] Alternance thèmes dark/light entre slides (PDF)
+- [ ] Canalisations avec opacity adaptée au format (PNG)
 
 ---
 
 **Document mis à jour le 2 Décembre 2025**  
-**Version 2.1 - Inclut Module Médias PDF et spécifications lignes canalisation**
+**Version 2.2 - Inclut harmonisation tokens PDF/PNG et lignes canalisation unifiées**
