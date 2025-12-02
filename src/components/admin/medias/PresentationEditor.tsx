@@ -369,14 +369,31 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
             <Card>
               <CardContent className="p-4 space-y-4">
                 {/* Export mode controls for current slide */}
-                <ExportModeControls
-                  exportMode={currentExportMode}
-                  onExportModeChange={(mode) => handleSlideChange('exportMode', mode)}
-                  barSize={currentBarSize}
-                  onBarSizeChange={(size) => handleSlideChange('barSize', size)}
-                  showBarSizeSelector={currentExportMode !== 'simple'}
-                  compact
-                />
+                <div className="space-y-2">
+                  <ExportModeControls
+                    exportMode={currentExportMode}
+                    onExportModeChange={(mode) => handleSlideChange('exportMode', mode)}
+                    barSize={currentBarSize}
+                    onBarSizeChange={(size) => handleSlideChange('barSize', size)}
+                    showBarSizeSelector={currentExportMode !== 'simple'}
+                    compact
+                  />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full text-xs"
+                    onClick={() => {
+                      setSlides(prev => prev.map(slide => ({
+                        ...slide,
+                        exportMode: currentExportMode,
+                        barSize: currentBarSize
+                      })));
+                      toast({ title: 'Mode appliqué à tous les slides' });
+                    }}
+                  >
+                    Appliquer à tous les slides
+                  </Button>
+                </div>
 
                 <div className="space-y-2">
                   <Label>Type de slide</Label>
