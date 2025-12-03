@@ -1,6 +1,6 @@
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const COLORS = ['#1A2B4A', '#D15A3E', '#4A90E2', '#50C878', '#F59E0B', '#8B5CF6'];
+const COLORS = ['#1A2B4A', '#B04A32', '#4A90E2', '#50C878', '#F59E0B', '#8B5CF6'];
 
 interface ChartData {
   [key: string]: any;

@@ -286,11 +286,11 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                           IArche
                         </span>
                         {showBarInPreview && (
-                          <div className="w-10 h-0.5 mt-1 bg-gradient-to-r from-[#1A2B4A] to-[#D15A3E]" />
+                          <div className="w-10 h-0.5 mt-1 bg-gradient-to-r from-[#1A2B4A] to-[#B04A32]" />
                         )}
                       </div>
                       {showBarInPreview && (
-                        <div className="w-16 h-0.5 bg-gradient-to-r from-[#1A2B4A] via-[#D15A3E] to-[#1A2B4A]" />
+                        <div className="w-16 h-0.5 bg-gradient-to-r from-[#1A2B4A] via-[#B04A32] to-[#1A2B4A]" />
                       )}
                     </div>
 
@@ -305,7 +305,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                         {current?.title}
                       </h2>
                       {showBarInPreview && current?.title && (
-                        <div className="w-20 h-0.5 mb-4 bg-gradient-to-r from-[#1A2B4A] to-[#D15A3E]" />
+                        <div className="w-20 h-0.5 mb-4 bg-gradient-to-r from-[#1A2B4A] to-[#B04A32]" />
                       )}
                       {current?.content && (
                         <p className={`text-sm leading-relaxed ${isDark ? 'text-white/80' : 'text-[#1A2B4A]/80'}`}>
@@ -316,7 +316,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                         <ul className="space-y-2 mt-4">
                           {current.bullets.map((bullet, idx) => (
                             <li key={idx} className="flex items-start gap-2 text-sm">
-                              <span style={{ color: '#D15A3E' }}>—</span>
+                              <span style={{ color: '#B04A32' }}>—</span>
                               <span className={isDark ? 'text-white/80' : 'text-[#1A2B4A]/80'}>{bullet}</span>
                             </li>
                           ))}

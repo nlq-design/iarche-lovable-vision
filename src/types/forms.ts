@@ -259,7 +259,7 @@ export const DEFAULT_FORM_SETTINGS: FormSettings = {
   design: {
     colors: {
       primary: '#1A2B4A',
-      secondary: '#D15A3E',
+      secondary: '#B04A32',
       background: '#FAF9F7',
       text: '#4A5568'
     },

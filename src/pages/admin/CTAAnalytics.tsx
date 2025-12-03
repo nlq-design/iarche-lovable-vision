@@ -163,7 +163,7 @@ const CTAAnalytics = () => {
     .map(([day, clicks]) => ({ day, clicks }))
     .slice(-14); // 14 derniers jours
 
-  const COLORS = ['#2D4263', '#D15A3E', '#5B8FA3', '#8B5E3C', '#A67B5B', '#6B8E7F'];
+  const COLORS = ['#2D4263', '#B04A32', '#5B8FA3', '#8B5E3C', '#A67B5B', '#6B8E7F'];
 
   const exportToCSV = (data: any[], filename: string) => {
     const csv = [

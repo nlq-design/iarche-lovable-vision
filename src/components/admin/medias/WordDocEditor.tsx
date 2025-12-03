@@ -28,7 +28,7 @@ interface SectionData {
 // Source: src/components/admin/medias/pdf/tokens.ts
 const WORD_COLORS = {
   bleuNuit: '1A2B4A',      // hsl(218, 47%, 20%) - Primary
-  terracotta: 'D15A3E',    // hsl(12, 60%, 53%) - Accent
+  terracotta: 'B04A32',    // hsl(12, 60%, 44%) - Accent (WCAG AA compliant)
   foreground: '2D2D2D',    // hsl(0, 0%, 18%) - Text
   muted: '6B7280',         // hsl(220, 9%, 46%) - Muted text
   border: 'E8E4DD',        // hsl(36, 18%, 89%) - Borders

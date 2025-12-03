@@ -77,7 +77,7 @@ const GenerateAssets = () => {
                   className="font-bold text-5xl"
                   style={{
                     fontFamily: 'Manrope, sans-serif',
-                    background: 'linear-gradient(90deg, #1A2B4A 0%, #D15A3E 50%, #1A2B4A 100%)',
+                    background: 'linear-gradient(90deg, #1A2B4A 0%, #B04A32 50%, #1A2B4A 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
@@ -130,7 +130,7 @@ const GenerateAssets = () => {
                   className="font-bold text-5xl"
                   style={{ 
                     fontFamily: 'Manrope, sans-serif',
-                    color: '#D15A3E' 
+                    color: '#B04A32' 
                   }}
                 >
                   IArche
@@ -165,7 +165,7 @@ const GenerateAssets = () => {
                       width,
                       height,
                       borderRadius: height / 2,
-                      background: 'linear-gradient(90deg, #1A2B4A 0%, #D15A3E 50%, #1A2B4A 100%)',
+                      background: 'linear-gradient(90deg, #1A2B4A 0%, #B04A32 50%, #1A2B4A 100%)',
                     }}
                   />
                 </div>
