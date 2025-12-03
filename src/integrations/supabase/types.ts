@@ -429,6 +429,161 @@ export type Database = {
           },
         ]
       }
+      booking_availability: {
+        Row: {
+          booking_type_id: string | null
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_active: boolean | null
+          start_time: string
+        }
+        Insert: {
+          booking_type_id?: string | null
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_active?: boolean | null
+          start_time: string
+        }
+        Update: {
+          booking_type_id?: string | null
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_availability_booking_type_id_fkey"
+            columns: ["booking_type_id"]
+            isOneToOne: false
+            referencedRelation: "booking_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_types: {
+        Row: {
+          buffer_minutes: number | null
+          color: string | null
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          is_active: boolean | null
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          buffer_minutes?: number | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean | null
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          buffer_minutes?: number | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bookings: {
+        Row: {
+          booking_type_id: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          company: string | null
+          created_at: string
+          email: string
+          end_time: string
+          google_event_id: string | null
+          google_meet_link: string | null
+          id: string
+          lead_id: string | null
+          message: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          start_time: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          booking_type_id: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          company?: string | null
+          created_at?: string
+          email: string
+          end_time: string
+          google_event_id?: string | null
+          google_meet_link?: string | null
+          id?: string
+          lead_id?: string | null
+          message?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          start_time: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          booking_type_id?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string
+          end_time?: string
+          google_event_id?: string | null
+          google_meet_link?: string | null
+          id?: string
+          lead_id?: string | null
+          message?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          start_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_booking_type_id_fkey"
+            columns: ["booking_type_id"]
+            isOneToOne: false
+            referencedRelation: "booking_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string | null

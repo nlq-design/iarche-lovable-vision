@@ -76,7 +76,9 @@ const FormEditor = lazy(() => import("./pages/admin/FormEditor"));
 const FormResponses = lazy(() => import("./pages/admin/FormResponses"));
 const AdminFormResponses = lazy(() => import("./pages/admin/AdminFormResponses"));
 const AdminEmails = lazy(() => import("./pages/admin/AdminEmails"));
+const AdminRendezVous = lazy(() => import("./pages/admin/AdminRendezVous"));
 const FormPublic = lazy(() => import("./pages/FormPublic"));
+const RendezVous = lazy(() => import("./pages/RendezVous"));
 const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"));
 
 // QueryClient avec cache optimisé
@@ -124,6 +126,13 @@ const App = () => (
           <Route path="/livres-blancs/:slug" element={<ArticleDetail />} />
           <Route path="/ateliers-webinaires/:slug" element={<ArticleDetail />} />
           <Route path="/contact" element={<Contact />} />
+          
+          {/* Rendez-vous */}
+          <Route path="/rendez-vous/:slug" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <RendezVous />
+            </Suspense>
+          } />
           
           {/* Pages secondaires */}
           <Route path="/newsletter" element={<Newsletter />} />
@@ -303,6 +312,11 @@ const App = () => (
           <Route path="/admin/faqs" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><AdminFAQs /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/rendez-vous" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminRendezVous /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/newsletters" element={

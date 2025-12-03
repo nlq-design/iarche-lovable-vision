@@ -11,7 +11,7 @@ const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 interface UserConfirmationRequest {
   email: string;
   name: string;
-  source_type: 'contact' | 'newsletter' | 'livre-blanc' | 'solution-contact';
+  source_type: 'contact' | 'newsletter' | 'livre-blanc' | 'solution-contact' | 'booking';
   source_context?: string;
   source_id?: string;
   // Livre blanc specific
@@ -119,6 +119,32 @@ const getEmailContent = (data: UserConfirmationRequest) => {
               <li>Conseils pratiques pour dirigeants</li>
               <li>Retours d'expérience et cas d'usage</li>
             </ul>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #666; font-size: 14px;">À bientôt,<br><strong style="color: #1A2B4A;">L'équipe IArche</strong></p>
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
+              <p>IArche · Bayonne · France</p>
+              <p><a href="https://iarche.fr" style="color: #B04A32;">iarche.fr</a></p>
+            </div>
+          </body>
+          </html>
+        `,
+      };
+
+    case 'booking':
+      return {
+        subject: `✅ Rendez-vous confirmé : ${data.source_context || 'IArche'}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #1A2B4A; font-size: 24px; margin-bottom: 10px;">Rendez-vous confirmé !</h1>
+            </div>
+            <p>Bonjour <strong>${data.name}</strong>,</p>
+            <p>Votre rendez-vous <strong>${data.source_context || ''}</strong> est bien confirmé.</p>
+            <p>Vous recevrez une invitation Google Calendar avec le lien de visioconférence.</p>
+            <p>À très bientôt !</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             <p style="color: #666; font-size: 14px;">À bientôt,<br><strong style="color: #1A2B4A;">L'équipe IArche</strong></p>
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">

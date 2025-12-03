@@ -62,3 +62,6 @@ verify_jwt = true
 
 [functions.send-user-confirmation]
 verify_jwt = false
+
+[functions.calendar-booking]
+verify_jwt = false
