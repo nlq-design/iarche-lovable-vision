@@ -169,7 +169,10 @@ const AtelierInscriptionForm = ({
       });
 
     } catch (error: any) {
+      console.error('Atelier inscription error:', error);
+      
       if (error.errors) {
+        // Erreur Zod - afficher sous les champs
         const fieldErrors: Partial<Record<keyof AtelierFormData, string>> = {};
         error.errors.forEach((err: any) => {
           if (err.path[0]) {
@@ -177,9 +180,16 @@ const AtelierInscriptionForm = ({
           }
         });
         setErrors(fieldErrors);
+        
+        // Toast aussi pour visibilité
+        toast({
+          title: "Erreur de validation",
+          description: error.errors[0]?.message || "Vérifiez les champs du formulaire",
+          variant: "destructive",
+        });
       } else {
         toast({
-          title: "Erreur",
+          title: "Erreur d'inscription",
           description: error.message || "Une erreur est survenue. Réessayez.",
           variant: "destructive",
         });
