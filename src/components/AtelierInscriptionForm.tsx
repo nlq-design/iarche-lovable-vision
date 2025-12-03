@@ -91,8 +91,8 @@ const AtelierInscriptionForm = ({
       // Track CTA click
       await trackCTAClick('atelier_inscription', 'atelier_detail', articleTitle);
       
-      // Créer le lead
-      const { data: leadData, error: leadError } = await supabase
+      // Créer le lead (sans .select() car pas de politique SELECT pour anon)
+      const { error: leadError } = await supabase
         .from('leads')
         .insert([{
           name: validatedData.name,
@@ -103,22 +103,29 @@ const AtelierInscriptionForm = ({
           source_id: articleId,
           source_context: articleTitle,
           consent_marketing: validatedData.consent_marketing,
-        }])
-        .select()
-        .single();
+        }]);
 
       if (leadError && leadError.code !== '23505') {
         console.error('Failed to create lead:', leadError);
         throw new Error('Erreur lors de l\'enregistrement');
       }
 
-      // Si lead créé, créer l'inscription dans atelier_inscriptions
-      if (leadData) {
+      // Créer l'inscription dans atelier_inscriptions
+      // Note: On utilise l'email pour retrouver le lead car on n'a pas son ID
+      const { data: leadForInscription } = await supabase
+        .from('leads')
+        .select('id')
+        .eq('email', validatedData.email)
+        .eq('source', 'atelier-webinaire')
+        .eq('source_id', articleId)
+        .single();
+
+      if (leadForInscription) {
         const { error: inscriptionError } = await supabase
           .from('atelier_inscriptions')
           .insert([{
             atelier_id: articleId,
-            lead_id: leadData.id,
+            lead_id: leadForInscription.id,
           }]);
 
         if (inscriptionError && inscriptionError.code !== '23505') {
@@ -128,29 +135,25 @@ const AtelierInscriptionForm = ({
       }
 
       // Envoyer notification email avec détails de l'événement
-      if (leadData) {
-        try {
-          await supabase.functions.invoke('send-lead-notification', {
-            body: {
-              lead_id: leadData.id,
-              name: validatedData.name,
-              email: validatedData.email,
-              company: validatedData.company,
-              phone: validatedData.phone,
-              source: 'atelier-webinaire',
-              source_context: articleTitle,
-              event_details: {
-                date: eventDate,
-                location: eventLocation,
-                heure_debut: heureDebut,
-                type_evenement: typeEvenement,
-              },
+      try {
+        await supabase.functions.invoke('send-lead-notification', {
+          body: {
+            name: validatedData.name,
+            email: validatedData.email,
+            company: validatedData.company,
+            phone: validatedData.phone,
+            source: 'atelier-webinaire',
+            source_context: articleTitle,
+            event_details: {
+              date: eventDate,
+              location: eventLocation,
+              heure_debut: heureDebut,
+              type_evenement: typeEvenement,
             },
-          });
-        } catch (notifError) {
-          console.warn('Failed to send lead notification:', notifError);
-          // Ne pas bloquer si la notification échoue
-        }
+          },
+        });
+      } catch (notifError) {
+        console.warn('Failed to send lead notification:', notifError);
       }
 
       // Marquer comme succès
