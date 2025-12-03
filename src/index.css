@@ -82,6 +82,16 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
     color-scheme: only light !important;
     background-color: #FAF9F7 !important;
+    -webkit-filter: none !important;
+    filter: none !important;
+    background-image: linear-gradient(#FAF9F7, #FAF9F7) !important;
+  }
+
+  /* Anti-Brave force dark - dernier recours */
+  @media (prefers-color-scheme: dark) {
+    html, body, * {
+      forced-color-adjust: none !important;
+    }
   }
 
   /* Strong tags dans le contenu des articles utilisent le bleu IArche avec surlignage subtil */
