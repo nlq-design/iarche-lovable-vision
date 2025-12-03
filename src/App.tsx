@@ -75,6 +75,7 @@ const AdminFormulaires = lazy(() => import("./pages/admin/AdminFormulaires"));
 const FormEditor = lazy(() => import("./pages/admin/FormEditor"));
 const FormResponses = lazy(() => import("./pages/admin/FormResponses"));
 const AdminFormResponses = lazy(() => import("./pages/admin/AdminFormResponses"));
+const AdminEmails = lazy(() => import("./pages/admin/AdminEmails"));
 const FormPublic = lazy(() => import("./pages/FormPublic"));
 const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"));
 
@@ -307,6 +308,11 @@ const App = () => (
           <Route path="/admin/newsletters" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><AdminNewsletters /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/emails" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminEmails /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/security-dashboard" element={
