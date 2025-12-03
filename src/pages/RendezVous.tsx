@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { format, addDays, startOfDay, isSameDay } from 'date-fns';
@@ -76,8 +76,10 @@ const RendezVous = () => {
     setAdditionalGuests(additionalGuests.filter(g => g !== email));
   };
 
-  // Generate dates for the next 14 days
-  const availableDates = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i + 1));
+  // Generate dates for the next 14 days - memoized to prevent duplicate rendering
+  const availableDates = useMemo(() => 
+    Array.from({ length: 14 }, (_, i) => addDays(new Date(), i + 1)),
+  []);
 
   // Load booking types list (when no slug)
   useEffect(() => {
