@@ -598,9 +598,14 @@ const FormEditor = () => {
 
   const selectedField = form?.fields.find(f => f.id === selectedFieldId) || null;
 
+  const getPublicUrl = () => {
+    const productionDomain = 'https://iarche.fr';
+    return `${productionDomain}/formulaires/${form?.slug}`;
+  };
+
   const copyLink = () => {
     if (!form) return;
-    navigator.clipboard.writeText(`${window.location.origin}/formulaires/${form.slug}`);
+    navigator.clipboard.writeText(getPublicUrl());
     toast({ title: 'Lien copié' });
   };
 
@@ -1038,14 +1043,14 @@ const FormEditor = () => {
                     <div className="flex flex-col items-center gap-4">
                       <div className="bg-white p-4 rounded-lg shadow-sm" id="qr-code-container">
                         <QRCode
-                          value={`${window.location.origin}/formulaires/${form.slug}`}
+                          value={getPublicUrl()}
                           size={200}
                           level="H"
                           fgColor={form.settings.design.colors.primary}
                         />
                       </div>
                       <p className="text-sm text-muted-foreground text-center">
-                        {window.location.origin}/formulaires/{form.slug}
+                        {getPublicUrl()}
                       </p>
                     </div>
                     
@@ -1101,7 +1106,7 @@ const FormEditor = () => {
                       <Button
                         variant="outline"
                         onClick={() => {
-                          navigator.clipboard.writeText(`${window.location.origin}/formulaires/${form.slug}`);
+                          navigator.clipboard.writeText(getPublicUrl());
                           toast({ title: 'Lien copié' });
                         }}
                       >
