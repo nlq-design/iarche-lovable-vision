@@ -1,9 +1,13 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
 interface BookingRequest {
   action: 'get-slots' | 'create-booking' | 'cancel-booking';
@@ -175,6 +179,184 @@ async function deleteCalendarEvent(accessToken: string, eventId: string): Promis
   );
 }
 
+// Generate ICS calendar file content
+function generateICS(
+  summary: string,
+  description: string,
+  startTime: Date,
+  endTime: Date,
+  location: string,
+  organizerEmail: string,
+  attendeeEmail: string,
+  meetLink?: string
+): string {
+  const formatDateICS = (date: Date): string => {
+    return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  };
+
+  const uid = crypto.randomUUID();
+  const now = formatDateICS(new Date());
+  const start = formatDateICS(startTime);
+  const end = formatDateICS(endTime);
+  
+  const fullDescription = meetLink 
+    ? `${description}\\n\\nLien Google Meet : ${meetLink}`
+    : description;
+
+  return `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//IArche//Booking System//FR
+CALSCALE:GREGORIAN
+METHOD:REQUEST
+BEGIN:VEVENT
+UID:${uid}
+DTSTAMP:${now}
+DTSTART:${start}
+DTEND:${end}
+SUMMARY:${summary}
+DESCRIPTION:${fullDescription.replace(/\n/g, '\\n')}
+LOCATION:${location}
+ORGANIZER;CN=IArche:mailto:${organizerEmail}
+ATTENDEE;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:${attendeeEmail}
+STATUS:CONFIRMED
+SEQUENCE:0
+END:VEVENT
+END:VCALENDAR`;
+}
+
+// Generate HTML email template
+function generateEmailHTML(
+  name: string,
+  bookingTypeName: string,
+  startTime: Date,
+  endTime: Date,
+  meetLink?: string
+): string {
+  const formatDateFr = (date: Date): string => {
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    };
+    return date.toLocaleDateString('fr-FR', options);
+  };
+
+  const formatTimeFr = (date: Date): string => {
+    return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  return `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirmation de rendez-vous</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #FAF9F7;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+          <!-- Header with gradient bar -->
+          <tr>
+            <td style="height: 8px; background: linear-gradient(90deg, hsl(218, 47%, 20%) 0%, hsl(12, 60%, 44%) 100%);"></td>
+          </tr>
+          
+          <!-- Logo -->
+          <tr>
+            <td style="padding: 32px 40px 24px; text-align: center;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 700; background: linear-gradient(270deg, hsl(218, 47%, 20%), hsl(12, 60%, 44%), hsl(218, 47%, 35%), hsl(12, 60%, 44%)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">IArche</h1>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 0 40px 32px;">
+              <h2 style="margin: 0 0 16px; font-size: 24px; font-weight: 600; color: hsl(218, 47%, 20%);">
+                Votre rendez-vous est confirmé !
+              </h2>
+              
+              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #4A5568;">
+                Bonjour ${name},<br><br>
+                Votre rendez-vous <strong>${bookingTypeName}</strong> a bien été enregistré.
+              </p>
+              
+              <!-- Booking details card -->
+              <table role="presentation" style="width: 100%; background-color: #F7FAFC; border-radius: 8px; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 24px;">
+                    <table role="presentation" style="width: 100%;">
+                      <tr>
+                        <td style="padding-bottom: 12px;">
+                          <strong style="color: hsl(218, 47%, 20%); font-size: 14px;">📅 Date</strong><br>
+                          <span style="color: #4A5568; font-size: 16px;">${formatDateFr(startTime)}</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding-bottom: 12px;">
+                          <strong style="color: hsl(218, 47%, 20%); font-size: 14px;">🕐 Horaire</strong><br>
+                          <span style="color: #4A5568; font-size: 16px;">${formatTimeFr(startTime)} - ${formatTimeFr(endTime)}</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <strong style="color: hsl(218, 47%, 20%); font-size: 14px;">📍 Lieu</strong><br>
+                          <span style="color: #4A5568; font-size: 16px;">Visioconférence Google Meet</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              
+              ${meetLink ? `
+              <!-- Meet Link Button -->
+              <table role="presentation" style="width: 100%; margin-bottom: 24px;">
+                <tr>
+                  <td style="text-align: center;">
+                    <a href="${meetLink}" target="_blank" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, hsl(218, 47%, 20%) 0%, hsl(218, 47%, 35%) 100%); color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px;">
+                      🎥 Rejoindre la réunion
+                    </a>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="text-align: center; padding-top: 12px;">
+                    <span style="font-size: 12px; color: #718096;">ou copiez ce lien : ${meetLink}</span>
+                  </td>
+                </tr>
+              </table>
+              ` : ''}
+              
+              <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.6; color: #718096;">
+                📎 Un fichier .ics est joint à cet email pour ajouter le rendez-vous à votre calendrier.
+              </p>
+              
+              <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #718096;">
+                Si vous avez des questions ou devez modifier votre rendez-vous, n'hésitez pas à nous contacter à <a href="mailto:nlq@nlq.fr" style="color: hsl(12, 60%, 44%);">nlq@nlq.fr</a>
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 24px 40px; background-color: #F7FAFC; border-top: 1px solid #E2E8F0;">
+              <p style="margin: 0; font-size: 12px; color: #718096; text-align: center;">
+                IArche · Bayonne · France<br>
+                <a href="https://iarche.fr" style="color: hsl(12, 60%, 44%); text-decoration: none;">iarche.fr</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
 // Generate available time slots for a date
 function generateSlots(
   date: string,
@@ -230,7 +412,7 @@ function generateSlots(
   return slots;
 }
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -426,18 +608,92 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Send confirmation emails
+      // Generate ICS file
+      const icsContent = generateICS(
+        `${bookingType.name} - IArche`,
+        `Rendez-vous avec IArche\n\nType: ${bookingType.name}\nAvec: ${bookingData.name}`,
+        startTime,
+        endTime,
+        googleMeetLink || 'Visioconférence Google Meet',
+        'nlq@nlq.fr',
+        bookingData.email,
+        googleMeetLink || undefined
+      );
+
+      // Generate HTML email
+      const emailHTML = generateEmailHTML(
+        bookingData.name,
+        bookingType.name,
+        startTime,
+        endTime,
+        googleMeetLink || undefined
+      );
+
+      // Send confirmation email with ICS attachment
       try {
-        await supabase.functions.invoke('send-user-confirmation', {
-          body: {
-            email: bookingData.email,
-            name: bookingData.name,
-            source_type: 'booking',
-            source_context: bookingType.name,
-          },
+        const icsBuffer = new TextEncoder().encode(icsContent);
+        const icsBase64 = btoa(String.fromCharCode(...icsBuffer));
+
+        await resend.emails.send({
+          from: 'IArche <contact@iarche.fr>',
+          to: [bookingData.email],
+          subject: `✅ Confirmation : ${bookingType.name} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`,
+          html: emailHTML,
+          attachments: [
+            {
+              filename: 'rendez-vous-iarche.ics',
+              content: icsBase64,
+            },
+          ],
         });
-      } catch (err) {
-        console.warn('Failed to send confirmation email:', err);
+
+        console.log('Confirmation email sent successfully to:', bookingData.email);
+
+        // Log email
+        await supabase.from('email_logs').insert({
+          recipient_email: bookingData.email,
+          subject: `Confirmation : ${bookingType.name}`,
+          email_type: 'booking_confirmation',
+          source_type: 'booking',
+          source_id: booking.id,
+          status: 'sent',
+          sent_at: new Date().toISOString(),
+        });
+      } catch (emailErr) {
+        console.error('Failed to send confirmation email:', emailErr);
+        // Log failed email
+        await supabase.from('email_logs').insert({
+          recipient_email: bookingData.email,
+          subject: `Confirmation : ${bookingType.name}`,
+          email_type: 'booking_confirmation',
+          source_type: 'booking',
+          source_id: booking.id,
+          status: 'failed',
+          error_message: emailErr instanceof Error ? emailErr.message : 'Unknown error',
+        });
+      }
+
+      // Send admin notification
+      try {
+        await resend.emails.send({
+          from: 'IArche <contact@iarche.fr>',
+          to: ['nlq@nlq.fr'],
+          subject: `📅 Nouveau RDV : ${bookingType.name} - ${bookingData.name}`,
+          html: `
+            <h2>Nouveau rendez-vous</h2>
+            <p><strong>Type:</strong> ${bookingType.name}</p>
+            <p><strong>Date:</strong> ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} à ${startTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+            <p><strong>Nom:</strong> ${bookingData.name}</p>
+            <p><strong>Email:</strong> ${bookingData.email}</p>
+            <p><strong>Téléphone:</strong> ${bookingData.phone || 'Non renseigné'}</p>
+            <p><strong>Entreprise:</strong> ${bookingData.company || 'Non renseignée'}</p>
+            <p><strong>Message:</strong> ${bookingData.message || 'Aucun'}</p>
+            ${googleMeetLink ? `<p><strong>Lien Meet:</strong> <a href="${googleMeetLink}">${googleMeetLink}</a></p>` : ''}
+          `,
+        });
+        console.log('Admin notification sent');
+      } catch (adminErr) {
+        console.warn('Failed to send admin notification:', adminErr);
       }
 
       return new Response(
