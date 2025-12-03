@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Download, Printer } from 'lucide-react';
+import { Printer } from 'lucide-react';
 import GradientButton from '@/components/ui/GradientButton';
 
 const CharteGraphique = () => {
@@ -11,20 +11,44 @@ const CharteGraphique = () => {
   };
 
   const colors = [
-    { name: 'Bleu Nuit', variable: '--primary', hsl: '218 47% 20%', hex: '#1A2B4A', usage: 'Titres, texte principal, CTA primaire' },
-    { name: 'Terracotta', variable: '--accent', hsl: '12 60% 53%', hex: '#D15A3E', usage: 'Accents, CTA secondaire, focus' },
-    { name: 'Blanc Cassé', variable: '--background', hsl: '30 14% 98%', hex: '#FAF9F7', usage: 'Fond principal' },
-    { name: 'Gris Sable', variable: '--secondary', hsl: '30 20% 93%', hex: '#F0EDE8', usage: 'Surfaces secondaires' },
-    { name: 'Bordure', variable: '--border', hsl: '30 16% 88%', hex: '#E5E0DA', usage: 'Bordures, séparateurs' },
-    { name: 'Texte Muted', variable: '--muted-foreground', hsl: '0 0% 40%', hex: '#666666', usage: 'Texte secondaire' },
-    { name: 'Vert Sauge', variable: '--success', hsl: '153 34% 36%', hex: '#3D7A5C', usage: 'Succès, validation' },
-    { name: 'Gris Texte', variable: '--text-subtle', hsl: '0 0% 40%', hex: '#4A5568', usage: 'Texte formulaires' },
+    { name: 'Bleu Nuit', variable: '--primary', hsl: '218 47% 20%', hex: '#1A2B4A', rgb: '26, 43, 74', usage: 'Titres, texte principal, CTA primaire' },
+    { name: 'Terracotta', variable: '--accent', hsl: '12 60% 53%', hex: '#D15A3E', rgb: '209, 90, 62', usage: 'Accents, CTA secondaire, focus, liens' },
+    { name: 'Blanc Cassé', variable: '--background', hsl: '30 14% 98%', hex: '#FAF9F7', rgb: '250, 249, 247', usage: 'Fond principal' },
+    { name: 'Gris Sable', variable: '--secondary', hsl: '30 20% 93%', hex: '#F0EDE8', rgb: '240, 237, 232', usage: 'Surfaces secondaires, cartes' },
+    { name: 'Bordure', variable: '--border', hsl: '30 16% 88%', hex: '#E5E0DA', rgb: '229, 224, 218', usage: 'Bordures, séparateurs' },
+    { name: 'Texte Muted', variable: '--muted-foreground', hsl: '0 0% 40%', hex: '#666666', rgb: '102, 102, 102', usage: 'Texte secondaire' },
+    { name: 'Gris Texte', variable: '--text-subtle', hsl: '215 14% 35%', hex: '#4A5568', rgb: '74, 85, 104', usage: 'Texte formulaires, descriptions' },
+    { name: 'Vert Sauge', variable: '--success', hsl: '153 34% 36%', hex: '#3D7A5C', rgb: '61, 122, 92', usage: 'Succès, validation' },
+  ];
+
+  const gradients = [
+    { name: 'Barre décorative', css: 'linear-gradient(90deg, #1A2B4A 0%, #D15A3E 100%)', usage: 'Barres horizontales, séparateurs visuels' },
+    { name: 'Texte animé', css: 'linear-gradient(270deg, #1A2B4A 0%, #D15A3E 33%, #1A2B4A 66%, #D15A3E 100%)', usage: 'Logo IArche, titres héroïques' },
+    { name: 'Fond sombre', css: 'linear-gradient(135deg, #1A2B4A 0%, #14203A 100%)', usage: 'Sections sombres, hero backgrounds' },
+    { name: 'Barre inversée', css: 'linear-gradient(90deg, #D15A3E 0%, #1A2B4A 100%)', usage: 'Variante de barre décorative' },
+  ];
+
+  const spacing = [
+    { label: 'XS', value: '4px', tailwind: 'p-1 / m-1', usage: 'Micro-espacements, icônes' },
+    { label: 'SM', value: '8px', tailwind: 'p-2 / m-2', usage: 'Espacements internes' },
+    { label: 'MD', value: '16px', tailwind: 'p-4 / m-4', usage: 'Standard, padding cartes' },
+    { label: 'LG', value: '24px', tailwind: 'p-6 / m-6', usage: 'Sections, gaps' },
+    { label: 'XL', value: '32px', tailwind: 'p-8 / m-8', usage: 'Grandes séparations' },
+    { label: '2XL', value: '48px', tailwind: 'p-12 / m-12', usage: 'Séparations majeures' },
+    { label: '3XL', value: '64px', tailwind: 'p-16 / m-16', usage: 'Hero sections' },
+  ];
+
+  const barSizes = [
+    { label: 'SM', width: '48px', height: '2px', usage: 'Petits titres, badges' },
+    { label: 'MD', width: '80px', height: '4px', usage: 'Titres standards' },
+    { label: 'LG', width: '96px', height: '4px', usage: 'Grands titres' },
+    { label: 'XL', width: '128px', height: '6px', usage: 'Hero, couvertures' },
   ];
 
   return (
     <>
       <Helmet>
-        <title>Charte Graphique | IArche</title>
+        <title>Charte Graphique Complète | IArche</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
@@ -41,8 +65,8 @@ const CharteGraphique = () => {
         <section className="min-h-screen flex flex-col items-center justify-center p-12 bg-[#FAF9F7] print:break-after-page">
           <div className="text-center">
             <h1 className="text-7xl font-semibold mb-4 hero-gradient-text">IArche</h1>
-            <p className="text-2xl text-[#666666] mb-2">Charte Graphique</p>
-            <p className="text-lg text-[#999999]">Version 2.0 — 3 Décembre 2025</p>
+            <p className="text-2xl text-[#666666] mb-2">Charte Graphique Complète</p>
+            <p className="text-lg text-[#999999]">Version 3.0 — Décembre 2025</p>
           </div>
           <div className="absolute bottom-12 text-center">
             <p className="text-sm text-[#999999]">L'IA se construit avec vous</p>
@@ -50,10 +74,63 @@ const CharteGraphique = () => {
           </div>
         </section>
 
-        {/* ========== PAGE 2: LOGO ========== */}
+        {/* ========== PAGE 2: SOMMAIRE ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
           <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
-            01. Logo
+            Sommaire
+          </h2>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <span className="w-8 h-8 rounded-full bg-[#1A2B4A] text-white flex items-center justify-center text-sm font-semibold">01</span>
+                <span className="text-lg text-[#1A2B4A]">Logo & Identité</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="w-8 h-8 rounded-full bg-[#1A2B4A] text-white flex items-center justify-center text-sm font-semibold">02</span>
+                <span className="text-lg text-[#1A2B4A]">Palette de Couleurs</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="w-8 h-8 rounded-full bg-[#1A2B4A] text-white flex items-center justify-center text-sm font-semibold">03</span>
+                <span className="text-lg text-[#1A2B4A]">Typographie</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="w-8 h-8 rounded-full bg-[#1A2B4A] text-white flex items-center justify-center text-sm font-semibold">04</span>
+                <span className="text-lg text-[#1A2B4A]">Espacements & Dimensions</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="w-8 h-8 rounded-full bg-[#1A2B4A] text-white flex items-center justify-center text-sm font-semibold">05</span>
+                <span className="text-lg text-[#1A2B4A]">Gradients</span>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <span className="w-8 h-8 rounded-full bg-[#D15A3E] text-white flex items-center justify-center text-sm font-semibold">06</span>
+                <span className="text-lg text-[#1A2B4A]">Éléments Visuels</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="w-8 h-8 rounded-full bg-[#D15A3E] text-white flex items-center justify-center text-sm font-semibold">07</span>
+                <span className="text-lg text-[#1A2B4A]">Boutons & CTA</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="w-8 h-8 rounded-full bg-[#D15A3E] text-white flex items-center justify-center text-sm font-semibold">08</span>
+                <span className="text-lg text-[#1A2B4A]">Animations</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="w-8 h-8 rounded-full bg-[#D15A3E] text-white flex items-center justify-center text-sm font-semibold">09</span>
+                <span className="text-lg text-[#1A2B4A]">Applications</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="w-8 h-8 rounded-full bg-[#D15A3E] text-white flex items-center justify-center text-sm font-semibold">10</span>
+                <span className="text-lg text-[#1A2B4A]">Usages & Règles</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ========== PAGE 3: LOGO ========== */}
+        <section className="min-h-screen p-12 bg-white print:break-after-page">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
+            01. Logo & Identité
           </h2>
 
           {/* Logo Principal */}
@@ -64,7 +141,7 @@ const CharteGraphique = () => {
             </div>
             <p className="text-sm text-[#666666]">
               Le logo principal utilise un gradient animé alternant entre Bleu Nuit et Terracotta.
-              Animation: 8 secondes, direction 270°, boucle infinie.
+              Animation: 8 secondes, direction 270°, boucle infinie. Background-size: 600% 600%.
             </p>
           </div>
 
@@ -75,22 +152,42 @@ const CharteGraphique = () => {
               <div className="bg-[#FAF9F7] p-8 rounded-lg flex items-center justify-center">
                 <span className="text-4xl font-semibold text-[#1A2B4A]">IArche</span>
               </div>
+              <p className="text-xs text-[#666666] mt-2">Fonds clairs uniquement</p>
             </div>
             <div>
               <h4 className="text-sm font-medium text-[#1A2B4A] mb-2">Blanc (Light)</h4>
               <div className="bg-[#1A2B4A] p-8 rounded-lg flex items-center justify-center">
                 <span className="text-4xl font-semibold text-white">IArche</span>
               </div>
+              <p className="text-xs text-[#666666] mt-2">Fonds sombres uniquement</p>
             </div>
             <div>
-              <h4 className="text-sm font-medium text-[#1A2B4A] mb-2">Gradient Statique</h4>
+              <h4 className="text-sm font-medium text-[#1A2B4A] mb-2">Terracotta</h4>
               <div className="bg-[#FAF9F7] p-8 rounded-lg flex items-center justify-center">
-                <span className="text-4xl font-semibold" style={{
-                  background: 'linear-gradient(90deg, #1A2B4A 0%, #1A2B4A 65%, #D15A3E 65%, #D15A3E 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
-                }}>IArche</span>
+                <span className="text-4xl font-semibold text-[#D15A3E]">IArche</span>
               </div>
+              <p className="text-xs text-[#666666] mt-2">Usages spéciaux</p>
+            </div>
+          </div>
+
+          {/* Barre décorative */}
+          <div className="mb-12">
+            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Barre Décorative Gradient</h3>
+            <div className="bg-[#FAF9F7] p-8 rounded-lg space-y-6">
+              {barSizes.map((bar) => (
+                <div key={bar.label} className="flex items-center gap-4">
+                  <span className="w-8 text-sm font-mono text-[#666666]">{bar.label}</span>
+                  <div 
+                    className="rounded-full"
+                    style={{ 
+                      width: bar.width, 
+                      height: bar.height,
+                      background: 'linear-gradient(90deg, #1A2B4A 0%, #D15A3E 100%)'
+                    }}
+                  />
+                  <span className="text-xs text-[#666666]">{bar.width} × {bar.height} — {bar.usage}</span>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -103,7 +200,7 @@ const CharteGraphique = () => {
               </div>
             </div>
             <p className="text-sm text-[#666666] mt-2">
-              Espace minimum autour du logo: hauteur du "I" majuscule.
+              Espace minimum autour du logo: hauteur du "I" majuscule sur chaque côté.
             </p>
           </div>
 
@@ -131,7 +228,7 @@ const CharteGraphique = () => {
           </div>
         </section>
 
-        {/* ========== PAGE 3: COULEURS ========== */}
+        {/* ========== PAGE 4: COULEURS ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
           <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
             02. Palette de Couleurs
@@ -184,6 +281,7 @@ const CharteGraphique = () => {
                 <div className="text-right font-mono text-xs text-[#666666]">
                   <p>{color.hex}</p>
                   <p>HSL: {color.hsl}</p>
+                  <p>RGB: {color.rgb}</p>
                   <p className="text-[#999999]">{color.variable}</p>
                 </div>
               </div>
@@ -191,7 +289,7 @@ const CharteGraphique = () => {
           </div>
         </section>
 
-        {/* ========== PAGE 4: TYPOGRAPHIE ========== */}
+        {/* ========== PAGE 5: TYPOGRAPHIE ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
           <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
             03. Typographie
@@ -206,6 +304,9 @@ const CharteGraphique = () => {
               <p className="text-2xl text-[#1A2B4A]">abcdefghijklmnopqrstuvwxyz</p>
               <p className="text-2xl text-[#1A2B4A]">0123456789 !@#$%&*()</p>
             </div>
+            <p className="text-sm text-[#666666] mt-2">
+              Police Google Fonts. Chargement: font-display: swap. Poids: 300, 400, 500, 600, 700.
+            </p>
           </div>
 
           {/* Poids */}
@@ -213,23 +314,23 @@ const CharteGraphique = () => {
             <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Poids Utilisés</h3>
             <div className="space-y-4">
               <div className="flex items-baseline gap-8">
-                <span className="w-24 text-sm text-[#666666]">Light (300)</span>
+                <span className="w-32 text-sm text-[#666666]">Light (300)</span>
                 <span className="text-3xl font-light text-[#1A2B4A]">L'IA se construit avec vous</span>
               </div>
               <div className="flex items-baseline gap-8">
-                <span className="w-24 text-sm text-[#666666]">Regular (400)</span>
+                <span className="w-32 text-sm text-[#666666]">Regular (400)</span>
                 <span className="text-3xl font-normal text-[#1A2B4A]">L'IA se construit avec vous</span>
               </div>
               <div className="flex items-baseline gap-8">
-                <span className="w-24 text-sm text-[#666666]">Medium (500)</span>
+                <span className="w-32 text-sm text-[#666666]">Medium (500)</span>
                 <span className="text-3xl font-medium text-[#1A2B4A]">L'IA se construit avec vous</span>
               </div>
               <div className="flex items-baseline gap-8">
-                <span className="w-24 text-sm text-[#666666]">Semibold (600)</span>
+                <span className="w-32 text-sm text-[#666666]">Semibold (600)</span>
                 <span className="text-3xl font-semibold text-[#1A2B4A]">L'IA se construit avec vous</span>
               </div>
               <div className="flex items-baseline gap-8">
-                <span className="w-24 text-sm text-[#666666]">Bold (700)</span>
+                <span className="w-32 text-sm text-[#666666]">Bold (700)</span>
                 <span className="text-3xl font-bold text-[#1A2B4A]">L'IA se construit avec vous</span>
               </div>
             </div>
@@ -259,19 +360,151 @@ const CharteGraphique = () => {
                 <span className="text-xs text-[#D15A3E] font-mono">Small — 0.875rem / 14px / text-muted-foreground</span>
                 <p className="text-sm text-[#666666]">Texte secondaire, légendes et annotations.</p>
               </div>
+              <div>
+                <span className="text-xs text-[#D15A3E] font-mono">Caption — 0.75rem / 12px / font-mono</span>
+                <p className="text-xs font-mono text-[#999999]">Code, valeurs techniques, timestamps.</p>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* ========== PAGE 5: ÉLÉMENTS VISUELS ========== */}
+        {/* ========== PAGE 6: ESPACEMENTS ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
           <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
-            04. Éléments Visuels
+            04. Espacements & Dimensions
+          </h2>
+
+          {/* Espacements */}
+          <div className="mb-12">
+            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Échelle d'Espacements</h3>
+            <div className="space-y-3 bg-[#FAF9F7] p-6 rounded-lg">
+              {spacing.map((item) => (
+                <div key={item.label} className="flex items-center gap-4">
+                  <span className="w-12 text-sm font-mono font-semibold text-[#1A2B4A]">{item.label}</span>
+                  <div className="h-6 bg-[#1A2B4A] rounded" style={{ width: item.value }} />
+                  <span className="w-20 text-sm font-mono text-[#666666]">{item.value}</span>
+                  <span className="w-32 text-xs font-mono text-[#999999]">{item.tailwind}</span>
+                  <span className="text-xs text-[#666666]">{item.usage}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Border Radius */}
+          <div className="mb-12">
+            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Border Radius</h3>
+            <div className="flex gap-8 bg-[#FAF9F7] p-6 rounded-lg">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-[#1A2B4A] rounded-none mb-2"></div>
+                <p className="text-xs font-mono text-[#666666]">none</p>
+                <p className="text-xs text-[#999999]">0px</p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-[#1A2B4A] rounded-sm mb-2"></div>
+                <p className="text-xs font-mono text-[#666666]">sm</p>
+                <p className="text-xs text-[#999999]">2px</p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-[#1A2B4A] rounded mb-2"></div>
+                <p className="text-xs font-mono text-[#666666]">default</p>
+                <p className="text-xs text-[#999999]">4px</p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-[#1A2B4A] rounded-md mb-2"></div>
+                <p className="text-xs font-mono text-[#666666]">md</p>
+                <p className="text-xs text-[#999999]">6px</p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-[#1A2B4A] rounded-lg mb-2"></div>
+                <p className="text-xs font-mono text-[#666666]">lg</p>
+                <p className="text-xs text-[#999999]">8px</p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-[#1A2B4A] rounded-xl mb-2"></div>
+                <p className="text-xs font-mono text-[#666666]">xl</p>
+                <p className="text-xs text-[#999999]">12px</p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-[#1A2B4A] rounded-full mb-2"></div>
+                <p className="text-xs font-mono text-[#666666]">full</p>
+                <p className="text-xs text-[#999999]">50%</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Formats d'export */}
+          <div>
+            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Formats d'Export Médias</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-[#FAF9F7] p-4 rounded-lg">
+                <h4 className="font-semibold text-[#1A2B4A] mb-2">PNG Exports</h4>
+                <ul className="text-sm text-[#666666] space-y-1">
+                  <li>• Post Instagram: 1080 × 1080px</li>
+                  <li>• Story: 1080 × 1920px</li>
+                  <li>• Banner LinkedIn: 1584 × 396px</li>
+                  <li>• OpenGraph: 1200 × 630px</li>
+                  <li>• Thumbnail: 1280 × 720px</li>
+                  <li>• Signature Email: 600 × 200px</li>
+                </ul>
+              </div>
+              <div className="bg-[#FAF9F7] p-4 rounded-lg">
+                <h4 className="font-semibold text-[#1A2B4A] mb-2">PDF Exports</h4>
+                <ul className="text-sm text-[#666666] space-y-1">
+                  <li>• Présentation: 1920 × 1080px (16:9)</li>
+                  <li>• Carousel: 1080 × 1350px (4:5)</li>
+                  <li>• A4: 595 × 842pt</li>
+                  <li>• Charte Graphique: A4 multi-pages</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ========== PAGE 7: GRADIENTS ========== */}
+        <section className="min-h-screen p-12 bg-white print:break-after-page">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
+            05. Gradients
+          </h2>
+
+          <div className="space-y-8">
+            {gradients.map((gradient, index) => (
+              <div key={index} className="bg-[#FAF9F7] p-6 rounded-lg">
+                <h3 className="text-lg font-semibold text-[#1A2B4A] mb-2">{gradient.name}</h3>
+                <div 
+                  className="h-16 rounded-lg mb-3"
+                  style={{ background: gradient.css }}
+                />
+                <p className="text-sm text-[#666666] mb-2">{gradient.usage}</p>
+                <pre className="text-xs font-mono bg-white p-3 rounded border border-[#E5E0DA] overflow-x-auto">
+                  {gradient.css}
+                </pre>
+              </div>
+            ))}
+          </div>
+
+          {/* Gradient sur texte */}
+          <div className="mt-8 bg-[#FAF9F7] p-6 rounded-lg">
+            <h3 className="text-lg font-semibold text-[#1A2B4A] mb-4">Application sur Texte</h3>
+            <div className="flex gap-8 items-center">
+              <span className="text-4xl font-semibold hero-gradient-text">IArche</span>
+              <div className="text-sm text-[#666666]">
+                <p>background-clip: text</p>
+                <p>-webkit-text-fill-color: transparent</p>
+                <p>animation: gradientText 8s ease infinite</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ========== PAGE 8: ÉLÉMENTS VISUELS ========== */}
+        <section className="min-h-screen p-12 bg-white print:break-after-page">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
+            06. Éléments Visuels
           </h2>
 
           {/* Lignes SVG */}
           <div className="mb-12">
-            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Lignes SVG Animées (Arche)</h3>
+            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Lignes SVG Canalisation (Arche)</h3>
             <div className="bg-[#FAF9F7] p-8 rounded-lg relative h-48">
               <svg className="absolute w-full h-full" viewBox="0 0 400 100" preserveAspectRatio="none">
                 <defs>
@@ -291,18 +524,20 @@ const CharteGraphique = () => {
             <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
               <div className="bg-[#FAF9F7] p-4 rounded">
                 <p className="font-mono text-xs text-[#666666]">Ligne 1: Bleu Nuit → Terracotta</p>
-                <p className="font-mono text-xs text-[#666666]">stroke-width: 2px, opacity: 0.5</p>
+                <p className="font-mono text-xs text-[#666666]">stroke-width: 7px, opacity: 0.6-0.7</p>
+                <p className="font-mono text-xs text-[#666666]">Forme: L inversé (top-left)</p>
               </div>
               <div className="bg-[#FAF9F7] p-4 rounded">
                 <p className="font-mono text-xs text-[#666666]">Ligne 2: Terracotta → Bleu Nuit</p>
                 <p className="font-mono text-xs text-[#666666]">Animation: 6s ease-in-out</p>
+                <p className="font-mono text-xs text-[#666666]">Forme: L normal (bottom-right)</p>
               </div>
             </div>
           </div>
 
           {/* Quadrillage */}
           <div className="mb-12">
-            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Fond Quadrillé Animé</h3>
+            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Fond Quadrillé Animé (Mesh)</h3>
             <div className="relative h-48 rounded-lg overflow-hidden border border-[#E5E0DA]">
               <div 
                 className="absolute inset-0 opacity-20"
@@ -319,7 +554,7 @@ const CharteGraphique = () => {
             </div>
             <p className="text-sm text-[#666666] mt-2">
               Deux quadrillages diagonaux (45° et -45°) avec animation de translation continue (40s).
-              Opacités: 20% et 10%.
+              Opacités: 20% et 10%. Espacement lignes: 20px.
             </p>
           </div>
 
@@ -334,18 +569,18 @@ const CharteGraphique = () => {
             </div>
             <p className="text-sm text-[#666666] mt-2">
               Bordure: 1px solid border/30. Animation: pulsation 6s (opacité 30% → 60%).
-              Délais échelonnés: 0s, 1s, 2s, 3s.
+              Délais échelonnés: 0s, 1s, 2s, 3s. Usage: Hero page uniquement.
             </p>
           </div>
         </section>
 
-        {/* ========== PAGE 6: BOUTONS & CTA ========== */}
+        {/* ========== PAGE 9: BOUTONS & CTA ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
           <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
-            05. Boutons & CTA
+            07. Boutons & CTA
           </h2>
 
-          {/* Bouton Primary */}
+          {/* GradientButton */}
           <div className="mb-12">
             <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">GradientButton — Primary</h3>
             <div className="flex gap-8 items-center mb-4">
@@ -398,7 +633,8 @@ const CharteGraphique = () => {
               </span>
             </div>
             <p className="text-sm text-[#666666]">
-              Texte avec gradient animé (8s). Soulignement animé au hover (scale-x 0 → 1).
+              Texte avec gradient animé (8s). Soulignement animé au hover (scale-x 0 → 1, 300ms).
+              Focus-visible: ring-2 ring-accent.
             </p>
           </div>
 
@@ -411,51 +647,50 @@ const CharteGraphique = () => {
               </span>
             </div>
             <p className="text-sm text-[#666666]">
-              Texte Bleu Nuit + flèche Terracotta. Gap augmente au hover (2 → 3).
+              Texte Bleu Nuit + flèche Terracotta. Gap augmente au hover (gap-2 → gap-3).
+              Focus-visible: ring-2 ring-accent.
             </p>
           </div>
         </section>
 
-        {/* ========== PAGE 7: ANIMATIONS ========== */}
+        {/* ========== PAGE 10: ANIMATIONS ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
           <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
-            06. Animations
+            08. Animations
           </h2>
 
-          <div className="space-y-8">
+          <div className="grid grid-cols-2 gap-6">
             {/* FadeIn */}
-            <div className="bg-[#FAF9F7] p-6 rounded-lg">
+            <div className="bg-[#FAF9F7] p-5 rounded-lg">
               <h3 className="text-lg font-semibold text-[#1A2B4A] mb-2">fadeIn</h3>
-              <p className="text-sm text-[#666666] mb-2">Apparition progressive avec légère translation verticale.</p>
-              <pre className="text-xs font-mono bg-white p-4 rounded border border-[#E5E0DA] overflow-x-auto">
+              <p className="text-sm text-[#666666] mb-2">Apparition progressive.</p>
+              <pre className="text-xs font-mono bg-white p-3 rounded border border-[#E5E0DA] overflow-x-auto">
 {`@keyframes fadeIn {
-  0% { opacity: 0; visibility: hidden; }
-  1% { visibility: visible; }
-  100% { opacity: 1; visibility: visible; }
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
-animation: fadeIn 0.6s ease-out forwards;`}
+animation: fadeIn 0.6s ease-out;`}
               </pre>
             </div>
 
             {/* GradientText */}
-            <div className="bg-[#FAF9F7] p-6 rounded-lg">
+            <div className="bg-[#FAF9F7] p-5 rounded-lg">
               <h3 className="text-lg font-semibold text-[#1A2B4A] mb-2">gradientText</h3>
-              <p className="text-sm text-[#666666] mb-2">Animation du gradient sur le texte (logo, titres).</p>
-              <pre className="text-xs font-mono bg-white p-4 rounded border border-[#E5E0DA] overflow-x-auto">
+              <p className="text-sm text-[#666666] mb-2">Animation gradient logo.</p>
+              <pre className="text-xs font-mono bg-white p-3 rounded border border-[#E5E0DA] overflow-x-auto">
 {`@keyframes gradientText {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
-animation: gradientText 8s ease infinite;
-background-size: 600% 600%;`}
+animation: gradientText 8s ease infinite;`}
               </pre>
             </div>
 
             {/* PatternScroll */}
-            <div className="bg-[#FAF9F7] p-6 rounded-lg">
+            <div className="bg-[#FAF9F7] p-5 rounded-lg">
               <h3 className="text-lg font-semibold text-[#1A2B4A] mb-2">patternScroll</h3>
-              <p className="text-sm text-[#666666] mb-2">Translation continue du quadrillage diagonal.</p>
-              <pre className="text-xs font-mono bg-white p-4 rounded border border-[#E5E0DA] overflow-x-auto">
+              <p className="text-sm text-[#666666] mb-2">Translation quadrillage.</p>
+              <pre className="text-xs font-mono bg-white p-3 rounded border border-[#E5E0DA] overflow-x-auto">
 {`@keyframes patternScroll {
   0% { transform: translate(0, 0); }
   100% { transform: translate(50px, 50px); }
@@ -465,10 +700,10 @@ animation: patternScroll 40s linear infinite;`}
             </div>
 
             {/* ConstructionFade */}
-            <div className="bg-[#FAF9F7] p-6 rounded-lg">
+            <div className="bg-[#FAF9F7] p-5 rounded-lg">
               <h3 className="text-lg font-semibold text-[#1A2B4A] mb-2">constructionFade</h3>
-              <p className="text-sm text-[#666666] mb-2">Pulsation des rectangles décoratifs.</p>
-              <pre className="text-xs font-mono bg-white p-4 rounded border border-[#E5E0DA] overflow-x-auto">
+              <p className="text-sm text-[#666666] mb-2">Pulsation rectangles.</p>
+              <pre className="text-xs font-mono bg-white p-3 rounded border border-[#E5E0DA] overflow-x-auto">
 {`@keyframes constructionFade {
   0%, 100% { opacity: 0.3; }
   50% { opacity: 0.6; }
@@ -478,24 +713,53 @@ animation: constructionFade 6s ease-in-out infinite;`}
             </div>
 
             {/* Line Draw */}
-            <div className="bg-[#FAF9F7] p-6 rounded-lg">
-              <h3 className="text-lg font-semibold text-[#1A2B4A] mb-2">Line Draw (SVG)</h3>
-              <p className="text-sm text-[#666666] mb-2">Animation de tracé progressif des lignes SVG.</p>
-              <pre className="text-xs font-mono bg-white p-4 rounded border border-[#E5E0DA] overflow-x-auto">
-{`const length = path.getTotalLength();
-path.style.strokeDasharray = length + 'px';
-path.style.strokeDashoffset = length + 'px';
-path.style.transition = 'stroke-dashoffset 6s ease-in-out';
-path.style.strokeDashoffset = '0px';`}
+            <div className="bg-[#FAF9F7] p-5 rounded-lg">
+              <h3 className="text-lg font-semibold text-[#1A2B4A] mb-2">lineDraw (SVG)</h3>
+              <p className="text-sm text-[#666666] mb-2">Tracé progressif lignes.</p>
+              <pre className="text-xs font-mono bg-white p-3 rounded border border-[#E5E0DA] overflow-x-auto">
+{`strokeDasharray: length
+strokeDashoffset: length → 0
+transition: 6s ease-in-out
+delay: 0.5s`}
+              </pre>
+            </div>
+
+            {/* Underline Hover */}
+            <div className="bg-[#FAF9F7] p-5 rounded-lg">
+              <h3 className="text-lg font-semibold text-[#1A2B4A] mb-2">underlineHover</h3>
+              <p className="text-sm text-[#666666] mb-2">Soulignement animé.</p>
+              <pre className="text-xs font-mono bg-white p-3 rounded border border-[#E5E0DA] overflow-x-auto">
+{`::after {
+  transform: scaleX(0);
+  transform-origin: right;
+}
+:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}`}
               </pre>
             </div>
           </div>
+
+          {/* Accessibilité */}
+          <div className="mt-8 bg-[#FAF9F7] p-5 rounded-lg">
+            <h3 className="text-lg font-semibold text-[#1A2B4A] mb-2">Accessibilité — Reduced Motion</h3>
+            <pre className="text-xs font-mono bg-white p-3 rounded border border-[#E5E0DA] overflow-x-auto">
+{`@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}`}
+            </pre>
+          </div>
         </section>
 
-        {/* ========== PAGE 8: APPLICATIONS ========== */}
-        <section className="min-h-screen p-12 bg-white">
+        {/* ========== PAGE 11: APPLICATIONS ========== */}
+        <section className="min-h-screen p-12 bg-white print:break-after-page">
           <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
-            07. Applications
+            09. Applications
           </h2>
 
           {/* Signature email */}
@@ -508,6 +772,7 @@ path.style.strokeDashoffset = '0px';`}
               <p className="text-xs text-[#666666]">nlq@iarche.fr · Bayonne, France</p>
               <p className="text-xs text-[#D15A3E] mt-1">L'IA se construit avec vous</p>
             </div>
+            <p className="text-sm text-[#666666] mt-2">Export: 600 × 200px PNG via /admin/medias/signature</p>
           </div>
 
           {/* Carte de visite */}
@@ -532,18 +797,41 @@ path.style.strokeDashoffset = '0px';`}
             </div>
           </div>
 
-          {/* Baseline */}
+          {/* Module Médias */}
           <div className="mb-12">
-            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Baseline</h3>
-            <div className="bg-[#FAF9F7] p-8 rounded-lg text-center">
-              <p className="text-2xl text-[#666666] italic">"L'IA se construit avec vous"</p>
+            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Module Admin Médias</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="bg-[#FAF9F7] p-4 rounded-lg">
+                <h4 className="font-semibold text-[#1A2B4A] mb-2">Éditeurs PNG</h4>
+                <ul className="text-[#666666] space-y-1">
+                  <li>• PostEditor (1080×1080)</li>
+                  <li>• BannerEditor (1584×396)</li>
+                  <li>• StoryEditor (1080×1920)</li>
+                  <li>• ThumbnailEditor (1280×720)</li>
+                  <li>• OpenGraphEditor (1200×630)</li>
+                  <li>• SignatureEditor (600×200)</li>
+                  <li>• LogoEditor (multi-formats)</li>
+                </ul>
+              </div>
+              <div className="bg-[#FAF9F7] p-4 rounded-lg">
+                <h4 className="font-semibold text-[#1A2B4A] mb-2">Éditeurs PDF</h4>
+                <ul className="text-[#666666] space-y-1">
+                  <li>• CarouselPDF (4:5)</li>
+                  <li>• PresentationPDF (16:9)</li>
+                  <li>• CharteEditor (A4)</li>
+                  <li>• HeaderDocEditor (A4)</li>
+                  <li>• QRCodeEditor</li>
+                  <li>• FaviconEditor</li>
+                </ul>
+              </div>
             </div>
           </div>
 
-          {/* Contact */}
+          {/* Coordonnées */}
           <div>
-            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Coordonnées</h3>
+            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Coordonnées Officielles</h3>
             <div className="bg-[#FAF9F7] p-6 rounded-lg">
+              <p className="text-[#1A2B4A]"><strong>Baseline:</strong> L'IA se construit avec vous</p>
               <p className="text-[#1A2B4A]"><strong>Email:</strong> nlq@iarche.fr</p>
               <p className="text-[#1A2B4A]"><strong>Localisation:</strong> Bayonne · France</p>
               <p className="text-[#1A2B4A]"><strong>Site:</strong> iarche.fr</p>
@@ -551,12 +839,79 @@ path.style.strokeDashoffset = '0px';`}
           </div>
         </section>
 
+        {/* ========== PAGE 12: USAGES & RÈGLES ========== */}
+        <section className="min-h-screen p-12 bg-white">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
+            10. Usages & Règles
+          </h2>
+
+          <div className="grid grid-cols-2 gap-8 mb-12">
+            {/* À faire */}
+            <div className="bg-[#E8F5E9] p-6 rounded-lg">
+              <h3 className="text-xl font-semibold text-[#2E7D32] mb-4">✓ À faire</h3>
+              <ul className="space-y-2 text-[#1A2B4A]">
+                <li>• Utiliser exclusivement les couleurs de la palette</li>
+                <li>• Respecter les zones de protection du logo</li>
+                <li>• Maintenir des contrastes WCAG AA minimum</li>
+                <li>• Utiliser les tokens CSS (--primary, --accent...)</li>
+                <li>• Appliquer focus-visible avec ring-accent</li>
+                <li>• Respecter la hiérarchie typographique</li>
+                <li>• Exporter en haute résolution (pixelRatio 3)</li>
+                <li>• Inclure prefers-reduced-motion</li>
+              </ul>
+            </div>
+
+            {/* À éviter */}
+            <div className="bg-[#FFEBEE] p-6 rounded-lg">
+              <h3 className="text-xl font-semibold text-[#C62828] mb-4">✗ À éviter</h3>
+              <ul className="space-y-2 text-[#1A2B4A]">
+                <li>• Modifier les couleurs du logo</li>
+                <li>• Utiliser des fonds trop chargés</li>
+                <li>• Hardcoder des valeurs HEX</li>
+                <li>• Réduire le logo sous 100px de large</li>
+                <li>• Déformer ou pivoter le logo</li>
+                <li>• Ajouter des ombres portées au logo</li>
+                <li>• Utiliser d'autres polices que Manrope</li>
+                <li>• Mélanger les styles de CTA</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Tokens référence */}
+          <div className="bg-[#FAF9F7] p-6 rounded-lg">
+            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Tokens CSS Référence</h3>
+            <div className="grid grid-cols-3 gap-4 font-mono text-xs">
+              <div>
+                <p className="font-semibold text-[#1A2B4A] mb-2">Couleurs</p>
+                <p className="text-[#666666]">--primary: 218 47% 20%</p>
+                <p className="text-[#666666]">--accent: 12 60% 53%</p>
+                <p className="text-[#666666]">--background: 30 14% 98%</p>
+                <p className="text-[#666666]">--foreground: 218 47% 20%</p>
+                <p className="text-[#666666]">--muted-foreground: 0 0% 40%</p>
+              </div>
+              <div>
+                <p className="font-semibold text-[#1A2B4A] mb-2">Surfaces</p>
+                <p className="text-[#666666]">--secondary: 30 20% 93%</p>
+                <p className="text-[#666666]">--border: 30 16% 88%</p>
+                <p className="text-[#666666]">--ring: 12 60% 53%</p>
+                <p className="text-[#666666]">--card: 30 14% 98%</p>
+              </div>
+              <div>
+                <p className="font-semibold text-[#1A2B4A] mb-2">Utilitaires</p>
+                <p className="text-[#666666]">--radius: 0.5rem</p>
+                <p className="text-[#666666]">--success: 153 34% 36%</p>
+                <p className="text-[#666666]">--text-subtle: 0 0% 40%</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ========== FOOTER ========== */}
         <footer className="p-8 bg-[#1A2B4A] text-white text-center print:break-before-avoid">
           <p className="text-xl font-semibold mb-2">IArche</p>
-          <p className="text-sm text-white/70">Charte Graphique v2.0 — Document confidentiel</p>
+          <p className="text-sm text-white/70">Charte Graphique Complète v3.0 — Document confidentiel</p>
           <p className="text-xs text-white/50 mt-4">© 2025 IArche · Tous droits réservés</p>
-          <p className="text-xs text-white/30 mt-2">Mise à jour : 3 Décembre 2025</p>
+          <p className="text-xs text-white/30 mt-2">Mise à jour : Décembre 2025</p>
         </footer>
       </div>
 
