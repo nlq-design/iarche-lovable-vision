@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { format, addDays, startOfDay, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar, Clock, CheckCircle, Loader2, ChevronLeft, ChevronRight, Video } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, Loader2, Video, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import GradientLink from '@/components/ui/GradientLink';
@@ -30,8 +30,9 @@ const RendezVous = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
+  const [bookingTypes, setBookingTypes] = useState<BookingType[]>([]);
   const [bookingType, setBookingType] = useState<BookingType | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
+  const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(addDays(new Date(), 1)));
   const [slots, setSlots] = useState<string[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,11 +52,41 @@ const RendezVous = () => {
   // Generate dates for the next 14 days
   const availableDates = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i + 1));
 
+  // Load booking types list (when no slug)
+  useEffect(() => {
+    if (!slug) {
+      loadBookingTypes();
+    }
+  }, [slug]);
+
+  // Load slots when slug is provided
   useEffect(() => {
     if (slug) {
       loadSlots(selectedDate);
     }
   }, [slug, selectedDate]);
+
+  const loadBookingTypes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('booking_types')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setBookingTypes(data || []);
+    } catch (err) {
+      console.error('Error loading booking types:', err);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les types de rendez-vous.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loadSlots = async (date: Date) => {
     setIsLoadingSlots(true);
@@ -136,6 +167,78 @@ const RendezVous = () => {
     );
   }
 
+  // No slug: show booking types list
+  if (!slug) {
+    return (
+      <BackgroundLayout>
+        <Helmet>
+          <title>Prendre rendez-vous · IArche</title>
+          <meta name="description" content="Réservez un rendez-vous avec IArche pour discuter de vos projets IA." />
+        </Helmet>
+        
+        <Header />
+        <BreadcrumbNav />
+        
+        <main className="min-h-screen pt-4">
+          <section className="max-w-4xl mx-auto px-6 py-8">
+            <div className="text-center mb-12">
+              <h1 className="text-3xl md:text-4xl font-bold hero-gradient-text mb-2 animate-fadeIn">
+                Prendre rendez-vous
+              </h1>
+              <div className="w-24 h-1 mx-auto mb-4 rounded-full bg-gradient-to-r from-primary via-accent to-primary animate-fadeIn [animation-delay:0.1s]"></div>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fadeIn [animation-delay:0.2s]">
+                Choisissez le type de rendez-vous qui correspond à votre besoin
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {bookingTypes.map((type, index) => (
+                <Link
+                  key={type.id}
+                  to={`/rendez-vous/${type.slug}`}
+                  className="group bg-secondary/30 rounded-lg p-6 border border-border hover:border-primary/50 transition-all duration-300 animate-fadeIn"
+                  style={{ animationDelay: `${0.3 + index * 0.1}s` }}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h2 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors mb-2">
+                        {type.name}
+                      </h2>
+                      {type.description && (
+                        <p className="text-muted-foreground text-sm mb-4">
+                          {type.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          {type.duration_minutes} min
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Video className="w-4 h-4" />
+                          Google Meet
+                        </span>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {bookingTypes.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Aucun type de rendez-vous disponible pour le moment.</p>
+              </div>
+            )}
+          </section>
+        </main>
+        
+        <Footer />
+      </BackgroundLayout>
+    );
+  }
+
   if (!bookingType) {
     return (
       <BackgroundLayout>
@@ -143,7 +246,7 @@ const RendezVous = () => {
         <main className="min-h-screen pt-20 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground mb-4">Type de rendez-vous non trouvé</h1>
-            <Button onClick={() => navigate('/services')}>Voir nos services</Button>
+            <Button onClick={() => navigate('/rendez-vous')}>Voir les types disponibles</Button>
           </div>
         </main>
         <Footer />
@@ -187,7 +290,7 @@ const RendezVous = () => {
               <p className="text-sm text-muted-foreground mb-6">
                 Vous allez recevoir un email de confirmation avec une invitation Google Calendar.
               </p>
-              <GradientLink href="/">Retour à l'accueil</GradientLink>
+              <GradientLink to="/">Retour à l'accueil</GradientLink>
             </div>
           </section>
         </main>
@@ -374,10 +477,10 @@ const RendezVous = () => {
                   </div>
                 )}
 
-                <GradientLink
+                <Button
                   type="submit"
                   disabled={!selectedSlot || isSubmitting}
-                  className="w-full justify-center"
+                  className="w-full bg-primary hover:bg-primary/90"
                 >
                   {isSubmitting ? (
                     <>
@@ -387,7 +490,7 @@ const RendezVous = () => {
                   ) : (
                     'Confirmer le rendez-vous'
                   )}
-                </GradientLink>
+                </Button>
               </form>
             </div>
           </div>
