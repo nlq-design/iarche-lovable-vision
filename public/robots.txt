@@ -16,5 +16,8 @@ Allow: /
 # Bloquer l'accès admin
 Disallow: /admin/
 
-# Sitemap dynamique via edge function
+# Sitemap statique (pages principales)
+Sitemap: https://iarche.fr/sitemap.xml
+
+# Sitemap dynamique (articles, actualités - accessible aux bots)
 Sitemap: https://mgjyhlyrwnnioctkbdkk.supabase.co/functions/v1/generate-sitemap
