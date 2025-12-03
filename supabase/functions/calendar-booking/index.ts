@@ -926,7 +926,9 @@ serve(async (req) => {
         JSON.stringify({ 
           success: true, 
           booking, 
-          meetLink,
+          googleMeetLink,
+          zoomJoinUrl,
+          zoomPassword,
           meetingType,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
