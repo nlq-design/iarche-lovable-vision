@@ -8,7 +8,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    color-scheme: light only;
+    color-scheme: only light;
     
     /* IArche Color Palette - Light Mode (Default) */
     
@@ -80,7 +80,8 @@ All colors MUST be HSL.
 
   html, body {
     @apply bg-background text-foreground;
-    color-scheme: light only !important;
+    color-scheme: only light !important;
+    background-color: #FAF9F7 !important;
   }
 
   /* Strong tags dans le contenu des articles utilisent le bleu IArche avec surlignage subtil */
