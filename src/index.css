@@ -8,6 +8,8 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    color-scheme: light only;
+    
     /* IArche Color Palette - Light Mode (Default) */
     
     /* Primary: Bleu Nuit #1A2B4A */
