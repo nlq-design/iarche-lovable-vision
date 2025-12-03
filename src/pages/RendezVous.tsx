@@ -30,7 +30,6 @@ type MeetingType = 'visio' | 'telephone' | 'presentiel';
 
 const MEETING_TYPE_OPTIONS = [
   { value: 'visio' as MeetingType, label: 'Visio', icon: Video, description: 'Visioconférence via Zoom' },
-  { value: 'telephone' as MeetingType, label: 'Téléphone', icon: Phone, description: 'Nous vous appelons' },
   { value: 'presentiel' as MeetingType, label: 'Présentiel', icon: MapPin, description: 'Dans nos locaux à Bayonne' },
 ];
 
