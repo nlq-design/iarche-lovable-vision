@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { logEmail } from '../_shared/emailLogger.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -70,12 +71,14 @@ const handler = async (req: Request): Promise<Response> => {
       critical: '🔴 Critique'
     };
 
+    const emailSubject = `[${severityLabels[alert.severity]}] Alerte de sécurité : ${alert.title}`;
+
     // Envoyer l'alerte par email
-    await resend.emails.send({
+    const { data: emailResponse, error: emailError } = await resend.emails.send({
       from: "IArche Security <security@iarche.fr>",
       to: adminEmails,
       replyTo: 'nlq@iarche.fr',
-      subject: `[${severityLabels[alert.severity]}] Alerte de sécurité : ${alert.title}`,
+      subject: emailSubject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: ${severityColors[alert.severity]}; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
@@ -109,7 +112,41 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
+    if (emailError) {
+      console.error('Error sending security alert email:', emailError);
+      
+      // Log failed email for each admin
+      for (const adminEmail of adminEmails) {
+        await logEmail({
+          recipient_email: adminEmail,
+          subject: emailSubject,
+          source_type: 'security',
+          email_type: 'admin_notification',
+          status: 'failed',
+          error_message: emailError.message,
+          metadata: { severity: alert.severity, alert_title: alert.title }
+        });
+      }
+
+      return new Response(
+        JSON.stringify({ error: emailError.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     console.log(`Security alert sent to ${adminEmails.length} admins:`, alert.title);
+
+    // Log successful email for each admin
+    for (const adminEmail of adminEmails) {
+      await logEmail({
+        recipient_email: adminEmail,
+        subject: emailSubject,
+        source_type: 'security',
+        email_type: 'admin_notification',
+        status: 'sent',
+        metadata: { severity: alert.severity, alert_title: alert.title, resend_id: emailResponse?.id }
+      });
+    }
 
     return new Response(JSON.stringify({ 
       success: true,

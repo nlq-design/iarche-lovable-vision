@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { Resend } from 'https://esm.sh/resend@2.0.0';
+import { logEmail } from '../_shared/emailLogger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -100,16 +101,32 @@ Deno.serve(async (req) => {
       </div>
     `;
 
+    const emailSubject = `🎯 Nouveau Lead: ${name} (${sourceLabel})`;
+    const adminEmail = 'nlq@iarche.fr';
+
     const { data, error } = await resend.emails.send({
       from: 'IArche Notifications <notifications@iarche.fr>',
-      to: ['nlq@iarche.fr'],
+      to: [adminEmail],
       reply_to: 'nlq@iarche.fr',
-      subject: `🎯 Nouveau Lead: ${name} (${sourceLabel})`,
+      subject: emailSubject,
       html: emailHtml,
     });
 
     if (error) {
       console.error('Error sending lead notification email:', error);
+      
+      // Log failed email
+      await logEmail({
+        recipient_email: adminEmail,
+        subject: emailSubject,
+        source_type: source,
+        email_type: 'admin_notification',
+        source_id: lead_id,
+        status: 'failed',
+        error_message: error.message,
+        metadata: { name, email, company, phone, source_context }
+      });
+
       return new Response(
         JSON.stringify({ error: error.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -117,6 +134,17 @@ Deno.serve(async (req) => {
     }
 
     console.log('Lead notification email sent successfully:', data);
+
+    // Log successful email
+    await logEmail({
+      recipient_email: adminEmail,
+      subject: emailSubject,
+      source_type: source,
+      email_type: 'admin_notification',
+      source_id: lead_id,
+      status: 'sent',
+      metadata: { name, email, company, phone, source_context, resend_id: data?.id }
+    });
 
     return new Response(
       JSON.stringify({ success: true, email_id: data?.id }),

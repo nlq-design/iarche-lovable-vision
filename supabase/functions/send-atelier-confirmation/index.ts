@@ -1,4 +1,5 @@
 import { Resend } from 'https://esm.sh/resend@2.0.0';
+import { logEmail } from '../_shared/emailLogger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +12,7 @@ interface AtelierConfirmationRequest {
   name: string;
   email: string;
   atelier_title: string;
+  atelier_id?: string;
   event_date: string | null;
   event_location: string | null;
   heure_debut: string | null;
@@ -22,11 +24,14 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const subject = (atelierTitle: string) => `✅ Inscription confirmée : ${atelierTitle}`;
+
   try {
     const { 
       name, 
       email, 
       atelier_title,
+      atelier_id,
       event_date,
       event_location,
       heure_debut,
@@ -60,10 +65,12 @@ Deno.serve(async (req) => {
       `;
     }
 
+    const emailSubject = subject(atelier_title);
+
     const { data, error } = await resend.emails.send({
       from: 'IArche <contact@iarche.fr>',
       to: [email],
-      subject: `✅ Inscription confirmée : ${atelier_title}`,
+      subject: emailSubject,
       html: `
         <!DOCTYPE html>
         <html>
@@ -110,6 +117,19 @@ Deno.serve(async (req) => {
 
     if (error) {
       console.error('Error sending confirmation email:', error);
+      
+      // Log failed email
+      await logEmail({
+        recipient_email: email,
+        subject: emailSubject,
+        source_type: 'atelier-webinaire',
+        email_type: 'user_confirmation',
+        source_id: atelier_id,
+        status: 'failed',
+        error_message: error.message,
+        metadata: { name, atelier_title }
+      });
+
       return new Response(
         JSON.stringify({ error: error.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -117,6 +137,17 @@ Deno.serve(async (req) => {
     }
 
     console.log('Confirmation email sent successfully:', data);
+
+    // Log successful email
+    await logEmail({
+      recipient_email: email,
+      subject: emailSubject,
+      source_type: 'atelier-webinaire',
+      email_type: 'user_confirmation',
+      source_id: atelier_id,
+      status: 'sent',
+      metadata: { name, atelier_title, resend_id: data?.id }
+    });
 
     return new Response(
       JSON.stringify({ success: true, email_id: data?.id }),

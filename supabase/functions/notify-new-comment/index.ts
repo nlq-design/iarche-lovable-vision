@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { Resend } from "https://esm.sh/resend@4.0.0";
 import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
 import { checkGeoBlocking, getGeoBlockingHeaders } from '../_shared/geoBlock.ts';
+import { logEmail } from '../_shared/emailLogger.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -155,12 +156,14 @@ const handler = async (req: Request): Promise<Response> => {
     const safeContent = escapeHtml(content);
     const safeArticleTitle = escapeHtml(article.title);
 
+    const emailSubject = `Nouveau commentaire en attente - ${safeArticleTitle}`;
+
     // Envoyer l'email aux admins
-    const emailResponse = await resend.emails.send({
+    const { data: emailResponse, error: emailError } = await resend.emails.send({
       from: "IArche Notifications <notifications@iarche.fr>",
       to: adminEmails,
       replyTo: 'nlq@iarche.fr',
-      subject: `Nouveau commentaire en attente - ${safeArticleTitle}`,
+      subject: emailSubject,
       html: `
         <h1>Nouveau commentaire en attente de modération</h1>
         <p><strong>Article :</strong> ${safeArticleTitle}</p>
@@ -182,7 +185,40 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
+    if (emailError) {
+      console.error('Error sending notification email:', emailError);
+      
+      // Log failed email for each admin
+      for (const adminEmail of adminEmails) {
+        await logEmail({
+          recipient_email: adminEmail,
+          subject: emailSubject,
+          source_type: 'comment',
+          email_type: 'admin_notification',
+          source_id: comment_id,
+          status: 'failed',
+          error_message: emailError.message,
+          metadata: { article_id, author_name, author_email }
+        });
+      }
+
+      throw new Error(emailError.message);
+    }
+
     console.log("Notification email sent successfully:", emailResponse);
+
+    // Log successful email for each admin
+    for (const adminEmail of adminEmails) {
+      await logEmail({
+        recipient_email: adminEmail,
+        subject: emailSubject,
+        source_type: 'comment',
+        email_type: 'admin_notification',
+        source_id: comment_id,
+        status: 'sent',
+        metadata: { article_id, author_name, author_email, resend_id: emailResponse?.id }
+      });
+    }
 
     return new Response(JSON.stringify({ success: true, emailResponse }), {
       status: 200,
