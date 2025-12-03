@@ -213,10 +213,12 @@ export default function PostEditor() {
   const handleExport = async () => {
     try {
       await exportToPNG(postRef, `post-${template}-${format}`, {
-        pixelRatio: 2,
+        pixelRatio: 3,
+        width: width * 2, // Export haute résolution
+        height: height * 2, // Export haute résolution
         backgroundColor: theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse,
       });
-      toast.success('Post exporté avec succès');
+      toast.success('Post exporté avec succès (haute résolution)');
     } catch (error) {
       toast.error('Erreur lors de l\'export');
     }

@@ -126,10 +126,12 @@ export default function StoryEditor() {
   const handleExport = async () => {
     try {
       await exportToPNG(storyRef, `story-${template}`, {
-        pixelRatio: 2,
+        pixelRatio: 3,
+        width: STORY_WIDTH * 2, // Export haute résolution (2160px)
+        height: STORY_HEIGHT * 2, // Export haute résolution (3840px)
         backgroundColor: theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse,
       });
-      toast.success('Story exportée avec succès');
+      toast.success('Story exportée avec succès (haute résolution)');
     } catch (error) {
       toast.error('Erreur lors de l\'export');
     }

@@ -137,10 +137,12 @@ export default function ThumbnailEditor() {
   const handleExport = async () => {
     try {
       await exportToPNG(thumbnailRef, `thumbnail-${eventType}-${format}`, {
-        pixelRatio: 2,
+        pixelRatio: 3,
+        width: width * 2, // Export haute résolution
+        height: height * 2, // Export haute résolution
         backgroundColor: theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse,
       });
-      toast.success('Miniature exportée avec succès');
+      toast.success('Miniature exportée avec succès (haute résolution)');
     } catch (error) {
       toast.error('Erreur lors de l\'export');
     }
