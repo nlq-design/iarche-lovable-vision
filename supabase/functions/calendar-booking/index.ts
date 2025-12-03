@@ -25,8 +25,22 @@ interface BookingRequest {
     bookingTypeId: string;
     meetingType?: MeetingType;
     additionalGuests?: string[];
+    solutionSlug?: string; // Track which solution page the booking came from
   };
   bookingId?: string;
+}
+
+// Map solution slugs to display names
+function getSolutionDisplayName(slug: string | undefined): string | undefined {
+  if (!slug) return undefined;
+  const solutionNames: Record<string, string> = {
+    'collaboria': 'Collaboria',
+    'datalia': 'Datalia',
+    'team-5-connect': 'Team 5 Connect',
+    'lexia': 'Lexia',
+    'dialogue-plus': 'Dialogue Plus',
+  };
+  return solutionNames[slug] || slug;
 }
 
 // Parse Google Service Account credentials
@@ -706,6 +720,12 @@ serve(async (req) => {
       if (existingLead) {
         leadId = existingLead.id;
       } else {
+        // Get solution display name for context
+        const solutionName = getSolutionDisplayName(bookingData.solutionSlug);
+        const sourceContext = solutionName 
+          ? `${bookingType.name} - ${solutionName} (${getMeetingTypeLabel(meetingType)})`
+          : `${bookingType.name} (${getMeetingTypeLabel(meetingType)})`;
+        
         const { data: newLead } = await supabase
           .from('leads')
           .insert({
@@ -714,13 +734,17 @@ serve(async (req) => {
             phone: bookingData.phone,
             company: bookingData.company,
             source: 'booking',
-            source_context: `${bookingType.name} (${getMeetingTypeLabel(meetingType)})`,
+            source_context: sourceContext,
             message: bookingData.message,
           })
           .select()
           .single();
         leadId = newLead?.id;
       }
+
+      // Get solution display name
+      const solutionName = getSolutionDisplayName(bookingData.solutionSlug);
+      const solutionInfo = solutionName ? `\nSolution: ${solutionName}` : '';
 
       // Create meeting link based on type
       let googleEventId = null;
@@ -730,7 +754,7 @@ serve(async (req) => {
       let zoomPassword = null;
 
       // Build description based on meeting type
-      let eventDescription = `Email: ${bookingData.email}\nEntreprise: ${bookingData.company || 'Non renseignée'}${additionalGuests.length > 0 ? `\nParticipants supplémentaires: ${additionalGuests.join(', ')}` : ''}\n\nMessage: ${bookingData.message || 'Aucun'}`;
+      let eventDescription = `Email: ${bookingData.email}\nEntreprise: ${bookingData.company || 'Non renseignée'}${solutionInfo}${additionalGuests.length > 0 ? `\nParticipants supplémentaires: ${additionalGuests.join(', ')}` : ''}\n\nMessage: ${bookingData.message || 'Aucun'}`;
       
       if (meetingType === 'telephone') {
         eventDescription = `📞 APPEL TÉLÉPHONIQUE\nNuméro à appeler: ${bookingData.phone || 'Non renseigné'}\n\n${eventDescription}`;
@@ -740,13 +764,18 @@ serve(async (req) => {
         eventDescription = `Téléphone: ${bookingData.phone || 'Non renseigné'}\n${eventDescription}`;
       }
 
+      // Event title with solution name if applicable
+      const eventTitle = solutionName 
+        ? `${bookingType.name} - ${solutionName} - ${bookingData.name}`
+        : `${bookingType.name} - ${bookingData.name}`;
+
       if (meetingType === 'visio') {
         // Create Zoom meeting
         try {
           const zoomToken = await getZoomAccessToken();
           const zoomResult = await createZoomMeeting(
             zoomToken,
-            `${bookingType.name} - ${bookingData.name}`,
+            eventTitle,
             startTime.toISOString(),
             bookingType.duration_minutes,
             allAttendeeEmails
@@ -764,7 +793,7 @@ serve(async (req) => {
           const accessToken = await getAccessToken();
           const eventResult = await createCalendarEvent(
             accessToken,
-            `${bookingType.name} - ${bookingData.name}`,
+            eventTitle,
             `${eventDescription}\n\nLien Zoom: ${zoomJoinUrl || 'À venir'}${zoomPassword ? `\nMot de passe: ${zoomPassword}` : ''}`,
             startTime.toISOString(),
             endTime.toISOString(),
@@ -781,7 +810,7 @@ serve(async (req) => {
           const accessToken = await getAccessToken();
           const eventResult = await createCalendarEvent(
             accessToken,
-            `${bookingType.name} - ${bookingData.name}`,
+            eventTitle,
             eventDescription,
             startTime.toISOString(),
             endTime.toISOString(),
@@ -831,7 +860,10 @@ serve(async (req) => {
 
       // Generate ICS file
       let icsLocation = getMeetingTypeLabel(meetingType);
-      let icsDescription = `Rendez-vous avec IArche\n\nType: ${bookingType.name}\nFormat: ${getMeetingTypeLabel(meetingType)}\nAvec: ${bookingData.name}`;
+      const icsTitle = solutionName 
+        ? `${bookingType.name} - ${solutionName} - IArche`
+        : `${bookingType.name} - IArche`;
+      let icsDescription = `Rendez-vous avec IArche\n\nType: ${bookingType.name}${solutionName ? `\nSolution: ${solutionName}` : ''}\nFormat: ${getMeetingTypeLabel(meetingType)}\nAvec: ${bookingData.name}`;
       
       if (meetingType === 'presentiel') {
         icsLocation = IARCHE_ADDRESS;
@@ -842,7 +874,7 @@ serve(async (req) => {
       }
       
       const icsContent = generateICS(
-        `${bookingType.name} - IArche`,
+        icsTitle,
         icsDescription,
         startTime,
         endTime,
@@ -870,10 +902,15 @@ serve(async (req) => {
         const icsBuffer = new TextEncoder().encode(icsContent);
         const icsBase64 = btoa(String.fromCharCode(...icsBuffer));
 
+      // Email subject with solution name if applicable
+      const emailSubject = solutionName
+        ? `✅ Confirmation : ${bookingType.name} - ${solutionName} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`
+        : `✅ Confirmation : ${bookingType.name} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`;
+
         await resend.emails.send({
           from: 'IArche <contact@iarche.fr>',
           to: allAttendeeEmails,
-          subject: `✅ Confirmation : ${bookingType.name} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`,
+          subject: emailSubject,
           html: emailHTML,
           attachments: [
             {
@@ -910,14 +947,20 @@ serve(async (req) => {
       }
 
       // Send admin notification
+      // Admin notification subject with solution
+      const adminSubject = solutionName
+        ? `📅 Nouveau RDV : ${bookingType.name} - ${solutionName} - ${bookingData.name}`
+        : `📅 Nouveau RDV : ${bookingType.name} - ${bookingData.name}`;
+
       try {
         await resend.emails.send({
           from: 'IArche <contact@iarche.fr>',
           to: ['nlq@nlq.fr'],
-          subject: `📅 Nouveau RDV : ${bookingType.name} - ${bookingData.name}`,
+          subject: adminSubject,
           html: `
             <h2>Nouveau rendez-vous</h2>
             <p><strong>Type:</strong> ${bookingType.name}</p>
+            ${solutionName ? `<p><strong>Solution:</strong> ${solutionName}</p>` : ''}
             <p><strong>Format:</strong> ${getMeetingTypeLabel(meetingType)}</p>
             <p><strong>Date:</strong> ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} à ${startTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
             <p><strong>Nom:</strong> ${bookingData.name}</p>
