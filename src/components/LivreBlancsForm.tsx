@@ -86,6 +86,19 @@ const LivreBlancsForm = ({ articleId, articleTitle }: LivreBlancsFormProps) => {
         throw new Error('Erreur lors de l\'enregistrement');
       }
 
+      // Récupérer l'URL du fichier pour l'email
+      let fileUrl = null;
+      try {
+        const { data: articleData } = await supabase
+          .from('articles')
+          .select('file_url')
+          .eq('id', articleId)
+          .single();
+        fileUrl = articleData?.file_url;
+      } catch (err) {
+        console.warn('Failed to get file URL:', err);
+      }
+
       // Envoyer notification email admin
       if (leadData) {
         try {
@@ -102,8 +115,24 @@ const LivreBlancsForm = ({ articleId, articleTitle }: LivreBlancsFormProps) => {
           });
         } catch (notifError) {
           console.warn('Failed to send lead notification:', notifError);
-          // Ne pas bloquer si la notification échoue
         }
+      }
+
+      // Envoyer email de confirmation avec le PDF à l'utilisateur
+      try {
+        await supabase.functions.invoke('send-user-confirmation', {
+          body: {
+            email: validatedData.email,
+            name: validatedData.name,
+            source_type: 'livre-blanc',
+            source_id: articleId,
+            source_context: articleTitle,
+            livre_blanc_title: articleTitle,
+            file_url: fileUrl,
+          },
+        });
+      } catch (confirmError) {
+        console.warn('Failed to send user confirmation:', confirmError);
       }
 
       // Incrémenter le compteur de téléchargements

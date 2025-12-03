@@ -90,7 +90,20 @@ const SolutionContactForm = ({ solutionName }: SolutionContactFormProps) => {
         });
       } catch (notifError) {
         console.warn('Failed to send lead notification:', notifError);
-        // Ne pas bloquer si la notification échoue
+      }
+
+      // Envoyer email de confirmation à l'utilisateur
+      try {
+        await supabase.functions.invoke('send-user-confirmation', {
+          body: {
+            email: validatedData.email,
+            name: validatedData.name,
+            source_type: 'solution-contact',
+            source_context: solutionName,
+          },
+        });
+      } catch (confirmError) {
+        console.warn('Failed to send user confirmation:', confirmError);
       }
 
       toast({

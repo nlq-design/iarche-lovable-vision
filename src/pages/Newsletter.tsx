@@ -57,6 +57,19 @@ const Newsletter = () => {
         throw dbError;
       }
 
+      // Envoyer email de bienvenue
+      try {
+        await supabase.functions.invoke('send-user-confirmation', {
+          body: {
+            email: validatedData.email,
+            name: validatedData.email.split('@')[0],
+            source_type: 'newsletter',
+          },
+        });
+      } catch (confirmError) {
+        console.warn('Failed to send welcome email:', confirmError);
+      }
+
       toast({
         title: "Inscription réussie",
         description: "Vous recevrez nos actualités par email.",

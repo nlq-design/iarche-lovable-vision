@@ -59,3 +59,6 @@ verify_jwt = true
 
 [functions.enrich-all-resources]
 verify_jwt = true
+
+[functions.send-user-confirmation]
+verify_jwt = false
