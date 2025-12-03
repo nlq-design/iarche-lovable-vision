@@ -78,8 +78,9 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
-  body {
+  html, body {
     @apply bg-background text-foreground;
+    color-scheme: light only !important;
   }
 
   /* Strong tags dans le contenu des articles utilisent le bleu IArche avec surlignage subtil */
