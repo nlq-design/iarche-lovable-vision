@@ -1,6 +1,6 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.15**  
+**Version mise à jour : V6.16**  
 **Date : 3 Décembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
@@ -8,7 +8,256 @@
 
 ## MODIFICATIONS MAJEURES
 
-### 0.13 MODULE MÉDIAS - MODES D'EXPORT UNIFIÉS — MISE À JOUR V6.14 ✅
+### 0.15 MODULE RÉSERVATION - PRISE DE RENDEZ-VOUS — MISE À JOUR V6.16 ✅
+
+#### Système complet de réservation avec intégration Zoom et Google Calendar
+
+**Contexte :**
+- Besoin d'un système de prise de rendez-vous intégré pour les prospects
+- Remplacement du formulaire contact simple par un module de réservation professionnel
+- Intégration calendrier automatique pour éviter les doubles réservations
+- Support visio (Zoom), téléphone et présentiel
+
+**1. Routes publiques**
+
+| Route | Description |
+|-------|-------------|
+| `/rendez-vous/:slug` | Page de réservation pour un type de RDV |
+
+**Types de rendez-vous configurés :**
+
+| Slug | Nom | Durée | Type par défaut |
+|------|-----|-------|-----------------|
+| `premier-echange` | Premier échange | 30 min | Visio |
+| `presentation` | Présentation approfondie | 60 min | Visio |
+
+**2. Routes admin**
+
+| Route | Fonction |
+|-------|----------|
+| `/admin/rendez-vous` | Liste des réservations |
+| `/admin/rendez-vous` (onglet Disponibilités) | Configuration des créneaux |
+| `/admin/rendez-vous` (onglet Types) | Gestion des types de RDV |
+
+**3. Tables Supabase**
+
+**booking_types** — Types de rendez-vous
+```sql
+CREATE TABLE booking_types (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  description TEXT,
+  duration_minutes INTEGER NOT NULL DEFAULT 30,
+  buffer_minutes INTEGER DEFAULT 0,
+  color TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+**booking_availability** — Disponibilités par type et jour
+```sql
+CREATE TABLE booking_availability (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  booking_type_id UUID REFERENCES booking_types(id),
+  day_of_week INTEGER NOT NULL, -- 1=Lundi, 5=Vendredi
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+**bookings** — Réservations
+```sql
+CREATE TABLE bookings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  booking_type_id UUID REFERENCES booking_types(id),
+  lead_id UUID REFERENCES leads(id),
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  company TEXT,
+  message TEXT,
+  meeting_type TEXT, -- 'visio', 'phone', 'presentiel'
+  start_time TIMESTAMPTZ NOT NULL,
+  end_time TIMESTAMPTZ NOT NULL,
+  status TEXT DEFAULT 'confirmed',
+  google_event_id TEXT,
+  google_meet_link TEXT,
+  zoom_meeting_id TEXT,
+  zoom_join_url TEXT,
+  additional_guests TEXT[], -- Emails des invités additionnels
+  notes TEXT,
+  cancellation_reason TEXT,
+  cancelled_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+**4. Intégration Zoom API**
+
+**Prérequis :**
+- Application Zoom Server-to-Server OAuth
+- Secrets configurés : `ZOOM_ACCOUNT_ID`, `ZOOM_CLIENT_ID`, `ZOOM_CLIENT_SECRET`
+- Scopes requis : `meeting:write:meeting:admin`, `user:read:admin`
+
+**Fonctionnement :**
+1. Utilisateur sélectionne type "Visio"
+2. Edge function `calendar-booking` génère token OAuth Zoom
+3. Création réunion Zoom via API `/users/me/meetings`
+4. Récupération du `join_url` et `meeting_id`
+5. Lien Zoom stocké en BDD et envoyé par email
+
+**5. Intégration Google Calendar API**
+
+**Prérequis :**
+- Compte de service Google Cloud avec API Calendar activée
+- Secrets configurés : `GOOGLE_SERVICE_ACCOUNT_KEY`, `GOOGLE_CALENDAR_ID`
+- Partage du calendrier avec le compte de service
+
+**Fonctionnement :**
+1. Edge function récupère les busy times via `freebusy/query`
+2. Créneaux déjà pris exclus de la sélection
+3. Création événement Google Calendar avec :
+   - Titre formaté : "[Type RDV] - Nom prospect (Entreprise)"
+   - Description avec détails + lien Zoom si visio
+   - Attendees : prospect + invités additionnels
+4. Event ID stocké pour modifications ultérieures
+
+**6. Génération des créneaux**
+
+**Règle : Heures fixes uniquement**
+Les créneaux sont générés sur des heures pleines (9h, 10h, 11h, 12h, etc.) et non sur des intervalles basés sur la durée du RDV.
+
+```typescript
+// Génération des créneaux horaires fixes
+for (let hour = startH; hour < endH; hour++) {
+  const current = new Date(dateObj);
+  current.setHours(hour, 0, 0, 0);
+  
+  // Vérification que le créneau se termine avant fin disponibilité
+  const slotEndTime = new Date(current.getTime() + durationMinutes * 60000);
+  if (slotEndTime.getTime() > endTimeLimit.getTime()) continue;
+  
+  // Vérification conflits avec busy times Google Calendar
+  // Vérification conflits avec bookings existants
+  // Si disponible et dans le futur → ajout à la liste
+}
+```
+
+**Exemple pour "Premier échange" (30 min) avec dispo 9h-18h :**
+- Créneaux proposés : 9h00, 10h00, 11h00, 12h00, 13h00, 14h00, 15h00, 16h00, 17h00
+- Le créneau 18h00 n'est pas proposé car finirait à 18h30 (hors disponibilité)
+
+**Exemple pour "Présentation" (60 min) avec dispo 9h-18h :**
+- Créneaux proposés : 9h00, 10h00, 11h00, 12h00, 13h00, 14h00, 15h00, 16h00, 17h00
+- Le créneau 17h00 est proposé car il finit exactement à 18h00
+
+**7. Formulaire de réservation**
+
+**Étapes du formulaire :**
+
+1. **Sélection du type de rendez-vous** (si plusieurs disponibles)
+2. **Sélection du type de réunion :**
+   - Visio (Zoom) — génère automatiquement lien Zoom
+   - Téléphone — demande numéro de téléphone
+   - Présentiel — indique adresse des bureaux
+3. **Sélection de la date** (calendrier)
+4. **Sélection du créneau** (heures disponibles)
+5. **Informations personnelles :**
+   - Nom (requis)
+   - Email (requis)
+   - Téléphone (requis si type = téléphone)
+   - Entreprise (optionnel)
+   - Message (optionnel)
+6. **Invités additionnels** (optionnel, emails)
+7. **Confirmation**
+
+**8. Emails automatiques**
+
+**Email prospect :**
+- Sujet : "Confirmation de votre rendez-vous avec IArche"
+- Contenu : récapitulatif date/heure, type de RDV, lien Zoom (si visio)
+- Pièce jointe : fichier `.ics` pour ajout au calendrier
+
+**Email invités additionnels :**
+- Sujet identique
+- Contenu adapté avec mention "Vous avez été invité par [Nom prospect]"
+- Pièce jointe : fichier `.ics`
+
+**Email admin (Nicolas) :**
+- Sujet : "Nouveau rendez-vous réservé"
+- Contenu : détails complets du prospect et du RDV
+
+**9. Edge function calendar-booking**
+
+**Fichier :** `supabase/functions/calendar-booking/index.ts`
+
+**Actions supportées :**
+
+| Action | Description |
+|--------|-------------|
+| `get-slots` | Récupère les créneaux disponibles pour une date |
+| `create-booking` | Crée une réservation (Zoom + Calendar + Emails) |
+| `cancel-booking` | Annule une réservation |
+| `get-booking-types` | Liste les types de RDV actifs |
+
+**Flow complet create-booking :**
+1. Validation des données
+2. Création du lead dans `leads` table
+3. Création réunion Zoom (si type = visio)
+4. Création événement Google Calendar
+5. Création booking en BDD
+6. Envoi emails (prospect + admin + invités)
+7. Retour confirmation avec IDs
+
+**10. Admin — Gestion des disponibilités**
+
+Interface admin avec 3 onglets :
+
+**Onglet Réservations :**
+- Liste des réservations à venir et passées
+- Statuts : Confirmé, Annulé
+- Actions : Voir détails, Annuler
+
+**Onglet Disponibilités :**
+- Configuration par type de RDV et jour de la semaine
+- Toggle actif/inactif par jour
+- Sélecteurs d'heures début/fin
+- Disponibilités par défaut : Lundi-Vendredi 9h-18h
+
+**Onglet Types :**
+- Gestion des types de RDV
+- Création/modification : nom, slug, durée, buffer, couleur
+- Activation/désactivation
+
+**Impact :**
+- Prise de rendez-vous professionnelle et automatisée
+- Synchronisation calendrier bidirectionnelle (évite doubles réservations)
+- Génération automatique liens Zoom pour visios
+- Emails de confirmation avec fichier ICS
+- Gestion centralisée des disponibilités
+
+**Fichiers créés/modifiés :**
+- `supabase/functions/calendar-booking/index.ts` (edge function complète)
+- `src/pages/RendezVous.tsx` (page publique)
+- `src/pages/admin/AdminRendezVous.tsx` (gestion admin)
+
+**Secrets requis :**
+- `ZOOM_ACCOUNT_ID`
+- `ZOOM_CLIENT_ID`
+- `ZOOM_CLIENT_SECRET`
+- `GOOGLE_SERVICE_ACCOUNT_KEY`
+- `GOOGLE_CALENDAR_ID`
+- `RESEND_API_KEY` (pour emails)
+
+---
+
+### 0.14 MODULE MÉDIAS - MODES D'EXPORT UNIFIÉS — MISE À JOUR V6.14 ✅
 
 #### Extension du pattern LogoEditor à tous les éditeurs de médias
 
