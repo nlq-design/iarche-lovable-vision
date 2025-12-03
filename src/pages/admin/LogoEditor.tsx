@@ -249,7 +249,7 @@ export default function LogoEditor() {
       const pixelRatio = targetWidth / currentWidth;
       const dataUrl = await toPng(ref.current, {
         quality: 1,
-        pixelRatio: Math.max(pixelRatio, 2),
+        pixelRatio: Math.max(pixelRatio, 3), // Augmenté à 3 pour haute résolution
         cacheBust: true,
       });
       const response = await fetch(dataUrl);

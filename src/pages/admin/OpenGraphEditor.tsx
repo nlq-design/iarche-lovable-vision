@@ -133,10 +133,12 @@ export default function OpenGraphEditor() {
   const handleExport = async () => {
     try {
       await exportToPNG(ogRef, `og-${template}`, {
-        pixelRatio: 2,
+        pixelRatio: 3,
+        width: OG_WIDTH * 2, // Export haute résolution (2400px)
+        height: OG_HEIGHT * 2, // Export haute résolution (1260px)
         backgroundColor: theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse,
       });
-      toast.success('Image Open Graph exportée');
+      toast.success('Image Open Graph exportée (haute résolution)');
     } catch (error) {
       toast.error('Erreur lors de l\'export');
     }

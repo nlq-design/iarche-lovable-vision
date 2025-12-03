@@ -111,10 +111,10 @@ export default function SignatureEditor() {
   const handleExportPNG = async () => {
     try {
       await exportToPNG(signatureRef, 'signature-email', {
-        pixelRatio: 2,
+        pixelRatio: 3,
         backgroundColor: '#FFFFFF',
       });
-      toast.success('Signature exportée en PNG');
+      toast.success('Signature exportée en PNG (haute résolution)');
     } catch (error) {
       toast.error('Erreur lors de l\'export');
     }
