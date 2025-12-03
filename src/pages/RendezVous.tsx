@@ -30,8 +30,12 @@ type MeetingType = 'visio' | 'telephone' | 'presentiel';
 
 const MEETING_TYPE_OPTIONS = [
   { value: 'visio' as MeetingType, label: 'Visio', icon: Video, description: 'Visioconférence via Zoom' },
+  { value: 'telephone' as MeetingType, label: 'Téléphone', icon: Phone, description: 'Nous vous appelons' },
   { value: 'presentiel' as MeetingType, label: 'Présentiel', icon: MapPin, description: 'Dans nos locaux à Bayonne' },
 ];
+
+// Slugs that should NOT show telephone option
+const SLUGS_WITHOUT_TELEPHONE = ['presentation'];
 
 const RendezVous = () => {
   const { slug } = useParams();
@@ -398,12 +402,17 @@ const RendezVous = () => {
           </div>
 
           {/* Meeting Type Selection */}
-          <div className="mb-8 animate-fadeIn [animation-delay:0.35s]">
-            <h2 className="text-xl font-semibold text-foreground mb-4 text-center">
-              Format du rendez-vous
-            </h2>
-            <div className="grid grid-cols-3 gap-3 max-w-2xl mx-auto">
-              {MEETING_TYPE_OPTIONS.map((option) => {
+          {(() => {
+            const availableOptions = SLUGS_WITHOUT_TELEPHONE.includes(slug || '')
+              ? MEETING_TYPE_OPTIONS.filter(o => o.value !== 'telephone')
+              : MEETING_TYPE_OPTIONS;
+            return (
+              <div className="mb-8 animate-fadeIn [animation-delay:0.35s]">
+                <h2 className="text-xl font-semibold text-foreground mb-4 text-center">
+                  Format du rendez-vous
+                </h2>
+                <div className={`grid gap-3 max-w-2xl mx-auto ${availableOptions.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                  {availableOptions.map((option) => {
                 const IconComponent = option.icon;
                 const isSelected = meetingType === option.value;
                 return (
@@ -427,8 +436,10 @@ const RendezVous = () => {
                   </button>
                 );
               })}
-            </div>
-          </div>
+                </div>
+              </div>
+            );
+          })()}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Date & Time Selection */}
