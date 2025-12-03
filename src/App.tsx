@@ -129,7 +129,7 @@ const App = () => (
           <Route path="/status" element={<Status />} />
           
           {/* Formulaires publics */}
-          <Route path="/f/:slug" element={
+          <Route path="/formulaires/:slug" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <FormPublic />
             </Suspense>
