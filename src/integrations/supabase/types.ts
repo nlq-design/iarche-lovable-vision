@@ -620,6 +620,93 @@ export type Database = {
         }
         Relationships: []
       }
+      email_configurations: {
+        Row: {
+          admin_email_subject: string | null
+          admin_emails: string[] | null
+          created_at: string
+          id: string
+          is_active: boolean
+          send_admin_notification: boolean
+          send_user_confirmation: boolean
+          source_id: string | null
+          source_type: string
+          updated_at: string
+          user_email_subject: string | null
+          user_email_template: string | null
+        }
+        Insert: {
+          admin_email_subject?: string | null
+          admin_emails?: string[] | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          send_admin_notification?: boolean
+          send_user_confirmation?: boolean
+          source_id?: string | null
+          source_type: string
+          updated_at?: string
+          user_email_subject?: string | null
+          user_email_template?: string | null
+        }
+        Update: {
+          admin_email_subject?: string | null
+          admin_emails?: string[] | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          send_admin_notification?: boolean
+          send_user_confirmation?: boolean
+          source_id?: string | null
+          source_type?: string
+          updated_at?: string
+          user_email_subject?: string | null
+          user_email_template?: string | null
+        }
+        Relationships: []
+      }
+      email_logs: {
+        Row: {
+          created_at: string
+          email_type: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          recipient_email: string
+          sent_at: string | null
+          source_id: string | null
+          source_type: string
+          status: string
+          subject: string
+        }
+        Insert: {
+          created_at?: string
+          email_type: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email: string
+          sent_at?: string | null
+          source_id?: string | null
+          source_type: string
+          status?: string
+          subject: string
+        }
+        Update: {
+          created_at?: string
+          email_type?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email?: string
+          sent_at?: string | null
+          source_id?: string | null
+          source_type?: string
+          status?: string
+          subject?: string
+        }
+        Relationships: []
+      }
       faqs: {
         Row: {
           article_id: string
