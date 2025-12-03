@@ -105,7 +105,7 @@ const AdminFormulaires = () => {
   };
 
   const copyLink = (slug: string) => {
-    navigator.clipboard.writeText(`${window.location.origin}/formulaires/${slug}`);
+    navigator.clipboard.writeText(`https://iarche.fr/formulaires/${slug}`);
     toast({ title: 'Lien copié', description: 'Le lien du formulaire a été copié' });
   };
 
