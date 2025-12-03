@@ -1,6 +1,6 @@
 # Brand Book IArche
 
-**Version :** 3.0  
+**Version :** 3.1  
 **Date : 3 Décembre 2025**  
 **Document de référence pour l'identité visuelle IArche**
 
@@ -24,8 +24,9 @@
 14. [Ton de Voix](#14-ton-de-voix)
 15. [Module Médias](#15-module-médias---génération-pdf--png)
 16. [Module FormBuilder](#16-module-formbuilder---formulaires-personnalisés)
-17. [Design System Tokens](#17-design-system-tokens---référence-technique)
-18. [Checklist Validation](#18-checklist-validation)
+17. [Module Réservation](#17-module-réservation---prise-de-rendez-vous)
+18. [Design System Tokens](#18-design-system-tokens---référence-technique)
+19. [Checklist Validation](#19-checklist-validation)
 
 ---
 
@@ -238,7 +239,7 @@ Toutes les couleurs sont définies en HSL dans `src/index.css` et utilisées via
 | Token | HSL | HEX équivalent | Usage |
 |-------|-----|----------------|-------|
 | `--primary` | 218 47% 20% | #1A2B4A | Bleu Nuit - Titres, logo, éléments structurants |
-| `--accent` | 12 60% 53% | #D15A3E | Terracotta - CTA, accents, focus |
+| `--accent` | 12 60% 44% | #B04A32 | Terracotta - CTA, accents, focus (WCAG AA) |
 | `--background` | 30 14% 98% | #FAF9F7 | Blanc Cassé - Fond principal |
 | `--foreground` | 0 0% 18% | #2D2D2D | Anthracite - Texte principal |
 
@@ -586,7 +587,7 @@ Lien secondaire avec texte Bleu Nuit et flèche Terracotta.
 
 ## 13. STRUCTURE DES PAGES
 
-### 13.1 Pages publiques (20 pages)
+### 13.1 Pages publiques (22+ pages)
 
 | Route | Titre |
 |-------|-------|
@@ -601,17 +602,21 @@ Lien secondaire avec texte Bleu Nuit et flèche Terracotta.
 | `/contact` | Nous contacter |
 | `/newsletter` | Newsletter |
 | `/livre-or` | Livre d'or |
+| `/rendez-vous/:slug` | Prise de rendez-vous |
 | `/mentions-legales` | Mentions légales |
 | `/conditions-generales` | Conditions générales |
 | `/confidentialite` | Politique de confidentialité |
 | `/status` | Status |
-| `/formulaires/:slug` | Formulaires publics |
+| `/f/:slug` | Formulaires publics |
 | `/actualites/:slug` | Détail actualité |
 | `/articles/:slug` | Détail article |
 | `/services/:slug` | Détail service |
 | `/solutions/:slug` | Détail solution |
+| `/cas-clients/:slug` | Détail cas client |
+| `/livres-blancs/:slug` | Détail livre blanc |
+| `/ateliers-webinaires/:slug` | Détail atelier |
 
-### 13.2 Pages admin (35+ pages)
+### 13.2 Pages admin (40+ pages)
 
 | Route | Fonction |
 |-------|----------|
@@ -623,7 +628,15 @@ Lien secondaire avec texte Bleu Nuit et flèche Terracotta.
 | `/admin/medias` | Module médias |
 | `/admin/leads` | Leads consolidés |
 | `/admin/articles` | Gestion articles |
-| ... | (35+ routes admin) |
+| `/admin/actualites` | Gestion actualités |
+| `/admin/cas-clients` | Gestion cas clients |
+| `/admin/livres-blancs` | Gestion livres blancs |
+| `/admin/ateliers-webinaires` | Gestion ateliers |
+| `/admin/rendez-vous` | Gestion réservations |
+| `/admin/emails` | Configuration emails |
+| `/admin/cta-analytics` | Analytics CTA |
+| `/admin/parametres` | Paramètres généraux |
+| ... | (40+ routes admin) |
 
 ---
 
@@ -805,15 +818,103 @@ Chaque formulaire peut être personnalisé :
 
 ---
 
-## 17. DESIGN SYSTEM TOKENS - Référence technique
+## 17. MODULE RÉSERVATION - Prise de rendez-vous
 
-### 17.1 Tokens CSS (index.css)
+### 17.1 Description
+
+Module de prise de rendez-vous intégré avec synchronisation Zoom et Google Calendar.
+
+**Route publique :** `/rendez-vous/:slug`
+
+### 17.2 Types de rendez-vous
+
+| Type | Durée | Description |
+|------|-------|-------------|
+| Premier échange | 30 min | Découverte rapide des besoins |
+| Présentation | 60 min | Présentation approfondie des solutions |
+
+### 17.3 Types de réunion
+
+| Type | Icône | Description |
+|------|-------|-------------|
+| **Visio** | Video | Génère automatiquement un lien Zoom |
+| **Téléphone** | Phone | Demande le numéro de téléphone |
+| **Présentiel** | MapPin | Indique l'adresse des bureaux (Bayonne) |
+
+### 17.4 Génération des créneaux
+
+**Règle fondamentale :** Les créneaux sont proposés uniquement sur des **heures fixes** (9h, 10h, 11h...), jamais sur des intervalles basés sur la durée.
+
+**Exclusions automatiques :**
+- Créneaux déjà réservés (table `bookings`)
+- Créneaux busy dans Google Calendar
+- Créneaux dans le passé
+- Créneaux dont la fin dépasse la disponibilité
+
+### 17.5 Flow de réservation
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  1. TYPE DE RÉUNION                                     │
+│     ○ Visio (Zoom)  ○ Téléphone  ○ Présentiel          │
+├─────────────────────────────────────────────────────────┤
+│  2. SÉLECTION DATE                                      │
+│     [    Calendrier avec jours disponibles    ]        │
+├─────────────────────────────────────────────────────────┤
+│  3. SÉLECTION CRÉNEAU                                   │
+│     [ 9h00 ] [ 10h00 ] [ 11h00 ] [ 14h00 ] ...        │
+├─────────────────────────────────────────────────────────┤
+│  4. INFORMATIONS                                        │
+│     Nom* | Email* | Téléphone | Entreprise | Message   │
+├─────────────────────────────────────────────────────────┤
+│  5. INVITÉS (optionnel)                                 │
+│     [+ Ajouter un invité] → Email des invités          │
+├─────────────────────────────────────────────────────────┤
+│  6. CONFIRMATION                                        │
+│     ✓ RDV créé + Email envoyé + .ics en pièce jointe  │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 17.6 Intégrations
+
+**Zoom API :**
+- Création automatique de réunion pour type "Visio"
+- Lien `join_url` envoyé par email et stocké en BDD
+- Authentification Server-to-Server OAuth
+
+**Google Calendar API :**
+- Vérification des disponibilités (freebusy)
+- Création d'événements avec attendees
+- Synchronisation bidirectionnelle
+
+### 17.7 Emails automatiques
+
+| Destinataire | Contenu |
+|--------------|---------|
+| **Prospect** | Confirmation + récapitulatif + fichier .ics + lien Zoom |
+| **Invités** | Invitation + fichier .ics + lien Zoom |
+| **Admin** | Notification nouveau RDV avec détails complets |
+
+### 17.8 Administration
+
+**Route :** `/admin/rendez-vous`
+
+**Onglets :**
+- **Réservations** : Liste, statuts, actions (annuler, voir)
+- **Disponibilités** : Configuration par jour de la semaine
+- **Types** : Gestion des types de RDV (durée, buffer, couleur)
+
+---
+
+## 18. DESIGN SYSTEM TOKENS - Référence technique
+
+### 18.1 Tokens CSS (index.css)
 
 ```css
 :root {
   /* Couleurs principales */
   --primary: 218 47% 20%;        /* Bleu Nuit */
-  --accent: 12 60% 53%;          /* Terracotta */
+  --accent: 12 60% 44%;          /* Terracotta (WCAG AA) */
   --background: 30 14% 98%;      /* Blanc Cassé */
   --foreground: 0 0% 18%;        /* Anthracite */
   
@@ -826,11 +927,11 @@ Chaque formulaire peut être personnalisé :
   
   /* Système */
   --radius: 0.75rem;
-  --ring: 12 60% 53%;            /* Focus ring */
+  --ring: 12 60% 44%;            /* Focus ring */
 }
 ```
 
-### 17.2 Tokens partagés médias (shared/tokens.ts)
+### 18.2 Tokens partagés médias (shared/tokens.ts)
 
 ```typescript
 export const IARCHE_COLORS = {
@@ -856,9 +957,9 @@ export const BAR_SIZES = {
 
 ---
 
-## 18. CHECKLIST VALIDATION
+## 19. CHECKLIST VALIDATION
 
-### 18.1 Éléments visuels obligatoires
+### 19.1 Éléments visuels obligatoires
 
 - [ ] Logo IArche avec gradient animé + barre décorative
 - [ ] Fond Blanc Cassé (#FAF9F7)
@@ -867,7 +968,7 @@ export const BAR_SIZES = {
 - [ ] Barre décorative sous chaque titre
 - [ ] Focus ring Terracotta (WCAG AAA)
 
-### 18.2 Animations obligatoires
+### 19.2 Animations obligatoires
 
 - [ ] Gradient text 8s sur logo IArche
 - [ ] PatternScroll 40s sur quadrillages
@@ -875,22 +976,23 @@ export const BAR_SIZES = {
 - [ ] PageTransition 0.4s entre pages
 - [ ] Canalisation lines 6s (hero/placeholder)
 
-### 18.3 Cohérence tokens
+### 19.3 Cohérence tokens
 
 - [ ] Toutes les couleurs via tokens CSS (pas de HEX hardcodé)
 - [ ] Typographie Manrope uniquement (Helvetica pour PDF)
 - [ ] Border-radius via --radius token
 - [ ] Espacements via classes Tailwind standard
 
-### 18.4 Formulaires
+### 19.4 Formulaires et Réservations
 
 - [ ] Couleurs personnalisables respectant la charte
 - [ ] Barre décorative optionnelle
 - [ ] Focus ring Terracotta sur tous les inputs
 - [ ] Validation client-side avec feedback visuel
 - [ ] URL de production (iarche.fr) pour liens copiés
+- [ ] Créneaux de réservation sur heures fixes uniquement
 
 ---
 
 **Document mis à jour le 3 Décembre 2025**  
-**Version 3.0 - Inclut Module FormBuilder complet**
+**Version 3.1 - Inclut Module Réservation complet**
