@@ -527,7 +527,7 @@ function generateEmailHTML(
   `.trim();
 }
 
-// Generate available time slots for a date
+// Generate available time slots for a date - fixed hourly slots (9h, 10h, 11h, etc.)
 function generateSlots(
   date: string,
   durationMinutes: number,
@@ -540,18 +540,22 @@ function generateSlots(
   const dateObj = new Date(date);
   
   for (const avail of availability) {
-    const [startH, startM] = avail.start_time.split(':').map(Number);
-    const [endH, endM] = avail.end_time.split(':').map(Number);
+    const [startH] = avail.start_time.split(':').map(Number);
+    const [endH] = avail.end_time.split(':').map(Number);
     
-    let current = new Date(dateObj);
-    current.setHours(startH, startM, 0, 0);
-    
-    const endTime = new Date(dateObj);
-    endTime.setHours(endH, endM, 0, 0);
-    
-    while (current.getTime() + durationMinutes * 60000 <= endTime.getTime()) {
-      const slotStart = current.toISOString();
-      const slotEnd = new Date(current.getTime() + durationMinutes * 60000).toISOString();
+    // Generate slots at fixed hours only (9, 10, 11, 12, etc.)
+    for (let hour = startH; hour < endH; hour++) {
+      const current = new Date(dateObj);
+      current.setHours(hour, 0, 0, 0);
+      
+      const slotEndTime = new Date(current.getTime() + durationMinutes * 60000);
+      const endTimeLimit = new Date(dateObj);
+      endTimeLimit.setHours(endH, 0, 0, 0);
+      
+      // Skip if slot end time exceeds availability end time
+      if (slotEndTime.getTime() > endTimeLimit.getTime()) {
+        continue;
+      }
       
       // Check if slot conflicts with busy times
       const isBusy = busyTimes.some(busy => {
@@ -572,10 +576,8 @@ function generateSlots(
       });
       
       if (!isBusy && !isBooked && current.getTime() > Date.now()) {
-        slots.push(slotStart);
+        slots.push(current.toISOString());
       }
-      
-      current = new Date(current.getTime() + (durationMinutes + bufferMinutes) * 60000);
     }
   }
   
