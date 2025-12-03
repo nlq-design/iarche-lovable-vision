@@ -83,18 +83,6 @@ const ArticleDetail = () => {
   const { isAdmin } = useAuth();
   const { trackCTAClick } = useCTATracking();
 
-  // Mapping des slugs de solutions aux liens Cal.com
-  const getSolutionCalLink = (articleSlug: string): string => {
-    const calLinks: Record<string, string> = {
-      'collaboria': 'https://cal.com/iarche/presentation-collaboria',
-      'datalia': 'https://cal.com/iarche/presentation-datalia',
-      'team-5-connect': 'https://cal.com/iarche/presentation-team-5-connect',
-      'lexia': 'https://cal.com/iarche/presentation-erp-avocat-booste-a-l-ia',
-      'chatbot-rag-avance': 'https://cal.com/iarche/chatbot-rag-avance'
-    };
-    return calLinks[articleSlug] || '/contact';
-  };
-
   const [article, setArticle] = useState<Article | null>(null);
   const [faq, setFaq] = useState<Array<{ question: string; answer: string }>>([]);
   const [loading, setLoading] = useState(true);
@@ -598,7 +586,7 @@ const ArticleDetail = () => {
               {/* CTA dans le header selon type */}
               {article.resource_type === 'solution' && (
                 <GradientLink 
-                  href={getSolutionCalLink(article.slug)} 
+                  to="/rendez-vous"
                   className="text-sm"
                   onClick={() => trackCTAClick('demander_presentation', 'solution_detail_header', article.slug)}
                 >
@@ -860,7 +848,7 @@ const ArticleDetail = () => {
           {article.resource_type === 'solution' && (
             <div className="text-center my-12 animate-fadeIn [animation-delay:0.5s]">
               <GradientLink 
-                href={getSolutionCalLink(article.slug)} 
+                to="/rendez-vous"
                 className="text-lg"
                 onClick={() => trackCTAClick('demander_presentation', 'solution_detail_before_faq', article.slug)}
               >

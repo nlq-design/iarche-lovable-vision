@@ -1,9 +1,11 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 interface GradientLinkProps {
   children: React.ReactNode;
   onClick?: () => void;
   href?: string;
+  to?: string;
   className?: string;
   type?: 'button' | 'submit' | 'reset';
   disabled?: boolean;
@@ -12,11 +14,13 @@ interface GradientLinkProps {
 /**
  * CTA Primaire avec gradient animé IArche (Option A)
  * Utilise le gradient 270deg Bleu Nuit ↔ Terracotta avec soulignement animé
+ * Supporte href (liens externes) et to (navigation interne React Router)
  */
 const GradientLink: React.FC<GradientLinkProps> = ({ 
   children, 
   onClick, 
-  href, 
+  href,
+  to,
   className = '',
   type = 'button',
   disabled = false 
@@ -62,6 +66,20 @@ const GradientLink: React.FC<GradientLinkProps> = ({
     </span>
   );
 
+  // Navigation interne React Router
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className={`${baseClasses} group`}
+        onClick={onClick}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  // Lien externe
   if (href) {
     return (
       <a

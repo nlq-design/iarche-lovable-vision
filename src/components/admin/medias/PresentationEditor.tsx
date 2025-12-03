@@ -42,7 +42,7 @@ const templateConfigs: Record<string, { name: string; defaultSlides: SlideData[]
       { id: 5, type: 'content', title: 'Notre méthodologie', subtitle: '', content: 'Une approche pragmatique centrée sur vos besoins réels et votre ROI.', bullets: [], exportMode: 'full', barSize: 'lg' },
       { id: 6, type: 'bullets', title: 'Pourquoi IArche ?', subtitle: '', content: '', bullets: ['Expertise IA reconnue', 'Proximité & engagement local', 'Solutions éprouvées', 'Accompagnement sur-mesure'], exportMode: 'full', barSize: 'lg' },
       { id: 7, type: 'content', title: 'Ils nous font confiance', subtitle: '', content: 'PME, ETI et grands groupes nous accompagnent dans leur transformation IA.', bullets: [], exportMode: 'full', barSize: 'lg' },
-      { id: 8, type: 'cta', title: 'Prêt à démarrer ?', subtitle: 'Prenez rendez-vous', content: 'cal.com/iarche/audit-conseil', bullets: [], exportMode: 'full', barSize: 'lg' },
+      { id: 8, type: 'cta', title: 'Prêt à démarrer ?', subtitle: 'Prenez rendez-vous', content: 'iarche.fr/rendez-vous', bullets: [], exportMode: 'full', barSize: 'lg' },
     ]
   },
   project: {
