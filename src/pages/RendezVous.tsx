@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar, Clock, CheckCircle, Loader2, Video, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, Loader2, Video, ArrowRight, Phone, MapPin, Users, X, Plus } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import GradientLink from '@/components/ui/GradientLink';
@@ -24,6 +25,15 @@ interface BookingType {
   duration_minutes: number;
   color: string;
 }
+
+type MeetingType = 'visio_meet' | 'visio_zoom' | 'telephone' | 'presentiel';
+
+const MEETING_TYPE_OPTIONS = [
+  { value: 'visio_meet' as MeetingType, label: 'Google Meet', icon: Video, description: 'Visioconférence via Google Meet' },
+  { value: 'visio_zoom' as MeetingType, label: 'Zoom', icon: Video, description: 'Visioconférence via Zoom' },
+  { value: 'telephone' as MeetingType, label: 'Téléphone', icon: Phone, description: 'Nous vous appelons' },
+  { value: 'presentiel' as MeetingType, label: 'Présentiel', icon: MapPin, description: 'Dans nos locaux à Bayonne' },
+];
 
 const RendezVous = () => {
   const { slug } = useParams();
@@ -40,6 +50,10 @@ const RendezVous = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [meetLink, setMeetLink] = useState<string | null>(null);
+  const [zoomPassword, setZoomPassword] = useState<string | null>(null);
+  const [meetingType, setMeetingType] = useState<MeetingType>('visio_zoom');
+  const [additionalGuests, setAdditionalGuests] = useState<string[]>([]);
+  const [newGuestEmail, setNewGuestEmail] = useState('');
   
   const [formData, setFormData] = useState({
     name: '',
@@ -48,6 +62,17 @@ const RendezVous = () => {
     company: '',
     message: '',
   });
+
+  const addGuest = () => {
+    if (newGuestEmail && !additionalGuests.includes(newGuestEmail) && newGuestEmail.includes('@')) {
+      setAdditionalGuests([...additionalGuests, newGuestEmail]);
+      setNewGuestEmail('');
+    }
+  };
+
+  const removeGuest = (email: string) => {
+    setAdditionalGuests(additionalGuests.filter(g => g !== email));
+  };
 
   // Generate dates for the next 14 days
   const availableDates = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i + 1));
@@ -121,6 +146,16 @@ const RendezVous = () => {
     e.preventDefault();
     if (!selectedSlot || !bookingType) return;
 
+    // Validate phone required for telephone meeting
+    if (meetingType === 'telephone' && !formData.phone) {
+      toast({
+        title: "Téléphone requis",
+        description: "Veuillez indiquer votre numéro de téléphone pour un rendez-vous téléphonique.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke('calendar-booking', {
@@ -130,6 +165,8 @@ const RendezVous = () => {
             ...formData,
             startTime: selectedSlot,
             bookingTypeId: bookingType.id,
+            meetingType,
+            additionalGuests: additionalGuests.length > 0 ? additionalGuests : undefined,
           },
         },
       });
@@ -137,11 +174,13 @@ const RendezVous = () => {
       if (error) throw error;
 
       setIsSuccess(true);
-      setMeetLink(data.googleMeetLink);
+      setMeetLink(data.googleMeetLink || data.zoomJoinUrl);
+      setZoomPassword(data.zoomPassword || null);
       
+      const meetingLabel = MEETING_TYPE_OPTIONS.find(o => o.value === meetingType)?.label || 'Visio';
       toast({
         title: "Rendez-vous confirmé !",
-        description: "Vous allez recevoir un email de confirmation avec le lien Google Meet.",
+        description: `Vous allez recevoir un email de confirmation${meetingType.startsWith('visio') ? ` avec le lien ${meetingLabel}` : ''}.`,
       });
     } catch (err) {
       console.error('Error creating booking:', err);
@@ -255,6 +294,7 @@ const RendezVous = () => {
   }
 
   if (isSuccess) {
+    const currentMeetingOption = MEETING_TYPE_OPTIONS.find(o => o.value === meetingType);
     return (
       <BackgroundLayout>
         <Helmet>
@@ -271,11 +311,15 @@ const RendezVous = () => {
                 Votre rendez-vous <strong>{bookingType.name}</strong> est confirmé pour le{' '}
                 <strong>{format(new Date(selectedSlot!), "EEEE d MMMM 'à' HH:mm", { locale: fr })}</strong>.
               </p>
-              {meetLink && (
+              
+              {/* Meeting link section based on type */}
+              {meetLink && meetingType.startsWith('visio') && (
                 <div className="bg-secondary/50 rounded-lg p-4 mb-6">
                   <div className="flex items-center justify-center gap-2 text-primary mb-2">
                     <Video className="w-5 h-5" />
-                    <span className="font-semibold">Lien Google Meet</span>
+                    <span className="font-semibold">
+                      Lien {meetingType === 'visio_zoom' ? 'Zoom' : 'Google Meet'}
+                    </span>
                   </div>
                   <a 
                     href={meetLink} 
@@ -285,10 +329,40 @@ const RendezVous = () => {
                   >
                     {meetLink}
                   </a>
+                  {zoomPassword && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Mot de passe : <strong>{zoomPassword}</strong>
+                    </p>
+                  )}
                 </div>
               )}
+              
+              {meetingType === 'telephone' && (
+                <div className="bg-secondary/50 rounded-lg p-4 mb-6">
+                  <div className="flex items-center justify-center gap-2 text-primary mb-2">
+                    <Phone className="w-5 h-5" />
+                    <span className="font-semibold">Appel téléphonique</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Nous vous appellerons au numéro indiqué à l'heure du rendez-vous.
+                  </p>
+                </div>
+              )}
+              
+              {meetingType === 'presentiel' && (
+                <div className="bg-secondary/50 rounded-lg p-4 mb-6">
+                  <div className="flex items-center justify-center gap-2 text-primary mb-2">
+                    <MapPin className="w-5 h-5" />
+                    <span className="font-semibold">Rendez-vous en présentiel</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    L'adresse exacte vous sera communiquée par email.
+                  </p>
+                </div>
+              )}
+              
               <p className="text-sm text-muted-foreground mb-6">
-                Vous allez recevoir un email de confirmation avec une invitation Google Calendar.
+                Vous allez recevoir un email de confirmation avec une invitation calendrier.
               </p>
               <GradientLink to="/">Retour à l'accueil</GradientLink>
             </div>
@@ -325,9 +399,39 @@ const RendezVous = () => {
             <div className="flex items-center justify-center gap-2 mt-4 text-sm text-muted-foreground animate-fadeIn [animation-delay:0.3s]">
               <Clock className="w-4 h-4" />
               <span>{bookingType.duration_minutes} minutes</span>
-              <span className="mx-2">•</span>
-              <Video className="w-4 h-4" />
-              <span>Visioconférence Google Meet</span>
+            </div>
+          </div>
+
+          {/* Meeting Type Selection */}
+          <div className="mb-8 animate-fadeIn [animation-delay:0.35s]">
+            <h2 className="text-xl font-semibold text-foreground mb-4 text-center">
+              Format du rendez-vous
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto">
+              {MEETING_TYPE_OPTIONS.map((option) => {
+                const IconComponent = option.icon;
+                const isSelected = meetingType === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setMeetingType(option.value)}
+                    className={`p-4 rounded-lg border-2 text-center transition-all ${
+                      isSelected
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-primary/50 hover:bg-secondary/50'
+                    }`}
+                  >
+                    <IconComponent className={`w-6 h-6 mx-auto mb-2 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                    <div className={`font-medium ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                      {option.label}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {option.description}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -435,15 +539,23 @@ const RendezVous = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="phone">Téléphone</Label>
+                  <Label htmlFor="phone">
+                    Téléphone {meetingType === 'telephone' && <span className="text-accent">*</span>}
+                  </Label>
                   <Input
                     id="phone"
                     type="tel"
+                    required={meetingType === 'telephone'}
                     placeholder="+33 6 12 34 56 78"
                     className="mt-1"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
+                  {meetingType === 'telephone' && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Requis pour les rendez-vous téléphoniques
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -467,6 +579,61 @@ const RendezVous = () => {
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   />
                 </div>
+
+                {/* Additional guests (for visio meetings) */}
+                {meetingType.startsWith('visio') && (
+                  <div>
+                    <Label className="flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Inviter des participants
+                    </Label>
+                    <div className="flex gap-2 mt-1">
+                      <Input
+                        type="email"
+                        placeholder="email@exemple.com"
+                        value={newGuestEmail}
+                        onChange={(e) => setNewGuestEmail(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addGuest();
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={addGuest}
+                        disabled={!newGuestEmail || !newGuestEmail.includes('@')}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    {additionalGuests.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {additionalGuests.map((email) => (
+                          <span
+                            key={email}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-sm rounded-md"
+                          >
+                            {email}
+                            <button
+                              type="button"
+                              onClick={() => removeGuest(email)}
+                              className="hover:text-accent"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Ces personnes recevront également l'invitation
+                    </p>
+                  </div>
+                )}
 
                 {selectedSlot && (
                   <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
