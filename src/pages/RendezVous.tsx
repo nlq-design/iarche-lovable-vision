@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { format, addDays, startOfDay, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -41,6 +41,10 @@ const RendezVous = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  
+  // Get solution slug from query params (for presentation bookings from solutions pages)
+  const solutionSlug = searchParams.get('solution');
   
   const [bookingTypes, setBookingTypes] = useState<BookingType[]>([]);
   const [bookingType, setBookingType] = useState<BookingType | null>(null);
@@ -173,6 +177,7 @@ const RendezVous = () => {
             bookingTypeId: bookingType.id,
             meetingType,
             additionalGuests: additionalGuests.length > 0 ? additionalGuests : undefined,
+            solutionSlug: solutionSlug || undefined, // Track which solution the booking came from
           },
         },
       });
