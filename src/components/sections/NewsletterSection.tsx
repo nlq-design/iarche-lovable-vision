@@ -141,7 +141,7 @@ const NewsletterSection = () => {
             En vous inscrivant, vous acceptez notre{' '}
             <a 
               href="/confidentialite" 
-              className="text-accent hover:underline focus:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 rounded"
+              className="text-accent underline hover:text-accent/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 rounded"
             >
               politique de confidentialité
             </a>
