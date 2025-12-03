@@ -246,7 +246,7 @@ const RendezVous = () => {
         <main className="min-h-screen pt-20 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground mb-4">Type de rendez-vous non trouvé</h1>
-            <Button onClick={() => navigate('/rendez-vous')}>Voir les types disponibles</Button>
+            <Button onClick={() => navigate('/')}>Retour à l'accueil</Button>
           </div>
         </main>
         <Footer />

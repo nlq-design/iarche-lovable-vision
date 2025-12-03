@@ -16,7 +16,7 @@ const AccrocheSection = () => {
       </p>
 
       <Link 
-        to="/rendez-vous"
+        to="/rendez-vous/premier-echange"
         onClick={() => trackCTAClick('premier_echange', 'accroche_section')}
         className="inline-flex items-center gap-2 text-primary hover:text-accent focus-visible:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 transition-colors duration-300 font-medium text-base group invisible animate-fadeIn [animation-delay:0.4s] cursor-pointer"
       >

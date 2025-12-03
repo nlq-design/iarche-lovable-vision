@@ -586,7 +586,7 @@ const ArticleDetail = () => {
               {/* CTA dans le header selon type */}
               {article.resource_type === 'solution' && (
                 <GradientLink 
-                  to="/rendez-vous"
+                  to="/rendez-vous/presentation"
                   className="text-sm"
                   onClick={() => trackCTAClick('demander_presentation', 'solution_detail_header', article.slug)}
                 >
@@ -848,7 +848,7 @@ const ArticleDetail = () => {
           {article.resource_type === 'solution' && (
             <div className="text-center my-12 animate-fadeIn [animation-delay:0.5s]">
               <GradientLink 
-                to="/rendez-vous"
+                to="/rendez-vous/presentation"
                 className="text-lg"
                 onClick={() => trackCTAClick('demander_presentation', 'solution_detail_before_faq', article.slug)}
               >
