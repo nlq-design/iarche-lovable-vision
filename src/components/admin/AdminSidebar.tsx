@@ -1,4 +1,4 @@
-import { Home, BarChart3, Sparkles, FileText, FolderOpen, Tag, MessageCircle, Users, Mail, Send, Shield, Settings, Database, HelpCircle, Activity, MousePointerClick, UserCheck, ImageIcon, ClipboardList } from 'lucide-react';
+import { Home, BarChart3, Sparkles, FileText, FolderOpen, Tag, MessageCircle, Users, Mail, Send, Shield, Settings, Database, HelpCircle, Activity, MousePointerClick, UserCheck, ImageIcon, ClipboardList, CalendarCheck } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -46,6 +46,7 @@ const navigationItems = [
     group: 'Engagement',
     items: [
       { title: 'Leads (consolidé)', url: '/admin/leads', icon: Users },
+      { title: 'Rendez-vous', url: '/admin/rendez-vous', icon: CalendarCheck },
       { title: 'Contacts', url: '/admin/contacts', icon: Mail },
       { title: 'Inscriptions Livres blancs', url: '/admin/livre-blanc-inscriptions', icon: FileText },
       { title: 'Inscriptions Ateliers', url: '/admin/atelier-inscriptions', icon: UserCheck },
