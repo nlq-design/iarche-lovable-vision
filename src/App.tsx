@@ -127,12 +127,7 @@ const App = () => (
           <Route path="/ateliers-webinaires/:slug" element={<ArticleDetail />} />
           <Route path="/contact" element={<Contact />} />
           
-          {/* Rendez-vous */}
-          <Route path="/rendez-vous" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-              <RendezVous />
-            </Suspense>
-          } />
+          {/* Rendez-vous - uniquement avec slug */}
           <Route path="/rendez-vous/:slug" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <RendezVous />
