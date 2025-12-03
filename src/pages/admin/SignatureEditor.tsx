@@ -36,7 +36,7 @@ export default function SignatureEditor() {
       <defs>
         <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stop-color="#1A2B4A"/>
-          <stop offset="50%" stop-color="#D15A3E"/>
+          <stop offset="50%" stop-color="#B04A32"/>
           <stop offset="100%" stop-color="#1A2B4A"/>
         </linearGradient>
       </defs>

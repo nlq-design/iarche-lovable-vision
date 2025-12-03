@@ -38,7 +38,7 @@ export default function FooterEmailEditor() {
       <defs>
         <linearGradient id="barGrad" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stop-color="#1A2B4A"/>
-          <stop offset="50%" stop-color="#D15A3E"/>
+          <stop offset="50%" stop-color="#B04A32"/>
           <stop offset="100%" stop-color="#1A2B4A"/>
         </linearGradient>
       </defs>
@@ -51,7 +51,7 @@ export default function FooterEmailEditor() {
       <defs>
         <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stop-color="#1A2B4A"/>
-          <stop offset="50%" stop-color="#D15A3E"/>
+          <stop offset="50%" stop-color="#B04A32"/>
           <stop offset="100%" stop-color="#1A2B4A"/>
         </linearGradient>
       </defs>
@@ -79,7 +79,7 @@ export default function FooterEmailEditor() {
         <tr>
           <td>
             <p style="margin:0;font-size:16px;font-weight:600;color:#1A2B4A;">${name}</p>
-            <p style="margin:4px 0 0;font-size:14px;color:#D15A3E;">${title}</p>
+            <p style="margin:4px 0 0;font-size:14px;color:#B04A32;">${title}</p>
           </td>
         </tr>
       </table>
@@ -105,7 +105,7 @@ export default function FooterEmailEditor() {
             <a href="${linkedinUrl}" style="display:inline-block;width:32px;height:32px;background-color:#1A2B4A;border-radius:4px;text-align:center;line-height:32px;text-decoration:none;">
               <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" alt="LinkedIn" width="18" height="18" style="vertical-align:middle;filter:brightness(0) invert(1);">
             </a>
-            <a href="https://iarche.fr" style="display:inline-block;margin-left:8px;width:32px;height:32px;background-color:#D15A3E;border-radius:4px;text-align:center;line-height:32px;text-decoration:none;">
+            <a href="https://iarche.fr" style="display:inline-block;margin-left:8px;width:32px;height:32px;background-color:#B04A32;border-radius:4px;text-align:center;line-height:32px;text-decoration:none;">
               <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Website" width="18" height="18" style="vertical-align:middle;filter:brightness(0) invert(1);">
             </a>
           </td>

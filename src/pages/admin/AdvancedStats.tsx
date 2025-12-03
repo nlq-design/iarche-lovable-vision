@@ -31,7 +31,7 @@ interface EngagementData {
   value: number;
 }
 
-const COLORS = ['#1A2B4A', '#D15A3E', '#4A90E2', '#50C878'];
+const COLORS = ['#1A2B4A', '#B04A32', '#4A90E2', '#50C878'];
 
 const AdvancedStats = () => {
   const [stats, setStats] = useState<Stats | null>(null);

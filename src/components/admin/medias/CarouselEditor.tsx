@@ -297,7 +297,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                         IArche
                       </span>
                       {showBarInPreview && (
-                        <div className="w-12 h-0.5 mx-auto mt-1 bg-gradient-to-r from-[#1A2B4A] to-[#D15A3E]" />
+                        <div className="w-12 h-0.5 mx-auto mt-1 bg-gradient-to-r from-[#1A2B4A] to-[#B04A32]" />
                       )}
                     </div>
 
@@ -310,7 +310,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                         <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-[#1A2B4A]'}`}>{current.title}</h2>
                       )}
                       {showBarInPreview && current?.title && (
-                        <div className="w-16 h-0.5 mx-auto bg-gradient-to-r from-[#1A2B4A] to-[#D15A3E]" />
+                        <div className="w-16 h-0.5 mx-auto bg-gradient-to-r from-[#1A2B4A] to-[#B04A32]" />
                       )}
                       {current?.content && (
                         <p className={`text-sm leading-relaxed ${isDark ? 'text-white/80' : 'text-[#1A2B4A]/80'}`}>{current.content}</p>
@@ -318,7 +318,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                       {current?.highlight && (
                         <p 
                           className="text-3xl font-bold mt-4"
-                          style={{ color: '#D15A3E' }}
+                          style={{ color: '#B04A32' }}
                         >
                           {current.highlight}
                         </p>
@@ -328,7 +328,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                     {/* Footer */}
                     <div className="text-center">
                       {showBarInPreview && (
-                        <div className="w-full h-px mb-2 bg-gradient-to-r from-[#1A2B4A] to-[#D15A3E] opacity-50" />
+                        <div className="w-full h-px mb-2 bg-gradient-to-r from-[#1A2B4A] to-[#B04A32] opacity-50" />
                       )}
                       <p className={`text-xs ${isDark ? 'text-white/40' : 'text-[#1A2B4A]/40'}`}>iarche.fr</p>
                     </div>
