@@ -14,8 +14,8 @@ All colors MUST be HSL.
     --primary: 218 47% 20%;
     --primary-foreground: 30 14% 98%;
     
-    /* Accent/CTA: Terracotta #D15A3E */
-    --accent: 12 60% 53%;
+    /* Accent/CTA: Terracotta #B04A32 (darkened for WCAG AA contrast) */
+    --accent: 12 60% 44%;
     --accent-foreground: 30 14% 98%;
     
     /* Background: Blanc Cassé #FAF9F7 */
