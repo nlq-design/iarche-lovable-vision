@@ -326,6 +326,9 @@ END:VEVENT
 END:VCALENDAR`;
 }
 
+// Address for in-person meetings
+const IARCHE_ADDRESS = '25 All. Marines, 64100 Bayonne';
+
 // Generate HTML email template
 function generateEmailHTML(
   name: string,
@@ -335,7 +338,8 @@ function generateEmailHTML(
   meetingType: MeetingType,
   meetLink?: string,
   zoomPassword?: string,
-  additionalGuests?: string[]
+  additionalGuests?: string[],
+  phone?: string
 ): string {
   const formatDateFr = (date: Date): string => {
     const options: Intl.DateTimeFormatOptions = {
@@ -353,7 +357,7 @@ function generateEmailHTML(
 
   const meetingTypeLabel = getMeetingTypeLabel(meetingType);
   const locationIcon = meetingType === 'telephone' ? '📞' : meetingType === 'presentiel' ? '📍' : '🎥';
-  const locationText = meetingType === 'presentiel' ? 'IArche, Bayonne' : meetingTypeLabel;
+  const locationText = meetingType === 'presentiel' ? IARCHE_ADDRESS : meetingTypeLabel;
 
   const guestsHtml = additionalGuests && additionalGuests.length > 0 
     ? `<tr>
@@ -389,7 +393,7 @@ function generateEmailHTML(
         <tr>
           <td style="padding: 16px; text-align: center;">
             <p style="margin: 0; color: #4A5568; font-size: 14px;">
-              📞 Nous vous appellerons au numéro que vous avez indiqué à l'heure du rendez-vous.
+              📞 Nous vous appellerons au <strong>${phone || 'numéro que vous avez indiqué'}</strong> à l'heure du rendez-vous.
             </p>
           </td>
         </tr>
@@ -401,9 +405,12 @@ function generateEmailHTML(
         <tr>
           <td style="padding: 16px; text-align: center;">
             <p style="margin: 0; color: #4A5568; font-size: 14px;">
-              📍 Rendez-vous dans nos locaux à Bayonne.<br>
-              L'adresse exacte vous sera communiquée par email.
+              📍 Rendez-vous dans nos locaux :<br>
+              <strong>${IARCHE_ADDRESS}</strong>
             </p>
+            <a href="https://maps.google.com/?q=${encodeURIComponent(IARCHE_ADDRESS)}" target="_blank" style="display: inline-block; margin-top: 12px; padding: 8px 16px; background-color: hsl(218, 47%, 20%); color: #ffffff; text-decoration: none; font-size: 12px; border-radius: 4px;">
+              🗺️ Voir sur Google Maps
+            </a>
           </td>
         </tr>
       </table>
@@ -722,7 +729,16 @@ serve(async (req) => {
       let zoomJoinUrl = null;
       let zoomPassword = null;
 
-      const eventDescription = `Email: ${bookingData.email}\nTéléphone: ${bookingData.phone || 'Non renseigné'}\nEntreprise: ${bookingData.company || 'Non renseignée'}${additionalGuests.length > 0 ? `\nParticipants supplémentaires: ${additionalGuests.join(', ')}` : ''}\n\nMessage: ${bookingData.message || 'Aucun'}`;
+      // Build description based on meeting type
+      let eventDescription = `Email: ${bookingData.email}\nEntreprise: ${bookingData.company || 'Non renseignée'}${additionalGuests.length > 0 ? `\nParticipants supplémentaires: ${additionalGuests.join(', ')}` : ''}\n\nMessage: ${bookingData.message || 'Aucun'}`;
+      
+      if (meetingType === 'telephone') {
+        eventDescription = `📞 APPEL TÉLÉPHONIQUE\nNuméro à appeler: ${bookingData.phone || 'Non renseigné'}\n\n${eventDescription}`;
+      } else if (meetingType === 'presentiel') {
+        eventDescription = `📍 RENDEZ-VOUS EN PRÉSENTIEL\nAdresse: ${IARCHE_ADDRESS}\n\n${eventDescription}`;
+      } else {
+        eventDescription = `Téléphone: ${bookingData.phone || 'Non renseigné'}\n${eventDescription}`;
+      }
 
       if (meetingType === 'visio') {
         // Create Zoom meeting
@@ -814,13 +830,23 @@ serve(async (req) => {
       }
 
       // Generate ICS file
-      const locationText = meetingType === 'presentiel' ? 'IArche, Bayonne' : getMeetingTypeLabel(meetingType);
+      let icsLocation = getMeetingTypeLabel(meetingType);
+      let icsDescription = `Rendez-vous avec IArche\n\nType: ${bookingType.name}\nFormat: ${getMeetingTypeLabel(meetingType)}\nAvec: ${bookingData.name}`;
+      
+      if (meetingType === 'presentiel') {
+        icsLocation = IARCHE_ADDRESS;
+        icsDescription += `\n\nAdresse: ${IARCHE_ADDRESS}`;
+      } else if (meetingType === 'telephone') {
+        icsLocation = `Appel au ${bookingData.phone || 'numéro indiqué'}`;
+        icsDescription += `\n\nNuméro à appeler: ${bookingData.phone || 'Non renseigné'}`;
+      }
+      
       const icsContent = generateICS(
         `${bookingType.name} - IArche`,
-        `Rendez-vous avec IArche\n\nType: ${bookingType.name}\nFormat: ${getMeetingTypeLabel(meetingType)}\nAvec: ${bookingData.name}`,
+        icsDescription,
         startTime,
         endTime,
-        meetLink || locationText,
+        meetLink || icsLocation,
         'nlq@nlq.fr',
         allAttendeeEmails,
         meetLink || undefined
@@ -835,7 +861,8 @@ serve(async (req) => {
         meetingType,
         meetLink || undefined,
         zoomPassword || undefined,
-        additionalGuests.length > 0 ? additionalGuests : undefined
+        additionalGuests.length > 0 ? additionalGuests : undefined,
+        bookingData.phone || undefined
       );
 
       // Send confirmation email with ICS attachment
