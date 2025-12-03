@@ -1,8 +1,31 @@
 # Brand Book IArche
 
-**Version :** 2.0  
-**Date : 1er Décembre 2025**  
+**Version :** 3.0  
+**Date : 3 Décembre 2025**  
 **Document de référence pour l'identité visuelle IArche**
+
+---
+
+## TABLE DES MATIÈRES
+
+1. [Positionnement de Marque](#1-positionnement-de-marque)
+2. [Logo](#2-logo)
+3. [Système de Titres](#3-système-de-titres---gradienttitle)
+4. [Palette Couleurs](#4-palette-couleurs)
+5. [Typographie](#5-typographie)
+6. [Arrière-plan](#6-arrière-plan---backgroundlayout)
+7. [Animations SVG](#7-animations-svg---lignes-canalisation)
+8. [Composant ArticlePlaceholder](#8-composant-articleplaceholder)
+9. [Rectangles Décoratifs](#9-rectangles-décoratifs)
+10. [Animations - Récapitulatif](#10-animations---récapitulatif-complet)
+11. [Composants CTA](#11-composants-cta)
+12. [Iconographie](#12-iconographie)
+13. [Structure des Pages](#13-structure-des-pages)
+14. [Ton de Voix](#14-ton-de-voix)
+15. [Module Médias](#15-module-médias---génération-pdf--png)
+16. [Module FormBuilder](#16-module-formbuilder---formulaires-personnalisés)
+17. [Design System Tokens](#17-design-system-tokens---référence-technique)
+18. [Checklist Validation](#18-checklist-validation)
 
 ---
 
@@ -89,7 +112,7 @@ Cette baseline exprime :
 
 ### 2.2 Logo avec barre décorative
 
-**NOUVEAUTÉ V2.0 :** Le logo IArche est toujours accompagné d'une barre décorative gradient positionnée en dessous.
+Le logo IArche est toujours accompagné d'une barre décorative gradient positionnée en dessous.
 
 **Spécifications de la barre décorative :**
 
@@ -99,6 +122,15 @@ Cette baseline exprime :
 | md | 80px | 4px | Header, formats moyens |
 | lg | 96px | 4px | Formats intermédiaires |
 | xl | 128px | 6px | Hero, grands formats |
+
+**Style de la barre :**
+
+```css
+.decorative-bar {
+  background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)));
+  border-radius: 9999px; /* rounded-full */
+}
+```
 
 ### 2.3 Logo Editor - Exports configurables
 
@@ -116,23 +148,7 @@ Cette baseline exprime :
 
 **Taille de barre configurable :** sm / md / lg / xl (indépendant de la taille d'export logo)
 
-| Contexte d'usage historique | Largeur barre | Épaisseur | Marge supérieure |
-|-----------------------------|---------------|-----------|------------------|
-| Hero (xl) | w-32 (128px) | h-1.5 (6px) | mt-2 |
-| Header | w-16 (64px) | h-1 (4px) | mt-1 |
-| Placeholder cards | w-12 (48px) | h-0.5 (2px) | mt-2 |
-| Placeholder large | w-20 (80px) | h-1 (4px) | mt-2 |
-
-**Style de la barre :**
-
-```css
-.decorative-bar {
-  background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)));
-  border-radius: 9999px; /* rounded-full */
-}
-```
-
-### 2.3 Déclinaisons fichiers
+### 2.4 Déclinaisons fichiers
 
 | Version | Fichier | Usage |
 |---------|---------|-------|
@@ -141,11 +157,11 @@ Cette baseline exprime :
 | **Monochrome blanc** | `logo-iarche-white.svg` | Fonds sombres |
 | **Monochrome Bleu Nuit** | `logo-iarche-dark.svg` | Version sobre, fonds clairs |
 
-### 2.4 Zone de protection
+### 2.5 Zone de protection
 
 Espace minimum autour du logo : **hauteur du "I"** sur tous les côtés.
 
-### 2.5 Tailles minimales
+### 2.6 Tailles minimales
 
 | Support | Taille minimale |
 |---------|-----------------|
@@ -153,7 +169,7 @@ Espace minimum autour du logo : **hauteur du "I"** sur tous les côtés.
 | Print | 25mm de largeur |
 | Favicon | 32x32px (version simplifiée "IA") |
 
-### 2.6 Usages interdits
+### 2.7 Usages interdits
 
 - ❌ Modifier les couleurs du gradient
 - ❌ Étirer ou déformer le logo
@@ -194,36 +210,20 @@ Le composant `GradientTitle` standardise l'affichage des titres avec gradient an
 
 ### 3.4 Exemples d'utilisation
 
-**Titre de page (lg) :**
 ```tsx
+// Titre de page (lg)
 <GradientTitle size="lg">Actualités</GradientTitle>
-```
 
-**Titre de card (sm) :**
-```tsx
+// Titre de card (sm)
 <GradientTitle size="sm" as="h2" centered={false} textClassName="line-clamp-2">
   {article.title}
 </GradientTitle>
-```
 
-**Hero principal (xl) :**
-```tsx
+// Hero principal (xl)
 <GradientTitle size="xl" className="mb-0">
   <span>IArche</span>
 </GradientTitle>
 ```
-
-### 3.5 Application sur le site
-
-| Page/Composant | Taille utilisée |
-|----------------|-----------------|
-| Hero section (/) | xl |
-| Header (logo) | Barre manuelle h-1 |
-| Pages listing (/actualites, /articles, etc.) | lg |
-| Pages slug (/actualites/:slug, etc.) | lg |
-| Cards articles | sm |
-| RelatedArticles cards | sm |
-| Sections (Newsletter, etc.) | md |
 
 ---
 
@@ -377,42 +377,12 @@ Composant wrapper réutilisable appliquant le design system IArche sur toutes le
 }
 ```
 
-**Quadrillage 2 (-45°) :**
-```css
-{
-  background: repeating-linear-gradient(
-    -45deg, 
-    transparent, 
-    transparent 20px, 
-    hsl(var(--border)) 20px, 
-    hsl(var(--border)) 22px
-  );
-  opacity: 0.1;
-  animation: patternScroll 40s linear infinite;
-  animation-delay: 10s;
-}
-```
-
 **Keyframe animation :**
 ```css
 @keyframes patternScroll {
   0% { transform: translate(0, 0); }
   100% { transform: translate(50px, 50px); }
 }
-```
-
-### 6.4 Usage
-
-```tsx
-import BackgroundLayout from '@/components/layouts/BackgroundLayout';
-
-const Page = () => (
-  <BackgroundLayout>
-    <Header />
-    {/* Contenu */}
-    <Footer />
-  </BackgroundLayout>
-);
 ```
 
 ---
@@ -424,14 +394,13 @@ const Page = () => (
 Lignes SVG animées représentant des "canalisations" formant une arche. Présentes sur :
 - Hero section (page d'accueil)
 - Composant ArticlePlaceholder
+- Module Médias (PDF et PNG)
 
 ### 7.2 Spécifications techniques
 
-**Structure générale :**
-
 | Propriété | Valeur |
 |-----------|--------|
-| Stroke width | 2px (hero) / 3px (placeholder) |
+| Stroke width | 2px (hero) / 3px (placeholder) / 7px (PDF) |
 | Opacity | 0.5 (hero) / 0.7 (placeholder) |
 | Animation | stroke-dasharray/dashoffset |
 | Durée | 6 secondes |
@@ -456,37 +425,19 @@ Lignes SVG animées représentant des "canalisations" formant une arche. Présen
 </linearGradient>
 ```
 
-### 7.4 Animation JavaScript
+### 7.4 Tracé des lignes
 
-```javascript
-useEffect(() => {
-  document.querySelectorAll('.canalisation-line').forEach(path => {
-    const svgPath = path as SVGGeometryElement;
-    const len = svgPath.getTotalLength();
-    
-    // Configuration initiale
-    path.style.strokeDasharray = `${len}px`;
-    path.style.strokeDashoffset = `${len}px`;
-    
-    // Animation de tracé progressif
-    setTimeout(() => {
-      path.style.transition = 'stroke-dashoffset 6s ease-in-out';
-      path.style.strokeDashoffset = '0px';
-    }, 500);
-  });
-}, []);
-```
+| Ligne | Tracé |
+|-------|-------|
+| Ligne 1 | Entrée droite → coin haut-gauche (30%) → sortie bas-gauche |
+| Ligne 2 | Entrée gauche → coin haut-droite (70%) → sortie bas-droite |
 
-### 7.5 CSS des lignes
+### 7.5 Couleurs par thème
 
-```css
-.canalisation-line {
-  fill: none;
-  stroke-width: 2;
-  stroke-linecap: round;
-  opacity: 0.5;
-}
-```
+| Thème | Ligne 1 | Ligne 2 |
+|-------|---------|---------|
+| **Bleu Nuit (dark)** | Terracotta | Terracotta |
+| **Blanc Cassé (light)** | Bleu Nuit | Terracotta |
 
 ---
 
@@ -498,61 +449,24 @@ useEffect(() => {
 
 Composant placeholder affichant le logo IArche avec gradient animé, barre décorative et arches SVG croisées. Utilisé quand aucune image de couverture n'est disponible.
 
-### 8.2 Props
-
-| Prop | Type | Défaut | Description |
-|------|------|--------|-------------|
-| `className` | string | '' | Classes Tailwind (hauteur, etc.) |
-| `size` | 'default' \| 'large' | 'default' | Taille du logo et de la barre |
-
-### 8.3 Variantes de taille
+### 8.2 Variantes de taille
 
 | Variante | Logo | Barre décorative | Usage |
 |----------|------|------------------|-------|
 | `default` | text-3xl md:text-4xl | w-12 h-0.5 | Cards listing |
 | `large` | text-4xl md:text-5xl | w-20 h-1 | Pages détail |
 
-### 8.4 Structure visuelle
+### 8.3 Structure visuelle
 
 ```
 ┌─────────────────────────────────────┐
 │  ╲─────────────────────────╱        │ ← Ligne SVG 1 (Bleu→Terracotta)
 │    ╲                     ╱          │
-│      ╲                 ╱            │
-│                                     │
 │           IArche                    │ ← Logo gradient animé
 │           ══════                    │ ← Barre décorative
-│                                     │
-│      ╱                 ╲            │
 │    ╱                     ╲          │
 │  ╱─────────────────────────╲        │ ← Ligne SVG 2 (Terracotta→Bleu)
 └─────────────────────────────────────┘
-```
-
-### 8.5 Arches SVG
-
-**Arch 1 (droite → gauche) :**
-- viewBox: `0 0 400 360`
-- Path: `M 398 2 L 121 2 C 119 2 117 4 117 6 L 117 176 C 117 178 115 180 113 180 L 0 180`
-- strokeWidth: 3px
-- opacity: 0.7
-
-**Arch 2 (gauche → droite) :**
-- viewBox: `0 0 400 106`
-- Path: `M 0 2 L 278 2 C 280 2 282 4 282 6 L 282 101 C 282 103 284 105 286 105 L 400 105`
-- strokeWidth: 3px
-- opacity: 0.7
-
-### 8.6 Exemples d'utilisation
-
-**Cards listing :**
-```tsx
-<ArticlePlaceholder className="h-40" />
-```
-
-**Pages détail :**
-```tsx
-<ArticlePlaceholder className="mb-6 rounded-xl h-56 md:h-72" size="large" />
 ```
 
 ---
@@ -580,15 +494,6 @@ Rectangles avec bordures discrètes et animation de pulsation, présents uniquem
   50% { opacity: 0.6; }
 }
 ```
-
-### 9.4 Positions
-
-| Rectangle | Position | Taille |
-|-----------|----------|--------|
-| 1 | top-20 left-10 | w-32 h-32 |
-| 2 | bottom-32 right-20 | w-24 h-24 |
-| 3 | top-1/2 right-10 | w-40 h-40 |
-| 4 | bottom-20 left-1/4 | w-28 h-28 |
 
 ---
 
@@ -643,7 +548,7 @@ Lien avec texte en gradient animé et flèche → dynamique.
 **Caractéristiques :**
 - Texte avec classe `hero-gradient-text`
 - Flèche → avec animation translate-x au hover
-- Underline dynamique avec stroke gradient
+- Underline dynamique avec stroke gradient (apparaît au hover uniquement)
 
 ### 11.2 GradientButton
 
@@ -654,6 +559,11 @@ Bouton avec fond gradient et effets hover.
 ### 11.3 IArcheLink
 
 Lien secondaire avec texte Bleu Nuit et flèche Terracotta.
+
+**Caractéristiques :**
+- Texte en Bleu Nuit (`text-primary`)
+- Flèche Terracotta (`text-accent`)
+- Underline animé au hover (pas de soulignement permanent)
 
 ---
 
@@ -676,42 +586,44 @@ Lien secondaire avec texte Bleu Nuit et flèche Terracotta.
 
 ## 13. STRUCTURE DES PAGES
 
-### 13.1 Pages listing (14 pages)
+### 13.1 Pages publiques (20 pages)
 
-| Route | Titre | GradientTitle |
-|-------|-------|---------------|
-| `/actualites` | Actualités | size="lg" |
-| `/articles` | Articles | size="lg" |
-| `/cas-clients` | Cas clients | size="lg" |
-| `/livres-blancs` | Livres blancs | size="lg" |
-| `/ateliers-webinaires` | Ateliers & Webinaires | size="lg" |
-| `/services` | Services | size="lg" |
-| `/solutions` | Solutions | size="lg" |
-| `/contact` | Nous contacter | size="lg" |
-| `/newsletter` | Newsletter | size="lg" |
-| `/livre-or` | Livre d'or | size="lg" |
-| `/mentions-legales` | Mentions légales | size="lg" |
-| `/conditions-generales` | Conditions générales | size="lg" |
-| `/confidentialite` | Politique de confidentialité | size="lg" |
-| `/status` | Status | size="lg" |
+| Route | Titre |
+|-------|-------|
+| `/` | Accueil (Hero) |
+| `/actualites` | Actualités |
+| `/articles` | Articles |
+| `/cas-clients` | Cas clients |
+| `/livres-blancs` | Livres blancs |
+| `/ateliers-webinaires` | Ateliers & Webinaires |
+| `/services` | Services |
+| `/solutions` | Solutions |
+| `/contact` | Nous contacter |
+| `/newsletter` | Newsletter |
+| `/livre-or` | Livre d'or |
+| `/mentions-legales` | Mentions légales |
+| `/conditions-generales` | Conditions générales |
+| `/confidentialite` | Politique de confidentialité |
+| `/status` | Status |
+| `/formulaires/:slug` | Formulaires publics |
+| `/actualites/:slug` | Détail actualité |
+| `/articles/:slug` | Détail article |
+| `/services/:slug` | Détail service |
+| `/solutions/:slug` | Détail solution |
 
-### 13.2 Pages slug (détail)
+### 13.2 Pages admin (35+ pages)
 
-| Route pattern | GradientTitle | ArticlePlaceholder |
-|---------------|---------------|-------------------|
-| `/actualites/:slug` | size="lg" | size="large" |
-| `/articles/:slug` | size="lg" | size="large" |
-| `/cas-clients/:slug` | size="lg" | size="large" |
-| `/livres-blancs/:slug` | size="lg" | size="large" |
-| `/ateliers-webinaires/:slug` | size="lg" | size="large" |
-| `/services/:slug` | size="lg" | - |
-| `/solutions/:slug` | size="lg" | - |
-
-### 13.3 Cards dans les listings
-
-Toutes les cards utilisent :
-- `GradientTitle size="sm"` pour le titre
-- `ArticlePlaceholder` (default) si pas d'image
+| Route | Fonction |
+|-------|----------|
+| `/admin` | Tableau de bord |
+| `/admin/formulaires` | Gestion formulaires |
+| `/admin/formulaires/:id` | Éditeur formulaire |
+| `/admin/formulaires/:id/responses` | Réponses formulaire |
+| `/admin/form-responses` | Vue globale réponses |
+| `/admin/medias` | Module médias |
+| `/admin/leads` | Leads consolidés |
+| `/admin/articles` | Gestion articles |
+| ... | (35+ routes admin) |
 
 ---
 
@@ -736,13 +648,13 @@ Toutes les cards utilisent :
 | "N'hésitez pas à nous contacter" | "Une question ? Parlons-en" |
 | "Nous sommes leaders de..." | "4 solutions en production" |
 
-### 14.3 Formules récurrentes
+### 14.3 Mots interdits
 
-- "L'IA se construit avec vous"
-- "Du concret, pas des slides"
-- "Résultats mesurables"
-- "De l'audit à l'autonomie"
-- "On fait avec vous, pas pour vous"
+- ❌ "formation" → ✅ "accompagnement"
+- ❌ "coaching" → ✅ "accompagnement"
+- ❌ "périmètre" → ✅ "projet"
+- ❌ "scalable" → ✅ "adaptée à vos besoins"
+- ❌ "maturité IA" → ✅ "adaptés aux PME"
 
 ---
 
@@ -750,27 +662,21 @@ Toutes les cards utilisent :
 
 ### 15.1 Description
 
-Module d'administration (`/admin/medias`) permettant de créer des contenus PDF et PNG conformes à la charte graphique IArche :
-- **Carrousels LinkedIn/Instagram** (PDF)
-- **Présentations PDF (16:9)**
-- **Documents Word**
-- **Visuels PNG** : Banner, Post, Story, Thumbnail, OpenGraph, HeaderEmail, Signature
+Module d'administration (`/admin/medias`) permettant de créer des contenus PDF et PNG conformes à la charte graphique IArche.
 
 **Architecture fichiers :**
 ```
 src/components/admin/medias/
 ├── shared/
-│   ├── tokens.ts      ← Source unique de vérité (couleurs, gradients, tailles)
-│   └── index.ts       ← Export centralisé
-├── html/              ← Composants pour PNG (via html-to-image)
-│   ├── tokens.ts
+│   ├── tokens.ts      ← Source unique de vérité
+│   └── index.ts
+├── html/              ← Composants pour PNG
 │   ├── HTMLBaseTemplate.tsx
 │   ├── HTMLCanalisationLines.tsx
 │   ├── HTMLMeshBackground.tsx
 │   ├── HTMLGradientBar.tsx
 │   └── HTMLLogo.tsx
-├── pdf/               ← Composants pour PDF (@react-pdf/renderer)
-│   ├── tokens.ts
+├── pdf/               ← Composants pour PDF
 │   ├── PDFCanalisationLines.tsx
 │   ├── PDFMeshBackground.tsx
 │   ├── PDFGradientBar.tsx
@@ -780,168 +686,179 @@ src/components/admin/medias/
     └── PresentationPDF.tsx
 ```
 
-### 15.2 Tokens partagés (Single Source of Truth)
-
-**Fichier :** `src/components/admin/medias/shared/tokens.ts`
-
-| Catégorie | Contenu |
-|-----------|---------|
-| **COLORS** | bleuNuit (#1A2B4A), terracotta (#D15A3E), blancCasse (#FAF9F7), variantes alpha |
-| **GRADIENTS** | bar (90°), barReverse, background (135°), text (270°) |
-| **FONTS** | html: Manrope, pdf: Helvetica |
-| **BAR_SIZES** | sm (48×2), md (80×4), lg (96×4), xl (128×6) |
-| **LOGO_SIZES** | sm (24px), md (32px), lg (48px), xl (64px) |
-| **EXPORT_FORMATS** | Toutes dimensions (carousel, banner, post, story, thumbnail, etc.) |
-
-### 15.3 Lignes Canalisation (signature visuelle)
-
-Reproduction des lignes SVG animées du hero section, en version statique.
-
-**PDF :** `src/components/admin/medias/pdf/PDFCanalisationLines.tsx`  
-**PNG :** `src/components/admin/medias/html/HTMLCanalisationLines.tsx`
-
-**Spécifications techniques :**
-
-| Propriété | PDF | PNG |
-|-----------|-----|-----|
-| Stroke width | 7px fixe | 3-8px (selon format) |
-| Opacity | 0.6 | 0.25-0.5 (selon format) |
-| Stroke linecap | round | round |
-| Coins | Quadratic Bezier | Quadratic Bezier |
-
-**Tracé des lignes :**
-
-| Ligne | Tracé |
-|-------|-------|
-| Ligne 1 | Entrée droite → coin haut-gauche (30%) → sortie bas-gauche |
-| Ligne 2 | Entrée gauche → coin haut-droite (70%) → sortie bas-droite |
-
-**Couleurs par thème :**
-
-| Thème | Ligne 1 | Ligne 2 |
-|-------|---------|---------|
-| **Bleu Nuit (dark)** | Terracotta | Terracotta |
-| **Blanc Cassé (light)** | Bleu Nuit | Terracotta |
-
-### 15.4 Éditeurs PNG avec Canalisations
-
-| Éditeur | Route | Dimensions | Opacity | StrokeWidth |
-|---------|-------|------------|---------|-------------|
-| Banner LinkedIn | `/admin/medias/banner` | 1584×396 | 0.4 | 5 |
-| Post Square | `/admin/medias/post` | 1200×1200 | 0.4 | 6 |
-| Post Landscape | `/admin/medias/post` | 1200×627 | 0.4 | 5 |
-| Story | `/admin/medias/story` | 1080×1920 | 0.5 | 8 |
-| Thumbnail 1080p | `/admin/medias/thumbnail` | 1920×1080 | 0.4 | 7 |
-| Thumbnail 720p | `/admin/medias/thumbnail` | 1280×720 | 0.4 | 5 |
-| OpenGraph | `/admin/medias/opengraph` | 1200×630 | 0.4 | 5 |
-| Header Email | `/admin/medias/header-email` | 600×150 | 0.25-0.35 | 2-3 |
-| Signature | `/admin/medias/signature` | 600×200 | N/A (table HTML) | N/A |
-
-### 15.5 Logo PDF/PNG
-
-| Thème | Variante logo | Composant PDF | Composant HTML |
-|-------|---------------|---------------|----------------|
-| Bleu Nuit | Terracotta (orange fixe) | PDFImageLogo | HTMLLogo |
-| Blanc Cassé | Gradient | PDFImageLogo | HTMLLogo |
-
-### 15.6 Autres éléments visuels
-
-| Élément | PDF | PNG | Description |
-|---------|-----|-----|-------------|
-| Barre décorative | PDFGradientBar | HTMLGradientBar | 4 tailles (sm/md/lg/xl) |
-| Motif diagonal | PDFMeshBackground | HTMLMeshBackground | Quadrillage 45° |
-| Arches coins | PDFArches | HTMLArches | Version simplifiée (coins uniquement) |
-
-### 15.7 Formats d'export
+### 15.2 Éditeurs disponibles
 
 **PDF :**
-
-| Format | Dimensions | Usage |
-|--------|------------|-------|
-| LinkedIn Carousel | 1080 × 1350 px | Posts carrousel LinkedIn |
-| Instagram Carousel | 1080 × 1080 px | Posts carrousel Instagram |
-| Présentation | 1920 × 1080 px | Slides 16:9 |
-| A4 | 595 × 842 px | Documents imprimables |
+- Carrousel LinkedIn/Instagram
+- Présentations 16:9
 
 **PNG :**
+| Éditeur | Route | Dimensions |
+|---------|-------|------------|
+| Banner LinkedIn | `/admin/medias/banner` | 1584×396 |
+| Post | `/admin/medias/post` | 1200×1200, 1200×627 |
+| Story | `/admin/medias/story` | 1080×1920 |
+| Thumbnail | `/admin/medias/thumbnail` | 1920×1080, 1280×720 |
+| OpenGraph | `/admin/medias/opengraph` | 1200×630 |
+| Header Email | `/admin/medias/header-email` | 600×150 |
+| Signature | `/admin/medias/signature` | 600×200 |
+| Logo | `/admin/medias/logo` | 100/250/500px |
+| Favicon | `/admin/medias/favicon` | Multi-format |
+| QR Code | `/admin/medias/qrcode` | Personnalisable |
 
-| Format | Dimensions | Usage |
-|--------|------------|-------|
-| Banner LinkedIn | 1584 × 396 px | Bannière profil/page |
-| Post Square | 1200 × 1200 px | Posts carrés |
-| Post Landscape | 1200 × 627 px | Posts paysage |
-| Story | 1080 × 1920 px | Stories verticales |
-| Thumbnail 1080p | 1920 × 1080 px | Miniatures YouTube |
-| Thumbnail 720p | 1280 × 720 px | Miniatures YouTube |
-| OpenGraph | 1200 × 630 px | Partage réseaux sociaux |
-| Header Email | 600 × 150 px | En-tête newsletter |
-| Signature | 600 × 200 px | Signature email |
-
-### 15.8 Modes d'export unifiés (ExportModeControls)
-
-Tous les éditeurs de médias utilisent un système de modes d'export unifié.
-
-**Composant :** `src/components/admin/medias/ExportModeControls.tsx`
-
-**Modes disponibles :**
+### 15.3 Modes d'export unifiés
 
 | Mode | Label | Contenu exporté |
 |------|-------|-----------------|
-| `simple` | Simple | Contenu uniquement (texte, logo si applicable) |
-| `with-bar` | + Barre | Contenu + barre décorative gradient |
-| `full` | Complet | Contenu + barre + mesh background + canalisations |
-
-**Tailles de barre configurables :**
-
-| Taille | Dimensions | Usage recommandé |
-|--------|------------|------------------|
-| sm | 48 × 2px | Petits formats (signature, header email) |
-| md | 80 × 4px | Formats moyens (posts, thumbnails) |
-| lg | 96 × 4px | Grands formats (banners, stories) |
-| xl | 128 × 6px | Très grands formats (présentations) |
-
-**Props du composant :**
-
-```tsx
-interface ExportModeControlsProps {
-  exportMode: 'simple' | 'with-bar' | 'full';
-  onExportModeChange: (mode: ExportMode) => void;
-  barSize: 'sm' | 'md' | 'lg' | 'xl';
-  onBarSizeChange: (size: BarSize) => void;
-  showBarSizeSelector?: boolean;  // Affiche sélecteur taille barre
-  compact?: boolean;              // Variante compacte
-}
-```
-
-**Utilisation dans les éditeurs :**
-
-```tsx
-<ExportModeControls
-  exportMode={exportMode}
-  onExportModeChange={setExportMode}
-  barSize={barSize}
-  onBarSizeChange={setBarSize}
-  compact={true}
-/>
-```
-
-### 15.9 Workflow de création
-
-1. Accéder à `/admin/medias`
-2. Choisir l'onglet (Documents PDF ou Visuels PNG)
-3. Sélectionner un template
-4. Remplir le contenu (titre, sous-titre, etc.)
-5. Choisir le thème de départ (Bleu Nuit ou Blanc Cassé)
-6. **Sélectionner le mode d'export (Simple / + Barre / Complet)**
-7. **Si barre activée, choisir la taille (sm/md/lg/xl)**
-8. Prévisualiser en temps réel
-9. Exporter (PDF ou PNG)
+| `simple` | Simple | Contenu uniquement |
+| `with-bar` | + Barre | Contenu + barre décorative |
+| `full` | Complet | Contenu + barre + mesh + canalisations |
 
 ---
 
-## 16. CHECKLIST VALIDATION
+## 16. MODULE FORMBUILDER - Formulaires personnalisés
 
-### 16.1 Éléments visuels obligatoires
+### 16.1 Description
+
+Module complet de création et gestion de formulaires personnalisés avec interface drag-and-drop, design IArche intégré, et analytics.
+
+**Routes :**
+- `/admin/formulaires` — Liste des formulaires
+- `/admin/formulaires/:id` — Éditeur drag-and-drop
+- `/admin/formulaires/:id/responses` — Réponses par formulaire
+- `/admin/form-responses` — Vue globale des réponses
+- `/formulaires/:slug` — Page publique du formulaire
+
+### 16.2 Types de champs (21 types)
+
+**Champs de saisie :**
+| Type | Icône | Description |
+|------|-------|-------------|
+| text | Type | Champ texte court |
+| email | Mail | Email avec validation |
+| phone | Phone | Téléphone avec format |
+| number | Hash | Nombre avec min/max |
+| textarea | AlignLeft | Texte long multiligne |
+| select | ChevronDown | Liste déroulante |
+| radio | Circle | Choix unique |
+| checkbox | CheckSquare | Choix multiple |
+| date | Calendar | Sélecteur de date |
+| time | Clock | Sélecteur d'heure |
+| datetime | CalendarClock | Date et heure |
+| file | Upload | Upload fichier |
+| rating | Star | Notation étoiles |
+| scale | Sliders | Échelle numérique |
+| boolean | ToggleLeft | Oui/Non |
+| signature | PenTool | Signature manuscrite |
+
+**Champs de mise en page :**
+| Type | Icône | Description |
+|------|-------|-------------|
+| heading | Heading | Titre de section |
+| paragraph | FileText | Texte explicatif |
+| divider | Minus | Séparateur horizontal |
+| rgpd | Shield | Consentement RGPD |
+
+### 16.3 Design personnalisable
+
+Chaque formulaire peut être personnalisé :
+
+| Option | Description |
+|--------|-------------|
+| **Couleurs** | Primary, secondary, background, text |
+| **Logo** | URL du logo personnalisé |
+| **Barre gradient** | Affichage et taille (sm/md/lg/xl) |
+| **Canalisations** | Lignes SVG décoratives |
+| **Border radius** | none/sm/md/lg |
+
+**Couleurs par défaut IArche :**
+```json
+{
+  "primary": "#1A2B4A",
+  "secondary": "#D15A3E",
+  "background": "#FAF9F7",
+  "text": "#4A5568"
+}
+```
+
+### 16.4 Fonctionnalités
+
+- **Drag-and-drop** : Réorganisation des champs
+- **Preview temps réel** : Aperçu instantané
+- **Validation** : Required, min/max, patterns
+- **Analytics** : Vues, starts, soumissions
+- **Export** : CSV et JSON
+- **QR Code** : Génération automatique
+- **Templates** : Sauvegarde et réutilisation
+
+### 16.5 Architecture technique
+
+**Tables Supabase :**
+- `forms` — Définition des formulaires
+- `form_responses` — Réponses soumises
+- `form_analytics` — Événements de tracking
+
+**Hooks :**
+- `useForms()` — CRUD formulaires
+- `useFormResponses()` — Gestion réponses
+- `useFormAnalytics()` — Tracking analytics
+
+---
+
+## 17. DESIGN SYSTEM TOKENS - Référence technique
+
+### 17.1 Tokens CSS (index.css)
+
+```css
+:root {
+  /* Couleurs principales */
+  --primary: 218 47% 20%;        /* Bleu Nuit */
+  --accent: 12 60% 53%;          /* Terracotta */
+  --background: 30 14% 98%;      /* Blanc Cassé */
+  --foreground: 0 0% 18%;        /* Anthracite */
+  
+  /* Couleurs secondaires */
+  --secondary: 30 20% 93%;       /* Gris Sable */
+  --muted-foreground: 0 0% 40%;  /* Texte secondaire */
+  --border: 30 16% 88%;          /* Bordures */
+  --success: 153 34% 36%;        /* Vert Sauge */
+  --destructive: 12 55% 50%;     /* Terracotta doux */
+  
+  /* Système */
+  --radius: 0.75rem;
+  --ring: 12 60% 53%;            /* Focus ring */
+}
+```
+
+### 17.2 Tokens partagés médias (shared/tokens.ts)
+
+```typescript
+export const IARCHE_COLORS = {
+  bleuNuit: '#1A2B4A',
+  terracotta: '#D15A3E',
+  blancCasse: '#FAF9F7',
+  grisTexte: '#4A5568',
+  // + variantes alpha
+};
+
+export const GRADIENTS = {
+  bar: { angle: 90, stops: ['bleuNuit', 'terracotta', 'bleuNuit'] },
+  text: { angle: 270, stops: ['bleuNuit', 'terracotta', 'bleuNuit', 'terracotta'] },
+};
+
+export const BAR_SIZES = {
+  sm: { width: 48, height: 2 },
+  md: { width: 80, height: 4 },
+  lg: { width: 96, height: 4 },
+  xl: { width: 128, height: 6 },
+};
+```
+
+---
+
+## 18. CHECKLIST VALIDATION
+
+### 18.1 Éléments visuels obligatoires
 
 - [ ] Logo IArche avec gradient animé + barre décorative
 - [ ] Fond Blanc Cassé (#FAF9F7)
@@ -950,7 +867,7 @@ interface ExportModeControlsProps {
 - [ ] Barre décorative sous chaque titre
 - [ ] Focus ring Terracotta (WCAG AAA)
 
-### 16.2 Animations obligatoires
+### 18.2 Animations obligatoires
 
 - [ ] Gradient text 8s sur logo IArche
 - [ ] PatternScroll 40s sur quadrillages
@@ -958,23 +875,22 @@ interface ExportModeControlsProps {
 - [ ] PageTransition 0.4s entre pages
 - [ ] Canalisation lines 6s (hero/placeholder)
 
-### 16.3 Cohérence tokens
+### 18.3 Cohérence tokens
 
 - [ ] Toutes les couleurs via tokens CSS (pas de HEX hardcodé)
 - [ ] Typographie Manrope uniquement (Helvetica pour PDF)
 - [ ] Border-radius via --radius token
 - [ ] Espacements via classes Tailwind standard
 
-### 16.4 Éléments PDF/PNG obligatoires
+### 18.4 Formulaires
 
-- [ ] Lignes canalisation (7px PDF, 3-8px PNG selon format)
-- [ ] Logo (terracotta sur dark, gradient sur light)
-- [ ] Barres décoratives proportionnelles (sm/md/lg/xl)
-- [ ] Motif diagonal mesh en arrière-plan
-- [ ] Alternance thèmes dark/light entre slides (PDF)
-- [ ] Canalisations avec opacity adaptée au format (PNG)
+- [ ] Couleurs personnalisables respectant la charte
+- [ ] Barre décorative optionnelle
+- [ ] Focus ring Terracotta sur tous les inputs
+- [ ] Validation client-side avec feedback visuel
+- [ ] URL de production (iarche.fr) pour liens copiés
 
 ---
 
-**Document mis à jour le 2 Décembre 2025**  
-**Version 2.2 - Inclut harmonisation tokens PDF/PNG et lignes canalisation unifiées**
+**Document mis à jour le 3 Décembre 2025**  
+**Version 3.0 - Inclut Module FormBuilder complet**

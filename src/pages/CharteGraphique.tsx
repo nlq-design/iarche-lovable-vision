@@ -18,6 +18,7 @@ const CharteGraphique = () => {
     { name: 'Bordure', variable: '--border', hsl: '30 16% 88%', hex: '#E5E0DA', usage: 'Bordures, séparateurs' },
     { name: 'Texte Muted', variable: '--muted-foreground', hsl: '0 0% 40%', hex: '#666666', usage: 'Texte secondaire' },
     { name: 'Vert Sauge', variable: '--success', hsl: '153 34% 36%', hex: '#3D7A5C', usage: 'Succès, validation' },
+    { name: 'Gris Texte', variable: '--text-subtle', hsl: '0 0% 40%', hex: '#4A5568', usage: 'Texte formulaires' },
   ];
 
   return (
@@ -41,7 +42,7 @@ const CharteGraphique = () => {
           <div className="text-center">
             <h1 className="text-7xl font-semibold mb-4 hero-gradient-text">IArche</h1>
             <p className="text-2xl text-[#666666] mb-2">Charte Graphique</p>
-            <p className="text-lg text-[#999999]">Version 1.0 — Décembre 2025</p>
+            <p className="text-lg text-[#999999]">Version 2.0 — 3 Décembre 2025</p>
           </div>
           <div className="absolute bottom-12 text-center">
             <p className="text-sm text-[#999999]">L'IA se construit avec vous</p>
@@ -553,8 +554,9 @@ path.style.strokeDashoffset = '0px';`}
         {/* ========== FOOTER ========== */}
         <footer className="p-8 bg-[#1A2B4A] text-white text-center print:break-before-avoid">
           <p className="text-xl font-semibold mb-2">IArche</p>
-          <p className="text-sm text-white/70">Charte Graphique v1.0 — Document confidentiel</p>
+          <p className="text-sm text-white/70">Charte Graphique v2.0 — Document confidentiel</p>
           <p className="text-xs text-white/50 mt-4">© 2025 IArche · Tous droits réservés</p>
+          <p className="text-xs text-white/30 mt-2">Mise à jour : 3 Décembre 2025</p>
         </footer>
       </div>
 

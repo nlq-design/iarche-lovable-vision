@@ -1,7 +1,7 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.14**  
-**Date : 2 Décembre 2025**  
+**Version mise à jour : V6.15**  
+**Date : 3 Décembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
@@ -4197,9 +4197,210 @@ const { data, error } = await supabase.functions.invoke('create-database-backup'
 
 ---
 
-## PROCHAINES ÉVOLUTIONS SÉCURITÉ (V7.0 - Roadmap)
+## MODULE FORMBUILDER - MISE À JOUR V6.15 ✅
+
+### 0.14 Système de formulaires personnalisés complet
+
+**Date :** 3 Décembre 2025
+
+#### Contexte
+
+Module complet de création et gestion de formulaires personnalisés avec :
+- Interface drag-and-drop
+- 21 types de champs
+- Design IArche intégré (couleurs, logo, barre, canalisations)
+- Analytics de formulaires
+- Export CSV/JSON des réponses
+- QR Code automatique
+
+#### 1. Architecture base de données
+
+**Tables Supabase créées :**
+
+| Table | Description | RLS |
+|-------|-------------|-----|
+| `forms` | Définition des formulaires | Admin CRUD, Public SELECT (is_active) |
+| `form_responses` | Réponses soumises | Admin SELECT/DELETE, Public INSERT |
+| `form_analytics` | Événements tracking | Admin SELECT, Public INSERT |
+
+**Colonnes table `forms` :**
+- `id`, `title`, `slug` (unique), `description`
+- `fields` (JSONB) — Tableau de définitions de champs
+- `settings` (JSONB) — Configuration design, notifications, RGPD
+- `is_active`, `views_count`, `submissions_count`
+- `qr_code_url`, `created_at`, `updated_at`
+
+**Colonnes table `form_responses` :**
+- `id`, `form_id`, `data` (JSONB), `metadata` (JSONB)
+- `submitted_at`, `is_complete`, `partial_data` (JSONB)
+
+**Functions Supabase :**
+- `increment_form_views(form_slug)` — Incrémente vues
+- `increment_form_submissions(form_slug)` — Incrémente soumissions
+
+#### 2. Types de champs implémentés (21)
+
+**Champs de saisie (16) :**
+
+| Type | Label | Icône | Validation |
+|------|-------|-------|------------|
+| text | Texte court | Type | min/max, pattern |
+| email | Email | Mail | Format email |
+| phone | Téléphone | Phone | Format téléphone |
+| number | Nombre | Hash | min/max |
+| textarea | Texte long | AlignLeft | min/max caractères |
+| select | Liste déroulante | ChevronDown | Options requises |
+| radio | Choix unique | Circle | Options requises |
+| checkbox | Cases à cocher | CheckSquare | Options, min/max sélections |
+| date | Date | Calendar | min/max date |
+| time | Heure | Clock | - |
+| datetime | Date et heure | CalendarClock | - |
+| file | Fichier | Upload | Types acceptés, taille max |
+| rating | Notation | Star | 1-5 étoiles |
+| scale | Échelle | Sliders | min/max configurable |
+| boolean | Oui/Non | ToggleLeft | - |
+| signature | Signature | PenTool | Canvas signature |
+
+**Champs de mise en page (5) :**
+
+| Type | Label | Icône | Description |
+|------|-------|-------|-------------|
+| heading | Titre | Heading | Titre de section |
+| paragraph | Paragraphe | FileText | Texte explicatif |
+| divider | Séparateur | Minus | Ligne horizontale |
+| rgpd | RGPD | Shield | Consentement obligatoire |
+
+#### 3. Routes et pages
+
+**Routes admin :**
+
+| Route | Composant | Description |
+|-------|-----------|-------------|
+| `/admin/formulaires` | AdminFormulaires | Liste des formulaires |
+| `/admin/formulaires/:id` | FormEditor | Éditeur drag-and-drop |
+| `/admin/formulaires/:id/responses` | FormResponses | Réponses par formulaire |
+| `/admin/form-responses` | AdminFormResponses | Vue globale toutes réponses |
+
+**Route publique :**
+
+| Route | Composant | Description |
+|-------|-----------|-------------|
+| `/formulaires/:slug` | FormPublic | Formulaire public |
+
+#### 4. Fonctionnalités éditeur (FormEditor)
+
+**Onglets :**
+1. **Champs** — Bibliothèque drag-and-drop
+2. **Design** — Personnalisation visuelle
+3. **QR Code** — Génération et export
+4. **Notifications** — Email admin/répondant
+
+**Design personnalisable :**
+
+| Option | Défaut IArche |
+|--------|---------------|
+| Primary | #1A2B4A (Bleu Nuit) |
+| Secondary | #D15A3E (Terracotta) |
+| Background | #FAF9F7 (Blanc Cassé) |
+| Text | #4A5568 (Gris texte) |
+| Logo | URL optionnelle |
+| Barre gradient | Oui, taille sm/md/lg/xl |
+| Canalisations | Optionnel |
+| Border radius | none/sm/md/lg |
+
+**Fonctionnalités champs :**
+- Drag-and-drop réorganisation
+- Configuration par champ (label, placeholder, required, validation)
+- Options personnalisées (select, radio, checkbox)
+- Preview temps réel
+
+#### 5. Page publique (FormPublic)
+
+**Workflow soumission :**
+1. Chargement formulaire via `getFormBySlug`
+2. Incrément compteur vues (`increment_form_views`)
+3. Tracking analytics (view, start, field_focus, submit)
+4. Validation client-side (required, formats, longueurs)
+5. Soumission via `submitResponse`
+6. Incrément compteur soumissions
+7. Affichage message succès + redirection optionnelle
+
+**Métadonnées capturées :**
+- `userAgent`, `device` (desktop/mobile/tablet)
+- `referrer`, `source` (UTM), `submittedAt`
+
+#### 6. Vue globale réponses (AdminFormResponses)
+
+**Fonctionnalités :**
+- Liste toutes réponses tous formulaires
+- Filtres : par formulaire, par date, recherche texte
+- Statistiques : total, aujourd'hui, formulaires actifs
+- Sélection multiple + suppression en masse
+- Export CSV/JSON filtré
+- Modal détail avec métadonnées
+
+#### 7. Politiques RLS
+
+**Table `forms` :**
+- Admin : CRUD complet
+- Public : SELECT uniquement si `is_active = true`
+
+**Table `form_responses` :**
+- Admin : SELECT, DELETE
+- Public (anon + authenticated) : INSERT avec `WITH CHECK (true)`
+- **IMPORTANT** : SELECT public ajouté pour permettre `.select()` après INSERT
+
+**Table `form_analytics` :**
+- Admin : SELECT
+- Public (anon + authenticated) : INSERT
+
+#### 8. Configuration URL production
+
+**Correction appliquée :**
+- Liens copiés utilisent `https://iarche.fr/formulaires/:slug`
+- QR Code pointe vers domaine de production
+- Suppression référence `window.location.origin` (dev)
+
+**Fichiers modifiés :**
+- `src/pages/admin/AdminFormulaires.tsx` — `copyLink` function
+- `src/pages/admin/FormEditor.tsx` — `getPublicUrl` function
+
+#### 9. Fichiers créés/modifiés
+
+**Types :**
+- `src/types/forms.ts` — Interfaces complètes (Form, FormField, FormResponse, etc.)
+
+**Hooks :**
+- `src/hooks/useForms.ts` — CRUD formulaires
+- `src/hooks/useFormResponses.ts` — Gestion réponses
+- `src/hooks/useFormAnalytics.ts` — Tracking analytics
+
+**Composants champs (21 fichiers) :**
+- `src/components/forms/fields/*.tsx`
+- `src/components/forms/fields/index.ts` — Export centralisé
+
+**Pages admin :**
+- `src/pages/admin/AdminFormulaires.tsx` — Liste
+- `src/pages/admin/FormEditor.tsx` — Éditeur
+- `src/pages/admin/FormResponses.tsx` — Réponses par formulaire
+- `src/pages/admin/AdminFormResponses.tsx` — Vue globale
+
+**Page publique :**
+- `src/pages/FormPublic.tsx` — Rendu formulaire
+
+**Sidebar :**
+- `src/components/admin/AdminSidebar.tsx` — Liens ajoutés
+
+**Routes :**
+- `src/App.tsx` — Routes lazy-loaded
+
+---
+
+## PROCHAINES ÉVOLUTIONS (V7.0 - Roadmap)
 
 ### 🔮 Fonctionnalités prévues
+
+**Sécurité :**
 
 1. **Stockage backups Supabase Storage** :
    - Upload fichiers backups dans bucket sécurisé
@@ -4223,16 +4424,48 @@ const { data, error } = await supabase.functions.invoke('create-database-backup'
    - Timeline visuelle des actions
    - Alertes comportements inhabituels
 
-5. **Dashboard analytics avancés** :
-   - Graphiques prédictifs (tendances futures)
-   - Corrélation événements (ex: backup fail + pic traffic)
-   - Export rapports PDF automatiques
+**FormBuilder :**
 
-6. **SIEM Integration** :
-   - Export logs vers outils SIEM (Splunk, ELK, etc.)
-   - Webhooks alertes temps réel
-   - API logs pour intégrations tierces
+5. **Logique conditionnelle** :
+   - Affichage champs selon réponses précédentes
+   - Sauts de section conditionnels
+   - Calculs automatiques
+
+6. **Intégrations** :
+   - Webhooks vers CRM/outils externes
+   - Emails de confirmation personnalisés
+   - Pièces jointes PDF récapitulatif
+
+7. **Templates prédéfinis** :
+   - Contact standard
+   - Enquête satisfaction
+   - Inscription événement
+   - Demande de devis
+
+8. **Analytics avancés** :
+   - Taux d'abandon par étape
+   - Heatmap champs
+   - A/B testing formulaires
+
+---
+
+## RÉCAPITULATIF VERSIONS
+
+| Version | Date | Contenu principal |
+|---------|------|-------------------|
+| V6.0 | Nov 2025 | Sécurité complète (2FA, audit, backups, rate limit) |
+| V6.1-6.8 | Nov 2025 | Harmonisations, corrections terminologiques |
+| V6.9 | Nov 2025 | Schema.org SoftwareApplication solutions |
+| V6.10 | Nov 2025 | Harmonisation terminologique complète |
+| V6.11 | Nov 2025 | Contenus solutions détaillés + FAQ |
+| V6.12 | Déc 2025 | Harmonisation tokens PDF/PNG + canalisations |
+| V6.13 | Déc 2025 | Logo Editor exports configurables |
+| V6.14 | Déc 2025 | Modes export unifiés tous éditeurs |
+| **V6.15** | **3 Déc 2025** | **Module FormBuilder complet** |
 
 ---
 
 **FIN DU DOCUMENT**
+
+**Dernière mise à jour : 3 Décembre 2025**  
+**Version : V6.15**
