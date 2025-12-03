@@ -12,14 +12,14 @@ export const COLORS = {
   // Palette primaire
   bleuNuit: '#1A2B4A',           // hsl(218, 47%, 20%) - Primary
   bleuNuitDark: '#14203A',       // Version plus sombre pour gradients
-  terracotta: '#D15A3E',         // hsl(12, 60%, 53%) - Accent
+  terracotta: '#B04A32',         // hsl(12, 60%, 44%) - Accent (WCAG AA compliant)
   blancCasse: '#FAF9F7',         // hsl(40, 33%, 97%) - Background clair
   
   // Variantes avec opacité (pour overlays, shadows)
   bleuNuitLight10: 'rgba(26, 43, 74, 0.1)',
   bleuNuitLight20: 'rgba(26, 43, 74, 0.2)',
-  terracottaLight20: 'rgba(209, 90, 62, 0.2)',
-  terracottaLight30: 'rgba(209, 90, 62, 0.3)',
+  terracottaLight20: 'rgba(176, 74, 50, 0.2)',
+  terracottaLight30: 'rgba(176, 74, 50, 0.3)',
   
   // Texte
   foreground: '#2D2D2D',         // hsl(0, 0%, 18%)
