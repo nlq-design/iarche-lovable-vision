@@ -12,7 +12,7 @@ const CharteGraphique = () => {
 
   const colors = [
     { name: 'Bleu Nuit', variable: '--primary', hsl: '218 47% 20%', hex: '#1A2B4A', rgb: '26, 43, 74', usage: 'Titres, texte principal, CTA primaire' },
-    { name: 'Terracotta', variable: '--accent', hsl: '12 60% 53%', hex: '#D15A3E', rgb: '209, 90, 62', usage: 'Accents, CTA secondaire, focus, liens' },
+    { name: 'Terracotta', variable: '--accent', hsl: '12 60% 44%', hex: '#B04A32', rgb: '176, 74, 50', usage: 'Accents, CTA secondaire, focus, liens' },
     { name: 'Blanc Cassé', variable: '--background', hsl: '30 14% 98%', hex: '#FAF9F7', rgb: '250, 249, 247', usage: 'Fond principal' },
     { name: 'Gris Sable', variable: '--secondary', hsl: '30 20% 93%', hex: '#F0EDE8', rgb: '240, 237, 232', usage: 'Surfaces secondaires, cartes' },
     { name: 'Bordure', variable: '--border', hsl: '30 16% 88%', hex: '#E5E0DA', rgb: '229, 224, 218', usage: 'Bordures, séparateurs' },
@@ -22,10 +22,10 @@ const CharteGraphique = () => {
   ];
 
   const gradients = [
-    { name: 'Barre décorative', css: 'linear-gradient(90deg, #1A2B4A 0%, #D15A3E 100%)', usage: 'Barres horizontales, séparateurs visuels' },
-    { name: 'Texte animé', css: 'linear-gradient(270deg, #1A2B4A 0%, #D15A3E 33%, #1A2B4A 66%, #D15A3E 100%)', usage: 'Logo IArche, titres héroïques' },
+    { name: 'Barre décorative', css: 'linear-gradient(90deg, #1A2B4A 0%, #B04A32 100%)', usage: 'Barres horizontales, séparateurs visuels' },
+    { name: 'Texte animé', css: 'linear-gradient(270deg, #1A2B4A 0%, #B04A32 33%, #1A2B4A 66%, #B04A32 100%)', usage: 'Logo IArche, titres héroïques' },
     { name: 'Fond sombre', css: 'linear-gradient(135deg, #1A2B4A 0%, #14203A 100%)', usage: 'Sections sombres, hero backgrounds' },
-    { name: 'Barre inversée', css: 'linear-gradient(90deg, #D15A3E 0%, #1A2B4A 100%)', usage: 'Variante de barre décorative' },
+    { name: 'Barre inversée', css: 'linear-gradient(90deg, #B04A32 0%, #1A2B4A 100%)', usage: 'Variante de barre décorative' },
   ];
 
   const spacing = [
@@ -76,7 +76,7 @@ const CharteGraphique = () => {
 
         {/* ========== PAGE 2: SOMMAIRE ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
             Sommaire
           </h2>
           <div className="grid grid-cols-2 gap-8">
@@ -104,23 +104,23 @@ const CharteGraphique = () => {
             </div>
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <span className="w-8 h-8 rounded-full bg-[#D15A3E] text-white flex items-center justify-center text-sm font-semibold">06</span>
+                <span className="w-8 h-8 rounded-full bg-[#B04A32] text-white flex items-center justify-center text-sm font-semibold">06</span>
                 <span className="text-lg text-[#1A2B4A]">Éléments Visuels</span>
               </div>
               <div className="flex items-center gap-4">
-                <span className="w-8 h-8 rounded-full bg-[#D15A3E] text-white flex items-center justify-center text-sm font-semibold">07</span>
+                <span className="w-8 h-8 rounded-full bg-[#B04A32] text-white flex items-center justify-center text-sm font-semibold">07</span>
                 <span className="text-lg text-[#1A2B4A]">Boutons & CTA</span>
               </div>
               <div className="flex items-center gap-4">
-                <span className="w-8 h-8 rounded-full bg-[#D15A3E] text-white flex items-center justify-center text-sm font-semibold">08</span>
+                <span className="w-8 h-8 rounded-full bg-[#B04A32] text-white flex items-center justify-center text-sm font-semibold">08</span>
                 <span className="text-lg text-[#1A2B4A]">Animations</span>
               </div>
               <div className="flex items-center gap-4">
-                <span className="w-8 h-8 rounded-full bg-[#D15A3E] text-white flex items-center justify-center text-sm font-semibold">09</span>
+                <span className="w-8 h-8 rounded-full bg-[#B04A32] text-white flex items-center justify-center text-sm font-semibold">09</span>
                 <span className="text-lg text-[#1A2B4A]">Applications</span>
               </div>
               <div className="flex items-center gap-4">
-                <span className="w-8 h-8 rounded-full bg-[#D15A3E] text-white flex items-center justify-center text-sm font-semibold">10</span>
+                <span className="w-8 h-8 rounded-full bg-[#B04A32] text-white flex items-center justify-center text-sm font-semibold">10</span>
                 <span className="text-lg text-[#1A2B4A]">Usages & Règles</span>
               </div>
             </div>
@@ -129,7 +129,7 @@ const CharteGraphique = () => {
 
         {/* ========== PAGE 3: LOGO ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
             01. Logo & Identité
           </h2>
 
@@ -164,7 +164,7 @@ const CharteGraphique = () => {
             <div>
               <h4 className="text-sm font-medium text-[#1A2B4A] mb-2">Terracotta</h4>
               <div className="bg-[#FAF9F7] p-8 rounded-lg flex items-center justify-center">
-                <span className="text-4xl font-semibold text-[#D15A3E]">IArche</span>
+                <span className="text-4xl font-semibold text-[#B04A32]">IArche</span>
               </div>
               <p className="text-xs text-[#666666] mt-2">Usages spéciaux</p>
             </div>
@@ -182,7 +182,7 @@ const CharteGraphique = () => {
                     style={{ 
                       width: bar.width, 
                       height: bar.height,
-                      background: 'linear-gradient(90deg, #1A2B4A 0%, #D15A3E 100%)'
+                      background: 'linear-gradient(90deg, #1A2B4A 0%, #B04A32 100%)'
                     }}
                   />
                   <span className="text-xs text-[#666666]">{bar.width} × {bar.height} — {bar.usage}</span>
@@ -195,7 +195,7 @@ const CharteGraphique = () => {
           <div className="mb-8">
             <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Zones de Protection</h3>
             <div className="bg-[#FAF9F7] p-8 rounded-lg inline-block">
-              <div className="border-2 border-dashed border-[#D15A3E] p-8">
+              <div className="border-2 border-dashed border-[#B04A32] p-8">
                 <span className="text-4xl font-semibold text-[#1A2B4A]">IArche</span>
               </div>
             </div>
@@ -230,7 +230,7 @@ const CharteGraphique = () => {
 
         {/* ========== PAGE 4: COULEURS ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
             02. Palette de Couleurs
           </h2>
 
@@ -246,12 +246,12 @@ const CharteGraphique = () => {
               </div>
             </div>
             <div>
-              <div className="h-40 rounded-t-lg" style={{ backgroundColor: '#D15A3E' }}></div>
+              <div className="h-40 rounded-t-lg" style={{ backgroundColor: '#B04A32' }}></div>
               <div className="bg-[#FAF9F7] p-4 rounded-b-lg">
                 <h4 className="font-semibold text-[#1A2B4A]">Terracotta</h4>
-                <p className="text-xs text-[#666666] font-mono mt-1">HEX: #D15A3E</p>
-                <p className="text-xs text-[#666666] font-mono">HSL: 12 60% 53%</p>
-                <p className="text-xs text-[#666666] font-mono">RGB: 209, 90, 62</p>
+                <p className="text-xs text-[#666666] font-mono mt-1">HEX: #B04A32</p>
+                <p className="text-xs text-[#666666] font-mono">HSL: 12 60% 44%</p>
+                <p className="text-xs text-[#666666] font-mono">RGB: 176, 74, 50</p>
               </div>
             </div>
             <div>
@@ -291,7 +291,7 @@ const CharteGraphique = () => {
 
         {/* ========== PAGE 5: TYPOGRAPHIE ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
             03. Typographie
           </h2>
 
@@ -341,27 +341,27 @@ const CharteGraphique = () => {
             <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Hiérarchie Typographique</h3>
             <div className="space-y-6 bg-[#FAF9F7] p-8 rounded-lg">
               <div>
-                <span className="text-xs text-[#D15A3E] font-mono">H1 — 4.5rem / 72px / font-semibold</span>
+                <span className="text-xs text-[#B04A32] font-mono">H1 — 4.5rem / 72px / font-semibold</span>
                 <h1 className="text-7xl font-semibold text-[#1A2B4A]">Titre Principal</h1>
               </div>
               <div>
-                <span className="text-xs text-[#D15A3E] font-mono">H2 — 2.25rem / 36px / font-semibold</span>
+                <span className="text-xs text-[#B04A32] font-mono">H2 — 2.25rem / 36px / font-semibold</span>
                 <h2 className="text-4xl font-semibold text-[#1A2B4A]">Titre de Section</h2>
               </div>
               <div>
-                <span className="text-xs text-[#D15A3E] font-mono">H3 — 1.5rem / 24px / font-semibold</span>
+                <span className="text-xs text-[#B04A32] font-mono">H3 — 1.5rem / 24px / font-semibold</span>
                 <h3 className="text-2xl font-semibold text-[#1A2B4A]">Sous-titre</h3>
               </div>
               <div>
-                <span className="text-xs text-[#D15A3E] font-mono">Body — 1rem / 16px / font-normal</span>
+                <span className="text-xs text-[#B04A32] font-mono">Body — 1rem / 16px / font-normal</span>
                 <p className="text-base text-[#1A2B4A]">Corps de texte standard pour le contenu principal des pages.</p>
               </div>
               <div>
-                <span className="text-xs text-[#D15A3E] font-mono">Small — 0.875rem / 14px / text-muted-foreground</span>
+                <span className="text-xs text-[#B04A32] font-mono">Small — 0.875rem / 14px / text-muted-foreground</span>
                 <p className="text-sm text-[#666666]">Texte secondaire, légendes et annotations.</p>
               </div>
               <div>
-                <span className="text-xs text-[#D15A3E] font-mono">Caption — 0.75rem / 12px / font-mono</span>
+                <span className="text-xs text-[#B04A32] font-mono">Caption — 0.75rem / 12px / font-mono</span>
                 <p className="text-xs font-mono text-[#999999]">Code, valeurs techniques, timestamps.</p>
               </div>
             </div>
@@ -370,7 +370,7 @@ const CharteGraphique = () => {
 
         {/* ========== PAGE 6: ESPACEMENTS ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
             04. Espacements & Dimensions
           </h2>
 
@@ -462,7 +462,7 @@ const CharteGraphique = () => {
 
         {/* ========== PAGE 7: GRADIENTS ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
             05. Gradients
           </h2>
 
@@ -498,7 +498,7 @@ const CharteGraphique = () => {
 
         {/* ========== PAGE 8: ÉLÉMENTS VISUELS ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
             06. Éléments Visuels
           </h2>
 
@@ -510,10 +510,10 @@ const CharteGraphique = () => {
                 <defs>
                   <linearGradient id="lineGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="#1A2B4A" />
-                    <stop offset="100%" stopColor="#D15A3E" />
+                    <stop offset="100%" stopColor="#B04A32" />
                   </linearGradient>
                   <linearGradient id="lineGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#D15A3E" />
+                    <stop offset="0%" stopColor="#B04A32" />
                     <stop offset="100%" stopColor="#1A2B4A" />
                   </linearGradient>
                 </defs>
@@ -576,7 +576,7 @@ const CharteGraphique = () => {
 
         {/* ========== PAGE 9: BOUTONS & CTA ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
             07. Boutons & CTA
           </h2>
 
@@ -585,19 +585,19 @@ const CharteGraphique = () => {
             <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">GradientButton — Primary</h3>
             <div className="flex gap-8 items-center mb-4">
               <button className="px-6 py-3 text-white font-medium rounded-lg" style={{
-                background: 'linear-gradient(to right, #1A2B4A, #D15A3E)',
+                background: 'linear-gradient(to right, #1A2B4A, #B04A32)',
                 backgroundSize: '200% 100%',
               }}>
                 Nous contacter
               </button>
               <button className="px-6 py-3 text-white font-medium rounded-lg opacity-50 cursor-not-allowed" style={{
-                background: 'linear-gradient(to right, #1A2B4A, #D15A3E)',
+                background: 'linear-gradient(to right, #1A2B4A, #B04A32)',
               }}>
                 Disabled
               </button>
             </div>
             <p className="text-sm text-[#666666] font-mono">
-              background: linear-gradient(to right, #1A2B4A, #D15A3E);<br/>
+              background: linear-gradient(to right, #1A2B4A, #B04A32);<br/>
               Hover: background-position slide de left à right.
             </p>
           </div>
@@ -610,7 +610,7 @@ const CharteGraphique = () => {
                 En savoir plus
               </button>
               <button className="px-6 py-3 font-medium rounded-lg text-white" style={{
-                background: 'linear-gradient(to right, #1A2B4A, #D15A3E)',
+                background: 'linear-gradient(to right, #1A2B4A, #B04A32)',
               }}>
                 Hover State
               </button>
@@ -643,7 +643,7 @@ const CharteGraphique = () => {
             <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">IArcheLink — Secondaire</h3>
             <div className="flex gap-8 items-center mb-4 bg-[#FAF9F7] p-8 rounded-lg">
               <span className="text-sm font-medium text-[#1A2B4A] inline-flex items-center gap-2">
-                En savoir plus <span className="text-[#D15A3E]">→</span>
+                En savoir plus <span className="text-[#B04A32]">→</span>
               </span>
             </div>
             <p className="text-sm text-[#666666]">
@@ -655,7 +655,7 @@ const CharteGraphique = () => {
 
         {/* ========== PAGE 10: ANIMATIONS ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
             08. Animations
           </h2>
 
@@ -758,7 +758,7 @@ delay: 0.5s`}
 
         {/* ========== PAGE 11: APPLICATIONS ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
             09. Applications
           </h2>
 
@@ -770,7 +770,7 @@ delay: 0.5s`}
               <p className="text-sm text-[#666666]">Fondateur</p>
               <p className="text-sm text-[#1A2B4A] font-medium mt-2">IArche</p>
               <p className="text-xs text-[#666666]">nlq@iarche.fr · Bayonne, France</p>
-              <p className="text-xs text-[#D15A3E] mt-1">L'IA se construit avec vous</p>
+              <p className="text-xs text-[#B04A32] mt-1">L'IA se construit avec vous</p>
             </div>
             <p className="text-sm text-[#666666] mt-2">Export: 600 × 200px PNG via /admin/medias/signature</p>
           </div>
@@ -791,7 +791,7 @@ delay: 0.5s`}
                 <div className="text-right">
                   <p className="text-white text-sm">nlq@iarche.fr</p>
                   <p className="text-white/70 text-xs">Bayonne · France</p>
-                  <p className="text-[#D15A3E] text-xs mt-2">L'IA se construit avec vous</p>
+                  <p className="text-[#B04A32] text-xs mt-2">L'IA se construit avec vous</p>
                 </div>
               </div>
             </div>
@@ -841,7 +841,7 @@ delay: 0.5s`}
 
         {/* ========== PAGE 12: USAGES & RÈGLES ========== */}
         <section className="min-h-screen p-12 bg-white">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#D15A3E] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
             10. Usages & Règles
           </h2>
 

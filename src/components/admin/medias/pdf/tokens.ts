@@ -19,7 +19,7 @@ export const IARCHE_COLORS = {
   bleuNuit: COLORS.bleuNuit,
   bleuNuitLight: '#233554', // Version hex pour PDF (pas de rgba)
   terracotta: COLORS.terracotta,
-  terracottaLight: '#c96442',
+  terracottaLight: '#a4563c',     // Version plus claire pour PDF (WCAG compliant)
   blancCasse: COLORS.blancCasse,
   
   // Text colors

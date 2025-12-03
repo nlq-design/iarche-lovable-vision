@@ -13,7 +13,7 @@ import { COLORS } from '@/components/admin/medias/shared/tokens';
 // Complete color palette
 const PALETTE = [
   { name: 'Bleu Nuit', hex: '#1A2B4A', hsl: '218 47% 20%', rgb: '26, 43, 74', usage: 'Couleur principale, titres, navigation' },
-  { name: 'Terracotta', hex: '#D15A3E', hsl: '12 60% 53%', rgb: '209, 90, 62', usage: 'Accent, CTA, liens, focus ring' },
+  { name: 'Terracotta', hex: '#B04A32', hsl: '12 60% 44%', rgb: '176, 74, 50', usage: 'Accent, CTA, liens, focus ring' },
   { name: 'Blanc Cassé', hex: '#FAF9F7', hsl: '30 14% 98%', rgb: '250, 249, 247', usage: 'Fond principal des pages' },
   { name: 'Gris Sable', hex: '#F0EDE8', hsl: '30 20% 93%', rgb: '240, 237, 232', usage: 'Surfaces secondaires, cartes' },
   { name: 'Bordure', hex: '#E5E0DA', hsl: '30 16% 88%', rgb: '229, 224, 218', usage: 'Bordures, séparateurs' },
@@ -24,10 +24,10 @@ const PALETTE = [
 
 // Gradients definition
 const GRADIENTS = [
-  { name: 'Barre décorative', css: 'linear-gradient(90deg, #1A2B4A 0%, #D15A3E 100%)', usage: 'Barres horizontales, séparateurs visuels' },
-  { name: 'Texte animé (logo)', css: 'linear-gradient(270deg, #1A2B4A 0%, #D15A3E 33%, #1A2B4A 66%, #D15A3E 100%)', usage: 'Logo IArche, titres héroïques' },
+  { name: 'Barre décorative', css: 'linear-gradient(90deg, #1A2B4A 0%, #B04A32 100%)', usage: 'Barres horizontales, séparateurs visuels' },
+  { name: 'Texte animé (logo)', css: 'linear-gradient(270deg, #1A2B4A 0%, #B04A32 33%, #1A2B4A 66%, #B04A32 100%)', usage: 'Logo IArche, titres héroïques' },
   { name: 'Fond sombre', css: 'linear-gradient(135deg, #1A2B4A 0%, #14203A 100%)', usage: 'Sections sombres, hero backgrounds' },
-  { name: 'Barre inversée', css: 'linear-gradient(90deg, #D15A3E 0%, #1A2B4A 100%)', usage: 'Variante de barre décorative' },
+  { name: 'Barre inversée', css: 'linear-gradient(90deg, #B04A32 0%, #1A2B4A 100%)', usage: 'Variante de barre décorative' },
 ];
 
 // Spacing scale
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   coverBaseline: { fontSize: 12, color: '#999999' },
   coverContact: { fontSize: 10, color: '#CCCCCC', marginTop: 8 },
   
-  pageHeader: { marginBottom: 20, paddingBottom: 12, borderBottomWidth: 3, borderBottomColor: '#D15A3E' },
+  pageHeader: { marginBottom: 20, paddingBottom: 12, borderBottomWidth: 3, borderBottomColor: '#B04A32' },
   pageTitle: { fontSize: 20, fontWeight: 'bold', color: '#1A2B4A' },
   pageNumber: { fontSize: 10, color: '#999999', marginTop: 4 },
   
@@ -113,14 +113,14 @@ const styles = StyleSheet.create({
   barUsage: { fontSize: 8, color: '#6B7280' },
   
   typoRow: { flexDirection: 'row', marginBottom: 6, alignItems: 'center' },
-  typoLevel: { width: 50, fontSize: 10, fontWeight: 'bold', color: '#D15A3E' },
+  typoLevel: { width: 50, fontSize: 10, fontWeight: 'bold', color: '#B04A32' },
   typoSize: { width: 100, fontSize: 9, color: '#4A5568', fontFamily: 'Courier' },
   typoWeight: { width: 80, fontSize: 9, color: '#4A5568' },
   typoUsage: { fontSize: 8, color: '#6B7280' },
   
   animRow: { flexDirection: 'row', marginBottom: 6, alignItems: 'center' },
   animName: { width: 90, fontSize: 10, fontWeight: 'bold', color: '#1A2B4A' },
-  animDuration: { width: 50, fontSize: 9, color: '#D15A3E', fontFamily: 'Courier' },
+  animDuration: { width: 50, fontSize: 9, color: '#B04A32', fontFamily: 'Courier' },
   animTiming: { width: 90, fontSize: 8, color: '#4A5568' },
   animUsage: { fontSize: 8, color: '#6B7280' },
   
@@ -185,7 +185,7 @@ const CharteCompletePDF = () => (
           </View>
           <View style={{ alignItems: 'center' }}>
             <View style={{ width: 80, height: 40, backgroundColor: '#FAF9F7', borderRadius: 4, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#E5E0DA' }}>
-              <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#D15A3E' }}>IArche</Text>
+              <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#B04A32' }}>IArche</Text>
             </View>
             <Text style={{ fontSize: 8, color: '#666666', marginTop: 4 }}>Terracotta</Text>
           </View>
@@ -340,7 +340,7 @@ const CharteCompletePDF = () => (
             <Text style={styles.sectionTitle}>Gradients</Text>
             {GRADIENTS.map((gradient, index) => (
               <View key={index} style={{ marginBottom: 10 }}>
-                <View style={[styles.gradientBox, { backgroundColor: index % 2 === 0 ? '#1A2B4A' : '#D15A3E' }]} />
+                <View style={[styles.gradientBox, { backgroundColor: index % 2 === 0 ? '#1A2B4A' : '#B04A32' }]} />
                 <Text style={styles.gradientName}>{gradient.name}</Text>
                 <Text style={styles.gradientUsage}>{gradient.usage}</Text>
               </View>
@@ -396,7 +396,7 @@ const CharteCompletePDF = () => (
             <Text style={{ fontSize: 8, color: '#4A5568' }}>Forme: L normal</Text>
           </View>
         </View>
-        <Text style={{ fontSize: 8, color: '#D15A3E', marginTop: 6, fontFamily: 'Courier' }}>
+        <Text style={{ fontSize: 8, color: '#B04A32', marginTop: 6, fontFamily: 'Courier' }}>
           stroke-width: 7px · opacity: 0.6-0.7 · animation: 6s ease-in-out
         </Text>
       </View>
@@ -463,7 +463,7 @@ const CharteCompletePDF = () => (
           </View>
         </View>
         <Text style={{ fontSize: 8, color: '#4A5568', fontFamily: 'Courier' }}>
-          background: linear-gradient(to right, #1A2B4A, #D15A3E) · Hover: slide left→right
+          background: linear-gradient(to right, #1A2B4A, #B04A32) · Hover: slide left→right
         </Text>
       </View>
 
@@ -473,7 +473,7 @@ const CharteCompletePDF = () => (
           <View style={[styles.ctaButton, { borderWidth: 2, borderColor: '#1A2B4A' }]}>
             <Text style={[styles.ctaText, { color: '#1A2B4A' }]}>En savoir plus</Text>
           </View>
-          <View style={[styles.ctaButton, { backgroundColor: '#D15A3E' }]}>
+          <View style={[styles.ctaButton, { backgroundColor: '#B04A32' }]}>
             <Text style={[styles.ctaText, { color: '#FFFFFF' }]}>Hover State</Text>
           </View>
         </View>
@@ -494,7 +494,7 @@ const CharteCompletePDF = () => (
         <Text style={styles.sectionTitle}>IArcheLink — Secondaire</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
           <Text style={{ fontSize: 12, color: '#1A2B4A' }}>En savoir plus </Text>
-          <Text style={{ fontSize: 12, color: '#D15A3E' }}>→</Text>
+          <Text style={{ fontSize: 12, color: '#B04A32' }}>→</Text>
         </View>
         <Text style={{ fontSize: 8, color: '#4A5568' }}>
           Texte Bleu Nuit + flèche Terracotta. Gap augmente au hover (gap-2 → gap-3).
@@ -529,7 +529,7 @@ const CharteCompletePDF = () => (
               <Text style={{ fontSize: 8, color: '#666666' }}>Fondateur</Text>
               <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#1A2B4A', marginTop: 4 }}>IArche</Text>
               <Text style={{ fontSize: 7, color: '#666666' }}>nlq@iarche.fr · Bayonne</Text>
-              <Text style={{ fontSize: 7, color: '#D15A3E', marginTop: 2 }}>L'IA se construit avec vous</Text>
+              <Text style={{ fontSize: 7, color: '#B04A32', marginTop: 2 }}>L'IA se construit avec vous</Text>
             </View>
             <Text style={{ fontSize: 8, color: '#999999', marginTop: 4 }}>Export: 600×200px</Text>
           </View>
@@ -737,7 +737,7 @@ export default function CharteEditor() {
                     style={{ 
                       width: bar.width || bar.value, 
                       height: bar.height,
-                      background: 'linear-gradient(90deg, #1A2B4A 0%, #D15A3E 100%)'
+                      background: 'linear-gradient(90deg, #1A2B4A 0%, #B04A32 100%)'
                     }}
                   />
                 </div>
