@@ -74,6 +74,7 @@ const FooterEmailEditor = lazy(() => import("./pages/admin/FooterEmailEditor"));
 const AdminFormulaires = lazy(() => import("./pages/admin/AdminFormulaires"));
 const FormEditor = lazy(() => import("./pages/admin/FormEditor"));
 const FormResponses = lazy(() => import("./pages/admin/FormResponses"));
+const AdminFormResponses = lazy(() => import("./pages/admin/AdminFormResponses"));
 const FormPublic = lazy(() => import("./pages/FormPublic"));
 const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"));
 
@@ -428,6 +429,11 @@ const App = () => (
           <Route path="/admin/formulaires/:id/responses" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><FormResponses /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/form-responses" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminFormResponses /></ProtectedAdminRoute>
             </Suspense>
           } />
           

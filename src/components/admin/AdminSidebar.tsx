@@ -60,6 +60,7 @@ const navigationItems = [
       { title: 'RedacNews', url: '/admin/redacnews', icon: Send },
       { title: 'Médias', url: '/admin/medias', icon: ImageIcon },
       { title: 'Formulaires', url: '/admin/formulaires', icon: ClipboardList },
+      { title: 'Réponses formulaires', url: '/admin/form-responses', icon: FileText },
     ]
   },
   {
