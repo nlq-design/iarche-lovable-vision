@@ -10,9 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Settings, History, CheckCircle, XCircle, Clock, Save, RefreshCw } from 'lucide-react';
+import { Mail, Settings, History, CheckCircle, XCircle, Clock, Save, RefreshCw, FileCode } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { EmailTemplateEditor } from '@/components/admin/EmailTemplateEditor';
 
 interface EmailConfiguration {
   id: string;
@@ -50,6 +51,9 @@ const SOURCE_LABELS: Record<string, string> = {
   'solution-contact': 'Contact Solutions',
   'form': 'Formulaires dynamiques'
 };
+
+// Sources qui supportent les templates personnalisés
+const TEMPLATE_SOURCES = ['contact', 'newsletter', 'livre-blanc', 'atelier-webinaire', 'solution-contact'];
 
 const AdminEmails = () => {
   const [configurations, setConfigurations] = useState<EmailConfiguration[]>([]);
@@ -160,6 +164,10 @@ const AdminEmails = () => {
               <Settings className="w-4 h-4" />
               Configuration
             </TabsTrigger>
+            <TabsTrigger value="templates" className="flex items-center gap-2">
+              <FileCode className="w-4 h-4" />
+              Templates
+            </TabsTrigger>
             <TabsTrigger value="history" className="flex items-center gap-2">
               <History className="w-4 h-4" />
               Historique
@@ -260,6 +268,26 @@ const AdminEmails = () => {
                 </CardContent>
               </Card>
             ))}
+          </TabsContent>
+
+          <TabsContent value="templates" className="space-y-4 mt-4">
+            {configurations
+              .filter(c => TEMPLATE_SOURCES.includes(c.source_type))
+              .map(config => (
+                <EmailTemplateEditor
+                  key={config.id}
+                  sourceType={config.source_type}
+                  sourceLabel={SOURCE_LABELS[config.source_type] || config.source_type}
+                  initialTemplate={config.user_email_template}
+                  initialSubject={config.user_email_subject}
+                  onSave={async (template, subject) => {
+                    await updateConfiguration(config.id, { 
+                      user_email_template: template,
+                      user_email_subject: subject 
+                    });
+                  }}
+                />
+              ))}
           </TabsContent>
 
           <TabsContent value="history" className="mt-4">
