@@ -9,7 +9,7 @@ const corsHeaders = {
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
-type MeetingType = 'visio_meet' | 'visio_zoom' | 'telephone' | 'presentiel';
+type MeetingType = 'visio' | 'telephone' | 'presentiel';
 
 interface BookingRequest {
   action: 'get-slots' | 'create-booking' | 'cancel-booking';
@@ -265,8 +265,7 @@ async function deleteCalendarEvent(accessToken: string, eventId: string): Promis
 // Get meeting type label in French
 function getMeetingTypeLabel(meetingType: MeetingType): string {
   switch (meetingType) {
-    case 'visio_meet': return 'Visioconférence Google Meet';
-    case 'visio_zoom': return 'Visioconférence Zoom';
+    case 'visio': return 'Visioconférence Zoom';
     case 'telephone': return 'Appel téléphonique';
     case 'presentiel': return 'Rendez-vous en présentiel';
     default: return 'Visioconférence';
@@ -362,20 +361,19 @@ function generateEmailHTML(
 
   let connectionSection = '';
   if (meetLink) {
-    const buttonLabel = meetingType === 'visio_zoom' ? '🎥 Rejoindre la réunion Zoom' : '🎥 Rejoindre la réunion';
     connectionSection = `
       <table role="presentation" style="width: 100%; margin-bottom: 24px;">
         <tr>
           <td style="text-align: center;">
             <a href="${meetLink}" target="_blank" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, hsl(218, 47%, 20%) 0%, hsl(218, 47%, 35%) 100%); color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px;">
-              ${buttonLabel}
+              🎥 Rejoindre la réunion Visio
             </a>
           </td>
         </tr>
         <tr>
           <td style="text-align: center; padding-top: 12px;">
             <span style="font-size: 12px; color: #718096;">ou copiez ce lien : ${meetLink}</span>
-            ${zoomPassword ? `<br><span style="font-size: 12px; color: #718096;">Mot de passe Zoom : <strong>${zoomPassword}</strong></span>` : ''}
+            ${zoomPassword ? `<br><span style="font-size: 12px; color: #718096;">Mot de passe : <strong>${zoomPassword}</strong></span>` : ''}
           </td>
         </tr>
       </table>
@@ -678,7 +676,7 @@ serve(async (req) => {
 
       const startTime = new Date(bookingData.startTime);
       const endTime = new Date(startTime.getTime() + bookingType.duration_minutes * 60000);
-      const meetingType: MeetingType = bookingData.meetingType || 'visio_meet';
+      const meetingType: MeetingType = bookingData.meetingType || 'visio';
       const additionalGuests = bookingData.additionalGuests || [];
 
       // Collect all attendee emails
@@ -721,7 +719,7 @@ serve(async (req) => {
 
       const eventDescription = `Email: ${bookingData.email}\nTéléphone: ${bookingData.phone || 'Non renseigné'}\nEntreprise: ${bookingData.company || 'Non renseignée'}${additionalGuests.length > 0 ? `\nParticipants supplémentaires: ${additionalGuests.join(', ')}` : ''}\n\nMessage: ${bookingData.message || 'Aucun'}`;
 
-      if (meetingType === 'visio_zoom') {
+      if (meetingType === 'visio') {
         // Create Zoom meeting
         try {
           const zoomToken = await getZoomAccessToken();
@@ -740,37 +738,19 @@ serve(async (req) => {
           console.error('Failed to create Zoom meeting:', err);
         }
 
-        // Also create Google Calendar event (without Meet)
+        // Also create Google Calendar event with Zoom link in description
         try {
           const accessToken = await getAccessToken();
           const eventResult = await createCalendarEvent(
             accessToken,
             `${bookingType.name} - ${bookingData.name}`,
-            `${eventDescription}\n\nLien Zoom: ${zoomJoinUrl || 'À venir'}`,
+            `${eventDescription}\n\nLien Zoom: ${zoomJoinUrl || 'À venir'}${zoomPassword ? `\nMot de passe: ${zoomPassword}` : ''}`,
             startTime.toISOString(),
             endTime.toISOString(),
             allAttendeeEmails,
             false // Don't create Meet link
           );
           googleEventId = eventResult.eventId;
-        } catch (err) {
-          console.error('Failed to create Google Calendar event:', err);
-        }
-      } else if (meetingType === 'visio_meet') {
-        // Create Google Calendar event with Meet link
-        try {
-          const accessToken = await getAccessToken();
-          const eventResult = await createCalendarEvent(
-            accessToken,
-            `${bookingType.name} - ${bookingData.name}`,
-            eventDescription,
-            startTime.toISOString(),
-            endTime.toISOString(),
-            allAttendeeEmails,
-            true // Create Meet link
-          );
-          googleEventId = eventResult.eventId;
-          googleMeetLink = eventResult.meetLink;
         } catch (err) {
           console.error('Failed to create Google Calendar event:', err);
         }
@@ -794,7 +774,7 @@ serve(async (req) => {
       }
 
       // Determine the meeting link to use
-      const meetLink = meetingType === 'visio_zoom' ? zoomJoinUrl : googleMeetLink;
+      const meetLink = zoomJoinUrl;
 
       // Create booking record
       const { data: booking, error: bookingError } = await supabase
@@ -914,7 +894,7 @@ serve(async (req) => {
             <p><strong>Entreprise:</strong> ${bookingData.company || 'Non renseignée'}</p>
             ${additionalGuests.length > 0 ? `<p><strong>Participants invités:</strong> ${additionalGuests.join(', ')}</p>` : ''}
             <p><strong>Message:</strong> ${bookingData.message || 'Aucun'}</p>
-            ${meetLink ? `<p><strong>Lien ${meetingType === 'visio_zoom' ? 'Zoom' : 'Meet'}:</strong> <a href="${meetLink}">${meetLink}</a></p>` : ''}
+            ${meetLink ? `<p><strong>Lien Visio:</strong> <a href="${meetLink}">${meetLink}</a></p>` : ''}
           `,
         });
         console.log('Admin notification sent');

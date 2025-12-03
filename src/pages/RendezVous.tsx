@@ -26,11 +26,10 @@ interface BookingType {
   color: string;
 }
 
-type MeetingType = 'visio_meet' | 'visio_zoom' | 'telephone' | 'presentiel';
+type MeetingType = 'visio' | 'telephone' | 'presentiel';
 
 const MEETING_TYPE_OPTIONS = [
-  { value: 'visio_meet' as MeetingType, label: 'Google Meet', icon: Video, description: 'Visioconférence via Google Meet' },
-  { value: 'visio_zoom' as MeetingType, label: 'Zoom', icon: Video, description: 'Visioconférence via Zoom' },
+  { value: 'visio' as MeetingType, label: 'Visio', icon: Video, description: 'Visioconférence via Zoom' },
   { value: 'telephone' as MeetingType, label: 'Téléphone', icon: Phone, description: 'Nous vous appelons' },
   { value: 'presentiel' as MeetingType, label: 'Présentiel', icon: MapPin, description: 'Dans nos locaux à Bayonne' },
 ];
@@ -51,7 +50,7 @@ const RendezVous = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [meetLink, setMeetLink] = useState<string | null>(null);
   const [zoomPassword, setZoomPassword] = useState<string | null>(null);
-  const [meetingType, setMeetingType] = useState<MeetingType>('visio_zoom');
+  const [meetingType, setMeetingType] = useState<MeetingType>('visio');
   const [additionalGuests, setAdditionalGuests] = useState<string[]>([]);
   const [newGuestEmail, setNewGuestEmail] = useState('');
   
@@ -177,10 +176,9 @@ const RendezVous = () => {
       setMeetLink(data.googleMeetLink || data.zoomJoinUrl);
       setZoomPassword(data.zoomPassword || null);
       
-      const meetingLabel = MEETING_TYPE_OPTIONS.find(o => o.value === meetingType)?.label || 'Visio';
       toast({
         title: "Rendez-vous confirmé !",
-        description: `Vous allez recevoir un email de confirmation${meetingType.startsWith('visio') ? ` avec le lien ${meetingLabel}` : ''}.`,
+        description: `Vous allez recevoir un email de confirmation${meetingType === 'visio' ? ' avec le lien Visio' : ''}.`,
       });
     } catch (err) {
       console.error('Error creating booking:', err);
@@ -255,7 +253,7 @@ const RendezVous = () => {
                         </span>
                         <span className="flex items-center gap-1">
                           <Video className="w-4 h-4" />
-                          Google Meet
+                          Visio
                         </span>
                       </div>
                     </div>
@@ -313,13 +311,11 @@ const RendezVous = () => {
               </p>
               
               {/* Meeting link section based on type */}
-              {meetLink && meetingType.startsWith('visio') && (
+              {meetLink && meetingType === 'visio' && (
                 <div className="bg-secondary/50 rounded-lg p-4 mb-6">
                   <div className="flex items-center justify-center gap-2 text-primary mb-2">
                     <Video className="w-5 h-5" />
-                    <span className="font-semibold">
-                      Lien {meetingType === 'visio_zoom' ? 'Zoom' : 'Google Meet'}
-                    </span>
+                    <span className="font-semibold">Lien Visio</span>
                   </div>
                   <a 
                     href={meetLink} 
@@ -407,7 +403,7 @@ const RendezVous = () => {
             <h2 className="text-xl font-semibold text-foreground mb-4 text-center">
               Format du rendez-vous
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto">
+            <div className="grid grid-cols-3 gap-3 max-w-2xl mx-auto">
               {MEETING_TYPE_OPTIONS.map((option) => {
                 const IconComponent = option.icon;
                 const isSelected = meetingType === option.value;
