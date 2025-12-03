@@ -118,7 +118,7 @@ const AtelierInscriptionForm = ({
         .eq('email', validatedData.email)
         .eq('source', 'atelier-webinaire')
         .eq('source_id', articleId)
-        .single();
+        .maybeSingle();
 
       if (leadForInscription) {
         const { error: inscriptionError } = await supabase
