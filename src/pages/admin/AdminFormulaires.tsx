@@ -105,7 +105,7 @@ const AdminFormulaires = () => {
   };
 
   const copyLink = (slug: string) => {
-    navigator.clipboard.writeText(`${window.location.origin}/f/${slug}`);
+    navigator.clipboard.writeText(`${window.location.origin}/formulaires/${slug}`);
     toast({ title: 'Lien copié', description: 'Le lien du formulaire a été copié' });
   };
 
@@ -333,7 +333,7 @@ const AdminFormulaires = () => {
                 </div>
               )}
               <p className="text-sm text-muted-foreground mt-4">
-                {window.location.origin}/f/{selectedForm?.slug}
+                {window.location.origin}/formulaires/{selectedForm?.slug}
               </p>
             </div>
           </DialogContent>
