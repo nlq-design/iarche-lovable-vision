@@ -158,17 +158,21 @@ const AtelierInscriptionForm = ({
 
       // Envoyer email de confirmation au participant
       try {
-        await supabase.functions.invoke('send-atelier-confirmation', {
+        const { error: confirmError } = await supabase.functions.invoke('send-atelier-confirmation', {
           body: {
             name: validatedData.name,
             email: validatedData.email,
             atelier_title: articleTitle,
+            atelier_id: articleId,
             event_date: eventDate,
             event_location: eventLocation,
             heure_debut: heureDebut,
             type_evenement: typeEvenement,
           },
         });
+        if (confirmError) {
+          console.warn('Failed to send confirmation email:', confirmError);
+        }
       } catch (confirmError) {
         console.warn('Failed to send confirmation email:', confirmError);
       }
