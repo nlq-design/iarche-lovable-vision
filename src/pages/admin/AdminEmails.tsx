@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Settings, History, CheckCircle, XCircle, Clock, Save, RefreshCw, FileCode } from 'lucide-react';
+import { Mail, Settings, History, CheckCircle, XCircle, Clock, Save, RefreshCw, FileCode, RotateCcw, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { EmailTemplateEditor } from '@/components/admin/EmailTemplateEditor';
@@ -60,6 +60,7 @@ const AdminEmails = () => {
   const [logs, setLogs] = useState<EmailLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [resending, setResending] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -96,6 +97,88 @@ const AdminEmails = () => {
     }
     
     setSaving(null);
+  };
+
+  const resendEmail = async (log: EmailLog) => {
+    setResending(log.id);
+    
+    try {
+      const metadata = log.metadata as Record<string, unknown> || {};
+      
+      // Déterminer quelle edge function appeler selon le source_type
+      let functionName = '';
+      let body: Record<string, unknown> = {};
+      
+      switch (log.source_type) {
+        case 'atelier-webinaire':
+          functionName = 'send-atelier-confirmation';
+          body = {
+            name: metadata.name || 'Participant',
+            email: log.recipient_email,
+            atelier_title: metadata.atelier_title || 'Atelier',
+            atelier_id: log.source_id,
+            event_date: null,
+            event_location: null,
+            heure_debut: null,
+            type_evenement: null
+          };
+          break;
+        case 'contact':
+        case 'livre-blanc':
+        case 'newsletter':
+        case 'solution_detail':
+          functionName = 'send-lead-notification';
+          body = {
+            lead_id: log.source_id || 'resend',
+            name: metadata.name || 'Lead',
+            email: metadata.email || log.recipient_email,
+            company: metadata.company,
+            phone: metadata.phone,
+            source: log.source_type,
+            source_context: metadata.source_context
+          };
+          break;
+        case 'comment':
+          functionName = 'notify-new-comment';
+          body = {
+            comment_id: log.source_id || 'resend',
+            article_id: metadata.article_id || '',
+            author_name: metadata.author_name || 'Auteur',
+            author_email: metadata.author_email || '',
+            content: ''
+          };
+          break;
+        case 'security':
+          functionName = 'send-security-alert';
+          body = {
+            alert: {
+              severity: metadata.severity || 'medium',
+              title: metadata.alert_title || 'Alerte',
+              description: 'Renvoi d\'alerte',
+              details: null
+            }
+          };
+          break;
+        default:
+          toast({ title: 'Erreur', description: 'Type d\'email non supporté pour le renvoi', variant: 'destructive' });
+          setResending(null);
+          return;
+      }
+
+      const { error } = await supabase.functions.invoke(functionName, { body });
+
+      if (error) {
+        toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+      } else {
+        toast({ title: 'Succès', description: 'Email renvoyé avec succès' });
+        loadData(); // Refresh logs
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue';
+      toast({ title: 'Erreur', description: errorMessage, variant: 'destructive' });
+    }
+    
+    setResending(null);
   };
 
   const getStatusBadge = (status: string) => {
@@ -302,12 +385,13 @@ const AdminEmails = () => {
                       <TableHead>Type</TableHead>
                       <TableHead>Sujet</TableHead>
                       <TableHead>Statut</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {logs.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                           Aucun email envoyé pour le moment
                         </TableCell>
                       </TableRow>
@@ -326,8 +410,37 @@ const AdminEmails = () => {
                           <TableCell className="text-sm">
                             {log.email_type === 'user_confirmation' ? 'Confirmation' : 'Notification'}
                           </TableCell>
-                          <TableCell className="text-sm max-w-[200px] truncate">{log.subject}</TableCell>
-                          <TableCell>{getStatusBadge(log.status)}</TableCell>
+                          <TableCell className="text-sm max-w-[200px] truncate" title={log.subject}>{log.subject}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-1">
+                              {getStatusBadge(log.status)}
+                              {log.error_message && (
+                                <span className="text-xs text-destructive truncate max-w-[150px]" title={log.error_message}>
+                                  {log.error_message}
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {log.status === 'failed' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => resendEmail(log)}
+                                disabled={resending === log.id}
+                                className="h-8"
+                              >
+                                {resending === log.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <>
+                                    <RotateCcw className="w-3 h-3 mr-1" />
+                                    Renvoyer
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
