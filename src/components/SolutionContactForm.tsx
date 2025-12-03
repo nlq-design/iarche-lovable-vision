@@ -94,7 +94,8 @@ const SolutionContactForm = ({ solutionName }: SolutionContactFormProps) => {
 
       // Envoyer email de confirmation à l'utilisateur
       try {
-        await supabase.functions.invoke('send-user-confirmation', {
+        console.log('Calling send-user-confirmation for solution-contact...');
+        const { data: confirmData, error: confirmError } = await supabase.functions.invoke('send-user-confirmation', {
           body: {
             email: validatedData.email,
             name: validatedData.name,
@@ -102,8 +103,13 @@ const SolutionContactForm = ({ solutionName }: SolutionContactFormProps) => {
             source_context: solutionName,
           },
         });
+        if (confirmError) {
+          console.error('send-user-confirmation error:', confirmError);
+        } else {
+          console.log('send-user-confirmation success:', confirmData);
+        }
       } catch (confirmError) {
-        console.warn('Failed to send user confirmation:', confirmError);
+        console.error('Failed to send user confirmation:', confirmError);
       }
 
       toast({
