@@ -600,7 +600,7 @@ const FormEditor = () => {
 
   const copyLink = () => {
     if (!form) return;
-    navigator.clipboard.writeText(`${window.location.origin}/f/${form.slug}`);
+    navigator.clipboard.writeText(`${window.location.origin}/formulaires/${form.slug}`);
     toast({ title: 'Lien copié' });
   };
 
@@ -1038,14 +1038,14 @@ const FormEditor = () => {
                     <div className="flex flex-col items-center gap-4">
                       <div className="bg-white p-4 rounded-lg shadow-sm" id="qr-code-container">
                         <QRCode
-                          value={`${window.location.origin}/f/${form.slug}`}
+                          value={`${window.location.origin}/formulaires/${form.slug}`}
                           size={200}
                           level="H"
                           fgColor={form.settings.design.colors.primary}
                         />
                       </div>
                       <p className="text-sm text-muted-foreground text-center">
-                        {window.location.origin}/f/{form.slug}
+                        {window.location.origin}/formulaires/{form.slug}
                       </p>
                     </div>
                     
@@ -1101,7 +1101,7 @@ const FormEditor = () => {
                       <Button
                         variant="outline"
                         onClick={() => {
-                          navigator.clipboard.writeText(`${window.location.origin}/f/${form.slug}`);
+                          navigator.clipboard.writeText(`${window.location.origin}/formulaires/${form.slug}`);
                           toast({ title: 'Lien copié' });
                         }}
                       >
