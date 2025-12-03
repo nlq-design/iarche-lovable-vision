@@ -134,7 +134,7 @@ const AtelierInscriptionForm = ({
         }
       }
 
-      // Envoyer notification email avec détails de l'événement
+      // Envoyer notification admin avec détails de l'événement
       try {
         await supabase.functions.invoke('send-lead-notification', {
           body: {
@@ -154,6 +154,23 @@ const AtelierInscriptionForm = ({
         });
       } catch (notifError) {
         console.warn('Failed to send lead notification:', notifError);
+      }
+
+      // Envoyer email de confirmation au participant
+      try {
+        await supabase.functions.invoke('send-atelier-confirmation', {
+          body: {
+            name: validatedData.name,
+            email: validatedData.email,
+            atelier_title: articleTitle,
+            event_date: eventDate,
+            event_location: eventLocation,
+            heure_debut: heureDebut,
+            type_evenement: typeEvenement,
+          },
+        });
+      } catch (confirmError) {
+        console.warn('Failed to send confirmation email:', confirmError);
       }
 
       // Marquer comme succès
