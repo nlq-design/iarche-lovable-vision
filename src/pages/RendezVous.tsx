@@ -131,7 +131,9 @@ const RendezVous = () => {
       if (error) throw error;
       
       setBookingType(data.bookingType);
-      setSlots(data.slots || []);
+      // Deduplicate slots to prevent duplicate key warnings
+      const uniqueSlots = [...new Set(data.slots || [])] as string[];
+      setSlots(uniqueSlots);
       setSelectedSlot(null);
     } catch (err) {
       console.error('Error loading slots:', err);
