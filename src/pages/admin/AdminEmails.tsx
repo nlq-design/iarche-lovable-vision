@@ -109,6 +109,9 @@ const AdminEmails = () => {
       let functionName = '';
       let body: Record<string, unknown> = {};
       
+      // Déterminer si c'est un email utilisateur ou admin
+      const isUserConfirmation = log.email_type === 'user_confirmation';
+      
       switch (log.source_type) {
         case 'atelier-webinaire':
           functionName = 'send-atelier-confirmation';
@@ -124,18 +127,57 @@ const AdminEmails = () => {
           };
           break;
         case 'contact':
+        case 'solution-contact':
+          if (isUserConfirmation) {
+            functionName = 'send-user-confirmation';
+            body = {
+              email: log.recipient_email,
+              name: metadata.name || 'Utilisateur',
+              source_type: log.source_type,
+              source_context: metadata.source_context
+            };
+          } else {
+            functionName = 'send-lead-notification';
+            body = {
+              name: metadata.name || 'Lead',
+              email: metadata.email || log.recipient_email,
+              company: metadata.company,
+              phone: metadata.phone,
+              source: log.source_type,
+              source_context: metadata.source_context
+            };
+          }
+          break;
         case 'livre-blanc':
+          if (isUserConfirmation) {
+            functionName = 'send-user-confirmation';
+            body = {
+              email: log.recipient_email,
+              name: metadata.name || 'Utilisateur',
+              source_type: 'livre-blanc',
+              source_id: log.source_id,
+              source_context: metadata.source_context,
+              livre_blanc_title: metadata.source_context,
+              file_url: metadata.file_url
+            };
+          } else {
+            functionName = 'send-lead-notification';
+            body = {
+              name: metadata.name || 'Lead',
+              email: metadata.email || log.recipient_email,
+              company: metadata.company,
+              phone: metadata.phone,
+              source: 'livre-blanc',
+              source_context: metadata.source_context
+            };
+          }
+          break;
         case 'newsletter':
-        case 'solution_detail':
-          functionName = 'send-lead-notification';
+          functionName = 'send-user-confirmation';
           body = {
-            lead_id: log.source_id || 'resend',
-            name: metadata.name || 'Lead',
-            email: metadata.email || log.recipient_email,
-            company: metadata.company,
-            phone: metadata.phone,
-            source: log.source_type,
-            source_context: metadata.source_context
+            email: log.recipient_email,
+            name: metadata.name || log.recipient_email.split('@')[0],
+            source_type: 'newsletter'
           };
           break;
         case 'comment':

@@ -89,6 +89,20 @@ const Contact = () => {
         console.warn('Failed to send lead notification:', notifError);
       }
 
+      // Envoyer email de confirmation à l'utilisateur
+      try {
+        await supabase.functions.invoke('send-user-confirmation', {
+          body: {
+            email: validatedData.email,
+            name: validatedData.name,
+            source_type: 'contact',
+            source_context: contextParam || validatedData.subject,
+          },
+        });
+      } catch (confirmError) {
+        console.warn('Failed to send user confirmation:', confirmError);
+      }
+
       toast({
         title: "Message envoyé",
         description: "Nous vous répondrons sous 24h.",
