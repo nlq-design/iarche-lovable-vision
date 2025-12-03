@@ -224,6 +224,8 @@ async function createCalendarEvent(
     };
   }
 
+  console.log('Creating calendar event for calendar:', calendarId);
+  
   const response = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?conferenceDataVersion=1`,
     {
@@ -237,6 +239,8 @@ async function createCalendarEvent(
   );
 
   const data = await response.json();
+  console.log('Calendar API response status:', response.status);
+  
   if (data.error) {
     console.error('Calendar event error:', data.error);
     throw new Error(data.error.message || 'Failed to create calendar event');
