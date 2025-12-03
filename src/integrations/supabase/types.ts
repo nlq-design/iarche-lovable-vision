@@ -508,6 +508,7 @@ export type Database = {
       }
       bookings: {
         Row: {
+          additional_guests: string[] | null
           booking_type_id: string
           cancellation_reason: string | null
           cancelled_at: string | null
@@ -519,6 +520,7 @@ export type Database = {
           google_meet_link: string | null
           id: string
           lead_id: string | null
+          meeting_type: string | null
           message: string | null
           name: string
           notes: string | null
@@ -526,8 +528,11 @@ export type Database = {
           start_time: string
           status: string
           updated_at: string
+          zoom_join_url: string | null
+          zoom_meeting_id: string | null
         }
         Insert: {
+          additional_guests?: string[] | null
           booking_type_id: string
           cancellation_reason?: string | null
           cancelled_at?: string | null
@@ -539,6 +544,7 @@ export type Database = {
           google_meet_link?: string | null
           id?: string
           lead_id?: string | null
+          meeting_type?: string | null
           message?: string | null
           name: string
           notes?: string | null
@@ -546,8 +552,11 @@ export type Database = {
           start_time: string
           status?: string
           updated_at?: string
+          zoom_join_url?: string | null
+          zoom_meeting_id?: string | null
         }
         Update: {
+          additional_guests?: string[] | null
           booking_type_id?: string
           cancellation_reason?: string | null
           cancelled_at?: string | null
@@ -559,6 +568,7 @@ export type Database = {
           google_meet_link?: string | null
           id?: string
           lead_id?: string | null
+          meeting_type?: string | null
           message?: string | null
           name?: string
           notes?: string | null
@@ -566,6 +576,8 @@ export type Database = {
           start_time?: string
           status?: string
           updated_at?: string
+          zoom_join_url?: string | null
+          zoom_meeting_id?: string | null
         }
         Relationships: [
           {

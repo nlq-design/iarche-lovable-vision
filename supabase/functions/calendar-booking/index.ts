@@ -9,6 +9,8 @@ const corsHeaders = {
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
+type MeetingType = 'visio_meet' | 'visio_zoom' | 'telephone' | 'presentiel';
+
 interface BookingRequest {
   action: 'get-slots' | 'create-booking' | 'cancel-booking';
   bookingTypeSlug?: string;
@@ -21,6 +23,8 @@ interface BookingRequest {
     message?: string;
     startTime: string;
     bookingTypeId: string;
+    meetingType?: MeetingType;
+    additionalGuests?: string[];
   };
   bookingId?: string;
 }
@@ -88,6 +92,78 @@ async function getAccessToken(): Promise<string> {
   return tokenData.access_token;
 }
 
+// Get Zoom OAuth access token
+async function getZoomAccessToken(): Promise<string> {
+  const accountId = Deno.env.get('ZOOM_ACCOUNT_ID');
+  const clientId = Deno.env.get('ZOOM_CLIENT_ID');
+  const clientSecret = Deno.env.get('ZOOM_CLIENT_SECRET');
+
+  if (!accountId || !clientId || !clientSecret) {
+    throw new Error('Zoom credentials not configured');
+  }
+
+  const credentials = btoa(`${clientId}:${clientSecret}`);
+  
+  const response = await fetch('https://zoom.us/oauth/token', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: `grant_type=account_credentials&account_id=${accountId}`,
+  });
+
+  const data = await response.json();
+  if (!data.access_token) {
+    console.error('Zoom token error:', data);
+    throw new Error('Failed to get Zoom access token');
+  }
+  return data.access_token;
+}
+
+// Create Zoom meeting
+async function createZoomMeeting(
+  accessToken: string,
+  topic: string,
+  startTime: string,
+  duration: number,
+  attendeeEmails: string[]
+): Promise<{ meetingId: string; joinUrl: string; password: string }> {
+  const response = await fetch('https://api.zoom.us/v2/users/me/meetings', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      topic,
+      type: 2, // Scheduled meeting
+      start_time: startTime,
+      duration,
+      timezone: 'Europe/Paris',
+      settings: {
+        host_video: true,
+        participant_video: true,
+        join_before_host: false,
+        waiting_room: true,
+        meeting_invitees: attendeeEmails.map(email => ({ email })),
+      },
+    }),
+  });
+
+  const data = await response.json();
+  if (data.code) {
+    console.error('Zoom meeting error:', data);
+    throw new Error(data.message || 'Failed to create Zoom meeting');
+  }
+
+  return {
+    meetingId: String(data.id),
+    joinUrl: data.join_url,
+    password: data.password,
+  };
+}
+
 // Get busy times from Google Calendar
 async function getBusyTimes(accessToken: string, timeMin: string, timeMax: string): Promise<{ start: string; end: string }[]> {
   const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
@@ -117,10 +193,36 @@ async function createCalendarEvent(
   description: string,
   startTime: string,
   endTime: string,
-  attendeeEmail: string
+  attendeeEmails: string[],
+  createMeet: boolean = true
 ): Promise<{ eventId: string; meetLink?: string }> {
   const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
   if (!calendarId) throw new Error('GOOGLE_CALENDAR_ID not configured');
+
+  const eventBody: any = {
+    summary,
+    description,
+    start: { dateTime: startTime, timeZone: 'Europe/Paris' },
+    end: { dateTime: endTime, timeZone: 'Europe/Paris' },
+    attendees: attendeeEmails.map(email => ({ email })),
+    reminders: {
+      useDefault: false,
+      overrides: [
+        { method: 'email', minutes: 1440 },
+        { method: 'popup', minutes: 30 },
+      ],
+    },
+  };
+
+  // Only add conference data if creating a Meet link
+  if (createMeet) {
+    eventBody.conferenceData = {
+      createRequest: {
+        requestId: crypto.randomUUID(),
+        conferenceSolutionKey: { type: 'hangoutsMeet' },
+      },
+    };
+  }
 
   const response = await fetch(
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?conferenceDataVersion=1`,
@@ -130,26 +232,7 @@ async function createCalendarEvent(
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        summary,
-        description,
-        start: { dateTime: startTime, timeZone: 'Europe/Paris' },
-        end: { dateTime: endTime, timeZone: 'Europe/Paris' },
-        attendees: [{ email: attendeeEmail }],
-        conferenceData: {
-          createRequest: {
-            requestId: crypto.randomUUID(),
-            conferenceSolutionKey: { type: 'hangoutsMeet' },
-          },
-        },
-        reminders: {
-          useDefault: false,
-          overrides: [
-            { method: 'email', minutes: 1440 },
-            { method: 'popup', minutes: 30 },
-          ],
-        },
-      }),
+      body: JSON.stringify(eventBody),
     }
   );
 
@@ -161,7 +244,7 @@ async function createCalendarEvent(
 
   return {
     eventId: data.id,
-    meetLink: data.conferenceData?.entryPoints?.find((e: any) => e.entryPointType === 'video')?.uri,
+    meetLink: createMeet ? data.conferenceData?.entryPoints?.find((e: any) => e.entryPointType === 'video')?.uri : undefined,
   };
 }
 
@@ -179,6 +262,17 @@ async function deleteCalendarEvent(accessToken: string, eventId: string): Promis
   );
 }
 
+// Get meeting type label in French
+function getMeetingTypeLabel(meetingType: MeetingType): string {
+  switch (meetingType) {
+    case 'visio_meet': return 'Visioconférence Google Meet';
+    case 'visio_zoom': return 'Visioconférence Zoom';
+    case 'telephone': return 'Appel téléphonique';
+    case 'presentiel': return 'Rendez-vous en présentiel';
+    default: return 'Visioconférence';
+  }
+}
+
 // Generate ICS calendar file content
 function generateICS(
   summary: string,
@@ -187,7 +281,7 @@ function generateICS(
   endTime: Date,
   location: string,
   organizerEmail: string,
-  attendeeEmail: string,
+  attendeeEmails: string[],
   meetLink?: string
 ): string {
   const formatDateICS = (date: Date): string => {
@@ -200,8 +294,12 @@ function generateICS(
   const end = formatDateICS(endTime);
   
   const fullDescription = meetLink 
-    ? `${description}\\n\\nLien Google Meet : ${meetLink}`
+    ? `${description}\\n\\nLien de connexion : ${meetLink}`
     : description;
+
+  const attendeesLines = attendeeEmails
+    .map(email => `ATTENDEE;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:${email}`)
+    .join('\n');
 
   return `BEGIN:VCALENDAR
 VERSION:2.0
@@ -217,7 +315,7 @@ SUMMARY:${summary}
 DESCRIPTION:${fullDescription.replace(/\n/g, '\\n')}
 LOCATION:${location}
 ORGANIZER;CN=IArche:mailto:${organizerEmail}
-ATTENDEE;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:${attendeeEmail}
+${attendeesLines}
 STATUS:CONFIRMED
 SEQUENCE:0
 END:VEVENT
@@ -230,7 +328,10 @@ function generateEmailHTML(
   bookingTypeName: string,
   startTime: Date,
   endTime: Date,
-  meetLink?: string
+  meetingType: MeetingType,
+  meetLink?: string,
+  zoomPassword?: string,
+  additionalGuests?: string[]
 ): string {
   const formatDateFr = (date: Date): string => {
     const options: Intl.DateTimeFormatOptions = {
@@ -245,6 +346,66 @@ function generateEmailHTML(
   const formatTimeFr = (date: Date): string => {
     return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   };
+
+  const meetingTypeLabel = getMeetingTypeLabel(meetingType);
+  const locationIcon = meetingType === 'telephone' ? '📞' : meetingType === 'presentiel' ? '📍' : '🎥';
+  const locationText = meetingType === 'presentiel' ? 'IArche, Bayonne' : meetingTypeLabel;
+
+  const guestsHtml = additionalGuests && additionalGuests.length > 0 
+    ? `<tr>
+        <td style="padding-top: 12px;">
+          <strong style="color: hsl(218, 47%, 20%); font-size: 14px;">👥 Participants invités</strong><br>
+          <span style="color: #4A5568; font-size: 16px;">${additionalGuests.join(', ')}</span>
+        </td>
+      </tr>`
+    : '';
+
+  let connectionSection = '';
+  if (meetLink) {
+    const buttonLabel = meetingType === 'visio_zoom' ? '🎥 Rejoindre la réunion Zoom' : '🎥 Rejoindre la réunion';
+    connectionSection = `
+      <table role="presentation" style="width: 100%; margin-bottom: 24px;">
+        <tr>
+          <td style="text-align: center;">
+            <a href="${meetLink}" target="_blank" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, hsl(218, 47%, 20%) 0%, hsl(218, 47%, 35%) 100%); color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px;">
+              ${buttonLabel}
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td style="text-align: center; padding-top: 12px;">
+            <span style="font-size: 12px; color: #718096;">ou copiez ce lien : ${meetLink}</span>
+            ${zoomPassword ? `<br><span style="font-size: 12px; color: #718096;">Mot de passe Zoom : <strong>${zoomPassword}</strong></span>` : ''}
+          </td>
+        </tr>
+      </table>
+    `;
+  } else if (meetingType === 'telephone') {
+    connectionSection = `
+      <table role="presentation" style="width: 100%; margin-bottom: 24px; background-color: #F7FAFC; border-radius: 8px;">
+        <tr>
+          <td style="padding: 16px; text-align: center;">
+            <p style="margin: 0; color: #4A5568; font-size: 14px;">
+              📞 Nous vous appellerons au numéro que vous avez indiqué à l'heure du rendez-vous.
+            </p>
+          </td>
+        </tr>
+      </table>
+    `;
+  } else if (meetingType === 'presentiel') {
+    connectionSection = `
+      <table role="presentation" style="width: 100%; margin-bottom: 24px; background-color: #F7FAFC; border-radius: 8px;">
+        <tr>
+          <td style="padding: 16px; text-align: center;">
+            <p style="margin: 0; color: #4A5568; font-size: 14px;">
+              📍 Rendez-vous dans nos locaux à Bayonne.<br>
+              L'adresse exacte vous sera communiquée par email.
+            </p>
+          </td>
+        </tr>
+      </table>
+    `;
+  }
 
   return `
 <!DOCTYPE html>
@@ -302,32 +463,17 @@ function generateEmailHTML(
                       </tr>
                       <tr>
                         <td>
-                          <strong style="color: hsl(218, 47%, 20%); font-size: 14px;">📍 Lieu</strong><br>
-                          <span style="color: #4A5568; font-size: 16px;">Visioconférence Google Meet</span>
+                          <strong style="color: hsl(218, 47%, 20%); font-size: 14px;">${locationIcon} Format</strong><br>
+                          <span style="color: #4A5568; font-size: 16px;">${locationText}</span>
                         </td>
                       </tr>
+                      ${guestsHtml}
                     </table>
                   </td>
                 </tr>
               </table>
               
-              ${meetLink ? `
-              <!-- Meet Link Button -->
-              <table role="presentation" style="width: 100%; margin-bottom: 24px;">
-                <tr>
-                  <td style="text-align: center;">
-                    <a href="${meetLink}" target="_blank" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, hsl(218, 47%, 20%) 0%, hsl(218, 47%, 35%) 100%); color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px;">
-                      🎥 Rejoindre la réunion
-                    </a>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="text-align: center; padding-top: 12px;">
-                    <span style="font-size: 12px; color: #718096;">ou copiez ce lien : ${meetLink}</span>
-                  </td>
-                </tr>
-              </table>
-              ` : ''}
+              ${connectionSection}
               
               <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.6; color: #718096;">
                 📎 Un fichier .ics est joint à cet email pour ajouter le rendez-vous à votre calendrier.
@@ -532,6 +678,11 @@ serve(async (req) => {
 
       const startTime = new Date(bookingData.startTime);
       const endTime = new Date(startTime.getTime() + bookingType.duration_minutes * 60000);
+      const meetingType: MeetingType = bookingData.meetingType || 'visio_meet';
+      const additionalGuests = bookingData.additionalGuests || [];
+
+      // Collect all attendee emails
+      const allAttendeeEmails = [bookingData.email, ...additionalGuests.filter(e => e && e.includes('@'))];
 
       // Create or find lead
       let leadId = null;
@@ -553,7 +704,7 @@ serve(async (req) => {
             phone: bookingData.phone,
             company: bookingData.company,
             source: 'booking',
-            source_context: bookingType.name,
+            source_context: `${bookingType.name} (${getMeetingTypeLabel(meetingType)})`,
             message: bookingData.message,
           })
           .select()
@@ -561,24 +712,89 @@ serve(async (req) => {
         leadId = newLead?.id;
       }
 
-      // Create Google Calendar event
+      // Create meeting link based on type
       let googleEventId = null;
       let googleMeetLink = null;
-      try {
-        const accessToken = await getAccessToken();
-        const eventResult = await createCalendarEvent(
-          accessToken,
-          `${bookingType.name} - ${bookingData.name}`,
-          `Email: ${bookingData.email}\nTéléphone: ${bookingData.phone || 'Non renseigné'}\nEntreprise: ${bookingData.company || 'Non renseignée'}\n\nMessage: ${bookingData.message || 'Aucun'}`,
-          startTime.toISOString(),
-          endTime.toISOString(),
-          bookingData.email
-        );
-        googleEventId = eventResult.eventId;
-        googleMeetLink = eventResult.meetLink;
-      } catch (err) {
-        console.error('Failed to create Google Calendar event:', err);
+      let zoomMeetingId = null;
+      let zoomJoinUrl = null;
+      let zoomPassword = null;
+
+      const eventDescription = `Email: ${bookingData.email}\nTéléphone: ${bookingData.phone || 'Non renseigné'}\nEntreprise: ${bookingData.company || 'Non renseignée'}${additionalGuests.length > 0 ? `\nParticipants supplémentaires: ${additionalGuests.join(', ')}` : ''}\n\nMessage: ${bookingData.message || 'Aucun'}`;
+
+      if (meetingType === 'visio_zoom') {
+        // Create Zoom meeting
+        try {
+          const zoomToken = await getZoomAccessToken();
+          const zoomResult = await createZoomMeeting(
+            zoomToken,
+            `${bookingType.name} - ${bookingData.name}`,
+            startTime.toISOString(),
+            bookingType.duration_minutes,
+            allAttendeeEmails
+          );
+          zoomMeetingId = zoomResult.meetingId;
+          zoomJoinUrl = zoomResult.joinUrl;
+          zoomPassword = zoomResult.password;
+          console.log('Zoom meeting created:', zoomMeetingId);
+        } catch (err) {
+          console.error('Failed to create Zoom meeting:', err);
+        }
+
+        // Also create Google Calendar event (without Meet)
+        try {
+          const accessToken = await getAccessToken();
+          const eventResult = await createCalendarEvent(
+            accessToken,
+            `${bookingType.name} - ${bookingData.name}`,
+            `${eventDescription}\n\nLien Zoom: ${zoomJoinUrl || 'À venir'}`,
+            startTime.toISOString(),
+            endTime.toISOString(),
+            allAttendeeEmails,
+            false // Don't create Meet link
+          );
+          googleEventId = eventResult.eventId;
+        } catch (err) {
+          console.error('Failed to create Google Calendar event:', err);
+        }
+      } else if (meetingType === 'visio_meet') {
+        // Create Google Calendar event with Meet link
+        try {
+          const accessToken = await getAccessToken();
+          const eventResult = await createCalendarEvent(
+            accessToken,
+            `${bookingType.name} - ${bookingData.name}`,
+            eventDescription,
+            startTime.toISOString(),
+            endTime.toISOString(),
+            allAttendeeEmails,
+            true // Create Meet link
+          );
+          googleEventId = eventResult.eventId;
+          googleMeetLink = eventResult.meetLink;
+        } catch (err) {
+          console.error('Failed to create Google Calendar event:', err);
+        }
+      } else {
+        // Telephone or presentiel - just create calendar event without video
+        try {
+          const accessToken = await getAccessToken();
+          const eventResult = await createCalendarEvent(
+            accessToken,
+            `${bookingType.name} - ${bookingData.name}`,
+            eventDescription,
+            startTime.toISOString(),
+            endTime.toISOString(),
+            allAttendeeEmails,
+            false // No Meet link
+          );
+          googleEventId = eventResult.eventId;
+        } catch (err) {
+          console.error('Failed to create Google Calendar event:', err);
+        }
       }
+
+      // Determine the meeting link to use
+      const meetLink = meetingType === 'visio_zoom' ? zoomJoinUrl : googleMeetLink;
 
       // Create booking record
       const { data: booking, error: bookingError } = await supabase
@@ -596,6 +812,10 @@ serve(async (req) => {
           status: 'confirmed',
           google_event_id: googleEventId,
           google_meet_link: googleMeetLink,
+          meeting_type: meetingType,
+          additional_guests: additionalGuests,
+          zoom_meeting_id: zoomMeetingId,
+          zoom_join_url: zoomJoinUrl,
         })
         .select()
         .single();
@@ -609,15 +829,16 @@ serve(async (req) => {
       }
 
       // Generate ICS file
+      const locationText = meetingType === 'presentiel' ? 'IArche, Bayonne' : getMeetingTypeLabel(meetingType);
       const icsContent = generateICS(
         `${bookingType.name} - IArche`,
-        `Rendez-vous avec IArche\n\nType: ${bookingType.name}\nAvec: ${bookingData.name}`,
+        `Rendez-vous avec IArche\n\nType: ${bookingType.name}\nFormat: ${getMeetingTypeLabel(meetingType)}\nAvec: ${bookingData.name}`,
         startTime,
         endTime,
-        googleMeetLink || 'Visioconférence Google Meet',
+        meetLink || locationText,
         'nlq@nlq.fr',
-        bookingData.email,
-        googleMeetLink || undefined
+        allAttendeeEmails,
+        meetLink || undefined
       );
 
       // Generate HTML email
@@ -626,7 +847,10 @@ serve(async (req) => {
         bookingType.name,
         startTime,
         endTime,
-        googleMeetLink || undefined
+        meetingType,
+        meetLink || undefined,
+        zoomPassword || undefined,
+        additionalGuests.length > 0 ? additionalGuests : undefined
       );
 
       // Send confirmation email with ICS attachment
@@ -636,7 +860,7 @@ serve(async (req) => {
 
         await resend.emails.send({
           from: 'IArche <contact@iarche.fr>',
-          to: [bookingData.email],
+          to: allAttendeeEmails,
           subject: `✅ Confirmation : ${bookingType.name} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`,
           html: emailHTML,
           attachments: [
@@ -647,7 +871,7 @@ serve(async (req) => {
           ],
         });
 
-        console.log('Confirmation email sent successfully to:', bookingData.email);
+        console.log('Confirmation email sent successfully to:', allAttendeeEmails.join(', '));
 
         // Log email
         await supabase.from('email_logs').insert({
@@ -682,13 +906,15 @@ serve(async (req) => {
           html: `
             <h2>Nouveau rendez-vous</h2>
             <p><strong>Type:</strong> ${bookingType.name}</p>
+            <p><strong>Format:</strong> ${getMeetingTypeLabel(meetingType)}</p>
             <p><strong>Date:</strong> ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} à ${startTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
             <p><strong>Nom:</strong> ${bookingData.name}</p>
             <p><strong>Email:</strong> ${bookingData.email}</p>
             <p><strong>Téléphone:</strong> ${bookingData.phone || 'Non renseigné'}</p>
             <p><strong>Entreprise:</strong> ${bookingData.company || 'Non renseignée'}</p>
+            ${additionalGuests.length > 0 ? `<p><strong>Participants invités:</strong> ${additionalGuests.join(', ')}</p>` : ''}
             <p><strong>Message:</strong> ${bookingData.message || 'Aucun'}</p>
-            ${googleMeetLink ? `<p><strong>Lien Meet:</strong> <a href="${googleMeetLink}">${googleMeetLink}</a></p>` : ''}
+            ${meetLink ? `<p><strong>Lien ${meetingType === 'visio_zoom' ? 'Zoom' : 'Meet'}:</strong> <a href="${meetLink}">${meetLink}</a></p>` : ''}
           `,
         });
         console.log('Admin notification sent');
@@ -697,7 +923,12 @@ serve(async (req) => {
       }
 
       return new Response(
-        JSON.stringify({ success: true, booking, googleMeetLink }),
+        JSON.stringify({ 
+          success: true, 
+          booking, 
+          meetLink,
+          meetingType,
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
