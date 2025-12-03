@@ -199,12 +199,13 @@ async function createCalendarEvent(
   const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
   if (!calendarId) throw new Error('GOOGLE_CALENDAR_ID not configured');
 
+  // Note: Service accounts cannot invite attendees without Domain-Wide Delegation
+  // Attendees receive confirmation emails via Resend instead
   const eventBody: any = {
     summary,
-    description,
+    description: `${description}\n\nParticipants: ${attendeeEmails.join(', ')}`,
     start: { dateTime: startTime, timeZone: 'Europe/Paris' },
     end: { dateTime: endTime, timeZone: 'Europe/Paris' },
-    attendees: attendeeEmails.map(email => ({ email })),
     reminders: {
       useDefault: false,
       overrides: [
