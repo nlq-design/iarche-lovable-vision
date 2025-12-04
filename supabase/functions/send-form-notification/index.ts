@@ -39,8 +39,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     console.log('[send-form-notification] Processing notification for form:', form_title);
 
-    const adminEmailAddress = admin_email || 'nlq@nlq.fr';
+    const adminEmailAddress = admin_email || 'nlq@iarche.fr';
     const results = { admin: false, respondent: false };
+    const shouldSendToRespondent = send_to_respondent !== false; // Par défaut true
 
     // Construire le résumé des réponses en HTML
     const responseHtml = Object.entries(response_data)
@@ -125,7 +126,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     // Email respondent (si configuré)
-    if (send_to_respondent && respondent_email) {
+    if (shouldSendToRespondent && respondent_email) {
       try {
         const respondentSubject = custom_subject || `Confirmation de votre réponse - ${form_title}`;
         const respondentMessage = custom_message || 'Nous avons bien reçu votre réponse et nous vous en remercions.';

@@ -168,7 +168,7 @@ export const useFormResponses = () => {
               form_title: form.title,
               response_data: responseData,
               respondent_email: respondentEmail,
-              admin_email: notificationSettings.adminEmail || 'nlq@nlq.fr',
+              admin_email: notificationSettings.adminEmail || 'nlq@iarche.fr',
               send_to_respondent: notificationSettings.sendToRespondent ?? true,
               custom_subject: notificationSettings.customSubject,
               custom_message: notificationSettings.customMessage,
