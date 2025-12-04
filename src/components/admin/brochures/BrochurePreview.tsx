@@ -6,10 +6,22 @@ interface BrochurePreviewProps {
 }
 
 const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
-  const { sections } = brochure;
+  const { sections, custom_colors } = brochure;
+  
+  // Build custom style overrides
+  const customStyle: React.CSSProperties = {};
+  if (custom_colors?.primary) {
+    (customStyle as any)['--brochure-primary'] = custom_colors.primary;
+  }
+  if (custom_colors?.accent) {
+    (customStyle as any)['--brochure-accent'] = custom_colors.accent;
+  }
+
+  const primaryColor = custom_colors?.primary || 'hsl(var(--primary))';
+  const accentColor = custom_colors?.accent || 'hsl(var(--accent))';
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" style={customStyle}>
       {/* Animated Background Pattern */}
       <div className="fixed inset-0 pointer-events-none" aria-hidden="true">
         <div 
@@ -27,10 +39,19 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
         {/* Gradient Bar */}
         <div 
           className="w-24 h-1 mb-8"
-          style={{ background: 'linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)' }}
+          style={{ background: `linear-gradient(90deg, ${primaryColor} 0%, ${accentColor} 100%)` }}
         />
         
-        <h1 className="text-5xl md:text-7xl font-bold text-center hero-gradient-text mb-4">
+        <h1 
+          className={`text-5xl md:text-7xl font-bold text-center mb-4 ${custom_colors?.primary || custom_colors?.accent ? '' : 'hero-gradient-text'}`}
+          style={custom_colors?.primary || custom_colors?.accent ? { 
+            background: `linear-gradient(270deg, ${primaryColor}, ${accentColor}, ${primaryColor}, ${accentColor})`,
+            backgroundSize: '600% 600%',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            animation: 'hero-gradient 15s ease infinite',
+          } : undefined}
+        >
           {brochure.cover_title || 'Titre'}
         </h1>
         
@@ -62,7 +83,7 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
       {sections.keyPoints.enabled && sections.keyPoints.points.length > 0 && (
         <section className="relative px-6 py-16 bg-secondary/30">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-3xl font-bold text-primary text-center mb-12">
+            <h2 className="text-3xl font-bold text-center mb-12" style={{ color: primaryColor }}>
               Points clés
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -72,9 +93,9 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
                   className="bg-background p-6 rounded-lg shadow-sm border border-border"
                 >
                   <div className="flex items-start gap-3">
-                    <CheckCircle className="h-6 w-6 text-accent flex-shrink-0 mt-1" />
+                    <CheckCircle className="h-6 w-6 flex-shrink-0 mt-1" style={{ color: accentColor }} />
                     <div>
-                      <h3 className="font-semibold text-primary mb-2">{point.title}</h3>
+                      <h3 className="font-semibold mb-2" style={{ color: primaryColor }}>{point.title}</h3>
                       <p className="text-muted-foreground text-sm">{point.description}</p>
                     </div>
                   </div>
@@ -88,7 +109,7 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
       {/* Details */}
       {sections.details.enabled && sections.details.content && (
         <section className="relative px-6 py-16 max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-primary mb-8">Détails</h2>
+          <h2 className="text-3xl font-bold mb-8" style={{ color: primaryColor }}>Détails</h2>
           <div className="prose prose-lg max-w-none text-foreground">
             {sections.details.content.split('\n').map((paragraph, i) => (
               <p key={i}>{paragraph}</p>
@@ -101,7 +122,7 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
       {sections.pricing.enabled && sections.pricing.plans.length > 0 && (
         <section className="relative px-6 py-16 bg-secondary/30">
           <div className="max-w-5xl mx-auto">
-            <h2 className="text-3xl font-bold text-primary text-center mb-12">
+            <h2 className="text-3xl font-bold text-center mb-12" style={{ color: primaryColor }}>
               {sections.pricing.title}
             </h2>
             <div className={`grid gap-6 ${sections.pricing.plans.length === 1 ? 'max-w-md mx-auto' : sections.pricing.plans.length === 2 ? 'md:grid-cols-2 max-w-3xl mx-auto' : 'md:grid-cols-3'}`}>
@@ -109,14 +130,13 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
                 <div 
                   key={plan.id}
                   className={`bg-background p-6 rounded-lg border-2 transition-shadow ${
-                    plan.highlighted 
-                      ? 'border-accent shadow-lg scale-105' 
-                      : 'border-border'
+                    plan.highlighted ? 'shadow-lg scale-105' : ''
                   }`}
+                  style={{ borderColor: plan.highlighted ? accentColor : 'hsl(var(--border))' }}
                 >
-                  <h3 className="text-xl font-bold text-primary mb-2">{plan.name}</h3>
+                  <h3 className="text-xl font-bold mb-2" style={{ color: primaryColor }}>{plan.name}</h3>
                   <div className="flex items-baseline gap-1 mb-4">
-                    <span className="text-3xl font-bold text-accent">{plan.price}</span>
+                    <span className="text-3xl font-bold" style={{ color: accentColor }}>{plan.price}</span>
                     {plan.period && (
                       <span className="text-muted-foreground">{plan.period}</span>
                     )}
@@ -124,7 +144,7 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
                   <ul className="space-y-2">
                     {plan.features.map((feature, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm">
-                        <CheckCircle className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
+                        <CheckCircle className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: accentColor }} />
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -139,13 +159,13 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
       {/* Testimonial */}
       {sections.testimonial.enabled && sections.testimonial.quote && (
         <section className="relative px-6 py-16 max-w-3xl mx-auto">
-          <div className="bg-primary/5 p-8 rounded-lg border-l-4 border-accent">
-            <Quote className="h-8 w-8 text-accent mb-4" />
+          <div className="bg-primary/5 p-8 rounded-lg border-l-4" style={{ borderColor: accentColor }}>
+            <Quote className="h-8 w-8 mb-4" style={{ color: accentColor }} />
             <blockquote className="text-lg italic text-foreground mb-4">
               "{sections.testimonial.quote}"
             </blockquote>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-primary">{sections.testimonial.author}</span>
+              <span className="font-semibold" style={{ color: primaryColor }}>{sections.testimonial.author}</span>
               {sections.testimonial.company && (
                 <>
                   <span className="text-muted-foreground">·</span>
@@ -161,14 +181,23 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
       {sections.contact.enabled && (
         <section className="relative px-6 py-20 text-center">
           <div className="max-w-xl mx-auto">
-            <h2 className="text-3xl font-bold text-primary mb-6">Intéressé ?</h2>
+            <h2 className="text-3xl font-bold mb-6" style={{ color: primaryColor }}>Intéressé ?</h2>
             
             <a 
               href="/contact"
-              className="inline-flex items-center gap-2 px-8 py-4 text-lg font-semibold rounded-lg transition-all hero-gradient-text border-2 border-accent hover:bg-accent hover:text-background"
+              className="inline-flex items-center gap-2 px-8 py-4 text-lg font-semibold rounded-lg transition-all border-2"
+              style={{ 
+                borderColor: accentColor,
+                background: custom_colors?.primary || custom_colors?.accent 
+                  ? `linear-gradient(270deg, ${primaryColor}, ${accentColor}, ${primaryColor}, ${accentColor})`
+                  : undefined,
+                backgroundSize: '600% 600%',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
             >
               {sections.contact.cta_text}
-              <span className="text-accent">→</span>
+              <span style={{ color: accentColor, WebkitTextFillColor: accentColor }}>→</span>
             </a>
 
             {sections.contact.show_coordinates && (
@@ -183,7 +212,17 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
       {/* Footer */}
       <footer className="px-6 py-8 border-t border-border">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <span className="hero-gradient-text font-bold text-xl">IArche</span>
+          <span 
+            className="font-bold text-xl"
+            style={{ 
+              background: `linear-gradient(270deg, ${primaryColor}, ${accentColor}, ${primaryColor}, ${accentColor})`,
+              backgroundSize: '600% 600%',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            IArche
+          </span>
           <span className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} IArche
           </span>
