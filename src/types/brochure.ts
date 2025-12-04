@@ -51,6 +51,15 @@ export interface BrochureCustomColors {
   accent?: string | null;
 }
 
+export type WebScrollDirection = 'vertical' | 'horizontal';
+export type PDFOrientation = 'portrait' | 'landscape';
+
+export interface BrochureExportSettings {
+  web_scroll: WebScrollDirection;
+  pdf_orientation: PDFOrientation;
+  pdf_auto_pagination: boolean;
+}
+
 export interface Brochure {
   id: string;
   slug: string;
@@ -62,6 +71,7 @@ export interface Brochure {
   published: boolean;
   views_count: number;
   custom_colors?: BrochureCustomColors;
+  export_settings?: BrochureExportSettings;
   created_at: string;
   updated_at: string;
 }
@@ -73,4 +83,10 @@ export const defaultSections: BrochureSections = {
   pricing: { enabled: false, title: 'Nos formules', plans: [] },
   testimonial: { enabled: false, quote: '', author: '', company: '' },
   contact: { enabled: true, cta_text: 'Nous contacter', show_coordinates: true },
+};
+
+export const defaultExportSettings: BrochureExportSettings = {
+  web_scroll: 'vertical',
+  pdf_orientation: 'portrait',
+  pdf_auto_pagination: true,
 };

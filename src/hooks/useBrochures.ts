@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Brochure, BrochureSections, BrochureCustomColors, defaultSections } from '@/types/brochure';
+import { Brochure, BrochureSections, BrochureCustomColors, BrochureExportSettings, defaultSections, defaultExportSettings } from '@/types/brochure';
 import { useToast } from '@/hooks/use-toast';
 import { Json } from '@/integrations/supabase/types';
 
@@ -16,6 +16,17 @@ const parseCustomColors = (colors: Json | null): BrochureCustomColors => {
     return { primary: null, accent: null };
   }
   return colors as unknown as BrochureCustomColors;
+};
+
+const parseExportSettings = (settings: Json | null): BrochureExportSettings => {
+  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+    return defaultExportSettings;
+  }
+  return {
+    web_scroll: (settings as any).web_scroll || defaultExportSettings.web_scroll,
+    pdf_orientation: (settings as any).pdf_orientation || defaultExportSettings.pdf_orientation,
+    pdf_auto_pagination: (settings as any).pdf_auto_pagination ?? defaultExportSettings.pdf_auto_pagination,
+  };
 };
 
 export const useBrochures = () => {
@@ -35,6 +46,7 @@ export const useBrochures = () => {
         ...b,
         sections: parseSections(b.sections),
         custom_colors: parseCustomColors(b.custom_colors),
+        export_settings: parseExportSettings(b.export_settings),
         views_count: b.views_count || 0,
       })) as Brochure[];
     },
@@ -52,6 +64,7 @@ export const useBrochures = () => {
           cover_image_url: brochure.cover_image_url,
           sections: brochure.sections as unknown as Json,
           custom_colors: brochure.custom_colors as unknown as Json,
+          export_settings: brochure.export_settings as unknown as Json,
           published: brochure.published || false,
         })
         .select()
@@ -81,6 +94,7 @@ export const useBrochures = () => {
           cover_image_url: brochure.cover_image_url,
           sections: brochure.sections as unknown as Json,
           custom_colors: brochure.custom_colors as unknown as Json,
+          export_settings: brochure.export_settings as unknown as Json,
           published: brochure.published,
         })
         .eq('id', id)
@@ -111,6 +125,7 @@ export const useBrochures = () => {
           cover_image_url: brochure.cover_image_url,
           sections: brochure.sections as unknown as Json,
           custom_colors: brochure.custom_colors as unknown as Json,
+          export_settings: brochure.export_settings as unknown as Json,
           published: false,
         })
         .select()
@@ -173,6 +188,7 @@ export const useBrochure = (id?: string) => {
         ...data,
         sections: parseSections(data.sections),
         custom_colors: parseCustomColors(data.custom_colors),
+        export_settings: parseExportSettings(data.export_settings),
         views_count: data.views_count || 0,
       } as Brochure;
     },
@@ -202,6 +218,7 @@ export const useBrochureBySlug = (slug?: string) => {
         ...data,
         sections: parseSections(data.sections),
         custom_colors: parseCustomColors(data.custom_colors),
+        export_settings: parseExportSettings(data.export_settings),
         views_count: data.views_count || 0,
       } as Brochure;
     },
