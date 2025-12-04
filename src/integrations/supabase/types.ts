@@ -596,6 +596,45 @@ export type Database = {
           },
         ]
       }
+      brochures: {
+        Row: {
+          cover_image_url: string | null
+          cover_subtitle: string | null
+          cover_title: string
+          created_at: string | null
+          id: string
+          published: boolean | null
+          sections: Json
+          slug: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          cover_image_url?: string | null
+          cover_subtitle?: string | null
+          cover_title: string
+          created_at?: string | null
+          id?: string
+          published?: boolean | null
+          sections?: Json
+          slug: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          cover_image_url?: string | null
+          cover_subtitle?: string | null
+          cover_title?: string
+          created_at?: string | null
+          id?: string
+          published?: boolean | null
+          sections?: Json
+          slug?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string | null

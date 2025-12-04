@@ -79,6 +79,9 @@ const AdminEmails = lazy(() => import("./pages/admin/AdminEmails"));
 const AdminRendezVous = lazy(() => import("./pages/admin/AdminRendezVous"));
 const FormPublic = lazy(() => import("./pages/FormPublic"));
 const RendezVous = lazy(() => import("./pages/RendezVous"));
+const BrochurePublic = lazy(() => import("./pages/BrochurePublic"));
+const AdminBrochures = lazy(() => import("./pages/admin/AdminBrochures"));
+const BrochureEditor = lazy(() => import("./pages/admin/BrochureEditor"));
 const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"));
 
 // QueryClient avec cache optimisé
@@ -143,6 +146,13 @@ const App = () => (
           <Route path="/formulaires/:slug" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <FormPublic />
+            </Suspense>
+          } />
+          
+          {/* Brochures publiques */}
+          <Route path="/brochure/:slug" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <BrochurePublic />
             </Suspense>
           } />
           
@@ -454,6 +464,23 @@ const App = () => (
           <Route path="/admin/form-responses" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><AdminFormResponses /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          
+          {/* Brochures */}
+          <Route path="/admin/brochures" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminBrochures /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/brochures/new" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><BrochureEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/brochures/:id" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><BrochureEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           
