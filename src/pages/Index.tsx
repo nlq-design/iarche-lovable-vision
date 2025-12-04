@@ -9,35 +9,32 @@ import NewsletterSection from "@/components/sections/NewsletterSection";
 import Footer from "@/components/layout/Footer";
 import BackgroundLayout from "@/components/layouts/BackgroundLayout";
 import { Helmet } from "react-helmet";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
 const Index = () => {
   const [showHeader, setShowHeader] = useState(false);
-  const heroSentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Utiliser IntersectionObserver pour détecter quand on quitte le hero
-    const sentinel = heroSentinelRef.current;
-    if (!sentinel) return;
+    const handleScroll = () => {
+      const scrollThreshold = window.innerHeight * 0.8;
+      const currentScroll = window.scrollY || document.documentElement.scrollTop;
+      setShowHeader(currentScroll > scrollThreshold);
+    };
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // Afficher le header quand le sentinel n'est plus visible (on a scrollé au-delà)
-        setShowHeader(!entry.isIntersecting);
-      },
-      {
-        root: null,
-        rootMargin: '-20% 0px 0px 0px', // Se déclenche quand 20% du haut est passé
-        threshold: 0
-      }
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-    <>
+    <div className="relative">
+      {/* Header sticky avec apparition au scroll - HORS du BackgroundLayout */}
+      <div 
+        className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
+          showHeader ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        <Header />
+      </div>
       <Helmet>
         <html lang="fr" />
         <link rel="alternate" hrefLang="fr" href="https://iarche.fr/" />
@@ -124,19 +121,17 @@ const Index = () => {
         </script>
       </Helmet>
 
-      {/* Header sticky avec apparition au scroll */}
-      <div 
-        className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
-          showHeader ? 'translate-y-0' : '-translate-y-full'
-        }`}
-      >
-        <Header />
-      </div>
-
       {/* Un seul BackgroundLayout englobant tout */}
       <BackgroundLayout>
-        {/* Sentinel pour détecter la fin du hero section */}
-        <div ref={heroSentinelRef} className="absolute top-[80vh] h-1 w-full pointer-events-none" aria-hidden="true" />
+        {/* Header sticky avec apparition au scroll */}
+        <div 
+          className={`fixed top-0 left-0 right-0 z-[100] transition-transform duration-300 ${
+            showHeader ? 'translate-y-0' : '-translate-y-full'
+          }`}
+        >
+          <Header />
+        </div>
+        
         <HeroSection />
         <AccrocheSection />
         <ServicesSection />
@@ -146,7 +141,7 @@ const Index = () => {
         <NewsletterSection />
         <Footer />
       </BackgroundLayout>
-    </>
+    </div>
   );
 };
 
