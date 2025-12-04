@@ -9,9 +9,16 @@ const corsHeaders = {
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
+interface FormField {
+  id: string;
+  label: string;
+  type: string;
+}
+
 interface FormNotificationRequest {
   form_id: string;
   form_title: string;
+  form_fields?: FormField[];
   response_data: Record<string, any>;
   respondent_email?: string;
   admin_email?: string;
@@ -29,6 +36,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const {
       form_id,
       form_title,
+      form_fields,
       response_data,
       respondent_email,
       admin_email,
@@ -38,8 +46,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }: FormNotificationRequest = await req.json();
 
     console.log('[send-form-notification] Processing notification for form:', form_title);
+    console.log('[send-form-notification] Form fields:', JSON.stringify(form_fields));
     console.log('[send-form-notification] Respondent email received:', respondent_email);
-    console.log('[send-form-notification] Response data:', JSON.stringify(response_data));
+
+    // Créer un mapping ID -> Label pour les champs
+    const fieldLabelMap: Record<string, string> = {};
+    if (form_fields && Array.isArray(form_fields)) {
+      for (const field of form_fields) {
+        if (field.id && field.label) {
+          fieldLabelMap[field.id] = field.label;
+        }
+      }
+    }
+    console.log('[send-form-notification] Field label map:', JSON.stringify(fieldLabelMap));
 
     // Trouver l'email du répondant dans les données si non fourni
     let finalRespondentEmail = respondent_email;
@@ -62,13 +81,30 @@ Deno.serve(async (req: Request): Promise<Response> => {
     console.log('[send-form-notification] Final respondent email:', finalRespondentEmail);
     console.log('[send-form-notification] Should send to respondent:', shouldSendToRespondent);
 
-    // Construire le résumé des réponses en HTML
+    // Construire le résumé des réponses en HTML avec les vrais labels
     const responseHtml = Object.entries(response_data)
       .filter(([_, value]) => value !== undefined && value !== null && value !== '')
       .map(([key, value]) => {
-        const displayValue = Array.isArray(value) ? value.join(', ') : String(value);
+        // Utiliser le label du champ si disponible, sinon fallback sur l'ID
+        const fieldLabel = fieldLabelMap[key] || key;
+        
+        // Formater la valeur
+        let displayValue = '';
+        if (typeof value === 'boolean') {
+          displayValue = value ? 'Oui' : 'Non';
+        } else if (Array.isArray(value)) {
+          displayValue = value.join(', ');
+        } else {
+          displayValue = String(value);
+        }
+        
+        // Nettoyer les valeurs de type radio/select (remplacer _ par espaces)
+        if (displayValue.includes('_')) {
+          displayValue = displayValue.replace(/_/g, ' ');
+        }
+        
         return `<tr>
-          <td style="padding: 12px; border-bottom: 1px solid #E5E7EB; font-weight: 500; color: #374151; width: 35%;">${key}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #E5E7EB; font-weight: 500; color: #374151; width: 35%;">${fieldLabel}</td>
           <td style="padding: 12px; border-bottom: 1px solid #E5E7EB; color: #6B7280;">${displayValue}</td>
         </tr>`;
       })

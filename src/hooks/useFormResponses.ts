@@ -134,7 +134,7 @@ export const useFormResponses = () => {
       // Récupérer les infos du formulaire pour les notifications
       const { data: form } = await supabase
         .from('forms')
-        .select('slug, title, settings')
+        .select('slug, title, settings, fields')
         .eq('id', formId)
         .single();
       
@@ -146,6 +146,7 @@ export const useFormResponses = () => {
       if (form) {
         const settings = form.settings as any;
         const notificationSettings = settings?.notifications || {};
+        const formFields = (form.fields as any[]) || [];
         
         // Trouver l'email du répondant
         let respondentEmail: string | undefined;
@@ -174,10 +175,11 @@ export const useFormResponses = () => {
           const payload = {
             form_id: formId,
             form_title: form.title,
+            form_fields: formFields, // Envoyer la structure des champs pour le mapping
             response_data: responseData,
             respondent_email: respondentEmail,
             admin_email: 'nlq@iarche.fr',
-            send_to_respondent: true, // Toujours envoyer au répondant
+            send_to_respondent: true,
             custom_subject: notificationSettings.customSubject,
             custom_message: notificationSettings.customMessage,
           };
