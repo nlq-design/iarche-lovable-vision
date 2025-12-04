@@ -39,13 +39,28 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     console.log('[send-form-notification] Processing notification for form:', form_title);
     console.log('[send-form-notification] Respondent email received:', respondent_email);
-    console.log('[send-form-notification] Send to respondent flag:', send_to_respondent);
+    console.log('[send-form-notification] Response data:', JSON.stringify(response_data));
+
+    // Trouver l'email du répondant dans les données si non fourni
+    let finalRespondentEmail = respondent_email;
+    if (!finalRespondentEmail && response_data) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      for (const [key, value] of Object.entries(response_data)) {
+        if (typeof value === 'string' && emailRegex.test(value)) {
+          finalRespondentEmail = value;
+          console.log('[send-form-notification] Found email in response_data:', finalRespondentEmail, 'field:', key);
+          break;
+        }
+      }
+    }
 
     const adminEmailAddress = admin_email || 'nlq@iarche.fr';
     const results = { admin: false, respondent: false };
-    const shouldSendToRespondent = send_to_respondent !== false; // Par défaut true
+    // Toujours envoyer au répondant si on a trouvé un email
+    const shouldSendToRespondent = !!finalRespondentEmail;
     
-    console.log('[send-form-notification] Should send to respondent:', shouldSendToRespondent, 'Email:', respondent_email);
+    console.log('[send-form-notification] Final respondent email:', finalRespondentEmail);
+    console.log('[send-form-notification] Should send to respondent:', shouldSendToRespondent);
 
     // Construire le résumé des réponses en HTML
     const responseHtml = Object.entries(response_data)
@@ -129,15 +144,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Email respondent (si configuré)
-    if (shouldSendToRespondent && respondent_email) {
+    // Email respondent (si email trouvé)
+    if (shouldSendToRespondent && finalRespondentEmail) {
       try {
-        const respondentSubject = custom_subject || `Confirmation de votre réponse - ${form_title}`;
-        const respondentMessage = custom_message || 'Nous avons bien reçu votre réponse et nous vous en remercions.';
+        const respondentSubject = custom_subject || `Confirmation de votre inscription - ${form_title}`;
+        const respondentMessage = custom_message || 'Nous avons bien reçu votre inscription et nous vous en remercions. Nous avons hâte de vous retrouver !';
+
+        console.log('[send-form-notification] Sending confirmation to:', finalRespondentEmail);
 
         const respondentEmailResponse = await resend.emails.send({
           from: 'IArche <contact@iarche.fr>',
-          to: [respondent_email],
+          to: [finalRespondentEmail],
           subject: respondentSubject,
           html: `
             <!DOCTYPE html>
@@ -187,7 +204,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         await logEmail({
           source_type: 'form',
           source_id: form_id,
-          recipient_email: respondent_email,
+          recipient_email: finalRespondentEmail,
           email_type: 'user_confirmation',
           subject: respondentSubject,
           status: 'sent',
@@ -197,7 +214,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         await logEmail({
           source_type: 'form',
           source_id: form_id,
-          recipient_email: respondent_email,
+          recipient_email: finalRespondentEmail!,
           email_type: 'user_confirmation',
           subject: custom_subject || `Confirmation - ${form_title}`,
           status: 'failed',
