@@ -46,19 +46,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }: FormNotificationRequest = await req.json();
 
     console.log('[send-form-notification] Processing notification for form:', form_title);
-    console.log('[send-form-notification] Form fields:', JSON.stringify(form_fields));
+    console.log('[send-form-notification] Form fields received:', JSON.stringify(form_fields));
     console.log('[send-form-notification] Respondent email received:', respondent_email);
 
     // Créer un mapping ID -> Label pour les champs
     const fieldLabelMap: Record<string, string> = {};
-    if (form_fields && Array.isArray(form_fields)) {
+    if (form_fields && Array.isArray(form_fields) && form_fields.length > 0) {
       for (const field of form_fields) {
-        if (field.id && field.label) {
+        if (field && field.id && field.label) {
           fieldLabelMap[field.id] = field.label;
+          console.log('[send-form-notification] Mapped field:', field.id, '->', field.label);
         }
       }
     }
-    console.log('[send-form-notification] Field label map:', JSON.stringify(fieldLabelMap));
+    console.log('[send-form-notification] Final field label map:', JSON.stringify(fieldLabelMap));
 
     // Trouver l'email du répondant dans les données si non fourni
     let finalRespondentEmail = respondent_email;
@@ -141,7 +142,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
               <div style="background: #ffffff; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
                 <div style="background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; margin-bottom: 25px; border-radius: 0 8px 8px 0;">
                   <p style="margin: 0; color: #92400E; font-size: 14px; font-weight: 500;">
-                    ⏰ Reçu le ${new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    ⏰ Reçu le ${new Date().toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })}
                   </p>
                 </div>
                 

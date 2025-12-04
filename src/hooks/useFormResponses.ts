@@ -146,8 +146,8 @@ export const useFormResponses = () => {
       if (form) {
         const settings = form.settings as any;
         const notificationSettings = settings?.notifications || {};
-        const formFields = (form.fields as any[]) || [];
-        
+        const formFields = form.fields as any[] | null;
+        console.log('Form fields from database:', formFields);
         // Trouver l'email du répondant
         let respondentEmail: string | undefined;
         
@@ -175,7 +175,7 @@ export const useFormResponses = () => {
           const payload = {
             form_id: formId,
             form_title: form.title,
-            form_fields: formFields, // Envoyer la structure des champs pour le mapping
+            form_fields: formFields || [], // Envoyer la structure des champs pour le mapping
             response_data: responseData,
             respondent_email: respondentEmail,
             admin_email: 'nlq@iarche.fr',
