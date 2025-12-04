@@ -1,4 +1,4 @@
-import { Home, BarChart3, Sparkles, FileText, FolderOpen, Tag, MessageCircle, Users, Mail, Send, Shield, Settings, Database, HelpCircle, Activity, MousePointerClick, UserCheck, ImageIcon, ClipboardList, CalendarCheck } from 'lucide-react';
+import { Home, BarChart3, Sparkles, FileText, FolderOpen, Tag, MessageCircle, Users, Mail, Send, Shield, Settings, Database, HelpCircle, Activity, MousePointerClick, UserCheck, ImageIcon, ClipboardList, CalendarCheck, BookOpen } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -32,6 +32,7 @@ const navigationItems = [
       { title: 'Cas clients', url: '/admin/cas-clients', icon: FileText },
       { title: 'Livres blancs', url: '/admin/livres-blancs', icon: FileText },
       { title: 'Ateliers & Webinaires', url: '/admin/ateliers-webinaires', icon: FileText },
+      { title: 'Brochures', url: '/admin/brochures', icon: BookOpen },
       { title: 'Redacia (IA)', url: '/admin/redacia', icon: Sparkles },
     ]
   },
