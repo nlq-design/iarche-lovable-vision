@@ -147,18 +147,27 @@ export const useFormResponses = () => {
         const settings = form.settings as any;
         const notificationSettings = settings?.notifications || {};
         
-        // Trouver l'email du répondant si configuré
+        // Trouver l'email du répondant
         let respondentEmail: string | undefined;
-        if (notificationSettings.sendToRespondent && notificationSettings.respondentEmailField) {
+        
+        // 1. Utiliser le champ configuré si présent
+        if (notificationSettings.respondentEmailField) {
           respondentEmail = responseData[notificationSettings.respondentEmailField];
         }
-        // Fallback: chercher un champ email dans les données
+        
+        // 2. Fallback: chercher une valeur qui ressemble à un email dans les données
         if (!respondentEmail) {
-          const emailKey = Object.keys(responseData).find(k => 
-            k.toLowerCase().includes('email') || k.toLowerCase().includes('mail')
-          );
-          if (emailKey) respondentEmail = responseData[emailKey];
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          for (const [key, value] of Object.entries(responseData)) {
+            if (typeof value === 'string' && emailRegex.test(value)) {
+              respondentEmail = value;
+              console.log('Found respondent email:', respondentEmail, 'in field:', key);
+              break;
+            }
+          }
         }
+        
+        console.log('Respondent email to send confirmation:', respondentEmail);
 
         // Appeler l'edge function pour les emails
         try {

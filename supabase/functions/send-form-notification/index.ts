@@ -38,10 +38,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }: FormNotificationRequest = await req.json();
 
     console.log('[send-form-notification] Processing notification for form:', form_title);
+    console.log('[send-form-notification] Respondent email received:', respondent_email);
+    console.log('[send-form-notification] Send to respondent flag:', send_to_respondent);
 
     const adminEmailAddress = admin_email || 'nlq@iarche.fr';
     const results = { admin: false, respondent: false };
     const shouldSendToRespondent = send_to_respondent !== false; // Par défaut true
+    
+    console.log('[send-form-notification] Should send to respondent:', shouldSendToRespondent, 'Email:', respondent_email);
 
     // Construire le résumé des réponses en HTML
     const responseHtml = Object.entries(response_data)
