@@ -24,7 +24,7 @@ const BackgroundLayout = ({ children, className = '' }: BackgroundLayoutProps) =
   const backgroundRef = useAnimationPause<HTMLDivElement>();
 
   return (
-    <div className={`min-h-screen bg-background text-foreground font-sans relative ${className}`}>
+    <div className={`min-h-screen bg-background text-foreground font-sans overflow-hidden relative ${className}`}>
         {/* ========================================
             QUADRILLAGES DIAGONAUX ANIMÉS (en arrière-plan)
             ======================================== */}
