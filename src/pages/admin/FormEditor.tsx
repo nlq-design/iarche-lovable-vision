@@ -648,7 +648,7 @@ const FormEditor = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open(`/f/${form.slug}`, '_blank')}
+                  onClick={() => window.open(`/formulaires/${form.slug}`, '_blank')}
                 >
                   <Eye className="h-4 w-4 mr-1" />
                   Preview
