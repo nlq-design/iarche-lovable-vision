@@ -603,6 +603,7 @@ export type Database = {
           cover_title: string
           created_at: string | null
           custom_colors: Json | null
+          export_settings: Json | null
           id: string
           published: boolean | null
           sections: Json
@@ -617,6 +618,7 @@ export type Database = {
           cover_title: string
           created_at?: string | null
           custom_colors?: Json | null
+          export_settings?: Json | null
           id?: string
           published?: boolean | null
           sections?: Json
@@ -631,6 +633,7 @@ export type Database = {
           cover_title?: string
           created_at?: string | null
           custom_colors?: Json | null
+          export_settings?: Json | null
           id?: string
           published?: boolean | null
           sections?: Json

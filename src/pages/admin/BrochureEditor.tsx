@@ -11,9 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Save, Eye, Download, Plus, Trash2, GripVertical, Upload, X, Loader2 } from 'lucide-react';
 import { useBrochures, useBrochure } from '@/hooks/useBrochures';
-import { Brochure, BrochureSections, BrochureKeyPoint, BrochurePricingPlan, defaultSections } from '@/types/brochure';
-import BrochurePreview from '@/components/admin/brochures/BrochurePreview';
+import { Brochure, BrochureSections, BrochureKeyPoint, BrochurePricingPlan, BrochureExportSettings as ExportSettingsType, defaultSections, defaultExportSettings } from '@/types/brochure';
+import BrochureWebView from '@/components/admin/brochures/BrochureWebView';
 import BrochurePDFExport from '@/components/admin/brochures/BrochurePDFExport';
+import BrochureExportSettingsComponent from '@/components/admin/brochures/BrochureExportSettings';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -33,6 +34,7 @@ const BrochureEditor = () => {
     cover_image_url: '',
     sections: defaultSections,
     custom_colors: { primary: null, accent: null },
+    export_settings: defaultExportSettings,
     published: false,
   });
 
@@ -647,6 +649,12 @@ const BrochureEditor = () => {
                   </CardContent>
                 </Card>
 
+                {/* Export Settings */}
+                <BrochureExportSettingsComponent
+                  settings={formData.export_settings || defaultExportSettings}
+                  onChange={(settings) => setFormData(prev => ({ ...prev, export_settings: settings }))}
+                />
+
                 <Card>
                   <CardHeader>
                     <CardTitle>Publication</CardTitle>
@@ -678,7 +686,7 @@ const BrochureEditor = () => {
               </CardHeader>
               <CardContent className="p-0 h-full overflow-auto">
                 <div className="transform scale-50 origin-top-left w-[200%]">
-                  <BrochurePreview brochure={formData as Brochure} />
+                  <BrochureWebView brochure={formData as Brochure} />
                 </div>
               </CardContent>
             </Card>
@@ -695,7 +703,7 @@ const BrochureEditor = () => {
               Fermer
             </Button>
           </div>
-          <BrochurePreview brochure={formData as Brochure} />
+          <BrochureWebView brochure={formData as Brochure} />
         </div>
       )}
 

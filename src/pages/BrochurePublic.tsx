@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { useBrochureBySlug } from '@/hooks/useBrochures';
-import BrochurePreview from '@/components/admin/brochures/BrochurePreview';
+import BrochureWebView from '@/components/admin/brochures/BrochureWebView';
 
 const BrochurePublic = () => {
   const { slug } = useParams();
@@ -49,7 +49,7 @@ const BrochurePublic = () => {
         )}
       </Helmet>
 
-      <BrochurePreview brochure={brochure} />
+      <BrochureWebView brochure={brochure} />
     </>
   );
 };
