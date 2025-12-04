@@ -85,6 +85,34 @@ All colors MUST be HSL.
     -webkit-filter: none !important;
     filter: none !important;
     background-image: linear-gradient(#FAF9F7, #FAF9F7) !important;
+    /* Safari: Force hardware acceleration for smoother rendering */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    /* Safari: Fix text rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Safari iOS: Use CSS variable for viewport height */
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: calc(var(--vh, 1vh) * 100);
+  }
+
+  /* Safari: Smooth scrolling with fallback */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Safari: Fix backdrop-filter support */
+  @supports not (backdrop-filter: blur(10px)) {
+    .backdrop-blur-sm,
+    .backdrop-blur-md,
+    .backdrop-blur-lg {
+      background-color: rgba(250, 249, 247, 0.95) !important;
+    }
   }
 
   /* Anti-Brave force dark - dernier recours */
