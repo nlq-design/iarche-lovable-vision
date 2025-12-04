@@ -9,19 +9,31 @@ import NewsletterSection from "@/components/sections/NewsletterSection";
 import Footer from "@/components/layout/Footer";
 import BackgroundLayout from "@/components/layouts/BackgroundLayout";
 import { Helmet } from "react-helmet";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 const Index = () => {
   const [showHeader, setShowHeader] = useState(false);
+  const heroSentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleScroll = () => {
-      // Afficher le header après 100vh de scroll
-      setShowHeader(window.scrollY > window.innerHeight * 0.8);
-    };
+    // Utiliser IntersectionObserver pour détecter quand on quitte le hero
+    const sentinel = heroSentinelRef.current;
+    if (!sentinel) return;
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Afficher le header quand le sentinel n'est plus visible (on a scrollé au-delà)
+        setShowHeader(!entry.isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: '-20% 0px 0px 0px', // Se déclenche quand 20% du haut est passé
+        threshold: 0
+      }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -123,6 +135,8 @@ const Index = () => {
 
       {/* Un seul BackgroundLayout englobant tout */}
       <BackgroundLayout>
+        {/* Sentinel pour détecter la fin du hero section */}
+        <div ref={heroSentinelRef} className="absolute top-[80vh] h-1 w-full pointer-events-none" aria-hidden="true" />
         <HeroSection />
         <AccrocheSection />
         <ServicesSection />
