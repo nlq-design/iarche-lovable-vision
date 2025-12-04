@@ -32,6 +32,7 @@ const BrochureEditor = () => {
     cover_subtitle: '',
     cover_image_url: '',
     sections: defaultSections,
+    custom_colors: { primary: null, accent: null },
     published: false,
   });
 
@@ -574,6 +575,75 @@ const BrochureEditor = () => {
                         </div>
                       </>
                     )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Personnalisation des couleurs</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Laissez vide pour utiliser les couleurs par défaut de la charte graphique.
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Couleur primaire</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <input
+                            type="color"
+                            value={formData.custom_colors?.primary || '#1A2B4A'}
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              custom_colors: { ...prev.custom_colors, primary: e.target.value }
+                            }))}
+                            className="h-10 w-16 rounded border border-border cursor-pointer"
+                          />
+                          <Input
+                            value={formData.custom_colors?.primary || ''}
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              custom_colors: { ...prev.custom_colors, primary: e.target.value || null }
+                            }))}
+                            placeholder="#1A2B4A"
+                            className="flex-1"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Couleur accent</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <input
+                            type="color"
+                            value={formData.custom_colors?.accent || '#B04A32'}
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              custom_colors: { ...prev.custom_colors, accent: e.target.value }
+                            }))}
+                            className="h-10 w-16 rounded border border-border cursor-pointer"
+                          />
+                          <Input
+                            value={formData.custom_colors?.accent || ''}
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              custom_colors: { ...prev.custom_colors, accent: e.target.value || null }
+                            }))}
+                            placeholder="#B04A32"
+                            className="flex-1"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFormData(prev => ({
+                        ...prev,
+                        custom_colors: { primary: null, accent: null }
+                      }))}
+                    >
+                      Réinitialiser aux couleurs par défaut
+                    </Button>
                   </CardContent>
                 </Card>
 

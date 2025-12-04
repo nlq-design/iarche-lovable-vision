@@ -46,6 +46,11 @@ export interface BrochureSections {
   };
 }
 
+export interface BrochureCustomColors {
+  primary?: string | null;
+  accent?: string | null;
+}
+
 export interface Brochure {
   id: string;
   slug: string;
@@ -55,6 +60,8 @@ export interface Brochure {
   cover_image_url?: string;
   sections: BrochureSections;
   published: boolean;
+  views_count: number;
+  custom_colors?: BrochureCustomColors;
   created_at: string;
   updated_at: string;
 }

@@ -23,18 +23,27 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, Eye, Copy, FileText, Search } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Plus, Pencil, Trash2, Eye, Copy, FileText, Search, QrCode, CopyPlus } from 'lucide-react';
 import { useBrochures } from '@/hooks/useBrochures';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import QRCode from 'react-qr-code';
+import { Brochure } from '@/types/brochure';
 
 const AdminBrochures = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { brochures, isLoading, deleteBrochure } = useBrochures();
+  const { brochures, isLoading, deleteBrochure, duplicateBrochure } = useBrochures();
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [qrBrochure, setQrBrochure] = useState<Brochure | null>(null);
 
   const filteredBrochures = brochures.filter(b =>
     b.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -51,6 +60,10 @@ const AdminBrochures = () => {
       deleteBrochure.mutate(deleteId);
       setDeleteId(null);
     }
+  };
+
+  const handleDuplicate = (brochure: Brochure) => {
+    duplicateBrochure.mutate(brochure);
   };
 
   return (
@@ -99,6 +112,7 @@ const AdminBrochures = () => {
                     <TableHead>Titre</TableHead>
                     <TableHead>Slug</TableHead>
                     <TableHead>Statut</TableHead>
+                    <TableHead>Vues</TableHead>
                     <TableHead>Créée le</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -112,6 +126,9 @@ const AdminBrochures = () => {
                         <Badge variant={brochure.published ? 'default' : 'secondary'}>
                           {brochure.published ? 'Publiée' : 'Brouillon'}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-muted-foreground">{brochure.views_count}</span>
                       </TableCell>
                       <TableCell>
                         {format(new Date(brochure.created_at), 'dd MMM yyyy', { locale: fr })}
@@ -136,8 +153,24 @@ const AdminBrochures = () => {
                               >
                                 <Copy className="h-4 w-4" />
                               </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setQrBrochure(brochure)}
+                                title="QR Code"
+                              >
+                                <QrCode className="h-4 w-4" />
+                              </Button>
                             </>
                           )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDuplicate(brochure)}
+                            title="Dupliquer"
+                          >
+                            <CopyPlus className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -181,6 +214,34 @@ const AdminBrochures = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* QR Code Modal */}
+      <Dialog open={!!qrBrochure} onOpenChange={() => setQrBrochure(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>QR Code - {qrBrochure?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            {qrBrochure && (
+              <div className="bg-white p-4 rounded-lg">
+                <QRCode value={`https://iarche.fr/brochure/${qrBrochure.slug}`} size={200} />
+              </div>
+            )}
+            <p className="text-sm text-muted-foreground text-center">
+              Scannez ce code pour accéder à la brochure
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (qrBrochure) copyLink(qrBrochure.slug);
+              }}
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Copier le lien
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Brochure, BrochureSections, defaultSections } from '@/types/brochure';
+import { Brochure, BrochureSections, BrochureCustomColors, defaultSections } from '@/types/brochure';
 import { useToast } from '@/hooks/use-toast';
 import { Json } from '@/integrations/supabase/types';
 
@@ -9,6 +9,13 @@ const parseSections = (sections: Json | null): BrochureSections => {
     return defaultSections;
   }
   return sections as unknown as BrochureSections;
+};
+
+const parseCustomColors = (colors: Json | null): BrochureCustomColors => {
+  if (!colors || typeof colors !== 'object' || Array.isArray(colors)) {
+    return { primary: null, accent: null };
+  }
+  return colors as unknown as BrochureCustomColors;
 };
 
 export const useBrochures = () => {
@@ -26,7 +33,9 @@ export const useBrochures = () => {
       if (error) throw error;
       return (data || []).map(b => ({
         ...b,
-        sections: parseSections(b.sections)
+        sections: parseSections(b.sections),
+        custom_colors: parseCustomColors(b.custom_colors),
+        views_count: b.views_count || 0,
       })) as Brochure[];
     },
   });
@@ -42,6 +51,7 @@ export const useBrochures = () => {
           cover_subtitle: brochure.cover_subtitle,
           cover_image_url: brochure.cover_image_url,
           sections: brochure.sections as unknown as Json,
+          custom_colors: brochure.custom_colors as unknown as Json,
           published: brochure.published || false,
         })
         .select()
@@ -70,6 +80,7 @@ export const useBrochures = () => {
           cover_subtitle: brochure.cover_subtitle,
           cover_image_url: brochure.cover_image_url,
           sections: brochure.sections as unknown as Json,
+          custom_colors: brochure.custom_colors as unknown as Json,
           published: brochure.published,
         })
         .eq('id', id)
@@ -82,6 +93,35 @@ export const useBrochures = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brochures'] });
       toast({ title: 'Brochure mise à jour' });
+    },
+    onError: (error) => {
+      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const duplicateBrochure = useMutation({
+    mutationFn: async (brochure: Brochure) => {
+      const { data, error } = await supabase
+        .from('brochures')
+        .insert({
+          title: `${brochure.title} (copie)`,
+          slug: `${brochure.slug}-copie-${Date.now()}`,
+          cover_title: brochure.cover_title,
+          cover_subtitle: brochure.cover_subtitle,
+          cover_image_url: brochure.cover_image_url,
+          sections: brochure.sections as unknown as Json,
+          custom_colors: brochure.custom_colors as unknown as Json,
+          published: false,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['brochures'] });
+      toast({ title: 'Brochure dupliquée' });
     },
     onError: (error) => {
       toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
@@ -111,6 +151,7 @@ export const useBrochures = () => {
     isLoading,
     createBrochure,
     updateBrochure,
+    duplicateBrochure,
     deleteBrochure,
   };
 };
@@ -130,7 +171,9 @@ export const useBrochure = (id?: string) => {
       if (!data) return null;
       return {
         ...data,
-        sections: parseSections(data.sections)
+        sections: parseSections(data.sections),
+        custom_colors: parseCustomColors(data.custom_colors),
+        views_count: data.views_count || 0,
       } as Brochure;
     },
     enabled: !!id,
@@ -151,9 +194,15 @@ export const useBrochureBySlug = (slug?: string) => {
 
       if (error) throw error;
       if (!data) return null;
+      
+      // Increment views
+      supabase.from('brochures').update({ views_count: (data.views_count || 0) + 1 }).eq('id', data.id).then();
+      
       return {
         ...data,
-        sections: parseSections(data.sections)
+        sections: parseSections(data.sections),
+        custom_colors: parseCustomColors(data.custom_colors),
+        views_count: data.views_count || 0,
       } as Brochure;
     },
     enabled: !!slug,
