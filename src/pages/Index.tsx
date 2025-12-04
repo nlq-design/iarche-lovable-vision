@@ -16,25 +16,16 @@ const Index = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      const scrollThreshold = window.innerHeight * 0.8;
-      const currentScroll = window.scrollY || document.documentElement.scrollTop;
-      setShowHeader(currentScroll > scrollThreshold);
+      // Afficher le header après 80% du viewport scrollé
+      setShowHeader(window.scrollY > window.innerHeight * 0.8);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-    <div className="relative">
-      {/* Header sticky avec apparition au scroll - HORS du BackgroundLayout */}
-      <div 
-        className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
-          showHeader ? 'translate-y-0' : '-translate-y-full'
-        }`}
-      >
-        <Header />
-      </div>
+    <>
       <Helmet>
         <html lang="fr" />
         <link rel="alternate" hrefLang="fr" href="https://iarche.fr/" />
@@ -121,17 +112,17 @@ const Index = () => {
         </script>
       </Helmet>
 
+      {/* Header sticky avec apparition au scroll */}
+      <div 
+        className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
+          showHeader ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        <Header />
+      </div>
+
       {/* Un seul BackgroundLayout englobant tout */}
       <BackgroundLayout>
-        {/* Header sticky avec apparition au scroll */}
-        <div 
-          className={`fixed top-0 left-0 right-0 z-[100] transition-transform duration-300 ${
-            showHeader ? 'translate-y-0' : '-translate-y-full'
-          }`}
-        >
-          <Header />
-        </div>
-        
         <HeroSection />
         <AccrocheSection />
         <ServicesSection />
@@ -141,7 +132,7 @@ const Index = () => {
         <NewsletterSection />
         <Footer />
       </BackgroundLayout>
-    </div>
+    </>
   );
 };
 
