@@ -81,14 +81,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
     console.log('[send-form-notification] Final respondent email:', finalRespondentEmail);
     console.log('[send-form-notification] Should send to respondent:', shouldSendToRespondent);
 
-    // Construire le résumé des réponses en HTML avec les vrais labels
+    // Construire le résumé des réponses en HTML avec les vrais labels (pour admin)
     const responseHtml = Object.entries(response_data)
       .filter(([_, value]) => value !== undefined && value !== null && value !== '')
       .map(([key, value]) => {
-        // Utiliser le label du champ si disponible, sinon fallback sur l'ID
         const fieldLabel = fieldLabelMap[key] || key;
         
-        // Formater la valeur
         let displayValue = '';
         if (typeof value === 'boolean') {
           displayValue = value ? 'Oui' : 'Non';
@@ -98,7 +96,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
           displayValue = String(value);
         }
         
-        // Nettoyer les valeurs de type radio/select (remplacer _ par espaces)
         if (displayValue.includes('_')) {
           displayValue = displayValue.replace(/_/g, ' ');
         }
@@ -110,7 +107,18 @@ Deno.serve(async (req: Request): Promise<Response> => {
       })
       .join('');
 
-    // Email admin
+    // Extraire les infos clés pour le prospect (nom, prénom)
+    let prospectName = '';
+    const nameLabels = ['nom', 'prénom', 'prenom', 'name', 'firstname', 'lastname', 'nom complet'];
+    for (const [key, value] of Object.entries(response_data)) {
+      const label = (fieldLabelMap[key] || key).toLowerCase();
+      if (nameLabels.some(n => label.includes(n)) && typeof value === 'string' && value.trim()) {
+        prospectName = prospectName ? `${prospectName} ${value}` : value;
+      }
+    }
+    prospectName = prospectName || 'vous';
+
+    // Email admin (DÉTAILLÉ avec toutes les infos)
     try {
       const adminEmailResponse = await resend.emails.send({
         from: 'IArche Formulaires <notifications@iarche.fr>',
@@ -126,18 +134,32 @@ Deno.serve(async (req: Request): Promise<Response> => {
           <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #FAF9F7;">
             <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
               <div style="background: linear-gradient(135deg, hsl(218, 47%, 20%) 0%, hsl(12, 60%, 44%) 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-                <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Nouvelle réponse au formulaire</h1>
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">📝 Nouvelle soumission</h1>
                 <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">${form_title}</p>
               </div>
               
               <div style="background: #ffffff; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
-                <p style="color: #374151; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
-                  Une nouvelle réponse a été soumise. Voici le détail :
-                </p>
+                <div style="background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; margin-bottom: 25px; border-radius: 0 8px 8px 0;">
+                  <p style="margin: 0; color: #92400E; font-size: 14px; font-weight: 500;">
+                    ⏰ Reçu le ${new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
                 
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px;">
+                <h2 style="color: hsl(218, 47%, 20%); font-size: 16px; margin-bottom: 15px; border-bottom: 2px solid hsl(12, 60%, 44%); padding-bottom: 8px;">
+                  📋 Détail complet des réponses
+                </h2>
+                
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; background: #F9FAFB; border-radius: 8px;">
                   ${responseHtml}
                 </table>
+                
+                ${finalRespondentEmail ? `
+                <div style="background: #ECFDF5; border-left: 4px solid #10B981; padding: 12px 16px; margin-bottom: 25px; border-radius: 0 8px 8px 0;">
+                  <p style="margin: 0; color: #065F46; font-size: 14px;">
+                    ✅ Email de confirmation envoyé à <strong>${finalRespondentEmail}</strong>
+                  </p>
+                </div>
+                ` : ''}
                 
                 <div style="text-align: center; margin-top: 30px;">
                   <a href="https://iarche.fr/admin/formulaires/${form_id}/reponses" 
@@ -180,11 +202,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Email respondent (si email trouvé)
+    // Email prospect (SUCCINCT - juste confirmation)
     if (shouldSendToRespondent && finalRespondentEmail) {
       try {
-        const respondentSubject = custom_subject || `Confirmation de votre inscription - ${form_title}`;
-        const respondentMessage = custom_message || 'Nous avons bien reçu votre inscription et nous vous en remercions. Nous avons hâte de vous retrouver !';
+        const respondentSubject = custom_subject || `Merci ${prospectName} ! Votre demande a bien été reçue`;
+        const respondentMessage = custom_message || `Bonjour ${prospectName},\n\nNous avons bien reçu votre demande et nous vous en remercions.`;
 
         console.log('[send-form-notification] Sending confirmation to:', finalRespondentEmail);
 
@@ -202,30 +224,40 @@ Deno.serve(async (req: Request): Promise<Response> => {
             <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #FAF9F7;">
               <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
                 <div style="background: linear-gradient(135deg, hsl(218, 47%, 20%) 0%, hsl(12, 60%, 44%) 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-                  <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Merci pour votre réponse !</h1>
+                  <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Merci ${prospectName} !</h1>
                 </div>
                 
                 <div style="background: #ffffff; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
-                  <p style="color: #374151; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
-                    ${respondentMessage}
+                  <p style="color: #374151; font-size: 16px; line-height: 1.7; margin-bottom: 20px;">
+                    Nous avons bien reçu votre demande concernant <strong style="color: hsl(218, 47%, 20%);">${form_title}</strong>.
                   </p>
                   
-                  <div style="background: #F9FAFB; padding: 20px; border-radius: 8px; margin: 25px 0;">
-                    <h3 style="color: hsl(218, 47%, 20%); margin: 0 0 15px 0; font-size: 16px;">Récapitulatif de vos réponses :</h3>
-                    <table style="width: 100%; border-collapse: collapse;">
-                      ${responseHtml}
-                    </table>
+                  <p style="color: #374151; font-size: 16px; line-height: 1.7; margin-bottom: 25px;">
+                    Notre équipe va prendre connaissance de vos informations et reviendra vers vous dans les meilleurs délais.
+                  </p>
+                  
+                  <div style="background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%); padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid hsl(218, 47%, 20%);">
+                    <p style="color: hsl(218, 47%, 20%); margin: 0; font-size: 15px; font-weight: 500;">
+                      💡 En attendant, découvrez nos solutions IA sur notre site
+                    </p>
                   </div>
                   
-                  <p style="color: #6B7280; font-size: 14px; line-height: 1.6;">
-                    Si vous avez des questions, n'hésitez pas à nous contacter à <a href="mailto:nlq@iarche.fr" style="color: hsl(12, 60%, 44%);">nlq@iarche.fr</a>
+                  <div style="text-align: center; margin-top: 30px;">
+                    <a href="https://iarche.fr/solutions" 
+                       style="display: inline-block; background: hsl(12, 60%, 44%); color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 500; font-size: 14px;">
+                      Découvrir nos solutions →
+                    </a>
+                  </div>
+                  
+                  <p style="color: #6B7280; font-size: 14px; line-height: 1.6; margin-top: 30px; text-align: center;">
+                    Une question ? Contactez-nous à <a href="mailto:nlq@iarche.fr" style="color: hsl(12, 60%, 44%); text-decoration: none; font-weight: 500;">nlq@iarche.fr</a>
                   </p>
                 </div>
                 
                 <div style="text-align: center; margin-top: 30px;">
                   <p style="color: #9CA3AF; font-size: 12px;">
                     IArche • Agence IA • Bayonne, France<br>
-                    <a href="https://iarche.fr" style="color: hsl(218, 47%, 20%);">iarche.fr</a>
+                    <a href="https://iarche.fr" style="color: hsl(218, 47%, 20%); text-decoration: none;">iarche.fr</a>
                   </p>
                 </div>
               </div>
