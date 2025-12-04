@@ -169,19 +169,22 @@ export const useFormResponses = () => {
         
         console.log('Respondent email to send confirmation:', respondentEmail);
 
-        // Appeler l'edge function pour les emails
+        // Appeler l'edge function pour les emails - TOUJOURS envoyer au répondant si email trouvé
         try {
+          const payload = {
+            form_id: formId,
+            form_title: form.title,
+            response_data: responseData,
+            respondent_email: respondentEmail,
+            admin_email: 'nlq@iarche.fr',
+            send_to_respondent: true, // Toujours envoyer au répondant
+            custom_subject: notificationSettings.customSubject,
+            custom_message: notificationSettings.customMessage,
+          };
+          console.log('Sending notification with payload:', payload);
+          
           await supabase.functions.invoke('send-form-notification', {
-            body: {
-              form_id: formId,
-              form_title: form.title,
-              response_data: responseData,
-              respondent_email: respondentEmail,
-              admin_email: notificationSettings.adminEmail || 'nlq@iarche.fr',
-              send_to_respondent: notificationSettings.sendToRespondent ?? true,
-              custom_subject: notificationSettings.customSubject,
-              custom_message: notificationSettings.customMessage,
-            }
+            body: payload
           });
           console.log('Notification emails sent successfully');
         } catch (emailError) {
