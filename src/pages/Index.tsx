@@ -9,31 +9,8 @@ import NewsletterSection from "@/components/sections/NewsletterSection";
 import Footer from "@/components/layout/Footer";
 import BackgroundLayout from "@/components/layouts/BackgroundLayout";
 import { Helmet } from "react-helmet";
-import { useEffect, useState } from "react";
 
 const Index = () => {
-  const [showHeader, setShowHeader] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const viewportHeight = window.innerHeight;
-      
-      // Hystérésis pour éviter le flickering:
-      // - Apparaît à 85% du viewport
-      // - Disparaît seulement en dessous de 70%
-      if (scrollY > viewportHeight * 0.85) {
-        setShowHeader(true);
-      } else if (scrollY < viewportHeight * 0.7) {
-        setShowHeader(false);
-      }
-      // Entre 70% et 85%, on garde l'état actuel (zone morte)
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   return (
     <>
       <Helmet>
@@ -122,16 +99,10 @@ const Index = () => {
         </script>
       </Helmet>
 
-      {/* Header sticky avec apparition au scroll */}
-      <div 
-        className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
-          showHeader ? 'translate-y-0' : '-translate-y-full'
-        }`}
-      >
-        <Header />
-      </div>
+      {/* Header en position normale */}
+      <Header />
 
-      {/* Un seul BackgroundLayout englobant tout */}
+      {/* BackgroundLayout démarre après le header */}
       <BackgroundLayout>
         <HeroSection />
         <AccrocheSection />
