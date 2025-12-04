@@ -16,11 +16,21 @@ const Index = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      // Afficher le header après 80% du viewport scrollé
-      setShowHeader(window.scrollY > window.innerHeight * 0.8);
+      const scrollY = window.scrollY;
+      const viewportHeight = window.innerHeight;
+      
+      // Hystérésis pour éviter le flickering:
+      // - Apparaît à 85% du viewport
+      // - Disparaît seulement en dessous de 70%
+      if (scrollY > viewportHeight * 0.85) {
+        setShowHeader(true);
+      } else if (scrollY < viewportHeight * 0.7) {
+        setShowHeader(false);
+      }
+      // Entre 70% et 85%, on garde l'état actuel (zone morte)
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
