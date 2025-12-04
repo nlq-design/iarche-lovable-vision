@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,13 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Save, Eye, Download, Plus, Trash2, GripVertical } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Download, Plus, Trash2, GripVertical, Upload, X, Loader2 } from 'lucide-react';
 import { useBrochures, useBrochure } from '@/hooks/useBrochures';
 import { Brochure, BrochureSections, BrochureKeyPoint, BrochurePricingPlan, defaultSections } from '@/types/brochure';
 import BrochurePreview from '@/components/admin/brochures/BrochurePreview';
 import BrochurePDFExport from '@/components/admin/brochures/BrochurePDFExport';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const BrochureEditor = () => {
   const { id } = useParams();
@@ -36,6 +37,46 @@ const BrochureEditor = () => {
 
   const [showPreview, setShowPreview] = useState(false);
   const [showPDFExport, setShowPDFExport] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Erreur', description: 'Seules les images sont acceptées', variant: 'destructive' });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('brochure-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('brochure-images')
+        .getPublicUrl(fileName);
+
+      setFormData(prev => ({ ...prev, cover_image_url: publicUrl }));
+      toast({ title: 'Image uploadée' });
+    } catch (error) {
+      toast({ title: 'Erreur', description: "Échec de l'upload", variant: 'destructive' });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const removeImage = () => {
+    setFormData(prev => ({ ...prev, cover_image_url: '' }));
+  };
 
   useEffect(() => {
     if (existingBrochure) {
@@ -244,12 +285,56 @@ const BrochureEditor = () => {
                       />
                     </div>
                     <div>
-                      <Label>Image de couverture (URL)</Label>
-                      <Input
-                        value={formData.cover_image_url || ''}
-                        onChange={(e) => setFormData(prev => ({ ...prev, cover_image_url: e.target.value }))}
-                        placeholder="https://..."
+                      <Label>Image de couverture</Label>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleImageUpload}
+                        accept="image/*"
+                        className="hidden"
                       />
+                      
+                      {formData.cover_image_url ? (
+                        <div className="relative mt-2">
+                          <img 
+                            src={formData.cover_image_url} 
+                            alt="Couverture" 
+                            className="w-full max-w-xs rounded-lg border border-border"
+                          />
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2 h-8 w-8"
+                            onClick={removeImage}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div 
+                          className="mt-2 border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-accent transition-colors"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          {isUploading ? (
+                            <Loader2 className="h-8 w-8 mx-auto animate-spin text-muted-foreground" />
+                          ) : (
+                            <>
+                              <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                              <p className="text-sm text-muted-foreground">Cliquer pour uploader</p>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      
+                      <div className="mt-2">
+                        <Label className="text-xs text-muted-foreground">Ou entrer une URL</Label>
+                        <Input
+                          value={formData.cover_image_url || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, cover_image_url: e.target.value }))}
+                          placeholder="https://..."
+                          className="mt-1"
+                        />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
