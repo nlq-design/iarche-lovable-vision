@@ -131,15 +131,54 @@ export const useFormResponses = () => {
         return null;
       }
 
-      // Incrémenter le compteur de soumissions
+      // Récupérer les infos du formulaire pour les notifications
       const { data: form } = await supabase
         .from('forms')
-        .select('slug')
+        .select('slug, title, settings')
         .eq('id', formId)
         .single();
       
       if (form?.slug) {
         await supabase.rpc('increment_form_submissions', { form_slug: form.slug });
+      }
+
+      // Envoyer les notifications email
+      if (form) {
+        const settings = form.settings as any;
+        const notificationSettings = settings?.notifications || {};
+        
+        // Trouver l'email du répondant si configuré
+        let respondentEmail: string | undefined;
+        if (notificationSettings.sendToRespondent && notificationSettings.respondentEmailField) {
+          respondentEmail = responseData[notificationSettings.respondentEmailField];
+        }
+        // Fallback: chercher un champ email dans les données
+        if (!respondentEmail) {
+          const emailKey = Object.keys(responseData).find(k => 
+            k.toLowerCase().includes('email') || k.toLowerCase().includes('mail')
+          );
+          if (emailKey) respondentEmail = responseData[emailKey];
+        }
+
+        // Appeler l'edge function pour les emails
+        try {
+          await supabase.functions.invoke('send-form-notification', {
+            body: {
+              form_id: formId,
+              form_title: form.title,
+              response_data: responseData,
+              respondent_email: respondentEmail,
+              admin_email: notificationSettings.adminEmail || 'nlq@nlq.fr',
+              send_to_respondent: notificationSettings.sendToRespondent ?? true,
+              custom_subject: notificationSettings.customSubject,
+              custom_message: notificationSettings.customMessage,
+            }
+          });
+          console.log('Notification emails sent successfully');
+        } catch (emailError) {
+          console.error('Error sending notification emails:', emailError);
+          // Ne pas bloquer la soumission si l'email échoue
+        }
       }
 
       toast({ title: 'Succès', description: 'Réponse enregistrée' });
