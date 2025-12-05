@@ -64,13 +64,17 @@ const Header = () => {
             </NavLink>
             
             {/* Menu Ressources - pointe vers /actualites avec dropdown */}
-            <div className="relative" ref={dropdownRef}>
+            <div 
+              className="relative" 
+              ref={dropdownRef}
+              onMouseEnter={() => setResourcesOpen(true)}
+              onMouseLeave={() => setResourcesOpen(false)}
+            >
               <button
                 onClick={() => {
                   navigate('/actualites');
                   setResourcesOpen(false);
                 }}
-                onMouseEnter={() => setResourcesOpen(true)}
                 className="flex items-center gap-1 text-sm hero-gradient-text transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 rounded px-2 py-1"
               >
                 Ressources
@@ -85,10 +89,7 @@ const Header = () => {
 
               {/* Dropdown */}
               {resourcesOpen && (
-                <div 
-                  className="absolute top-full left-0 mt-2 bg-background border border-border shadow-lg rounded-lg py-2 min-w-[220px] z-50"
-                  onMouseLeave={() => setResourcesOpen(false)}
-                >
+                <div className="absolute top-full left-0 mt-2 bg-background border border-border shadow-lg rounded-lg py-2 min-w-[220px] z-50">
                   <NavLink
                     to="/actualites"
                     onClick={() => setResourcesOpen(false)}
