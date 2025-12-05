@@ -9,11 +9,12 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Save, Eye, Download, Plus, Trash2, GripVertical, Upload, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Download, Plus, Trash2, GripVertical, Upload, X, Loader2, Image } from 'lucide-react';
 import { useBrochures, useBrochure } from '@/hooks/useBrochures';
 import { Brochure, BrochureSections, BrochureKeyPoint, BrochurePricingPlan, BrochureExportSettings as ExportSettingsType, defaultSections, defaultExportSettings } from '@/types/brochure';
 import BrochureWebView from '@/components/admin/brochures/BrochureWebView';
 import BrochurePDFExport from '@/components/admin/brochures/BrochurePDFExport';
+import BrochureSVGExport from '@/components/admin/brochures/BrochureSVGExport';
 import BrochureExportSettingsComponent from '@/components/admin/brochures/BrochureExportSettings';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,6 +41,7 @@ const BrochureEditor = () => {
 
   const [showPreview, setShowPreview] = useState(false);
   const [showPDFExport, setShowPDFExport] = useState(false);
+  const [showSVGExport, setShowSVGExport] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -214,10 +216,16 @@ const BrochureEditor = () => {
               Aperçu
             </Button>
             {!isNew && (
-              <Button variant="outline" onClick={() => setShowPDFExport(true)}>
-                <Download className="h-4 w-4 mr-2" />
-                Export PDF
-              </Button>
+              <>
+                <Button variant="outline" onClick={() => setShowSVGExport(true)}>
+                  <Image className="h-4 w-4 mr-2" />
+                  Export SVG
+                </Button>
+                <Button variant="outline" onClick={() => setShowPDFExport(true)}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export PDF
+                </Button>
+              </>
             )}
             <Button onClick={handleSave} disabled={createBrochure.isPending || updateBrochure.isPending}>
               <Save className="h-4 w-4 mr-2" />
@@ -714,6 +722,13 @@ const BrochureEditor = () => {
           onClose={() => setShowPDFExport(false)}
         />
       )}
+
+      {/* SVG Export Modal */}
+      <BrochureSVGExport
+        brochure={formData as Brochure}
+        isOpen={showSVGExport}
+        onClose={() => setShowSVGExport(false)}
+      />
     </AdminLayout>
   );
 };
