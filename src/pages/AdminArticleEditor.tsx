@@ -1241,6 +1241,7 @@ const AdminArticleEditor = () => {
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
+                        type="button"
                         variant="outline"
                         className={cn(
                           "w-full justify-start text-left font-normal",
@@ -1523,6 +1524,7 @@ const AdminArticleEditor = () => {
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
+                              type="button"
                               variant="outline"
                               className={cn("w-full justify-start text-left font-normal", !eventDate && "text-muted-foreground")}
                               disabled={isLoading}
@@ -1722,6 +1724,7 @@ const AdminArticleEditor = () => {
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
+                              type="button"
                               variant="outline"
                               className={cn(
                                 "w-full justify-start text-left font-normal",
@@ -2076,6 +2079,7 @@ const AdminArticleEditor = () => {
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
+                          type="button"
                           variant="outline"
                           className={cn(
                             "w-full justify-start text-left font-normal",
