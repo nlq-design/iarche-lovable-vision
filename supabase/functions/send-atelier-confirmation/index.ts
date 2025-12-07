@@ -1,5 +1,7 @@
 import { Resend } from 'https://esm.sh/resend@2.0.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { logEmail } from '../_shared/emailLogger.ts';
+import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,6 +21,18 @@ interface AtelierConfirmationRequest {
   type_evenement: string | null;
 }
 
+// Fonction d'échappement HTML pour prévenir les attaques XSS dans les emails
+const escapeHtml = (text: string): string => {
+  const map: { [key: string]: string } = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -27,6 +41,48 @@ Deno.serve(async (req) => {
   const subject = (atelierTitle: string) => `✅ Inscription confirmée : ${atelierTitle}`;
 
   try {
+    // Rate limiting: 5 requêtes par IP par heure
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0].trim() 
+      || req.headers.get('x-real-ip') 
+      || 'unknown';
+
+    const rateLimitResult = await checkRateLimit(
+      supabaseAdmin,
+      clientIP,
+      'atelier-confirmation',
+      { maxRequests: 5, windowMinutes: 60 }
+    );
+
+    const rateLimitHeaders = getRateLimitHeaders(
+      rateLimitResult.remaining,
+      5,
+      60
+    );
+
+    if (!rateLimitResult.allowed) {
+      console.warn('Rate limit exceeded for IP:', clientIP);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Too many requests. Please try again later.',
+          retryAfter: 60 * 60 
+        }),
+        { 
+          status: 429, 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Retry-After': String(60 * 60),
+            ...corsHeaders,
+            ...rateLimitHeaders
+          } 
+        }
+      );
+    }
+
     const { 
       name, 
       email, 
@@ -40,6 +96,13 @@ Deno.serve(async (req) => {
 
     console.log(`Sending atelier confirmation to ${email} for "${atelier_title}"`);
 
+    // Échapper les données utilisateur pour prévenir les attaques XSS
+    const safeName = escapeHtml(name);
+    const safeAtelierTitle = escapeHtml(atelier_title);
+    const safeEventLocation = event_location ? escapeHtml(event_location) : null;
+    const safeTypeEvenement = type_evenement ? escapeHtml(type_evenement) : null;
+    const safeHeureDebut = heure_debut ? escapeHtml(heure_debut) : null;
+
     // Format date for display
     const formattedDate = event_date 
       ? new Date(event_date).toLocaleDateString('fr-FR', { 
@@ -52,20 +115,20 @@ Deno.serve(async (req) => {
 
     // Build event details HTML
     let eventDetailsHtml = '';
-    if (event_date || event_location || heure_debut || type_evenement) {
+    if (event_date || safeEventLocation || safeHeureDebut || safeTypeEvenement) {
       eventDetailsHtml = `
         <div style="background-color: #f8f7f5; border-radius: 8px; padding: 20px; margin: 20px 0;">
           <h3 style="color: #1A2B4A; margin-top: 0;">Détails de l'événement</h3>
           <table style="width: 100%; border-collapse: collapse;">
-            ${event_date ? `<tr><td style="padding: 8px 0; color: #666;">📅 Date</td><td style="padding: 8px 0; color: #1A2B4A; font-weight: 500;">${formattedDate}${heure_debut ? ` à ${heure_debut}` : ''}</td></tr>` : ''}
-            ${event_location ? `<tr><td style="padding: 8px 0; color: #666;">📍 Lieu</td><td style="padding: 8px 0; color: #1A2B4A; font-weight: 500;">${event_location}</td></tr>` : ''}
-            ${type_evenement ? `<tr><td style="padding: 8px 0; color: #666;">🎯 Format</td><td style="padding: 8px 0; color: #1A2B4A; font-weight: 500;">${type_evenement}</td></tr>` : ''}
+            ${event_date ? `<tr><td style="padding: 8px 0; color: #666;">📅 Date</td><td style="padding: 8px 0; color: #1A2B4A; font-weight: 500;">${formattedDate}${safeHeureDebut ? ` à ${safeHeureDebut}` : ''}</td></tr>` : ''}
+            ${safeEventLocation ? `<tr><td style="padding: 8px 0; color: #666;">📍 Lieu</td><td style="padding: 8px 0; color: #1A2B4A; font-weight: 500;">${safeEventLocation}</td></tr>` : ''}
+            ${safeTypeEvenement ? `<tr><td style="padding: 8px 0; color: #666;">🎯 Format</td><td style="padding: 8px 0; color: #1A2B4A; font-weight: 500;">${safeTypeEvenement}</td></tr>` : ''}
           </table>
         </div>
       `;
     }
 
-    const emailSubject = subject(atelier_title);
+    const emailSubject = subject(safeAtelierTitle);
 
     const { data, error } = await resend.emails.send({
       from: 'IArche <contact@iarche.fr>',
@@ -84,12 +147,12 @@ Deno.serve(async (req) => {
             <h1 style="color: #1A2B4A; font-size: 24px; margin-bottom: 10px;">Inscription confirmée !</h1>
           </div>
           
-          <p>Bonjour <strong>${name}</strong>,</p>
+          <p>Bonjour <strong>${safeName}</strong>,</p>
           
           <p>Nous avons bien reçu votre inscription à l'événement :</p>
           
           <div style="background: linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%); color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h2 style="margin: 0; font-size: 20px;">${atelier_title}</h2>
+            <h2 style="margin: 0; font-size: 20px;">${safeAtelierTitle}</h2>
           </div>
           
           ${eventDetailsHtml}
@@ -132,7 +195,7 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify({ error: error.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -151,7 +214,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ success: true, email_id: data?.id }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error in send-atelier-confirmation:', error);
