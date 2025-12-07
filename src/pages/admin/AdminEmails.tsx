@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
@@ -9,11 +9,14 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Settings, History, CheckCircle, XCircle, Clock, Save, RefreshCw, FileCode, RotateCcw, Loader2 } from 'lucide-react';
+import { Mail, Settings, History, CheckCircle, XCircle, Clock, Save, RefreshCw, FileCode, RotateCcw, Loader2, Send, Megaphone, Eye, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { EmailTemplateEditor } from '@/components/admin/EmailTemplateEditor';
+
+import { LazyQuill } from '@/components/admin/LazyQuill';
 
 interface EmailConfiguration {
   id: string;
@@ -43,13 +46,15 @@ interface EmailLog {
   sent_at: string | null;
   created_at: string;
 }
+
 const SOURCE_LABELS: Record<string, string> = {
   'contact': 'Formulaire Contact',
   'newsletter': 'Newsletter',
   'livre-blanc': 'Livres Blancs',
   'atelier-webinaire': 'Ateliers & Webinaires',
   'solution-contact': 'Contact Solutions',
-  'form': 'Formulaires dynamiques'
+  'form': 'Formulaires dynamiques',
+  'brevo-campaign': 'Campagne Brevo'
 };
 
 // Sources qui supportent les templates personnalisés
@@ -61,6 +66,17 @@ const AdminEmails = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [resending, setResending] = useState<string | null>(null);
+  const [subscriberCount, setSubscriberCount] = useState(0);
+  
+  // Brevo campaign state
+  const [campaignSubject, setCampaignSubject] = useState('');
+  const [campaignContent, setCampaignContent] = useState('');
+  const [campaignSenderName, setCampaignSenderName] = useState('IArche');
+  const [campaignSenderEmail, setCampaignSenderEmail] = useState('newsletter@iarche.fr');
+  const [campaignReplyTo, setCampaignReplyTo] = useState('nlq@iarche.fr');
+  const [sendingCampaign, setSendingCampaign] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  
   const { toast } = useToast();
 
   useEffect(() => {
@@ -70,15 +86,55 @@ const AdminEmails = () => {
   const loadData = async () => {
     setLoading(true);
     
-    const [configRes, logsRes] = await Promise.all([
+    const [configRes, logsRes, subscribersRes] = await Promise.all([
       supabase.from('email_configurations').select('*').order('source_type'),
-      supabase.from('email_logs').select('*').order('created_at', { ascending: false }).limit(100)
+      supabase.from('email_logs').select('*').order('created_at', { ascending: false }).limit(100),
+      supabase.from('newsletter_subscribers').select('id', { count: 'exact', head: true })
     ]);
 
     if (configRes.data) setConfigurations(configRes.data);
     if (logsRes.data) setLogs(logsRes.data);
+    if (subscribersRes.count !== null) setSubscriberCount(subscribersRes.count);
     
     setLoading(false);
+  };
+
+  const sendBrevoCampaign = async () => {
+    if (!campaignSubject.trim() || !campaignContent.trim()) {
+      toast({ title: 'Erreur', description: 'Sujet et contenu requis', variant: 'destructive' });
+      return;
+    }
+
+    setSendingCampaign(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('send-brevo-campaign', {
+        body: {
+          subject: campaignSubject,
+          htmlContent: campaignContent,
+          senderName: campaignSenderName,
+          senderEmail: campaignSenderEmail,
+          replyTo: campaignReplyTo
+        }
+      });
+
+      if (error) throw error;
+
+      toast({ 
+        title: 'Campagne envoyée', 
+        description: `${data.sent} emails envoyés, ${data.failed} échecs` 
+      });
+      
+      // Reset form
+      setCampaignSubject('');
+      setCampaignContent('');
+      loadData(); // Refresh logs
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue';
+      toast({ title: 'Erreur', description: errorMessage, variant: 'destructive' });
+    }
+    
+    setSendingCampaign(false);
   };
 
   const updateConfiguration = async (id: string, updates: Partial<EmailConfiguration>) => {
@@ -283,8 +339,12 @@ const AdminEmails = () => {
           </Card>
         </div>
 
-        <Tabs defaultValue="configuration">
+        <Tabs defaultValue="brevo">
           <TabsList>
+            <TabsTrigger value="brevo" className="flex items-center gap-2">
+              <Megaphone className="w-4 h-4" />
+              Campagnes Brevo
+            </TabsTrigger>
             <TabsTrigger value="configuration" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               Configuration
@@ -298,6 +358,143 @@ const AdminEmails = () => {
               Historique
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="brevo" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Megaphone className="w-5 h-5 text-primary" />
+                      Nouvelle Campagne Brevo
+                    </CardTitle>
+                    <CardDescription>
+                      Composez et envoyez une campagne marketing à tous vos abonnés
+                    </CardDescription>
+                  </div>
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Users className="w-3 h-3" />
+                    {subscriberCount} abonnés
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Paramètres expéditeur */}
+                <div className="grid md:grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
+                  <div className="space-y-2">
+                    <Label>Nom expéditeur</Label>
+                    <Input 
+                      value={campaignSenderName}
+                      onChange={(e) => setCampaignSenderName(e.target.value)}
+                      placeholder="IArche"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email expéditeur</Label>
+                    <Input 
+                      value={campaignSenderEmail}
+                      onChange={(e) => setCampaignSenderEmail(e.target.value)}
+                      placeholder="newsletter@iarche.fr"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Réponse à</Label>
+                    <Input 
+                      value={campaignReplyTo}
+                      onChange={(e) => setCampaignReplyTo(e.target.value)}
+                      placeholder="nlq@iarche.fr"
+                    />
+                  </div>
+                </div>
+
+                {/* Sujet */}
+                <div className="space-y-2">
+                  <Label className="text-base font-medium">Sujet de la campagne *</Label>
+                  <Input 
+                    value={campaignSubject}
+                    onChange={(e) => setCampaignSubject(e.target.value)}
+                    placeholder="Découvrez notre nouvelle offre IA..."
+                    className="text-lg"
+                  />
+                </div>
+
+                {/* Contenu HTML */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-medium">Contenu de l'email *</Label>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowPreview(!showPreview)}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      {showPreview ? 'Éditeur' : 'Aperçu'}
+                    </Button>
+                  </div>
+                  
+                  {showPreview ? (
+                    <div className="border rounded-lg p-6 bg-white min-h-[400px]">
+                      <div 
+                        className="prose max-w-none"
+                        dangerouslySetInnerHTML={{ __html: campaignContent }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="border rounded-lg overflow-hidden">
+                      <Suspense fallback={<div className="h-[400px] bg-muted animate-pulse" />}>
+                        <LazyQuill
+                          value={campaignContent}
+                          onChange={setCampaignContent}
+                          placeholder="Composez votre email marketing..."
+                          className="bg-white"
+                          modules={{
+                            toolbar: [
+                              [{ 'header': [1, 2, 3, false] }],
+                              ['bold', 'italic', 'underline', 'strike'],
+                              [{ 'color': [] }, { 'background': [] }],
+                              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                              [{ 'align': [] }],
+                              ['link', 'image'],
+                              ['clean']
+                            ]
+                          }}
+                        />
+                      </Suspense>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <p className="text-sm text-muted-foreground">
+                    La campagne sera envoyée à {subscriberCount} abonnés via Brevo
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setCampaignSubject('');
+                        setCampaignContent('');
+                      }}
+                    >
+                      Réinitialiser
+                    </Button>
+                    <Button
+                      onClick={sendBrevoCampaign}
+                      disabled={sendingCampaign || !campaignSubject.trim() || !campaignContent.trim()}
+                    >
+                      {sendingCampaign ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4 mr-2" />
+                      )}
+                      Envoyer la campagne
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="configuration" className="space-y-4 mt-4">
             {configurations.map(config => (
