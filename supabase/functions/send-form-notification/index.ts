@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { Resend } from 'https://esm.sh/resend@2.0.0';
 import { logEmail } from '../_shared/emailLogger.ts';
+import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +9,17 @@ const corsHeaders = {
 };
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+
+// Fonction d'échappement HTML pour prévenir les injections XSS
+function escapeHtml(text: string): string {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 interface FormField {
   id: string;
@@ -33,6 +45,32 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Rate limiting - 10 requêtes max par IP par heure
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const { allowed, remaining } = await checkRateLimit(supabase, ipAddress, 'form-notification', {
+      maxRequests: 10,
+      windowMinutes: 60
+    });
+
+    if (!allowed) {
+      console.log('[send-form-notification] Rate limit exceeded for IP:', ipAddress);
+      return new Response(
+        JSON.stringify({ error: 'Trop de requêtes. Réessayez plus tard.' }),
+        { 
+          status: 429, 
+          headers: { 
+            'Content-Type': 'application/json', 
+            ...corsHeaders, 
+            ...getRateLimitHeaders(remaining, 10, 60) 
+          } 
+        }
+      );
+    }
+
     const {
       form_id,
       form_title,
@@ -45,7 +83,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
       custom_message,
     }: FormNotificationRequest = await req.json();
 
-    console.log('[send-form-notification] Processing notification for form:', form_title);
+    // Échapper le titre du formulaire
+    const safeFormTitle = escapeHtml(form_title);
+
+    console.log('[send-form-notification] Processing notification for form:', safeFormTitle);
     console.log('[send-form-notification] Form fields received:', JSON.stringify(form_fields));
     console.log('[send-form-notification] Respondent email received:', respondent_email);
 
@@ -86,15 +127,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const responseHtml = Object.entries(response_data)
       .filter(([_, value]) => value !== undefined && value !== null && value !== '')
       .map(([key, value]) => {
-        const fieldLabel = fieldLabelMap[key] || key;
+        // Échapper le label du champ
+        const fieldLabel = escapeHtml(fieldLabelMap[key] || key);
         
         let displayValue = '';
         if (typeof value === 'boolean') {
           displayValue = value ? 'Oui' : 'Non';
         } else if (Array.isArray(value)) {
-          displayValue = value.join(', ');
+          displayValue = escapeHtml(value.join(', '));
         } else {
-          displayValue = String(value);
+          displayValue = escapeHtml(String(value));
         }
         
         if (displayValue.includes('_')) {
@@ -117,14 +159,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
         prospectName = prospectName ? `${prospectName} ${value}` : value;
       }
     }
-    prospectName = prospectName || 'vous';
+    // Échapper le nom du prospect
+    const safeProspectName = escapeHtml(prospectName) || 'vous';
 
     // Email admin (DÉTAILLÉ avec toutes les infos)
     try {
       const adminEmailResponse = await resend.emails.send({
         from: 'IArche Formulaires <notifications@iarche.fr>',
         to: [adminEmailAddress],
-        subject: `📝 Nouvelle réponse: ${form_title}`,
+        subject: `📝 Nouvelle réponse: ${safeFormTitle}`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -136,7 +179,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
             <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
               <div style="background: linear-gradient(135deg, hsl(218, 47%, 20%) 0%, hsl(12, 60%, 44%) 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
                 <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">📝 Nouvelle soumission</h1>
-                <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">${form_title}</p>
+                <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">${safeFormTitle}</p>
               </div>
               
               <div style="background: #ffffff; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
@@ -157,13 +200,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
                 ${finalRespondentEmail ? `
                 <div style="background: #ECFDF5; border-left: 4px solid #10B981; padding: 12px 16px; margin-bottom: 25px; border-radius: 0 8px 8px 0;">
                   <p style="margin: 0; color: #065F46; font-size: 14px;">
-                    ✅ Email de confirmation envoyé à <strong>${finalRespondentEmail}</strong>
+                    ✅ Email de confirmation envoyé à <strong>${escapeHtml(finalRespondentEmail)}</strong>
                   </p>
                 </div>
                 ` : ''}
                 
                 <div style="text-align: center; margin-top: 30px;">
-                  <a href="https://iarche.fr/admin/formulaires/${form_id}/reponses" 
+                  <a href="https://iarche.fr/admin/formulaires/${escapeHtml(form_id)}/reponses" 
                      style="display: inline-block; background: hsl(218, 47%, 20%); color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 500; font-size: 14px;">
                     Voir toutes les réponses →
                   </a>
@@ -187,7 +230,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         source_id: form_id,
         recipient_email: adminEmailAddress,
         email_type: 'admin_notification',
-        subject: `Nouvelle réponse: ${form_title}`,
+        subject: `Nouvelle réponse: ${safeFormTitle}`,
         status: 'sent',
       });
     } catch (emailError: any) {
@@ -197,7 +240,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         source_id: form_id,
         recipient_email: adminEmailAddress,
         email_type: 'admin_notification',
-        subject: `Nouvelle réponse: ${form_title}`,
+        subject: `Nouvelle réponse: ${safeFormTitle}`,
         status: 'failed',
         error_message: emailError.message,
       });
@@ -206,8 +249,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Email prospect (SUCCINCT - juste confirmation)
     if (shouldSendToRespondent && finalRespondentEmail) {
       try {
-        const respondentSubject = custom_subject || `Merci ${prospectName} ! Votre demande a bien été reçue`;
-        const respondentMessage = custom_message || `Bonjour ${prospectName},\n\nNous avons bien reçu votre demande et nous vous en remercions.`;
+        const respondentSubject = custom_subject || `Merci ${safeProspectName} ! Votre demande a bien été reçue`;
+        const respondentMessage = custom_message || `Bonjour ${safeProspectName},\n\nNous avons bien reçu votre demande et nous vous en remercions.`;
 
         console.log('[send-form-notification] Sending confirmation to:', finalRespondentEmail);
 
@@ -225,12 +268,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
             <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #FAF9F7;">
               <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
                 <div style="background: linear-gradient(135deg, hsl(218, 47%, 20%) 0%, hsl(12, 60%, 44%) 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-                  <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Merci ${prospectName} !</h1>
+                  <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Merci ${safeProspectName} !</h1>
                 </div>
                 
                 <div style="background: #ffffff; padding: 30px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
                   <p style="color: #374151; font-size: 16px; line-height: 1.7; margin-bottom: 20px;">
-                    Nous avons bien reçu votre demande concernant <strong style="color: hsl(218, 47%, 20%);">${form_title}</strong>.
+                    Nous avons bien reçu votre demande concernant <strong style="color: hsl(218, 47%, 20%);">${safeFormTitle}</strong>.
                   </p>
                   
                   <p style="color: #374151; font-size: 16px; line-height: 1.7; margin-bottom: 25px;">
@@ -285,7 +328,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           source_id: form_id,
           recipient_email: finalRespondentEmail!,
           email_type: 'user_confirmation',
-          subject: custom_subject || `Confirmation - ${form_title}`,
+          subject: custom_subject || `Confirmation - ${safeFormTitle}`,
           status: 'failed',
           error_message: emailError.message,
         });
