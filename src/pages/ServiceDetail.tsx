@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -160,7 +161,7 @@ const ServiceDetail = () => {
                   <span 
                     className="prose prose-lg max-w-none
                       prose-strong:font-semibold prose-strong:text-[hsl(var(--primary))] prose-strong:px-1 prose-strong:py-0.5 prose-strong:rounded prose-strong:bg-gradient-to-r prose-strong:from-primary/8 prose-strong:via-primary/12 prose-strong:to-primary/8"
-                    dangerouslySetInnerHTML={{ __html: livrable }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(livrable) }}
                   />
                 </li>
               ))}
