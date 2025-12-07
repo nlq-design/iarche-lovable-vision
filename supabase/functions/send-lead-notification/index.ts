@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { Resend } from 'https://esm.sh/resend@2.0.0';
 import { logEmail } from '../_shared/emailLogger.ts';
+import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +9,17 @@ const corsHeaders = {
 };
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+
+// HTML escape function to prevent XSS
+function escapeHtml(text: string | null | undefined): string {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 interface LeadNotificationRequest {
   lead_id: string;
@@ -32,9 +44,44 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Rate limiting
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
+    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const { allowed, remaining } = await checkRateLimit(supabaseAdmin, clientIP, 'lead-notification', {
+      maxRequests: 10,
+      windowMinutes: 60
+    });
+
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Trop de requêtes. Réessayez plus tard.' }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            ...getRateLimitHeaders(remaining, 10, 60)
+          } 
+        }
+      );
+    }
+
     const { lead_id, name, email, company, phone, source, source_context, message, event_details }: LeadNotificationRequest = await req.json();
 
     console.log('Sending lead notification for:', lead_id);
+
+    // Escape all user-provided data
+    const safeName = escapeHtml(name);
+    const safeEmail = escapeHtml(email);
+    const safeCompany = escapeHtml(company);
+    const safePhone = escapeHtml(phone);
+    const safeSourceContext = escapeHtml(source_context);
+    const safeMessage = escapeHtml(message);
+    const safeLeadId = escapeHtml(lead_id);
 
     // Déterminer le type de lead et le contexte
     const sourceLabel = source === 'livre-blanc' ? 'Téléchargement Livre Blanc' :
@@ -42,25 +89,30 @@ Deno.serve(async (req) => {
                         source === 'contact' ? 'Formulaire de Contact' :
                         source === 'solution_detail' ? 'Contact Solution' : source;
 
-    const contextInfo = source_context ? `<p><strong>Contexte:</strong> ${source_context}</p>` : '';
+    const contextInfo = safeSourceContext ? `<p><strong>Contexte:</strong> ${safeSourceContext}</p>` : '';
     
     // Si un message est fourni, l'ajouter à l'email
-    const messageInfo = message ? `
+    const messageInfo = safeMessage ? `
       <h3 style="color: hsl(218, 47%, 20%); font-size: 18px; margin-top: 25px;">💬 Message</h3>
       <div style="background: #FAF9F7; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid hsl(12, 60%, 53%);">
-        <p style="margin: 0; white-space: pre-wrap; color: #374151;">${message}</p>
+        <p style="margin: 0; white-space: pre-wrap; color: #374151;">${safeMessage}</p>
       </div>
     ` : '';
 
-    // Si c'est un atelier, ajouter les détails de l'événement
+    // Si c'est un atelier, ajouter les détails de l'événement (escape event_details)
     let eventDetailsHtml = '';
     if (source === 'atelier-webinaire' && event_details) {
+      const safeLocation = escapeHtml(event_details.location);
+      const safeHeureDebut = escapeHtml(event_details.heure_debut);
+      const safeTypeEvenement = escapeHtml(event_details.type_evenement);
+      const formattedDate = event_details.date ? new Date(event_details.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '';
+      
       eventDetailsHtml = `
         <h3 style="color: hsl(218, 47%, 20%); font-size: 18px; margin-top: 25px;">📅 Détails de l'événement</h3>
         <div style="background: #FAF9F7; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid hsl(12, 60%, 53%);">
-          ${event_details.date ? `<p style="margin: 5px 0;"><strong>Date:</strong> ${new Date(event_details.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}${event_details.heure_debut ? ` à ${event_details.heure_debut}` : ''}</p>` : ''}
-          ${event_details.location ? `<p style="margin: 5px 0;"><strong>Lieu:</strong> ${event_details.location}</p>` : ''}
-          ${event_details.type_evenement ? `<p style="margin: 5px 0;"><strong>Format:</strong> ${event_details.type_evenement}</p>` : ''}
+          ${formattedDate ? `<p style="margin: 5px 0;"><strong>Date:</strong> ${formattedDate}${safeHeureDebut ? ` à ${safeHeureDebut}` : ''}</p>` : ''}
+          ${safeLocation ? `<p style="margin: 5px 0;"><strong>Lieu:</strong> ${safeLocation}</p>` : ''}
+          ${safeTypeEvenement ? `<p style="margin: 5px 0;"><strong>Format:</strong> ${safeTypeEvenement}</p>` : ''}
         </div>
       `;
     }
@@ -75,10 +127,10 @@ Deno.serve(async (req) => {
           <h2 style="color: hsl(218, 47%, 20%); margin-top: 0; font-size: 20px;">📋 Informations du lead</h2>
           
           <div style="background: #FAF9F7; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid hsl(12, 60%, 53%);">
-            <p style="margin: 5px 0;"><strong>Nom:</strong> ${name}</p>
-            <p style="margin: 5px 0;"><strong>Email:</strong> <a href="mailto:${email}" style="color: hsl(12, 60%, 53%);">${email}</a></p>
-            ${company ? `<p style="margin: 5px 0;"><strong>Société:</strong> ${company}</p>` : ''}
-            ${phone ? `<p style="margin: 5px 0;"><strong>Téléphone:</strong> ${phone}</p>` : ''}
+            <p style="margin: 5px 0;"><strong>Nom:</strong> ${safeName}</p>
+            <p style="margin: 5px 0;"><strong>Email:</strong> <a href="mailto:${safeEmail}" style="color: hsl(12, 60%, 53%);">${safeEmail}</a></p>
+            ${safeCompany ? `<p style="margin: 5px 0;"><strong>Société:</strong> ${safeCompany}</p>` : ''}
+            ${safePhone ? `<p style="margin: 5px 0;"><strong>Téléphone:</strong> ${safePhone}</p>` : ''}
           </div>
 
           <h3 style="color: hsl(218, 47%, 20%); font-size: 18px; margin-top: 25px;">📍 Source</h3>
@@ -91,7 +143,7 @@ Deno.serve(async (req) => {
 
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #E5E7EB; text-align: center;">
             <p style="color: #6B7280; font-size: 14px; margin: 0;">
-              Lead ID: <code style="background: #F3F4F6; padding: 2px 6px; border-radius: 3px;">${lead_id}</code>
+              Lead ID: <code style="background: #F3F4F6; padding: 2px 6px; border-radius: 3px;">${safeLeadId}</code>
             </p>
             <p style="color: #6B7280; font-size: 12px; margin-top: 10px;">
               IArche · Agence IA · Bayonne, France
@@ -101,7 +153,7 @@ Deno.serve(async (req) => {
       </div>
     `;
 
-    const emailSubject = `🎯 Nouveau Lead: ${name} (${sourceLabel})`;
+    const emailSubject = `🎯 Nouveau Lead: ${safeName} (${sourceLabel})`;
     const adminEmail = 'nlq@iarche.fr';
 
     const { data, error } = await resend.emails.send({
