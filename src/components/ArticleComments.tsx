@@ -35,15 +35,15 @@ export const ArticleComments = ({ articleId }: ArticleCommentsProps) => {
 
   const loadComments = async () => {
     setLoading(true);
+    // Use the comments_public view to avoid exposing author_email
     const { data, error } = await supabase
-      .from('comments')
+      .from('comments_public' as 'comments')
       .select('id, author_name, content, created_at')
       .eq('article_id', articleId)
-      .eq('approved', true)
       .order('created_at', { ascending: false });
 
     if (!error && data) {
-      setComments(data);
+      setComments(data as Comment[]);
     }
     setLoading(false);
   };
