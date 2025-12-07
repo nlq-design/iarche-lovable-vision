@@ -25,7 +25,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.send-security-alert]
-verify_jwt = false
+verify_jwt = true
 
 [functions.check-login-attempt]
 verify_jwt = false
