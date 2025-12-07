@@ -1,4 +1,5 @@
 import { useState, useEffect, Suspense } from 'react';
+import DOMPurify from 'dompurify';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -436,7 +437,7 @@ const AdminEmails = () => {
                     <div className="border rounded-lg p-6 bg-white min-h-[400px]">
                       <div 
                         className="prose max-w-none"
-                        dangerouslySetInnerHTML={{ __html: campaignContent }}
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(campaignContent) }}
                       />
                     </div>
                   ) : (
