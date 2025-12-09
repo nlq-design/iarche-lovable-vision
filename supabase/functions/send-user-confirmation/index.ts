@@ -1,5 +1,7 @@
 import { Resend } from 'https://esm.sh/resend@2.0.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { logEmail } from '../_shared/emailLogger.ts';
+import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,6 +9,34 @@ const corsHeaders = {
 };
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+
+// Fonction d'échappement HTML pour prévenir les injections XSS
+const escapeHtml = (text: string | null | undefined): string => {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
+// Validation des URLs pour s'assurer qu'elles pointent vers des domaines de confiance
+const validateFileUrl = (url: string | null | undefined): string => {
+  if (!url) return '';
+  try {
+    const parsed = new URL(url);
+    const trustedDomains = ['iarche.fr', 'mgjyhlyrwnnioctkbdkk.supabase.co'];
+    if (trustedDomains.some(domain => parsed.hostname.endsWith(domain))) {
+      return url;
+    }
+    console.warn(`Untrusted file URL domain: ${parsed.hostname}`);
+    return '';
+  } catch {
+    console.warn(`Invalid file URL: ${url}`);
+    return '';
+  }
+};
 
 interface UserConfirmationRequest {
   email: string;
@@ -20,6 +50,12 @@ interface UserConfirmationRequest {
 }
 
 const getEmailContent = (data: UserConfirmationRequest) => {
+  // Échapper toutes les données utilisateur
+  const safeName = escapeHtml(data.name);
+  const safeSourceContext = escapeHtml(data.source_context);
+  const safeLivreBlanctitle = escapeHtml(data.livre_blanc_title);
+  const safeFileUrl = validateFileUrl(data.file_url);
+
   switch (data.source_type) {
     case 'contact':
       return {
@@ -32,8 +68,8 @@ const getEmailContent = (data: UserConfirmationRequest) => {
             <div style="text-align: center; margin-bottom: 30px;">
               <h1 style="color: #1A2B4A; font-size: 24px; margin-bottom: 10px;">Demande reçue !</h1>
             </div>
-            <p>Bonjour <strong>${data.name}</strong>,</p>
-            <p>Nous avons bien reçu votre message${data.source_context ? ` concernant "${data.source_context}"` : ''}.</p>
+            <p>Bonjour <strong>${safeName}</strong>,</p>
+            <p>Nous avons bien reçu votre message${safeSourceContext ? ` concernant "${safeSourceContext}"` : ''}.</p>
             <p>Notre équipe vous répondra dans les plus brefs délais, généralement sous 24h.</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             <p style="color: #666; font-size: 14px;">À bientôt,<br><strong style="color: #1A2B4A;">L'équipe IArche</strong></p>
@@ -48,7 +84,7 @@ const getEmailContent = (data: UserConfirmationRequest) => {
 
     case 'solution-contact':
       return {
-        subject: `✅ Demande pour ${data.source_context || 'nos solutions'} · IArche`,
+        subject: `✅ Demande pour ${safeSourceContext || 'nos solutions'} · IArche`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -57,8 +93,8 @@ const getEmailContent = (data: UserConfirmationRequest) => {
             <div style="text-align: center; margin-bottom: 30px;">
               <h1 style="color: #1A2B4A; font-size: 24px; margin-bottom: 10px;">Demande reçue !</h1>
             </div>
-            <p>Bonjour <strong>${data.name}</strong>,</p>
-            <p>Nous avons bien reçu votre demande concernant <strong>${data.source_context || 'nos solutions'}</strong>.</p>
+            <p>Bonjour <strong>${safeName}</strong>,</p>
+            <p>Nous avons bien reçu votre demande concernant <strong>${safeSourceContext || 'nos solutions'}</strong>.</p>
             <p>Un membre de notre équipe vous contactera rapidement pour organiser une présentation personnalisée.</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             <p style="color: #666; font-size: 14px;">À bientôt,<br><strong style="color: #1A2B4A;">L'équipe IArche</strong></p>
@@ -73,7 +109,7 @@ const getEmailContent = (data: UserConfirmationRequest) => {
 
     case 'livre-blanc':
       return {
-        subject: `📚 Votre livre blanc : ${data.livre_blanc_title || 'Document'}`,
+        subject: `📚 Votre livre blanc : ${safeLivreBlanctitle || 'Document'}`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -82,11 +118,11 @@ const getEmailContent = (data: UserConfirmationRequest) => {
             <div style="text-align: center; margin-bottom: 30px;">
               <h1 style="color: #1A2B4A; font-size: 24px; margin-bottom: 10px;">Votre livre blanc est prêt !</h1>
             </div>
-            <p>Bonjour <strong>${data.name}</strong>,</p>
+            <p>Bonjour <strong>${safeName}</strong>,</p>
             <p>Merci pour votre intérêt ! Voici votre livre blanc :</p>
             <div style="background: linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%); color: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-              <h2 style="margin: 0 0 15px 0; font-size: 18px;">${data.livre_blanc_title || 'Document'}</h2>
-              ${data.file_url ? `<a href="${data.file_url}" style="display: inline-block; background: white; color: #1A2B4A; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">📥 Télécharger le PDF</a>` : ''}
+              <h2 style="margin: 0 0 15px 0; font-size: 18px;">${safeLivreBlanctitle || 'Document'}</h2>
+              ${safeFileUrl ? `<a href="${safeFileUrl}" style="display: inline-block; background: white; color: #1A2B4A; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">📥 Télécharger le PDF</a>` : ''}
             </div>
             <p>Bonne lecture ! N'hésitez pas à nous contacter si vous avez des questions.</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
@@ -111,7 +147,7 @@ const getEmailContent = (data: UserConfirmationRequest) => {
             <div style="text-align: center; margin-bottom: 30px;">
               <h1 style="color: #1A2B4A; font-size: 24px; margin-bottom: 10px;">Bienvenue !</h1>
             </div>
-            <p>Bonjour <strong>${data.name}</strong>,</p>
+            <p>Bonjour <strong>${safeName}</strong>,</p>
             <p>Merci de vous être inscrit à notre newsletter !</p>
             <p>Vous recevrez régulièrement :</p>
             <ul style="color: #666;">
@@ -132,7 +168,7 @@ const getEmailContent = (data: UserConfirmationRequest) => {
 
     case 'booking':
       return {
-        subject: `✅ Rendez-vous confirmé : ${data.source_context || 'IArche'}`,
+        subject: `✅ Rendez-vous confirmé : ${safeSourceContext || 'IArche'}`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -141,8 +177,8 @@ const getEmailContent = (data: UserConfirmationRequest) => {
             <div style="text-align: center; margin-bottom: 30px;">
               <h1 style="color: #1A2B4A; font-size: 24px; margin-bottom: 10px;">Rendez-vous confirmé !</h1>
             </div>
-            <p>Bonjour <strong>${data.name}</strong>,</p>
-            <p>Votre rendez-vous <strong>${data.source_context || ''}</strong> est bien confirmé.</p>
+            <p>Bonjour <strong>${safeName}</strong>,</p>
+            <p>Votre rendez-vous <strong>${safeSourceContext || ''}</strong> est bien confirmé.</p>
             <p>Vous recevrez une invitation Google Calendar avec le lien de visioconférence.</p>
             <p>À très bientôt !</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
@@ -164,7 +200,7 @@ const getEmailContent = (data: UserConfirmationRequest) => {
           <html>
           <head><meta charset="utf-8"></head>
           <body style="font-family: sans-serif; padding: 20px;">
-            <p>Bonjour ${data.name},</p>
+            <p>Bonjour ${safeName},</p>
             <p>Nous avons bien reçu votre demande.</p>
             <p>L'équipe IArche</p>
           </body>
@@ -180,6 +216,33 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Rate limiting
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+    
+    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const { allowed, remaining } = await checkRateLimit(supabase, clientIP, 'user-confirmation', {
+      maxRequests: 10,
+      windowMinutes: 60
+    });
+
+    if (!allowed) {
+      console.warn(`Rate limit exceeded for IP: ${clientIP}`);
+      return new Response(
+        JSON.stringify({ error: 'Trop de requêtes. Veuillez réessayer plus tard.' }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            ...getRateLimitHeaders(remaining, 10, 60),
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+    }
+
     const data: UserConfirmationRequest = await req.json();
     
     console.log(`Sending user confirmation to ${data.email} for source: ${data.source_type}`);
@@ -227,7 +290,13 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ success: true, email_id: emailData?.id }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          ...getRateLimitHeaders(remaining, 10, 60),
+          'Content-Type': 'application/json' 
+        } 
+      }
     );
   } catch (error) {
     console.error('Error in send-user-confirmation:', error);
