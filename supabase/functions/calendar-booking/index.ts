@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { checkRateLimit, getRateLimitHeaders } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -595,7 +596,39 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Rate limiting - 10 requests per hour per IP for create-booking, 30 for get-slots
+    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                     req.headers.get('cf-connecting-ip') || 
+                     'unknown';
+    
     const { action, bookingTypeSlug, date, bookingData, bookingId }: BookingRequest = await req.json();
+
+    // Apply stricter rate limiting for create-booking action
+    const rateLimitConfig = action === 'create-booking' 
+      ? { maxRequests: 5, windowMinutes: 60 }  // 5 bookings per hour
+      : { maxRequests: 30, windowMinutes: 60 }; // 30 slot checks per hour
+    
+    const { allowed, remaining } = await checkRateLimit(
+      supabase, 
+      clientIP, 
+      `calendar-booking-${action}`, 
+      rateLimitConfig
+    );
+    
+    if (!allowed) {
+      console.warn(`Rate limit exceeded for IP ${clientIP} on ${action}`);
+      return new Response(
+        JSON.stringify({ error: 'Trop de requêtes. Veuillez réessayer plus tard.' }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            ...getRateLimitHeaders(remaining, rateLimitConfig.maxRequests, rateLimitConfig.windowMinutes)
+          } 
+        }
+      );
+    }
 
     console.log(`Calendar booking action: ${action}`, { bookingTypeSlug, date });
 
