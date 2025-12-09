@@ -1,5 +1,5 @@
 import { Brochure } from '@/types/brochure';
-import { CheckCircle, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CheckCircle, Quote, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 import { COLORS, GRADIENTS, BAR_SIZES } from '@/components/admin/medias/shared/tokens';
 
@@ -29,6 +29,9 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
   }
   if (sections.details.enabled && sections.details.content) {
     slides.push({ type: 'details', data: sections.details });
+  }
+  if (sections.cta?.enabled && sections.cta?.button_url) {
+    slides.push({ type: 'cta', data: sections.cta });
   }
   if (sections.pricing.enabled && sections.pricing.plans.length > 0) {
     slides.push({ type: 'pricing', data: sections.pricing });
@@ -301,6 +304,57 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
                   <p key={i} style={{ color: COLORS.foreground }}>{paragraph}</p>
                 ))}
               </div>
+            </div>
+          </section>
+        );
+
+      case 'cta':
+        return (
+          <section 
+            key={index} 
+            className={`relative px-6 py-16 ${isHorizontal ? 'min-h-screen flex items-center' : ''} ${slideClass}`}
+            style={{ backgroundColor: COLORS.secondary }}
+          >
+            <div className="max-w-3xl mx-auto text-center relative z-10">
+              {slide.data.title && (
+                <h2 
+                  className="text-3xl font-bold mb-4"
+                  style={{ color: primaryColor }}
+                >
+                  {slide.data.title}
+                </h2>
+              )}
+              <div className="flex justify-center mb-8">
+                <div 
+                  className="rounded-full"
+                  style={{ 
+                    width: BAR_SIZES.md.width, 
+                    height: BAR_SIZES.md.height,
+                    background: GRADIENTS.bar.css,
+                  }}
+                />
+              </div>
+              {slide.data.description && (
+                <p 
+                  className="text-lg mb-8"
+                  style={{ color: COLORS.muted }}
+                >
+                  {slide.data.description}
+                </p>
+              )}
+              <a 
+                href={slide.data.button_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-4 text-lg font-semibold rounded-lg transition-all hover:scale-105"
+                style={{ 
+                  backgroundColor: accentColor,
+                  color: COLORS.blancCasse,
+                }}
+              >
+                {slide.data.button_text || 'En savoir plus'}
+                <ExternalLink className="h-5 w-5" />
+              </a>
             </div>
           </section>
         );

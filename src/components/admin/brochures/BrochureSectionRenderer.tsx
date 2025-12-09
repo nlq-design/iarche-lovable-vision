@@ -1,5 +1,5 @@
 import { Brochure } from '@/types/brochure';
-import { CheckCircle, Quote } from 'lucide-react';
+import { CheckCircle, Quote, ExternalLink } from 'lucide-react';
 import { COLORS, GRADIENTS, BAR_SIZES } from '@/components/admin/medias/shared/tokens';
 
 interface SlideData {
@@ -195,6 +195,59 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
                 </p>
               ))}
             </div>
+          </div>
+        </section>
+      );
+
+    case 'cta':
+      return (
+        <section 
+          className="relative min-h-[800px] px-12 py-20 flex items-center"
+          style={{ backgroundColor: COLORS.secondary }}
+        >
+          <div className="max-w-4xl mx-auto text-center relative z-10">
+            {slide.data.title && (
+              <h2 
+                className="text-4xl font-bold mb-4"
+                style={{ color: primaryColor }}
+              >
+                {slide.data.title}
+              </h2>
+            )}
+            <div className="flex justify-center mb-10">
+              <div 
+                className="rounded-full"
+                style={{ 
+                  width: BAR_SIZES.md.width, 
+                  height: BAR_SIZES.md.height,
+                  background: GRADIENTS.bar.css,
+                }}
+              />
+            </div>
+            {slide.data.description && (
+              <p 
+                className="text-xl mb-10"
+                style={{ color: COLORS.muted }}
+              >
+                {slide.data.description}
+              </p>
+            )}
+            <div 
+              className="inline-flex items-center gap-3 px-10 py-5 text-xl font-semibold rounded-xl"
+              style={{ 
+                backgroundColor: accentColor,
+                color: COLORS.blancCasse,
+              }}
+            >
+              {slide.data.button_text || 'En savoir plus'}
+              <ExternalLink className="h-6 w-6" />
+            </div>
+            <p 
+              className="mt-8 text-base"
+              style={{ color: COLORS.subtle }}
+            >
+              {slide.data.button_url}
+            </p>
           </div>
         </section>
       );

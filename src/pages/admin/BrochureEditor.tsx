@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Save, Eye, Download, Plus, Trash2, GripVertical, Upload, X, Loader2, Image } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Download, Plus, Trash2, GripVertical, Upload, X, Loader2, Image, Link } from 'lucide-react';
 import { useBrochures, useBrochure } from '@/hooks/useBrochures';
 import { Brochure, BrochureSections, BrochureKeyPoint, BrochurePricingPlan, BrochureExportSettings as ExportSettingsType, defaultSections, defaultExportSettings } from '@/types/brochure';
 import BrochureWebView from '@/components/admin/brochures/BrochureWebView';
@@ -440,7 +440,64 @@ const BrochureEditor = () => {
                   )}
                 </Card>
 
-                {/* Témoignage */}
+                {/* CTA Link */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <Link className="h-4 w-4" />
+                        Appel à l'action (CTA)
+                      </CardTitle>
+                      <Switch
+                        checked={formData.sections?.cta?.enabled}
+                        onCheckedChange={(checked) => updateSection('cta', { enabled: checked })}
+                      />
+                    </div>
+                  </CardHeader>
+                  {formData.sections?.cta?.enabled && (
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label>Titre</Label>
+                        <Input
+                          value={formData.sections?.cta?.title || ''}
+                          onChange={(e) => updateSection('cta', { title: e.target.value })}
+                          placeholder="Prêt à démarrer ?"
+                        />
+                      </div>
+                      <div>
+                        <Label>Description (optionnelle)</Label>
+                        <Textarea
+                          value={formData.sections?.cta?.description || ''}
+                          onChange={(e) => updateSection('cta', { description: e.target.value })}
+                          placeholder="Réservez une démonstration gratuite..."
+                          rows={2}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Texte du bouton</Label>
+                          <Input
+                            value={formData.sections?.cta?.button_text || ''}
+                            onChange={(e) => updateSection('cta', { button_text: e.target.value })}
+                            placeholder="Prendre rendez-vous"
+                          />
+                        </div>
+                        <div>
+                          <Label>URL du lien *</Label>
+                          <Input
+                            value={formData.sections?.cta?.button_url || ''}
+                            onChange={(e) => updateSection('cta', { button_url: e.target.value })}
+                            placeholder="https://iarche.fr/rendez-vous/..."
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Lien vers une page de prise de rendez-vous, un formulaire, ou toute autre page.
+                      </p>
+                    </CardContent>
+                  )}
+                </Card>
+
                 <Card>
                   <CardHeader>
                     <div className="flex items-center justify-between">

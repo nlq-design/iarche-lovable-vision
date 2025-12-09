@@ -8,7 +8,13 @@ const parseSections = (sections: Json | null): BrochureSections => {
   if (!sections || typeof sections !== 'object' || Array.isArray(sections)) {
     return defaultSections;
   }
-  return sections as unknown as BrochureSections;
+  const parsed = sections as unknown as Partial<BrochureSections>;
+  // Ensure CTA section exists for backwards compatibility
+  return {
+    ...defaultSections,
+    ...parsed,
+    cta: parsed.cta || defaultSections.cta,
+  };
 };
 
 const parseCustomColors = (colors: Json | null): BrochureCustomColors => {

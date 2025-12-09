@@ -14,6 +14,14 @@ export interface BrochurePricingPlan {
   highlighted?: boolean;
 }
 
+export interface BrochureCTA {
+  enabled: boolean;
+  title: string;
+  description: string;
+  button_text: string;
+  button_url: string;
+}
+
 export interface BrochureSections {
   introduction: {
     enabled: boolean;
@@ -28,6 +36,7 @@ export interface BrochureSections {
     content: string;
     features: string[];
   };
+  cta: BrochureCTA;
   pricing: {
     enabled: boolean;
     title: string;
@@ -80,6 +89,7 @@ export const defaultSections: BrochureSections = {
   introduction: { enabled: true, content: '' },
   keyPoints: { enabled: true, points: [] },
   details: { enabled: false, content: '', features: [] },
+  cta: { enabled: false, title: '', description: '', button_text: 'Prendre rendez-vous', button_url: '' },
   pricing: { enabled: false, title: 'Nos formules', plans: [] },
   testimonial: { enabled: false, quote: '', author: '', company: '' },
   contact: { enabled: true, cta_text: 'Nous contacter', show_coordinates: true },
