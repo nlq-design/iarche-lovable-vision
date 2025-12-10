@@ -64,7 +64,6 @@ const ANIMATIONS = [
   { name: 'fadeIn', duration: '0.6s', timing: 'ease-out', usage: 'Apparition éléments' },
   { name: 'gradientText', duration: '8s', timing: 'ease infinite', usage: 'Logo, titres gradient' },
   { name: 'patternScroll', duration: '40s', timing: 'linear infinite', usage: 'Fond quadrillé' },
-  { name: 'constructionFade', duration: '6s', timing: 'ease-in-out infinite', usage: 'Rectangles décoratifs' },
   { name: 'lineDraw', duration: '6s', timing: 'ease-in-out', usage: 'Lignes SVG canalisation' },
 ];
 

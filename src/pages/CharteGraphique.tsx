@@ -558,20 +558,6 @@ const CharteGraphique = () => {
             </p>
           </div>
 
-          {/* Rectangles décoratifs */}
-          <div>
-            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Rectangles Décoratifs</h3>
-            <div className="relative h-48 bg-[#FAF9F7] rounded-lg">
-              <div className="absolute top-4 left-4 w-16 h-16 border border-[#E5E0DA] rounded-lg opacity-40"></div>
-              <div className="absolute bottom-8 right-8 w-12 h-12 border border-[#E5E0DA] rounded-lg opacity-50"></div>
-              <div className="absolute top-1/2 right-4 w-20 h-20 border border-[#E5E0DA] rounded-lg opacity-30"></div>
-              <div className="absolute bottom-4 left-1/4 w-14 h-14 border border-[#E5E0DA] rounded-lg opacity-60"></div>
-            </div>
-            <p className="text-sm text-[#666666] mt-2">
-              Bordure: 1px solid border/30. Animation: pulsation 6s (opacité 30% → 60%).
-              Délais échelonnés: 0s, 1s, 2s, 3s. Usage: Hero page uniquement.
-            </p>
-          </div>
         </section>
 
         {/* ========== PAGE 9: BOUTONS & CTA ========== */}
@@ -699,18 +685,6 @@ animation: patternScroll 40s linear infinite;`}
               </pre>
             </div>
 
-            {/* ConstructionFade */}
-            <div className="bg-[#FAF9F7] p-5 rounded-lg">
-              <h3 className="text-lg font-semibold text-[#1A2B4A] mb-2">constructionFade</h3>
-              <p className="text-sm text-[#666666] mb-2">Pulsation rectangles.</p>
-              <pre className="text-xs font-mono bg-white p-3 rounded border border-[#E5E0DA] overflow-x-auto">
-{`@keyframes constructionFade {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.6; }
-}
-animation: constructionFade 6s ease-in-out infinite;`}
-              </pre>
-            </div>
 
             {/* Line Draw */}
             <div className="bg-[#FAF9F7] p-5 rounded-lg">
