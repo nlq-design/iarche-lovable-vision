@@ -40,8 +40,8 @@ All colors MUST be HSL.
     --muted: 30 20% 93%;
     --muted-foreground: 0 0% 40%;
     
-    /* Text subtle: Gris foncé pour meilleur contraste (anciennement #999999) */
-    --text-subtle: 0 0% 40%;
+    /* Text subtle: Gris bleuté harmonisé avec Bleu Nuit (#4A5568) */
+    --text-subtle: 215 14% 35%;
     
     /* Destructive: Terracotta doux #C4553D */
     --destructive: 12 55% 50%;
