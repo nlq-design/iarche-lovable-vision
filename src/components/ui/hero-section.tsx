@@ -30,14 +30,6 @@ const HeroSection = () => {
 
   return (
     <div ref={heroRef} className="min-h-screen flex items-center justify-center relative">
-        {/* Rectangles décoratifs (Construction) - Uniquement sur / */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" role="presentation" aria-hidden="true">
-          <div className="absolute top-20 left-10 w-32 h-32 border border-border/30 rounded-lg animate-constructionFade" />
-          <div className="absolute bottom-32 right-20 w-24 h-24 border border-border/30 rounded-lg animate-constructionFade [animation-delay:1s]" />
-          <div className="absolute top-1/2 right-10 w-40 h-40 border border-border/30 rounded-lg animate-constructionFade [animation-delay:2s]" />
-          <div className="absolute bottom-20 left-1/4 w-28 h-28 border border-border/30 rounded-lg animate-constructionFade [animation-delay:3s]" />
-        </div>
-
         <div className="container text-center z-10 relative px-6 py-20">
           <div className="mb-20 md:mb-28 invisible animate-fadeIn [animation-delay:0.1s]">
             <GradientTitle size="xl" className="mb-0">
