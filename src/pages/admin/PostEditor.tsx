@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, User } from 'lucide-react';
+import { ArrowLeft, User, Download } from 'lucide-react';
 import { MediaTemplate } from '@/hooks/useMediaTemplates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,7 @@ import ExportActions from '@/components/admin/medias/ExportActions';
 import PlatformPresets, { Platform } from '@/components/admin/medias/PlatformPresets';
 import { ImageLibrary } from '@/components/admin/medias/ImageLibrary';
 import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
-import { Download } from 'lucide-react';
+import CharterSelector, { CharterType, getCharterColors, getCharterGradients } from '@/components/admin/medias/CharterSelector';
 import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
@@ -101,13 +101,16 @@ export default function PostEditor() {
   const [format, setFormat] = useState<PostFormat>('square');
   const [template, setTemplate] = useState<PostTemplate>('annonce');
   const [theme, setTheme] = useState<ThemeType>('dark');
+  const [charter, setCharter] = useState<CharterType>('iarche');
   const [preset, setPreset] = useState<PresetTemplate>('custom');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [barSize, setBarSize] = useState<BarSize>('lg');
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
   const [platformPreset, setPlatformPreset] = useState<Platform>('linkedin-post');
   
-  const backgroundColor = theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse;
+  // Get colors based on charter
+  const charterColors = getCharterColors(charter);
+  const backgroundColor = theme === 'dark' ? charterColors.bleuNuit : charterColors.blancCasse;
 
   // Apply preset template
   const applyPreset = (presetKey: PresetTemplate) => {
@@ -234,8 +237,8 @@ export default function PostEditor() {
   };
 
   const { width, height } = DIMENSIONS[format];
-  const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
-  const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(26,43,74,0.7)';
+  const textColor = theme === 'dark' ? charterColors.white : charterColors.bleuNuit;
+  const subtextColor = theme === 'dark' ? charterColors.whiteAlpha70 : charterColors.grisTexte;
 
   const renderPostContent = () => {
     switch (template) {
@@ -655,6 +658,9 @@ export default function PostEditor() {
                 </Tabs>
               </div>
 
+              {/* Charter selector */}
+              <CharterSelector value={charter} onChange={setCharter} />
+
               {/* Theme selector */}
               <div className="space-y-2">
                 <Label>Thème</Label>
@@ -663,8 +669,8 @@ export default function PostEditor() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="dark">Bleu Nuit (sombre)</SelectItem>
-                    <SelectItem value="light">Blanc Cassé (clair)</SelectItem>
+                    <SelectItem value="dark">Sombre</SelectItem>
+                    <SelectItem value="light">Clair</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

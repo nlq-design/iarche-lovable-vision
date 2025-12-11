@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { ArrowLeft, Linkedin, Sparkles } from 'lucide-react';
-import { COLORS_PERSO, GRADIENTS_PERSO, WATERMARK_CONFIG, type GradientTypePerso } from '@/components/admin/medias/perso/tokensPerso';
+import CharterSelector, { CharterType, getCharterColors, getCharterGradients, GradientType } from '@/components/admin/medias/CharterSelector';
 import ExportActions from '@/components/admin/medias/ExportActions';
 
 // Dimensions réelles LinkedIn Banner
@@ -24,26 +24,31 @@ const BannerPersoEditor = () => {
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [gradientType, setGradientType] = useState<GradientTypePerso>('diagonal');
+  const [charter, setCharter] = useState<CharterType>('iarche2');
+  const [gradientType, setGradientType] = useState<GradientType>('diagonal');
   const [showWatermark, setShowWatermark] = useState(true);
-  const [titleSize, setTitleSize] = useState(72); // Taille relative au canvas 1584px
+  const [titleSize, setTitleSize] = useState(72);
   const [subtitleSize, setSubtitleSize] = useState(28);
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('left');
   const [quality, setQuality] = useState<number>(2);
 
+  // Get colors based on charter
+  const charterColors = getCharterColors(charter);
+  const charterGradients = getCharterGradients(charter);
+
   const getBackground = () => {
     if (theme === 'light') {
-      return COLORS_PERSO.blancCasse;
+      return charterColors.blancCasse;
     }
-    return GRADIENTS_PERSO[gradientType]?.css || GRADIENTS_PERSO.diagonal.css;
+    return charterGradients[gradientType]?.css || charterGradients.diagonal.css;
   };
 
   const getTextColor = () => {
-    return theme === 'dark' ? COLORS_PERSO.white : COLORS_PERSO.grisTexte;
+    return theme === 'dark' ? charterColors.white : charterColors.grisTexte;
   };
 
   const getSubtitleColor = () => {
-    return theme === 'dark' ? COLORS_PERSO.whiteAlpha90 : COLORS_PERSO.terracotta;
+    return theme === 'dark' ? charterColors.whiteAlpha90 : charterColors.terracotta;
   };
 
   const getAlignStyles = (): React.CSSProperties => {
@@ -154,8 +159,8 @@ const BannerPersoEditor = () => {
                         bottom: 20,
                         right: 30,
                         fontSize: 18,
-                        opacity: WATERMARK_CONFIG.opacity,
-                        color: theme === 'dark' ? COLORS_PERSO.white : COLORS_PERSO.bleuProfond,
+                        opacity: 0.15,
+                        color: theme === 'dark' ? charterColors.white : charterColors.bleuNuit,
                       }}
                     >
                       IArche
@@ -170,13 +175,13 @@ const BannerPersoEditor = () => {
                         style={{ 
                           width: 48, 
                           height: 48,
-                          color: theme === 'dark' ? COLORS_PERSO.whiteAlpha50 : COLORS_PERSO.terracotta 
+                          color: theme === 'dark' ? charterColors.whiteAlpha50 : charterColors.terracotta 
                         }} 
                       />
                       <p 
                         style={{ 
                           fontSize: 24,
-                          color: theme === 'dark' ? COLORS_PERSO.whiteAlpha50 : COLORS_PERSO.grisTexte 
+                          color: theme === 'dark' ? charterColors.whiteAlpha50 : charterColors.grisTexte 
                         }}
                       >
                         Ajoutez votre titre et tagline
@@ -240,6 +245,9 @@ const BannerPersoEditor = () => {
 
             <Card>
               <CardContent className="pt-6 space-y-4">
+                {/* Charter selector */}
+                <CharterSelector value={charter} onChange={setCharter} />
+
                 <div className="flex items-center justify-between">
                   <Label>Thème</Label>
                   <Select value={theme} onValueChange={(v) => setTheme(v as 'dark' | 'light')}>
@@ -256,7 +264,7 @@ const BannerPersoEditor = () => {
                 {theme === 'dark' && (
                   <div className="flex items-center justify-between">
                     <Label>Dégradé</Label>
-                    <Select value={gradientType} onValueChange={(v) => setGradientType(v as GradientTypePerso)}>
+                    <Select value={gradientType} onValueChange={(v) => setGradientType(v as GradientType)}>
                       <SelectTrigger className="w-32">
                         <SelectValue />
                       </SelectTrigger>

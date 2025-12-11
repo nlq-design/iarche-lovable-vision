@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Linkedin, Plus, Trash2, ChevronLeft, ChevronRight, Download, Sparkles } from 'lucide-react';
-import { COLORS_PERSO, GRADIENTS_PERSO, WATERMARK_CONFIG, type GradientTypePerso } from '@/components/admin/medias/perso/tokensPerso';
+import CharterSelector, { CharterType, getCharterColors, getCharterGradients, GradientType } from '@/components/admin/medias/CharterSelector';
 import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
 import JSZip from 'jszip';
@@ -31,11 +31,16 @@ const CarouselPersoEditor = () => {
   ]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [gradientType, setGradientType] = useState<GradientTypePerso>('diagonal');
+  const [charter, setCharter] = useState<CharterType>('iarche2');
+  const [gradientType, setGradientType] = useState<GradientType>('diagonal');
   const [showWatermark, setShowWatermark] = useState(true);
   const [showSlideNumber, setShowSlideNumber] = useState(true);
-  const [quality, setQuality] = useState<number>(2); // 2x recommandé
+  const [quality, setQuality] = useState<number>(2);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Get colors based on charter
+  const charterColors = getCharterColors(charter);
+  const charterGradients = getCharterGradients(charter);
 
   const addSlide = () => {
     const newSlide: Slide = {
@@ -64,17 +69,17 @@ const CarouselPersoEditor = () => {
 
   const getBackground = () => {
     if (theme === 'light') {
-      return COLORS_PERSO.blancCasse;
+      return charterColors.blancCasse;
     }
-    return GRADIENTS_PERSO[gradientType]?.css || GRADIENTS_PERSO.diagonal.css;
+    return charterGradients[gradientType]?.css || charterGradients.diagonal.css;
   };
 
   const getTextColor = () => {
-    return theme === 'dark' ? COLORS_PERSO.white : COLORS_PERSO.grisTexte;
+    return theme === 'dark' ? charterColors.white : charterColors.grisTexte;
   };
 
   const getSubtitleColor = () => {
-    return theme === 'dark' ? COLORS_PERSO.whiteAlpha70 : COLORS_PERSO.terracotta;
+    return theme === 'dark' ? charterColors.whiteAlpha70 : charterColors.terracotta;
   };
 
   const exportAllSlides = async () => {
