@@ -126,11 +126,9 @@ export default function BannerEditor() {
     try {
       await exportToPNG(bannerRef, `banner-${template}`, {
         pixelRatio: 3,
-        width: BANNER_WIDTH * 2, // Export haute résolution (3168px)
-        height: BANNER_HEIGHT * 2, // Export haute résolution (792px)
         backgroundColor: theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse,
       });
-      toast.success('Bannière exportée avec succès (haute résolution)');
+      toast.success(`Bannière exportée (${BANNER_WIDTH * 3}×${BANNER_HEIGHT * 3}px)`);
     } catch (error) {
       toast.error('Erreur lors de l\'export');
     }

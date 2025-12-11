@@ -211,14 +211,13 @@ export default function PostEditor() {
   }, [location.state, loadTemplateData]);
 
   const handleExport = async () => {
+    const { width, height } = DIMENSIONS[format];
     try {
       await exportToPNG(postRef, `post-${template}-${format}`, {
         pixelRatio: 3,
-        width: width * 2, // Export haute résolution
-        height: height * 2, // Export haute résolution
         backgroundColor: theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse,
       });
-      toast.success('Post exporté avec succès (haute résolution)');
+      toast.success(`Post exporté (${width * 3}×${height * 3}px)`);
     } catch (error) {
       toast.error('Erreur lors de l\'export');
     }
