@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { LazyQuill } from '@/components/admin/LazyQuill';
+import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import {
   DndContext,
   closestCenter,
@@ -188,6 +189,23 @@ const BrevoHTMLEditor = () => {
     })
   );
 
+  const getCurrentData = useCallback(() => ({
+    headerTitle,
+    headerImage,
+    showHeaderImage,
+    footerText,
+    sections,
+  }), [headerTitle, headerImage, showHeaderImage, footerText, sections]);
+
+  const handleLoadTemplate = useCallback((data: Record<string, unknown>) => {
+    if (data.headerTitle !== undefined) setHeaderTitle(data.headerTitle as string);
+    if (data.headerImage !== undefined) setHeaderImage(data.headerImage as string);
+    if (data.showHeaderImage !== undefined) setShowHeaderImage(data.showHeaderImage as boolean);
+    if (data.footerText !== undefined) setFooterText(data.footerText as string);
+    if (data.sections !== undefined) setSections(data.sections as Section[]);
+    toast.success('Template chargé');
+  }, []);
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
@@ -343,6 +361,20 @@ const BrevoHTMLEditor = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Formulaire */}
         <div className="space-y-4">
+          {/* Templates sauvegardés */}
+          <Card>
+            <CardHeader className="py-3">
+              <CardTitle className="text-base">Mes templates</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SavedTemplatesPanel
+                editorType="brevo-html"
+                getCurrentData={getCurrentData}
+                onLoadTemplate={handleLoadTemplate}
+              />
+            </CardContent>
+          </Card>
+
           {/* Header */}
           <Card>
             <CardHeader className="py-3">
