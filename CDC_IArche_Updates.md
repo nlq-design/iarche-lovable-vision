@@ -1,12 +1,27 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.17**  
+**Version mise à jour : V6.18**  
 **Date : 11 Décembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.17 MODULE MÉDIAS - EXPORT AVANCÉ — MISE À JOUR V6.18 ✅
+
+Améliorations techniques des éditeurs médias :
+
+**1. Export WebP** — Compression ~50% avec qualité préservée
+**2. Upload direct Supabase** — Export vers bucket `media-library` avec URL copiée
+**3. Présets par plateforme** — Tailles prédéfinies (LinkedIn, Twitter, Instagram, Facebook, YouTube, OpenGraph)
+
+Composants créés :
+- `src/lib/mediaExport.ts` — Fonctions export PNG/WebP et upload Supabase
+- `src/components/admin/medias/PlatformPresets.tsx` — Sélecteur présets plateforme
+- `src/components/admin/medias/ExportActions.tsx` — Menu export unifié
+
+---
 
 ### 0.16 MODULE MÉDIAS - QUALITÉ PNG CONFIGURABLE — MISE À JOUR V6.17 ✅
 
