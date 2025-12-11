@@ -40,22 +40,24 @@ export const COLORS = {
 // GRADIENTS - Définitions CSS et angles
 // =====================================================
 export const GRADIENTS = {
-  // Barre décorative horizontale
+  // Barre décorative horizontale (Charte 3.1 : Bleu → Terracotta → Bleu)
   bar: {
     angle: 90,
     stops: [
       { color: COLORS.bleuNuit, position: 0 },
-      { color: COLORS.terracotta, position: 100 },
+      { color: COLORS.terracotta, position: 50 },
+      { color: COLORS.bleuNuit, position: 100 },
     ],
-    css: `linear-gradient(90deg, ${COLORS.bleuNuit} 0%, ${COLORS.terracotta} 100%)`,
+    css: `linear-gradient(90deg, ${COLORS.bleuNuit} 0%, ${COLORS.terracotta} 50%, ${COLORS.bleuNuit} 100%)`,
   },
   barReverse: {
     angle: 90,
     stops: [
       { color: COLORS.terracotta, position: 0 },
-      { color: COLORS.bleuNuit, position: 100 },
+      { color: COLORS.bleuNuit, position: 50 },
+      { color: COLORS.terracotta, position: 100 },
     ],
-    css: `linear-gradient(90deg, ${COLORS.terracotta} 0%, ${COLORS.bleuNuit} 100%)`,
+    css: `linear-gradient(90deg, ${COLORS.terracotta} 0%, ${COLORS.bleuNuit} 50%, ${COLORS.terracotta} 100%)`,
   },
   // Fond diagonal
   background: {
@@ -96,24 +98,24 @@ export const FONTS = {
 } as const;
 
 // =====================================================
-// DIMENSIONS - Barres décoratives (Charte 3.1 adaptée)
-// Ratio barre/logo : ~60-65% de la largeur du texte "IArche"
+// DIMENSIONS - Barres décoratives (Charte 3.1 exacte)
 // =====================================================
 export const BAR_SIZES = {
-  sm: { width: 52, height: 3 },   // Logo sm (80px) → ~65%
-  md: { width: 72, height: 4 },   // Logo md (110px) → ~65%
-  lg: { width: 104, height: 5 },  // Logo lg (160px) → ~65%
-  xl: { width: 136, height: 6 },  // Logo xl (210px) → ~65%
+  sm: { width: 48, height: 2 },   // Placeholder cards, petits formats
+  md: { width: 80, height: 4 },   // Header, formats moyens
+  lg: { width: 96, height: 4 },   // Formats intermédiaires
+  xl: { width: 128, height: 6 },  // Hero, grands formats
 } as const;
 
 // =====================================================
-// DIMENSIONS - Logo (font-size en px)
+// DIMENSIONS - Logo (font-size en px, width estimée)
+// Ajustées pour mieux remplir les exports (100/250/500px)
 // =====================================================
 export const LOGO_SIZES = {
-  sm: { fontSize: 24, width: 80 },
-  md: { fontSize: 32, width: 110 },
-  lg: { fontSize: 48, width: 160 },
-  xl: { fontSize: 64, width: 210 },
+  sm: { fontSize: 28, width: 95 },    // Pour export ~100px
+  md: { fontSize: 42, width: 140 },   // Pour export ~250px
+  lg: { fontSize: 56, width: 185 },   // Intermédiaire
+  xl: { fontSize: 72, width: 240 },   // Pour export ~500px
 } as const;
 
 // =====================================================
