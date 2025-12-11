@@ -5,26 +5,114 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Copy, Check, Eye, Code } from 'lucide-react';
+import { Copy, Check, Eye, Code, Plus, Trash2, Columns, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Link } from 'react-router-dom';
+
+interface Section {
+  id: string;
+  type: 'text' | 'columns' | 'cta' | 'divider';
+  title?: string;
+  content?: string;
+  leftColumn?: string;
+  rightColumn?: string;
+  ctaText?: string;
+  ctaLink?: string;
+}
 
 const BrevoHTMLExport = () => {
-  const [title, setTitle] = useState('');
-  const [subtitle, setSubtitle] = useState('');
-  const [bodyText, setBodyText] = useState('');
-  const [ctaText, setCtaText] = useState('');
-  const [ctaLink, setCtaLink] = useState('https://iarche.fr');
+  const [headerTitle, setHeaderTitle] = useState('IArche');
+  const [headerImage, setHeaderImage] = useState('');
+  const [showHeaderImage, setShowHeaderImage] = useState(false);
   const [footerText, setFooterText] = useState('IArche · Bayonne · France');
   const [copied, setCopied] = useState(false);
+  
+  const [sections, setSections] = useState<Section[]>([
+    { id: '1', type: 'text', title: '', content: '' }
+  ]);
+
+  const addSection = (type: Section['type']) => {
+    const newSection: Section = {
+      id: Date.now().toString(),
+      type,
+      title: '',
+      content: '',
+      leftColumn: '',
+      rightColumn: '',
+      ctaText: '',
+      ctaLink: 'https://iarche.fr'
+    };
+    setSections([...sections, newSection]);
+  };
+
+  const updateSection = (id: string, updates: Partial<Section>) => {
+    setSections(sections.map(s => s.id === id ? { ...s, ...updates } : s));
+  };
+
+  const removeSection = (id: string) => {
+    if (sections.length > 1) {
+      setSections(sections.filter(s => s.id !== id));
+    }
+  };
 
   const generateHTML = () => {
+    const sectionsHTML = sections.map(section => {
+      switch (section.type) {
+        case 'text':
+          return `
+              ${section.title ? `<h2 style="margin: 0 0 15px; color: #1A2B4A; font-size: 22px; font-weight: bold;">${section.title}</h2>` : ''}
+              ${section.content ? `<div style="color: #4A5568; font-size: 16px; line-height: 1.7; margin-bottom: 25px;">${section.content.replace(/\n/g, '<br>')}</div>` : ''}`;
+        
+        case 'columns':
+          return `
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 25px;">
+                <tr>
+                  <td width="48%" valign="top" style="padding-right: 2%;">
+                    <div style="color: #4A5568; font-size: 15px; line-height: 1.6;">${(section.leftColumn || '').replace(/\n/g, '<br>')}</div>
+                  </td>
+                  <td width="4%"></td>
+                  <td width="48%" valign="top" style="padding-left: 2%;">
+                    <div style="color: #4A5568; font-size: 15px; line-height: 1.6;">${(section.rightColumn || '').replace(/\n/g, '<br>')}</div>
+                  </td>
+                </tr>
+              </table>`;
+        
+        case 'cta':
+          return section.ctaText ? `
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 30px auto;">
+                <tr>
+                  <td style="background: linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%); border-radius: 6px;">
+                    <a href="${section.ctaLink || 'https://iarche.fr'}" target="_blank" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold;">${section.ctaText}</a>
+                  </td>
+                </tr>
+              </table>` : '';
+        
+        case 'divider':
+          return `
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin: 25px 0;">
+                <tr>
+                  <td style="border-top: 1px solid #E2E8F0;"></td>
+                </tr>
+              </table>`;
+        
+        default:
+          return '';
+      }
+    }).join('');
+
+    const headerContent = showHeaderImage && headerImage 
+      ? `<img src="${headerImage}" alt="${headerTitle}" style="max-width: 200px; height: auto; margin-bottom: 15px;" />`
+      : '';
+
     return `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title || 'IArche'}</title>
+  <title>${headerTitle || 'IArche'}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #FAF9F7; font-family: Arial, Helvetica, sans-serif;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #FAF9F7;">
@@ -32,31 +120,19 @@ const BrevoHTMLExport = () => {
       <td align="center" style="padding: 40px 20px;">
         <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
           
-          <!-- Header avec gradient -->
+          <!-- Header -->
           <tr>
             <td style="background: linear-gradient(135deg, #1A2B4A 0%, #2D4A7C 50%, #B04A32 100%); padding: 30px 40px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">IArche</h1>
+              ${headerContent}
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">${headerTitle}</h1>
               <div style="width: 60px; height: 3px; background: linear-gradient(90deg, #1A2B4A, #B04A32, #1A2B4A); margin: 15px auto 0;"></div>
             </td>
           </tr>
           
-          <!-- Contenu principal -->
+          <!-- Contenu -->
           <tr>
             <td style="padding: 40px;">
-              ${title ? `<h2 style="margin: 0 0 10px; color: #1A2B4A; font-size: 24px; font-weight: bold;">${title}</h2>` : ''}
-              ${subtitle ? `<p style="margin: 0 0 25px; color: #B04A32; font-size: 16px; font-weight: 500;">${subtitle}</p>` : ''}
-              ${bodyText ? `<div style="color: #4A5568; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">${bodyText.replace(/\n/g, '<br>')}</div>` : ''}
-              
-              ${ctaText ? `
-              <!-- CTA Button -->
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 30px auto;">
-                <tr>
-                  <td style="background: linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%); border-radius: 6px;">
-                    <a href="${ctaLink}" target="_blank" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold;">${ctaText}</a>
-                  </td>
-                </tr>
-              </table>
-              ` : ''}
+              ${sectionsHTML}
             </td>
           </tr>
           
@@ -84,7 +160,7 @@ const BrevoHTMLExport = () => {
       setCopied(true);
       toast.success('HTML copié !');
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
+    } catch {
       toast.error('Erreur lors de la copie');
     }
   };
@@ -93,9 +169,16 @@ const BrevoHTMLExport = () => {
     <AdminLayout>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-primary">Export HTML Brevo</h1>
-            <p className="text-muted-foreground">Générez du HTML prêt à intégrer dans vos campagnes</p>
+          <div className="flex items-center gap-4">
+            <Link to="/admin/emails">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-primary">Export HTML Brevo</h1>
+              <p className="text-muted-foreground">Générez du HTML prêt à intégrer dans vos campagnes</p>
+            </div>
           </div>
           <Button onClick={handleCopy} className="gap-2">
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -105,77 +188,151 @@ const BrevoHTMLExport = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Formulaire */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Contenu</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Titre principal</Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ex: Nouvelle offre IA"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="subtitle">Sous-titre</Label>
-                <Input
-                  id="subtitle"
-                  value={subtitle}
-                  onChange={(e) => setSubtitle(e.target.value)}
-                  placeholder="Ex: Découvrez nos solutions"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="body">Corps du message</Label>
-                <Textarea
-                  id="body"
-                  value={bodyText}
-                  onChange={(e) => setBodyText(e.target.value)}
-                  placeholder="Rédigez votre message ici..."
-                  rows={6}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-4">
+            {/* Header */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">En-tête</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="ctaText">Texte du bouton</Label>
+                  <Label>Titre de l'en-tête</Label>
                   <Input
-                    id="ctaText"
-                    value={ctaText}
-                    onChange={(e) => setCtaText(e.target.value)}
-                    placeholder="Ex: En savoir plus"
+                    value={headerTitle}
+                    onChange={(e) => setHeaderTitle(e.target.value)}
+                    placeholder="IArche"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ctaLink">Lien du bouton</Label>
-                  <Input
-                    id="ctaLink"
-                    value={ctaLink}
-                    onChange={(e) => setCtaLink(e.target.value)}
-                    placeholder="https://..."
-                  />
+                
+                <div className="flex items-center justify-between">
+                  <Label>Image d'en-tête (optionnel)</Label>
+                  <Switch checked={showHeaderImage} onCheckedChange={setShowHeaderImage} />
                 </div>
-              </div>
+                
+                {showHeaderImage && (
+                  <Input
+                    value={headerImage}
+                    onChange={(e) => setHeaderImage(e.target.value)}
+                    placeholder="https://... (URL de l'image)"
+                  />
+                )}
+              </CardContent>
+            </Card>
 
-              <div className="space-y-2">
-                <Label htmlFor="footer">Footer</Label>
+            {/* Sections */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Sections</CardTitle>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => addSection('text')}>
+                      <Plus className="h-4 w-4 mr-1" /> Texte
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => addSection('columns')}>
+                      <Columns className="h-4 w-4 mr-1" /> Colonnes
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => addSection('cta')}>
+                      <Plus className="h-4 w-4 mr-1" /> CTA
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => addSection('divider')}>
+                      Séparateur
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {sections.map((section, index) => (
+                  <div key={section.id} className="p-4 border rounded-lg space-y-3 bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Section {index + 1} - {section.type === 'text' ? 'Texte' : section.type === 'columns' ? 'Colonnes' : section.type === 'cta' ? 'Bouton CTA' : 'Séparateur'}
+                      </span>
+                      {sections.length > 1 && (
+                        <Button size="icon" variant="ghost" onClick={() => removeSection(section.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+
+                    {section.type === 'text' && (
+                      <>
+                        <Input
+                          value={section.title || ''}
+                          onChange={(e) => updateSection(section.id, { title: e.target.value })}
+                          placeholder="Titre (optionnel)"
+                        />
+                        <Textarea
+                          value={section.content || ''}
+                          onChange={(e) => updateSection(section.id, { content: e.target.value })}
+                          placeholder="Contenu..."
+                          rows={4}
+                        />
+                      </>
+                    )}
+
+                    {section.type === 'columns' && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs">Colonne gauche</Label>
+                          <Textarea
+                            value={section.leftColumn || ''}
+                            onChange={(e) => updateSection(section.id, { leftColumn: e.target.value })}
+                            placeholder="Contenu colonne gauche..."
+                            rows={4}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">Colonne droite</Label>
+                          <Textarea
+                            value={section.rightColumn || ''}
+                            onChange={(e) => updateSection(section.id, { rightColumn: e.target.value })}
+                            placeholder="Contenu colonne droite..."
+                            rows={4}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {section.type === 'cta' && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <Input
+                          value={section.ctaText || ''}
+                          onChange={(e) => updateSection(section.id, { ctaText: e.target.value })}
+                          placeholder="Texte du bouton"
+                        />
+                        <Input
+                          value={section.ctaLink || ''}
+                          onChange={(e) => updateSection(section.id, { ctaLink: e.target.value })}
+                          placeholder="Lien du bouton"
+                        />
+                      </div>
+                    )}
+
+                    {section.type === 'divider' && (
+                      <p className="text-xs text-muted-foreground">Ligne de séparation horizontale</p>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Footer */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Pied de page</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <Input
-                  id="footer"
                   value={footerText}
                   onChange={(e) => setFooterText(e.target.value)}
-                  placeholder="Ex: IArche · Bayonne · France"
+                  placeholder="IArche · Bayonne · France"
                 />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Aperçu */}
-          <Card>
+          <Card className="lg:sticky lg:top-6 h-fit">
             <CardHeader>
               <CardTitle className="text-lg">Aperçu & Code</CardTitle>
             </CardHeader>
@@ -192,18 +349,18 @@ const BrevoHTMLExport = () => {
                 <TabsContent value="preview" className="mt-0">
                   <div 
                     className="border rounded-lg overflow-hidden bg-[#FAF9F7]"
-                    style={{ maxHeight: '600px', overflowY: 'auto' }}
+                    style={{ maxHeight: '700px', overflowY: 'auto' }}
                   >
                     <iframe
                       srcDoc={generateHTML()}
                       title="Aperçu email"
-                      className="w-full h-[500px] border-0"
+                      className="w-full h-[600px] border-0"
                     />
                   </div>
                 </TabsContent>
                 <TabsContent value="code" className="mt-0">
                   <div className="relative">
-                    <pre className="bg-muted p-4 rounded-lg overflow-auto text-xs max-h-[500px]">
+                    <pre className="bg-muted p-4 rounded-lg overflow-auto text-xs max-h-[600px]">
                       <code>{generateHTML()}</code>
                     </pre>
                   </div>
