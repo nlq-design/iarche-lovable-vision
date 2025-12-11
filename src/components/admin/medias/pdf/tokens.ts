@@ -11,6 +11,8 @@ import {
   BAR_SIZES,
   LOGO_SIZES,
   EXPORT_FORMATS,
+  LOGO_BAR_MAPPING,
+  LOGO_BAR_GAP,
 } from '../shared/tokens';
 
 // Réexport pour compatibilité avec le code existant
@@ -124,3 +126,6 @@ export const GRADIENT_STOPS = {
   barReverse: GRADIENTS.barReverse.stops,
   background: GRADIENTS.background.stops,
 } as const;
+
+// Logo + Barre proportions (Charte 3.1)
+export { LOGO_BAR_MAPPING, LOGO_BAR_GAP };

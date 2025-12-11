@@ -126,6 +126,25 @@ export const ARCH_SIZES = {
 } as const;
 
 // =====================================================
+// LOGO + BARRE - Proportions obligatoires (Charte 3.1)
+// Le logo IArche DOIT toujours être accompagné de sa barre
+// =====================================================
+export const LOGO_BAR_MAPPING: Record<LogoSize, BarSize> = {
+  sm: 'sm',  // Logo sm (24px) → Barre sm (48×2)
+  md: 'md',  // Logo md (32px) → Barre md (80×4)
+  lg: 'lg',  // Logo lg (48px) → Barre lg (96×4)
+  xl: 'xl',  // Logo xl (64px) → Barre xl (128×6)
+} as const;
+
+// Espacement logo-barre proportionnel
+export const LOGO_BAR_GAP: Record<LogoSize, number> = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+} as const;
+
+// =====================================================
 // FORMATS D'EXPORT
 // =====================================================
 export const EXPORT_FORMATS = {
