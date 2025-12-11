@@ -24,6 +24,13 @@ import { BarSize, LogoSize as LogoSizeToken } from '@/components/admin/medias/ht
 type ExportFormat = 'png' | 'svg' | 'pdf';
 type ExportMode = 'logo-bar' | 'full';
 type FormatCategory = 'standard' | 'profile';
+type PngQuality = '4' | '6' | '8';
+
+const PNG_QUALITY_OPTIONS: Record<PngQuality, { label: string; description: string }> = {
+  '4': { label: '4x', description: 'Web & réseaux' },
+  '6': { label: '6x', description: 'Documents' },
+  '8': { label: '8x', description: 'Print HD' },
+};
 
 // Standard sizes
 type StandardSize = '500' | '250' | '100';
@@ -46,7 +53,7 @@ const PROFILE_FORMATS: Record<ProfileFormat, { size: number; label: string; icon
 };
 
 const EXPORT_FORMATS: Record<ExportFormat, { label: string; icon: React.ReactNode; description: string }> = {
-  png: { label: 'PNG', icon: <FileImage className="h-4 w-4" />, description: 'Ultra haute résolution (8x)' },
+  png: { label: 'PNG', icon: <FileImage className="h-4 w-4" />, description: 'Raster haute résolution' },
   svg: { label: 'SVG', icon: <FileCode className="h-4 w-4" />, description: 'Vectoriel, scalable' },
   pdf: { label: 'PDF', icon: <FileText className="h-4 w-4" />, description: 'Vectoriel, impression' },
 };
@@ -166,6 +173,8 @@ interface LogoPreviewCardProps {
   exportFormat: ExportFormat;
   onFormatChange: (format: ExportFormat) => void;
   isProfile: boolean;
+  pngQuality: PngQuality;
+  onQualityChange: (quality: PngQuality) => void;
 }
 
 const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({ 
@@ -183,6 +192,8 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
   exportFormat,
   onFormatChange,
   isProfile,
+  pngQuality,
+  onQualityChange,
 }) => {
   const [dimensions, setDimensions] = useState({ width: 300, height: 200 });
 
@@ -322,6 +333,27 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
             ))}
           </div>
         </div>
+
+        {/* PNG Quality Selection - only show when PNG is selected */}
+        {exportFormat === 'png' && (
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground">Qualité :</Label>
+            <div className="flex gap-1">
+              {(Object.entries(PNG_QUALITY_OPTIONS) as [PngQuality, typeof PNG_QUALITY_OPTIONS[PngQuality]][]).map(([key, option]) => (
+                <Button
+                  key={key}
+                  variant={pngQuality === key ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => onQualityChange(key)}
+                  title={option.description}
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
         
         <Button
           variant="outline"
@@ -358,6 +390,11 @@ export default function LogoEditor() {
     gradient: 'png',
     terracotta: 'png',
   });
+
+  const [pngQualities, setPngQualities] = useState<Record<LogoVariant, PngQuality>>({
+    gradient: '8',
+    terracotta: '8',
+  });
   
   // Update bar sizes when size changes
   useEffect(() => {
@@ -391,6 +428,10 @@ export default function LogoEditor() {
     setExportFormats(prev => ({ ...prev, [variant]: format }));
   };
 
+  const updatePngQuality = (variant: LogoVariant, quality: PngQuality) => {
+    setPngQualities(prev => ({ ...prev, [variant]: quality }));
+  };
+
   const getCurrentSize = (): number => {
     return formatCategory === 'standard'
       ? STANDARD_SIZES[standardSize].width
@@ -414,11 +455,12 @@ export default function LogoEditor() {
   };
 
   // PNG Export
-  const capturePng = async (ref: React.RefObject<HTMLDivElement>, targetWidth: number): Promise<Blob | null> => {
+  const capturePng = async (ref: React.RefObject<HTMLDivElement>, targetWidth: number, quality: PngQuality): Promise<Blob | null> => {
     if (!ref.current) return null;
     try {
       const currentWidth = ref.current.offsetWidth;
-      const pixelRatio = Math.max((targetWidth / currentWidth) * 8, 8); // Ultra high quality 8x
+      const qualityMultiplier = parseInt(quality);
+      const pixelRatio = Math.max((targetWidth / currentWidth) * qualityMultiplier, qualityMultiplier);
       const dataUrl = await toPng(ref.current, {
         quality: 1,
         pixelRatio,
@@ -482,7 +524,7 @@ export default function LogoEditor() {
       
       switch (format) {
         case 'png':
-          blob = await capturePng(refs[variantKey], targetWidth);
+          blob = await capturePng(refs[variantKey], targetWidth, pngQualities[variantKey]);
           break;
         case 'svg':
           blob = await captureSvg(refs[variantKey]);
@@ -526,7 +568,7 @@ export default function LogoEditor() {
         
         switch (format) {
           case 'png':
-            blob = await capturePng(refs[key], targetWidth);
+            blob = await capturePng(refs[key], targetWidth, pngQualities[key]);
             break;
           case 'svg':
             blob = await captureSvg(refs[key]);
@@ -661,6 +703,8 @@ export default function LogoEditor() {
               exportFormat={exportFormats[key]}
               onFormatChange={(format) => updateExportFormat(key, format)}
               isProfile={formatCategory === 'profile'}
+              pngQuality={pngQualities[key]}
+              onQualityChange={(quality) => updatePngQuality(key, quality)}
             />
           ))}
         </div>
