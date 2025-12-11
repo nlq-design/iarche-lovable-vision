@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Download, ChevronUp } from 'lucide-react';
+import { ArrowLeft, ChevronUp } from 'lucide-react';
 import { MediaTemplate } from '@/hooks/useMediaTemplates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,10 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import { exportToPNG } from '@/lib/exportPng';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import ExportModeControls, { ExportMode } from '@/components/admin/medias/ExportModeControls';
+import ExportActions from '@/components/admin/medias/ExportActions';
+import PlatformPresets, { Platform } from '@/components/admin/medias/PlatformPresets';
+import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
+import { Download } from 'lucide-react';
 import {
   HTMLBaseTemplate,
   HTMLLogoWithBar,
@@ -24,13 +27,6 @@ import {
   ThemeType,
   BarSize,
 } from '@/components/admin/medias/html';
-
-type PngQuality = 4 | 6 | 8;
-const PNG_QUALITY_OPTIONS: { value: PngQuality; label: string }[] = [
-  { value: 4, label: 'Standard (4x)' },
-  { value: 6, label: 'Haute (6x)' },
-  { value: 8, label: 'Ultra (8x)' },
-];
 
 type StoryTemplate = 'annonce' | 'chiffre';
 

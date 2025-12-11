@@ -1,20 +1,22 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Download, Image as ImageIcon, User } from 'lucide-react';
+import { ArrowLeft, User } from 'lucide-react';
 import { MediaTemplate } from '@/hooks/useMediaTemplates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import { exportToPNG } from '@/lib/exportPng';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import ExportModeControls, { ExportMode } from '@/components/admin/medias/ExportModeControls';
+import ExportActions from '@/components/admin/medias/ExportActions';
+import PlatformPresets, { Platform } from '@/components/admin/medias/PlatformPresets';
 import { ImageLibrary } from '@/components/admin/medias/ImageLibrary';
+import { PngQuality, PNG_QUALITY_OPTIONS } from '@/lib/mediaExport';
 import {
   HTMLBaseTemplate,
   HTMLLogoWithBar,
@@ -23,13 +25,6 @@ import {
   ThemeType,
   BarSize,
 } from '@/components/admin/medias/html';
-
-type PngQuality = 4 | 6 | 8;
-const PNG_QUALITY_OPTIONS: { value: PngQuality; label: string }[] = [
-  { value: 4, label: 'Standard (4x)' },
-  { value: 6, label: 'Haute (6x)' },
-  { value: 8, label: 'Ultra (8x)' },
-];
 
 const BANNER_WIDTH = 1584;
 const BANNER_HEIGHT = 396;
@@ -72,6 +67,7 @@ export default function BannerEditor() {
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [barSize, setBarSize] = useState<BarSize>('lg');
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
+  const [platformPreset, setPlatformPreset] = useState<Platform>('linkedin-banner');
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(32);
@@ -102,10 +98,10 @@ export default function BannerEditor() {
 
   // Get current data for saving template
   const getCurrentData = useCallback(() => ({
-    template, theme, preset, exportMode, barSize, pngQuality,
+    template, theme, preset, exportMode, barSize, pngQuality, platformPreset,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     tagline, selectedSolution, ceoName, ceoTitle, ceoPhoto,
-  }), [template, theme, preset, exportMode, barSize, pngQuality, titleFontSize, titleBold, titleItalic, titleAlignment, tagline, selectedSolution, ceoName, ceoTitle, ceoPhoto]);
+  }), [template, theme, preset, exportMode, barSize, pngQuality, platformPreset, titleFontSize, titleBold, titleItalic, titleAlignment, tagline, selectedSolution, ceoName, ceoTitle, ceoPhoto]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
@@ -114,6 +110,7 @@ export default function BannerEditor() {
     if (data.exportMode) setExportMode(data.exportMode as ExportMode);
     if (data.barSize) setBarSize(data.barSize as BarSize);
     if (data.pngQuality) setPngQuality(data.pngQuality as PngQuality);
+    if (data.platformPreset) setPlatformPreset(data.platformPreset as Platform);
     if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
     if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
     if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
@@ -133,17 +130,7 @@ export default function BannerEditor() {
     }
   }, [location.state, loadTemplateData]);
 
-  const handleExport = async () => {
-    try {
-      await exportToPNG(bannerRef, `banner-${template}`, {
-        pixelRatio: pngQuality,
-        backgroundColor: theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse,
-      });
-      toast.success(`Bannière exportée (${BANNER_WIDTH * pngQuality}×${BANNER_HEIGHT * pngQuality}px)`);
-    } catch (error) {
-      toast.error('Erreur lors de l\'export');
-    }
-  };
+  const backgroundColor = theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse;
 
   const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
   const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(26,43,74,0.7)';
@@ -287,10 +274,13 @@ export default function BannerEditor() {
               <p className="text-muted-foreground">1584 × 396 px</p>
             </div>
           </div>
-          <Button onClick={handleExport} className="gap-2">
-            <Download className="h-4 w-4" />
-            Exporter PNG
-          </Button>
+          <ExportActions
+            elementRef={bannerRef}
+            filename={`banner-${template}`}
+            quality={pngQuality}
+            backgroundColor={theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse}
+            onUploadComplete={(url) => toast.success(`URL: ${url}`)}
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -362,6 +352,13 @@ export default function BannerEditor() {
                 onExportModeChange={setExportMode}
                 barSize={barSize}
                 onBarSizeChange={setBarSize}
+              />
+
+              {/* Platform Presets */}
+              <PlatformPresets
+                value={platformPreset}
+                onChange={setPlatformPreset}
+                filterByCategory={['LinkedIn', 'Twitter/X', 'Facebook']}
               />
 
               {/* PNG Quality */}

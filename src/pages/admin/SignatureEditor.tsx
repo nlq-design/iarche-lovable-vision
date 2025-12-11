@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,15 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import { exportToPNG } from '@/lib/exportPng';
+import ExportActions from '@/components/admin/medias/ExportActions';
+import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
+import { Download } from 'lucide-react';
 import { IARCHE_COLORS } from '@/components/admin/medias/html';
-
-type PngQuality = 4 | 6 | 8;
-const PNG_QUALITY_OPTIONS: { value: PngQuality; label: string }[] = [
-  { value: 4, label: 'Standard (4x)' },
-  { value: 6, label: 'Haute (6x)' },
-  { value: 8, label: 'Ultra (8x)' },
-];
 
 const SIGNATURE_WIDTH = 600;
 const SIGNATURE_HEIGHT = 200;

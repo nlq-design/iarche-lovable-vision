@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { ArrowLeft, Download } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { MediaTemplate } from '@/hooks/useMediaTemplates';
 import { Button } from '@/components/ui/button';
@@ -7,12 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { exportToPNG } from '@/lib/exportPng';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import ExportModeControls, { ExportMode } from '@/components/admin/medias/ExportModeControls';
+import ExportActions from '@/components/admin/medias/ExportActions';
+import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
+import { Download } from 'lucide-react';
 import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
@@ -21,13 +23,6 @@ import {
   IARCHE_COLORS,
   IARCHE_FONTS,
 } from '@/components/admin/medias/html';
-
-type PngQuality = 4 | 6 | 8;
-const PNG_QUALITY_OPTIONS: { value: PngQuality; label: string }[] = [
-  { value: 4, label: 'Standard (4x)' },
-  { value: 6, label: 'Haute (6x)' },
-  { value: 8, label: 'Ultra (8x)' },
-];
 
 type HeaderTemplate = 'newsletter' | 'annonce' | 'minimal';
 
