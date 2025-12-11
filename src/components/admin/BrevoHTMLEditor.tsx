@@ -77,36 +77,36 @@ const BrevoHTMLEditor = () => {
       switch (section.type) {
         case 'text':
           return `
-              ${section.title ? `<h2 style="margin: 0 0 15px; color: #1A2B4A; font-size: 22px; font-weight: bold;">${section.title}</h2>` : ''}
-              ${section.content ? `<div style="color: #4A5568; font-size: 16px; line-height: 1.7; margin-bottom: 25px;">${section.content}</div>` : ''}`;
+              ${section.title ? `<h2 style="margin: 0 0 8px; color: #1A2B4A; font-size: 20px; font-weight: bold;">${section.title}</h2>` : ''}
+              ${section.content ? `<div style="color: #4A5568; font-size: 15px; line-height: 1.5; margin-bottom: 12px;">${section.content}</div>` : ''}`;
         
         case 'columns':
           return `
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 25px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 12px;">
                 <tr>
                   <td width="48%" valign="top" style="padding-right: 2%;">
-                    <div style="color: #4A5568; font-size: 15px; line-height: 1.6;">${section.leftColumn || ''}</div>
+                    <div style="color: #4A5568; font-size: 14px; line-height: 1.5;">${section.leftColumn || ''}</div>
                   </td>
                   <td width="4%"></td>
                   <td width="48%" valign="top" style="padding-left: 2%;">
-                    <div style="color: #4A5568; font-size: 15px; line-height: 1.6;">${section.rightColumn || ''}</div>
+                    <div style="color: #4A5568; font-size: 14px; line-height: 1.5;">${section.rightColumn || ''}</div>
                   </td>
                 </tr>
               </table>`;
         
         case 'cta':
           return section.ctaText ? `
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 30px auto;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 16px auto;">
                 <tr>
                   <td style="background: linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%); border-radius: 6px;">
-                    <a href="${section.ctaLink || 'https://iarche.fr'}" target="_blank" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold;">${section.ctaText}</a>
+                    <a href="${section.ctaLink || 'https://iarche.fr'}" target="_blank" style="display: inline-block; padding: 12px 28px; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: bold;">${section.ctaText}</a>
                   </td>
                 </tr>
               </table>` : '';
         
         case 'divider':
           return `
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin: 25px 0;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin: 12px 0;">
                 <tr>
                   <td style="border-top: 1px solid #E2E8F0;"></td>
                 </tr>
@@ -131,30 +131,30 @@ const BrevoHTMLEditor = () => {
 <body style="margin: 0; padding: 0; background-color: #FAF9F7; font-family: Arial, Helvetica, sans-serif;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #FAF9F7;">
     <tr>
-      <td align="center" style="padding: 40px 20px;">
+      <td align="center" style="padding: 24px 16px;">
         <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
           
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #1A2B4A 0%, #2D4A7C 50%, #B04A32 100%); padding: 30px 40px; text-align: center;">
+            <td style="background: linear-gradient(135deg, #1A2B4A 0%, #2D4A7C 50%, #B04A32 100%); padding: 20px 24px; text-align: center;">
               ${headerContent}
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">${headerTitle}</h1>
-              <div style="width: 60px; height: 3px; background: linear-gradient(90deg, #1A2B4A, #B04A32, #1A2B4A); margin: 15px auto 0;"></div>
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: bold;">${headerTitle}</h1>
+              <div style="width: 50px; height: 2px; background: linear-gradient(90deg, #1A2B4A, #B04A32, #1A2B4A); margin: 10px auto 0;"></div>
             </td>
           </tr>
           
           <!-- Contenu -->
           <tr>
-            <td style="padding: 40px;">
+            <td style="padding: 24px;">
               ${sectionsHTML}
             </td>
           </tr>
           
           <!-- Footer -->
           <tr>
-            <td style="background-color: #1A2B4A; padding: 25px 40px; text-align: center;">
-              <p style="margin: 0; color: #ffffff; font-size: 14px;">${footerText}</p>
-              <p style="margin: 10px 0 0; color: rgba(255,255,255,0.7); font-size: 12px;">
+            <td style="background-color: #1A2B4A; padding: 16px 24px; text-align: center;">
+              <p style="margin: 0; color: #ffffff; font-size: 13px;">${footerText}</p>
+              <p style="margin: 6px 0 0; color: rgba(255,255,255,0.7); font-size: 11px;">
                 <a href="https://iarche.fr" style="color: #B04A32; text-decoration: none;">iarche.fr</a>
               </p>
             </td>
