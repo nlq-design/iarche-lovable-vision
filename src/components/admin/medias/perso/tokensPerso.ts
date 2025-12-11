@@ -1,7 +1,7 @@
 /**
  * =====================================================
- * CHARTE GRAPHIQUE PERSONNELLE - NICOLAS LARA
- * Tokens extraits du profil LinkedIn
+ * CHARTE GRAPHIQUE IArche II
+ * Palette alternative pour médias personnalisés
  * =====================================================
  */
 

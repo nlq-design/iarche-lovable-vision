@@ -89,9 +89,9 @@ const AdminMediasPerso = () => {
                 <User className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Médias Personnel</h1>
+                <h1 className="text-2xl font-bold text-foreground">Média IArche II</h1>
                 <p className="text-muted-foreground">
-                  Charte graphique Nicolas Lara - Réseaux sociaux
+                  Charte graphique alternative - Réseaux sociaux
                 </p>
               </div>
             </div>
