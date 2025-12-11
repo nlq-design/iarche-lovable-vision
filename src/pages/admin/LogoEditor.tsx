@@ -28,8 +28,8 @@ const LOGO_SIZES: Record<LogoSize, { width: number; label: string }> = {
   '100': { width: 100, label: '100px (Petite)' },
 };
 
-// Options de barre disponibles (xs à 2xl)
-const BAR_SIZE_OPTIONS: BarSize[] = Object.keys(BAR_SIZES) as BarSize[];
+// Options de barre disponibles (sm à xl) - Charte 3.1
+const BAR_SIZE_OPTIONS: BarSize[] = ['sm', 'md', 'lg', 'xl'];
 
 // Modes d'export conformes à la charte 3.1 - Le logo est TOUJOURS avec sa barre
 const EXPORT_MODES: Record<ExportMode, { label: string }> = {
