@@ -3,11 +3,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Copy, Check, Eye, Code, Plus, Trash2, Columns } from 'lucide-react';
+import { Copy, Check, Eye, Code, Plus, Trash2, Columns, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { LazyQuill } from '@/components/admin/LazyQuill';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const quillModules = {
   toolbar: [
@@ -37,6 +54,122 @@ interface Section {
   ctaLink?: string;
 }
 
+interface SortableSectionProps {
+  section: Section;
+  index: number;
+  sections: Section[];
+  updateSection: (id: string, updates: Partial<Section>) => void;
+  removeSection: (id: string) => void;
+}
+
+const SortableSection = ({ section, index, sections, updateSection, removeSection }: SortableSectionProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: section.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="p-4 border rounded-lg space-y-3 bg-muted/30">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button
+            {...attributes}
+            {...listeners}
+            className="cursor-grab hover:bg-muted p-1 rounded touch-none"
+          >
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          </button>
+          <span className="text-sm font-medium text-muted-foreground">
+            Section {index + 1} - {section.type === 'text' ? 'Texte' : section.type === 'columns' ? 'Colonnes' : section.type === 'cta' ? 'Bouton CTA' : 'Séparateur'}
+          </span>
+        </div>
+        {sections.length > 1 && (
+          <Button size="icon" variant="ghost" onClick={() => removeSection(section.id)}>
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        )}
+      </div>
+
+      {section.type === 'text' && (
+        <>
+          <Input
+            value={section.title || ''}
+            onChange={(e) => updateSection(section.id, { title: e.target.value })}
+            placeholder="Titre (optionnel)"
+          />
+          <div className="brevo-quill-editor">
+            <LazyQuill
+              value={section.content || ''}
+              onChange={(value) => updateSection(section.id, { content: value })}
+              modules={quillModules}
+              formats={quillFormats}
+              placeholder="Contenu avec mise en forme..."
+            />
+          </div>
+        </>
+      )}
+
+      {section.type === 'columns' && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="text-xs">Colonne gauche</Label>
+            <div className="brevo-quill-editor">
+              <LazyQuill
+                value={section.leftColumn || ''}
+                onChange={(value) => updateSection(section.id, { leftColumn: value })}
+                modules={quillModules}
+                formats={quillFormats}
+                placeholder="Contenu colonne gauche..."
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs">Colonne droite</Label>
+            <div className="brevo-quill-editor">
+              <LazyQuill
+                value={section.rightColumn || ''}
+                onChange={(value) => updateSection(section.id, { rightColumn: value })}
+                modules={quillModules}
+                formats={quillFormats}
+                placeholder="Contenu colonne droite..."
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {section.type === 'cta' && (
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            value={section.ctaText || ''}
+            onChange={(e) => updateSection(section.id, { ctaText: e.target.value })}
+            placeholder="Texte du bouton"
+          />
+          <Input
+            value={section.ctaLink || ''}
+            onChange={(e) => updateSection(section.id, { ctaLink: e.target.value })}
+            placeholder="Lien du bouton"
+          />
+        </div>
+      )}
+
+      {section.type === 'divider' && (
+        <p className="text-xs text-muted-foreground">Ligne de séparation horizontale</p>
+      )}
+    </div>
+  );
+};
+
 const BrevoHTMLEditor = () => {
   const [headerTitle, setHeaderTitle] = useState('IArche');
   const [headerImage, setHeaderImage] = useState('');
@@ -47,6 +180,24 @@ const BrevoHTMLEditor = () => {
   const [sections, setSections] = useState<Section[]>([
     { id: '1', type: 'text', title: '', content: '' }
   ]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setSections((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
 
   const addSection = (type: Section['type']) => {
     const newSection: Section = {
@@ -243,88 +394,28 @@ const BrevoHTMLEditor = () => {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {sections.map((section, index) => (
-                <div key={section.id} className="p-4 border rounded-lg space-y-3 bg-muted/30">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      Section {index + 1} - {section.type === 'text' ? 'Texte' : section.type === 'columns' ? 'Colonnes' : section.type === 'cta' ? 'Bouton CTA' : 'Séparateur'}
-                    </span>
-                    {sections.length > 1 && (
-                      <Button size="icon" variant="ghost" onClick={() => removeSection(section.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    )}
-                  </div>
-
-                  {section.type === 'text' && (
-                    <>
-                      <Input
-                        value={section.title || ''}
-                        onChange={(e) => updateSection(section.id, { title: e.target.value })}
-                        placeholder="Titre (optionnel)"
-                      />
-                      <div className="brevo-quill-editor">
-                        <LazyQuill
-                          value={section.content || ''}
-                          onChange={(value) => updateSection(section.id, { content: value })}
-                          modules={quillModules}
-                          formats={quillFormats}
-                          placeholder="Contenu avec mise en forme..."
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {section.type === 'columns' && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs">Colonne gauche</Label>
-                        <div className="brevo-quill-editor">
-                          <LazyQuill
-                            value={section.leftColumn || ''}
-                            onChange={(value) => updateSection(section.id, { leftColumn: value })}
-                            modules={quillModules}
-                            formats={quillFormats}
-                            placeholder="Contenu colonne gauche..."
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs">Colonne droite</Label>
-                        <div className="brevo-quill-editor">
-                          <LazyQuill
-                            value={section.rightColumn || ''}
-                            onChange={(value) => updateSection(section.id, { rightColumn: value })}
-                            modules={quillModules}
-                            formats={quillFormats}
-                            placeholder="Contenu colonne droite..."
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {section.type === 'cta' && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <Input
-                        value={section.ctaText || ''}
-                        onChange={(e) => updateSection(section.id, { ctaText: e.target.value })}
-                        placeholder="Texte du bouton"
-                      />
-                      <Input
-                        value={section.ctaLink || ''}
-                        onChange={(e) => updateSection(section.id, { ctaLink: e.target.value })}
-                        placeholder="Lien du bouton"
-                      />
-                    </div>
-                  )}
-
-                  {section.type === 'divider' && (
-                    <p className="text-xs text-muted-foreground">Ligne de séparation horizontale</p>
-                  )}
-                </div>
-              ))}
+            <CardContent className="space-y-4">
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={sections.map(s => s.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {sections.map((section, index) => (
+                    <SortableSection
+                      key={section.id}
+                      section={section}
+                      index={index}
+                      sections={sections}
+                      updateSection={updateSection}
+                      removeSection={removeSection}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
             </CardContent>
           </Card>
 
