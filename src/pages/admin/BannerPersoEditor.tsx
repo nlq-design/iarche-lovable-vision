@@ -24,7 +24,7 @@ const BannerPersoEditor = () => {
   const [showWatermark, setShowWatermark] = useState(true);
   const [titleSize, setTitleSize] = useState(42);
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('left');
-  const [quality, setQuality] = useState<number>(6);
+  const [quality, setQuality] = useState<number>(2); // 2x recommandé pour bannière
 
   const getBackground = () => {
     if (theme === 'light') {
@@ -69,7 +69,7 @@ const BannerPersoEditor = () => {
             filename="banner-linkedin-perso"
             width={1584}
             height={396}
-            quality={quality as 4 | 6 | 8}
+            quality={quality as 1 | 2 | 3 | 4 | 6 | 8}
           />
         </div>
 
@@ -225,12 +225,25 @@ const BannerPersoEditor = () => {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label>Qualité: {quality}x</Label>
+                  <div>
+                    <Label>Qualité: {quality}x</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {quality === 1 && '1584×396px (~150KB)'}
+                      {quality === 2 && '3168×792px (~400KB) ✓'}
+                      {quality === 3 && '4752×1188px (~800KB)'}
+                      {quality === 4 && '6336×1584px (~1.5MB)'}
+                      {quality === 6 && '9504×2376px (~3MB)'}
+                      {quality === 8 && '12672×3168px (~6MB)'}
+                    </p>
+                  </div>
                   <Select value={String(quality)} onValueChange={(v) => setQuality(Number(v))}>
                     <SelectTrigger className="w-20">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="1">1x</SelectItem>
+                      <SelectItem value="2">2x ✓</SelectItem>
+                      <SelectItem value="3">3x</SelectItem>
                       <SelectItem value="4">4x</SelectItem>
                       <SelectItem value="6">6x</SelectItem>
                       <SelectItem value="8">8x</SelectItem>
