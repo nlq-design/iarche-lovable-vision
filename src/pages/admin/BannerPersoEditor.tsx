@@ -84,18 +84,17 @@ const BannerPersoEditor = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-6">
-          {/* Preview Container - Scaled for display */}
+          {/* Preview Container */}
           <div className="space-y-4">
-            <Label>Aperçu (dimensions réelles scalées)</Label>
+            <Label>Aperçu (50% de {CANVAS_WIDTH}×{CANVAS_HEIGHT}px)</Label>
             <div className="overflow-x-auto bg-muted/30 rounded-lg p-4">
-              {/* Fixed dimension canvas - scaled down for display */}
+              {/* Scaled container for display only */}
               <div 
-                className="mx-auto origin-top-left"
+                className="mx-auto"
                 style={{
-                  width: CANVAS_WIDTH,
-                  height: CANVAS_HEIGHT,
-                  transform: 'scale(0.5)',
-                  transformOrigin: 'top left',
+                  width: CANVAS_WIDTH * 0.5,
+                  height: CANVAS_HEIGHT * 0.5,
+                  overflow: 'hidden',
                 }}
               >
                 <div 
@@ -104,6 +103,8 @@ const BannerPersoEditor = () => {
                   style={{
                     width: CANVAS_WIDTH,
                     height: CANVAS_HEIGHT,
+                    transform: 'scale(0.5)',
+                    transformOrigin: 'top left',
                     background: getBackground(),
                     fontFamily: "'Manrope', 'Helvetica Neue', Arial, sans-serif",
                   }}
@@ -181,8 +182,6 @@ const BannerPersoEditor = () => {
                 </div>
               </div>
             </div>
-            {/* Wrapper to maintain layout after scale */}
-            <div style={{ height: CANVAS_HEIGHT * 0.5 - CANVAS_HEIGHT, marginTop: -(CANVAS_HEIGHT * 0.5) }} />
           </div>
 
           {/* Controls */}
