@@ -16,11 +16,11 @@ import ExportActions from '@/components/admin/medias/ExportActions';
 import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
 import { Download } from 'lucide-react';
 import { BarSize } from '@/components/admin/medias/html/tokens';
+import CharterSelector, { CharterType, getCharterColors } from '@/components/admin/medias/CharterSelector';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
   HTMLGradientBar,
-  IARCHE_COLORS,
   IARCHE_FONTS,
 } from '@/components/admin/medias/html';
 
@@ -51,10 +51,14 @@ const HeaderEmailEditor: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
 
   const [template, setTemplate] = useState<HeaderTemplate>('newsletter');
+  const [charter, setCharter] = useState<CharterType>('iarche');
   const [preset, setPreset] = useState<string>('');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [barSize, setBarSize] = useState<BarSize>('md');
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
+  
+  // Get colors based on charter
+  const charterColors = getCharterColors(charter);
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(20);
@@ -116,7 +120,7 @@ const HeaderEmailEditor: React.FC = () => {
     try {
       await exportToPNG(previewRef, `header-email-${template}`, {
         pixelRatio: pngQuality,
-        backgroundColor: template === 'newsletter' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse,
+        backgroundColor: template === 'newsletter' ? charterColors.bleuNuit : charterColors.blancCasse,
       });
       toast.success(`Header exporté (${600 * pngQuality}×${150 * pngQuality}px)`);
     } catch (error) {
@@ -167,14 +171,14 @@ const HeaderEmailEditor: React.FC = () => {
                   fontSize: `${titleFontSize}px`,
                   fontWeight: titleBold ? 700 : 400,
                   fontStyle: titleItalic ? 'italic' : 'normal',
-                  color: IARCHE_COLORS.white,
+                  color: charterColors.white,
                 }}>
                   {formData.titre}
                 </span>
                 <span style={{
                   fontFamily: IARCHE_FONTS.primary,
                   fontSize: `${titleFontSize * 0.7}px`,
-                  color: IARCHE_COLORS.terracotta,
+                  color: charterColors.terracotta,
                 }}>
                   {formData.numero} · {formData.date}
                 </span>
@@ -212,7 +216,7 @@ const HeaderEmailEditor: React.FC = () => {
                 fontSize: `${titleFontSize}px`,
                 fontWeight: titleBold ? 600 : 400,
                 fontStyle: titleItalic ? 'italic' : 'normal',
-                color: IARCHE_COLORS.bleuNuit,
+                color: charterColors.bleuNuit,
                 textAlign: titleAlignment,
               }}>
                 {formData.titre}
