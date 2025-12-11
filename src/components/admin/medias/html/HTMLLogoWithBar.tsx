@@ -55,7 +55,7 @@ export const HTMLLogoWithBar: React.FC<HTMLLogoWithBarProps> = ({
   const containerStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: `${gap}px`,
   };
 
