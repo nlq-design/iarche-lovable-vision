@@ -112,14 +112,6 @@ const AdminMediasPerso = () => {
               </div>
               <div className="flex items-center gap-2">
                 <div 
-                  className="w-8 h-8 rounded-full border-2 border-white shadow-md"
-                  style={{ backgroundColor: COLORS_PERSO.mauveTransition }}
-                  title="Mauve"
-                />
-                <span className="text-xs text-muted-foreground">Mauve</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div 
                   className="w-8 h-8 rounded-full border-2 border-muted shadow-md"
                   style={{ backgroundColor: COLORS_PERSO.blancCasse }}
                   title="Blanc Cassé"
@@ -128,7 +120,7 @@ const AdminMediasPerso = () => {
               </div>
               <div 
                 className="ml-auto h-8 w-32 rounded-lg shadow-inner"
-                style={{ background: `linear-gradient(135deg, ${COLORS_PERSO.terracotta} 0%, ${COLORS_PERSO.mauveTransition} 50%, ${COLORS_PERSO.bleuProfond} 100%)` }}
+                style={{ background: `linear-gradient(135deg, ${COLORS_PERSO.terracotta} 0%, ${COLORS_PERSO.bleuProfond} 100%)` }}
                 title="Dégradé diagonal"
               />
             </div>

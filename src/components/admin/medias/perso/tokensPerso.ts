@@ -9,11 +9,10 @@
 // COULEURS - Palette "Nicolas Lara"
 // =====================================================
 export const COLORS_PERSO = {
-  // Palette primaire
+  // Palette primaire (2 couleurs uniquement)
   terracotta: '#D4633A',           // hsl(15, 65%, 52%) - Primary warm
   bleuProfond: '#213A6B',          // hsl(220, 55%, 28%) - Secondary deep
-  mauveTransition: '#5C4A75',      // hsl(260, 30%, 40%) - Accent subtle
-  blancCasse: '#FAF9F7',           // hsl(40, 23%, 97%) - Background light (user's choice)
+  blancCasse: '#FAF9F7',           // hsl(40, 23%, 97%) - Background light
   
   // Texte
   white: '#FFFFFF',
@@ -29,18 +28,17 @@ export const COLORS_PERSO = {
 } as const;
 
 // =====================================================
-// GRADIENTS - Style LinkedIn diagonal
+// GRADIENTS - Style LinkedIn diagonal (sans mauve)
 // =====================================================
 export const GRADIENTS_PERSO = {
-  // Dégradé diagonal comme la photo LinkedIn (gauche orange → droite bleu)
+  // Dégradé diagonal Terracotta → Bleu Profond uniquement
   diagonal: {
     angle: 135,
     stops: [
       { color: COLORS_PERSO.terracotta, position: 0 },
-      { color: COLORS_PERSO.mauveTransition, position: 50 },
       { color: COLORS_PERSO.bleuProfond, position: 100 },
     ],
-    css: `linear-gradient(135deg, ${COLORS_PERSO.terracotta} 0%, ${COLORS_PERSO.mauveTransition} 50%, ${COLORS_PERSO.bleuProfond} 100%)`,
+    css: `linear-gradient(135deg, ${COLORS_PERSO.terracotta} 0%, ${COLORS_PERSO.bleuProfond} 100%)`,
   },
   // Dégradé horizontal
   horizontal: {
