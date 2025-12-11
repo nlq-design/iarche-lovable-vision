@@ -82,6 +82,7 @@ const FormEditor = lazy(() => import("./pages/admin/FormEditor"));
 const FormResponses = lazy(() => import("./pages/admin/FormResponses"));
 const AdminFormResponses = lazy(() => import("./pages/admin/AdminFormResponses"));
 const AdminEmails = lazy(() => import("./pages/admin/AdminEmails"));
+const BrevoHTMLExport = lazy(() => import("./pages/admin/BrevoHTMLExport"));
 const AdminRendezVous = lazy(() => import("./pages/admin/AdminRendezVous"));
 const FormPublic = lazy(() => import("./pages/FormPublic"));
 const RendezVous = lazy(() => import("./pages/RendezVous"));
@@ -343,6 +344,11 @@ const App = () => (
           <Route path="/admin/emails" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><AdminEmails /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/emails/brevo-html" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><BrevoHTMLExport /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/security-dashboard" element={
