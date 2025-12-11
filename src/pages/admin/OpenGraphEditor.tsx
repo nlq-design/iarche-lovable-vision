@@ -25,6 +25,13 @@ import {
   ThemeType,
 } from '@/components/admin/medias/html';
 
+type PngQuality = 4 | 6 | 8;
+const PNG_QUALITY_OPTIONS: { value: PngQuality; label: string }[] = [
+  { value: 4, label: 'Standard (4x)' },
+  { value: 6, label: 'Haute (6x)' },
+  { value: 8, label: 'Ultra (8x)' },
+];
+
 type OGTemplate = 'page' | 'article' | 'solution';
 
 type PresetTemplate = {
@@ -66,6 +73,7 @@ export default function OpenGraphEditor() {
   const [preset, setPreset] = useState<string>('');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [barSize, setBarSize] = useState<BarSize>('lg');
+  const [pngQuality, setPngQuality] = useState<PngQuality>(6);
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(72);
@@ -99,12 +107,12 @@ export default function OpenGraphEditor() {
 
   // Get current data for saving template
   const getCurrentData = useCallback(() => ({
-    template, theme, preset, exportMode, barSize,
+    template, theme, preset, exportMode, barSize, pngQuality,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     pageTitle, pageTagline,
     articleTitle, articleDate, articleCategory,
     selectedSolution, solutionImage,
-  }), [template, theme, preset, exportMode, barSize, titleFontSize, titleBold, titleItalic, titleAlignment, pageTitle, pageTagline, articleTitle, articleDate, articleCategory, selectedSolution, solutionImage]);
+  }), [template, theme, preset, exportMode, barSize, pngQuality, titleFontSize, titleBold, titleItalic, titleAlignment, pageTitle, pageTagline, articleTitle, articleDate, articleCategory, selectedSolution, solutionImage]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
@@ -112,6 +120,7 @@ export default function OpenGraphEditor() {
     if (data.theme) setTheme(data.theme as ThemeType);
     if (data.exportMode) setExportMode(data.exportMode as ExportMode);
     if (data.barSize) setBarSize(data.barSize as BarSize);
+    if (data.pngQuality) setPngQuality(data.pngQuality as PngQuality);
     if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
     if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
     if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
@@ -136,10 +145,10 @@ export default function OpenGraphEditor() {
   const handleExport = async () => {
     try {
       await exportToPNG(ogRef, `og-${template}`, {
-        pixelRatio: 3,
+        pixelRatio: pngQuality,
         backgroundColor: theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse,
       });
-      toast.success(`Open Graph exporté (${OG_WIDTH * 3}×${OG_HEIGHT * 3}px)`);
+      toast.success(`Open Graph exporté (${OG_WIDTH * pngQuality}×${OG_HEIGHT * pngQuality}px)`);
     } catch (error) {
       toast.error('Erreur lors de l\'export');
     }
@@ -503,6 +512,21 @@ export default function OpenGraphEditor() {
                 onBarSizeChange={setBarSize}
                 compact={true}
               />
+
+              {/* PNG Quality */}
+              <div className="space-y-2">
+                <Label>Qualité PNG</Label>
+                <Select value={String(pngQuality)} onValueChange={(v) => setPngQuality(Number(v) as PngQuality)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PNG_QUALITY_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={String(opt.value)}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Saved Templates */}
               <div className="pt-4 border-t">

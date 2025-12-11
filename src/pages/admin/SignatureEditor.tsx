@@ -4,11 +4,19 @@ import { ArrowLeft, Download, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { exportToPNG } from '@/lib/exportPng';
 import { IARCHE_COLORS } from '@/components/admin/medias/html';
+
+type PngQuality = 4 | 6 | 8;
+const PNG_QUALITY_OPTIONS: { value: PngQuality; label: string }[] = [
+  { value: 4, label: 'Standard (4x)' },
+  { value: 6, label: 'Haute (6x)' },
+  { value: 8, label: 'Ultra (8x)' },
+];
 
 const SIGNATURE_WIDTH = 600;
 const SIGNATURE_HEIGHT = 200;
@@ -21,6 +29,7 @@ export default function SignatureEditor() {
   const navigate = useNavigate();
   const signatureRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [pngQuality, setPngQuality] = useState<PngQuality>(6);
   
   // Form fields
   const [prenom, setPrenom] = useState('Nicolas');
@@ -111,10 +120,10 @@ export default function SignatureEditor() {
   const handleExportPNG = async () => {
     try {
       await exportToPNG(signatureRef, 'signature-email', {
-        pixelRatio: 3,
+        pixelRatio: pngQuality,
         backgroundColor: '#FFFFFF',
       });
-      toast.success('Signature exportée en PNG (haute résolution)');
+      toast.success(`Signature exportée (${SIGNATURE_WIDTH * pngQuality}×${SIGNATURE_HEIGHT * pngQuality}px)`);
     } catch (error) {
       toast.error('Erreur lors de l\'export');
     }
@@ -178,6 +187,19 @@ export default function SignatureEditor() {
               <div className="space-y-2">
                 <Label>Tagline</Label>
                 <Input value={tagline} onChange={(e) => setTagline(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Qualité PNG</Label>
+                <Select value={String(pngQuality)} onValueChange={(v) => setPngQuality(Number(v) as PngQuality)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PNG_QUALITY_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={String(opt.value)}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>

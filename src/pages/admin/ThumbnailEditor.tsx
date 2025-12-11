@@ -24,6 +24,13 @@ import {
   ThemeType,
 } from '@/components/admin/medias/html';
 
+type PngQuality = 4 | 6 | 8;
+const PNG_QUALITY_OPTIONS: { value: PngQuality; label: string }[] = [
+  { value: 4, label: 'Standard (4x)' },
+  { value: 6, label: 'Haute (6x)' },
+  { value: 8, label: 'Ultra (8x)' },
+];
+
 type ThumbnailFormat = 'standard' | 'youtube';
 type EventType = 'webinaire' | 'atelier' | 'replay';
 
@@ -69,6 +76,7 @@ export default function ThumbnailEditor() {
   const [preset, setPreset] = useState<string>('');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [barSize, setBarSize] = useState<BarSize>('xl');
+  const [pngQuality, setPngQuality] = useState<PngQuality>(6);
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(72);
@@ -102,11 +110,11 @@ export default function ThumbnailEditor() {
 
   // Get current data for saving template
   const getCurrentData = useCallback(() => ({
-    format, theme, eventType, preset, exportMode, barSize,
+    format, theme, eventType, preset, exportMode, barSize, pngQuality,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     titre, sousTitre, date, heure,
     speakerNom, speakerFonction, showSpeaker, speakerPhoto,
-  }), [format, theme, eventType, preset, exportMode, barSize, titleFontSize, titleBold, titleItalic, titleAlignment, titre, sousTitre, date, heure, speakerNom, speakerFonction, showSpeaker, speakerPhoto]);
+  }), [format, theme, eventType, preset, exportMode, barSize, pngQuality, titleFontSize, titleBold, titleItalic, titleAlignment, titre, sousTitre, date, heure, speakerNom, speakerFonction, showSpeaker, speakerPhoto]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
@@ -115,6 +123,7 @@ export default function ThumbnailEditor() {
     if (data.eventType) setEventType(data.eventType as EventType);
     if (data.exportMode) setExportMode(data.exportMode as ExportMode);
     if (data.barSize) setBarSize(data.barSize as BarSize);
+    if (data.pngQuality) setPngQuality(data.pngQuality as PngQuality);
     if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
     if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
     if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
@@ -141,10 +150,10 @@ export default function ThumbnailEditor() {
     const { width, height } = DIMENSIONS[format];
     try {
       await exportToPNG(thumbnailRef, `thumbnail-${eventType}-${format}`, {
-        pixelRatio: 3,
+        pixelRatio: pngQuality,
         backgroundColor: theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse,
       });
-      toast.success(`Miniature exportée (${width * 3}×${height * 3}px)`);
+      toast.success(`Miniature exportée (${width * pngQuality}×${height * pngQuality}px)`);
     } catch (error) {
       toast.error('Erreur lors de l\'export');
     }
@@ -345,6 +354,21 @@ export default function ThumbnailEditor() {
                 onBarSizeChange={setBarSize}
                 compact={true}
               />
+
+              {/* PNG Quality */}
+              <div className="space-y-2">
+                <Label>Qualité PNG</Label>
+                <Select value={String(pngQuality)} onValueChange={(v) => setPngQuality(Number(v) as PngQuality)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PNG_QUALITY_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={String(opt.value)}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Saved Templates */}
               <div className="pt-4 border-t">

@@ -1,12 +1,18 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.16**  
-**Date : 3 Décembre 2025**  
+**Version mise à jour : V6.17**  
+**Date : 11 Décembre 2025**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.16 MODULE MÉDIAS - QUALITÉ PNG CONFIGURABLE — MISE À JOUR V6.17 ✅
+
+Sélecteur de qualité PNG (4x Standard / 6x Haute / 8x Ultra) ajouté à tous les éditeurs médias : BannerEditor, StoryEditor, PostEditor, ThumbnailEditor, OpenGraphEditor, HeaderEmailEditor, SignatureEditor. Qualité par défaut : 6x (Haute). Persistance dans templates personnalisés.
+
+---
 
 ### 0.15 MODULE RÉSERVATION - PRISE DE RENDEZ-VOUS — MISE À JOUR V6.16 ✅
 

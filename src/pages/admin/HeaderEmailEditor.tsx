@@ -22,6 +22,13 @@ import {
   IARCHE_FONTS,
 } from '@/components/admin/medias/html';
 
+type PngQuality = 4 | 6 | 8;
+const PNG_QUALITY_OPTIONS: { value: PngQuality; label: string }[] = [
+  { value: 4, label: 'Standard (4x)' },
+  { value: 6, label: 'Haute (6x)' },
+  { value: 8, label: 'Ultra (8x)' },
+];
+
 type HeaderTemplate = 'newsletter' | 'annonce' | 'minimal';
 
 type PresetTemplate = {
@@ -52,6 +59,7 @@ const HeaderEmailEditor: React.FC = () => {
   const [preset, setPreset] = useState<string>('');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [barSize, setBarSize] = useState<BarSize>('md');
+  const [pngQuality, setPngQuality] = useState<PngQuality>(6);
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(20);
@@ -82,16 +90,17 @@ const HeaderEmailEditor: React.FC = () => {
 
   // Get current data for saving template
   const getCurrentData = useCallback(() => ({
-    template, preset, exportMode, barSize,
+    template, preset, exportMode, barSize, pngQuality,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     formData,
-  }), [template, preset, exportMode, barSize, titleFontSize, titleBold, titleItalic, titleAlignment, formData]);
+  }), [template, preset, exportMode, barSize, pngQuality, titleFontSize, titleBold, titleItalic, titleAlignment, formData]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
     if (data.template) setTemplate(data.template as HeaderTemplate);
     if (data.exportMode) setExportMode(data.exportMode as ExportMode);
     if (data.barSize) setBarSize(data.barSize as BarSize);
+    if (data.pngQuality) setPngQuality(data.pngQuality as PngQuality);
     if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
     if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
     if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
@@ -111,10 +120,10 @@ const HeaderEmailEditor: React.FC = () => {
     setIsExporting(true);
     try {
       await exportToPNG(previewRef, `header-email-${template}`, {
-        pixelRatio: 2,
+        pixelRatio: pngQuality,
         backgroundColor: template === 'newsletter' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse,
       });
-      toast.success('Header exporté avec succès');
+      toast.success(`Header exporté (${600 * pngQuality}×${150 * pngQuality}px)`);
     } catch (error) {
       toast.error("Erreur lors de l'export");
     } finally {
@@ -368,6 +377,21 @@ const HeaderEmailEditor: React.FC = () => {
                 onBarSizeChange={setBarSize}
                 compact={true}
               />
+
+              {/* PNG Quality */}
+              <div className="space-y-2">
+                <Label>Qualité PNG</Label>
+                <Select value={String(pngQuality)} onValueChange={(v) => setPngQuality(Number(v) as PngQuality)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PNG_QUALITY_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={String(opt.value)}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Saved Templates */}
               <div className="pt-4 border-t">
