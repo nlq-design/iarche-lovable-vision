@@ -129,3 +129,10 @@ export const GRADIENT_STOPS = {
 
 // Logo + Barre proportions (Charte 3.1)
 export { LOGO_BAR_MAPPING, LOGO_BAR_GAP };
+
+// Export size mapping
+export { EXPORT_BAR_MAPPING } from '../shared/tokens';
+
+// Types
+export type BarSize = keyof typeof BAR_SIZES;
+export type LogoSize = keyof typeof LOGO_SIZES;
