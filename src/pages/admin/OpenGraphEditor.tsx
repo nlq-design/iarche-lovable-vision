@@ -19,11 +19,11 @@ import { ImageLibrary } from '@/components/admin/medias/ImageLibrary';
 import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
 import { Download } from 'lucide-react';
 import { BarSize } from '@/components/admin/medias/html/tokens';
+import CharterSelector, { CharterType, getCharterColors, getCharterGradients } from '@/components/admin/medias/CharterSelector';
 import {
   HTMLBaseTemplate,
   HTMLLogoWithBar,
   HTMLGradientBar,
-  IARCHE_COLORS,
   IARCHE_FONTS,
   ThemeType,
 } from '@/components/admin/medias/html';
@@ -66,10 +66,14 @@ export default function OpenGraphEditor() {
   
   const [template, setTemplate] = useState<OGTemplate>('page');
   const [theme, setTheme] = useState<ThemeType>('dark');
+  const [charter, setCharter] = useState<CharterType>('iarche');
   const [preset, setPreset] = useState<string>('');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [barSize, setBarSize] = useState<BarSize>('lg');
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
+  
+  // Get colors based on charter
+  const charterColors = getCharterColors(charter);
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(72);
@@ -142,7 +146,7 @@ export default function OpenGraphEditor() {
     try {
       await exportToPNG(ogRef, `og-${template}`, {
         pixelRatio: pngQuality,
-        backgroundColor: theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse,
+        backgroundColor: theme === 'dark' ? charterColors.bleuNuit : charterColors.blancCasse,
       });
       toast.success(`Open Graph exporté (${OG_WIDTH * pngQuality}×${OG_HEIGHT * pngQuality}px)`);
     } catch (error) {
@@ -150,7 +154,7 @@ export default function OpenGraphEditor() {
     }
   };
 
-  const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
+  const textColor = theme === 'dark' ? charterColors.white : charterColors.bleuNuit;
   const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(26,43,74,0.7)';
 
   const renderOGContent = () => {
@@ -204,8 +208,8 @@ export default function OpenGraphEditor() {
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: '18px',
                 fontWeight: 600,
-                color: IARCHE_COLORS.white,
-                backgroundColor: IARCHE_COLORS.terracotta,
+                color: charterColors.white,
+                backgroundColor: charterColors.terracotta,
                 padding: '8px 20px',
                 borderRadius: '6px',
                 textTransform: 'uppercase',
@@ -238,7 +242,7 @@ export default function OpenGraphEditor() {
 
             {/* Footer */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <FileText size={24} color={IARCHE_COLORS.terracotta} />
+              <FileText size={24} color={charterColors.terracotta} />
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: '20px',
@@ -286,7 +290,7 @@ export default function OpenGraphEditor() {
                 width: '140px',
                 height: '140px',
                 borderRadius: '24px',
-                backgroundColor: solutionImage ? 'transparent' : IARCHE_COLORS.terracotta,
+                backgroundColor: solutionImage ? 'transparent' : charterColors.terracotta,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -296,7 +300,7 @@ export default function OpenGraphEditor() {
                 {solutionImage ? (
                   <img src={solutionImage} alt={solution.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  <Briefcase size={64} color={IARCHE_COLORS.white} />
+                  <Briefcase size={64} color={charterColors.white} />
                 )}
               </div>
               
@@ -326,7 +330,7 @@ export default function OpenGraphEditor() {
 
             {/* Footer */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Globe size={20} color={IARCHE_COLORS.terracotta} />
+              <Globe size={20} color={charterColors.terracotta} />
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: '18px',

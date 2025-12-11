@@ -11,7 +11,7 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import ExportActions from '@/components/admin/medias/ExportActions';
 import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
 import { Download } from 'lucide-react';
-import { IARCHE_COLORS } from '@/components/admin/medias/html';
+import CharterSelector, { CharterType, getCharterColors } from '@/components/admin/medias/CharterSelector';
 
 const SIGNATURE_WIDTH = 600;
 const SIGNATURE_HEIGHT = 200;
@@ -24,7 +24,11 @@ export default function SignatureEditor() {
   const navigate = useNavigate();
   const signatureRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [charter, setCharter] = useState<CharterType>('iarche');
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
+  
+  // Get colors based on charter
+  const charterColors = getCharterColors(charter);
   
   // Form fields
   const [prenom, setPrenom] = useState('Nicolas');
@@ -39,9 +43,9 @@ export default function SignatureEditor() {
     const gradientLogoSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="28" viewBox="0 0 80 28">
       <defs>
         <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#1A2B4A"/>
-          <stop offset="50%" stop-color="#B04A32"/>
-          <stop offset="100%" stop-color="#1A2B4A"/>
+          <stop offset="0%" stop-color="${charterColors.bleuNuit}"/>
+          <stop offset="50%" stop-color="${charterColors.terracotta}"/>
+          <stop offset="100%" stop-color="${charterColors.bleuNuit}"/>
         </linearGradient>
       </defs>
       <text x="0" y="22" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="bold" fill="url(#logoGrad)">IArche</text>
@@ -51,13 +55,13 @@ export default function SignatureEditor() {
     const phoneRow = telephone ? `
       <tr>
         <td style="padding: 2px 0;">
-          <a href="tel:${telephone.replace(/\s/g, '')}" style="color: ${IARCHE_COLORS.bleuNuit}; text-decoration: none; font-size: 14px;">${telephone}</a>
+          <a href="tel:${telephone.replace(/\s/g, '')}" style="color: ${charterColors.bleuNuit}; text-decoration: none; font-size: 14px;">${telephone}</a>
         </td>
       </tr>` : '';
 
     return `<table cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, 'Helvetica Neue', sans-serif; max-width: 600px;">
   <tr>
-    <td style="padding-right: 20px; vertical-align: top; border-right: 3px solid ${IARCHE_COLORS.terracotta};">
+    <td style="padding-right: 20px; vertical-align: top; border-right: 3px solid ${charterColors.terracotta};">
       <table cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td style="padding-bottom: 8px;">
@@ -72,7 +76,7 @@ export default function SignatureEditor() {
       <table cellpadding="0" cellspacing="0" border="0">
         <tr>
           <td style="padding-bottom: 4px;">
-            <span style="font-weight: bold; font-size: 16px; color: ${IARCHE_COLORS.bleuNuit};">${prenom} ${nom.toUpperCase()}</span>
+            <span style="font-weight: bold; font-size: 16px; color: ${charterColors.bleuNuit};">${prenom} ${nom.toUpperCase()}</span>
           </td>
         </tr>
         <tr>
@@ -82,12 +86,12 @@ export default function SignatureEditor() {
         </tr>
         <tr>
           <td style="padding: 2px 0;">
-            <a href="mailto:${email}" style="color: ${IARCHE_COLORS.terracotta}; text-decoration: none; font-size: 14px;">${email}</a>
+            <a href="mailto:${email}" style="color: ${charterColors.terracotta}; text-decoration: none; font-size: 14px;">${email}</a>
           </td>
         </tr>${phoneRow}
         <tr>
           <td style="padding: 2px 0;">
-            <a href="https://iarche.fr" style="color: ${IARCHE_COLORS.bleuNuit}; text-decoration: none; font-size: 14px;">iarche.fr</a>
+            <a href="https://iarche.fr" style="color: ${charterColors.bleuNuit}; text-decoration: none; font-size: 14px;">iarche.fr</a>
           </td>
         </tr>
       </table>
@@ -184,6 +188,10 @@ export default function SignatureEditor() {
                 <Input value={tagline} onChange={(e) => setTagline(e.target.value)} />
               </div>
               <div className="space-y-2">
+                <Label>Charte graphique</Label>
+                <CharterSelector value={charter} onChange={setCharter} />
+              </div>
+              <div className="space-y-2">
                 <Label>Qualité PNG</Label>
                 <Select value={String(pngQuality)} onValueChange={(v) => setPngQuality(Number(v) as PngQuality)}>
                   <SelectTrigger>
@@ -225,12 +233,12 @@ export default function SignatureEditor() {
                         <td style={{ 
                           paddingRight: '20px', 
                           verticalAlign: 'top', 
-                          borderRight: `3px solid ${IARCHE_COLORS.terracotta}` 
+                          borderRight: `3px solid ${charterColors.terracotta}` 
                         }}>
                           <span style={{ 
                             fontSize: '24px', 
                             fontWeight: 'bold', 
-                            background: `linear-gradient(90deg, ${IARCHE_COLORS.bleuNuit} 0%, ${IARCHE_COLORS.terracotta} 50%, ${IARCHE_COLORS.bleuNuit} 100%)`,
+                            background: `linear-gradient(90deg, ${charterColors.bleuNuit} 0%, ${charterColors.terracotta} 50%, ${charterColors.bleuNuit} 100%)`,
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                             backgroundClip: 'text',
@@ -243,7 +251,7 @@ export default function SignatureEditor() {
                             <span style={{ 
                               fontWeight: 'bold', 
                               fontSize: '16px', 
-                              color: IARCHE_COLORS.bleuNuit 
+                              color: charterColors.bleuNuit 
                             }}>
                               {prenom} {nom.toUpperCase()}
                             </span>
@@ -257,7 +265,7 @@ export default function SignatureEditor() {
                             <a 
                               href={`mailto:${email}`} 
                               style={{ 
-                                color: IARCHE_COLORS.terracotta, 
+                                color: charterColors.terracotta, 
                                 textDecoration: 'none', 
                                 fontSize: '14px' 
                               }}
@@ -270,7 +278,7 @@ export default function SignatureEditor() {
                               <a 
                                 href={`tel:${telephone.replace(/\s/g, '')}`} 
                                 style={{ 
-                                  color: IARCHE_COLORS.bleuNuit, 
+                                  color: charterColors.bleuNuit, 
                                   textDecoration: 'none', 
                                   fontSize: '14px' 
                                 }}
@@ -283,7 +291,7 @@ export default function SignatureEditor() {
                             <a 
                               href="https://iarche.fr" 
                               style={{ 
-                                color: IARCHE_COLORS.bleuNuit, 
+                                color: charterColors.bleuNuit, 
                                 textDecoration: 'none', 
                                 fontSize: '14px' 
                               }}

@@ -14,7 +14,8 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { toPng, toSvg } from 'html-to-image';
 import { pdf, Document, Page, View, Text, Svg, Defs, LinearGradient, Stop, Rect } from '@react-pdf/renderer';
-import { COLORS, BAR_SIZES, LOGO_SIZES, GRADIENTS } from '@/components/admin/medias/shared/tokens';
+import CharterSelector, { CharterType, getCharterColors, getCharterGradients } from '@/components/admin/medias/CharterSelector';
+import { BAR_SIZES, LOGO_SIZES, GRADIENTS } from '@/components/admin/medias/shared/tokens';
 import { HTMLMeshBackground } from '@/components/admin/medias/html/HTMLMeshBackground';
 import { HTMLCanalisationLines } from '@/components/admin/medias/html/HTMLCanalisationLines';
 import { HTMLLogoWithBar } from '@/components/admin/medias/html/HTMLLogoWithBar';
@@ -78,24 +79,24 @@ const getDefaultBarSize = (size: string): BarSize => {
   return 'md';
 };
 
-const LOGO_VARIANTS = {
+const getLogoVariants = (charterColors: ReturnType<typeof getCharterColors>) => ({
   gradient: {
     label: 'Logo Dégradé',
     description: 'Version principale sur fond clair',
-    bgColor: COLORS.blancCasse,
+    bgColor: charterColors.blancCasse,
     theme: 'light' as const,
     filename: 'logo-iarche-gradient',
   },
   terracotta: {
     label: 'Logo Terracotta',
     description: 'Version accent sur fond sombre',
-    bgColor: COLORS.bleuNuit,
+    bgColor: charterColors.bleuNuit,
     theme: 'dark' as const,
     filename: 'logo-iarche-terracotta',
   },
-};
+});
 
-type LogoVariant = keyof typeof LOGO_VARIANTS;
+type LogoVariant = 'gradient' | 'terracotta';
 
 // PDF Logo Document Component
 const PDFLogoDocument: React.FC<{
@@ -103,13 +104,15 @@ const PDFLogoDocument: React.FC<{
   size: number;
   isProfile: boolean;
   showBackground: boolean;
-}> = ({ variant, size, isProfile, showBackground }) => {
-  const variantData = LOGO_VARIANTS[variant];
+  charterColors: ReturnType<typeof getCharterColors>;
+}> = ({ variant, size, isProfile, showBackground, charterColors }) => {
+  const logoVariants = getLogoVariants(charterColors);
+  const variantData = logoVariants[variant];
   const fontSize = Math.max(size * 0.12, 24);
   const barWidth = Math.max(size * 0.25, 48);
   const barHeight = Math.max(size * 0.012, 3);
   
-  const textColor = variant === 'terracotta' ? COLORS.terracotta : COLORS.bleuNuit;
+  const textColor = variant === 'terracotta' ? charterColors.terracotta : charterColors.bleuNuit;
   
   return (
     <Document>
@@ -140,9 +143,9 @@ const PDFLogoDocument: React.FC<{
           >
             <Defs>
               <LinearGradient id="barGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <Stop offset="0%" stopColor={COLORS.bleuNuit} />
-                <Stop offset="50%" stopColor={COLORS.terracotta} />
-                <Stop offset="100%" stopColor={COLORS.bleuNuit} />
+                <Stop offset="0%" stopColor={charterColors.bleuNuit} />
+                <Stop offset="50%" stopColor={charterColors.terracotta} />
+                <Stop offset="100%" stopColor={charterColors.bleuNuit} />
               </LinearGradient>
             </Defs>
             <Rect
@@ -159,7 +162,7 @@ const PDFLogoDocument: React.FC<{
 };
 
 interface LogoPreviewCardProps {
-  variant: typeof LOGO_VARIANTS[LogoVariant];
+  variant: ReturnType<typeof getLogoVariants>[LogoVariant];
   variantKey: LogoVariant;
   exportMode: ExportMode;
   onModeChange: (mode: ExportMode) => void;
@@ -371,10 +374,15 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
 
 export default function LogoEditor() {
   const navigate = useNavigate();
+  const [charter, setCharter] = useState<CharterType>('iarche');
   const [formatCategory, setFormatCategory] = useState<FormatCategory>('standard');
   const [standardSize, setStandardSize] = useState<StandardSize>('500');
   const [profileFormat, setProfileFormat] = useState<ProfileFormat>('linkedin');
   const [isExporting, setIsExporting] = useState(false);
+  
+  // Get colors based on charter
+  const charterColors = getCharterColors(charter);
+  const LOGO_VARIANTS = getLogoVariants(charterColors);
   
   const [exportModes, setExportModes] = useState<Record<LogoVariant, ExportMode>>({
     gradient: 'logo-bar',
@@ -501,6 +509,7 @@ export default function LogoEditor() {
           size={targetSize}
           isProfile={isProfile}
           showBackground={showBackground}
+          charterColors={charterColors}
         />
       );
       const blob = await pdf(doc).toBlob();
@@ -737,15 +746,15 @@ export default function LogoEditor() {
           <CardContent>
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded border" style={{ backgroundColor: COLORS.bleuNuit }} />
+                <div className="w-8 h-8 rounded border" style={{ backgroundColor: charterColors.bleuNuit }} />
                 <span className="text-sm">Bleu Nuit</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded border" style={{ backgroundColor: COLORS.terracotta }} />
+                <div className="w-8 h-8 rounded border" style={{ backgroundColor: charterColors.terracotta }} />
                 <span className="text-sm">Terracotta</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded border" style={{ backgroundColor: COLORS.blancCasse }} />
+                <div className="w-8 h-8 rounded border" style={{ backgroundColor: charterColors.blancCasse }} />
                 <span className="text-sm">Blanc Cassé</span>
               </div>
             </div>
