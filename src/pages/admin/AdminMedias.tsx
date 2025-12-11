@@ -464,6 +464,7 @@ const editorTypeConfig: Record<EditorType, { label: string; route: string; icon:
   post: { label: 'Post LinkedIn', route: '/admin/medias/post', icon: Image },
   carousel: { label: 'Carrousel', route: '/admin/medias/carousel', icon: Linkedin },
   presentation: { label: 'Présentation', route: '/admin/medias/presentation', icon: FileText },
+  'brevo-html': { label: 'HTML Brevo', route: '/admin/emails', icon: MailOpen },
 };
 
 function SavedTemplatesGlobalView({ navigate }: { navigate: ReturnType<typeof useNavigate> }) {
