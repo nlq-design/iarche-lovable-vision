@@ -1,7 +1,7 @@
 # Brand Book IArche
 
-**Version :** 3.1  
-**Date : 3 Décembre 2025**  
+**Version :** 3.2  
+**Date : 11 Décembre 2025**  
 **Document de référence pour l'identité visuelle IArche**
 
 ---
@@ -726,6 +726,23 @@ src/components/admin/medias/
 | `simple` | Simple | Contenu uniquement |
 | `with-bar` | + Barre | Contenu + barre décorative |
 | `full` | Complet | Contenu + barre + mesh + canalisations |
+
+### 15.4 Qualité PNG configurable
+
+Tous les éditeurs PNG offrent un sélecteur de qualité (pixelRatio) :
+
+| Niveau | PixelRatio | Usage recommandé |
+|--------|------------|------------------|
+| **Standard** | 4x | Web, réseaux sociaux |
+| **Haute** | 6x | Print standard, présentations (par défaut) |
+| **Ultra** | 8x | Impression haute qualité, archivage |
+
+**Tailles d'export résultantes (exemple Banner 1584×396) :**
+- Standard (4x) : 6336 × 1584 px
+- Haute (6x) : 9504 × 2376 px
+- Ultra (8x) : 12672 × 3168 px
+
+La qualité sélectionnée est persistée dans les templates personnalisés.
 
 ---
 
