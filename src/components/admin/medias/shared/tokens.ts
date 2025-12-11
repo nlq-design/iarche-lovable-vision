@@ -96,13 +96,14 @@ export const FONTS = {
 } as const;
 
 // =====================================================
-// DIMENSIONS - Barres décoratives (Charte 3.1)
+// DIMENSIONS - Barres décoratives (Charte 3.1 adaptée)
+// Ratio barre/logo : ~60-65% de la largeur du texte "IArche"
 // =====================================================
 export const BAR_SIZES = {
-  sm: { width: 48, height: 2 },   // Placeholder cards, petits formats
-  md: { width: 80, height: 4 },   // Header, formats moyens
-  lg: { width: 96, height: 4 },   // Formats intermédiaires
-  xl: { width: 128, height: 6 },  // Hero, grands formats
+  sm: { width: 52, height: 3 },   // Logo sm (80px) → ~65%
+  md: { width: 72, height: 4 },   // Logo md (110px) → ~65%
+  lg: { width: 104, height: 5 },  // Logo lg (160px) → ~65%
+  xl: { width: 136, height: 6 },  // Logo xl (210px) → ~65%
 } as const;
 
 // =====================================================
@@ -144,12 +145,12 @@ export const EXPORT_BAR_MAPPING = {
   '500': 'xl',   // 500px export → barre 128px (25.6%)
 } as const;
 
-// Espacement logo-barre proportionnel
+// Espacement logo-barre proportionnel (ajusté pour meilleur équilibre)
 export const LOGO_BAR_GAP: Record<LogoSize, number> = {
-  sm: 6,
+  sm: 8,
   md: 10,
   lg: 14,
-  xl: 18,
+  xl: 16,
 } as const;
 
 // =====================================================
