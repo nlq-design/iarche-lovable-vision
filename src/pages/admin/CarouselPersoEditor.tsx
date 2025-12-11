@@ -34,7 +34,7 @@ const CarouselPersoEditor = () => {
   const [gradientType, setGradientType] = useState<GradientTypePerso>('diagonal');
   const [showWatermark, setShowWatermark] = useState(true);
   const [showSlideNumber, setShowSlideNumber] = useState(true);
-  const [quality, setQuality] = useState<number>(6);
+  const [quality, setQuality] = useState<number>(2); // 2x recommandé
   const [isExporting, setIsExporting] = useState(false);
 
   const addSlide = () => {

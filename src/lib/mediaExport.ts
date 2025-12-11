@@ -2,12 +2,15 @@ import { toPng, toBlob } from 'html-to-image';
 import { supabase } from '@/integrations/supabase/client';
 
 export type ExportFormat = 'png' | 'webp';
-export type PngQuality = 4 | 6 | 8;
+export type PngQuality = 1 | 2 | 3 | 4 | 6 | 8;
 
-export const PNG_QUALITY_OPTIONS: { value: PngQuality; label: string }[] = [
-  { value: 4, label: 'Standard (4x)' },
-  { value: 6, label: 'Haute (6x)' },
-  { value: 8, label: 'Ultra (8x)' },
+export const PNG_QUALITY_OPTIONS: { value: PngQuality; label: string; description: string }[] = [
+  { value: 1, label: '1x', description: 'Taille native' },
+  { value: 2, label: '2x', description: 'Retina (recommandé)' },
+  { value: 3, label: '3x', description: 'Haute résolution' },
+  { value: 4, label: '4x', description: 'Très haute' },
+  { value: 6, label: '6x', description: 'Ultra (gros fichiers)' },
+  { value: 8, label: '8x', description: 'Maximum (très gros)' },
 ];
 
 export interface ExportOptions {

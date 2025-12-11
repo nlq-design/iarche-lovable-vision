@@ -26,7 +26,7 @@ const PostPersoEditor = () => {
   const [gradientType, setGradientType] = useState<GradientTypePerso>('diagonal');
   const [showWatermark, setShowWatermark] = useState(true);
   const [titleSize, setTitleSize] = useState(48);
-  const [quality, setQuality] = useState<number>(6);
+  const [quality, setQuality] = useState<number>(2); // 2x recommandé
 
   const getBackground = () => {
     if (theme === 'light') {
@@ -66,7 +66,7 @@ const PostPersoEditor = () => {
             filename="post-perso"
             width={1080}
             height={1080}
-            quality={quality as 4 | 6 | 8}
+            quality={quality as 1 | 2 | 3 | 4 | 6 | 8}
           />
         </div>
 
