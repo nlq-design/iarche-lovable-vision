@@ -57,8 +57,11 @@ export const IARCHE_SIZES = {
 // Logo + Barre proportions (Charte 3.1)
 export { LOGO_BAR_MAPPING, LOGO_BAR_GAP };
 
+// Export size mapping
+export { EXPORT_BAR_MAPPING } from '../shared/tokens';
+
 // Types
-export type { ThemeType, BarSize, LogoSize, ArchSize } from '../shared/tokens';
+export type { ThemeType, BarSize, LogoSize, ArchSize, ExportSize } from '../shared/tokens';
 
 // Réexport des formats pour référence
 export { EXPORT_FORMATS };

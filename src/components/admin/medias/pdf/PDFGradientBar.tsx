@@ -1,11 +1,11 @@
 import { Svg, Defs, LinearGradient, Stop, Rect } from '@react-pdf/renderer';
-import { BAR_SIZES, IARCHE_COLORS } from './tokens';
+import { BAR_SIZES, IARCHE_COLORS, BarSize } from './tokens';
 
 // Counter for unique gradient IDs to avoid conflicts when multiple bars render
 let barGradientCounter = 0;
 
 interface PDFGradientBarProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: BarSize;
   /** Custom width override */
   width?: number;
   /** Custom height override */
@@ -25,11 +25,13 @@ interface PDFGradientBarProps {
  * Uses native react-pdf SVG components for reliable rendering.
  * Each bar gets a unique gradient ID to prevent conflicts.
  * 
- * Sizes (from GradientTitle.tsx):
- * - sm: 48×2px - Cards, placeholders
- * - md: 80×4px - Section titles
- * - lg: 96×4px - Page titles
- * - xl: 128×6px - Hero sections
+ * Sizes synchronisées avec HTML:
+ * - xs: 24×2px - Pour exports ~100px
+ * - sm: 48×2px - Logo sm
+ * - md: 64×3px - Pour exports ~250px  
+ * - lg: 80×4px - Logo lg
+ * - xl: 120×5px - Pour exports ~500px
+ * - 2xl: 160×6px - Exports plus grands
  */
 export const PDFGradientBar = ({ 
   size = 'md', 

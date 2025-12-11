@@ -12,7 +12,7 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { toPng } from 'html-to-image';
-import { COLORS } from '@/components/admin/medias/shared/tokens';
+import { COLORS, EXPORT_BAR_MAPPING, BAR_SIZES } from '@/components/admin/medias/shared/tokens';
 import { HTMLMeshBackground } from '@/components/admin/medias/html/HTMLMeshBackground';
 import { HTMLCanalisationLines } from '@/components/admin/medias/html/HTMLCanalisationLines';
 import { HTMLLogoWithBar } from '@/components/admin/medias/html/HTMLLogoWithBar';
@@ -28,7 +28,8 @@ const LOGO_SIZES: Record<LogoSize, { width: number; label: string }> = {
   '100': { width: 100, label: '100px (Petite)' },
 };
 
-const BAR_SIZE_OPTIONS: BarSize[] = ['sm', 'md', 'lg', 'xl'];
+// Options de barre disponibles (xs à 2xl)
+const BAR_SIZE_OPTIONS: BarSize[] = Object.keys(BAR_SIZES) as BarSize[];
 
 // Modes d'export conformes à la charte 3.1 - Le logo est TOUJOURS avec sa barre
 const EXPORT_MODES: Record<ExportMode, { label: string }> = {
@@ -41,6 +42,11 @@ const LOGO_SIZE_MAP: Record<LogoSize, LogoSizeToken> = {
   '500': 'xl',
   '250': 'lg',
   '100': 'md',
+};
+
+// Barre par défaut proportionnelle à l'export
+const getDefaultBarSize = (exportSize: LogoSize): BarSize => {
+  return EXPORT_BAR_MAPPING[exportSize] as BarSize;
 };
 
 const LOGO_VARIANTS = {
@@ -192,10 +198,20 @@ export default function LogoEditor() {
     terracotta: 'logo-bar',
   });
   
+  // Barres par défaut proportionnelles à la taille d'export
   const [barSizes, setBarSizes] = useState<Record<LogoVariant, BarSize>>({
-    gradient: 'xl',
-    terracotta: 'xl',
+    gradient: getDefaultBarSize('500'),
+    terracotta: getDefaultBarSize('500'),
   });
+  
+  // Mettre à jour les barres quand la taille d'export change
+  useEffect(() => {
+    const newBarSize = getDefaultBarSize(size);
+    setBarSizes({
+      gradient: newBarSize,
+      terracotta: newBarSize,
+    });
+  }, [size]);
   
   const gradientRef = useRef<HTMLDivElement>(null);
   const terracottaRef = useRef<HTMLDivElement>(null);
