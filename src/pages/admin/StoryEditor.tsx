@@ -17,7 +17,7 @@ import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import ExportModeControls, { ExportMode } from '@/components/admin/medias/ExportModeControls';
 import {
   HTMLBaseTemplate,
-  HTMLLogo,
+  HTMLLogoWithBar,
   HTMLGradientBar,
   IARCHE_COLORS,
   IARCHE_FONTS,
@@ -137,7 +137,6 @@ export default function StoryEditor() {
 
   const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
   const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(26,43,74,0.7)';
-  const showBar = exportMode === 'with-bar' || exportMode === 'full';
   const showCanalisations = exportMode === 'full';
 
   const renderStoryContent = () => {
@@ -153,7 +152,7 @@ export default function StoryEditor() {
             textAlign: titleAlignment,
           }}>
             {/* Header */}
-            <HTMLLogo size="xl" theme={theme} />
+            <HTMLLogoWithBar size="xl" theme={theme} barSize={barSize} />
             
             {/* Main Content */}
             <div style={{ 
@@ -173,7 +172,6 @@ export default function StoryEditor() {
               }}>
                 {badge}
               </span>
-              {showBar && <HTMLGradientBar size={barSize} />}
               <h1 style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${titleFontSize}px`,
@@ -220,7 +218,7 @@ export default function StoryEditor() {
             textAlign: titleAlignment,
           }}>
             {/* Header */}
-            <HTMLLogo size="xl" theme={theme} />
+            <HTMLLogoWithBar size="xl" theme={theme} barSize={barSize} />
             
             {/* Main Content - Big Number */}
             <div style={{ 
@@ -239,7 +237,6 @@ export default function StoryEditor() {
               }}>
                 {chiffre}
               </div>
-              {showBar && <HTMLGradientBar size={barSize} />}
               <p style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${titleFontSize * 0.55}px`,

@@ -17,7 +17,7 @@ import ExportModeControls, { ExportMode } from '@/components/admin/medias/Export
 import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
-  HTMLLogo,
+  HTMLLogoWithBar,
   HTMLGradientBar,
   IARCHE_COLORS,
   IARCHE_FONTS,
@@ -144,7 +144,6 @@ export default function OpenGraphEditor() {
 
   const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
   const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(26,43,74,0.7)';
-  const showBar = exportMode === 'with-bar' || exportMode === 'full';
 
   const renderOGContent = () => {
     switch (template) {
@@ -159,8 +158,7 @@ export default function OpenGraphEditor() {
             gap: '32px',
             textAlign: titleAlignment,
           }}>
-            <HTMLLogo size="xl" theme={theme} />
-            {showBar && <HTMLGradientBar size={barSize} />}
+            <HTMLLogoWithBar size="xl" theme={theme} barSize={barSize} />
             <h1 style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: `${titleFontSize}px`,
@@ -193,7 +191,7 @@ export default function OpenGraphEditor() {
           }}>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <HTMLLogo size="lg" theme={theme} />
+              <HTMLLogoWithBar size="lg" theme={theme} barSize={barSize} />
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: '18px',
@@ -217,7 +215,6 @@ export default function OpenGraphEditor() {
               maxWidth: '85%',
               textAlign: titleAlignment,
             }}>
-              {showBar && <HTMLGradientBar size={barSize} />}
               <h1 style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${titleFontSize * 0.72}px`,
@@ -257,7 +254,7 @@ export default function OpenGraphEditor() {
           }}>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <HTMLLogo size="lg" theme={theme} />
+              <HTMLLogoWithBar size="lg" theme={theme} barSize={barSize} />
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: '16px',
@@ -292,7 +289,6 @@ export default function OpenGraphEditor() {
               
               {/* Text */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', textAlign: titleAlignment }}>
-                {showBar && <HTMLGradientBar size={barSize} />}
                 <h1 style={{
                   fontFamily: IARCHE_FONTS.primary,
                   fontSize: `${titleFontSize * 0.89}px`,

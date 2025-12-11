@@ -16,7 +16,7 @@ import ExportModeControls, { ExportMode } from '@/components/admin/medias/Export
 import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
-  HTMLLogo,
+  HTMLLogoWithBar,
   HTMLGradientBar,
   IARCHE_COLORS,
   IARCHE_FONTS,
@@ -158,10 +158,9 @@ export default function ThumbnailEditor() {
     ? (theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.white)
     : IARCHE_COLORS.white;
 
-  const showBar = exportMode === 'with-bar' || exportMode === 'full';
+  const showCanalisations = exportMode === 'full';
   const actualTitleSize = format === 'standard' ? titleFontSize : titleFontSize * 0.78;
   const actualSubtitleSize = format === 'standard' ? titleFontSize * 0.44 : titleFontSize * 0.33;
-
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -369,7 +368,7 @@ export default function ThumbnailEditor() {
                     }}>
                       {/* Header */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <HTMLLogo size="xl" theme={theme} />
+                        <HTMLLogoWithBar size="xl" theme={theme} barSize={barSize} />
                         <span style={{
                           fontFamily: IARCHE_FONTS.primary,
                           fontSize: '20px',
@@ -393,7 +392,6 @@ export default function ThumbnailEditor() {
                         maxWidth: '70%',
                         textAlign: titleAlignment,
                       }}>
-                        {showBar && <HTMLGradientBar size={barSize} />}
                         <h1 style={{
                           fontFamily: IARCHE_FONTS.primary,
                           fontSize: `${actualTitleSize}px`,
