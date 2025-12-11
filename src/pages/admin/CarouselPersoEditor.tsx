@@ -159,7 +159,7 @@ const CarouselPersoEditor = () => {
                       `}
                       style={{ 
                         background: currentSlide === i ? undefined : getBackground(),
-                        color: currentSlide === i ? undefined : (theme === 'dark' ? COLORS_PERSO.white : COLORS_PERSO.grisTexte),
+                        color: currentSlide === i ? undefined : (theme === 'dark' ? charterColors.white : charterColors.grisTexte),
                       }}
                     >
                       {i + 1}
@@ -245,7 +245,7 @@ const CarouselPersoEditor = () => {
                   {theme === 'dark' && (
                     <div className="flex items-center justify-between">
                       <Label>Dégradé</Label>
-                      <Select value={gradientType} onValueChange={(v) => setGradientType(v as GradientTypePerso)}>
+                      <Select value={gradientType} onValueChange={(v) => setGradientType(v as GradientType)}>
                         <SelectTrigger className="w-28">
                           <SelectValue />
                         </SelectTrigger>
@@ -328,7 +328,7 @@ const CarouselPersoEditor = () => {
                 {slide.body && (
                   <p 
                     className="text-sm leading-relaxed"
-                    style={{ color: theme === 'dark' ? COLORS_PERSO.whiteAlpha90 : COLORS_PERSO.grisTexte }}
+                    style={{ color: theme === 'dark' ? charterColors.whiteAlpha90 : charterColors.grisTexte }}
                   >
                     {slide.body}
                   </p>
@@ -340,8 +340,8 @@ const CarouselPersoEditor = () => {
                 <div 
                   className="absolute bottom-4 right-4 text-xs font-bold"
                   style={{ 
-                    opacity: WATERMARK_CONFIG.opacity,
-                    color: theme === 'dark' ? COLORS_PERSO.white : COLORS_PERSO.bleuProfond,
+                    opacity: 0.15,
+                    color: theme === 'dark' ? charterColors.white : (charterColors.bleuNuit || charterColors.terracotta),
                   }}
                 >
                   IArche
@@ -351,8 +351,8 @@ const CarouselPersoEditor = () => {
               {/* Empty state */}
               {!slide.title && !slide.body && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <Sparkles className="h-8 w-8 mb-2" style={{ color: theme === 'dark' ? COLORS_PERSO.whiteAlpha50 : COLORS_PERSO.terracotta }} />
-                  <p className="text-xs" style={{ color: theme === 'dark' ? COLORS_PERSO.whiteAlpha50 : COLORS_PERSO.grisTexte }}>
+                  <Sparkles className="h-8 w-8 mb-2" style={{ color: theme === 'dark' ? charterColors.whiteAlpha50 : charterColors.terracotta }} />
+                  <p className="text-xs" style={{ color: theme === 'dark' ? charterColors.whiteAlpha50 : charterColors.grisTexte }}>
                     Slide {currentSlide + 1}
                   </p>
                 </div>

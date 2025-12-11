@@ -280,7 +280,7 @@ const ProfilePersoEditor = () => {
                 {theme === 'gradient' && (
                   <div className="flex items-center justify-between">
                     <Label>Direction</Label>
-                    <Select value={gradientType} onValueChange={(v) => setGradientType(v as GradientTypePerso)}>
+                    <Select value={gradientType} onValueChange={(v) => setGradientType(v as GradientType)}>
                       <SelectTrigger className="w-32">
                         <SelectValue />
                       </SelectTrigger>
