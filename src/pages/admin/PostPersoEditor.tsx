@@ -9,10 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { ArrowLeft, Download, Upload, Linkedin, Instagram, Sparkles } from 'lucide-react';
-import { COLORS_PERSO, GRADIENTS_PERSO, WATERMARK_CONFIG, type GradientTypePerso } from '@/components/admin/medias/perso/tokensPerso';
+import { ArrowLeft, Linkedin, Instagram, Sparkles } from 'lucide-react';
+import CharterSelector, { CharterType, getCharterColors, getCharterGradients, GradientType } from '@/components/admin/medias/CharterSelector';
 import ExportActions from '@/components/admin/medias/ExportActions';
-import { toast } from 'sonner';
 
 const PostPersoEditor = () => {
   const navigate = useNavigate();
@@ -23,24 +22,29 @@ const PostPersoEditor = () => {
   const [subtitle, setSubtitle] = useState('');
   const [body, setBody] = useState('');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [gradientType, setGradientType] = useState<GradientTypePerso>('diagonal');
+  const [charter, setCharter] = useState<CharterType>('iarche2');
+  const [gradientType, setGradientType] = useState<GradientType>('diagonal');
   const [showWatermark, setShowWatermark] = useState(true);
   const [titleSize, setTitleSize] = useState(48);
-  const [quality, setQuality] = useState<number>(2); // 2x recommandé
+  const [quality, setQuality] = useState<number>(2);
+
+  // Get colors based on charter
+  const charterColors = getCharterColors(charter);
+  const charterGradients = getCharterGradients(charter);
 
   const getBackground = () => {
     if (theme === 'light') {
-      return COLORS_PERSO.blancCasse;
+      return charterColors.blancCasse;
     }
-    return GRADIENTS_PERSO[gradientType]?.css || GRADIENTS_PERSO.diagonal.css;
+    return charterGradients[gradientType]?.css || charterGradients.diagonal.css;
   };
 
   const getTextColor = () => {
-    return theme === 'dark' ? COLORS_PERSO.white : COLORS_PERSO.grisTexte;
+    return theme === 'dark' ? charterColors.white : charterColors.grisTexte;
   };
 
   const getSubtitleColor = () => {
-    return theme === 'dark' ? COLORS_PERSO.whiteAlpha70 : COLORS_PERSO.terracotta;
+    return theme === 'dark' ? charterColors.whiteAlpha70 : charterColors.terracotta;
   };
 
   return (
@@ -110,6 +114,9 @@ const PostPersoEditor = () => {
 
             <Card>
               <CardContent className="pt-6 space-y-4">
+                {/* Charter selector */}
+                <CharterSelector value={charter} onChange={setCharter} />
+
                 <div className="flex items-center justify-between">
                   <Label>Thème</Label>
                   <Select value={theme} onValueChange={(v) => setTheme(v as 'dark' | 'light')}>
@@ -126,7 +133,7 @@ const PostPersoEditor = () => {
                 {theme === 'dark' && (
                   <div className="flex items-center justify-between">
                     <Label>Type de dégradé</Label>
-                    <Select value={gradientType} onValueChange={(v) => setGradientType(v as GradientTypePerso)}>
+                    <Select value={gradientType} onValueChange={(v) => setGradientType(v as GradientType)}>
                       <SelectTrigger className="w-32">
                         <SelectValue />
                       </SelectTrigger>
@@ -208,9 +215,9 @@ const PostPersoEditor = () => {
                   </p>
                 )}
                 {body && (
-                  <p 
+                <p 
                     className="text-base leading-relaxed max-w-[80%]"
-                    style={{ color: theme === 'dark' ? COLORS_PERSO.whiteAlpha90 : COLORS_PERSO.grisTexte }}
+                    style={{ color: theme === 'dark' ? charterColors.whiteAlpha90 : charterColors.grisTexte }}
                   >
                     {body}
                   </p>
@@ -222,8 +229,8 @@ const PostPersoEditor = () => {
                 <div 
                   className="absolute bottom-5 right-5 text-sm font-bold"
                   style={{ 
-                    opacity: WATERMARK_CONFIG.opacity,
-                    color: theme === 'dark' ? COLORS_PERSO.white : COLORS_PERSO.bleuProfond,
+                    opacity: 0.15,
+                    color: theme === 'dark' ? charterColors.white : charterColors.bleuNuit,
                   }}
                 >
                   IArche
@@ -233,8 +240,8 @@ const PostPersoEditor = () => {
               {/* Empty state */}
               {!title && !subtitle && !body && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <Sparkles className="h-12 w-12 mb-4" style={{ color: theme === 'dark' ? COLORS_PERSO.whiteAlpha50 : COLORS_PERSO.terracotta }} />
-                  <p style={{ color: theme === 'dark' ? COLORS_PERSO.whiteAlpha50 : COLORS_PERSO.grisTexte }}>
+                  <Sparkles className="h-12 w-12 mb-4" style={{ color: theme === 'dark' ? charterColors.whiteAlpha50 : charterColors.terracotta }} />
+                  <p style={{ color: theme === 'dark' ? charterColors.whiteAlpha50 : charterColors.grisTexte }}>
                     Commencez à taper...
                   </p>
                 </div>

@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { ArrowLeft, Linkedin, Instagram, Sparkles } from 'lucide-react';
-import { COLORS_PERSO, GRADIENTS_PERSO, WATERMARK_CONFIG, type GradientTypePerso } from '@/components/admin/medias/perso/tokensPerso';
+import CharterSelector, { CharterType, getCharterColors, getCharterGradients, GradientType } from '@/components/admin/medias/CharterSelector';
 import ExportActions from '@/components/admin/medias/ExportActions';
 
 const StoryPersoEditor = () => {
@@ -23,24 +23,29 @@ const StoryPersoEditor = () => {
   const [body, setBody] = useState('');
   const [cta, setCta] = useState('');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [gradientType, setGradientType] = useState<GradientTypePerso>('diagonal');
+  const [charter, setCharter] = useState<CharterType>('iarche2');
+  const [gradientType, setGradientType] = useState<GradientType>('diagonal');
   const [showWatermark, setShowWatermark] = useState(true);
   const [titleSize, setTitleSize] = useState(48);
-  const [quality, setQuality] = useState<number>(2); // 2x recommandé
+  const [quality, setQuality] = useState<number>(2);
+
+  // Get colors based on charter
+  const charterColors = getCharterColors(charter);
+  const charterGradients = getCharterGradients(charter);
 
   const getBackground = () => {
     if (theme === 'light') {
-      return COLORS_PERSO.blancCasse;
+      return charterColors.blancCasse;
     }
-    return GRADIENTS_PERSO[gradientType]?.css || GRADIENTS_PERSO.diagonal.css;
+    return charterGradients[gradientType]?.css || charterGradients.diagonal.css;
   };
 
   const getTextColor = () => {
-    return theme === 'dark' ? COLORS_PERSO.white : COLORS_PERSO.grisTexte;
+    return theme === 'dark' ? charterColors.white : charterColors.grisTexte;
   };
 
   const getSubtitleColor = () => {
-    return theme === 'dark' ? COLORS_PERSO.whiteAlpha70 : COLORS_PERSO.terracotta;
+    return theme === 'dark' ? charterColors.whiteAlpha70 : charterColors.terracotta;
   };
 
   return (
@@ -121,6 +126,11 @@ const StoryPersoEditor = () => {
             <Card>
               <CardContent className="pt-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
+                  {/* Charter selector */}
+                  <div className="col-span-2">
+                    <CharterSelector value={charter} onChange={setCharter} />
+                  </div>
+
                   <div className="flex items-center justify-between">
                     <Label>Thème</Label>
                     <Select value={theme} onValueChange={(v) => setTheme(v as 'dark' | 'light')}>
@@ -137,7 +147,7 @@ const StoryPersoEditor = () => {
                   {theme === 'dark' && (
                     <div className="flex items-center justify-between">
                       <Label>Dégradé</Label>
-                      <Select value={gradientType} onValueChange={(v) => setGradientType(v as GradientTypePerso)}>
+                      <Select value={gradientType} onValueChange={(v) => setGradientType(v as GradientType)}>
                         <SelectTrigger className="w-28">
                           <SelectValue />
                         </SelectTrigger>
@@ -224,7 +234,7 @@ const StoryPersoEditor = () => {
                 {body && (
                   <p 
                     className="text-xs leading-relaxed"
-                    style={{ color: theme === 'dark' ? COLORS_PERSO.whiteAlpha90 : COLORS_PERSO.grisTexte }}
+                    style={{ color: theme === 'dark' ? charterColors.whiteAlpha90 : charterColors.grisTexte }}
                   >
                     {body}
                   </p>
@@ -246,8 +256,8 @@ const StoryPersoEditor = () => {
                 <div 
                   className="absolute bottom-3 right-3 text-xs font-bold"
                   style={{ 
-                    opacity: WATERMARK_CONFIG.opacity,
-                    color: theme === 'dark' ? COLORS_PERSO.white : COLORS_PERSO.bleuProfond,
+                    opacity: 0.15,
+                    color: theme === 'dark' ? charterColors.white : charterColors.bleuNuit,
                   }}
                 >
                   IArche
@@ -257,8 +267,8 @@ const StoryPersoEditor = () => {
               {/* Empty state */}
               {!title && !subtitle && !body && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <Sparkles className="h-8 w-8 mb-2" style={{ color: theme === 'dark' ? COLORS_PERSO.whiteAlpha50 : COLORS_PERSO.terracotta }} />
-                  <p className="text-xs" style={{ color: theme === 'dark' ? COLORS_PERSO.whiteAlpha50 : COLORS_PERSO.grisTexte }}>
+                  <Sparkles className="h-8 w-8 mb-2" style={{ color: theme === 'dark' ? charterColors.whiteAlpha50 : charterColors.terracotta }} />
+                  <p className="text-xs" style={{ color: theme === 'dark' ? charterColors.whiteAlpha50 : charterColors.grisTexte }}>
                     Créez votre story
                   </p>
                 </div>

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, User, Linkedin, Twitter, Instagram, Facebook, Upload, X, Download, Circle } from 'lucide-react';
-import { COLORS_PERSO, GRADIENTS_PERSO, type GradientTypePerso } from '@/components/admin/medias/perso/tokensPerso';
+import CharterSelector, { CharterType, getCharterColors, getCharterGradients, GradientType } from '@/components/admin/medias/CharterSelector';
 import { exportToPNG } from '@/lib/mediaExport';
 import { toast } from 'sonner';
 import JSZip from 'jszip';
@@ -35,28 +35,33 @@ const ProfilePersoEditor = () => {
   const [customText, setCustomText] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [theme, setTheme] = useState<'dark' | 'light' | 'gradient'>('gradient');
-  const [gradientType, setGradientType] = useState<GradientTypePerso>('diagonal');
+  const [charter, setCharter] = useState<CharterType>('iarche2');
+  const [gradientType, setGradientType] = useState<GradientType>('diagonal');
   const [showCircleGuide, setShowCircleGuide] = useState(true);
   const [fontSize, setFontSize] = useState(280);
   const [quality, setQuality] = useState<number>(2);
+
+  // Get colors based on charter
+  const charterColors = getCharterColors(charter);
+  const charterGradients = getCharterGradients(charter);
 
   const displayText = textMode === 'initials' ? (initials || 'NL') : (customText || 'Texte');
 
   const getBackground = () => {
     switch (theme) {
       case 'light':
-        return COLORS_PERSO.blancCasse;
+        return charterColors.blancCasse;
       case 'dark':
-        return COLORS_PERSO.bleuProfond;
+        return charterColors.bleuNuit;
       case 'gradient':
-        return GRADIENTS_PERSO[gradientType]?.css || GRADIENTS_PERSO.diagonal.css;
+        return charterGradients[gradientType]?.css || charterGradients.diagonal.css;
       default:
-        return GRADIENTS_PERSO.diagonal.css;
+        return charterGradients.diagonal.css;
     }
   };
 
   const getTextColor = () => {
-    return theme === 'light' ? COLORS_PERSO.bleuProfond : COLORS_PERSO.white;
+    return theme === 'light' ? charterColors.bleuNuit : charterColors.white;
   };
 
   // Upload photo
