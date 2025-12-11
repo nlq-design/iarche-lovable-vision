@@ -12,8 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Settings, History, CheckCircle, XCircle, Clock, Save, RefreshCw, FileCode, RotateCcw, Loader2, Send, Megaphone, Eye, Users, ExternalLink } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Mail, Settings, History, CheckCircle, XCircle, Clock, Save, RefreshCw, FileCode, RotateCcw, Loader2, Send, Megaphone, Eye, Users } from 'lucide-react';
+import BrevoHTMLEditor from '@/components/admin/BrevoHTMLEditor';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { EmailTemplateEditor } from '@/components/admin/EmailTemplateEditor';
@@ -347,6 +347,10 @@ const AdminEmails = () => {
               <Megaphone className="w-4 h-4" />
               Campagnes Brevo
             </TabsTrigger>
+            <TabsTrigger value="html-generator" className="flex items-center gap-2">
+              <FileCode className="w-4 h-4" />
+              Générateur HTML
+            </TabsTrigger>
             <TabsTrigger value="configuration" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               Configuration
@@ -362,26 +366,6 @@ const AdminEmails = () => {
           </TabsList>
 
           <TabsContent value="brevo" className="space-y-4 mt-4">
-            {/* Lien rapide vers l'export HTML */}
-            <Card className="bg-primary/5 border-primary/20">
-              <CardContent className="py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <FileCode className="w-5 h-5 text-primary" />
-                    <div>
-                      <p className="font-medium">Générateur HTML</p>
-                      <p className="text-sm text-muted-foreground">Créez du HTML personnalisé à copier dans Brevo</p>
-                    </div>
-                  </div>
-                  <Link to="/admin/emails/brevo-html">
-                    <Button variant="outline" className="gap-2">
-                      <ExternalLink className="w-4 h-4" />
-                      Ouvrir l'éditeur
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
 
             <Card>
               <CardHeader>
@@ -517,6 +501,10 @@ const AdminEmails = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="html-generator" className="mt-4">
+            <BrevoHTMLEditor />
           </TabsContent>
 
           <TabsContent value="configuration" className="space-y-4 mt-4">
