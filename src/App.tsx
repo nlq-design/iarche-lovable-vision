@@ -76,6 +76,7 @@ const PostPersoEditor = lazy(() => import("./pages/admin/PostPersoEditor"));
 const BannerPersoEditor = lazy(() => import("./pages/admin/BannerPersoEditor"));
 const StoryPersoEditor = lazy(() => import("./pages/admin/StoryPersoEditor"));
 const CarouselPersoEditor = lazy(() => import("./pages/admin/CarouselPersoEditor"));
+const ProfilePersoEditor = lazy(() => import("./pages/admin/ProfilePersoEditor"));
 const AdminFormulaires = lazy(() => import("./pages/admin/AdminFormulaires"));
 const FormEditor = lazy(() => import("./pages/admin/FormEditor"));
 const FormResponses = lazy(() => import("./pages/admin/FormResponses"));
@@ -474,6 +475,11 @@ const App = () => (
           <Route path="/admin/medias-perso/carousel" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><CarouselPersoEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/medias-perso/profile" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><ProfilePersoEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           
