@@ -8,6 +8,7 @@ export * from './tokens';
 
 // Composants partagés
 export { HTMLLogo } from './HTMLLogo';
+export { HTMLLogoWithBar } from './HTMLLogoWithBar';
 export { HTMLGradientBar } from './HTMLGradientBar';
 export { HTMLMeshBackground } from './HTMLMeshBackground';
 export { HTMLArches } from './HTMLArches';

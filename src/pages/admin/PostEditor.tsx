@@ -18,8 +18,7 @@ import ExportModeControls, { ExportMode } from '@/components/admin/medias/Export
 import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
-  HTMLLogo,
-  HTMLGradientBar,
+  HTMLLogoWithBar,
   IARCHE_COLORS,
   IARCHE_FONTS,
   ThemeType,
@@ -226,7 +225,6 @@ export default function PostEditor() {
   const { width, height } = DIMENSIONS[format];
   const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
   const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(26,43,74,0.7)';
-  const showBar = exportMode === 'with-bar' || exportMode === 'full';
 
   const renderPostContent = () => {
     switch (template) {
@@ -240,7 +238,7 @@ export default function PostEditor() {
             height: '100%',
             textAlign: titleAlignment,
           }}>
-            <HTMLLogo size="lg" theme={theme} />
+            <HTMLLogoWithBar size="lg" theme={theme} barSize={barSize} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start' }}>
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
@@ -264,7 +262,6 @@ export default function PostEditor() {
               }}>
                 {title}
               </h1>
-              {showBar && <HTMLGradientBar size={barSize} />}
               <p style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${descFontSize}px`,
@@ -301,7 +298,7 @@ export default function PostEditor() {
             textAlign: titleAlignment,
             gap: '32px',
           }}>
-            <HTMLLogo size="md" theme={theme} />
+            <HTMLLogoWithBar size="md" theme={theme} barSize={barSize} />
             <div style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: `${titleFontSize}px`,
@@ -316,7 +313,6 @@ export default function PostEditor() {
             }}>
               {chiffre}
             </div>
-            {showBar && <HTMLGradientBar size={barSize} />}
             <p style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: `${descFontSize}px`,
@@ -352,7 +348,7 @@ export default function PostEditor() {
             height: '100%',
             textAlign: titleAlignment,
           }}>
-            <HTMLLogo size="md" theme={theme} />
+            <HTMLLogoWithBar size="md" theme={theme} barSize={barSize} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start' }}>
               <p style={{
                 fontFamily: IARCHE_FONTS.primary,
@@ -367,7 +363,6 @@ export default function PostEditor() {
               }}>
                 {citation}
               </p>
-              {showBar && <HTMLGradientBar size={barSize} />}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: descAlignment }}>
                 <span style={{
                   fontFamily: IARCHE_FONTS.primary,
@@ -410,8 +405,8 @@ export default function PostEditor() {
             height: '100%',
             textAlign: titleAlignment,
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-              <HTMLLogo size="md" theme={theme} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'flex-start' }}>
+              <HTMLLogoWithBar size="md" theme={theme} barSize={barSize} />
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: '16px',
@@ -434,7 +429,6 @@ export default function PostEditor() {
               }}>
                 {conseilNumero}
               </div>
-              {showBar && <HTMLGradientBar size={barSize} />}
               <h2 style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${titleFontSize}px`,

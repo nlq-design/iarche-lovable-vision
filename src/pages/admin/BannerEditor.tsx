@@ -16,8 +16,7 @@ import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import ExportModeControls, { ExportMode } from '@/components/admin/medias/ExportModeControls';
 import {
   HTMLBaseTemplate,
-  HTMLLogo,
-  HTMLGradientBar,
+  HTMLLogoWithBar,
   IARCHE_COLORS,
   IARCHE_FONTS,
   ThemeType,
@@ -136,7 +135,6 @@ export default function BannerEditor() {
 
   const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
   const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(26,43,74,0.7)';
-  const showBar = exportMode === 'with-bar' || exportMode === 'full';
   const showCanalisations = exportMode === 'full';
 
   const renderBannerContent = () => {
@@ -152,8 +150,7 @@ export default function BannerEditor() {
             gap: '24px',
             textAlign: titleAlignment,
           }}>
-            <HTMLLogo size="xl" theme={theme} />
-            {showBar && <HTMLGradientBar size={barSize} />}
+            <HTMLLogoWithBar size="xl" theme={theme} barSize={barSize} />
             <p style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: `${titleFontSize}px`,
@@ -180,8 +177,7 @@ export default function BannerEditor() {
             gap: '20px',
             textAlign: titleAlignment,
           }}>
-            <HTMLLogo size="lg" theme={theme} />
-            {showBar && <HTMLGradientBar size={barSize} />}
+            <HTMLLogoWithBar size="lg" theme={theme} barSize={barSize} />
             <h2 style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: `${titleFontSize + 16}px`,
@@ -234,8 +230,7 @@ export default function BannerEditor() {
               gap: '16px',
               textAlign: titleAlignment,
             }}>
-              <HTMLLogo size="lg" theme={theme} />
-              {showBar && <HTMLGradientBar size={barSize} />}
+              <HTMLLogoWithBar size="lg" theme={theme} barSize={barSize} />
               <h2 style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${titleFontSize + 4}px`,
