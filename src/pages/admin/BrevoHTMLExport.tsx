@@ -2,15 +2,31 @@ import React, { useState } from 'react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Copy, Check, Eye, Code, Plus, Trash2, Columns, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Link } from 'react-router-dom';
+import { LazyQuill } from '@/components/admin/LazyQuill';
+
+const quillModules = {
+  toolbar: [
+    [{ 'font': [] }],
+    [{ 'size': ['small', false, 'large', 'huge'] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'color': [] }, { 'background': [] }],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    ['link'],
+    ['clean']
+  ]
+};
+
+const quillFormats = [
+  'font', 'size', 'bold', 'italic', 'underline', 'strike',
+  'color', 'background', 'list', 'bullet', 'link'
+];
 
 interface Section {
   id: string;
@@ -64,18 +80,18 @@ const BrevoHTMLExport = () => {
         case 'text':
           return `
               ${section.title ? `<h2 style="margin: 0 0 15px; color: #1A2B4A; font-size: 22px; font-weight: bold;">${section.title}</h2>` : ''}
-              ${section.content ? `<div style="color: #4A5568; font-size: 16px; line-height: 1.7; margin-bottom: 25px;">${section.content.replace(/\n/g, '<br>')}</div>` : ''}`;
+              ${section.content ? `<div style="color: #4A5568; font-size: 16px; line-height: 1.7; margin-bottom: 25px;">${section.content}</div>` : ''}`;
         
         case 'columns':
           return `
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 25px;">
                 <tr>
                   <td width="48%" valign="top" style="padding-right: 2%;">
-                    <div style="color: #4A5568; font-size: 15px; line-height: 1.6;">${(section.leftColumn || '').replace(/\n/g, '<br>')}</div>
+                    <div style="color: #4A5568; font-size: 15px; line-height: 1.6;">${section.leftColumn || ''}</div>
                   </td>
                   <td width="4%"></td>
                   <td width="48%" valign="top" style="padding-left: 2%;">
-                    <div style="color: #4A5568; font-size: 15px; line-height: 1.6;">${(section.rightColumn || '').replace(/\n/g, '<br>')}</div>
+                    <div style="color: #4A5568; font-size: 15px; line-height: 1.6;">${section.rightColumn || ''}</div>
                   </td>
                 </tr>
               </table>`;
@@ -261,12 +277,15 @@ const BrevoHTMLExport = () => {
                           onChange={(e) => updateSection(section.id, { title: e.target.value })}
                           placeholder="Titre (optionnel)"
                         />
-                        <Textarea
-                          value={section.content || ''}
-                          onChange={(e) => updateSection(section.id, { content: e.target.value })}
-                          placeholder="Contenu..."
-                          rows={4}
-                        />
+                        <div className="brevo-quill-editor">
+                          <LazyQuill
+                            value={section.content || ''}
+                            onChange={(value) => updateSection(section.id, { content: value })}
+                            modules={quillModules}
+                            formats={quillFormats}
+                            placeholder="Contenu avec mise en forme..."
+                          />
+                        </div>
                       </>
                     )}
 
@@ -274,21 +293,27 @@ const BrevoHTMLExport = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label className="text-xs">Colonne gauche</Label>
-                          <Textarea
-                            value={section.leftColumn || ''}
-                            onChange={(e) => updateSection(section.id, { leftColumn: e.target.value })}
-                            placeholder="Contenu colonne gauche..."
-                            rows={4}
-                          />
+                          <div className="brevo-quill-editor">
+                            <LazyQuill
+                              value={section.leftColumn || ''}
+                              onChange={(value) => updateSection(section.id, { leftColumn: value })}
+                              modules={quillModules}
+                              formats={quillFormats}
+                              placeholder="Contenu colonne gauche..."
+                            />
+                          </div>
                         </div>
                         <div className="space-y-2">
                           <Label className="text-xs">Colonne droite</Label>
-                          <Textarea
-                            value={section.rightColumn || ''}
-                            onChange={(e) => updateSection(section.id, { rightColumn: e.target.value })}
-                            placeholder="Contenu colonne droite..."
-                            rows={4}
-                          />
+                          <div className="brevo-quill-editor">
+                            <LazyQuill
+                              value={section.rightColumn || ''}
+                              onChange={(value) => updateSection(section.id, { rightColumn: value })}
+                              modules={quillModules}
+                              formats={quillFormats}
+                              placeholder="Contenu colonne droite..."
+                            />
+                          </div>
                         </div>
                       </div>
                     )}
