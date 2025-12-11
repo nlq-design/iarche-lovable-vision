@@ -203,3 +203,22 @@ main {
   animation: pageTransition 0.4s ease-out;
   will-change: opacity, transform;
 }
+
+/* Brevo HTML Export Quill Editor */
+.brevo-quill-editor .ql-container {
+  min-height: 120px;
+  font-size: 14px;
+}
+
+.brevo-quill-editor .ql-editor {
+  min-height: 100px;
+}
+
+.brevo-quill-editor .ql-toolbar {
+  border-radius: 6px 6px 0 0;
+  background: hsl(var(--muted));
+}
+
+.brevo-quill-editor .ql-container {
+  border-radius: 0 0 6px 6px;
+}
