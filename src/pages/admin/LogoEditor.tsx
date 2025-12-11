@@ -1,52 +1,74 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Package, Info } from 'lucide-react';
+import { ArrowLeft, Download, Package, Info, Circle, Square, FileImage, FileCode, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { toPng } from 'html-to-image';
-import { COLORS, EXPORT_BAR_MAPPING, BAR_SIZES } from '@/components/admin/medias/shared/tokens';
+import { toPng, toSvg } from 'html-to-image';
+import { pdf, Document, Page, View, Text, Svg, Defs, LinearGradient, Stop, Rect } from '@react-pdf/renderer';
+import { COLORS, BAR_SIZES, LOGO_SIZES, GRADIENTS } from '@/components/admin/medias/shared/tokens';
 import { HTMLMeshBackground } from '@/components/admin/medias/html/HTMLMeshBackground';
 import { HTMLCanalisationLines } from '@/components/admin/medias/html/HTMLCanalisationLines';
 import { HTMLLogoWithBar } from '@/components/admin/medias/html/HTMLLogoWithBar';
 import { BarSize, LogoSize as LogoSizeToken } from '@/components/admin/medias/html/tokens';
 
-type LogoSize = '500' | '250' | '100';
-// Suppression de 'logo' (Seul) - Charte 3.1 exige que le logo soit TOUJOURS accompagné de sa barre
+// Types
+type ExportFormat = 'png' | 'svg' | 'pdf';
 type ExportMode = 'logo-bar' | 'full';
+type FormatCategory = 'standard' | 'profile';
 
-const LOGO_SIZES: Record<LogoSize, { width: number; label: string }> = {
+// Standard sizes
+type StandardSize = '500' | '250' | '100';
+
+// Profile formats for social media
+type ProfileFormat = 'linkedin' | 'facebook' | 'instagram' | 'twitter' | 'youtube';
+
+const STANDARD_SIZES: Record<StandardSize, { width: number; label: string }> = {
   '500': { width: 500, label: '500px (Grande)' },
   '250': { width: 250, label: '250px (Moyenne)' },
   '100': { width: 100, label: '100px (Petite)' },
 };
 
-// Options de barre disponibles (sm à xl) - Charte 3.1
+const PROFILE_FORMATS: Record<ProfileFormat, { size: number; label: string; icon: string }> = {
+  linkedin: { size: 400, label: 'LinkedIn', icon: 'in' },
+  facebook: { size: 320, label: 'Facebook', icon: 'f' },
+  instagram: { size: 320, label: 'Instagram', icon: 'ig' },
+  twitter: { size: 400, label: 'Twitter/X', icon: 'x' },
+  youtube: { size: 800, label: 'YouTube', icon: 'yt' },
+};
+
+const EXPORT_FORMATS: Record<ExportFormat, { label: string; icon: React.ReactNode; description: string }> = {
+  png: { label: 'PNG', icon: <FileImage className="h-4 w-4" />, description: 'Haute résolution (4x)' },
+  svg: { label: 'SVG', icon: <FileCode className="h-4 w-4" />, description: 'Vectoriel, scalable' },
+  pdf: { label: 'PDF', icon: <FileText className="h-4 w-4" />, description: 'Vectoriel, impression' },
+};
+
 const BAR_SIZE_OPTIONS: BarSize[] = ['sm', 'md', 'lg', 'xl'];
 
-// Modes d'export conformes à la charte 3.1 - Le logo est TOUJOURS avec sa barre
 const EXPORT_MODES: Record<ExportMode, { label: string }> = {
   'logo-bar': { label: 'Standard' },
   'full': { label: 'Complet (fond)' },
 };
 
-// Mapping des tailles d'export vers les tailles de logo du composant
-const LOGO_SIZE_MAP: Record<LogoSize, LogoSizeToken> = {
+// Mapping for logo sizes
+const LOGO_SIZE_MAP: Record<StandardSize, LogoSizeToken> = {
   '500': 'xl',
   '250': 'lg',
   '100': 'md',
 };
 
-// Barre par défaut proportionnelle à l'export
-const getDefaultBarSize = (exportSize: LogoSize): BarSize => {
-  return EXPORT_BAR_MAPPING[exportSize] as BarSize;
+const getDefaultBarSize = (size: string): BarSize => {
+  if (size === '500' || parseInt(size) >= 400) return 'xl';
+  if (size === '250' || parseInt(size) >= 250) return 'lg';
+  return 'md';
 };
 
 const LOGO_VARIANTS = {
@@ -68,6 +90,67 @@ const LOGO_VARIANTS = {
 
 type LogoVariant = keyof typeof LOGO_VARIANTS;
 
+// PDF Logo Document Component
+const PDFLogoDocument: React.FC<{
+  variant: LogoVariant;
+  size: number;
+  isProfile: boolean;
+  showBackground: boolean;
+}> = ({ variant, size, isProfile, showBackground }) => {
+  const variantData = LOGO_VARIANTS[variant];
+  const fontSize = Math.max(size * 0.12, 24);
+  const barWidth = Math.max(size * 0.25, 48);
+  const barHeight = Math.max(size * 0.012, 3);
+  
+  const textColor = variant === 'terracotta' ? COLORS.terracotta : COLORS.bleuNuit;
+  
+  return (
+    <Document>
+      <Page
+        size={isProfile ? { width: size, height: size } : { width: size, height: size * 0.67 }}
+        style={{ backgroundColor: variantData.bgColor }}
+      >
+        <View style={{ 
+          flex: 1, 
+          justifyContent: 'center', 
+          alignItems: 'center',
+        }}>
+          {/* Logo Text */}
+          <Text style={{
+            fontSize,
+            fontWeight: 700,
+            color: textColor,
+            fontFamily: 'Helvetica-Bold',
+            letterSpacing: -0.5,
+          }}>
+            IArche
+          </Text>
+          
+          {/* Gradient Bar */}
+          <Svg
+            viewBox={`0 0 ${barWidth} ${barHeight}`}
+            style={{ width: barWidth, height: barHeight, marginTop: 8 }}
+          >
+            <Defs>
+              <LinearGradient id="barGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <Stop offset="0%" stopColor={COLORS.bleuNuit} />
+                <Stop offset="50%" stopColor={COLORS.terracotta} />
+                <Stop offset="100%" stopColor={COLORS.bleuNuit} />
+              </LinearGradient>
+            </Defs>
+            <Rect
+              width={barWidth}
+              height={barHeight}
+              rx={barHeight / 2}
+              fill="url(#barGrad)"
+            />
+          </Svg>
+        </View>
+      </Page>
+    </Document>
+  );
+};
+
 interface LogoPreviewCardProps {
   variant: typeof LOGO_VARIANTS[LogoVariant];
   variantKey: LogoVariant;
@@ -75,11 +158,14 @@ interface LogoPreviewCardProps {
   onModeChange: (mode: ExportMode) => void;
   barSize: BarSize;
   onBarSizeChange: (size: BarSize) => void;
-  onDownload: () => void;
+  onDownload: (format: ExportFormat) => void;
   isExporting: boolean;
   sizeLabel: string;
   logoSize: LogoSizeToken;
   exportRef: React.RefObject<HTMLDivElement>;
+  exportFormat: ExportFormat;
+  onFormatChange: (format: ExportFormat) => void;
+  isProfile: boolean;
 }
 
 const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({ 
@@ -94,6 +180,9 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
   sizeLabel,
   logoSize,
   exportRef,
+  exportFormat,
+  onFormatChange,
+  isProfile,
 }) => {
   const [dimensions, setDimensions] = useState({ width: 300, height: 200 });
 
@@ -113,6 +202,7 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
         <CardDescription>{variant.description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Export Mode */}
         <RadioGroup 
           value={exportMode} 
           onValueChange={(v) => onModeChange(v as ExportMode)}
@@ -128,6 +218,7 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
           ))}
         </RadioGroup>
 
+        {/* Bar Size */}
         <div className="flex items-center gap-2">
           <Label className="text-xs text-muted-foreground">Barre :</Label>
           <div className="flex gap-1">
@@ -145,31 +236,90 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
           </div>
         </div>
 
-        <div
-          ref={exportRef}
-          className="aspect-[3/2] rounded-lg overflow-hidden relative"
-          style={{ backgroundColor: variant.bgColor }}
-        >
-          {showBackground && (
-            <HTMLMeshBackground theme={variant.theme} opacity={0.05} />
-          )}
+        {/* Preview Container */}
+        <div className="relative">
+          <div
+            ref={exportRef}
+            className={`${isProfile ? 'aspect-square' : 'aspect-[3/2]'} rounded-lg overflow-hidden relative`}
+            style={{ backgroundColor: variant.bgColor }}
+          >
+            {showBackground && (
+              <HTMLMeshBackground theme={variant.theme} opacity={0.05} />
+            )}
+            
+            {showBackground && (
+              <HTMLCanalisationLines
+                width={dimensions.width}
+                height={dimensions.height}
+                theme={variant.theme}
+                opacity={0.4}
+                strokeWidth={3}
+              />
+            )}
+            
+            <div className="absolute inset-0 flex items-center justify-center p-6 z-10">
+              <HTMLLogoWithBar 
+                size={logoSize} 
+                theme={variant.theme}
+                barSize={barSize}
+              />
+            </div>
+          </div>
           
-          {showBackground && (
-            <HTMLCanalisationLines
-              width={dimensions.width}
-              height={dimensions.height}
-              theme={variant.theme}
-              opacity={0.4}
-              strokeWidth={3}
-            />
+          {/* Circular Mask Overlay for Profile Preview */}
+          {isProfile && (
+            <div className="absolute inset-0 pointer-events-none">
+              <svg viewBox="0 0 100 100" className="w-full h-full">
+                <defs>
+                  <mask id={`circle-mask-${variantKey}`}>
+                    <rect width="100" height="100" fill="white" />
+                    <circle cx="50" cy="50" r="48" fill="black" />
+                  </mask>
+                </defs>
+                <rect 
+                  width="100" 
+                  height="100" 
+                  fill="rgba(0,0,0,0.5)" 
+                  mask={`url(#circle-mask-${variantKey})`} 
+                />
+                <circle 
+                  cx="50" 
+                  cy="50" 
+                  r="48" 
+                  fill="none" 
+                  stroke="white" 
+                  strokeWidth="0.5" 
+                  strokeDasharray="2,2"
+                />
+              </svg>
+            </div>
           )}
-          
-          <div className="absolute inset-0 flex items-center justify-center p-6 z-10">
-            <HTMLLogoWithBar 
-              size={logoSize} 
-              theme={variant.theme}
-              barSize={barSize}
-            />
+        </div>
+        
+        {isProfile && (
+          <p className="text-xs text-muted-foreground text-center">
+            <Circle className="h-3 w-3 inline mr-1" />
+            Prévisualisation du masque circulaire
+          </p>
+        )}
+
+        {/* Export Format Selection */}
+        <div className="flex items-center gap-2">
+          <Label className="text-xs text-muted-foreground">Format :</Label>
+          <div className="flex gap-1">
+            {(Object.entries(EXPORT_FORMATS) as [ExportFormat, typeof EXPORT_FORMATS[ExportFormat]][]).map(([key, format]) => (
+              <Button
+                key={key}
+                variant={exportFormat === key ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 px-2 text-xs gap-1"
+                onClick={() => onFormatChange(key)}
+                title={format.description}
+              >
+                {format.icon}
+                {format.label}
+              </Button>
+            ))}
           </div>
         </div>
         
@@ -177,10 +327,10 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
           variant="outline"
           className="w-full gap-2"
           disabled={isExporting}
-          onClick={onDownload}
+          onClick={() => onDownload(exportFormat)}
         >
           <Download className="h-4 w-4" />
-          PNG ({sizeLabel})
+          {EXPORT_FORMATS[exportFormat].label} ({sizeLabel})
         </Button>
       </CardContent>
     </Card>
@@ -189,29 +339,37 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
 
 export default function LogoEditor() {
   const navigate = useNavigate();
-  const [size, setSize] = useState<LogoSize>('500');
+  const [formatCategory, setFormatCategory] = useState<FormatCategory>('standard');
+  const [standardSize, setStandardSize] = useState<StandardSize>('500');
+  const [profileFormat, setProfileFormat] = useState<ProfileFormat>('linkedin');
   const [isExporting, setIsExporting] = useState(false);
   
-  // Par défaut 'logo-bar' (standard) - conforme à la charte 3.1
   const [exportModes, setExportModes] = useState<Record<LogoVariant, ExportMode>>({
     gradient: 'logo-bar',
     terracotta: 'logo-bar',
   });
   
-  // Barres par défaut proportionnelles à la taille d'export
   const [barSizes, setBarSizes] = useState<Record<LogoVariant, BarSize>>({
     gradient: getDefaultBarSize('500'),
     terracotta: getDefaultBarSize('500'),
   });
+
+  const [exportFormats, setExportFormats] = useState<Record<LogoVariant, ExportFormat>>({
+    gradient: 'png',
+    terracotta: 'png',
+  });
   
-  // Mettre à jour les barres quand la taille d'export change
+  // Update bar sizes when size changes
   useEffect(() => {
-    const newBarSize = getDefaultBarSize(size);
+    const newSize = formatCategory === 'standard' 
+      ? standardSize 
+      : PROFILE_FORMATS[profileFormat].size.toString();
+    const newBarSize = getDefaultBarSize(newSize);
     setBarSizes({
       gradient: newBarSize,
       terracotta: newBarSize,
     });
-  }, [size]);
+  }, [standardSize, profileFormat, formatCategory]);
   
   const gradientRef = useRef<HTMLDivElement>(null);
   const terracottaRef = useRef<HTMLDivElement>(null);
@@ -229,41 +387,122 @@ export default function LogoEditor() {
     setBarSizes(prev => ({ ...prev, [variant]: barSize }));
   };
 
-  const capturePreview = async (ref: React.RefObject<HTMLDivElement>, targetWidth: number): Promise<Blob | null> => {
+  const updateExportFormat = (variant: LogoVariant, format: ExportFormat) => {
+    setExportFormats(prev => ({ ...prev, [variant]: format }));
+  };
+
+  const getCurrentSize = (): number => {
+    return formatCategory === 'standard'
+      ? STANDARD_SIZES[standardSize].width
+      : PROFILE_FORMATS[profileFormat].size;
+  };
+
+  const getCurrentSizeLabel = (): string => {
+    return formatCategory === 'standard'
+      ? `${STANDARD_SIZES[standardSize].width}px`
+      : `${PROFILE_FORMATS[profileFormat].label} ${PROFILE_FORMATS[profileFormat].size}px`;
+  };
+
+  const getLogoSize = (): LogoSizeToken => {
+    if (formatCategory === 'standard') {
+      return LOGO_SIZE_MAP[standardSize];
+    }
+    const size = PROFILE_FORMATS[profileFormat].size;
+    if (size >= 600) return 'xl';
+    if (size >= 350) return 'lg';
+    return 'md';
+  };
+
+  // PNG Export
+  const capturePng = async (ref: React.RefObject<HTMLDivElement>, targetWidth: number): Promise<Blob | null> => {
     if (!ref.current) return null;
     try {
       const currentWidth = ref.current.offsetWidth;
-      const pixelRatio = targetWidth / currentWidth;
+      const pixelRatio = Math.max((targetWidth / currentWidth) * 4, 4); // High quality 4x
       const dataUrl = await toPng(ref.current, {
         quality: 1,
-        pixelRatio: Math.max(pixelRatio, 3),
+        pixelRatio,
         cacheBust: true,
       });
       const response = await fetch(dataUrl);
       return await response.blob();
     } catch (error) {
-      console.error('Error capturing preview:', error);
+      console.error('Error capturing PNG:', error);
       return null;
     }
   };
 
-  const handleExportSingle = async (variantKey: LogoVariant) => {
+  // SVG Export
+  const captureSvg = async (ref: React.RefObject<HTMLDivElement>): Promise<Blob | null> => {
+    if (!ref.current) return null;
+    try {
+      const svgString = await toSvg(ref.current, {
+        cacheBust: true,
+        filter: (node) => {
+          // Include all nodes
+          return true;
+        },
+      });
+      return new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    } catch (error) {
+      console.error('Error capturing SVG:', error);
+      return null;
+    }
+  };
+
+  // PDF Export
+  const capturePdf = async (variantKey: LogoVariant, targetSize: number, isProfile: boolean, showBackground: boolean): Promise<Blob | null> => {
+    try {
+      const doc = (
+        <PDFLogoDocument
+          variant={variantKey}
+          size={targetSize}
+          isProfile={isProfile}
+          showBackground={showBackground}
+        />
+      );
+      const blob = await pdf(doc).toBlob();
+      return blob;
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      return null;
+    }
+  };
+
+  const handleExportSingle = async (variantKey: LogoVariant, format: ExportFormat) => {
     setIsExporting(true);
     try {
       const variant = LOGO_VARIANTS[variantKey];
-      const targetWidth = LOGO_SIZES[size].width;
+      const targetWidth = getCurrentSize();
       const mode = exportModes[variantKey];
+      const isProfile = formatCategory === 'profile';
       
-      const blob = await capturePreview(refs[variantKey], targetWidth);
+      let blob: Blob | null = null;
+      let extension = format;
+      
+      switch (format) {
+        case 'png':
+          blob = await capturePng(refs[variantKey], targetWidth);
+          break;
+        case 'svg':
+          blob = await captureSvg(refs[variantKey]);
+          break;
+        case 'pdf':
+          blob = await capturePdf(variantKey, targetWidth, isProfile, mode === 'full');
+          break;
+      }
+      
       const suffix = mode === 'logo-bar' ? '-barre' : '-complet';
+      const profileSuffix = isProfile ? `-${profileFormat}` : '';
       
       if (blob) {
-        saveAs(blob, `${variant.filename}${suffix}-${targetWidth}px.png`);
-        toast.success('Logo téléchargé');
+        saveAs(blob, `${variant.filename}${suffix}${profileSuffix}-${targetWidth}px.${extension}`);
+        toast.success(`Logo ${format.toUpperCase()} téléchargé`);
       } else {
         toast.error('Erreur lors du téléchargement');
       }
     } catch (error) {
+      console.error('Export error:', error);
       toast.error('Erreur lors de l\'export');
     } finally {
       setIsExporting(false);
@@ -274,20 +513,37 @@ export default function LogoEditor() {
     setIsExporting(true);
     try {
       const zip = new JSZip();
-      const targetWidth = LOGO_SIZES[size].width;
+      const targetWidth = getCurrentSize();
+      const isProfile = formatCategory === 'profile';
 
       for (const [key, variant] of Object.entries(LOGO_VARIANTS) as [LogoVariant, typeof LOGO_VARIANTS[LogoVariant]][]) {
         const mode = exportModes[key];
-        const blob = await capturePreview(refs[key], targetWidth);
+        const format = exportFormats[key];
         const suffix = mode === 'logo-bar' ? '-barre' : '-complet';
+        const profileSuffix = isProfile ? `-${profileFormat}` : '';
+        
+        let blob: Blob | null = null;
+        
+        switch (format) {
+          case 'png':
+            blob = await capturePng(refs[key], targetWidth);
+            break;
+          case 'svg':
+            blob = await captureSvg(refs[key]);
+            break;
+          case 'pdf':
+            blob = await capturePdf(key, targetWidth, isProfile, mode === 'full');
+            break;
+        }
         
         if (blob) {
-          zip.file(`${variant.filename}${suffix}-${targetWidth}px.png`, blob);
+          zip.file(`${variant.filename}${suffix}${profileSuffix}-${targetWidth}px.${format}`, blob);
         }
       }
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
-      saveAs(zipBlob, `logos-iarche-${targetWidth}px.zip`);
+      const profileSuffix = isProfile ? `-${profileFormat}` : '';
+      saveAs(zipBlob, `logos-iarche${profileSuffix}-${targetWidth}px.zip`);
       toast.success('Pack logos téléchargé');
     } catch (error) {
       toast.error('Erreur lors de la création du ZIP');
@@ -306,7 +562,7 @@ export default function LogoEditor() {
             </Button>
             <div>
               <h1 className="text-2xl font-bold text-foreground">Logos IArche</h1>
-              <p className="text-muted-foreground">Téléchargez les logos officiels</p>
+              <p className="text-muted-foreground">Exports PNG, SVG vectoriel, PDF impression</p>
             </div>
           </div>
           <Button onClick={handleExportAll} disabled={isExporting} className="gap-2">
@@ -318,28 +574,74 @@ export default function LogoEditor() {
         <Alert>
           <Info className="h-4 w-4" />
           <AlertDescription>
-            <strong>Charte 3.1 :</strong> Le logo IArche doit toujours être accompagné de sa barre décorative. 
-            L'option "logo seul" n'est plus disponible.
+            <strong>Charte 3.1 :</strong> Le logo IArche doit toujours être accompagné de sa barre décorative.
+            Les formats SVG et PDF sont vectoriels et offrent une qualité d'impression optimale.
           </AlertDescription>
         </Alert>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <Label className="whitespace-nowrap">Taille d'export :</Label>
-              <Select value={size} onValueChange={(v) => setSize(v as LogoSize)}>
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(LOGO_SIZES).map(([key, { label }]) => (
-                    <SelectItem key={key} value={key}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Format Category Tabs */}
+        <Tabs value={formatCategory} onValueChange={(v) => setFormatCategory(v as FormatCategory)}>
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="standard" className="gap-2">
+              <Square className="h-4 w-4" />
+              Standard
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="gap-2">
+              <Circle className="h-4 w-4" />
+              Profil (Réseaux)
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="standard" className="mt-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <Label className="whitespace-nowrap">Taille d'export :</Label>
+                  <Select value={standardSize} onValueChange={(v) => setStandardSize(v as StandardSize)}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(STANDARD_SIZES).map(([key, { label }]) => (
+                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="profile" className="mt-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <Label>Format profil (carré avec masque circulaire) :</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {(Object.entries(PROFILE_FORMATS) as [ProfileFormat, typeof PROFILE_FORMATS[ProfileFormat]][]).map(([key, format]) => (
+                      <Button
+                        key={key}
+                        variant={profileFormat === key ? 'default' : 'outline'}
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => setProfileFormat(key)}
+                      >
+                        <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold">
+                          {format.icon}
+                        </span>
+                        {format.label}
+                        <span className="text-xs text-muted-foreground">({format.size}px)</span>
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Les photos de profil s'affichent en cercle sur ces réseaux. La prévisualisation montre la zone visible.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {(Object.entries(LOGO_VARIANTS) as [LogoVariant, typeof LOGO_VARIANTS[LogoVariant]][]).map(([key, variant]) => (
@@ -351,14 +653,38 @@ export default function LogoEditor() {
               onModeChange={(mode) => updateExportMode(key, mode)}
               barSize={barSizes[key]}
               onBarSizeChange={(size) => updateBarSize(key, size)}
-              onDownload={() => handleExportSingle(key)}
+              onDownload={(format) => handleExportSingle(key, format)}
               isExporting={isExporting}
-              sizeLabel={`${LOGO_SIZES[size].width}px`}
-              logoSize={LOGO_SIZE_MAP[size]}
+              sizeLabel={getCurrentSizeLabel()}
+              logoSize={getLogoSize()}
               exportRef={refs[key]}
+              exportFormat={exportFormats[key]}
+              onFormatChange={(format) => updateExportFormat(key, format)}
+              isProfile={formatCategory === 'profile'}
             />
           ))}
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Formats d'export</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {(Object.entries(EXPORT_FORMATS) as [ExportFormat, typeof EXPORT_FORMATS[ExportFormat]][]).map(([key, format]) => (
+                <div key={key} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                  <div className="p-2 rounded-md bg-background">
+                    {format.icon}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{format.label}</p>
+                    <p className="text-xs text-muted-foreground">{format.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
