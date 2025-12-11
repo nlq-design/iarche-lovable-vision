@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Package } from 'lucide-react';
+import { ArrowLeft, Download, Package, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import JSZip from 'jszip';
@@ -14,11 +15,12 @@ import { toPng } from 'html-to-image';
 import { COLORS } from '@/components/admin/medias/shared/tokens';
 import { HTMLMeshBackground } from '@/components/admin/medias/html/HTMLMeshBackground';
 import { HTMLCanalisationLines } from '@/components/admin/medias/html/HTMLCanalisationLines';
-import { HTMLGradientBar } from '@/components/admin/medias/html/HTMLGradientBar';
-import { BarSize } from '@/components/admin/medias/html/tokens';
+import { HTMLLogoWithBar } from '@/components/admin/medias/html/HTMLLogoWithBar';
+import { BarSize, LogoSize as LogoSizeToken } from '@/components/admin/medias/html/tokens';
 
 type LogoSize = '500' | '250' | '100';
-type ExportMode = 'logo' | 'logo-bar' | 'full';
+// Suppression de 'logo' (Seul) - Charte 3.1 exige que le logo soit TOUJOURS accompagné de sa barre
+type ExportMode = 'logo-bar' | 'full';
 
 const LOGO_SIZES: Record<LogoSize, { width: number; label: string }> = {
   '500': { width: 500, label: '500px (Grande)' },
@@ -28,35 +30,32 @@ const LOGO_SIZES: Record<LogoSize, { width: number; label: string }> = {
 
 const BAR_SIZE_OPTIONS: BarSize[] = ['sm', 'md', 'lg', 'xl'];
 
+// Modes d'export conformes à la charte 3.1 - Le logo est TOUJOURS avec sa barre
 const EXPORT_MODES: Record<ExportMode, { label: string }> = {
-  'logo': { label: 'Seul' },
-  'logo-bar': { label: '+ Barre' },
-  'full': { label: 'Complet' },
+  'logo-bar': { label: 'Standard' },
+  'full': { label: 'Complet (fond)' },
+};
+
+// Mapping des tailles d'export vers les tailles de logo du composant
+const LOGO_SIZE_MAP: Record<LogoSize, LogoSizeToken> = {
+  '500': 'xl',
+  '250': 'lg',
+  '100': 'md',
 };
 
 const LOGO_VARIANTS = {
   gradient: {
-    src: '/assets/logo-iarche-gradient.png',
     label: 'Logo Dégradé',
-    description: 'Version principale',
+    description: 'Version principale sur fond clair',
     bgColor: COLORS.blancCasse,
     theme: 'light' as const,
     filename: 'logo-iarche-gradient',
   },
-  white: {
-    src: '/assets/logo-iarche-white.png',
-    label: 'Logo Blanc',
-    description: 'Pour fonds sombres',
+  terracotta: {
+    label: 'Logo Terracotta',
+    description: 'Version accent sur fond sombre',
     bgColor: COLORS.bleuNuit,
     theme: 'dark' as const,
-    filename: 'logo-iarche-white',
-  },
-  terracotta: {
-    src: '/assets/logo-iarche-terracotta.png',
-    label: 'Logo Terracotta',
-    description: 'Version accent',
-    bgColor: COLORS.blancCasse,
-    theme: 'light' as const,
     filename: 'logo-iarche-terracotta',
   },
 };
@@ -73,6 +72,7 @@ interface LogoPreviewCardProps {
   onDownload: () => void;
   isExporting: boolean;
   sizeLabel: string;
+  logoSize: LogoSizeToken;
   exportRef: React.RefObject<HTMLDivElement>;
 }
 
@@ -86,6 +86,7 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
   onDownload, 
   isExporting,
   sizeLabel,
+  logoSize,
   exportRef,
 }) => {
   const [dimensions, setDimensions] = useState({ width: 300, height: 200 });
@@ -97,7 +98,6 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
     }
   }, [exportRef]);
 
-  const showBar = exportMode === 'logo-bar' || exportMode === 'full';
   const showBackground = exportMode === 'full';
 
   return (
@@ -122,24 +122,22 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
           ))}
         </RadioGroup>
 
-        {(exportMode === 'logo-bar' || exportMode === 'full') && (
-          <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground">Barre :</Label>
-            <div className="flex gap-1">
-              {BAR_SIZE_OPTIONS.map((size) => (
-                <Button
-                  key={size}
-                  variant={barSize === size ? 'default' : 'outline'}
-                  size="sm"
-                  className="h-6 px-2 text-xs"
-                  onClick={() => onBarSizeChange(size)}
-                >
-                  {size.toUpperCase()}
-                </Button>
-              ))}
-            </div>
+        <div className="flex items-center gap-2">
+          <Label className="text-xs text-muted-foreground">Barre :</Label>
+          <div className="flex gap-1">
+            {BAR_SIZE_OPTIONS.map((size) => (
+              <Button
+                key={size}
+                variant={barSize === size ? 'default' : 'outline'}
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => onBarSizeChange(size)}
+              >
+                {size.toUpperCase()}
+              </Button>
+            ))}
           </div>
-        )}
+        </div>
 
         <div
           ref={exportRef}
@@ -160,13 +158,12 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
             />
           )}
           
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 z-10">
-            <img 
-              src={variant.src} 
-              alt={variant.label}
-              className="max-w-[60%] max-h-[45%] object-contain"
+          <div className="absolute inset-0 flex items-center justify-center p-6 z-10">
+            <HTMLLogoWithBar 
+              size={logoSize} 
+              theme={variant.theme}
+              barSize={barSize}
             />
-            {showBar && <HTMLGradientBar size={barSize} />}
           </div>
         </div>
         
@@ -189,25 +186,22 @@ export default function LogoEditor() {
   const [size, setSize] = useState<LogoSize>('500');
   const [isExporting, setIsExporting] = useState(false);
   
+  // Par défaut 'logo-bar' (standard) - conforme à la charte 3.1
   const [exportModes, setExportModes] = useState<Record<LogoVariant, ExportMode>>({
-    gradient: 'full',
-    white: 'logo',
+    gradient: 'logo-bar',
     terracotta: 'logo-bar',
   });
   
   const [barSizes, setBarSizes] = useState<Record<LogoVariant, BarSize>>({
     gradient: 'xl',
-    white: 'lg',
-    terracotta: 'lg',
+    terracotta: 'xl',
   });
   
   const gradientRef = useRef<HTMLDivElement>(null);
-  const whiteRef = useRef<HTMLDivElement>(null);
   const terracottaRef = useRef<HTMLDivElement>(null);
   
   const refs: Record<LogoVariant, React.RefObject<HTMLDivElement>> = {
     gradient: gradientRef,
-    white: whiteRef,
     terracotta: terracottaRef,
   };
 
@@ -219,29 +213,6 @@ export default function LogoEditor() {
     setBarSizes(prev => ({ ...prev, [variant]: barSize }));
   };
 
-  const resizeAndExport = async (src: string, targetWidth: number): Promise<Blob | null> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          resolve(null);
-          return;
-        }
-        const aspectRatio = img.height / img.width;
-        const targetHeight = Math.round(targetWidth * aspectRatio);
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-        canvas.toBlob((blob) => resolve(blob), 'image/png', 1.0);
-      };
-      img.onerror = () => resolve(null);
-      img.src = src;
-    });
-  };
-
   const capturePreview = async (ref: React.RefObject<HTMLDivElement>, targetWidth: number): Promise<Blob | null> => {
     if (!ref.current) return null;
     try {
@@ -249,7 +220,7 @@ export default function LogoEditor() {
       const pixelRatio = targetWidth / currentWidth;
       const dataUrl = await toPng(ref.current, {
         quality: 1,
-        pixelRatio: Math.max(pixelRatio, 3), // Augmenté à 3 pour haute résolution
+        pixelRatio: Math.max(pixelRatio, 3),
         cacheBust: true,
       });
       const response = await fetch(dataUrl);
@@ -267,15 +238,8 @@ export default function LogoEditor() {
       const targetWidth = LOGO_SIZES[size].width;
       const mode = exportModes[variantKey];
       
-      let blob: Blob | null = null;
-      let suffix = '';
-      
-      if (mode === 'logo') {
-        blob = await resizeAndExport(variant.src, targetWidth);
-      } else {
-        blob = await capturePreview(refs[variantKey], targetWidth);
-        suffix = mode === 'logo-bar' ? '-barre' : '-complet';
-      }
+      const blob = await capturePreview(refs[variantKey], targetWidth);
+      const suffix = mode === 'logo-bar' ? '-barre' : '-complet';
       
       if (blob) {
         saveAs(blob, `${variant.filename}${suffix}-${targetWidth}px.png`);
@@ -298,15 +262,8 @@ export default function LogoEditor() {
 
       for (const [key, variant] of Object.entries(LOGO_VARIANTS) as [LogoVariant, typeof LOGO_VARIANTS[LogoVariant]][]) {
         const mode = exportModes[key];
-        let blob: Blob | null = null;
-        let suffix = '';
-        
-        if (mode === 'logo') {
-          blob = await resizeAndExport(variant.src, targetWidth);
-        } else {
-          blob = await capturePreview(refs[key], targetWidth);
-          suffix = mode === 'logo-bar' ? '-barre' : '-complet';
-        }
+        const blob = await capturePreview(refs[key], targetWidth);
+        const suffix = mode === 'logo-bar' ? '-barre' : '-complet';
         
         if (blob) {
           zip.file(`${variant.filename}${suffix}-${targetWidth}px.png`, blob);
@@ -342,6 +299,14 @@ export default function LogoEditor() {
           </Button>
         </div>
 
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Charte 3.1 :</strong> Le logo IArche doit toujours être accompagné de sa barre décorative. 
+            L'option "logo seul" n'est plus disponible.
+          </AlertDescription>
+        </Alert>
+
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
@@ -360,7 +325,7 @@ export default function LogoEditor() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {(Object.entries(LOGO_VARIANTS) as [LogoVariant, typeof LOGO_VARIANTS[LogoVariant]][]).map(([key, variant]) => (
             <LogoPreviewCard
               key={key}
@@ -373,6 +338,7 @@ export default function LogoEditor() {
               onDownload={() => handleExportSingle(key)}
               isExporting={isExporting}
               sizeLabel={`${LOGO_SIZES[size].width}px`}
+              logoSize={LOGO_SIZE_MAP[size]}
               exportRef={refs[key]}
             />
           ))}
