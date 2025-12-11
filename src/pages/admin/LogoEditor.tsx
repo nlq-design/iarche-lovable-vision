@@ -46,7 +46,7 @@ const PROFILE_FORMATS: Record<ProfileFormat, { size: number; label: string; icon
 };
 
 const EXPORT_FORMATS: Record<ExportFormat, { label: string; icon: React.ReactNode; description: string }> = {
-  png: { label: 'PNG', icon: <FileImage className="h-4 w-4" />, description: 'Haute résolution (4x)' },
+  png: { label: 'PNG', icon: <FileImage className="h-4 w-4" />, description: 'Ultra haute résolution (8x)' },
   svg: { label: 'SVG', icon: <FileCode className="h-4 w-4" />, description: 'Vectoriel, scalable' },
   pdf: { label: 'PDF', icon: <FileText className="h-4 w-4" />, description: 'Vectoriel, impression' },
 };
@@ -418,7 +418,7 @@ export default function LogoEditor() {
     if (!ref.current) return null;
     try {
       const currentWidth = ref.current.offsetWidth;
-      const pixelRatio = Math.max((targetWidth / currentWidth) * 4, 4); // High quality 4x
+      const pixelRatio = Math.max((targetWidth / currentWidth) * 8, 8); // Ultra high quality 8x
       const dataUrl = await toPng(ref.current, {
         quality: 1,
         pixelRatio,
