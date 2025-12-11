@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Linkedin, 
   Instagram, 
+  Twitter,
+  Facebook,
   Plus, 
   Image, 
   Smartphone, 
@@ -16,6 +18,15 @@ import {
 import { COLORS_PERSO, EXPORT_FORMATS_PERSO } from '@/components/admin/medias/perso/tokensPerso';
 
 const visualFormats = [
+  { 
+    id: 'profile', 
+    name: 'Photo de Profil', 
+    description: 'Multi-réseaux',
+    dimensions: '400×400px',
+    icon: User,
+    platforms: [Linkedin, Twitter, Instagram, Facebook],
+    route: '/admin/medias-perso/profile',
+  },
   { 
     id: 'post', 
     name: 'Post Carré', 
