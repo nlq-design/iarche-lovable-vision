@@ -32,29 +32,38 @@ export async function exportToPNG(
     throw new Error('Element ref is not defined');
   }
 
+  const element = elementRef.current;
+  
+  // Sauvegarder le transform actuel
+  const originalTransform = element.style.transform;
+  const originalTransformOrigin = element.style.transformOrigin;
+  
+  // Retirer temporairement le transform pour capturer les vraies dimensions
+  element.style.transform = 'none';
+  element.style.transformOrigin = 'top left';
+
   // Attendre que les fonts soient chargées
   await document.fonts.ready;
 
-  const dataUrl = await toPng(elementRef.current, {
-    pixelRatio: options?.pixelRatio || 2,
-    backgroundColor: options?.backgroundColor,
-    cacheBust: true,
-    // Capturer les dimensions exactes de l'élément
-    width: elementRef.current.offsetWidth,
-    height: elementRef.current.offsetHeight,
-    style: {
-      transform: 'none',
-      transformOrigin: 'top left',
-    },
-    // Inclure les fonts
-    fontEmbedCSS: '',
-    skipFonts: false,
-  });
+  try {
+    const dataUrl = await toPng(element, {
+      pixelRatio: options?.pixelRatio || 2,
+      backgroundColor: options?.backgroundColor,
+      cacheBust: true,
+      width: options?.width || element.scrollWidth,
+      height: options?.height || element.scrollHeight,
+      skipFonts: false,
+    });
 
-  const link = document.createElement('a');
-  link.download = `${filename}.png`;
-  link.href = dataUrl;
-  link.click();
+    const link = document.createElement('a');
+    link.download = `${filename}.png`;
+    link.href = dataUrl;
+    link.click();
+  } finally {
+    // Restaurer le transform original
+    element.style.transform = originalTransform;
+    element.style.transformOrigin = originalTransformOrigin;
+  }
 }
 
 /**
@@ -69,22 +78,35 @@ export async function exportToWebP(
     throw new Error('Element ref is not defined');
   }
 
+  const element = elementRef.current;
+  
+  // Sauvegarder le transform actuel
+  const originalTransform = element.style.transform;
+  const originalTransformOrigin = element.style.transformOrigin;
+  
+  // Retirer temporairement le transform
+  element.style.transform = 'none';
+  element.style.transformOrigin = 'top left';
+
   // Attendre que les fonts soient chargées
   await document.fonts.ready;
 
-  // First get PNG blob
-  const pngBlob = await toBlob(elementRef.current, {
-    pixelRatio: options?.pixelRatio || 2,
-    backgroundColor: options?.backgroundColor,
-    cacheBust: true,
-    width: elementRef.current.offsetWidth,
-    height: elementRef.current.offsetHeight,
-    style: {
-      transform: 'none',
-      transformOrigin: 'top left',
-    },
-    skipFonts: false,
-  });
+  let pngBlob: Blob | null = null;
+  
+  try {
+    pngBlob = await toBlob(element, {
+      pixelRatio: options?.pixelRatio || 2,
+      backgroundColor: options?.backgroundColor,
+      cacheBust: true,
+      width: options?.width || element.scrollWidth,
+      height: options?.height || element.scrollHeight,
+      skipFonts: false,
+    });
+  } finally {
+    // Restaurer le transform original
+    element.style.transform = originalTransform;
+    element.style.transformOrigin = originalTransformOrigin;
+  }
 
   if (!pngBlob) {
     throw new Error('Failed to create blob');
@@ -152,22 +174,35 @@ export async function uploadToMediaLibrary(
     throw new Error('Element ref is not defined');
   }
 
+  const element = elementRef.current;
+  
+  // Sauvegarder le transform actuel
+  const originalTransform = element.style.transform;
+  const originalTransformOrigin = element.style.transformOrigin;
+  
+  // Retirer temporairement le transform
+  element.style.transform = 'none';
+  element.style.transformOrigin = 'top left';
+
   // Attendre que les fonts soient chargées
   await document.fonts.ready;
 
-  // Get PNG blob first
-  const pngBlob = await toBlob(elementRef.current, {
-    pixelRatio: options?.pixelRatio || 2,
-    backgroundColor: options?.backgroundColor,
-    cacheBust: true,
-    width: elementRef.current.offsetWidth,
-    height: elementRef.current.offsetHeight,
-    style: {
-      transform: 'none',
-      transformOrigin: 'top left',
-    },
-    skipFonts: false,
-  });
+  let pngBlob: Blob | null = null;
+  
+  try {
+    pngBlob = await toBlob(element, {
+      pixelRatio: options?.pixelRatio || 2,
+      backgroundColor: options?.backgroundColor,
+      cacheBust: true,
+      width: options?.width || element.scrollWidth,
+      height: options?.height || element.scrollHeight,
+      skipFonts: false,
+    });
+  } finally {
+    // Restaurer le transform original
+    element.style.transform = originalTransform;
+    element.style.transformOrigin = originalTransformOrigin;
+  }
 
   if (!pngBlob) {
     throw new Error('Failed to create blob');
