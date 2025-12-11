@@ -32,16 +32,23 @@ export async function exportToPNG(
     throw new Error('Element ref is not defined');
   }
 
+  // Attendre que les fonts soient chargées
+  await document.fonts.ready;
+
   const dataUrl = await toPng(elementRef.current, {
     pixelRatio: options?.pixelRatio || 2,
     backgroundColor: options?.backgroundColor,
-    width: options?.width,
-    height: options?.height,
     cacheBust: true,
+    // Capturer les dimensions exactes de l'élément
+    width: elementRef.current.offsetWidth,
+    height: elementRef.current.offsetHeight,
     style: {
-      transform: 'scale(1)',
+      transform: 'none',
       transformOrigin: 'top left',
     },
+    // Inclure les fonts
+    fontEmbedCSS: '',
+    skipFonts: false,
   });
 
   const link = document.createElement('a');
@@ -62,17 +69,21 @@ export async function exportToWebP(
     throw new Error('Element ref is not defined');
   }
 
+  // Attendre que les fonts soient chargées
+  await document.fonts.ready;
+
   // First get PNG blob
   const pngBlob = await toBlob(elementRef.current, {
     pixelRatio: options?.pixelRatio || 2,
     backgroundColor: options?.backgroundColor,
-    width: options?.width,
-    height: options?.height,
     cacheBust: true,
+    width: elementRef.current.offsetWidth,
+    height: elementRef.current.offsetHeight,
     style: {
-      transform: 'scale(1)',
+      transform: 'none',
       transformOrigin: 'top left',
     },
+    skipFonts: false,
   });
 
   if (!pngBlob) {
@@ -141,17 +152,21 @@ export async function uploadToMediaLibrary(
     throw new Error('Element ref is not defined');
   }
 
+  // Attendre que les fonts soient chargées
+  await document.fonts.ready;
+
   // Get PNG blob first
   const pngBlob = await toBlob(elementRef.current, {
     pixelRatio: options?.pixelRatio || 2,
     backgroundColor: options?.backgroundColor,
-    width: options?.width,
-    height: options?.height,
     cacheBust: true,
+    width: elementRef.current.offsetWidth,
+    height: elementRef.current.offsetHeight,
     style: {
-      transform: 'scale(1)',
+      transform: 'none',
       transformOrigin: 'top left',
     },
+    skipFonts: false,
   });
 
   if (!pngBlob) {

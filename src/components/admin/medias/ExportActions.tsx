@@ -33,12 +33,8 @@ export default function ExportActions({
       await exportToPNG(elementRef, filename, {
         pixelRatio: quality,
         backgroundColor,
-        width,
-        height,
       });
-      const exportWidth = (width || 1200) * quality;
-      const exportHeight = (height || 630) * quality;
-      toast.success(`PNG exporté (${exportWidth}×${exportHeight}px)`);
+      toast.success(`PNG exporté (qualité ${quality}x)`);
     } catch (error) {
       toast.error('Erreur lors de l\'export PNG');
       console.error(error);
