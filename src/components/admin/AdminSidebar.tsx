@@ -62,7 +62,7 @@ const navigationItems = [
       { title: 'RedacNews', url: '/admin/redacnews', icon: Send },
       { title: 'Gestion Emails', url: '/admin/emails', icon: Mail },
       { title: 'Médias IArche', url: '/admin/medias', icon: ImageIcon },
-      { title: 'Médias Perso', url: '/admin/medias-perso', icon: ImageIcon },
+      { title: 'Média IArche II', url: '/admin/medias-perso', icon: ImageIcon },
       { title: 'Formulaires', url: '/admin/formulaires', icon: ClipboardList },
       { title: 'Réponses formulaires', url: '/admin/form-responses', icon: FileText },
     ]

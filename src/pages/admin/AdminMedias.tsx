@@ -209,11 +209,24 @@ const AdminMedias = () => {
   return (
     <AdminLayout>
       <div className="p-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Médias & Communication</h1>
-          <p className="text-muted-foreground mt-1">
-            Générez des supports de communication conformes à la charte graphique IArche
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Médias & Communication</h1>
+            <p className="text-muted-foreground mt-1">
+              Générez des supports de communication conformes à la charte graphique IArche
+            </p>
+          </div>
+          <Button 
+            variant="outline"
+            onClick={() => navigate('/admin/medias-perso')}
+            className="flex items-center gap-2"
+          >
+            <div 
+              className="w-4 h-4 rounded-full"
+              style={{ background: 'linear-gradient(135deg, #D4633A 0%, #213A6B 100%)' }}
+            />
+            Média IArche II
+          </Button>
         </div>
 
         <Tabs defaultValue="documents" className="space-y-6">
