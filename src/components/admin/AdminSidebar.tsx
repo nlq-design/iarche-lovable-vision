@@ -61,7 +61,8 @@ const navigationItems = [
       { title: 'Abonnés Newsletter', url: '/admin/newsletters', icon: Users },
       { title: 'RedacNews', url: '/admin/redacnews', icon: Send },
       { title: 'Gestion Emails', url: '/admin/emails', icon: Mail },
-      { title: 'Médias', url: '/admin/medias', icon: ImageIcon },
+      { title: 'Médias IArche', url: '/admin/medias', icon: ImageIcon },
+      { title: 'Médias Perso', url: '/admin/medias-perso', icon: ImageIcon },
       { title: 'Formulaires', url: '/admin/formulaires', icon: ClipboardList },
       { title: 'Réponses formulaires', url: '/admin/form-responses', icon: FileText },
     ]
