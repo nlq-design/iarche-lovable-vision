@@ -49,11 +49,13 @@ const BannerPersoEditor = () => {
   const getAlignStyles = (): React.CSSProperties => {
     switch (textAlign) {
       case 'left':
-        return { alignItems: 'flex-start', textAlign: 'left', paddingLeft: 80 };
+        return { alignItems: 'flex-start', textAlign: 'left', paddingLeft: 80, paddingRight: 80 };
       case 'center':
-        return { alignItems: 'center', textAlign: 'center' };
+        return { alignItems: 'center', textAlign: 'center', paddingLeft: 80, paddingRight: 80 };
       case 'right':
-        return { alignItems: 'flex-end', textAlign: 'right', paddingRight: 80 };
+        return { alignItems: 'flex-end', textAlign: 'right', paddingLeft: 80, paddingRight: 80 };
+      default:
+        return { alignItems: 'flex-start', textAlign: 'left', paddingLeft: 80, paddingRight: 80 };
     }
   };
 
@@ -123,6 +125,7 @@ const BannerPersoEditor = () => {
                           textShadow: theme === 'dark' ? '0 4px 20px rgba(0,0,0,0.4)' : 'none',
                           letterSpacing: '-0.02em',
                           marginBottom: 8,
+                          width: '100%',
                         }}
                       >
                         {title}
@@ -135,6 +138,7 @@ const BannerPersoEditor = () => {
                           color: getSubtitleColor(),
                           fontSize: subtitleSize,
                           letterSpacing: '0.01em',
+                          width: '100%',
                         }}
                       >
                         {subtitle}
