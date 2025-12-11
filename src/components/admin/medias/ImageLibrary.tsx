@@ -43,9 +43,9 @@ interface ImageLibraryProps {
 
 // Available storage buckets for media
 const MEDIA_BUCKETS = [
+  { id: 'media-library', label: 'Bibliothèque', description: 'Images médias' },
   { id: 'brochure-images', label: 'Brochures', description: 'Images pour brochures' },
   { id: 'qr-codes', label: 'QR Codes', description: 'QR codes générés' },
-  { id: 'livres-blancs', label: 'Livres Blancs', description: 'Documents PDF' },
 ] as const;
 
 export const ImageLibrary: React.FC<ImageLibraryProps> = ({
@@ -195,9 +195,9 @@ export const ImageLibrary: React.FC<ImageLibraryProps> = ({
         </DialogHeader>
 
         <Tabs value={selectedBucket} onValueChange={setSelectedBucket}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="w-full">
             {MEDIA_BUCKETS.map(bucket => (
-              <TabsTrigger key={bucket.id} value={bucket.id} className="text-xs">
+              <TabsTrigger key={bucket.id} value={bucket.id} className="text-xs flex-1">
                 {bucket.label}
               </TabsTrigger>
             ))}

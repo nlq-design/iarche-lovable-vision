@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Download, Image } from 'lucide-react';
+import { ArrowLeft, Download, Image as ImageIcon, User } from 'lucide-react';
 import { MediaTemplate } from '@/hooks/useMediaTemplates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { exportToPNG } from '@/lib/exportPng';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import ExportModeControls, { ExportMode } from '@/components/admin/medias/ExportModeControls';
+import { ImageLibrary } from '@/components/admin/medias/ImageLibrary';
 import {
   HTMLBaseTemplate,
   HTMLLogoWithBar,
@@ -79,6 +80,7 @@ export default function BannerEditor() {
   // CEO fields
   const [ceoName, setCeoName] = useState('Nicolas Lara-Quétier');
   const [ceoTitle, setCeoTitle] = useState('CEO & Fondateur');
+  const [ceoPhoto, setCeoPhoto] = useState<string | null>(null);
 
   const applyPreset = (presetId: string) => {
     const selectedPreset = PRESET_TEMPLATES.find(p => p.id === presetId);
@@ -94,8 +96,8 @@ export default function BannerEditor() {
   const getCurrentData = useCallback(() => ({
     template, theme, preset, exportMode, barSize,
     titleFontSize, titleBold, titleItalic, titleAlignment,
-    tagline, selectedSolution, ceoName, ceoTitle,
-  }), [template, theme, preset, exportMode, barSize, titleFontSize, titleBold, titleItalic, titleAlignment, tagline, selectedSolution, ceoName, ceoTitle]);
+    tagline, selectedSolution, ceoName, ceoTitle, ceoPhoto,
+  }), [template, theme, preset, exportMode, barSize, titleFontSize, titleBold, titleItalic, titleAlignment, tagline, selectedSolution, ceoName, ceoTitle, ceoPhoto]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
@@ -111,6 +113,7 @@ export default function BannerEditor() {
     if (data.selectedSolution !== undefined) setSelectedSolution(data.selectedSolution as string);
     if (data.ceoName !== undefined) setCeoName(data.ceoName as string);
     if (data.ceoTitle !== undefined) setCeoTitle(data.ceoTitle as string);
+    if (data.ceoPhoto !== undefined) setCeoPhoto(data.ceoPhoto as string | null);
   }, []);
 
   // Load template from navigation state
@@ -209,7 +212,7 @@ export default function BannerEditor() {
             height: '100%',
             gap: '48px',
           }}>
-            {/* Photo placeholder */}
+            {/* Photo */}
             <div style={{
               width: '180px',
               height: '180px',
@@ -219,13 +222,18 @@ export default function BannerEditor() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              overflow: 'hidden',
             }}>
-              <Image size={48} color={subtextColor} />
+              {ceoPhoto ? (
+                <img src={ceoPhoto} alt={ceoName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <User size={48} color={subtextColor} />
+              )}
             </div>
             
             {/* Info */}
             <div style={{ 
-              display: 'flex', 
+              display: 'flex',
               flexDirection: 'column',
               gap: '16px',
               textAlign: titleAlignment,
@@ -394,6 +402,31 @@ export default function BannerEditor() {
                       onChange={(e) => setCeoTitle(e.target.value)}
                       placeholder="CEO & Fondateur"
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Photo</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={ceoPhoto || ''}
+                        onChange={(e) => setCeoPhoto(e.target.value || null)}
+                        placeholder="URL de la photo"
+                        className="flex-1"
+                      />
+                      <ImageLibrary 
+                        onSelect={(url) => setCeoPhoto(url)} 
+                        triggerLabel="Choisir"
+                      />
+                    </div>
+                    {ceoPhoto && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setCeoPhoto(null)}
+                        className="w-full mt-1"
+                      >
+                        Supprimer la photo
+                      </Button>
+                    )}
                   </div>
                 </>
               )}

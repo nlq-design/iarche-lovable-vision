@@ -13,6 +13,7 @@ import { exportToPNG } from '@/lib/exportPng';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import ExportModeControls, { ExportMode } from '@/components/admin/medias/ExportModeControls';
+import { ImageLibrary } from '@/components/admin/medias/ImageLibrary';
 import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
@@ -85,6 +86,7 @@ export default function ThumbnailEditor() {
   const [speakerNom, setSpeakerNom] = useState('Nicolas Lara-Quétier');
   const [speakerFonction, setSpeakerFonction] = useState('CEO & Fondateur, IArche');
   const [showSpeaker, setShowSpeaker] = useState(true);
+  const [speakerPhoto, setSpeakerPhoto] = useState<string | null>(null);
 
   const applyPreset = (presetId: string) => {
     const selectedPreset = PRESET_TEMPLATES.find(p => p.id === presetId);
@@ -103,8 +105,8 @@ export default function ThumbnailEditor() {
     format, theme, eventType, preset, exportMode, barSize,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     titre, sousTitre, date, heure,
-    speakerNom, speakerFonction, showSpeaker,
-  }), [format, theme, eventType, preset, exportMode, barSize, titleFontSize, titleBold, titleItalic, titleAlignment, titre, sousTitre, date, heure, speakerNom, speakerFonction, showSpeaker]);
+    speakerNom, speakerFonction, showSpeaker, speakerPhoto,
+  }), [format, theme, eventType, preset, exportMode, barSize, titleFontSize, titleBold, titleItalic, titleAlignment, titre, sousTitre, date, heure, speakerNom, speakerFonction, showSpeaker, speakerPhoto]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
@@ -124,6 +126,7 @@ export default function ThumbnailEditor() {
     if (data.speakerNom !== undefined) setSpeakerNom(data.speakerNom as string);
     if (data.speakerFonction !== undefined) setSpeakerFonction(data.speakerFonction as string);
     if (data.showSpeaker !== undefined) setShowSpeaker(data.showSpeaker as boolean);
+    if (data.speakerPhoto !== undefined) setSpeakerPhoto(data.speakerPhoto as string | null);
   }, []);
 
   // Load template from navigation state
@@ -306,6 +309,31 @@ export default function ThumbnailEditor() {
                     <Label>Fonction</Label>
                     <Input value={speakerFonction} onChange={(e) => setSpeakerFonction(e.target.value)} />
                   </div>
+                  <div className="space-y-2">
+                    <Label>Photo intervenant</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={speakerPhoto || ''}
+                        onChange={(e) => setSpeakerPhoto(e.target.value || null)}
+                        placeholder="URL de la photo"
+                        className="flex-1"
+                      />
+                      <ImageLibrary 
+                        onSelect={(url) => setSpeakerPhoto(url)} 
+                        triggerLabel="Choisir"
+                      />
+                    </div>
+                    {speakerPhoto && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setSpeakerPhoto(null)}
+                        className="w-full mt-1"
+                      >
+                        Supprimer
+                      </Button>
+                    )}
+                  </div>
                 </>
               )}
 
@@ -465,8 +493,13 @@ export default function ThumbnailEditor() {
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
+                              overflow: 'hidden',
                             }}>
-                              <User size={28} color={IARCHE_COLORS.white} />
+                              {speakerPhoto ? (
+                                <img src={speakerPhoto} alt={speakerNom} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                <User size={28} color={IARCHE_COLORS.white} />
+                              )}
                             </div>
                             <div>
                               <div style={{

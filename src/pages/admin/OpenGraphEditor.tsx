@@ -14,6 +14,7 @@ import { exportToPNG } from '@/lib/exportPng';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import ExportModeControls, { ExportMode } from '@/components/admin/medias/ExportModeControls';
+import { ImageLibrary } from '@/components/admin/medias/ImageLibrary';
 import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
@@ -83,6 +84,7 @@ export default function OpenGraphEditor() {
   
   // Solution fields
   const [selectedSolution, setSelectedSolution] = useState(SOLUTIONS[0].id);
+  const [solutionImage, setSolutionImage] = useState<string | null>(null);
 
   const applyPreset = (presetId: string) => {
     const selectedPreset = PRESET_TEMPLATES.find(p => p.id === presetId);
@@ -101,8 +103,8 @@ export default function OpenGraphEditor() {
     titleFontSize, titleBold, titleItalic, titleAlignment,
     pageTitle, pageTagline,
     articleTitle, articleDate, articleCategory,
-    selectedSolution,
-  }), [template, theme, preset, exportMode, barSize, titleFontSize, titleBold, titleItalic, titleAlignment, pageTitle, pageTagline, articleTitle, articleDate, articleCategory, selectedSolution]);
+    selectedSolution, solutionImage,
+  }), [template, theme, preset, exportMode, barSize, titleFontSize, titleBold, titleItalic, titleAlignment, pageTitle, pageTagline, articleTitle, articleDate, articleCategory, selectedSolution, solutionImage]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
@@ -120,6 +122,7 @@ export default function OpenGraphEditor() {
     if (data.articleDate !== undefined) setArticleDate(data.articleDate as string);
     if (data.articleCategory !== undefined) setArticleCategory(data.articleCategory as string);
     if (data.selectedSolution !== undefined) setSelectedSolution(data.selectedSolution as string);
+    if (data.solutionImage !== undefined) setSolutionImage(data.solutionImage as string | null);
   }, []);
 
   // Load template from navigation state
@@ -273,18 +276,23 @@ export default function OpenGraphEditor() {
               alignItems: 'center',
               gap: '48px',
             }}>
-              {/* Icon */}
+              {/* Icon/Image */}
               <div style={{
                 width: '140px',
                 height: '140px',
                 borderRadius: '24px',
-                backgroundColor: IARCHE_COLORS.terracotta,
+                backgroundColor: solutionImage ? 'transparent' : IARCHE_COLORS.terracotta,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
+                overflow: 'hidden',
               }}>
-                <Briefcase size={64} color={IARCHE_COLORS.white} />
+                {solutionImage ? (
+                  <img src={solutionImage} alt={solution.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <Briefcase size={64} color={IARCHE_COLORS.white} />
+                )}
               </div>
               
               {/* Text */}
@@ -443,21 +451,48 @@ export default function OpenGraphEditor() {
               )}
 
               {template === 'solution' && (
-                <div className="space-y-2">
-                  <Label>Solution</Label>
-                  <Select value={selectedSolution} onValueChange={setSelectedSolution}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SOLUTIONS.map((sol) => (
-                        <SelectItem key={sol.id} value={sol.id}>
-                          {sol.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <>
+                  <div className="space-y-2">
+                    <Label>Solution</Label>
+                    <Select value={selectedSolution} onValueChange={setSelectedSolution}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SOLUTIONS.map((sol) => (
+                          <SelectItem key={sol.id} value={sol.id}>
+                            {sol.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Image/Icône</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={solutionImage || ''}
+                        onChange={(e) => setSolutionImage(e.target.value || null)}
+                        placeholder="URL de l'image"
+                        className="flex-1"
+                      />
+                      <ImageLibrary 
+                        onSelect={(url) => setSolutionImage(url)} 
+                        triggerLabel="Choisir"
+                      />
+                    </div>
+                    {solutionImage && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setSolutionImage(null)}
+                        className="w-full mt-1"
+                      >
+                        Supprimer l'image
+                      </Button>
+                    )}
+                  </div>
+                </>
               )}
 
               {/* Export Mode Controls */}

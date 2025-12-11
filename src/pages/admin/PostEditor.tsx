@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Download } from 'lucide-react';
+import { ArrowLeft, Download, User } from 'lucide-react';
 import { MediaTemplate } from '@/hooks/useMediaTemplates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import { exportToPNG } from '@/lib/exportPng';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
 import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import ExportModeControls, { ExportMode } from '@/components/admin/medias/ExportModeControls';
+import { ImageLibrary } from '@/components/admin/medias/ImageLibrary';
 import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
@@ -141,6 +142,7 @@ export default function PostEditor() {
   const [temoinNom, setTemoinNom] = useState('Marie Dupont');
   const [temoinFonction, setTemoinFonction] = useState('Directrice Générale');
   const [temoinEntreprise, setTemoinEntreprise] = useState('Entreprise XYZ');
+  const [temoinPhoto, setTemoinPhoto] = useState<string | null>(null);
   
   // Conseil fields
   const [conseilNumero, setConseilNumero] = useState('01');
@@ -164,11 +166,11 @@ export default function PostEditor() {
     format, template, theme, exportMode, barSize,
     badge, title, description, cta,
     chiffre, contexte, source,
-    citation, temoinNom, temoinFonction, temoinEntreprise,
+    citation, temoinNom, temoinFonction, temoinEntreprise, temoinPhoto,
     conseilNumero, conseilTitre, conseilContenu,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     descFontSize, descBold, descItalic, descAlignment,
-  }), [format, template, theme, exportMode, barSize, badge, title, description, cta, chiffre, contexte, source, citation, temoinNom, temoinFonction, temoinEntreprise, conseilNumero, conseilTitre, conseilContenu, titleFontSize, titleBold, titleItalic, titleAlignment, descFontSize, descBold, descItalic, descAlignment]);
+  }), [format, template, theme, exportMode, barSize, badge, title, description, cta, chiffre, contexte, source, citation, temoinNom, temoinFonction, temoinEntreprise, temoinPhoto, conseilNumero, conseilTitre, conseilContenu, titleFontSize, titleBold, titleItalic, titleAlignment, descFontSize, descBold, descItalic, descAlignment]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
@@ -188,6 +190,7 @@ export default function PostEditor() {
     if (data.temoinNom !== undefined) setTemoinNom(data.temoinNom as string);
     if (data.temoinFonction !== undefined) setTemoinFonction(data.temoinFonction as string);
     if (data.temoinEntreprise !== undefined) setTemoinEntreprise(data.temoinEntreprise as string);
+    if (data.temoinPhoto !== undefined) setTemoinPhoto(data.temoinPhoto as string | null);
     if (data.conseilNumero !== undefined) setConseilNumero(data.conseilNumero as string);
     if (data.conseilTitre !== undefined) setConseilTitre(data.conseilTitre as string);
     if (data.conseilContenu !== undefined) setConseilContenu(data.conseilContenu as string);
@@ -349,7 +352,20 @@ export default function PostEditor() {
             textAlign: titleAlignment,
           }}>
             <HTMLLogoWithBar size="md" theme={theme} barSize={barSize} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '32px', width: '100%' }}>
+              {temoinPhoto && (
+                <div style={{
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  border: `3px solid ${IARCHE_COLORS.terracotta}`,
+                  flexShrink: 0,
+                }}>
+                  <img src={temoinPhoto} alt={temoinNom} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start', flex: 1 }}>
               <p style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${titleFontSize}px`,
@@ -389,6 +405,7 @@ export default function PostEditor() {
                 }}>
                   {temoinEntreprise}
                 </span>
+              </div>
               </div>
             </div>
             <div style={{ height: '40px' }} />
@@ -526,6 +543,31 @@ export default function PostEditor() {
             <div className="space-y-2">
               <Label>Entreprise</Label>
               <Input value={temoinEntreprise} onChange={(e) => setTemoinEntreprise(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Photo du témoin</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={temoinPhoto || ''}
+                  onChange={(e) => setTemoinPhoto(e.target.value || null)}
+                  placeholder="URL de la photo"
+                  className="flex-1"
+                />
+                <ImageLibrary 
+                  onSelect={(url) => setTemoinPhoto(url)} 
+                  triggerLabel="Choisir"
+                />
+              </div>
+              {temoinPhoto && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setTemoinPhoto(null)}
+                  className="w-full mt-1"
+                >
+                  Supprimer la photo
+                </Button>
+              )}
             </div>
           </>
         );
