@@ -12,6 +12,8 @@ import {
   LOGO_SIZES,
   ARCH_SIZES,
   EXPORT_FORMATS,
+  LOGO_BAR_MAPPING,
+  LOGO_BAR_GAP,
 } from '../shared/tokens';
 
 // Réexport pour compatibilité avec le code existant
@@ -51,6 +53,9 @@ export const IARCHE_SIZES = {
   },
   arch: ARCH_SIZES,
 } as const;
+
+// Logo + Barre proportions (Charte 3.1)
+export { LOGO_BAR_MAPPING, LOGO_BAR_GAP };
 
 // Types
 export type { ThemeType, BarSize, LogoSize, ArchSize } from '../shared/tokens';

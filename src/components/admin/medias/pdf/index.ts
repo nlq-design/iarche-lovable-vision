@@ -7,6 +7,9 @@ export { PDFGradientBar } from './PDFGradientBar';
 export { PDFMeshBackground } from './PDFMeshBackground';
 export { PDFArches } from './PDFArches';
 
+// Logo + Barre obligatoire (Charte 3.1)
+export { PDFLogoWithBar } from './PDFLogoWithBar';
+
 // Base64 SVG components (reliable rendering) - RECOMMENDED
 export { 
   PDFImageLogo, 

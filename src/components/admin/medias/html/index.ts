@@ -14,3 +14,6 @@ export { HTMLMeshBackground } from './HTMLMeshBackground';
 export { HTMLArches } from './HTMLArches';
 export { HTMLCanalisationLines } from './HTMLCanalisationLines';
 export { HTMLBaseTemplate } from './HTMLBaseTemplate';
+
+// Image Library (Supabase Storage)
+export { ImageLibrary } from '../ImageLibrary';
