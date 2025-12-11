@@ -96,15 +96,13 @@ export const FONTS = {
 } as const;
 
 // =====================================================
-// DIMENSIONS - Barres décoratives (proportionnelles)
+// DIMENSIONS - Barres décoratives (Charte 3.1)
 // =====================================================
 export const BAR_SIZES = {
-  xs: { width: 24, height: 2 },   // Pour exports ~100px
-  sm: { width: 48, height: 2 },   // Pour logos sm (24px)
-  md: { width: 64, height: 3 },   // Pour exports ~250px
-  lg: { width: 80, height: 4 },   // Pour logos lg (48px)
-  xl: { width: 120, height: 5 },  // Pour exports ~500px
-  '2xl': { width: 160, height: 6 }, // Pour exports plus grands
+  sm: { width: 48, height: 2 },   // Placeholder cards, petits formats
+  md: { width: 80, height: 4 },   // Header, formats moyens
+  lg: { width: 96, height: 4 },   // Formats intermédiaires
+  xl: { width: 128, height: 6 },  // Hero, grands formats
 } as const;
 
 // =====================================================
@@ -133,16 +131,17 @@ export const ARCH_SIZES = {
 // =====================================================
 export const LOGO_BAR_MAPPING: Record<LogoSize, BarSize> = {
   sm: 'sm',  // Logo sm (24px) → Barre sm (48×2)
-  md: 'md',  // Logo md (32px) → Barre md (64×3)
-  lg: 'lg',  // Logo lg (48px) → Barre lg (80×4)
-  xl: 'xl',  // Logo xl (64px) → Barre xl (120×5)
+  md: 'md',  // Logo md (32px) → Barre md (80×4)
+  lg: 'lg',  // Logo lg (48px) → Barre lg (96×4)
+  xl: 'xl',  // Logo xl (64px) → Barre xl (128×6)
 } as const;
 
 // Mapping export size → bar size (pour LogoEditor)
+// Ratio barre/export : ~25-30% de la largeur d'export
 export const EXPORT_BAR_MAPPING = {
-  '100': 'xs',   // 100px export → barre 24px (24%)
-  '250': 'md',   // 250px export → barre 64px (25.6%)
-  '500': 'xl',   // 500px export → barre 120px (24%)
+  '100': 'sm',   // 100px export → barre 48px (48%)
+  '250': 'md',   // 250px export → barre 80px (32%)
+  '500': 'xl',   // 500px export → barre 128px (25.6%)
 } as const;
 
 // Espacement logo-barre proportionnel
@@ -179,7 +178,7 @@ export const EXPORT_FORMATS = {
 // TYPES
 // =====================================================
 export type ThemeType = 'dark' | 'light';
-export type BarSize = keyof typeof BAR_SIZES;
+export type BarSize = keyof typeof BAR_SIZES;  // sm | md | lg | xl
 export type LogoSize = keyof typeof LOGO_SIZES;
 export type ArchSize = keyof typeof ARCH_SIZES;
 export type ExportSize = keyof typeof EXPORT_BAR_MAPPING;
