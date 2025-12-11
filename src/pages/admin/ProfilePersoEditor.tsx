@@ -30,13 +30,17 @@ const ProfilePersoEditor = () => {
   const previewRef = useRef<HTMLDivElement>(null);
   
   // Form state
+  const [textMode, setTextMode] = useState<'initials' | 'custom'>('initials');
   const [initials, setInitials] = useState('NL');
+  const [customText, setCustomText] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [theme, setTheme] = useState<'dark' | 'light' | 'gradient'>('gradient');
   const [gradientType, setGradientType] = useState<GradientTypePerso>('diagonal');
   const [showCircleGuide, setShowCircleGuide] = useState(true);
   const [fontSize, setFontSize] = useState(280);
   const [quality, setQuality] = useState<number>(2);
+
+  const displayText = textMode === 'initials' ? (initials || 'NL') : (customText || 'Texte');
 
   const getBackground = () => {
     switch (theme) {
@@ -199,16 +203,41 @@ const ProfilePersoEditor = () => {
 
                 {!photoUrl && (
                   <>
-                    <div>
-                      <Label>Initiales</Label>
-                      <Input
-                        value={initials}
-                        onChange={(e) => setInitials(e.target.value.toUpperCase().slice(0, 3))}
-                        placeholder="NL"
-                        maxLength={3}
-                        className="mt-1 text-center font-bold text-xl"
-                      />
+                    <div className="flex items-center justify-between">
+                      <Label>Mode texte</Label>
+                      <Select value={textMode} onValueChange={(v) => setTextMode(v as 'initials' | 'custom')}>
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="initials">Initiales</SelectItem>
+                          <SelectItem value="custom">Texte libre</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
+
+                    {textMode === 'initials' ? (
+                      <div>
+                        <Label>Initiales (max 3)</Label>
+                        <Input
+                          value={initials}
+                          onChange={(e) => setInitials(e.target.value.toUpperCase().slice(0, 3))}
+                          placeholder="NL"
+                          maxLength={3}
+                          className="mt-1 text-center font-bold text-xl"
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <Label>Texte personnalisé</Label>
+                        <Input
+                          value={customText}
+                          onChange={(e) => setCustomText(e.target.value)}
+                          placeholder="Votre texte"
+                          className="mt-1 text-center font-bold"
+                        />
+                      </div>
+                    )}
 
                     <div>
                       <Label>Taille police: {fontSize}px</Label>
@@ -216,7 +245,7 @@ const ProfilePersoEditor = () => {
                         type="range"
                         value={fontSize}
                         onChange={(e) => setFontSize(Number(e.target.value))}
-                        min={180}
+                        min={textMode === 'initials' ? 180 : 60}
                         max={400}
                         step={10}
                         className="w-full mt-2"
@@ -329,15 +358,18 @@ const ProfilePersoEditor = () => {
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span
-                      className="font-bold"
+                      className="font-bold text-center px-4"
                       style={{
                         color: getTextColor(),
                         fontSize: fontSize,
-                        letterSpacing: '-0.02em',
+                        letterSpacing: textMode === 'initials' ? '-0.02em' : '-0.01em',
                         textShadow: theme !== 'light' ? '0 4px 20px rgba(0,0,0,0.3)' : 'none',
+                        lineHeight: 1,
+                        wordBreak: 'break-word',
+                        maxWidth: '90%',
                       }}
                     >
-                      {initials || 'NL'}
+                      {displayText}
                     </span>
                   </div>
                 )}
@@ -373,15 +405,16 @@ const ProfilePersoEditor = () => {
                       {photoUrl ? (
                         <img src={photoUrl} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-full h-full flex items-center justify-center overflow-hidden">
                           <span
-                            className="font-bold"
+                            className="font-bold text-center"
                             style={{
                               color: getTextColor(),
-                              fontSize: previewSize * 0.4,
+                              fontSize: previewSize * (textMode === 'initials' ? 0.4 : 0.25),
+                              lineHeight: 1,
                             }}
                           >
-                            {initials?.slice(0, 2) || 'NL'}
+                            {textMode === 'initials' ? displayText.slice(0, 2) : displayText.slice(0, 4)}
                           </span>
                         </div>
                       )}
