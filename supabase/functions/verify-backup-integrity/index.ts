@@ -45,6 +45,22 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Verify admin role
+    const { data: roleData, error: roleError } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .single();
+
+    if (roleError || !roleData) {
+      console.error('Admin access denied for user:', user.id);
+      return new Response(
+        JSON.stringify({ error: 'Admin access required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { backup_id } = await req.json() as VerifyRequest;
 
     console.log(`Starting integrity check for backup ${backup_id}`);
