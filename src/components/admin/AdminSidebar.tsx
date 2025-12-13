@@ -1,4 +1,31 @@
-import { Home, BarChart3, Sparkles, FileText, FolderOpen, Tag, MessageCircle, Users, Mail, Send, Shield, Settings, Database, HelpCircle, Activity, MousePointerClick, UserCheck, ImageIcon, ClipboardList, CalendarCheck, BookOpen } from 'lucide-react';
+import { 
+  Home, 
+  BarChart3, 
+  Sparkles, 
+  FileText, 
+  FolderOpen, 
+  Tag, 
+  MessageCircle, 
+  Users, 
+  Mail, 
+  Send, 
+  Shield, 
+  Settings, 
+  Database, 
+  HelpCircle, 
+  Activity, 
+  MousePointerClick, 
+  UserCheck, 
+  ImageIcon, 
+  ClipboardList, 
+  CalendarCheck, 
+  BookOpen,
+  Newspaper,
+  Building2,
+  Calendar,
+  Rocket,
+  FileDown
+} from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import {
@@ -28,11 +55,13 @@ const navigationItems = [
     group: 'Contenu',
     items: [
       { title: 'Articles', url: '/admin/articles', icon: FileText },
-      { title: 'Actualités', url: '/admin/actualites', icon: FileText },
-      { title: 'Cas clients', url: '/admin/cas-clients', icon: FileText },
-      { title: 'Livres blancs', url: '/admin/livres-blancs', icon: FileText },
-      { title: 'Ateliers & Webinaires', url: '/admin/ateliers-webinaires', icon: FileText },
-      { title: 'Brochures', url: '/admin/brochures', icon: BookOpen },
+      { title: 'Actualités', url: '/admin/actualites', icon: Newspaper },
+      { title: 'Cas clients', url: '/admin/cas-clients', icon: Building2 },
+      { title: 'Livres blancs', url: '/admin/livres-blancs', icon: BookOpen },
+      { title: 'Ateliers & Webinaires', url: '/admin/ateliers-webinaires', icon: Calendar },
+      { title: 'Solutions', url: '/admin/solutions', icon: Rocket },
+      { title: 'FAQs', url: '/admin/faqs', icon: HelpCircle },
+      { title: 'Brochures', url: '/admin/brochures', icon: FileDown },
       { title: 'Redacia (IA)', url: '/admin/redacia', icon: Sparkles },
     ]
   },
@@ -49,10 +78,11 @@ const navigationItems = [
       { title: 'Leads (consolidé)', url: '/admin/leads', icon: Users },
       { title: 'Rendez-vous', url: '/admin/rendez-vous', icon: CalendarCheck },
       { title: 'Contacts', url: '/admin/contacts', icon: Mail },
-      { title: 'Inscriptions Livres blancs', url: '/admin/livre-blanc-inscriptions', icon: FileText },
+      { title: 'Inscriptions Livres blancs', url: '/admin/livre-blanc-inscriptions', icon: BookOpen },
       { title: 'Inscriptions Ateliers', url: '/admin/atelier-inscriptions', icon: UserCheck },
       { title: 'Commentaires', url: '/admin/comments', icon: MessageCircle },
-      { title: 'FAQs', url: '/admin/faqs', icon: HelpCircle },
+      { title: 'Formulaires', url: '/admin/formulaires', icon: ClipboardList },
+      { title: 'Réponses formulaires', url: '/admin/form-responses', icon: ClipboardList },
     ]
   },
   {
@@ -61,10 +91,7 @@ const navigationItems = [
       { title: 'Abonnés Newsletter', url: '/admin/newsletters', icon: Users },
       { title: 'RedacNews', url: '/admin/redacnews', icon: Send },
       { title: 'Gestion Emails', url: '/admin/emails', icon: Mail },
-      { title: 'Médias IArche', url: '/admin/medias', icon: ImageIcon },
-      { title: 'Média IArche II', url: '/admin/medias-perso', icon: ImageIcon },
-      { title: 'Formulaires', url: '/admin/formulaires', icon: ClipboardList },
-      { title: 'Réponses formulaires', url: '/admin/form-responses', icon: FileText },
+      { title: 'Médias', url: '/admin/medias', icon: ImageIcon },
     ]
   },
   {
@@ -73,7 +100,7 @@ const navigationItems = [
       { title: 'Dashboard sécurité', url: '/admin/security-dashboard', icon: Shield },
       { title: 'Logs d\'audit', url: '/admin/audit-logs', icon: Shield },
       { title: 'Backups', url: '/admin/backups', icon: Database },
-      { title: 'Paramètres de sécurité', url: '/admin/settings', icon: Settings },
+      { title: 'Paramètres', url: '/admin/settings', icon: Settings },
     ]
   }
 ];

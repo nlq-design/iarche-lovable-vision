@@ -48,6 +48,7 @@ const AdminActualites = lazy(() => import("./pages/admin/AdminActualites"));
 const AdminCasClients = lazy(() => import("./pages/admin/AdminCasClients"));
 const AdminLivresBlancs = lazy(() => import("./pages/admin/AdminLivresBlancs"));
 const AdminAteliersWebinaires = lazy(() => import("./pages/admin/AdminAteliersWebinaires"));
+const AdminSolutions = lazy(() => import("./pages/admin/AdminSolutions"));
 const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
 const AdminContacts = lazy(() => import("./pages/admin/AdminContacts"));
 const AdminAtelierInscriptions = lazy(() => import("./pages/admin/AdminAtelierInscriptions"));
@@ -203,6 +204,26 @@ const App = () => (
           <Route path="/admin/ateliers-webinaires" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><AdminAteliersWebinaires /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/solutions" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminSolutions /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/solutions/new" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/solutions/:id" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/solutions/:id/history" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/leads" element={
