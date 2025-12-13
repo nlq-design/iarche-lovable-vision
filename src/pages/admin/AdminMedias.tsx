@@ -186,7 +186,7 @@ const toolsTemplates = [
   },
 ];
 
-// Formats personnels (IArche II)
+// Formats personnels (IArche II) - routes existantes
 const persoFormats = [
   { 
     id: 'profile', 
