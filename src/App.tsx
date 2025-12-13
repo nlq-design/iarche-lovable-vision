@@ -58,7 +58,7 @@ const AdminFAQs = lazy(() => import("./pages/admin/AdminFAQs"));
 const PerformanceMonitoring = lazy(() => import("./pages/admin/PerformanceMonitoring"));
 const CTAAnalytics = lazy(() => import("./pages/admin/CTAAnalytics"));
 const AdminMedias = lazy(() => import("./pages/admin/AdminMedias"));
-const AdminMediasPerso = lazy(() => import("./pages/admin/AdminMediasPerso"));
+
 const BannerEditor = lazy(() => import("./pages/admin/BannerEditor"));
 const PostEditor = lazy(() => import("./pages/admin/PostEditor"));
 const SignatureEditor = lazy(() => import("./pages/admin/SignatureEditor"));
@@ -472,12 +472,6 @@ const App = () => (
             </Suspense>
           } />
           
-          {/* Médias Personnel */}
-          <Route path="/admin/medias-perso" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-              <ProtectedAdminRoute><AdminMediasPerso /></ProtectedAdminRoute>
-            </Suspense>
-          } />
           <Route path="/admin/medias-perso/post" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><PostPersoEditor /></ProtectedAdminRoute>
