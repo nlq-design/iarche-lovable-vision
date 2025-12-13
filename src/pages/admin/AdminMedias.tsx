@@ -26,7 +26,12 @@ import {
   Palette,
   QrCode,
   FileImage,
-  MailPlus
+  MailPlus,
+  Instagram,
+  Twitter,
+  Facebook,
+  Layers,
+  User
 } from 'lucide-react';
 import { useMediaTemplates, EditorType, MediaTemplate } from '@/hooks/useMediaTemplates';
 import { format } from 'date-fns';
@@ -46,6 +51,8 @@ import { Input } from '@/components/ui/input';
 import { CarouselEditor } from '@/components/admin/medias/CarouselEditor';
 import { PresentationEditor } from '@/components/admin/medias/PresentationEditor';
 import { WordDocEditor } from '@/components/admin/medias/WordDocEditor';
+import { COLORS_PERSO } from '@/components/admin/medias/perso/tokensPerso';
+import { IARCHE_I_COLORS } from '@/components/admin/medias/CharterSelector';
 
 type MediaType = 'carousel' | 'presentation' | 'word' | null;
 type TemplateType = string | null;
@@ -179,6 +186,55 @@ const toolsTemplates = [
   },
 ];
 
+// Formats personnels (IArche II)
+const persoFormats = [
+  { 
+    id: 'profile', 
+    name: 'Photo de Profil', 
+    description: 'Multi-réseaux',
+    dimensions: '400×400px',
+    icon: User,
+    platforms: [Linkedin, Twitter, Instagram, Facebook],
+    route: '/admin/medias-perso/profile',
+  },
+  { 
+    id: 'post', 
+    name: 'Post Carré', 
+    description: 'LinkedIn & Instagram',
+    dimensions: '1080×1080px',
+    icon: Image,
+    platforms: [Linkedin, Instagram],
+    route: '/admin/medias-perso/post',
+  },
+  { 
+    id: 'banner', 
+    name: 'Bannière LinkedIn', 
+    description: 'Profil ou page entreprise',
+    dimensions: '1584×396px',
+    icon: Linkedin,
+    platforms: [Linkedin],
+    route: '/admin/medias-perso/banner',
+  },
+  { 
+    id: 'story', 
+    name: 'Story', 
+    description: 'Instagram & LinkedIn Stories',
+    dimensions: '1080×1920px',
+    icon: Smartphone,
+    platforms: [Linkedin, Instagram],
+    route: '/admin/medias-perso/story',
+  },
+  { 
+    id: 'carousel', 
+    name: 'Carrousel', 
+    description: 'Multi-slides LinkedIn',
+    dimensions: '1080×1350px',
+    icon: Layers,
+    platforms: [Linkedin],
+    route: '/admin/medias-perso/carousel',
+  },
+];
+
 const AdminMedias = () => {
   const navigate = useNavigate();
   const [selectedMedia, setSelectedMedia] = useState<MediaType>(null);
@@ -208,250 +264,205 @@ const AdminMedias = () => {
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Médias & Communication</h1>
-            <p className="text-muted-foreground mt-1">
-              Générez des supports de communication conformes à la charte graphique IArche
-            </p>
-          </div>
-          <Button 
-            variant="outline"
-            onClick={() => navigate('/admin/medias-perso')}
-            className="flex items-center gap-2"
-          >
-            <div 
-              className="w-4 h-4 rounded-full"
-              style={{ background: 'linear-gradient(135deg, #D4633A 0%, #213A6B 100%)' }}
-            />
-            Média IArche II
-          </Button>
+      <div className="p-6 space-y-8">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Médias & Communication</h1>
+          <p className="text-muted-foreground mt-1">
+            Générez des supports de communication conformes aux chartes graphiques
+          </p>
         </div>
 
-        <Tabs defaultValue="documents" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-2xl">
-            <TabsTrigger value="documents" className="flex items-center gap-2">
-              📄 Documents PDF
-            </TabsTrigger>
-            <TabsTrigger value="visuels" className="flex items-center gap-2">
-              🖼️ Visuels PNG
-            </TabsTrigger>
-            <TabsTrigger value="outils" className="flex items-center gap-2">
-              <Wrench className="h-4 w-4" />
-              Outils
-            </TabsTrigger>
-            <TabsTrigger value="templates" className="flex items-center gap-2">
-              <Bookmark className="h-4 w-4" />
-              Mes templates
-            </TabsTrigger>
-          </TabsList>
+        {/* Deux sections côte à côte */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          
+          {/* === CHARTE IARCHE I (Officielle) === */}
+          <section className="space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b">
+              <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: `linear-gradient(135deg, ${IARCHE_I_COLORS.bleuNuit} 0%, ${IARCHE_I_COLORS.terracotta} 100%)` }}
+              >
+                <Palette className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">IArche I – Charte Officielle</h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: IARCHE_I_COLORS.bleuNuit }} title="Bleu Nuit" />
+                  <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: IARCHE_I_COLORS.terracotta }} title="Terracotta" />
+                  <div className="w-4 h-4 rounded-full border border-muted" style={{ backgroundColor: IARCHE_I_COLORS.blancCasse }} title="Blanc Cassé" />
+                </div>
+              </div>
+            </div>
 
-          {/* === DOCUMENTS PDF (Phase 1 - Figée) === */}
-          <TabsContent value="documents" className="space-y-6">
-            <Tabs defaultValue="carousel" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3 max-w-lg">
-                <TabsTrigger value="carousel" className="flex items-center gap-2">
-                  <Linkedin className="h-4 w-4" />
-                  Carrousel
-                </TabsTrigger>
-                <TabsTrigger value="presentation" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Présentation
-                </TabsTrigger>
-                <TabsTrigger value="word" className="flex items-center gap-2">
-                  <FileIcon className="h-4 w-4" />
-                  Word
-                </TabsTrigger>
+            <Tabs defaultValue="visuels-i" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="documents-i" className="text-xs">📄 PDF</TabsTrigger>
+                <TabsTrigger value="visuels-i" className="text-xs">🖼️ PNG</TabsTrigger>
+                <TabsTrigger value="outils-i" className="text-xs"><Wrench className="h-3 w-3 mr-1" />Outils</TabsTrigger>
+                <TabsTrigger value="templates-i" className="text-xs"><Bookmark className="h-3 w-3 mr-1" />Mes</TabsTrigger>
               </TabsList>
 
-              {/* Carrousel LinkedIn */}
-              <TabsContent value="carousel" className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold">Carrousels LinkedIn</h2>
-                    <p className="text-sm text-muted-foreground">Format 1080×1350px - Export PDF multi-pages</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {carouselTemplates.map((template) => (
-                    <Card 
-                      key={template.id} 
-                      className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
-                      onClick={() => handleSelectTemplate('carousel', template.id)}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-base">{template.name}</CardTitle>
-                          <Badge variant="secondary">{template.slides} slides</Badge>
-                        </div>
-                        <CardDescription>{template.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="aspect-[4/5] bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg flex items-center justify-center">
-                          <Linkedin className="h-12 w-12 text-primary/30" />
-                        </div>
-                        <Button className="w-full mt-4" variant="outline">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Créer
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+              {/* Documents PDF */}
+              <TabsContent value="documents-i" className="space-y-4">
+                <Tabs defaultValue="carousel" className="space-y-4">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="carousel" className="text-xs"><Linkedin className="h-3 w-3 mr-1" />Carrousel</TabsTrigger>
+                    <TabsTrigger value="presentation" className="text-xs"><FileText className="h-3 w-3 mr-1" />Présentation</TabsTrigger>
+                    <TabsTrigger value="word" className="text-xs"><FileIcon className="h-3 w-3 mr-1" />Word</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="carousel" className="grid grid-cols-1 gap-3">
+                    {carouselTemplates.map((template) => (
+                      <Card key={template.id} className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => handleSelectTemplate('carousel', template.id)}>
+                        <CardHeader className="py-3">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-sm">{template.name}</CardTitle>
+                            <Badge variant="secondary" className="text-xs">{template.slides} slides</Badge>
+                          </div>
+                          <CardDescription className="text-xs">{template.description}</CardDescription>
+                        </CardHeader>
+                      </Card>
+                    ))}
+                  </TabsContent>
+                  <TabsContent value="presentation" className="grid grid-cols-1 gap-3">
+                    {presentationTemplates.map((template) => (
+                      <Card key={template.id} className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => handleSelectTemplate('presentation', template.id)}>
+                        <CardHeader className="py-3">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-sm">{template.name}</CardTitle>
+                            <Badge variant="secondary" className="text-xs">{template.slides} slides</Badge>
+                          </div>
+                          <CardDescription className="text-xs">{template.description}</CardDescription>
+                        </CardHeader>
+                      </Card>
+                    ))}
+                  </TabsContent>
+                  <TabsContent value="word" className="grid grid-cols-1 gap-3">
+                    {wordTemplates.map((template) => (
+                      <Card key={template.id} className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => handleSelectTemplate('word', template.id)}>
+                        <CardHeader className="py-3">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-sm">{template.name}</CardTitle>
+                            <Badge variant="secondary" className="text-xs">{template.pages} pages</Badge>
+                          </div>
+                          <CardDescription className="text-xs">{template.description}</CardDescription>
+                        </CardHeader>
+                      </Card>
+                    ))}
+                  </TabsContent>
+                </Tabs>
               </TabsContent>
 
-              {/* Présentation PDF */}
-              <TabsContent value="presentation" className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold">Présentations PDF</h2>
-                    <p className="text-sm text-muted-foreground">Format 1920×1080px - Export PDF</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {presentationTemplates.map((template) => (
-                    <Card 
-                      key={template.id} 
-                      className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
-                      onClick={() => handleSelectTemplate('presentation', template.id)}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-base">{template.name}</CardTitle>
-                          <Badge variant="secondary">{template.slides} slides</Badge>
+              {/* Visuels PNG */}
+              <TabsContent value="visuels-i" className="grid grid-cols-2 gap-3">
+                {visualTemplates.map((template) => {
+                  const IconComponent = template.icon;
+                  return (
+                    <Card key={template.id} className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => navigate(template.route)}>
+                      <CardHeader className="py-3">
+                        <div className="flex items-center gap-2">
+                          <IconComponent className="h-4 w-4 text-primary/60" />
+                          <CardTitle className="text-sm">{template.name}</CardTitle>
                         </div>
-                        <CardDescription>{template.description}</CardDescription>
+                        <CardDescription className="text-xs">{template.dimensions}</CardDescription>
                       </CardHeader>
-                      <CardContent>
-                        <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg flex items-center justify-center">
-                          <FileText className="h-12 w-12 text-primary/30" />
-                        </div>
-                        <Button className="w-full mt-4" variant="outline">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Créer
-                        </Button>
-                      </CardContent>
                     </Card>
-                  ))}
-                </div>
+                  );
+                })}
               </TabsContent>
 
-              {/* Document Word */}
-              <TabsContent value="word" className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold">Documents Word</h2>
-                    <p className="text-sm text-muted-foreground">Format A4 - Export DOCX</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {wordTemplates.map((template) => (
-                    <Card 
-                      key={template.id} 
-                      className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
-                      onClick={() => handleSelectTemplate('word', template.id)}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-base">{template.name}</CardTitle>
-                          <Badge variant="secondary">{template.pages} pages</Badge>
+              {/* Outils */}
+              <TabsContent value="outils-i" className="grid grid-cols-2 gap-3">
+                {toolsTemplates.map((template) => {
+                  const IconComponent = template.icon;
+                  return (
+                    <Card key={template.id} className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => navigate(template.route)}>
+                      <CardHeader className="py-3">
+                        <div className="flex items-center gap-2">
+                          <IconComponent className="h-4 w-4 text-accent/60" />
+                          <CardTitle className="text-sm">{template.name}</CardTitle>
                         </div>
-                        <CardDescription>{template.description}</CardDescription>
+                        <CardDescription className="text-xs">{template.description}</CardDescription>
                       </CardHeader>
-                      <CardContent>
-                        <div className="aspect-[3/4] bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg flex items-center justify-center">
-                          <FileIcon className="h-12 w-12 text-primary/30" />
-                        </div>
-                        <Button className="w-full mt-4" variant="outline">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Créer
-                        </Button>
-                      </CardContent>
                     </Card>
-                  ))}
-                </div>
+                  );
+                })}
+              </TabsContent>
+
+              {/* Templates sauvegardés */}
+              <TabsContent value="templates-i">
+                <SavedTemplatesGlobalView navigate={navigate} />
               </TabsContent>
             </Tabs>
-          </TabsContent>
+          </section>
 
-          {/* === VISUELS PNG (Phase 2) === */}
-          <TabsContent value="visuels" className="space-y-4">
-            <div>
-              <h2 className="text-lg font-semibold">Visuels PNG</h2>
-              <p className="text-sm text-muted-foreground">Export haute résolution via html-to-image</p>
+          {/* === CHARTE IARCHE II (Personnelle) === */}
+          <section className="space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b">
+              <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: `linear-gradient(135deg, ${COLORS_PERSO.terracotta} 0%, ${COLORS_PERSO.bleuProfond} 100%)` }}
+              >
+                <User className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">IArche II – Charte Alternative</h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: COLORS_PERSO.terracotta }} title="Terracotta" />
+                  <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: COLORS_PERSO.bleuProfond }} title="Bleu Profond" />
+                  <div className="w-4 h-4 rounded-full border border-muted" style={{ backgroundColor: COLORS_PERSO.blancCasse }} title="Blanc Cassé" />
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {visualTemplates.map((template) => {
-                const IconComponent = template.icon;
+
+            <div className="grid grid-cols-2 gap-3">
+              {persoFormats.map((format) => {
+                const IconComponent = format.icon;
                 return (
                   <Card 
-                    key={template.id} 
-                    className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
-                    onClick={() => navigate(template.route)}
+                    key={format.id} 
+                    className="cursor-pointer hover:border-primary/50 transition-all group"
+                    onClick={() => navigate(format.route)}
                   >
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base">{template.name}</CardTitle>
-                      <CardDescription>{template.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg flex flex-col items-center justify-center gap-2">
-                        <IconComponent className="h-10 w-10 text-primary/30" />
-                        <span className="text-xs text-muted-foreground">{template.dimensions}</span>
+                    <CardHeader className="py-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <IconComponent className="h-4 w-4" style={{ color: COLORS_PERSO.terracotta }} />
+                          <CardTitle className="text-sm">{format.name}</CardTitle>
+                        </div>
+                        <div className="flex gap-0.5">
+                          {format.platforms.map((Platform, idx) => (
+                            <Platform key={idx} className="h-3 w-3 text-muted-foreground" />
+                          ))}
+                        </div>
                       </div>
-                      <Button className="w-full mt-4" variant="outline">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Créer
-                      </Button>
-                    </CardContent>
+                      <CardDescription className="text-xs">{format.dimensions}</CardDescription>
+                    </CardHeader>
                   </Card>
                 );
               })}
             </div>
-          </TabsContent>
 
-          {/* === OUTILS (Phase 3) === */}
-          <TabsContent value="outils" className="space-y-4">
-            <div>
-              <h2 className="text-lg font-semibold">Outils de marque</h2>
-              <p className="text-sm text-muted-foreground">Générateurs pour votre identité visuelle</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {toolsTemplates.map((template) => {
-                const IconComponent = template.icon;
-                return (
-                  <Card 
-                    key={template.id} 
-                    className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
-                    onClick={() => navigate(template.route)}
-                  >
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base">{template.name}</CardTitle>
-                      <CardDescription>{template.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="aspect-video bg-gradient-to-br from-accent/10 to-primary/10 rounded-lg flex items-center justify-center">
-                        <IconComponent className="h-12 w-12 text-accent/40" />
-                      </div>
-                      <Button className="w-full mt-4" variant="outline">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Ouvrir
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </TabsContent>
+            {/* Info watermark */}
+            <Card className="bg-muted/30">
+              <CardContent className="py-3">
+                <div className="flex items-start gap-2">
+                  <Image className="h-4 w-4 text-primary mt-0.5" />
+                  <div>
+                    <p className="text-xs font-medium">Logo IArche en watermark</p>
+                    <p className="text-xs text-muted-foreground">
+                      Tous les exports incluent le logo en filigrane (15% opacité). Option désactivable.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
 
-          {/* === MES TEMPLATES === */}
-          <TabsContent value="templates" className="space-y-4">
-            <SavedTemplatesGlobalView navigate={navigate} />
-          </TabsContent>
-        </Tabs>
+        </div>
       </div>
     </AdminLayout>
   );
+
 };
 
 // Editor type labels and routes
