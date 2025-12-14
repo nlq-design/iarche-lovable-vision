@@ -111,12 +111,55 @@ export function useMediaTemplates(editorType?: EditorType) {
     },
   });
 
+  // Duplicate template (with optional color conversion)
+  const duplicateMutation = useMutation({
+    mutationFn: async ({ 
+      sourceId, 
+      newName, 
+      newEditorType,
+      templateData 
+    }: { 
+      sourceId: string; 
+      newName: string;
+      newEditorType?: EditorType;
+      templateData: Record<string, unknown>;
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('media_templates')
+        .insert({
+          name: newName,
+          editor_type: newEditorType || editorType,
+          template_data: templateData,
+          user_id: user.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['media-templates'] });
+      toast.success('Template dupliqué');
+    },
+    onError: (error) => {
+      toast.error('Erreur lors de la duplication');
+      console.error(error);
+    },
+  });
+
   return {
     templates,
     isLoading,
     saveTemplate: saveMutation.mutate,
     renameTemplate: renameMutation.mutate,
     deleteTemplate: deleteMutation.mutate,
+    duplicateTemplate: duplicateMutation.mutate,
     isSaving: saveMutation.isPending,
+    isDuplicating: duplicateMutation.isPending,
   };
 }
