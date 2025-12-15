@@ -1,6 +1,9 @@
 /**
- * IArche HTML Design System for PNG exports
- * Phase 2 - Visuels HTML → PNG avec html-to-image
+ * IArche HTML Design System v4.0 for PNG exports
+ * 
+ * CHANGELOG v4.0:
+ * - HTMLLogoWithArc remplace HTMLLogoWithBar
+ * - Arcs au lieu de barres gradient
  */
 
 // Tokens - Source unique de vérité
@@ -8,8 +11,9 @@ export * from './tokens';
 
 // Composants partagés
 export { HTMLLogo } from './HTMLLogo';
-export { HTMLLogoWithBar } from './HTMLLogoWithBar';
-export { HTMLGradientBar } from './HTMLGradientBar';
+export { HTMLLogoWithArc } from './HTMLLogoWithArc';
+export { HTMLLogoWithBar } from './HTMLLogoWithBar'; // Legacy
+export { HTMLGradientBar } from './HTMLGradientBar'; // Legacy
 export { HTMLMeshBackground } from './HTMLMeshBackground';
 export { HTMLArches } from './HTMLArches';
 export { HTMLCanalisationLines } from './HTMLCanalisationLines';
