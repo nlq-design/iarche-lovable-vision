@@ -26,13 +26,13 @@
 | lg | 180px | 20px | Grands titres de page |
 | xl | 260px | 28px | Hero section |
 
-### Path SVG de référence (extrait EXACTEMENT de iarche-main.svg, normalisé viewBox 0 0 200 24)
+### Fichier de référence
 
-```svg
-M 0 22 C 0 22 58 -6 100 10 C 142 26 200 18 200 18 L 200 20 C 200 20 142 30 100 14 C 58 -2 0 24 0 24 Z
-```
+L'arc utilise directement le fichier PNG de référence fourni :
+- **Source** : `src/assets/arc-iarche-v4.png` (import ES6 pour composants React)
+- **Public** : `public/assets/arc-iarche-v4.png` (pour PDF et URLs directes)
 
-**Courbe de Bézier cubique** reproduisant fidèlement la virgule du logo officiel : part épais à gauche (bas), monte en arc élégant, s'affine progressivement vers la droite.
+Aucun path SVG n'est généré - le fichier PNG exact est utilisé tel quel.
 
 ### Suppressions v4.0
 - ❌ Barres gradient horizontales (`div bg-gradient-to-r`)

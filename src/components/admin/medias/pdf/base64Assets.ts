@@ -18,24 +18,10 @@ const createGradientBarSVG = (width: number, height: number): string => {
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 };
 
-// Generate arc SVG data URI (v4.0 - replaces bars)
-// Path exact extrait du logo officiel iarche-main.svg
-const createArcSVG = (width: number, height: number): string => {
-  const viewBoxWidth = 200;
-  const viewBoxHeight = 24;
-  // Path exact de l'arc officiel IArche v4.0
-  const arcPath = 'M 0 22 C 0 22 58 -6 100 10 C 142 26 200 18 200 18 L 200 20 C 200 20 142 30 100 14 C 58 -2 0 24 0 24 Z';
-  
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}">
-    <defs>
-      <linearGradient id="arcGrad" x1="0%" y1="50%" x2="100%" y2="50%">
-        <stop offset="0%" stop-color="${IARCHE_COLORS.bleuNuit}"/>
-        <stop offset="100%" stop-color="${IARCHE_COLORS.terracotta}"/>
-      </linearGradient>
-    </defs>
-    <path d="${arcPath}" fill="url(#arcGrad)"/>
-  </svg>`;
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
+// Arc v4.0 - URL directe vers le fichier PNG de référence
+const getArcUrl = (width: number, height: number): string => {
+  // Utilise le fichier PNG exact fourni
+  return '/assets/arc-iarche-v4.png';
 };
 
 // Generate logo as SVG data URI
@@ -67,11 +53,11 @@ const createLogoSVG = (variant: 'gradient' | 'white' | 'terracotta'): string => 
 
 // Export pre-generated assets
 export const BASE64_ASSETS = {
-  // Arc décoratifs (v4.0)
-  arcSm: createArcSVG(80, 10),
-  arcMd: createArcSVG(120, 14),
-  arcLg: createArcSVG(180, 20),
-  arcXl: createArcSVG(260, 28),
+  // Arc décoratifs (v4.0) - URL directe vers le PNG de référence
+  arcSm: getArcUrl(80, 10),
+  arcMd: getArcUrl(120, 14),
+  arcLg: getArcUrl(180, 20),
+  arcXl: getArcUrl(260, 28),
   
   // Gradient bars (legacy - kept for compatibility)
   barSm: createGradientBarSVG(48, 2),
