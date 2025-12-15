@@ -97,7 +97,7 @@ export default function QRCodeEditor() {
 
     // Draw logo in center if enabled
     if (showLogo) {
-      const logoSize = size * 0.15;
+      const logoSize = size * 0.18;
       const logoX = (size - logoSize) / 2;
       const logoY = (size - logoSize) / 2;
       
@@ -105,12 +105,25 @@ export default function QRCodeEditor() {
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(logoX - 5, logoY - 5, logoSize + 10, logoSize + 10);
       
-      // Draw "IA" text as logo
-      ctx.fillStyle = qrColor;
-      ctx.font = `bold ${logoSize * 0.6}px Helvetica`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('IA', size / 2, size / 2);
+      // Draw logo image
+      const logoImg = new Image();
+      logoImg.crossOrigin = 'anonymous';
+      await new Promise<void>((resolve) => {
+        logoImg.onload = () => {
+          ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+          resolve();
+        };
+        logoImg.onerror = () => {
+          // Fallback: draw "IA" text
+          ctx.fillStyle = qrColor;
+          ctx.font = `bold ${logoSize * 0.6}px Helvetica`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('IA', size / 2, size / 2);
+          resolve();
+        };
+        logoImg.src = '/logos/iarche-main.png';
+      });
     }
 
     return new Promise((resolve) => {
@@ -414,15 +427,14 @@ export default function QRCodeEditor() {
                           style={{ pointerEvents: 'none' }}
                         >
                           <div 
-                            className="px-2 py-1 rounded"
+                            className="p-1 rounded"
                             style={{ backgroundColor: bgColor === 'transparent' ? '#FFFFFF' : bgColor }}
                           >
-                            <span 
-                              className="text-2xl font-bold"
-                              style={{ color: qrColor }}
-                            >
-                              IA
-                            </span>
+                            <img 
+                              src="/logos/iarche-main.svg" 
+                              alt="IArche" 
+                              style={{ height: 40, width: 'auto' }}
+                            />
                           </div>
                         </div>
                       )}
