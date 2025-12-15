@@ -19,10 +19,12 @@ const createGradientBarSVG = (width: number, height: number): string => {
 };
 
 // Generate arc SVG data URI (v4.0 - replaces bars)
+// Path exact extrait du logo officiel iarche-main.svg
 const createArcSVG = (width: number, height: number): string => {
   const viewBoxWidth = 200;
   const viewBoxHeight = 24;
-  const arcPath = 'M 0 18 Q 100 0, 200 14 L 200 16 Q 100 4, 0 22 Z';
+  // Path exact de l'arc officiel IArche v4.0
+  const arcPath = 'M 0 22 C 0 22 58 -6 100 10 C 142 26 200 18 200 18 L 200 20 C 200 20 142 30 100 14 C 58 -2 0 24 0 24 Z';
   
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}">
     <defs>

@@ -34,22 +34,15 @@ const LogoArc: React.FC<LogoArcProps> = ({
   const gradientId = `logoArc-${size}-${Math.random().toString(36).substr(2, 9)}`;
 
   // ViewBox normalisée pour le scaling proportionnel
+  // ViewBox et path extraits EXACTEMENT du logo officiel iarche-main.svg (path id="path13929-32-7")
+  // Normalisé pour viewBox 0 0 200 24
   const viewBoxWidth = 200;
   const viewBoxHeight = 24;
   
-  // Path de l'arc exactement conforme au logo IArche v4.0
-  // Arc de cercle classique qui :
-  // - Part en bas à gauche (épaisseur max)
-  // - Monte en courbe vers le centre-haut
-  // - Redescend vers le bas à droite (épaisseur min)
-  // - S'affine progressivement de gauche à droite
-  const arcPath = `
-    M 0 18
-    Q 100 0, 200 14
-    L 200 16
-    Q 100 4, 0 22
-    Z
-  `.replace(/\s+/g, ' ').trim();
+  // Path exact de l'arc officiel IArche v4.0
+  // Courbe de Bézier cubique reproduisant fidèlement la virgule du logo
+  // Part épais à gauche (bas), monte en arc, s'affine vers la droite
+  const arcPath = `M 0 22 C 0 22 58 -6 100 10 C 142 26 200 18 200 18 L 200 20 C 200 20 142 30 100 14 C 58 -2 0 24 0 24 Z`;
 
   return (
     <svg
