@@ -1,54 +1,50 @@
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link } from 'react-router-dom';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 import GradientLink from '@/components/ui/GradientLink';
 import IArcheLink from '@/components/ui/IArcheLink';
 import { useCTATracking } from '@/hooks/useCTATracking';
 import LogoArc from '@/components/ui/LogoArc';
+import { Loader2 } from 'lucide-react';
+import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
+
+interface Solution {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+}
 
 const Solutions = () => {
   const { trackCTAClick } = useCTATracking();
-  const saasSolutions = [
-    {
-      name: 'Collaboria',
-      slug: 'collaboria',
-      tagline: 'Plateforme collaborative IA',
-      description: 'Multi-LLM, benchmark, maîtrise des usages. Souveraine et conforme.',
-      ctaLabel: 'Découvrir Collaboria'
-    },
-    {
-      name: 'Chatbot RAG Avancé',
-      slug: 'dialogue-plus',
-      tagline: 'Chatbot IA connecté à vos documents',
-      description: 'RAG avancé, 340+ modèles, benchmark intégré.',
-      ctaLabel: 'Découvrir le Chatbot RAG'
-    },
-    {
-      name: 'ERP Avocat',
-      slug: 'lexia',
-      tagline: 'ERP pour cabinets d\'avocats',
-      description: 'ERP pour cabinet d\'avocats boosté à l\'IA',
-      ctaLabel: 'Découvrir ERP Avocat'
-    },
-    {
-      name: 'Datalia',
-      slug: 'datalia',
-      tagline: 'Extraction de données locales',
-      description: 'Prospection par mots-clés et zones. Licence à vie.',
-      ctaLabel: 'Découvrir Datalia'
-    },
-    {
-      name: 'Team 5 Connect',
-      slug: 'team-5-connect',
-      tagline: 'Gestion RH des équipes terrain',
-      description: 'Pointage, absences, conformité — BTP et industrie.',
-      ctaLabel: 'Découvrir Team 5 Connect'
+  const [solutions, setSolutions] = useState<Solution[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadSolutions();
+  }, []);
+
+  const loadSolutions = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('articles')
+      .select('id, title, slug, excerpt')
+      .eq('published', true)
+      .eq('resource_type', 'solution')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Erreur lors du chargement des solutions:', error);
+    } else {
+      setSolutions(data || []);
     }
-  ];
+    setLoading(false);
+  };
 
   return (
     <BackgroundLayout>
@@ -113,35 +109,48 @@ const Solutions = () => {
                 Je veux en savoir plus
               </GradientLink>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {saasSolutions.map((solution, index) => (
-                <Card 
-                  key={solution.name}
-                  className="animate-fadeIn hover:shadow-lg transition-shadow duration-300"
-                  style={{ animationDelay: `${0.4 + index * 0.1}s` }}
-                >
-                  <CardHeader>
-                    <CardTitle className="text-xl text-foreground">
-                      {solution.name}
-                    </CardTitle>
-                    <CardDescription className="text-sm mt-1">
-                      {solution.tagline}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground mb-4">
-                      {solution.description}
-                    </p>
-                    <IArcheLink 
-                      href={`/solutions/${solution.slug}`}
-                      onClick={() => trackCTAClick('en_savoir_plus_solution', 'solutions_page', solution.slug)}
-                    >
-                      {solution.ctaLabel}
-                    </IArcheLink>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+
+            {loading ? (
+              <div className="flex justify-center items-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : solutions.length === 0 ? (
+              <div className="text-center py-20">
+                <ArticlePlaceholder />
+                <p className="text-muted-foreground mt-4">
+                  Aucune solution disponible pour le moment.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {solutions.map((solution, index) => (
+                  <Card 
+                    key={solution.id}
+                    className="animate-fadeIn hover:shadow-lg transition-shadow duration-300"
+                    style={{ animationDelay: `${0.4 + index * 0.1}s` }}
+                  >
+                    <CardHeader>
+                      <CardTitle className="text-xl text-foreground">
+                        {solution.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {solution.excerpt && (
+                        <p className="text-muted-foreground mb-4">
+                          {solution.excerpt}
+                        </p>
+                      )}
+                      <IArcheLink 
+                        href={`/solutions/${solution.slug}`}
+                        onClick={() => trackCTAClick('en_savoir_plus_solution', 'solutions_page', solution.slug)}
+                      >
+                        Découvrir {solution.title}
+                      </IArcheLink>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* CTA */}
