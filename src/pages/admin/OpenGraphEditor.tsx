@@ -19,10 +19,10 @@ import { ImageLibrary } from '@/components/admin/medias/ImageLibrary';
 import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
 import { Download } from 'lucide-react';
 import { BarSize } from '@/components/admin/medias/html/tokens';
-import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
   HTMLLogoWithBar,
+  IARCHE_COLORS,
   IARCHE_FONTS,
   ThemeType,
 } from '@/components/admin/medias/html';
@@ -67,14 +67,13 @@ export default function OpenGraphEditor() {
   
   const [template, setTemplate] = useState<OGTemplate>('page');
   const [theme, setTheme] = useState<ThemeType>('dark');
-  const [charter, setCharter] = useState<CharterType>('iarche');
   const [preset, setPreset] = useState<string>('');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [barSize, setBarSize] = useState<BarSize>('lg');
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
   
-  // Get colors based on charter
-  const charterColors = getCharterColors(charter);
+  // Use official IArche colors
+  const charterColors = { ...IARCHE_COLORS, white: '#FFFFFF' };
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(72);

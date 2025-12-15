@@ -78,7 +78,7 @@ const getDefaultBarSize = (size: string): BarSize => {
   return 'md';
 };
 
-const getLogoVariants = (charterColors: ReturnType<typeof getCharterColors>) => ({
+const getLogoVariants = (charterColors: typeof IARCHE_COLORS) => ({
   gradient: {
     label: 'Logo Dégradé',
     description: 'Version principale sur fond clair',
@@ -103,7 +103,7 @@ const PDFLogoDocument: React.FC<{
   size: number;
   isProfile: boolean;
   showBackground: boolean;
-  charterColors: ReturnType<typeof getCharterColors>;
+  charterColors: typeof IARCHE_COLORS;
 }> = ({ variant, size, isProfile, showBackground, charterColors }) => {
   const logoVariants = getLogoVariants(charterColors);
   const variantData = logoVariants[variant];
@@ -363,14 +363,13 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
 
 export default function LogoEditor() {
   const navigate = useNavigate();
-  const [charter, setCharter] = useState<CharterType>('iarche');
   const [formatCategory, setFormatCategory] = useState<FormatCategory>('standard');
   const [standardSize, setStandardSize] = useState<StandardSize>('500');
   const [profileFormat, setProfileFormat] = useState<ProfileFormat>('linkedin');
   const [isExporting, setIsExporting] = useState(false);
   
-  // Get colors based on charter
-  const charterColors = getCharterColors(charter);
+  // Use official IArche colors
+  const charterColors = IARCHE_COLORS;
   const LOGO_VARIANTS = getLogoVariants(charterColors);
   
   const [exportModes, setExportModes] = useState<Record<LogoVariant, ExportMode>>({

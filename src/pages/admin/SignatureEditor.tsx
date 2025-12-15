@@ -24,11 +24,10 @@ export default function SignatureEditor() {
   const navigate = useNavigate();
   const signatureRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
-  const [charter, setCharter] = useState<CharterType>('iarche');
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
   
-  // Get colors based on charter
-  const charterColors = getCharterColors(charter);
+  // Use official IArche colors
+  const charterColors = IARCHE_COLORS;
   
   // Form fields
   const [prenom, setPrenom] = useState('Nicolas');
@@ -186,10 +185,6 @@ export default function SignatureEditor() {
               <div className="space-y-2">
                 <Label>Tagline</Label>
                 <Input value={tagline} onChange={(e) => setTagline(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Charte graphique</Label>
-                <CharterSelector value={charter} onChange={setCharter} />
               </div>
               <div className="space-y-2">
                 <Label>Qualité PNG</Label>

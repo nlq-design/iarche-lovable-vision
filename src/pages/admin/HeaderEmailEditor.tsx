@@ -52,14 +52,13 @@ const HeaderEmailEditor: React.FC = () => {
   const [isExporting, setIsExporting] = useState(false);
 
   const [template, setTemplate] = useState<HeaderTemplate>('newsletter');
-  const [charter, setCharter] = useState<CharterType>('iarche');
   const [preset, setPreset] = useState<string>('');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [barSize, setBarSize] = useState<BarSize>('md');
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
   
-  // Get colors based on charter
-  const charterColors = getCharterColors(charter);
+  // Use official IArche colors
+  const charterColors = IARCHE_COLORS;
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(20);
