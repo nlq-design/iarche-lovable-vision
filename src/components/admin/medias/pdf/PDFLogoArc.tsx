@@ -29,10 +29,12 @@ export const PDFLogoArc = ({
   const { width, height } = sizeConfig[size];
   const gradientId = `pdfLogoArc-${arcGradientCounter++}`;
 
+  // ViewBox et path extraits EXACTEMENT du logo officiel iarche-main.svg
   const viewBoxWidth = 200;
   const viewBoxHeight = 24;
   
-  const arcPath = `M 0 18 Q 100 0, 200 14 L 200 16 Q 100 4, 0 22 Z`;
+  // Path exact de l'arc officiel IArche v4.0
+  const arcPath = `M 0 22 C 0 22 58 -6 100 10 C 142 26 200 18 200 18 L 200 20 C 200 20 142 30 100 14 C 58 -2 0 24 0 24 Z`;
 
   return (
     <Svg 

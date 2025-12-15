@@ -26,11 +26,13 @@
 | lg | 180px | 20px | Grands titres de page |
 | xl | 260px | 28px | Hero section |
 
-### Path SVG de référence (normalisé viewBox 0 0 200 24)
+### Path SVG de référence (extrait EXACTEMENT de iarche-main.svg, normalisé viewBox 0 0 200 24)
 
 ```svg
-M 0 20 Q 50 0, 100 8 Q 150 14, 200 18 L 200 22 Q 150 19, 100 14 Q 50 8, 0 24 Z
+M 0 22 C 0 22 58 -6 100 10 C 142 26 200 18 200 18 L 200 20 C 200 20 142 30 100 14 C 58 -2 0 24 0 24 Z
 ```
+
+**Courbe de Bézier cubique** reproduisant fidèlement la virgule du logo officiel : part épais à gauche (bas), monte en arc élégant, s'affine progressivement vers la droite.
 
 ### Suppressions v4.0
 - ❌ Barres gradient horizontales (`div bg-gradient-to-r`)
