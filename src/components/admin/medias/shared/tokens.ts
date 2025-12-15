@@ -1,8 +1,13 @@
 /**
  * =====================================================
- * IARCHE DESIGN SYSTEM - TOKENS PARTAGÉS
+ * IARCHE DESIGN SYSTEM v4.0 - TOKENS PARTAGÉS
  * Source unique de vérité pour PDF et PNG
  * =====================================================
+ * 
+ * CHANGELOG v4.0:
+ * - L'arc remplace la barre gradient horizontale
+ * - Nouveau logo SVG avec arc au-dessus du texte
+ * - Animations arcs au lieu des lignes "canalisation"
  */
 
 // =====================================================
@@ -40,7 +45,16 @@ export const COLORS = {
 // GRADIENTS - Définitions CSS et angles
 // =====================================================
 export const GRADIENTS = {
-  // Barre décorative horizontale (Charte 3.1 : Bleu → Terracotta → Bleu)
+  // Arc décoratif (v4.0 : remplace la barre)
+  arc: {
+    angle: 90,
+    stops: [
+      { color: COLORS.bleuNuit, position: 0 },
+      { color: COLORS.terracotta, position: 100 },
+    ],
+    css: `linear-gradient(90deg, ${COLORS.bleuNuit} 0%, ${COLORS.terracotta} 100%)`,
+  },
+  // Barre décorative horizontale (legacy - maintenue pour compatibilité)
   bar: {
     angle: 90,
     stops: [
@@ -98,13 +112,23 @@ export const FONTS = {
 } as const;
 
 // =====================================================
-// DIMENSIONS - Barres décoratives (Charte 3.1 exacte)
+// DIMENSIONS - Arcs décoratifs (v4.0)
+// =====================================================
+export const ARC_SIZES = {
+  sm: { width: 48, height: 12, strokeWidth: 1.5 },
+  md: { width: 80, height: 20, strokeWidth: 2 },
+  lg: { width: 120, height: 30, strokeWidth: 2.5 },
+  xl: { width: 160, height: 40, strokeWidth: 3 },
+} as const;
+
+// =====================================================
+// DIMENSIONS - Barres décoratives (legacy - Charte 3.x)
 // =====================================================
 export const BAR_SIZES = {
-  sm: { width: 48, height: 2 },   // Placeholder cards, petits formats
-  md: { width: 80, height: 4 },   // Header, formats moyens
-  lg: { width: 96, height: 4 },   // Formats intermédiaires
-  xl: { width: 128, height: 6 },  // Hero, grands formats
+  sm: { width: 48, height: 2 },
+  md: { width: 80, height: 4 },
+  lg: { width: 96, height: 4 },
+  xl: { width: 128, height: 6 },
 } as const;
 
 // =====================================================
@@ -129,25 +153,47 @@ export const ARCH_SIZES = {
 } as const;
 
 // =====================================================
-// LOGO + BARRE - Proportions obligatoires (Charte 3.1)
-// Le logo IArche DOIT toujours être accompagné de sa barre
+// LOGO + ARC - Proportions obligatoires (Charte 4.0)
+// Le logo IArche utilise maintenant un arc au-dessus du texte
 // =====================================================
+export const LOGO_ARC_MAPPING: Record<LogoSize, ArcSize> = {
+  sm: 'sm',  // Logo sm → Arc sm
+  md: 'md',  // Logo md → Arc md
+  lg: 'lg',  // Logo lg → Arc lg
+  xl: 'xl',  // Logo xl → Arc xl
+} as const;
+
+// Legacy: LOGO + BARRE (Charte 3.x - maintenu pour compatibilité)
 export const LOGO_BAR_MAPPING: Record<LogoSize, BarSize> = {
-  sm: 'sm',  // Logo sm (24px) → Barre sm (48×2)
-  md: 'md',  // Logo md (32px) → Barre md (80×4)
-  lg: 'lg',  // Logo lg (48px) → Barre lg (96×4)
-  xl: 'xl',  // Logo xl (64px) → Barre xl (128×6)
+  sm: 'sm',
+  md: 'md',
+  lg: 'lg',
+  xl: 'xl',
 } as const;
 
-// Mapping export size → bar size (pour LogoEditor)
-// Ratio barre/export : ~25-30% de la largeur d'export
+// Mapping export size → arc size (pour LogoEditor v4.0)
+export const EXPORT_ARC_MAPPING = {
+  '100': 'sm',
+  '250': 'md',
+  '500': 'xl',
+} as const;
+
+// Legacy mapping (Charte 3.x)
 export const EXPORT_BAR_MAPPING = {
-  '100': 'sm',   // 100px export → barre 48px (48%)
-  '250': 'md',   // 250px export → barre 80px (32%)
-  '500': 'xl',   // 500px export → barre 128px (25.6%)
+  '100': 'sm',
+  '250': 'md',
+  '500': 'xl',
 } as const;
 
-// Espacement logo-barre proportionnel (ajusté pour meilleur équilibre)
+// Espacement logo-arc proportionnel
+export const LOGO_ARC_GAP: Record<LogoSize, number> = {
+  sm: 6,
+  md: 8,
+  lg: 12,
+  xl: 14,
+} as const;
+
+// Legacy: Espacement logo-barre (Charte 3.x)
 export const LOGO_BAR_GAP: Record<LogoSize, number> = {
   sm: 8,
   md: 10,
@@ -181,7 +227,8 @@ export const EXPORT_FORMATS = {
 // TYPES
 // =====================================================
 export type ThemeType = 'dark' | 'light';
-export type BarSize = keyof typeof BAR_SIZES;  // sm | md | lg | xl
+export type ArcSize = keyof typeof ARC_SIZES;   // sm | md | lg | xl (v4.0)
+export type BarSize = keyof typeof BAR_SIZES;   // sm | md | lg | xl (legacy)
 export type LogoSize = keyof typeof LOGO_SIZES;
 export type ArchSize = keyof typeof ARCH_SIZES;
 export type ExportSize = keyof typeof EXPORT_BAR_MAPPING;

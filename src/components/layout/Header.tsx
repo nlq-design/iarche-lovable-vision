@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import GradientLink from '@/components/ui/GradientLink';
+import Logo from '@/components/ui/Logo';
 import { ChevronDown } from 'lucide-react';
 import { useCTATracking } from '@/hooks/useCTATracking';
 
@@ -27,13 +28,12 @@ const Header = () => {
     <header className="sticky top-0 z-50 bg-background border-b border-border">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
-          {/* Logo IArche */}
+          {/* Logo IArche v4.0 */}
           <button 
             onClick={() => navigate('/')}
-            className="flex flex-col items-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded"
+            className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded"
           >
-            <span className="text-3xl font-semibold hero-gradient-text">IArche</span>
-            <div className="w-16 h-1 rounded-full bg-gradient-to-r from-primary via-accent to-primary mt-1"></div>
+            <Logo variant="main" size="md" />
           </button>
 
           {/* Navigation Desktop */}
