@@ -32,7 +32,7 @@ export default function SignatureEditor() {
   
   // Form fields
   const [prenom, setPrenom] = useState('Nicolas');
-  const [nom, setNom] = useState('Lara-Quétier');
+  const [nom, setNom] = useState('Lara Queralta');
   const [fonction, setFonction] = useState('CEO & Fondateur');
   const [email, setEmail] = useState('nlq@iarche.fr');
   const [telephone, setTelephone] = useState('');

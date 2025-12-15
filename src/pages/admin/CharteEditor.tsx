@@ -523,7 +523,7 @@ const CharteCompletePDF = () => (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Signature Email</Text>
             <View style={{ backgroundColor: '#FAF9F7', padding: 10, borderRadius: 4 }}>
-              <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#1A2B4A' }}>Nicolas Laquerrière-Music</Text>
+              <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#1A2B4A' }}>Nicolas Lara Queralta</Text>
               <Text style={{ fontSize: 8, color: '#666666' }}>Fondateur</Text>
               <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#1A2B4A', marginTop: 4 }}>IArche</Text>
               <Text style={{ fontSize: 7, color: '#666666' }}>nlq@iarche.fr · Bayonne</Text>
