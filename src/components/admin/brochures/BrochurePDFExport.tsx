@@ -85,15 +85,18 @@ const MeshBackground = ({ width, height }: { width: number; height: number }) =>
   );
 };
 
-// Logo Component with gradient bar
-const BrandLogo = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) => {
-  const barSize = size === 'sm' ? BAR_SIZES.sm : size === 'md' ? BAR_SIZES.md : BAR_SIZES.lg;
-  const fontSize = size === 'sm' ? 14 : size === 'md' ? 18 : 24;
+// Logo Component v4.0 avec arc
+const BrandLogo = ({ size = 'md', isDark = false }: { size?: 'sm' | 'md' | 'lg'; isDark?: boolean }) => {
+  const logoHeight = size === 'sm' ? 20 : size === 'md' ? 28 : 36;
+  const arcWidth = size === 'sm' ? 60 : size === 'md' ? 80 : 100;
+  const arcHeight = size === 'sm' ? 8 : size === 'md' ? 10 : 12;
+  
+  const logoSrc = isDark ? BASE64_ASSETS.logoWhite : BASE64_ASSETS.logoGradient;
   
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <Image src={BASE64_ASSETS.logoGradient} style={{ width: fontSize * 3.5, height: fontSize * 1.2 }} />
-      <Image src={BASE64_ASSETS.barSm} style={{ width: barSize.width / 2, height: barSize.height }} />
+    <View style={{ flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+      <Image src={logoSrc} style={{ height: logoHeight, objectFit: 'contain' }} />
+      <Image src={BASE64_ASSETS.arcMd} style={{ width: arcWidth, height: arcHeight, objectFit: 'contain' }} />
     </View>
   );
 };

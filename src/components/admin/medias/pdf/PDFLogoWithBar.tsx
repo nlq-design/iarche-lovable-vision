@@ -1,7 +1,7 @@
 import { View } from '@react-pdf/renderer';
 import { PDFLogo } from './PDFLogo';
-import { PDFGradientBar } from './PDFGradientBar';
-import { BAR_SIZES, LOGO_BAR_GAP, BarSize, LogoSize } from './tokens';
+import { PDFLogoArc } from './PDFLogoArc';
+import { LOGO_BAR_GAP, BarSize, LogoSize } from './tokens';
 
 interface PDFLogoWithBarProps {
   size?: LogoSize;
@@ -13,16 +13,11 @@ interface PDFLogoWithBarProps {
 }
 
 /**
- * Logo IArche avec barre décorative obligatoire (PDF)
- * Selon la charte graphique 3.1, le logo doit TOUJOURS être accompagné de sa barre
+ * Logo IArche v4.0 avec arc décoratif (PDF)
  * 
- * Proportions synchronisées avec HTML:
- * - xs: barre 24×2 (pour exports ~100px)
- * - sm: barre 48×2 (pour logo sm 24px)
- * - md: barre 64×3 (pour exports ~250px)
- * - lg: barre 80×4 (pour logo lg 48px)
- * - xl: barre 120×5 (pour exports ~500px)
- * - 2xl: barre 160×6 (pour exports plus grands)
+ * Conforme à la charte graphique 4.0:
+ * - Logo SVG/PNG officiel
+ * - Arc décoratif (remplace l'ancienne barre gradient)
  */
 export const PDFLogoWithBar = ({
   size = 'md',
@@ -30,7 +25,7 @@ export const PDFLogoWithBar = ({
   isDark = false,
   style = {},
 }: PDFLogoWithBarProps) => {
-  // Barre proportionnelle par défaut
+  // Arc proportionnel par défaut
   const effectiveBarSize: BarSize = barSize || size;
   
   // Espacement proportionnel
@@ -45,8 +40,8 @@ export const PDFLogoWithBar = ({
         ...style,
       }}
     >
-      <PDFLogo size={size} />
-      <PDFGradientBar size={effectiveBarSize} isDark={isDark} />
+      <PDFLogo size={size} isDark={isDark} />
+      <PDFLogoArc size={effectiveBarSize} />
     </View>
   );
 };

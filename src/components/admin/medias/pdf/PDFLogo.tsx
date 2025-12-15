@@ -1,63 +1,54 @@
-import { Svg, Defs, LinearGradient, Stop, Text, View } from '@react-pdf/renderer';
-import { LOGO_SIZES_PDF, IARCHE_COLORS } from './tokens';
+import { View, Image } from '@react-pdf/renderer';
+import { LOGO_SIZES_PDF } from './tokens';
 
 interface PDFLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  /** Dark theme - use white logo on dark backgrounds */
+  isDark?: boolean;
 }
 
+const LOGO_HEIGHTS: Record<string, number> = {
+  sm: 24,
+  md: 40,
+  lg: 56,
+  xl: 80,
+};
+
 /**
- * IArche logo with gradient effect (static version for PDF)
- * Gradient frozen at 50% of animation cycle: BleuNuit → Terracotta → BleuNuit
+ * IArche logo v4.0 pour PDF
+ * Utilise les images PNG du logo officiel
  */
-export const PDFLogo = ({ size = 'md' }: PDFLogoProps) => {
-  const config = LOGO_SIZES_PDF[size];
+export const PDFLogo = ({ size = 'md', isDark = false }: PDFLogoProps) => {
+  const height = LOGO_HEIGHTS[size] || 40;
+  
+  // Logo PNG selon le thème
+  const logoSrc = isDark 
+    ? '/logos/iarche-white.png'
+    : '/logos/iarche-main.png';
   
   return (
     <View style={{ alignItems: 'center' }}>
-      <Svg viewBox={config.viewBox} style={{ width: config.width, height: config.fontSize + 8 }}>
-        <Defs>
-          <LinearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor={IARCHE_COLORS.bleuNuit} />
-            <Stop offset="50%" stopColor={IARCHE_COLORS.terracotta} />
-            <Stop offset="100%" stopColor={IARCHE_COLORS.bleuNuit} />
-          </LinearGradient>
-        </Defs>
-        <Text
-          x="0"
-          y={config.fontSize}
-          fill="url(#logoGradient)"
-          style={{
-            fontFamily: 'Manrope',
-            fontWeight: 700,
-            fontSize: config.fontSize,
-          }}
-        >
-          IArche
-        </Text>
-      </Svg>
+      <Image
+        src={logoSrc}
+        style={{ height, objectFit: 'contain' }}
+      />
     </View>
   );
 };
 
 /**
- * Alternative: Simple text logo when SVG text isn't rendering properly
- * Uses Terracotta accent color as fallback
+ * Alternative: Logo texte simple pour fallback
+ * Deprecated - préférer PDFLogo avec images
  */
-export const PDFLogoText = ({ size = 'md' }: PDFLogoProps) => {
+export const PDFLogoText = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) => {
   const fontSizes = { sm: 32, md: 52, lg: 72 };
   
   return (
     <View style={{ alignItems: 'center' }}>
-      <Text
-        style={{
-          fontSize: fontSizes[size],
-          fontWeight: 'bold',
-          color: IARCHE_COLORS.terracotta,
-          fontFamily: 'Helvetica-Bold',
-        }}
-      >
-        IArche
-      </Text>
+      <Image
+        src="/logos/iarche-main.png"
+        style={{ height: fontSizes[size] * 0.6, objectFit: 'contain' }}
+      />
     </View>
   );
 };

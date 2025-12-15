@@ -1,7 +1,13 @@
 // Base64 encoded PNG assets for react-pdf compatibility
-// These are inline to guarantee inclusion in PDF documents
+// v4.0: Utilise les logos officiels en PNG
 
 import { IARCHE_COLORS } from './tokens';
+
+// Arc v4.0 - URL directe vers le fichier PNG de référence
+const getArcUrl = (): string => {
+  // Utilise le fichier PNG exact fourni
+  return '/assets/arc-iarche-v4.png';
+};
 
 // Generate gradient bar as SVG data URI (legacy - kept for compatibility)
 const createGradientBarSVG = (width: number, height: number): string => {
@@ -18,46 +24,13 @@ const createGradientBarSVG = (width: number, height: number): string => {
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 };
 
-// Arc v4.0 - URL directe vers le fichier PNG de référence
-const getArcUrl = (width: number, height: number): string => {
-  // Utilise le fichier PNG exact fourni
-  return '/assets/arc-iarche-v4.png';
-};
-
-// Generate logo as SVG data URI
-const createLogoSVG = (variant: 'gradient' | 'white' | 'terracotta'): string => {
-  let fill = '';
-  let gradientDef = '';
-  
-  if (variant === 'gradient') {
-    gradientDef = `<defs>
-      <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stop-color="${IARCHE_COLORS.bleuNuit}"/>
-        <stop offset="50%" stop-color="${IARCHE_COLORS.terracotta}"/>
-        <stop offset="100%" stop-color="${IARCHE_COLORS.bleuNuit}"/>
-      </linearGradient>
-    </defs>`;
-    fill = 'url(#logoGrad)';
-  } else if (variant === 'white') {
-    fill = '#FFFFFF';
-  } else {
-    fill = IARCHE_COLORS.terracotta;
-  }
-  
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="140" height="40" viewBox="0 0 140 40">
-    ${gradientDef}
-    <text x="70" y="30" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="32" font-weight="bold" fill="${fill}">IArche</text>
-  </svg>`;
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
-};
-
 // Export pre-generated assets
 export const BASE64_ASSETS = {
   // Arc décoratifs (v4.0) - URL directe vers le PNG de référence
-  arcSm: getArcUrl(80, 10),
-  arcMd: getArcUrl(120, 14),
-  arcLg: getArcUrl(180, 20),
-  arcXl: getArcUrl(260, 28),
+  arcSm: getArcUrl(),
+  arcMd: getArcUrl(),
+  arcLg: getArcUrl(),
+  arcXl: getArcUrl(),
   
   // Gradient bars (legacy - kept for compatibility)
   barSm: createGradientBarSVG(48, 2),
@@ -66,10 +39,10 @@ export const BASE64_ASSETS = {
   barXl: createGradientBarSVG(128, 6),
   barFull: createGradientBarSVG(400, 4),
   
-  // Logo variants
-  logoGradient: createLogoSVG('gradient'),
-  logoWhite: createLogoSVG('white'),
-  logoTerracotta: createLogoSVG('terracotta'),
+  // Logo variants v4.0 - URLs vers les fichiers PNG officiels
+  logoGradient: '/logos/iarche-main.png',
+  logoWhite: '/logos/iarche-white.png',
+  logoTerracotta: '/logos/iarche-main.png', // Fallback vers le logo principal
 };
 
 // Bullet styles as React Native compatible objects
