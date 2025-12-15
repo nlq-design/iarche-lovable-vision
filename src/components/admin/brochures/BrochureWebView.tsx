@@ -2,6 +2,7 @@ import { Brochure } from '@/types/brochure';
 import { CheckCircle, Quote, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 import { COLORS, GRADIENTS, BAR_SIZES } from '@/components/admin/medias/shared/tokens';
+import LogoArc from '@/components/ui/LogoArc';
 
 interface BrochureWebViewProps {
   brochure: Brochure;
@@ -69,37 +70,27 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
     }
   }, [isHorizontal]);
 
-  // Logo component with gradient and decorative bar
+  // Logo component with official SVG and decorative arc v4.0
   const BrandLogo = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) => {
-    const sizes = {
-      sm: { text: 'text-xl', bar: BAR_SIZES.sm },
-      md: { text: 'text-2xl', bar: BAR_SIZES.md },
-      lg: { text: 'text-3xl', bar: BAR_SIZES.lg },
+    const logoSizes = {
+      sm: 24,
+      md: 32,
+      lg: 40,
     };
-    const s = sizes[size];
+    const arcSizes: Record<string, 'sm' | 'md' | 'lg'> = {
+      sm: 'sm',
+      md: 'sm',
+      lg: 'md',
+    };
     
     return (
       <div className="flex flex-col items-center gap-2">
-        <span 
-          className={`${s.text} font-semibold`}
-          style={{ 
-            background: GRADIENTS.text.css,
-            backgroundSize: '600% 600%',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            animation: 'hero-gradient 8s ease infinite',
-          }}
-        >
-          IArche
-        </span>
-        <div 
-          className="rounded-full"
-          style={{ 
-            width: s.bar.width, 
-            height: s.bar.height,
-            background: GRADIENTS.bar.css,
-          }}
+        <img 
+          src="/logos/iarche-main.svg" 
+          alt="IArche" 
+          style={{ height: logoSizes[size], width: 'auto' }}
         />
+        <LogoArc size={arcSizes[size]} />
       </div>
     );
   };
@@ -147,16 +138,9 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
           >
             <MeshBackground />
             <div className="relative z-10 flex flex-col items-center">
-              {/* Decorative bar above title */}
-              <div 
-                className="rounded-full mb-8"
-                style={{ 
-                  width: BAR_SIZES.xl.width, 
-                  height: BAR_SIZES.xl.height,
-                  background: GRADIENTS.bar.css,
-                }}
-              />
-              <h1 
+              {/* Arc décoratif v4.0 above title */}
+              <LogoArc size="xl" className="mb-8" />
+              <h1
                 className="text-5xl md:text-7xl font-bold text-center mb-4"
                 style={{ 
                   background: GRADIENTS.text.css,
@@ -228,16 +212,9 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
               >
                 Points clés
               </h2>
-              {/* Decorative bar under title */}
+              {/* Arc décoratif v4.0 under title */}
               <div className="flex justify-center mb-12">
-                <div 
-                  className="rounded-full"
-                  style={{ 
-                    width: BAR_SIZES.md.width, 
-                    height: BAR_SIZES.md.height,
-                    background: GRADIENTS.bar.css,
-                  }}
-                />
+                <LogoArc size="md" />
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {slide.data.points.map((point: any) => (
@@ -291,14 +268,7 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
               >
                 Détails
               </h2>
-              <div 
-                className="rounded-full mb-8"
-                style={{ 
-                  width: BAR_SIZES.md.width, 
-                  height: BAR_SIZES.md.height,
-                  background: GRADIENTS.bar.css,
-                }}
-              />
+              <LogoArc size="md" className="mb-8" />
               <div className="prose prose-lg max-w-none">
                 {slide.data.content.split('\n').map((paragraph: string, i: number) => (
                   <p key={i} style={{ color: COLORS.foreground }}>{paragraph}</p>
@@ -325,14 +295,7 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
                 </h2>
               )}
               <div className="flex justify-center mb-8">
-                <div 
-                  className="rounded-full"
-                  style={{ 
-                    width: BAR_SIZES.md.width, 
-                    height: BAR_SIZES.md.height,
-                    background: GRADIENTS.bar.css,
-                  }}
-                />
+                <LogoArc size="md" />
               </div>
               {slide.data.description && (
                 <p 
@@ -374,14 +337,7 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
                 {slide.data.title}
               </h2>
               <div className="flex justify-center mb-12">
-                <div 
-                  className="rounded-full"
-                  style={{ 
-                    width: BAR_SIZES.md.width, 
-                    height: BAR_SIZES.md.height,
-                    background: GRADIENTS.bar.css,
-                  }}
-                />
+                <LogoArc size="md" />
               </div>
               <div className={`grid gap-6 ${slide.data.plans.length === 1 ? 'max-w-md mx-auto' : slide.data.plans.length === 2 ? 'md:grid-cols-2 max-w-3xl mx-auto' : 'md:grid-cols-3'}`}>
                 {slide.data.plans.map((plan: any) => (
@@ -489,14 +445,7 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
                 Intéressé ?
               </h2>
               <div className="flex justify-center mb-8">
-                <div 
-                  className="rounded-full"
-                  style={{ 
-                    width: BAR_SIZES.md.width, 
-                    height: BAR_SIZES.md.height,
-                    background: GRADIENTS.bar.css,
-                  }}
-                />
+                <LogoArc size="md" />
               </div>
               <a 
                 href="/contact"

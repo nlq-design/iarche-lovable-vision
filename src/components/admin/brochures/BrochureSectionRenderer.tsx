@@ -1,6 +1,7 @@
 import { Brochure } from '@/types/brochure';
 import { CheckCircle, Quote, ExternalLink } from 'lucide-react';
-import { COLORS, GRADIENTS, BAR_SIZES } from '@/components/admin/medias/shared/tokens';
+import { COLORS, GRADIENTS } from '@/components/admin/medias/shared/tokens';
+import LogoArc from '@/components/ui/LogoArc';
 
 interface SlideData {
   type: string;
@@ -49,14 +50,8 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
         >
           <MeshBackground />
           <div className="relative z-10 flex flex-col items-center">
-            <div 
-              className="rounded-full mb-8"
-              style={{ 
-                width: BAR_SIZES.xl.width, 
-                height: BAR_SIZES.xl.height,
-                background: GRADIENTS.bar.css,
-              }}
-            />
+            {/* Arc décoratif v4.0 */}
+            <LogoArc size="xl" className="mb-8" />
             <h1 
               className="text-7xl font-bold text-center mb-6"
               style={{ 
@@ -120,14 +115,7 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
               Points clés
             </h2>
             <div className="flex justify-center mb-12">
-              <div 
-                className="rounded-full"
-                style={{ 
-                  width: BAR_SIZES.md.width, 
-                  height: BAR_SIZES.md.height,
-                  background: GRADIENTS.bar.css,
-                }}
-              />
+              <LogoArc size="md" />
             </div>
             <div className="grid grid-cols-3 gap-8">
               {slide.data.points.map((point: any) => (
@@ -180,14 +168,7 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
             >
               Détails
             </h2>
-            <div 
-              className="rounded-full mb-8"
-              style={{ 
-                width: BAR_SIZES.md.width, 
-                height: BAR_SIZES.md.height,
-                background: GRADIENTS.bar.css,
-              }}
-            />
+            <LogoArc size="md" className="mb-8" />
             <div className="prose prose-xl max-w-none">
               {slide.data.content.split('\n').map((paragraph: string, i: number) => (
                 <p key={i} className="text-lg mb-4" style={{ color: COLORS.foreground }}>
@@ -215,14 +196,7 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
               </h2>
             )}
             <div className="flex justify-center mb-10">
-              <div 
-                className="rounded-full"
-                style={{ 
-                  width: BAR_SIZES.md.width, 
-                  height: BAR_SIZES.md.height,
-                  background: GRADIENTS.bar.css,
-                }}
-              />
+              <LogoArc size="md" />
             </div>
             {slide.data.description && (
               <p 
@@ -266,14 +240,7 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
               {slide.data.title}
             </h2>
             <div className="flex justify-center mb-12">
-              <div 
-                className="rounded-full"
-                style={{ 
-                  width: BAR_SIZES.md.width, 
-                  height: BAR_SIZES.md.height,
-                  background: GRADIENTS.bar.css,
-                }}
-              />
+              <LogoArc size="md" />
             </div>
             <div className={`grid gap-8 ${
               slide.data.plans.length === 1 ? 'max-w-md mx-auto' : 
@@ -383,14 +350,7 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
               Intéressé ?
             </h2>
             <div className="flex justify-center mb-10">
-              <div 
-                className="rounded-full"
-                style={{ 
-                  width: BAR_SIZES.md.width, 
-                  height: BAR_SIZES.md.height,
-                  background: GRADIENTS.bar.css,
-                }}
-              />
+              <LogoArc size="md" />
             </div>
             <div 
               className="inline-flex items-center gap-3 px-10 py-5 text-xl font-semibold rounded-xl"
