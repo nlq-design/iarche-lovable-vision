@@ -502,35 +502,33 @@ const CharteGraphique = () => {
             06. Éléments Visuels
           </h2>
 
-          {/* Lignes SVG */}
+          {/* Arc Décoratif - Nouveau v4.0 */}
           <div className="mb-12">
-            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Lignes SVG Canalisation (Arche)</h3>
-            <div className="bg-[#FAF9F7] p-8 rounded-lg relative h-48">
-              <svg className="absolute w-full h-full" viewBox="0 0 400 100" preserveAspectRatio="none">
+            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Arc Décoratif (Virgule du Logo)</h3>
+            <div className="bg-[#FAF9F7] p-8 rounded-lg flex items-center justify-center">
+              <svg viewBox="0 0 100 12" width="300" height="36" className="block">
                 <defs>
-                  <linearGradient id="lineGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <linearGradient id="arcGradDemo" x1="0%" y1="50%" x2="100%" y2="50%">
                     <stop offset="0%" stopColor="#1A2B4A" />
                     <stop offset="100%" stopColor="#B04A32" />
                   </linearGradient>
-                  <linearGradient id="lineGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#B04A32" />
-                    <stop offset="100%" stopColor="#1A2B4A" />
-                  </linearGradient>
                 </defs>
-                <path d="M0 20 L150 20 L150 80 L0 80" fill="none" stroke="url(#lineGrad1)" strokeWidth="2" opacity="0.5" />
-                <path d="M400 20 L250 20 L250 80 L400 80" fill="none" stroke="url(#lineGrad2)" strokeWidth="2" opacity="0.5" />
+                <path
+                  d="M 0 10 C 25 0, 50 2, 75 6 C 85 7.5, 95 9, 100 10 L 100 12 C 95 11, 85 9.5, 75 8 C 50 4, 25 2, 0 12 Z"
+                  fill="url(#arcGradDemo)"
+                />
               </svg>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
               <div className="bg-[#FAF9F7] p-4 rounded">
-                <p className="font-mono text-xs text-[#666666]">Ligne 1: Bleu Nuit → Terracotta</p>
-                <p className="font-mono text-xs text-[#666666]">stroke-width: 7px, opacity: 0.6-0.7</p>
-                <p className="font-mono text-xs text-[#666666]">Forme: L inversé (top-left)</p>
+                <p className="font-mono text-xs text-[#666666]">Origine: Virgule du logo officiel</p>
+                <p className="font-mono text-xs text-[#666666]">Gradient: Bleu Nuit → Terracotta</p>
+                <p className="font-mono text-xs text-[#666666]">Forme: Courbe bézier affinée</p>
               </div>
               <div className="bg-[#FAF9F7] p-4 rounded">
-                <p className="font-mono text-xs text-[#666666]">Ligne 2: Terracotta → Bleu Nuit</p>
-                <p className="font-mono text-xs text-[#666666]">Animation: 6s ease-in-out</p>
-                <p className="font-mono text-xs text-[#666666]">Forme: L normal (bottom-right)</p>
+                <p className="font-mono text-xs text-[#666666]">Tailles: sm (60px), md (100px), lg (160px), xl (220px)</p>
+                <p className="font-mono text-xs text-[#666666]">Usage: Sous les titres, cards, CTAs</p>
+                <p className="font-mono text-xs text-[#666666]">Remplace: Barre gradient horizontale</p>
               </div>
             </div>
           </div>

@@ -17,7 +17,6 @@ import { pdf, Document, Page, View, Text, Svg, Defs, LinearGradient, Stop, Rect 
 import CharterSelector, { CharterType, getCharterColors, getCharterGradients } from '@/components/admin/medias/CharterSelector';
 import { BAR_SIZES, LOGO_SIZES, GRADIENTS } from '@/components/admin/medias/shared/tokens';
 import { HTMLMeshBackground } from '@/components/admin/medias/html/HTMLMeshBackground';
-import { HTMLCanalisationLines } from '@/components/admin/medias/html/HTMLCanalisationLines';
 import { HTMLLogoWithBar } from '@/components/admin/medias/html/HTMLLogoWithBar';
 import { BarSize, LogoSize as LogoSizeToken } from '@/components/admin/medias/html/tokens';
 
@@ -259,16 +258,6 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
           >
             {showBackground && (
               <HTMLMeshBackground theme={variant.theme} opacity={0.05} />
-            )}
-            
-            {showBackground && (
-              <HTMLCanalisationLines
-                width={dimensions.width}
-                height={dimensions.height}
-                theme={variant.theme}
-                opacity={0.4}
-                strokeWidth={3}
-              />
             )}
             
             <div className="absolute inset-0 flex items-center justify-center p-6 z-10">

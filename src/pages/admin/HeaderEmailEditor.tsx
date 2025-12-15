@@ -132,7 +132,6 @@ const HeaderEmailEditor: React.FC = () => {
 
   const renderPreview = () => {
     const showBar = exportMode === 'with-bar' || exportMode === 'full';
-    const showCanalisations = exportMode === 'full';
     
     switch (template) {
       case 'newsletter':
@@ -144,9 +143,6 @@ const HeaderEmailEditor: React.FC = () => {
             theme="dark"
             showMesh={exportMode === 'full'}
             showArches={false}
-            showCanalisations={showCanalisations}
-            canalisationOpacity={0.35}
-            canalisationStrokeWidth={3}
             padding={24}
           >
             <div style={{ 
@@ -196,9 +192,6 @@ const HeaderEmailEditor: React.FC = () => {
             theme="light"
             showMesh={false}
             showArches={false}
-            showCanalisations={showCanalisations}
-            canalisationOpacity={0.35}
-            canalisationStrokeWidth={3}
             padding={24}
           >
             <div style={{ 
@@ -235,9 +228,6 @@ const HeaderEmailEditor: React.FC = () => {
             theme="light"
             showMesh={false}
             showArches={false}
-            showCanalisations={showCanalisations}
-            canalisationOpacity={0.25}
-            canalisationStrokeWidth={2}
             padding={24}
           >
             <div style={{ 

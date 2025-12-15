@@ -469,9 +469,6 @@ export default function StoryEditor() {
                     theme={theme}
                     padding={80}
                     showArches={false}
-                    showCanalisations={showCanalisations}
-                    canalisationOpacity={0.5}
-                    canalisationStrokeWidth={8}
                   >
                     {renderStoryContent()}
                   </HTMLBaseTemplate>

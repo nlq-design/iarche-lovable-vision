@@ -565,9 +565,6 @@ export default function OpenGraphEditor() {
                     theme={theme}
                     padding={60}
                     showArches={false}
-                    showCanalisations={exportMode === 'full'}
-                    canalisationOpacity={0.4}
-                    canalisationStrokeWidth={5}
                   >
                     {renderOGContent()}
                   </HTMLBaseTemplate>

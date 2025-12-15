@@ -2,7 +2,6 @@ import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
 import { PDFImageLogo, PDFPatternBackground } from '../pdf/PDFImageAssets';
 import { PDFGradientBar } from '../pdf/PDFGradientBar';
-import { PDFCanalisationLines } from '../pdf/PDFCanalisationLines';
 
 export type ExportMode = 'simple' | 'with-bar' | 'full';
 export type BarSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -32,187 +31,111 @@ const styles = StyleSheet.create({
     position: 'relative',
     backgroundColor: IARCHE_COLORS.blancCasse,
   },
-  backgroundLayer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-  },
   content: {
     flex: 1,
-    padding: 60,
+    padding: 40,
+    justifyContent: 'space-between',
     position: 'relative',
-    zIndex: 10,
+    zIndex: 1,
   },
   header: {
-    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 30,
   },
   logoContainer: {
-    alignItems: 'center',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
   },
-  mainContent: {
+  slideNumber: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  body: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 30,
   },
-  sectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
     marginBottom: 16,
-  },
-  sectionNumber: {
-    fontSize: 72,
-    fontWeight: 'bold',
-    opacity: 0.2,
-    marginRight: 20,
-    fontFamily: 'Helvetica-Bold',
-  },
-  sectionNumberDark: {
-    color: IARCHE_COLORS.white,
-  },
-  sectionNumberLight: {
-    color: IARCHE_COLORS.terracotta,
-  },
-  subtitleDark: {
-    fontSize: 16,
-    color: IARCHE_COLORS.white,
-    opacity: 0.5,
-    textTransform: 'uppercase',
-    letterSpacing: 4,
-    marginBottom: 10,
-    fontFamily: 'Helvetica',
-    fontWeight: 'normal',
-    textAlign: 'center',
-  },
-  titleDark: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: IARCHE_COLORS.white,
-    textAlign: 'center',
-    marginBottom: 8,
     lineHeight: 1.2,
-    fontFamily: 'Helvetica-Bold',
   },
-  textDark: {
+  subtitle: {
     fontSize: 18,
-    color: IARCHE_COLORS.white,
+    marginBottom: 24,
+    lineHeight: 1.4,
     opacity: 0.8,
-    textAlign: 'center',
+  },
+  contentText: {
+    fontSize: 14,
     lineHeight: 1.6,
-    fontFamily: 'Helvetica',
-    fontWeight: 'normal',
-    marginTop: 16,
+    opacity: 0.9,
   },
-  highlightDark: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: IARCHE_COLORS.terracotta,
+  highlight: {
     marginTop: 20,
-    fontFamily: 'Helvetica-Bold',
-    textAlign: 'center',
+    padding: 16,
+    borderRadius: 8,
   },
-  subtitleLight: {
+  highlightText: {
     fontSize: 16,
-    color: IARCHE_COLORS.subtle,
-    textTransform: 'uppercase',
-    letterSpacing: 4,
-    marginBottom: 10,
-    fontFamily: 'Helvetica',
-    fontWeight: 'normal',
-    textAlign: 'center',
-  },
-  titleLight: {
-    fontSize: 40,
     fontWeight: 'bold',
-    color: IARCHE_COLORS.foreground,
-    textAlign: 'center',
-    marginBottom: 8,
-    lineHeight: 1.2,
-    fontFamily: 'Helvetica-Bold',
-  },
-  textLight: {
-    fontSize: 18,
-    color: IARCHE_COLORS.foreground,
-    opacity: 0.85,
-    textAlign: 'center',
-    lineHeight: 1.6,
-    fontFamily: 'Helvetica',
-    fontWeight: 'normal',
-    marginTop: 16,
-  },
-  highlightLight: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: IARCHE_COLORS.terracotta,
-    marginTop: 20,
-    fontFamily: 'Helvetica-Bold',
-    textAlign: 'center',
+    lineHeight: 1.4,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 16,
+    marginTop: 'auto',
   },
-  footerTextDark: {
-    fontSize: 13,
-    color: IARCHE_COLORS.white,
-    opacity: 0.4,
-    fontFamily: 'Helvetica',
-    fontWeight: 'normal',
+  footerText: {
+    fontSize: 10,
+    opacity: 0.6,
   },
-  footerTextLight: {
-    fontSize: 13,
-    color: IARCHE_COLORS.subtle,
-    fontFamily: 'Helvetica',
-    fontWeight: 'normal',
+  swipeIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
-  baselineDark: {
-    fontSize: 11,
-    color: IARCHE_COLORS.white,
-    opacity: 0.3,
-    fontFamily: 'Helvetica',
-    fontWeight: 'normal',
-  },
-  baselineLight: {
-    fontSize: 11,
-    color: IARCHE_COLORS.subtle,
-    opacity: 0.7,
-    fontFamily: 'Helvetica',
-    fontWeight: 'normal',
+  swipeArrow: {
+    fontSize: 12,
+    opacity: 0.6,
   },
 });
 
-export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }: CarouselPDFProps) => {
-  const dimensions = format === 'linkedin' 
-    ? PDF_FORMATS.carouselLinkedIn 
-    : PDF_FORMATS.carouselInstagram;
-  const { width, height } = dimensions;
+// Format dimensions
+const FORMATS = {
+  linkedin: { width: 1080, height: 1080 },
+  instagram: { width: 1080, height: 1350 },
+};
 
-  const getSlideTheme = (slideIndex: number): boolean => {
-    if (startTheme === 'dark') {
-      return slideIndex % 2 === 0;
-    } else {
-      return slideIndex % 2 !== 0;
-    }
-  };
+export const CarouselPDF: React.FC<CarouselPDFProps> = ({ 
+  slides, 
+  format = 'linkedin',
+  startTheme = 'dark' 
+}) => {
+  const { width, height } = FORMATS[format];
 
   return (
     <Document>
       {slides.map((slide, index) => {
-        const isDark = getSlideTheme(index);
-        const isFirst = index === 0;
-        const isLast = index === slides.length - 1;
-        const showSectionNumber = !isFirst && !isLast;
+        // Alternate themes starting from startTheme
+        const isDark = startTheme === 'dark' ? index % 2 === 0 : index % 2 !== 0;
+        
+        const textColor = isDark ? IARCHE_COLORS.blancCasse : IARCHE_COLORS.bleuNuit;
+        const subtextColor = isDark ? 'rgba(250, 249, 247, 0.7)' : IARCHE_COLORS.subtle;
+        const highlightBg = isDark 
+          ? 'rgba(176, 74, 50, 0.15)' 
+          : 'rgba(26, 43, 74, 0.08)';
+        const highlightTextColor = isDark 
+          ? IARCHE_COLORS.terracotta 
+          : IARCHE_COLORS.bleuNuit;
         
         // Per-slide export mode (default to 'full' for backward compatibility)
         const exportMode = slide.exportMode || 'full';
         const barSize = slide.barSize || 'md';
         const showBar = exportMode === 'with-bar' || exportMode === 'full';
-        const showCanalisations = exportMode === 'full';
         
         return (
           <Page 
@@ -228,17 +151,6 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
               isDark={isDark}
             />
             
-            {/* Canalisation lines - only in 'full' mode */}
-            {showCanalisations && (
-              <PDFCanalisationLines 
-                width={width} 
-                height={height} 
-                isDark={isDark}
-                opacity={0.6}
-                strokeWidth={7}
-              />
-            )}
-            
             {/* Main content */}
             <View style={styles.content}>
               {/* Header with logo PNG and optional bar PNG */}
@@ -248,93 +160,59 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
                     width={120} 
                     variant={isDark ? 'terracotta' : 'gradient'} 
                   />
-                  {/* Bar under logo - width matches logo */}
                   {showBar && (
-                    <PDFGradientBar size={barSize} width={120} isDark={isDark} style={{ marginTop: 6 }} />
+                    <PDFGradientBar 
+                      size={barSize} 
+                      width={120} 
+                      isDark={isDark}
+                      style={{ marginTop: 8 }}
+                    />
                   )}
                 </View>
-                {/* Header bar - only if showBar */}
-                {showBar && (
-                  <PDFGradientBar 
-                    size="xl" 
-                    width={width - 120} 
-                    height={3}
-                    isDark={isDark}
-                    style={{ marginTop: 8 }} 
-                  />
-                )}
+                <Text style={[styles.slideNumber, { color: subtextColor }]}>
+                  {String(index + 1).padStart(2, '0')}/{String(slides.length).padStart(2, '0')}
+                </Text>
               </View>
 
-              {/* Content area */}
-              <View style={styles.mainContent}>
-                {showSectionNumber ? (
-                  <View style={styles.sectionRow}>
-                    <Text style={[styles.sectionNumber, isDark ? styles.sectionNumberDark : styles.sectionNumberLight]}>
-                      {String(index).padStart(2, '0')}
-                    </Text>
-                    <View style={{ alignItems: 'flex-start' }}>
-                      {slide.title && slide.title.length > 0 ? (
-                        <Text style={isDark ? styles.titleDark : styles.titleLight}>
-                          {slide.title}
-                        </Text>
-                      ) : null}
-                      {showBar && <PDFGradientBar size={barSize} isDark={isDark} style={{ marginTop: 8 }} />}
-                    </View>
-                  </View>
-                ) : (
-                  <View style={{ alignItems: 'center' }}>
-                    {slide.subtitle && slide.subtitle.length > 0 ? (
-                      <Text style={isDark ? styles.subtitleDark : styles.subtitleLight}>
-                        {slide.subtitle}
-                      </Text>
-                    ) : null}
-                    {slide.title && slide.title.length > 0 ? (
-                      <Text style={isDark ? styles.titleDark : styles.titleLight}>
-                        {slide.title}
-                      </Text>
-                    ) : null}
-                    {showBar && <PDFGradientBar size={barSize} isDark={isDark} style={{ marginTop: 12, marginBottom: 16 }} />}
-                  </View>
+              {/* Body content */}
+              <View style={styles.body}>
+                <Text style={[styles.title, { color: textColor }]}>
+                  {slide.title}
+                </Text>
+                {slide.subtitle && (
+                  <Text style={[styles.subtitle, { color: subtextColor }]}>
+                    {slide.subtitle}
+                  </Text>
                 )}
-                
-                {slide.content && slide.content.length > 0 ? (
-                  <Text style={isDark ? styles.textDark : styles.textLight}>
+                {slide.content && (
+                  <Text style={[styles.contentText, { color: textColor }]}>
                     {slide.content}
                   </Text>
-                ) : null}
-                {slide.highlight && slide.highlight.length > 0 ? (
-                  <Text style={isDark ? styles.highlightDark : styles.highlightLight}>
-                    {slide.highlight}
-                  </Text>
-                ) : null}
+                )}
+                {slide.highlight && (
+                  <View style={[styles.highlight, { backgroundColor: highlightBg }]}>
+                    <Text style={[styles.highlightText, { color: highlightTextColor }]}>
+                      {slide.highlight}
+                    </Text>
+                  </View>
+                )}
               </View>
 
-              {/* Footer with optional gradient bar separator */}
-              <View>
-                {showBar && (
-                  <PDFGradientBar 
-                    size="xl" 
-                    width={width - 120} 
-                    height={2}
-                    isDark={isDark}
-                    style={{ marginBottom: 12 }} 
-                  />
-                )}
-                <View style={styles.footer}>
-                  <View>
-                    <Text style={isDark ? styles.footerTextDark : styles.footerTextLight}>
-                      iarche.fr
+              {/* Footer */}
+              <View style={styles.footer}>
+                <Text style={[styles.footerText, { color: subtextColor }]}>
+                  iarche.fr
+                </Text>
+                {index < slides.length - 1 && (
+                  <View style={styles.swipeIndicator}>
+                    <Text style={[styles.footerText, { color: subtextColor }]}>
+                      Swipe
                     </Text>
-                    {isLast && (
-                      <Text style={isDark ? styles.baselineDark : styles.baselineLight}>
-                        L'IA se construit avec vous
-                      </Text>
-                    )}
+                    <Text style={[styles.swipeArrow, { color: IARCHE_COLORS.terracotta }]}>
+                      →
+                    </Text>
                   </View>
-                  <Text style={isDark ? styles.footerTextDark : styles.footerTextLight}>
-                    {index + 1}/{slides.length}
-                  </Text>
-                </View>
+                )}
               </View>
             </View>
           </Page>
@@ -343,3 +221,5 @@ export const CarouselPDF = ({ slides, format = 'linkedin', startTheme = 'dark' }
     </Document>
   );
 };
+
+export default CarouselPDF;
