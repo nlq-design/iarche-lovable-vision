@@ -12,11 +12,11 @@ export * from './tokens';
 
 // Composants partagés
 export { HTMLLogo } from './HTMLLogo';
+export { HTMLLogoArc } from './HTMLLogoArc';
 export { HTMLLogoWithArc } from './HTMLLogoWithArc';
 export { HTMLLogoWithBar } from './HTMLLogoWithBar'; // Legacy
 export { HTMLGradientBar } from './HTMLGradientBar'; // Legacy
 export { HTMLMeshBackground } from './HTMLMeshBackground';
-export { HTMLArches } from './HTMLArches';
 export { HTMLBaseTemplate } from './HTMLBaseTemplate';
 
 // Image Library (Supabase Storage)

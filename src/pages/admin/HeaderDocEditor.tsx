@@ -11,16 +11,16 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import { toPng } from 'html-to-image';
 import { saveAs } from 'file-saver';
 import { COLORS, FONTS } from '@/components/admin/medias/shared/tokens';
-import { HTMLGradientBar } from '@/components/admin/medias/html/HTMLGradientBar';
-import type { BarSize } from '@/components/admin/medias/html/tokens';
+import { HTMLLogoArc } from '@/components/admin/medias/html/HTMLLogoArc';
+import type { ArcSize } from '@/components/admin/medias/html/tokens';
 
 export default function HeaderDocEditor() {
   const navigate = useNavigate();
   const headerRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
 
-  // Bar size control
-  const [barSize, setBarSize] = useState<BarSize>('xl');
+  // Arc size control
+  const [barSize, setBarSize] = useState<ArcSize>('xl');
 
   // Editable fields
   const [address, setAddress] = useState('64100 Bayonne, France');
@@ -83,10 +83,10 @@ export default function HeaderDocEditor() {
             <CardContent className="space-y-4">
               {/* Bar size control */}
               <div className="space-y-2">
-                <Label>Taille de la barre</Label>
+                <Label>Taille de l'arc</Label>
                 <RadioGroup
                   value={barSize}
-                  onValueChange={(v) => setBarSize(v as BarSize)}
+                  onValueChange={(v) => setBarSize(v as ArcSize)}
                   className="flex gap-2"
                 >
                   {(['sm', 'md', 'lg', 'xl'] as const).map((size) => (
@@ -184,9 +184,9 @@ export default function HeaderDocEditor() {
                     </div>
                   </div>
 
-                  {/* Gradient bar separator */}
+                  {/* Arc separator */}
                   <div className="mt-6">
-                    <HTMLGradientBar size={barSize} />
+                    <HTMLLogoArc size={barSize} />
                   </div>
                 </div>
 

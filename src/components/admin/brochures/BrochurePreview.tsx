@@ -1,5 +1,6 @@
 import { Brochure } from '@/types/brochure';
 import { CheckCircle, Quote } from 'lucide-react';
+import LogoArc from '@/components/ui/LogoArc';
 
 interface BrochurePreviewProps {
   brochure: Brochure;
@@ -36,11 +37,8 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
 
       {/* Cover Section */}
       <section className="relative min-h-[60vh] flex flex-col items-center justify-center px-6 py-20">
-        {/* Gradient Bar */}
-        <div 
-          className="w-24 h-1 mb-8"
-          style={{ background: `linear-gradient(90deg, ${primaryColor} 0%, ${accentColor} 100%)` }}
-        />
+        {/* Arc décoratif */}
+        <LogoArc size="lg" className="mb-8" />
         
         <h1 
           className={`text-5xl md:text-7xl font-bold text-center mb-4 ${custom_colors?.primary || custom_colors?.accent ? '' : 'hero-gradient-text'}`}

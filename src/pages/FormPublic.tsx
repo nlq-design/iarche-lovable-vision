@@ -352,14 +352,27 @@ const FormPublic = () => {
         style={{ backgroundColor: colors.background }}
       >
         <div className="max-w-2xl mx-auto">
-          {/* Header with optional gradient bar */}
+          {/* Header with optional arc */}
           {design.showGradientBar && (
-            <div 
-              className="h-1 w-full mb-8 rounded-full"
-              style={{
-                background: `linear-gradient(90deg, ${colors.primary}, ${colors.secondary})`
-              }}
-            />
+            <div className="mb-8 flex justify-center">
+              <svg
+                viewBox="0 0 200 24"
+                width="120"
+                height="14"
+                aria-hidden="true"
+              >
+                <defs>
+                  <linearGradient id="formArcGradient" x1="0%" y1="50%" x2="100%" y2="50%">
+                    <stop offset="0%" stopColor={colors.primary} />
+                    <stop offset="100%" stopColor={colors.secondary} />
+                  </linearGradient>
+                </defs>
+                <path
+                  d="M 0 20 Q 50 0, 100 8 Q 150 14, 200 18 L 200 22 Q 150 19, 100 14 Q 50 8, 0 24 Z"
+                  fill="url(#formArcGradient)"
+                />
+              </svg>
+            </div>
           )}
           
           {/* Logo */}
