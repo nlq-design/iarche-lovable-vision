@@ -26,8 +26,8 @@ const DEFAULT_TEMPLATE = `<!DOCTYPE html>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
     .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
     .header { background: linear-gradient(135deg, #1A2B4A 0%, #2d4a7c 100%); padding: 32px; text-align: center; }
-    .header img { height: 40px; }
-    .header h1 { color: #ffffff; margin: 16px 0 0; font-size: 24px; }
+    .header img { height: 40px; margin-bottom: 12px; }
+    .header-arc { width: 60px; height: 8px; margin: 0 auto; }
     .content { padding: 32px; color: #374151; line-height: 1.6; }
     .content h2 { color: #1A2B4A; margin-top: 0; }
     .button { display: inline-block; background: #B04A32; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0; }
@@ -38,7 +38,8 @@ const DEFAULT_TEMPLATE = `<!DOCTYPE html>
 <body>
   <div class="container">
     <div class="header">
-      <h1>IArche</h1>
+      <img src="https://iarche.fr/logos/iarche-white.svg" alt="IArche" />
+      <img src="https://iarche.fr/assets/arc-iarche-v4.png" alt="" class="header-arc" />
     </div>
     <div class="content">
       <h2>{{title}}</h2>

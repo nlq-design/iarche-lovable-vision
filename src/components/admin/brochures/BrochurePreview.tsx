@@ -210,17 +210,11 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
       {/* Footer */}
       <footer className="px-6 py-8 border-t border-border">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <span 
-            className="font-bold text-xl"
-            style={{ 
-              background: `linear-gradient(270deg, ${primaryColor}, ${accentColor}, ${primaryColor}, ${accentColor})`,
-              backgroundSize: '600% 600%',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            IArche
-          </span>
+          <img 
+            src="/logos/iarche-main.svg" 
+            alt="IArche" 
+            className="h-8"
+          />
           <span className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} IArche
           </span>

@@ -1,23 +1,27 @@
 import React from 'react';
-import { IARCHE_COLORS, IARCHE_GRADIENTS, IARCHE_FONTS, IARCHE_SIZES, LogoSize, ThemeType, BarSize } from './tokens';
+import { IARCHE_SIZES, LogoSize, ThemeType, BarSize } from './tokens';
+import { HTMLLogoArc } from './HTMLLogoArc';
 
 interface HTMLLogoWithBarProps {
   size?: LogoSize;
   theme?: ThemeType;
   className?: string;
-  /** Taille de la barre proportionnelle au logo par défaut */
+  /** Taille de la barre (arc) proportionnelle au logo par défaut */
   barSize?: BarSize;
 }
 
+const LOGO_HEIGHTS: Record<LogoSize, number> = {
+  sm: 24,
+  md: 40,
+  lg: 56,
+  xl: 80,
+};
+
 /**
- * Logo IArche avec barre décorative obligatoire
- * Selon la charte graphique 3.1, le logo doit TOUJOURS être accompagné de sa barre
+ * Logo IArche v4.0 avec arc décoratif
  * 
- * Proportions par défaut:
- * - sm (24px) → bar sm (48x2)
- * - md (32px) → bar md (80x4)
- * - lg (48px) → bar lg (96x4)
- * - xl (64px) → bar xl (128x6)
+ * Utilise le logo SVG officiel + arc décoratif
+ * Conforme à la charte graphique 4.0
  */
 export const HTMLLogoWithBar: React.FC<HTMLLogoWithBarProps> = ({
   size = 'md',
@@ -25,32 +29,16 @@ export const HTMLLogoWithBar: React.FC<HTMLLogoWithBarProps> = ({
   className = '',
   barSize,
 }) => {
-  const fontSize = IARCHE_SIZES.logo[size];
+  const height = LOGO_HEIGHTS[size];
+  const effectiveBarSize = barSize || size;
   
-  // Barre proportionnelle par défaut
-  const effectiveBarSize: BarSize = barSize || size;
-  const barDimensions = IARCHE_SIZES.bar[effectiveBarSize];
-  
-  // Espacement entre logo et barre proportionnel à la taille
+  // Espacement entre logo et arc proportionnel à la taille
   const gap = size === 'sm' ? 8 : size === 'md' ? 12 : size === 'lg' ? 16 : 20;
 
-  const logoStyle: React.CSSProperties = {
-    fontFamily: IARCHE_FONTS.primary,
-    fontSize: `${fontSize}px`,
-    fontWeight: 700,
-    letterSpacing: '-0.02em',
-    lineHeight: 1,
-    margin: 0,
-    padding: 0,
-  };
-
-  const barStyle: React.CSSProperties = {
-    width: `${barDimensions.width}px`,
-    height: `${barDimensions.height}px`,
-    background: IARCHE_GRADIENTS.bar,
-    borderRadius: `${barDimensions.height / 2}px`,
-    flexShrink: 0,
-  };
+  // Logo SVG selon le thème
+  const logoSrc = theme === 'dark' 
+    ? '/logos/iarche-white.svg' 
+    : '/logos/iarche-main.svg';
 
   const containerStyle: React.CSSProperties = {
     display: 'flex',
@@ -59,40 +47,15 @@ export const HTMLLogoWithBar: React.FC<HTMLLogoWithBarProps> = ({
     gap: `${gap}px`,
   };
 
-  // Sur fond sombre (dark): logo en Terracotta
-  if (theme === 'dark') {
-    return (
-      <div className={className} style={containerStyle}>
-        <span
-          style={{
-            ...logoStyle,
-            color: IARCHE_COLORS.terracotta,
-          }}
-        >
-          IArche
-        </span>
-        <div style={barStyle} />
-      </div>
-    );
-  }
-
-  // Sur fond clair (light): logo avec gradient animé
   return (
     <div className={className} style={containerStyle}>
-      <span
-        style={{
-          ...logoStyle,
-          background: IARCHE_GRADIENTS.text,
-          backgroundSize: '300% 100%',
-          WebkitBackgroundClip: 'text',
-          backgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          color: 'transparent',
-        }}
-      >
-        IArche
-      </span>
-      <div style={barStyle} />
+      <img
+        src={logoSrc}
+        alt="IArche"
+        style={{ height, display: 'inline-block' }}
+        draggable={false}
+      />
+      <HTMLLogoArc size={effectiveBarSize} />
     </div>
   );
 };

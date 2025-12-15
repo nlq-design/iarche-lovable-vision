@@ -307,8 +307,10 @@ const BrevoHTMLEditor = () => {
           <tr>
             <td style="background: linear-gradient(135deg, #1A2B4A 0%, #2D4A7C 50%, #B04A32 100%); padding: 20px 24px; text-align: center;">
               ${headerContent}
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: bold;">${headerTitle}</h1>
+              <img src="https://iarche.fr/logos/iarche-white.svg" alt="IArche" style="height: 32px; margin-bottom: 8px;" />
               <div style="width: 50px; height: 2px; background: linear-gradient(90deg, #1A2B4A, #B04A32, #1A2B4A); margin: 10px auto 0;"></div>
+            </td>
+          </tr>
             </td>
           </tr>
           
