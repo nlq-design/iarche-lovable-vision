@@ -22,12 +22,6 @@ export {
   PDFBarSources,
 } from './PDFImageAssets';
 
-// Canalisation lines (matching hero animation frozen at 6s)
-export { 
-  PDFCanalisationLines, 
-  PDFCanalisationLinesSimple 
-} from './PDFCanalisationLines';
-
 // Design tokens
 export { 
   IARCHE_COLORS, 

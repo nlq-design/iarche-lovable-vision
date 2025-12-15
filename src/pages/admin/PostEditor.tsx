@@ -786,9 +786,6 @@ export default function PostEditor() {
                     theme={theme}
                     padding={format === 'square' ? 80 : 60}
                     showArches={false}
-                    showCanalisations={exportMode === 'full'}
-                    canalisationOpacity={0.4}
-                    canalisationStrokeWidth={format === 'square' ? 6 : 5}
                   >
                     {renderPostContent()}
                   </HTMLBaseTemplate>

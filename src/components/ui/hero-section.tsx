@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import GradientLink from '@/components/ui/GradientLink';
-import GradientTitle from '@/components/ui/GradientTitle';
-import AnimatedArcs from '@/components/ui/AnimatedArcs';
+import Logo from '@/components/ui/Logo';
+import LogoArc from '@/components/ui/LogoArc';
 import { ChevronDown } from 'lucide-react';
 import { useAnimationPause } from '@/hooks/useAnimationPause';
 import { useCTATracking } from '@/hooks/useCTATracking';
@@ -14,19 +14,18 @@ const HeroSection = () => {
 
   return (
     <div ref={heroRef} className="min-h-screen flex items-center justify-center relative">
-      {/* Arcs SVG animés - nouvelle identité v4.0 */}
-      <AnimatedArcs />
-
       <div className="container text-center z-10 relative px-6 py-20">
-        <div className="mb-20 md:mb-28 invisible animate-fadeIn [animation-delay:0.1s]">
-          <GradientTitle size="xl" className="mb-0">
-            <span>IArche</span>
-            <span className="sr-only">· Agence IA Bayonne | Conseil & Intégration PME</span>
-          </GradientTitle>
+        {/* Logo officiel SVG + Arc décoratif */}
+        <div className="mb-20 md:mb-28 invisible animate-fadeIn [animation-delay:0.1s] flex flex-col items-center">
+          <Logo variant="main" size="xl" className="mb-4" />
+          <LogoArc size="xl" />
+          <span className="sr-only">IArche · Agence IA Bayonne | Conseil & Intégration PME</span>
         </div>
+        
         <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-16 leading-relaxed invisible animate-fadeIn [animation-delay:0.2s]">
           L'IA se construit avec vous
         </p>
+        
         <div className="flex justify-center invisible animate-fadeIn [animation-delay:0.3s]">
           <GradientLink
             onClick={() => {

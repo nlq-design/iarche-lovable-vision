@@ -4,6 +4,7 @@
  * CHANGELOG v4.0:
  * - HTMLLogoWithArc remplace HTMLLogoWithBar
  * - Arcs au lieu de barres gradient
+ * - Suppression des canalisations
  */
 
 // Tokens - Source unique de vérité
@@ -16,7 +17,6 @@ export { HTMLLogoWithBar } from './HTMLLogoWithBar'; // Legacy
 export { HTMLGradientBar } from './HTMLGradientBar'; // Legacy
 export { HTMLMeshBackground } from './HTMLMeshBackground';
 export { HTMLArches } from './HTMLArches';
-export { HTMLCanalisationLines } from './HTMLCanalisationLines';
 export { HTMLBaseTemplate } from './HTMLBaseTemplate';
 
 // Image Library (Supabase Storage)

@@ -2,7 +2,6 @@ import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
 import { PDFImageLogo, PDFPatternBackground } from '../pdf/PDFImageAssets';
 import { PDFGradientBar } from '../pdf/PDFGradientBar';
-import { PDFCanalisationLines } from '../pdf/PDFCanalisationLines';
 
 export type ExportMode = 'simple' | 'with-bar' | 'full';
 export type BarSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -241,7 +240,6 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
         const exportMode = slide.exportMode || 'full';
         const barSize = slide.barSize || 'lg';
         const showBar = exportMode === 'with-bar' || exportMode === 'full';
-        const showCanalisations = exportMode === 'full';
         
         return (
           <Page 
@@ -256,17 +254,6 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
               opacity={isDark ? 0.05 : 0.07}
               isDark={isDark}
             />
-            
-            {/* Canalisation lines - only in 'full' mode */}
-            {showCanalisations && (
-              <PDFCanalisationLines 
-                width={PAGE_WIDTH} 
-                height={PAGE_HEIGHT} 
-                isDark={isDark}
-                opacity={0.6}
-                strokeWidth={7}
-              />
-            )}
 
             {/* Main content */}
             <View style={styles.content}>

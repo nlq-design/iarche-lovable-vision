@@ -493,9 +493,6 @@ export default function BannerEditor() {
                     theme={theme}
                     padding={60}
                     showArches={false}
-                    showCanalisations={showCanalisations}
-                    canalisationOpacity={0.4}
-                    canalisationStrokeWidth={5}
                   >
                     {renderBannerContent()}
                   </HTMLBaseTemplate>

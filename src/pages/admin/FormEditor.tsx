@@ -1016,19 +1016,6 @@ const FormEditor = () => {
                       </Select>
                     </div>
                   )}
-                  <div className="flex items-center justify-between">
-                    <Label>Afficher lignes de canalisation</Label>
-                    <Switch
-                      checked={form.settings.design.showCanalisations || false}
-                      onCheckedChange={(checked) => setForm({
-                        ...form,
-                        settings: {
-                          ...form.settings,
-                          design: { ...form.settings.design, showCanalisations: checked }
-                        }
-                      })}
-                    />
-                  </div>
                 </div>
               </TabsContent>
 

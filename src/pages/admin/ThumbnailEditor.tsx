@@ -411,9 +411,6 @@ export default function ThumbnailEditor() {
                     theme={theme}
                     padding={80}
                     showArches={false}
-                    showCanalisations={exportMode === 'full'}
-                    canalisationOpacity={0.4}
-                    canalisationStrokeWidth={format === 'standard' ? 7 : 5}
                   >
                     <div style={{
                       display: 'flex', 

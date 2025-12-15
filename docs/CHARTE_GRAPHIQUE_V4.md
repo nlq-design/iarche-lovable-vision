@@ -1,32 +1,38 @@
-# Charte Graphique IArche v4.0
+# IArche Charte Graphique v4.0
 
-## Changelog v4.0 (Décembre 2024)
+## Changements majeurs
 
 ### Logo
-- **Nouveau design** : Arc au-dessus du texte "IArche" avec gradient Bleu Nuit → Terracotta
-- **Variantes** : main (gradient), white (fond sombre), dark (monochrome)
-- **Icône** : Symbole arc seul pour favicon/PWA
+- **Logo officiel SVG** : Remplace le texte gradient animé
+- **Variantes** : main (gradient), white, dark
+- **Icône** : Arc seul pour favicon/PWA
 
 ### Éléments décoratifs
-- **Arc** remplace la barre gradient horizontale sous les titres
-- **Animations SVG** : Arcs animés au lieu des lignes "canalisation"
+- **Arc décoratif** : Reproduction de la "virgule" du logo (I→E)
+- **Remplace** : Barre gradient horizontale ET lignes canalisation
+- **Tailles** : sm (60px), md (100px), lg (160px), xl (220px)
+
+### Suppressions v4.0
+- ❌ Lignes canalisation (HTMLCanalisationLines, PDFCanalisationLines)
+- ❌ AnimatedArcs (remplacé par arc statique du logo)
+- ❌ Texte gradient "IArche" (remplacé par logo SVG)
 
 ### Fichiers logo
 - `/logos/iarche-main.svg` - Logo principal gradient
 - `/logos/iarche-white.svg` - Logo blanc
 - `/logos/iarche-dark.svg` - Logo Bleu Nuit
-- `/logos/iarche-vertical.svg` - Version verticale
 - `/logos/iarche-icon-32.svg` - Favicon
-- `/logos/iarche-icon-512.svg` - PWA/OG
-
-### Couleurs (inchangées)
-- Bleu Nuit : #1A2B4A
-- Terracotta : #B04A32
-- Blanc Cassé : #FAF9F7
+- `/logos/iarche-icon-512.svg` - PWA icon
 
 ### Composants mis à jour
-- `Logo.tsx` - Nouveau composant logo SVG
-- `LogoArc.tsx` - Arc décoratif
-- `AnimatedArcs.tsx` - Animations hero
-- `GradientTitle.tsx` - Utilise arc au lieu de barre
-- `Header.tsx` - Intègre nouveau logo
+- `Logo.tsx` - Affiche le logo SVG officiel
+- `LogoArc.tsx` - Arc décoratif (virgule du logo)
+- `GradientTitle.tsx` - Utilise LogoArc sous les titres
+- `hero-section.tsx` - Logo SVG + arc au lieu de texte gradient
+- `HTMLBaseTemplate.tsx` - Sans canalisations
+- Tous les éditeurs médias - Options canalisation supprimées
+
+### Couleurs (inchangées)
+- Bleu Nuit: `hsl(218, 47%, 20%)` / #1A2B4A
+- Terracotta: `hsl(12, 60%, 44%)` / #B04A32
+- Blanc Cassé: `hsl(30, 14%, 98%)` / #FAF9F7
