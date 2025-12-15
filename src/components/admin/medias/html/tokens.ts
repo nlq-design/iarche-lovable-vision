@@ -61,7 +61,7 @@ export { LOGO_BAR_MAPPING, LOGO_BAR_GAP };
 export { EXPORT_BAR_MAPPING } from '../shared/tokens';
 
 // Types
-export type { ThemeType, BarSize, LogoSize, ArchSize, ExportSize } from '../shared/tokens';
+export type { ThemeType, BarSize, LogoSize, ArchSize, ExportSize, ArcSize } from '../shared/tokens';
 
 // Réexport des formats pour référence
 export { EXPORT_FORMATS };

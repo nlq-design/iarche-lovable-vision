@@ -135,14 +135,14 @@ const createStyles = (orientation: PDFOrientation, customColors?: { primary?: st
       maxWidth: isLandscape ? 500 : 380,
       lineHeight: 1.6,
     },
-    gradientBar: {
-      width: isLandscape ? BAR_SIZES.xl.width : BAR_SIZES.lg.width,
-      height: isLandscape ? BAR_SIZES.xl.height : BAR_SIZES.lg.height,
+    arcBar: {
+      width: isLandscape ? 180 : 120,
+      height: isLandscape ? 20 : 14,
       marginBottom: 24,
     },
-    gradientBarSmall: {
-      width: BAR_SIZES.md.width,
-      height: BAR_SIZES.md.height,
+    arcBarSmall: {
+      width: 120,
+      height: 14,
       marginBottom: 20,
     },
     // Section elements
@@ -363,8 +363,8 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
         <MeshBackground width={pageSize.width} height={pageSize.height} />
         
         <View style={{ zIndex: 1, alignItems: 'center' }}>
-          {/* Decorative gradient bar */}
-          <Image src={BASE64_ASSETS.barXl} style={styles.gradientBar} />
+          {/* Decorative arc */}
+          <Image src={BASE64_ASSETS.arcLg} style={styles.arcBar} />
           
           <Text style={styles.coverTitle}>{brochure.cover_title}</Text>
           {brochure.cover_subtitle && (
@@ -402,14 +402,14 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
                 {sections.introduction.enabled && sections.introduction.content && (
                   <View style={styles.column}>
                     <Text style={styles.sectionTitle}>Présentation</Text>
-                    <Image src={BASE64_ASSETS.barMd} style={styles.gradientBarSmall} />
+                    <Image src={BASE64_ASSETS.arcMd} style={styles.arcBarSmall} />
                     <Text style={styles.paragraph}>{sections.introduction.content}</Text>
                   </View>
                 )}
                 {sections.keyPoints.enabled && sections.keyPoints.points.length > 0 && (
                   <View style={[styles.column, { flex: sections.introduction.enabled ? 1.3 : 1 }]}>
                     <Text style={styles.sectionTitle}>Points clés</Text>
-                    <Image src={BASE64_ASSETS.barMd} style={styles.gradientBarSmall} />
+                    <Image src={BASE64_ASSETS.arcMd} style={styles.arcBarSmall} />
                     <View style={styles.keyPointsGrid}>
                       {sections.keyPoints.points.map((point) => (
                         <View key={point.id} style={styles.keyPointCard}>
@@ -429,14 +429,14 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
                 {sections.introduction.enabled && sections.introduction.content && (
                   <View style={{ marginBottom: 36 }}>
                     <Text style={styles.sectionTitle}>Présentation</Text>
-                    <Image src={BASE64_ASSETS.barMd} style={styles.gradientBarSmall} />
+                    <Image src={BASE64_ASSETS.arcMd} style={styles.arcBarSmall} />
                     <Text style={styles.paragraph}>{sections.introduction.content}</Text>
                   </View>
                 )}
                 {sections.keyPoints.enabled && sections.keyPoints.points.length > 0 && (
                   <View>
                     <Text style={styles.sectionTitle}>Points clés</Text>
-                    <Image src={BASE64_ASSETS.barMd} style={styles.gradientBarSmall} />
+                    <Image src={BASE64_ASSETS.arcMd} style={styles.arcBarSmall} />
                     <View style={styles.keyPointsGrid}>
                       {sections.keyPoints.points.map((point) => (
                         <View key={point.id} style={styles.keyPointCard}>
@@ -469,7 +469,7 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
           
           <View style={{ zIndex: 1 }}>
             <Text style={styles.sectionTitle}>Détails</Text>
-            <Image src={BASE64_ASSETS.barMd} style={styles.gradientBarSmall} />
+            <Image src={BASE64_ASSETS.arcMd} style={styles.arcBarSmall} />
             
             {sections.details.content && (
               isLandscape ? (
@@ -517,7 +517,7 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
           <View style={[styles.sectionWithBackground, { position: 'relative' }]}>
             <View style={styles.centeredContent}>
               <Text style={styles.sectionTitleCentered}>{sections.pricing.title}</Text>
-              <Image src={BASE64_ASSETS.barMd} style={styles.gradientBarSmall} />
+              <Image src={BASE64_ASSETS.arcMd} style={styles.arcBarSmall} />
             </View>
             
             <View style={styles.pricingGrid}>
@@ -567,7 +567,7 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
                 {sections.contact.enabled && (
                   <View style={[styles.column, styles.contactSection]}>
                     <Text style={styles.sectionTitleCentered}>Intéressé ?</Text>
-                    <Image src={BASE64_ASSETS.barMd} style={[styles.gradientBarSmall, { marginBottom: 28 }]} />
+                    <Image src={BASE64_ASSETS.arcMd} style={[styles.arcBarSmall, { marginBottom: 28 }]} />
                     <View style={styles.ctaButton}>
                       <Text style={styles.ctaText}>{sections.contact.cta_text}</Text>
                     </View>
@@ -592,7 +592,7 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
                 {sections.contact.enabled && (
                   <View style={styles.contactSection}>
                     <Text style={styles.sectionTitleCentered}>Intéressé ?</Text>
-                    <Image src={BASE64_ASSETS.barMd} style={[styles.gradientBarSmall, { marginBottom: 28 }]} />
+                    <Image src={BASE64_ASSETS.arcMd} style={[styles.arcBarSmall, { marginBottom: 28 }]} />
                     <View style={styles.ctaButton}>
                       <Text style={styles.ctaText}>{sections.contact.cta_text}</Text>
                     </View>

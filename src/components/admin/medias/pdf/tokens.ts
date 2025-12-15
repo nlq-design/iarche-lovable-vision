@@ -136,3 +136,4 @@ export { EXPORT_BAR_MAPPING } from '../shared/tokens';
 // Types
 export type BarSize = keyof typeof BAR_SIZES;
 export type LogoSize = keyof typeof LOGO_SIZES;
+export type { ArcSize } from '../shared/tokens';

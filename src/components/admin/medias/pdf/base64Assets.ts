@@ -3,7 +3,7 @@
 
 import { IARCHE_COLORS } from './tokens';
 
-// Generate gradient bar as SVG data URI (more reliable than PNG for react-pdf)
+// Generate gradient bar as SVG data URI (legacy - kept for compatibility)
 const createGradientBarSVG = (width: number, height: number): string => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
     <defs>
@@ -14,6 +14,24 @@ const createGradientBarSVG = (width: number, height: number): string => {
       </linearGradient>
     </defs>
     <rect width="${width}" height="${height}" rx="${height/2}" fill="url(#barGrad)"/>
+  </svg>`;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+};
+
+// Generate arc SVG data URI (v4.0 - replaces bars)
+const createArcSVG = (width: number, height: number): string => {
+  const viewBoxWidth = 200;
+  const viewBoxHeight = 24;
+  const arcPath = 'M 0 20 Q 50 0, 100 8 Q 150 14, 200 18 L 200 22 Q 150 19, 100 14 Q 50 8, 0 24 Z';
+  
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}">
+    <defs>
+      <linearGradient id="arcGrad" x1="0%" y1="50%" x2="100%" y2="50%">
+        <stop offset="0%" stop-color="${IARCHE_COLORS.bleuNuit}"/>
+        <stop offset="100%" stop-color="${IARCHE_COLORS.terracotta}"/>
+      </linearGradient>
+    </defs>
+    <path d="${arcPath}" fill="url(#arcGrad)"/>
   </svg>`;
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 };
@@ -47,12 +65,18 @@ const createLogoSVG = (variant: 'gradient' | 'white' | 'terracotta'): string => 
 
 // Export pre-generated assets
 export const BASE64_ASSETS = {
-  // Gradient bars at different sizes
+  // Arc décoratifs (v4.0)
+  arcSm: createArcSVG(80, 10),
+  arcMd: createArcSVG(120, 14),
+  arcLg: createArcSVG(180, 20),
+  arcXl: createArcSVG(260, 28),
+  
+  // Gradient bars (legacy - kept for compatibility)
   barSm: createGradientBarSVG(48, 2),
   barMd: createGradientBarSVG(80, 4),
   barLg: createGradientBarSVG(96, 4),
   barXl: createGradientBarSVG(128, 6),
-  barFull: createGradientBarSVG(400, 4), // Full-width bar for header
+  barFull: createGradientBarSVG(400, 4),
   
   // Logo variants
   logoGradient: createLogoSVG('gradient'),

@@ -6,51 +6,50 @@ interface LogoArcProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   /** Classes CSS additionnelles */
   className?: string;
-  /** Animer l'arc (drawing effect) */
-  animated?: boolean;
 }
 
 /**
- * Arc décoratif IArche v4.0
+ * Arc décoratif IArche v4.0 - Conforme au logo officiel
  * 
  * Reproduction exacte de la "virgule" du logo officiel
- * (la courbe qui relie le I au E)
+ * Courbe élégante allant de Bleu Nuit → Terracotta
+ * S'amenuise progressivement de gauche à droite
  * 
- * Utilisé sous les titres et comme élément décoratif
- * Remplace toutes les barres gradient horizontales
+ * Remplace toutes les barres gradient horizontales du site
  */
 const LogoArc: React.FC<LogoArcProps> = ({
   size = 'md',
   className = '',
-  animated = false,
 }) => {
   const sizeConfig = {
-    sm: { width: 60, height: 8 },
-    md: { width: 100, height: 12 },
-    lg: { width: 160, height: 18 },
-    xl: { width: 220, height: 24 },
+    sm: { width: 80, height: 10 },
+    md: { width: 120, height: 14 },
+    lg: { width: 180, height: 20 },
+    xl: { width: 260, height: 28 },
   };
 
   const { width, height } = sizeConfig[size];
   
-  // Gradient IDs uniques pour éviter les conflits
-  const gradientId = `logoArcGradient-${size}-${Math.random().toString(36).substr(2, 9)}`;
+  // Gradient ID unique pour éviter les conflits
+  const gradientId = `logoArc-${size}-${Math.random().toString(36).substr(2, 9)}`;
 
-  // Path simplifié de l'arc du logo officiel
-  // Reproduit la forme de la virgule qui va du I au E
-  // ViewBox normalisée pour faciliter le scaling
-  const viewBoxWidth = 100;
-  const viewBoxHeight = 12;
+  // ViewBox normalisée pour le scaling proportionnel
+  const viewBoxWidth = 200;
+  const viewBoxHeight = 24;
   
-  // Courbe bézier reproduisant l'arc du logo
-  // Commence large à gauche, s'affine vers la droite
+  // Path de l'arc exactement conforme au logo IArche
+  // Courbe de Bézier qui :
+  // - Part légèrement en bas à gauche
+  // - Monte en courbe douce vers le centre-haut
+  // - Redescend légèrement vers la droite
+  // - S'affine progressivement de gauche à droite
   const arcPath = `
-    M 0 10
-    C 25 0, 50 2, 75 6
-    C 85 7.5, 95 9, 100 10
-    L 100 12
-    C 95 11, 85 9.5, 75 8
-    C 50 4, 25 2, 0 12
+    M 0 20
+    Q 50 0, 100 8
+    Q 150 14, 200 18
+    L 200 22
+    Q 150 19, 100 14
+    Q 50 8, 0 24
     Z
   `.replace(/\s+/g, ' ').trim();
 
@@ -59,11 +58,7 @@ const LogoArc: React.FC<LogoArcProps> = ({
       viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
       width={width}
       height={height}
-      className={cn(
-        'block',
-        animated && 'animate-arc-draw',
-        className
-      )}
+      className={cn('block', className)}
       aria-hidden="true"
       preserveAspectRatio="xMidYMid meet"
     >
@@ -76,7 +71,6 @@ const LogoArc: React.FC<LogoArcProps> = ({
       <path
         d={arcPath}
         fill={`url(#${gradientId})`}
-        className={animated ? 'arc-path' : ''}
       />
     </svg>
   );

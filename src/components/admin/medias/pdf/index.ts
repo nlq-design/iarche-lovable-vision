@@ -4,10 +4,11 @@
 // SVG-based components (may have rendering issues)
 export { PDFLogo, PDFLogoText } from './PDFLogo';
 export { PDFGradientBar } from './PDFGradientBar';
+export { PDFLogoArc } from './PDFLogoArc';
 export { PDFMeshBackground } from './PDFMeshBackground';
 export { PDFArches } from './PDFArches';
 
-// Logo + Barre obligatoire (Charte 3.1)
+// Logo + Barre/Arc obligatoire (Charte 4.0)
 export { PDFLogoWithBar } from './PDFLogoWithBar';
 
 // Base64 SVG components (reliable rendering) - RECOMMENDED
