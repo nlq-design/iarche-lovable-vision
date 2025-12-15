@@ -3,6 +3,7 @@ import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
+import LogoArc from '@/components/ui/LogoArc';
 
 const ConditionsGenerales = () => {
   return (
@@ -49,7 +50,7 @@ const ConditionsGenerales = () => {
             <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
               Conditions générales de vente
             </h1>
-            <div className="w-24 h-1 mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary animate-fadeIn [animation-delay:0.15s]"></div>
+            <LogoArc size="md" className="mb-6 animate-fadeIn [animation-delay:0.15s]" />
           </div>
 
           {/* Contenu */}

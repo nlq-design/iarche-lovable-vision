@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { PresentationPDF, ExportMode, BarSize } from './templates/PresentationPDF';
 import { ExportModeControls } from './ExportModeControls';
+import { HTMLLogoArc } from './html/HTMLLogoArc';
 
 interface PresentationEditorProps {
   templateId: string;
@@ -286,11 +287,11 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                           IArche
                         </span>
                         {showBarInPreview && (
-                          <div className="w-10 h-0.5 mt-1 bg-gradient-to-r from-[#1A2B4A] to-[#B04A32]" />
+                          <HTMLLogoArc size="sm" className="mt-1" />
                         )}
                       </div>
                       {showBarInPreview && (
-                        <div className="w-16 h-0.5 bg-gradient-to-r from-[#1A2B4A] via-[#B04A32] to-[#1A2B4A]" />
+                        <HTMLLogoArc size="sm" />
                       )}
                     </div>
 
@@ -305,7 +306,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                         {current?.title}
                       </h2>
                       {showBarInPreview && current?.title && (
-                        <div className="w-20 h-0.5 mb-4 bg-gradient-to-r from-[#1A2B4A] to-[#B04A32]" />
+                        <HTMLLogoArc size="sm" className="mb-4" />
                       )}
                       {current?.content && (
                         <p className={`text-sm leading-relaxed ${isDark ? 'text-white/80' : 'text-[#1A2B4A]/80'}`}>

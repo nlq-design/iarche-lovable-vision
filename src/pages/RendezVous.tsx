@@ -16,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import GradientLink from '@/components/ui/GradientLink';
+import LogoArc from '@/components/ui/LogoArc';
 
 interface BookingType {
   id: string;
@@ -234,7 +235,7 @@ const RendezVous = () => {
               <h1 className="text-3xl md:text-4xl font-bold hero-gradient-text mb-2 animate-fadeIn">
                 Prendre rendez-vous
               </h1>
-              <div className="w-24 h-1 mx-auto mb-4 rounded-full bg-gradient-to-r from-primary via-accent to-primary animate-fadeIn [animation-delay:0.1s]"></div>
+              <LogoArc size="md" className="mx-auto mb-4 animate-fadeIn [animation-delay:0.1s]" />
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fadeIn [animation-delay:0.2s]">
                 Choisissez le type de rendez-vous qui correspond à votre besoin
               </p>
@@ -398,7 +399,7 @@ const RendezVous = () => {
             <h1 className="text-3xl md:text-4xl font-bold hero-gradient-text mb-2 animate-fadeIn">
               {bookingType.name}
             </h1>
-            <div className="w-24 h-1 mx-auto mb-4 rounded-full bg-gradient-to-r from-primary via-accent to-primary animate-fadeIn [animation-delay:0.1s]"></div>
+            <LogoArc size="md" className="mx-auto mb-4 animate-fadeIn [animation-delay:0.1s]" />
             {bookingType.description && (
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fadeIn [animation-delay:0.2s]">
                 {bookingType.description}

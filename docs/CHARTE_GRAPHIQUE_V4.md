@@ -7,14 +7,36 @@
 - **Variantes** : main (gradient), white, dark
 - **Icône** : Arc seul pour favicon/PWA
 
-### Éléments décoratifs
-- **Arc décoratif** : Reproduction de la "virgule" du logo (I→E)
-- **Remplace** : Barre gradient horizontale ET lignes canalisation
-- **Tailles** : sm (60px), md (100px), lg (160px), xl (220px)
+### Élément décoratif unique : Arc IArche
+
+**L'arc de cercle est l'UNIQUE élément décoratif du site.**
+
+- **Forme** : Courbe de Bézier reproduisant la "virgule" du logo officiel (I→E)
+- **Gradient** : Bleu Nuit (#1A2B4A) → Terracotta (#B04A32)
+- **S'affine** progressivement de gauche à droite
+- **Remplace TOUTES les barres gradient horizontales**
+- **NE JAMAIS placer sous un logo** (réservé aux titres et identité site)
+
+### Tailles de l'arc
+
+| Taille | Largeur | Hauteur | Usage |
+|--------|---------|---------|-------|
+| sm | 80px | 10px | Cards, petits titres |
+| md | 120px | 14px | Titres de section (défaut) |
+| lg | 180px | 20px | Grands titres de page |
+| xl | 260px | 28px | Hero section |
+
+### Path SVG de référence (normalisé viewBox 0 0 200 24)
+
+```svg
+M 0 20 Q 50 0, 100 8 Q 150 14, 200 18 L 200 22 Q 150 19, 100 14 Q 50 8, 0 24 Z
+```
 
 ### Suppressions v4.0
+- ❌ Barres gradient horizontales (`div bg-gradient-to-r`)
+- ❌ HTMLGradientBar / PDFGradientBar (remplacés par HTMLLogoArc / PDFLogoArc)
 - ❌ Lignes canalisation (HTMLCanalisationLines, PDFCanalisationLines)
-- ❌ AnimatedArcs (remplacé par arc statique du logo)
+- ❌ AnimatedArcs (remplacé par arc statique)
 - ❌ Texte gradient "IArche" (remplacé par logo SVG)
 
 ### Fichiers logo
@@ -23,16 +45,38 @@
 - `/logos/iarche-dark.svg` - Logo Bleu Nuit
 - `/logos/iarche-icon-32.svg` - Favicon
 - `/logos/iarche-icon-512.svg` - PWA icon
+- `/public/assets/arc-reference-v4.png` - Image de référence de l'arc
 
-### Composants mis à jour
-- `Logo.tsx` - Affiche le logo SVG officiel
-- `LogoArc.tsx` - Arc décoratif (virgule du logo)
-- `GradientTitle.tsx` - Utilise LogoArc sous les titres
-- `hero-section.tsx` - Logo SVG + arc au lieu de texte gradient
-- `HTMLBaseTemplate.tsx` - Sans canalisations
-- Tous les éditeurs médias - Options canalisation supprimées
+### Composants
+
+| Composant | Fichier | Usage |
+|-----------|---------|-------|
+| LogoArc | `src/components/ui/LogoArc.tsx` | Arc pour pages publiques |
+| HTMLLogoArc | `src/components/admin/medias/html/HTMLLogoArc.tsx` | Arc pour éditeurs média HTML |
+| PDFLogoArc | `src/components/admin/medias/pdf/PDFLogoArc.tsx` | Arc pour exports PDF |
+| GradientTitle | `src/components/ui/GradientTitle.tsx` | Titre + arc (showArc prop) |
+
+### Règles d'utilisation
+
+1. **Sous les titres de page** : Oui, via `GradientTitle` ou `LogoArc` direct
+2. **Sous les titres de section** : Oui
+3. **Sous le logo dans les cards** : ❌ NON - arc réservé aux titres
+4. **Dans les éditeurs média** : Oui, remplace les anciennes barres
 
 ### Couleurs (inchangées)
 - Bleu Nuit: `hsl(218, 47%, 20%)` / #1A2B4A
 - Terracotta: `hsl(12, 60%, 44%)` / #B04A32
 - Blanc Cassé: `hsl(30, 14%, 98%)` / #FAF9F7
+
+### Migration
+
+Toutes les occurrences de :
+```tsx
+<div className="... bg-gradient-to-r from-primary via-accent to-primary ..."></div>
+```
+
+Doivent être remplacées par :
+```tsx
+import LogoArc from '@/components/ui/LogoArc';
+<LogoArc size="md" className="..." />
+```

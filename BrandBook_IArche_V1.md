@@ -1,8 +1,10 @@
 # Brand Book IArche
 
-**Version :** 3.2  
-**Date : 11 Décembre 2025**  
+**Version :** 4.0  
+**Date : 15 Décembre 2025**  
 **Document de référence pour l'identité visuelle IArche**
+
+> ⚠️ **MISE À JOUR v4.0** : L'arc de cercle IArche remplace TOUTES les barres gradient horizontales.
 
 ---
 
@@ -111,45 +113,71 @@ Cette baseline exprime :
 }
 ```
 
-### 2.2 Logo avec barre décorative
+### 2.2 Arc décoratif IArche (v4.0)
 
-Le logo IArche est toujours accompagné d'une barre décorative gradient positionnée en dessous.
+> **IMPORTANT v4.0** : L'arc de cercle remplace TOUTES les barres gradient horizontales sur le site.
 
-**Spécifications de la barre décorative :**
+**L'arc de cercle est l'UNIQUE élément décoratif** reproduisant la "virgule" du logo officiel (de I vers E).
 
-| Taille | Largeur | Épaisseur | Contexte |
-|--------|---------|-----------|----------|
-| sm | 48px | 2px | Placeholder cards, petits formats |
-| md | 80px | 4px | Header, formats moyens |
-| lg | 96px | 4px | Formats intermédiaires |
-| xl | 128px | 6px | Hero, grands formats |
+**Composant principal :** `src/components/ui/LogoArc.tsx`
 
-**Style de la barre :**
+**Spécifications de l'arc :**
 
-```css
-.decorative-bar {
-  background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)));
-  border-radius: 9999px; /* rounded-full */
-}
+| Taille | Largeur | Hauteur | Usage |
+|--------|---------|---------|-------|
+| sm | 80px | 10px | Cards, petits titres |
+| md | 120px | 14px | Titres de section (défaut) |
+| lg | 180px | 20px | Grands titres de page |
+| xl | 260px | 28px | Hero section |
+
+**Gradient :** Bleu Nuit (#1A2B4A) → Terracotta (#B04A32)
+
+**Path SVG normalisé (viewBox 0 0 200 24) :**
+
+```svg
+M 0 20 Q 50 0, 100 8 Q 150 14, 200 18 L 200 22 Q 150 19, 100 14 Q 50 8, 0 24 Z
 ```
 
-### 2.3 Logo Editor - Exports configurables
+**Usage :**
+
+```tsx
+import LogoArc from '@/components/ui/LogoArc';
+
+// Sous un titre de page
+<LogoArc size="md" className="mx-auto mb-6" />
+
+// Dans un éditeur média
+import { HTMLLogoArc } from '@/components/admin/medias/html/HTMLLogoArc';
+<HTMLLogoArc size="sm" />
+```
+
+### 2.3 Règle d'utilisation de l'arc
+
+| Contexte | Arc autorisé |
+|----------|--------------|
+| Sous les titres de page | ✅ Oui |
+| Sous les titres de section | ✅ Oui |
+| Sous le logo dans les cards | ❌ NON |
+| Dans ArticlePlaceholder | ❌ NON (logo seul) |
+| Dans les éditeurs média | ✅ Oui |
+
+### 2.4 Logo Editor - Exports configurables
 
 **Route admin :** `/admin/medias/logo`
 
 **Modes d'export (sélectionnables individuellement par variante) :**
 - **Seul** : Logo PNG uniquement
-- **+ Barre** : Logo + barre décorative gradient
-- **Complet** : Logo + barre + mesh background + lignes canalisation
+- **+ Arc** : Logo + arc décoratif IArche
+- **Complet** : Logo + arc + mesh background
 
 **Variantes disponibles :**
 - Gradient (principal, fond Blanc Cassé)
 - Blanc (fonds sombres, fond Bleu Nuit)
 - Terracotta (accent, fond Blanc Cassé)
 
-**Taille de barre configurable :** sm / md / lg / xl (indépendant de la taille d'export logo)
+**Taille d'arc configurable :** sm / md / lg / xl
 
-### 2.4 Déclinaisons fichiers
+### 2.5 Déclinaisons fichiers
 
 | Version | Fichier | Usage |
 |---------|---------|-------|
@@ -157,12 +185,13 @@ Le logo IArche est toujours accompagné d'une barre décorative gradient positio
 | **PNG transparent** | `logo-iarche.png` | Réseaux sociaux, présentations |
 | **Monochrome blanc** | `logo-iarche-white.svg` | Fonds sombres |
 | **Monochrome Bleu Nuit** | `logo-iarche-dark.svg` | Version sobre, fonds clairs |
+| **Arc de référence** | `public/assets/arc-reference-v4.png` | Référence visuelle |
 
-### 2.5 Zone de protection
+### 2.6 Zone de protection
 
 Espace minimum autour du logo : **hauteur du "I"** sur tous les côtés.
 
-### 2.6 Tailles minimales
+### 2.7 Tailles minimales
 
 | Support | Taille minimale |
 |---------|-----------------|
@@ -170,14 +199,15 @@ Espace minimum autour du logo : **hauteur du "I"** sur tous les côtés.
 | Print | 25mm de largeur |
 | Favicon | 32x32px (version simplifiée "IA") |
 
-### 2.7 Usages interdits
+### 2.8 Usages interdits
 
 - ❌ Modifier les couleurs du gradient
 - ❌ Étirer ou déformer le logo
 - ❌ Ajouter des effets (ombre, contour, 3D)
 - ❌ Placer sur fond qui réduit la lisibilité
 - ❌ Utiliser une autre typographie
-- ❌ Supprimer la barre décorative
+- ❌ Utiliser une barre droite au lieu de l'arc (v4.0)
+- ❌ Placer l'arc sous le logo dans les cards
 
 ---
 
@@ -187,16 +217,17 @@ Espace minimum autour du logo : **hauteur du "I"** sur tous les côtés.
 
 **Fichier :** `src/components/ui/GradientTitle.tsx`
 
-Le composant `GradientTitle` standardise l'affichage des titres avec gradient animé et barre décorative proportionnelle.
+Le composant `GradientTitle` standardise l'affichage des titres avec gradient animé et **arc décoratif IArche** (v4.0).
 
 ### 3.2 Variantes de taille
 
-| Taille | Typographie | Barre décorative | Usage |
-|--------|-------------|------------------|-------|
-| **sm** | text-base md:text-lg font-semibold | w-12 h-0.5 mt-1 | Titres dans les cards |
-| **md** | text-2xl md:text-3xl font-bold | w-20 h-1 mt-2 | Titres de sections |
-| **lg** | text-3xl md:text-5xl font-bold | w-24 h-1 mt-2 | Titres de pages |
-| **xl** | text-5xl md:text-6xl lg:text-7xl font-semibold | w-32 h-1.5 mt-2 | Hero principal |
+| Taille | Typographie | Arc décoratif | Usage |
+|--------|-------------|---------------|-------|
+| **sm** | text-base md:text-lg font-semibold | arc sm (80×10px) | Titres dans les cards |
+| **md** | text-2xl md:text-3xl font-bold | arc md (120×14px) | Titres de sections |
+| **lg** | text-3xl md:text-5xl font-bold | arc lg (180×20px) | Titres de pages |
+| **xl** | text-5xl md:text-6xl lg:text-7xl font-semibold | arc xl (260×28px) | Hero principal |
+
 
 ### 3.3 Props du composant
 

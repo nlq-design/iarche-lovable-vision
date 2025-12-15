@@ -311,16 +311,16 @@ Composant réutilisable offrant :
 | OpenGraphEditor | `/admin/medias/opengraph` | ✅ simple/+barre/complet | ✅ sm/md/lg/xl |
 | HeaderEmailEditor | `/admin/medias/header-email` | ✅ simple/+barre/complet | ✅ sm/md/lg/xl |
 
-**3. Logique conditionnelle d'affichage**
+**3. Logique conditionnelle d'affichage (v4.0 - Arc remplace barre)**
 
 ```tsx
-// Barre visible si mode = 'with-bar' ou 'full'
+// Arc visible si mode = 'with-bar' ou 'full' (remplace HTMLGradientBar)
 {(exportMode === 'with-bar' || exportMode === 'full') && (
-  <HTMLGradientBar size={barSize} />
+  <HTMLLogoArc size={barSize} />
 )}
 
-// Canalisations visibles uniquement si mode = 'full'
-<HTMLCanalisationLines showCanalisations={exportMode === 'full'} />
+// Canalisations SUPPRIMÉES en v4.0
+// {showCanalisations && <HTMLCanalisationLines />} // ❌ SUPPRIMÉ
 ```
 
 **4. Persistance dans templates**
