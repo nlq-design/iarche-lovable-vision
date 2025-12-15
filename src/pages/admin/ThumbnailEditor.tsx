@@ -17,7 +17,6 @@ import PlatformPresets, { Platform } from '@/components/admin/medias/PlatformPre
 import { ImageLibrary } from '@/components/admin/medias/ImageLibrary';
 import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
 import { BarSize } from '@/components/admin/medias/html/tokens';
-import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
   HTMLLogoWithBar,
