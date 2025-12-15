@@ -801,7 +801,7 @@ animation: patternScroll 40s linear infinite;`}
           <div className="mb-12">
             <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Signature Email</h3>
             <div className="bg-[#FAF9F7] p-6 rounded-lg inline-block">
-              <p className="font-semibold text-[#1A2B4A]">Nicolas Laquerrière-Music</p>
+              <p className="font-semibold text-[#1A2B4A]">Nicolas Lara Queralta</p>
               <p className="text-sm text-[#666666]">Fondateur</p>
               <img src="/logos/iarche-main.svg" alt="IArche" className="h-6 mt-2" />
               <p className="text-xs text-[#666666] mt-1">nlq@iarche.fr · Bayonne, France</p>
@@ -817,7 +817,7 @@ animation: patternScroll 40s linear infinite;`}
               <div className="w-80 h-48 bg-[#FAF9F7] rounded-lg p-6 flex flex-col justify-between border border-[#E5E0DA]">
                 <img src="/logos/iarche-main.svg" alt="IArche" className="h-8" />
                 <div>
-                  <p className="font-semibold text-[#1A2B4A]">Nicolas Laquerrière-Music</p>
+                  <p className="font-semibold text-[#1A2B4A]">Nicolas Lara Queralta</p>
                   <p className="text-xs text-[#666666]">Fondateur</p>
                 </div>
               </div>

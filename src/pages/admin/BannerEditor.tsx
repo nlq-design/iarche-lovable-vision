@@ -40,11 +40,11 @@ type PresetTemplate = {
 };
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
-  { id: 'default', label: 'Par défaut', tagline: "L'IA se construit avec vous", ceoName: 'Nicolas Lara-Quétier', ceoTitle: 'CEO & Fondateur' },
-  { id: 'innovation', label: 'Innovation', tagline: 'Transformez votre entreprise avec l\'IA', ceoName: 'Nicolas Lara-Quétier', ceoTitle: 'Expert IA & Consultant' },
-  { id: 'solutions', label: 'Solutions', tagline: 'Des solutions IA sur mesure pour PME', ceoName: 'Nicolas Lara-Quétier', ceoTitle: 'Fondateur IArche' },
-  { id: 'accompagnement', label: 'Accompagnement', tagline: 'Votre partenaire IA de confiance', ceoName: 'Nicolas Lara-Quétier', ceoTitle: 'CEO & Fondateur' },
-  { id: 'expert', label: 'Expert', tagline: 'L\'expertise IA au service de votre croissance', ceoName: 'Nicolas Lara-Quétier', ceoTitle: 'Expert en Intelligence Artificielle' },
+  { id: 'default', label: 'Par défaut', tagline: "L'IA se construit avec vous", ceoName: 'Nicolas Lara Queralta', ceoTitle: 'CEO & Fondateur' },
+  { id: 'innovation', label: 'Innovation', tagline: 'Transformez votre entreprise avec l\'IA', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Expert IA & Consultant' },
+  { id: 'solutions', label: 'Solutions', tagline: 'Des solutions IA sur mesure pour PME', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Fondateur IArche' },
+  { id: 'accompagnement', label: 'Accompagnement', tagline: 'Votre partenaire IA de confiance', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'CEO & Fondateur' },
+  { id: 'expert', label: 'Expert', tagline: 'L\'expertise IA au service de votre croissance', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Expert en Intelligence Artificielle' },
 ];
 
 const SOLUTIONS = [
@@ -87,7 +87,7 @@ export default function BannerEditor() {
   const [selectedSolution, setSelectedSolution] = useState(SOLUTIONS[0].id);
   
   // CEO fields
-  const [ceoName, setCeoName] = useState('Nicolas Lara-Quétier');
+  const [ceoName, setCeoName] = useState('Nicolas Lara Queralta');
   const [ceoTitle, setCeoTitle] = useState('CEO & Fondateur');
   const [ceoPhoto, setCeoPhoto] = useState<string | null>(null);
 

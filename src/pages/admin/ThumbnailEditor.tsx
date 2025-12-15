@@ -92,7 +92,7 @@ export default function ThumbnailEditor() {
   const [heure, setHeure] = useState('14h00');
   
   // Speaker fields
-  const [speakerNom, setSpeakerNom] = useState('Nicolas Lara-Quétier');
+  const [speakerNom, setSpeakerNom] = useState('Nicolas Lara Queralta');
   const [speakerFonction, setSpeakerFonction] = useState('CEO & Fondateur, IArche');
   const [showSpeaker, setShowSpeaker] = useState(true);
   const [speakerPhoto, setSpeakerPhoto] = useState<string | null>(null);
