@@ -19,7 +19,7 @@ import { ImageLibrary } from '@/components/admin/medias/ImageLibrary';
 import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
 import { Download } from 'lucide-react';
 import { BarSize } from '@/components/admin/medias/html/tokens';
-import CharterSelector, { CharterType, getCharterColors, getCharterGradients } from '@/components/admin/medias/CharterSelector';
+import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
   HTMLLogoWithBar,

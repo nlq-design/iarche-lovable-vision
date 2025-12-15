@@ -27,11 +27,6 @@ import {
   QrCode,
   FileImage,
   MailPlus,
-  Instagram,
-  Twitter,
-  Facebook,
-  Layers,
-  User
 } from 'lucide-react';
 import { useMediaTemplates, EditorType, MediaTemplate } from '@/hooks/useMediaTemplates';
 import { format } from 'date-fns';
@@ -51,8 +46,7 @@ import { Input } from '@/components/ui/input';
 import { CarouselEditor } from '@/components/admin/medias/CarouselEditor';
 import { PresentationEditor } from '@/components/admin/medias/PresentationEditor';
 import { WordDocEditor } from '@/components/admin/medias/WordDocEditor';
-import { COLORS_PERSO } from '@/components/admin/medias/perso/tokensPerso';
-import { IARCHE_I_COLORS } from '@/components/admin/medias/CharterSelector';
+import { IARCHE_COLORS } from '@/components/admin/medias/html';
 
 type MediaType = 'carousel' | 'presentation' | 'word' | null;
 type TemplateType = string | null;
@@ -186,55 +180,6 @@ const toolsTemplates = [
   },
 ];
 
-// Formats personnels (IArche II) - routes existantes
-const persoFormats = [
-  { 
-    id: 'profile', 
-    name: 'Photo de Profil', 
-    description: 'Multi-réseaux',
-    dimensions: '400×400px',
-    icon: User,
-    platforms: [Linkedin, Twitter, Instagram, Facebook],
-    route: '/admin/medias-perso/profile',
-  },
-  { 
-    id: 'post', 
-    name: 'Post Carré', 
-    description: 'LinkedIn & Instagram',
-    dimensions: '1080×1080px',
-    icon: Image,
-    platforms: [Linkedin, Instagram],
-    route: '/admin/medias-perso/post',
-  },
-  { 
-    id: 'banner', 
-    name: 'Bannière LinkedIn', 
-    description: 'Profil ou page entreprise',
-    dimensions: '1584×396px',
-    icon: Linkedin,
-    platforms: [Linkedin],
-    route: '/admin/medias-perso/banner',
-  },
-  { 
-    id: 'story', 
-    name: 'Story', 
-    description: 'Instagram & LinkedIn Stories',
-    dimensions: '1080×1920px',
-    icon: Smartphone,
-    platforms: [Linkedin, Instagram],
-    route: '/admin/medias-perso/story',
-  },
-  { 
-    id: 'carousel', 
-    name: 'Carrousel', 
-    description: 'Multi-slides LinkedIn',
-    dimensions: '1080×1350px',
-    icon: Layers,
-    platforms: [Linkedin],
-    route: '/admin/medias-perso/carousel',
-  },
-];
-
 const AdminMedias = () => {
   const navigate = useNavigate();
   const [selectedMedia, setSelectedMedia] = useState<MediaType>(null);
@@ -268,226 +213,139 @@ const AdminMedias = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Médias & Communication</h1>
           <p className="text-muted-foreground mt-1">
-            Générez des supports de communication conformes aux chartes graphiques
+            Générez des supports de communication conformes à la charte graphique v4.0
           </p>
         </div>
 
-        {/* Deux sections côte à côte */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          
-          {/* === CHARTE IARCHE I (Officielle) === */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-3 pb-4 border-b">
-              <div 
-                className="w-10 h-10 rounded-full flex items-center justify-center"
-                style={{ background: `linear-gradient(135deg, ${IARCHE_I_COLORS.bleuNuit} 0%, ${IARCHE_I_COLORS.terracotta} 100%)` }}
-              >
-                <Palette className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">IArche I – Charte Officielle</h2>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: IARCHE_I_COLORS.bleuNuit }} title="Bleu Nuit" />
-                  <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: IARCHE_I_COLORS.terracotta }} title="Terracotta" />
-                  <div className="w-4 h-4 rounded-full border border-muted" style={{ backgroundColor: IARCHE_I_COLORS.blancCasse }} title="Blanc Cassé" />
-                </div>
+        {/* Charte Graphique v4.0 */}
+        <section className="space-y-6">
+          <div className="flex items-center gap-3 pb-4 border-b">
+            <div 
+              className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ background: `linear-gradient(135deg, ${IARCHE_COLORS.bleuNuit} 0%, ${IARCHE_COLORS.terracotta} 100%)` }}
+            >
+              <Palette className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold">Charte Graphique v4.0</h2>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: IARCHE_COLORS.bleuNuit }} title="Bleu Nuit" />
+                <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: IARCHE_COLORS.terracotta }} title="Terracotta" />
+                <div className="w-4 h-4 rounded-full border border-muted" style={{ backgroundColor: IARCHE_COLORS.blancCasse }} title="Blanc Cassé" />
               </div>
             </div>
+          </div>
 
-            <Tabs defaultValue="visuels-i" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="documents-i" className="text-xs">📄 PDF</TabsTrigger>
-                <TabsTrigger value="visuels-i" className="text-xs">🖼️ PNG</TabsTrigger>
-                <TabsTrigger value="outils-i" className="text-xs"><Wrench className="h-3 w-3 mr-1" />Outils</TabsTrigger>
-                <TabsTrigger value="templates-i" className="text-xs"><Bookmark className="h-3 w-3 mr-1" />Mes</TabsTrigger>
-              </TabsList>
+          <Tabs defaultValue="visuels" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="documents" className="text-xs">📄 PDF</TabsTrigger>
+              <TabsTrigger value="visuels" className="text-xs">🖼️ PNG</TabsTrigger>
+              <TabsTrigger value="outils" className="text-xs"><Wrench className="h-3 w-3 mr-1" />Outils</TabsTrigger>
+              <TabsTrigger value="templates" className="text-xs"><Bookmark className="h-3 w-3 mr-1" />Mes</TabsTrigger>
+            </TabsList>
 
-              {/* Documents PDF */}
-              <TabsContent value="documents-i" className="space-y-4">
-                <Tabs defaultValue="carousel" className="space-y-4">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="carousel" className="text-xs"><Linkedin className="h-3 w-3 mr-1" />Carrousel</TabsTrigger>
-                    <TabsTrigger value="presentation" className="text-xs"><FileText className="h-3 w-3 mr-1" />Présentation</TabsTrigger>
-                    <TabsTrigger value="word" className="text-xs"><FileIcon className="h-3 w-3 mr-1" />Word</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="carousel" className="grid grid-cols-1 gap-3">
-                    {carouselTemplates.map((template) => (
-                      <Card key={template.id} className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => handleSelectTemplate('carousel', template.id)}>
-                        <CardHeader className="py-3">
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-sm">{template.name}</CardTitle>
-                            <Badge variant="secondary" className="text-xs">{template.slides} slides</Badge>
-                          </div>
-                          <CardDescription className="text-xs">{template.description}</CardDescription>
-                        </CardHeader>
-                      </Card>
-                    ))}
-                  </TabsContent>
-                  <TabsContent value="presentation" className="grid grid-cols-1 gap-3">
-                    {presentationTemplates.map((template) => (
-                      <Card key={template.id} className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => handleSelectTemplate('presentation', template.id)}>
-                        <CardHeader className="py-3">
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-sm">{template.name}</CardTitle>
-                            <Badge variant="secondary" className="text-xs">{template.slides} slides</Badge>
-                          </div>
-                          <CardDescription className="text-xs">{template.description}</CardDescription>
-                        </CardHeader>
-                      </Card>
-                    ))}
-                  </TabsContent>
-                  <TabsContent value="word" className="grid grid-cols-1 gap-3">
-                    {wordTemplates.map((template) => (
-                      <Card key={template.id} className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => handleSelectTemplate('word', template.id)}>
-                        <CardHeader className="py-3">
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-sm">{template.name}</CardTitle>
-                            <Badge variant="secondary" className="text-xs">{template.pages} pages</Badge>
-                          </div>
-                          <CardDescription className="text-xs">{template.description}</CardDescription>
-                        </CardHeader>
-                      </Card>
-                    ))}
-                  </TabsContent>
-                </Tabs>
-              </TabsContent>
-
-              {/* Visuels PNG */}
-              <TabsContent value="visuels-i" className="grid grid-cols-2 gap-3">
-                {visualTemplates.map((template) => {
-                  const IconComponent = template.icon;
-                  return (
-                    <Card key={template.id} className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => navigate(template.route)}>
+            {/* Documents PDF */}
+            <TabsContent value="documents" className="space-y-4">
+              <Tabs defaultValue="carousel" className="space-y-4">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="carousel" className="text-xs"><Linkedin className="h-3 w-3 mr-1" />Carrousel</TabsTrigger>
+                  <TabsTrigger value="presentation" className="text-xs"><FileText className="h-3 w-3 mr-1" />Présentation</TabsTrigger>
+                  <TabsTrigger value="word" className="text-xs"><FileIcon className="h-3 w-3 mr-1" />Word</TabsTrigger>
+                </TabsList>
+                <TabsContent value="carousel" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {carouselTemplates.map((template) => (
+                    <Card key={template.id} className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => handleSelectTemplate('carousel', template.id)}>
                       <CardHeader className="py-3">
-                        <div className="flex items-center gap-2">
-                          <IconComponent className="h-4 w-4 text-primary/60" />
+                        <div className="flex items-center justify-between">
                           <CardTitle className="text-sm">{template.name}</CardTitle>
-                        </div>
-                        <CardDescription className="text-xs">{template.dimensions}</CardDescription>
-                      </CardHeader>
-                    </Card>
-                  );
-                })}
-              </TabsContent>
-
-              {/* Outils */}
-              <TabsContent value="outils-i" className="grid grid-cols-2 gap-3">
-                {toolsTemplates.map((template) => {
-                  const IconComponent = template.icon;
-                  return (
-                    <Card key={template.id} className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => navigate(template.route)}>
-                      <CardHeader className="py-3">
-                        <div className="flex items-center gap-2">
-                          <IconComponent className="h-4 w-4 text-accent/60" />
-                          <CardTitle className="text-sm">{template.name}</CardTitle>
+                          <Badge variant="secondary" className="text-xs">{template.slides} slides</Badge>
                         </div>
                         <CardDescription className="text-xs">{template.description}</CardDescription>
                       </CardHeader>
                     </Card>
-                  );
-                })}
-              </TabsContent>
+                  ))}
+                </TabsContent>
+                <TabsContent value="presentation" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {presentationTemplates.map((template) => (
+                    <Card key={template.id} className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => handleSelectTemplate('presentation', template.id)}>
+                      <CardHeader className="py-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-sm">{template.name}</CardTitle>
+                          <Badge variant="secondary" className="text-xs">{template.slides} slides</Badge>
+                        </div>
+                        <CardDescription className="text-xs">{template.description}</CardDescription>
+                      </CardHeader>
+                    </Card>
+                  ))}
+                </TabsContent>
+                <TabsContent value="word" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {wordTemplates.map((template) => (
+                    <Card key={template.id} className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => handleSelectTemplate('word', template.id)}>
+                      <CardHeader className="py-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-sm">{template.name}</CardTitle>
+                          <Badge variant="secondary" className="text-xs">{template.pages} pages</Badge>
+                        </div>
+                        <CardDescription className="text-xs">{template.description}</CardDescription>
+                      </CardHeader>
+                    </Card>
+                  ))}
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
 
-              {/* Templates sauvegardés */}
-              <TabsContent value="templates-i">
-                <SavedTemplatesGlobalView navigate={navigate} />
-              </TabsContent>
-            </Tabs>
-          </section>
-
-          {/* === CHARTE IARCHE II (Personnelle) === */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-3 pb-4 border-b">
-              <div 
-                className="w-10 h-10 rounded-full flex items-center justify-center"
-                style={{ background: `linear-gradient(135deg, ${COLORS_PERSO.terracotta} 0%, ${COLORS_PERSO.bleuProfond} 100%)` }}
-              >
-                <User className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">IArche II – Charte Alternative</h2>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: COLORS_PERSO.terracotta }} title="Terracotta" />
-                  <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: COLORS_PERSO.bleuProfond }} title="Bleu Profond" />
-                  <div className="w-4 h-4 rounded-full border border-muted" style={{ backgroundColor: COLORS_PERSO.blancCasse }} title="Blanc Cassé" />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              {persoFormats.map((format) => {
-                const IconComponent = format.icon;
+            {/* Visuels PNG */}
+            <TabsContent value="visuels" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {visualTemplates.map((template) => {
+                const IconComponent = template.icon;
                 return (
-                  <Card 
-                    key={format.id} 
-                    className="cursor-pointer hover:border-primary/50 transition-all group"
-                    onClick={() => navigate(format.route)}
-                  >
+                  <Card key={template.id} className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => navigate(template.route)}>
                     <CardHeader className="py-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <IconComponent className="h-4 w-4" style={{ color: COLORS_PERSO.terracotta }} />
-                          <CardTitle className="text-sm">{format.name}</CardTitle>
-                        </div>
-                        <div className="flex gap-0.5">
-                          {format.platforms.map((Platform, idx) => (
-                            <Platform key={idx} className="h-3 w-3 text-muted-foreground" />
-                          ))}
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <IconComponent className="h-4 w-4 text-primary/60" />
+                        <CardTitle className="text-sm">{template.name}</CardTitle>
                       </div>
-                      <CardDescription className="text-xs">{format.dimensions}</CardDescription>
+                      <CardDescription className="text-xs">{template.dimensions}</CardDescription>
                     </CardHeader>
                   </Card>
                 );
               })}
-            </div>
+            </TabsContent>
 
-            {/* Info watermark */}
-            <Card className="bg-muted/30">
-              <CardContent className="py-3">
-                <div className="flex items-start gap-2">
-                  <Image className="h-4 w-4 text-primary mt-0.5" />
-                  <div>
-                    <p className="text-xs font-medium">Logo IArche en watermark</p>
-                    <p className="text-xs text-muted-foreground">
-                      Tous les exports incluent le logo en filigrane (15% opacité). Option désactivable.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
+            {/* Outils */}
+            <TabsContent value="outils" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {toolsTemplates.map((template) => {
+                const IconComponent = template.icon;
+                return (
+                  <Card key={template.id} className="cursor-pointer hover:border-primary/50 transition-all" onClick={() => navigate(template.route)}>
+                    <CardHeader className="py-3">
+                      <div className="flex items-center gap-2">
+                        <IconComponent className="h-4 w-4 text-accent/60" />
+                        <CardTitle className="text-sm">{template.name}</CardTitle>
+                      </div>
+                      <CardDescription className="text-xs">{template.description}</CardDescription>
+                    </CardHeader>
+                  </Card>
+                );
+              })}
+            </TabsContent>
 
-        </div>
+            {/* Templates sauvegardés */}
+            <TabsContent value="templates">
+              <SavedTemplatesGlobalView navigate={navigate} />
+            </TabsContent>
+          </Tabs>
+        </section>
       </div>
     </AdminLayout>
   );
-
 };
 
-// Editor type labels and routes
-const editorTypeConfig: Record<EditorType, { label: string; route: string; icon: React.ElementType }> = {
-  banner: { label: 'Bannière LinkedIn', route: '/admin/medias/banner', icon: Linkedin },
-  story: { label: 'Story', route: '/admin/medias/story', icon: Smartphone },
-  thumbnail: { label: 'Miniature', route: '/admin/medias/thumbnail', icon: Video },
-  opengraph: { label: 'Open Graph', route: '/admin/medias/og', icon: Globe },
-  'header-email': { label: 'Header Email', route: '/admin/medias/header-email', icon: MailOpen },
-  post: { label: 'Post LinkedIn', route: '/admin/medias/post', icon: Image },
-  carousel: { label: 'Carrousel', route: '/admin/medias/carousel', icon: Linkedin },
-  presentation: { label: 'Présentation', route: '/admin/medias/presentation', icon: FileText },
-  'brevo-html': { label: 'HTML Brevo', route: '/admin/emails', icon: MailOpen },
-};
-
-function SavedTemplatesGlobalView({ navigate }: { navigate: ReturnType<typeof useNavigate> }) {
-  const [filterType, setFilterType] = useState<EditorType | 'all'>('all');
+// Component to show all saved templates
+const SavedTemplatesGlobalView: React.FC<{ navigate: (path: string, state?: object) => void }> = ({ navigate }) => {
+  const { templates, isLoading, deleteTemplate, renameTemplate } = useMediaTemplates();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  
-  const { templates, isLoading, renameTemplate, deleteTemplate } = useMediaTemplates();
-
-  const filteredTemplates = filterType === 'all' 
-    ? templates 
-    : templates.filter(t => t.editor_type === filterType);
 
   const handleStartRename = (template: MediaTemplate) => {
     setEditingId(template.id);
@@ -501,169 +359,114 @@ function SavedTemplatesGlobalView({ navigate }: { navigate: ReturnType<typeof us
     setEditingId(null);
   };
 
-  const handleOpenTemplate = (template: MediaTemplate) => {
-    const config = editorTypeConfig[template.editor_type as EditorType];
-    if (config) {
-      navigate(config.route, { state: { loadTemplate: template } });
-    }
+  const getEditorRoute = (editorType: string) => {
+    const routes: Record<string, string> = {
+      banner: '/admin/medias/banner',
+      post: '/admin/medias/post',
+      story: '/admin/medias/story',
+      thumbnail: '/admin/medias/thumbnail',
+      og: '/admin/medias/og',
+      'header-email': '/admin/medias/header-email',
+      signature: '/admin/medias/signature',
+    };
+    return routes[editorType] || '/admin/medias';
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (templates.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Aucun template sauvegardé</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Créez des visuels et sauvegardez-les pour les retrouver ici
+        </p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">Mes templates sauvegardés</h2>
-          <p className="text-sm text-muted-foreground">
-            {templates.length} template{templates.length > 1 ? 's' : ''} sauvegardé{templates.length > 1 ? 's' : ''}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Select value={filterType} onValueChange={(v) => setFilterType(v as EditorType | 'all')}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrer par type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les types</SelectItem>
-              {Object.entries(editorTypeConfig).map(([key, { label }]) => (
-                <SelectItem key={key} value={key}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          {/* Quick create dropdown */}
-          <Select onValueChange={(route) => navigate(route)}>
-            <SelectTrigger className="w-[180px]">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {templates.map((template) => (
+          <Card key={template.id} className="relative">
+            <CardHeader className="pb-2">
+              {editingId === template.id ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="h-8 text-sm"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleConfirmRename();
+                      if (e.key === 'Escape') setEditingId(null);
+                    }}
+                  />
+                  <Button size="sm" onClick={handleConfirmRename}>OK</Button>
+                </div>
+              ) : (
+                <CardTitle className="text-base">{template.name}</CardTitle>
+              )}
+              <CardDescription className="text-xs">
+                {template.editor_type} · {format(new Date(template.created_at), 'dd MMM yyyy', { locale: fr })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-2">
               <div className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                <span>Créer un template</span>
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="flex-1 gap-1"
+                  onClick={() => navigate(getEditorRoute(template.editor_type), { state: { loadTemplate: template } })}
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Ouvrir
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleStartRename(template)}
+                >
+                  <Pencil className="h-3 w-3" />
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="outline" className="text-destructive">
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Supprimer le template ?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Cette action est irréversible.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => deleteTemplate(template.id)}
+                        className="bg-destructive text-destructive-foreground"
+                      >
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(editorTypeConfig)
-                .filter(([key]) => !['carousel', 'presentation'].includes(key))
-                .map(([key, { label, route, icon: Icon }]) => (
-                  <SelectItem key={key} value={route}>
-                    <div className="flex items-center gap-2">
-                      <Icon className="h-4 w-4" />
-                      {label}
-                    </div>
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-        </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
-
-      {filteredTemplates.length === 0 ? (
-        <Card className="py-12">
-          <CardContent className="flex flex-col items-center justify-center text-center">
-            <Bookmark className="h-12 w-12 text-muted-foreground/30 mb-4" />
-            <p className="text-muted-foreground">
-              {filterType === 'all' 
-                ? "Aucun template sauvegardé" 
-                : `Aucun template de type "${editorTypeConfig[filterType]?.label}"`}
-            </p>
-            <p className="text-sm text-muted-foreground/70 mt-1">
-              Créez un visuel et sauvegardez-le comme template
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredTemplates.map((template) => {
-            const config = editorTypeConfig[template.editor_type as EditorType];
-            const IconComponent = config?.icon || FileText;
-            
-            return (
-              <Card key={template.id} className="group hover:border-primary/50 transition-all">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    {editingId === template.id ? (
-                      <Input
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleConfirmRename()}
-                        onBlur={handleConfirmRename}
-                        className="h-7 text-sm"
-                        autoFocus
-                      />
-                    ) : (
-                      <CardTitle className="text-base truncate">{template.name}</CardTitle>
-                    )}
-                    <Badge variant="secondary" className="shrink-0 ml-2">
-                      {config?.label || template.editor_type}
-                    </Badge>
-                  </div>
-                  <CardDescription className="text-xs">
-                    Créé le {format(new Date(template.created_at), 'dd MMM yyyy', { locale: fr })}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div 
-                    className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg flex items-center justify-center cursor-pointer hover:from-primary/20 hover:to-accent/20 transition-colors"
-                    onClick={() => handleOpenTemplate(template)}
-                  >
-                    <IconComponent className="h-10 w-10 text-primary/30" />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => handleOpenTemplate(template)}
-                    >
-                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                      Ouvrir
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8"
-                      onClick={() => handleStartRename(template)}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Supprimer le template ?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Cette action est irréversible. Le template "{template.name}" sera définitivement supprimé.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Annuler</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => deleteTemplate(template.id)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Supprimer
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
-}
+};
 
 export default AdminMedias;
