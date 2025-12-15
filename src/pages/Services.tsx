@@ -7,6 +7,7 @@ import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle } from 'lucide-react';
 import GradientLink from '@/components/ui/GradientLink';
+import GradientTitle from '@/components/ui/GradientTitle';
 import IArcheLink from '@/components/ui/IArcheLink';
 import { useCTATracking } from '@/hooks/useCTATracking';
 
@@ -156,10 +157,9 @@ const Services = () => {
         <section className="max-w-6xl mx-auto px-6 py-4">
           {/* En-tête */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
+            <GradientTitle size="lg" as="h1" className="mb-6 animate-fadeIn [animation-delay:0.1s]">
               Nos services
-            </h1>
-            <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary animate-fadeIn [animation-delay:0.15s]"></div>
+            </GradientTitle>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
               Audit, développement, accompagnement, conformité.
             </p>

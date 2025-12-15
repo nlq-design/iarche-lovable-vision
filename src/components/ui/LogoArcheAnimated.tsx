@@ -1,29 +1,23 @@
 import Logo from './Logo';
-import LogoArc from './LogoArc';
 
 interface LogoArcheAnimatedProps {
   className?: string;
 }
 
 /**
- * Logo IArche avec arc décoratif - Version v4.0
+ * Logo IArche animé - Version v4.0
  * 
- * Logo statique avec arc, sans animations complexes
- * Remplace l'ancienne version avec lignes canalisation
+ * Logo statique UNIQUEMENT, sans arc décoratif
+ * L'arc ne doit JAMAIS être sous le logo
+ * L'arc est réservé aux titres et éléments d'identité site
  */
 const LogoArcheAnimated = ({ className = '' }: LogoArcheAnimatedProps) => {
   return (
     <div className={`relative flex flex-col items-center ${className}`}>
-      {/* Logo IArche officiel */}
+      {/* Logo IArche officiel - SANS arc */}
       <div className="invisible animate-fadeIn [animation-delay:0.1s]">
         <Logo variant="main" size="lg" />
       </div>
-      
-      {/* Arc décoratif */}
-      <LogoArc 
-        size="md" 
-        className="mt-3 invisible animate-fadeIn [animation-delay:0.2s]"
-      />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
 import { PDFImageLogo, PDFPatternBackground } from '../pdf/PDFImageAssets';
-import { PDFGradientBar } from '../pdf/PDFGradientBar';
+import { PDFLogoArc } from '../pdf/PDFLogoArc';
 
 export type ExportMode = 'simple' | 'with-bar' | 'full';
 export type BarSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -264,11 +264,11 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
                     width={140} 
                     variant={isDark ? 'terracotta' : 'gradient'} 
                   />
-                  {showBar && <PDFGradientBar size={barSize} width={140} isDark={isDark} style={{ marginTop: 6 }} />}
+                  {showBar && <PDFLogoArc size={barSize} style={{ marginTop: 6 }} />}
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   {showBar && (
-                    <PDFGradientBar size={barSize} width={300} height={3} isDark={isDark} style={{ marginRight: 20 }} />
+                    <PDFLogoArc size={barSize} style={{ marginRight: 20 }} />
                   )}
                   <Text style={styles.slideNumber}>
                     {String(index + 1).padStart(2, '0')}
@@ -289,7 +289,7 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
                           {slide.title}
                         </Text>
                       ) : null}
-                      {showBar && <PDFGradientBar size={barSize} isDark={isDark} style={{ marginTop: 12 }} />}
+                      {showBar && <PDFLogoArc size={barSize} style={{ marginTop: 12 }} />}
                     </View>
                   </View>
                 ) : null}
@@ -306,7 +306,7 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
                         {slide.title}
                       </Text>
                     ) : null}
-                    {showBar && <PDFGradientBar size="xl" isDark={isDark} style={{ marginTop: 16 }} />}
+                    {showBar && <PDFLogoArc size="xl" style={{ marginTop: 16 }} />}
                     {slide.content && slide.content.length > 0 ? (
                       <Text style={[isDark ? styles.textDark : styles.textLight, { marginTop: 24, textAlign: 'center' }]}>
                         {slide.content}
@@ -339,7 +339,7 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
                 {slide.type === 'cta' ? (
                   <View style={{ alignItems: 'center' }}>
                     <Text style={styles.ctaText}>{slide.title || 'Contact'}</Text>
-                    {showBar && <PDFGradientBar size="xl" isDark={isDark} style={{ marginTop: 20, marginBottom: 20 }} />}
+                    {showBar && <PDFLogoArc size="xl" style={{ marginTop: 20, marginBottom: 20 }} />}
                     {slide.content && slide.content.length > 0 ? (
                       <Text style={[styles.ctaSubtext, isDark ? styles.ctaSubtextDark : styles.ctaSubtextLight]}>
                         {slide.content}
@@ -352,7 +352,7 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
               {/* Footer */}
               <View>
                 {showBar && (
-                  <PDFGradientBar size="xl" width={PAGE_WIDTH - 160} height={2} isDark={isDark} style={{ marginBottom: 16 }} />
+                  <PDFLogoArc size="xl" style={{ marginBottom: 16 }} />
                 )}
                 <View style={styles.footer}>
                   <Text style={isDark ? styles.footerTextDark : styles.footerTextLight}>

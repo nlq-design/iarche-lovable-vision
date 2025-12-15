@@ -95,9 +95,12 @@ export interface FormDesignSettings {
     text: string;
   };
   logo?: string;
-  showGradientBar: boolean;
-  barSize: 'sm' | 'md' | 'lg' | 'xl';
-  showCanalisations: boolean;
+  showArc: boolean;
+  arcSize: 'sm' | 'md' | 'lg' | 'xl';
+  /** @deprecated Use showArc instead */
+  showGradientBar?: boolean;
+  /** @deprecated Use arcSize instead */
+  barSize?: 'sm' | 'md' | 'lg' | 'xl';
   fontFamily?: string;
   borderRadius?: 'none' | 'sm' | 'md' | 'lg';
 }
@@ -263,9 +266,8 @@ export const DEFAULT_FORM_SETTINGS: FormSettings = {
       background: '#FAF9F7',
       text: '#4A5568'
     },
-    showGradientBar: true,
-    barSize: 'lg',
-    showCanalisations: false,
+    showArc: true,
+    arcSize: 'lg',
     borderRadius: 'md'
   },
   thankYou: {

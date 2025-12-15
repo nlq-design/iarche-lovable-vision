@@ -21,11 +21,12 @@ import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
   HTMLLogoWithBar,
-  HTMLGradientBar,
   IARCHE_COLORS,
   IARCHE_FONTS,
   ThemeType,
 } from '@/components/admin/medias/html';
+import { HTMLLogoArc } from '@/components/admin/medias/html/HTMLLogoArc';
+import { ArcSize } from '@/components/admin/medias/html/tokens';
 
 type ThumbnailFormat = 'standard' | 'youtube';
 type EventType = 'webinaire' | 'atelier' | 'replay';

@@ -9,15 +9,15 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { COLORS } from '@/components/admin/medias/shared/tokens';
-import { HTMLGradientBar } from '@/components/admin/medias/html/HTMLGradientBar';
-import { IARCHE_SIZES, type BarSize } from '@/components/admin/medias/html/tokens';
+import { HTMLLogoArc } from '@/components/admin/medias/html/HTMLLogoArc';
+import { IARCHE_SIZES, type ArcSize } from '@/components/admin/medias/html/tokens';
 
 export default function FooterEmailEditor() {
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
 
-  // Bar size control
-  const [barSize, setBarSize] = useState<BarSize>('lg');
+  // Arc size control
+  const [barSize, setBarSize] = useState<ArcSize>('lg');
 
   // Editable fields
   const [name, setName] = useState('Nicolas');
@@ -180,12 +180,12 @@ export default function FooterEmailEditor() {
               <CardDescription>Personnalisez le pied de page</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Bar size control */}
+              {/* Arc size control */}
               <div className="space-y-2">
-                <Label>Taille de la barre</Label>
+                <Label>Taille de l'arc</Label>
                 <RadioGroup
                   value={barSize}
-                  onValueChange={(v) => setBarSize(v as BarSize)}
+                  onValueChange={(v) => setBarSize(v as ArcSize)}
                   className="flex gap-2"
                 >
                   {(['sm', 'md', 'lg', 'xl'] as const).map((size) => (
@@ -264,9 +264,9 @@ export default function FooterEmailEditor() {
                         </a>
                       </div>
                       
-                      {/* Gradient bar below logo */}
+                      {/* Arc below logo */}
                       <div style={{ marginTop: '8px' }}>
-                        <HTMLGradientBar size={barSize} />
+                        <HTMLLogoArc size={barSize} />
                       </div>
 
                       {/* Contact */}
@@ -341,9 +341,9 @@ export default function FooterEmailEditor() {
                         </span>
                       </div>
                       
-                      {/* Gradient bar below logo - one size smaller for mobile */}
+                      {/* Arc below logo - one size smaller for mobile */}
                       <div style={{ marginTop: '6px' }}>
-                        <HTMLGradientBar size={barSize === 'sm' ? 'sm' : barSize === 'md' ? 'sm' : barSize === 'lg' ? 'md' : 'lg'} />
+                        <HTMLLogoArc size={barSize === 'sm' ? 'sm' : barSize === 'md' ? 'sm' : barSize === 'lg' ? 'md' : 'lg'} />
                       </div>
 
                       {/* Contact */}

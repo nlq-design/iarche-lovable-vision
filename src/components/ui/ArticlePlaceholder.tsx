@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import Logo from './Logo';
-import LogoArc from './LogoArc';
 
 interface ArticlePlaceholderProps {
   className?: string;
@@ -10,22 +9,17 @@ interface ArticlePlaceholderProps {
 /**
  * Placeholder pour les cards d'articles - Version v4.0
  * 
- * Logo IArche statique avec arc décoratif
- * Sans animations, sans canalisations
+ * Logo IArche statique UNIQUEMENT
+ * L'arc ne doit JAMAIS être sous le logo dans les cards
+ * L'arc est réservé aux titres et éléments d'identité site
  */
 const ArticlePlaceholder = memo(({ className = '', size = 'default' }: ArticlePlaceholderProps) => {
   return (
     <div className={`relative overflow-hidden bg-background flex flex-col items-center justify-center ${className}`}>
-      {/* Logo IArche officiel statique */}
+      {/* Logo IArche officiel statique - SANS arc */}
       <Logo 
         variant="main" 
         size={size === 'large' ? 'lg' : 'md'} 
-      />
-      
-      {/* Arc décoratif sous le logo */}
-      <LogoArc 
-        size={size === 'large' ? 'md' : 'sm'} 
-        className="mt-3"
       />
     </div>
   );

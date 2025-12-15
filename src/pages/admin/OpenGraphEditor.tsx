@@ -23,10 +23,11 @@ import CharterSelector, { CharterType, getCharterColors, getCharterGradients } f
 import {
   HTMLBaseTemplate,
   HTMLLogoWithBar,
-  HTMLGradientBar,
   IARCHE_FONTS,
   ThemeType,
 } from '@/components/admin/medias/html';
+import { HTMLLogoArc } from '@/components/admin/medias/html/HTMLLogoArc';
+import { ArcSize } from '@/components/admin/medias/html/tokens';
 
 type OGTemplate = 'page' | 'article' | 'solution';
 

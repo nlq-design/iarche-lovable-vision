@@ -353,7 +353,7 @@ const FormPublic = () => {
       >
         <div className="max-w-2xl mx-auto">
           {/* Header with optional arc */}
-          {design.showGradientBar && (
+          {(design.showArc ?? design.showGradientBar) && (
             <div className="mb-8 flex justify-center">
               <svg
                 viewBox="0 0 200 24"
