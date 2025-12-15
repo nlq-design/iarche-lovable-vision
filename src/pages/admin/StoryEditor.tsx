@@ -17,7 +17,6 @@ import ExportModeControls, { ExportMode } from '@/components/admin/medias/Export
 import ExportActions from '@/components/admin/medias/ExportActions';
 import PlatformPresets, { Platform } from '@/components/admin/medias/PlatformPresets';
 import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
-import CharterSelector, { CharterType, getCharterColors, getCharterGradients } from '@/components/admin/medias/CharterSelector';
 import {
   HTMLBaseTemplate,
   HTMLLogoWithBar,
@@ -60,14 +59,10 @@ export default function StoryEditor() {
   
   const [template, setTemplate] = useState<StoryTemplate>('annonce');
   const [theme, setTheme] = useState<ThemeType>('dark');
-  const [charter, setCharter] = useState<CharterType>('iarche');
   const [preset, setPreset] = useState<string>('');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [barSize, setBarSize] = useState<ArcSize>('xl');
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
-  
-  // Get colors based on charter
-  const charterColors = getCharterColors(charter);
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(64);
@@ -144,8 +139,8 @@ export default function StoryEditor() {
     }
   };
 
-  const textColor = theme === 'dark' ? charterColors.white : charterColors.bleuNuit;
-  const subtextColor = theme === 'dark' ? charterColors.whiteAlpha70 : charterColors.grisTexte;
+  const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
+  const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : IARCHE_COLORS.grey;
   const showCanalisations = exportMode === 'full';
 
   const renderStoryContent = () => {
@@ -341,9 +336,6 @@ export default function StoryEditor() {
                   </TabsList>
                 </Tabs>
               </div>
-
-              {/* Charter selector */}
-              <CharterSelector value={charter} onChange={setCharter} />
 
               {/* Theme */}
               <div className="space-y-2">

@@ -16,7 +16,7 @@ import ExportActions from '@/components/admin/medias/ExportActions';
 import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
 import { Download } from 'lucide-react';
 import { BarSize } from '@/components/admin/medias/html/tokens';
-import CharterSelector, { CharterType, getCharterColors } from '@/components/admin/medias/CharterSelector';
+import { IARCHE_COLORS } from '@/components/admin/medias/html';
 import {
   HTMLBaseTemplate,
   HTMLLogo,

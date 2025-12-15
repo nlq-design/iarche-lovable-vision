@@ -11,7 +11,7 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import ExportActions from '@/components/admin/medias/ExportActions';
 import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
 import { Download } from 'lucide-react';
-import CharterSelector, { CharterType, getCharterColors } from '@/components/admin/medias/CharterSelector';
+import { IARCHE_COLORS } from '@/components/admin/medias/html';
 
 const SIGNATURE_WIDTH = 600;
 const SIGNATURE_HEIGHT = 200;

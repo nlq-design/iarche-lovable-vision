@@ -14,7 +14,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { toPng, toSvg } from 'html-to-image';
 import { pdf, Document, Page, View, Text, Svg, Defs, LinearGradient, Stop, Rect } from '@react-pdf/renderer';
-import CharterSelector, { CharterType, getCharterColors, getCharterGradients } from '@/components/admin/medias/CharterSelector';
+import { IARCHE_COLORS } from '@/components/admin/medias/html';
 import { BAR_SIZES, LOGO_SIZES, GRADIENTS } from '@/components/admin/medias/shared/tokens';
 import { HTMLMeshBackground } from '@/components/admin/medias/html/HTMLMeshBackground';
 import { HTMLLogoWithBar } from '@/components/admin/medias/html/HTMLLogoWithBar';

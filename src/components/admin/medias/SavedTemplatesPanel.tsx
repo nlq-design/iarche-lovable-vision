@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Trash2, Pencil, Check, X, Loader2, Copy } from 'lucide-react';
+import { Save, Trash2, Pencil, Check, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,15 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { useMediaTemplates, EditorType, MediaTemplate } from '@/hooks/useMediaTemplates';
-import { convertTemplateColors, detectTemplateCharter } from '@/lib/charterColorConverter';
-import { IARCHE_I_COLORS, IARCHE_II_COLORS } from './CharterSelector';
 
 interface SavedTemplatesPanelProps {
   editorType: EditorType;
@@ -44,7 +36,7 @@ export default function SavedTemplatesPanel({
   getCurrentData,
   onLoadTemplate,
 }: SavedTemplatesPanelProps) {
-  const { templates, isLoading, saveTemplate, renameTemplate, deleteTemplate, duplicateTemplate, isSaving, isDuplicating } = useMediaTemplates(editorType);
+  const { templates, isLoading, saveTemplate, renameTemplate, deleteTemplate, isSaving } = useMediaTemplates(editorType);
   const [newName, setNewName] = useState('');
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -72,36 +64,6 @@ export default function SavedTemplatesPanel({
   const handleCancelRename = () => {
     setEditingId(null);
     setEditName('');
-  };
-
-  const handleDuplicateToOtherCharter = (template: MediaTemplate) => {
-    const detectedCharter = detectTemplateCharter(template.template_data);
-    const targetCharter = detectedCharter === 'iarche2' ? 'iarche' : 'iarche2';
-    const charterLabel = targetCharter === 'iarche2' ? 'IArche II' : 'IArche I';
-    
-    const convertedData = convertTemplateColors(template.template_data, targetCharter);
-    
-    duplicateTemplate({
-      sourceId: template.id,
-      newName: `${template.name} (${charterLabel})`,
-      templateData: convertedData,
-    });
-  };
-
-  const getCharterIndicator = (template: MediaTemplate) => {
-    const charter = detectTemplateCharter(template.template_data);
-    if (!charter) return null;
-    
-    const colors = charter === 'iarche2' ? IARCHE_II_COLORS : IARCHE_I_COLORS;
-    return (
-      <div 
-        className="w-3 h-3 rounded-full shrink-0"
-        style={{ 
-          background: `linear-gradient(135deg, ${colors.bleuNuit} 0%, ${colors.terracotta} 100%)`
-        }}
-        title={charter === 'iarche2' ? 'IArche II' : 'IArche I'}
-      />
-    );
   };
 
   return (
@@ -178,7 +140,6 @@ export default function SavedTemplatesPanel({
                 </>
               ) : (
                 <>
-                  {getCharterIndicator(template)}
                   <button
                     onClick={() => onLoadTemplate(template.template_data)}
                     className="flex-1 text-left text-sm font-medium truncate hover:text-primary"
@@ -193,41 +154,6 @@ export default function SavedTemplatesPanel({
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                  
-                  {/* Dropdown pour duplication */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0"
-                        disabled={isDuplicating}
-                      >
-                        {isDuplicating ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Copy className="h-3.5 w-3.5" />
-                        )}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => handleDuplicateToOtherCharter(template)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full"
-                            style={{ 
-                              background: detectTemplateCharter(template.template_data) === 'iarche2'
-                                ? `linear-gradient(135deg, ${IARCHE_I_COLORS.bleuNuit} 0%, ${IARCHE_I_COLORS.terracotta} 100%)`
-                                : `linear-gradient(135deg, ${IARCHE_II_COLORS.terracotta} 0%, ${IARCHE_II_COLORS.bleuNuit} 100%)`
-                            }}
-                          />
-                          Dupliquer vers {detectTemplateCharter(template.template_data) === 'iarche2' ? 'IArche I' : 'IArche II'}
-                        </div>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
 
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
