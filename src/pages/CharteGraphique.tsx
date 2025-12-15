@@ -2,6 +2,8 @@ import React, { useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Printer } from 'lucide-react';
 import GradientButton from '@/components/ui/GradientButton';
+import LogoArc from '@/components/ui/LogoArc';
+import arcImage from '@/assets/arc-iarche-v4.png';
 
 const CharteGraphique = () => {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -21,13 +23,6 @@ const CharteGraphique = () => {
     { name: 'Vert Sauge', variable: '--success', hsl: '153 34% 36%', hex: '#3D7A5C', rgb: '61, 122, 92', usage: 'Succès, validation' },
   ];
 
-  const gradients = [
-    { name: 'Barre décorative', css: 'linear-gradient(90deg, #1A2B4A 0%, #B04A32 100%)', usage: 'Barres horizontales, séparateurs visuels' },
-    { name: 'Texte animé', css: 'linear-gradient(270deg, #1A2B4A 0%, #B04A32 33%, #1A2B4A 66%, #B04A32 100%)', usage: 'Logo IArche, titres héroïques' },
-    { name: 'Fond sombre', css: 'linear-gradient(135deg, #1A2B4A 0%, #14203A 100%)', usage: 'Sections sombres, hero backgrounds' },
-    { name: 'Barre inversée', css: 'linear-gradient(90deg, #B04A32 0%, #1A2B4A 100%)', usage: 'Variante de barre décorative' },
-  ];
-
   const spacing = [
     { label: 'XS', value: '4px', tailwind: 'p-1 / m-1', usage: 'Micro-espacements, icônes' },
     { label: 'SM', value: '8px', tailwind: 'p-2 / m-2', usage: 'Espacements internes' },
@@ -38,17 +33,17 @@ const CharteGraphique = () => {
     { label: '3XL', value: '64px', tailwind: 'p-16 / m-16', usage: 'Hero sections' },
   ];
 
-  const barSizes = [
-    { label: 'SM', width: '48px', height: '2px', usage: 'Petits titres, badges' },
-    { label: 'MD', width: '80px', height: '4px', usage: 'Titres standards' },
-    { label: 'LG', width: '96px', height: '4px', usage: 'Grands titres' },
-    { label: 'XL', width: '128px', height: '6px', usage: 'Hero, couvertures' },
+  const arcSizes = [
+    { label: 'SM', width: '80px', height: '10px', usage: 'Cards, petits titres' },
+    { label: 'MD', width: '120px', height: '14px', usage: 'Titres de section (défaut)' },
+    { label: 'LG', width: '180px', height: '20px', usage: 'Grands titres de page' },
+    { label: 'XL', width: '260px', height: '28px', usage: 'Hero section' },
   ];
 
   return (
     <>
       <Helmet>
-        <title>Charte Graphique Complète | IArche</title>
+        <title>Charte Graphique v4.0 | IArche</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
@@ -64,9 +59,9 @@ const CharteGraphique = () => {
         {/* ========== PAGE 1: COUVERTURE ========== */}
         <section className="min-h-screen flex flex-col items-center justify-center p-12 bg-[#FAF9F7] print:break-after-page">
           <div className="text-center">
-            <h1 className="text-7xl font-semibold mb-4 hero-gradient-text">IArche</h1>
+            <img src="/logos/iarche-main.svg" alt="IArche" className="h-20 mx-auto mb-6" />
             <p className="text-2xl text-[#666666] mb-2">Charte Graphique Complète</p>
-            <p className="text-lg text-[#999999]">Version 3.0 — Décembre 2025</p>
+            <p className="text-lg text-[#999999]">Version 4.0 — Décembre 2025</p>
           </div>
           <div className="absolute bottom-12 text-center">
             <p className="text-sm text-[#999999]">L'IA se construit avec vous</p>
@@ -76,9 +71,11 @@ const CharteGraphique = () => {
 
         {/* ========== PAGE 2: SOMMAIRE ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-2">
             Sommaire
           </h2>
+          <LogoArc size="md" className="mb-8" />
+          
           <div className="grid grid-cols-2 gap-8">
             <div className="space-y-4">
               <div className="flex items-center gap-4">
@@ -87,19 +84,19 @@ const CharteGraphique = () => {
               </div>
               <div className="flex items-center gap-4">
                 <span className="w-8 h-8 rounded-full bg-[#1A2B4A] text-white flex items-center justify-center text-sm font-semibold">02</span>
-                <span className="text-lg text-[#1A2B4A]">Palette de Couleurs</span>
+                <span className="text-lg text-[#1A2B4A]">Arc Décoratif (Nouveau v4.0)</span>
               </div>
               <div className="flex items-center gap-4">
                 <span className="w-8 h-8 rounded-full bg-[#1A2B4A] text-white flex items-center justify-center text-sm font-semibold">03</span>
-                <span className="text-lg text-[#1A2B4A]">Typographie</span>
+                <span className="text-lg text-[#1A2B4A]">Palette de Couleurs</span>
               </div>
               <div className="flex items-center gap-4">
                 <span className="w-8 h-8 rounded-full bg-[#1A2B4A] text-white flex items-center justify-center text-sm font-semibold">04</span>
-                <span className="text-lg text-[#1A2B4A]">Espacements & Dimensions</span>
+                <span className="text-lg text-[#1A2B4A]">Typographie</span>
               </div>
               <div className="flex items-center gap-4">
                 <span className="w-8 h-8 rounded-full bg-[#1A2B4A] text-white flex items-center justify-center text-sm font-semibold">05</span>
-                <span className="text-lg text-[#1A2B4A]">Gradients</span>
+                <span className="text-lg text-[#1A2B4A]">Espacements & Dimensions</span>
               </div>
             </div>
             <div className="space-y-4">
@@ -125,69 +122,79 @@ const CharteGraphique = () => {
               </div>
             </div>
           </div>
+
+          {/* Changelog v4.0 */}
+          <div className="mt-12 bg-[#E8F5E9] p-6 rounded-lg">
+            <h3 className="text-lg font-semibold text-[#2E7D32] mb-3">Nouveautés v4.0</h3>
+            <ul className="text-sm text-[#1A2B4A] space-y-1">
+              <li>✓ <strong>Logo SVG officiel</strong> — Remplace le texte gradient animé</li>
+              <li>✓ <strong>Arc décoratif PNG</strong> — Fichier exact, remplace toutes les barres gradient</li>
+              <li>✓ <strong>Suppression</strong> — Lignes canalisation, AnimatedArcs, gradient bars</li>
+              <li>✓ <strong>Composant LogoArc</strong> — Unique élément décoratif (sous titres uniquement)</li>
+            </ul>
+          </div>
         </section>
 
         {/* ========== PAGE 3: LOGO ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-2">
             01. Logo & Identité
           </h2>
+          <LogoArc size="md" className="mb-8" />
 
-          {/* Logo Principal */}
+          {/* Logo Principal SVG */}
           <div className="mb-12">
-            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Logo Principal — Gradient Animé</h3>
+            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Logo Principal — SVG Officiel</h3>
             <div className="bg-[#FAF9F7] p-12 rounded-lg flex items-center justify-center mb-4">
-              <span className="text-6xl font-semibold hero-gradient-text">IArche</span>
+              <img src="/logos/iarche-main.svg" alt="IArche" className="h-16" />
             </div>
             <p className="text-sm text-[#666666]">
-              Le logo principal utilise un gradient animé alternant entre Bleu Nuit et Terracotta.
-              Animation: 8 secondes, direction 270°, boucle infinie. Background-size: 600% 600%.
+              Logo officiel en format SVG vectoriel. Typographie serif avec gradient Bleu Nuit → Terracotta.
+              L'arc reliant le "I" au "E" est l'élément signature de l'identité.
             </p>
           </div>
 
           {/* Variantes */}
           <div className="grid grid-cols-3 gap-6 mb-12">
             <div>
+              <h4 className="text-sm font-medium text-[#1A2B4A] mb-2">Gradient (Main)</h4>
+              <div className="bg-[#FAF9F7] p-8 rounded-lg flex items-center justify-center">
+                <img src="/logos/iarche-main.svg" alt="IArche" className="h-10" />
+              </div>
+              <p className="text-xs text-[#666666] mt-2">Usage principal</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-[#1A2B4A] mb-2">Blanc (White)</h4>
+              <div className="bg-[#1A2B4A] p-8 rounded-lg flex items-center justify-center">
+                <img src="/logos/iarche-white.svg" alt="IArche" className="h-10" />
+              </div>
+              <p className="text-xs text-[#666666] mt-2">Fonds sombres</p>
+            </div>
+            <div>
               <h4 className="text-sm font-medium text-[#1A2B4A] mb-2">Bleu Nuit (Dark)</h4>
               <div className="bg-[#FAF9F7] p-8 rounded-lg flex items-center justify-center">
-                <span className="text-4xl font-semibold text-[#1A2B4A]">IArche</span>
+                <img src="/logos/iarche-dark.svg" alt="IArche" className="h-10" />
               </div>
-              <p className="text-xs text-[#666666] mt-2">Fonds clairs uniquement</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-[#1A2B4A] mb-2">Blanc (Light)</h4>
-              <div className="bg-[#1A2B4A] p-8 rounded-lg flex items-center justify-center">
-                <span className="text-4xl font-semibold text-white">IArche</span>
-              </div>
-              <p className="text-xs text-[#666666] mt-2">Fonds sombres uniquement</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium text-[#1A2B4A] mb-2">Terracotta</h4>
-              <div className="bg-[#FAF9F7] p-8 rounded-lg flex items-center justify-center">
-                <span className="text-4xl font-semibold text-[#B04A32]">IArche</span>
-              </div>
-              <p className="text-xs text-[#666666] mt-2">Usages spéciaux</p>
+              <p className="text-xs text-[#666666] mt-2">Fonds clairs, monochrome</p>
             </div>
           </div>
 
-          {/* Barre décorative */}
+          {/* Fichiers logo */}
           <div className="mb-12">
-            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Barre Décorative Gradient</h3>
-            <div className="bg-[#FAF9F7] p-8 rounded-lg space-y-6">
-              {barSizes.map((bar) => (
-                <div key={bar.label} className="flex items-center gap-4">
-                  <span className="w-8 text-sm font-mono text-[#666666]">{bar.label}</span>
-                  <div 
-                    className="rounded-full"
-                    style={{ 
-                      width: bar.width, 
-                      height: bar.height,
-                      background: 'linear-gradient(90deg, #1A2B4A 0%, #B04A32 100%)'
-                    }}
-                  />
-                  <span className="text-xs text-[#666666]">{bar.width} × {bar.height} — {bar.usage}</span>
-                </div>
-              ))}
+            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Fichiers Logo</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="bg-[#FAF9F7] p-4 rounded-lg font-mono text-xs">
+                <p className="font-semibold text-[#1A2B4A] mb-2">Logos SVG</p>
+                <p className="text-[#666666]">/logos/iarche-main.svg — Gradient</p>
+                <p className="text-[#666666]">/logos/iarche-white.svg — Blanc</p>
+                <p className="text-[#666666]">/logos/iarche-dark.svg — Bleu Nuit</p>
+                <p className="text-[#666666]">/logos/iarche-vertical.svg — Vertical</p>
+              </div>
+              <div className="bg-[#FAF9F7] p-4 rounded-lg font-mono text-xs">
+                <p className="font-semibold text-[#1A2B4A] mb-2">Icônes (Favicon/PWA)</p>
+                <p className="text-[#666666]">/logos/iarche-icon-32.svg — Favicon</p>
+                <p className="text-[#666666]">/logos/iarche-icon-512.svg — PWA</p>
+              </div>
             </div>
           </div>
 
@@ -196,7 +203,7 @@ const CharteGraphique = () => {
             <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Zones de Protection</h3>
             <div className="bg-[#FAF9F7] p-8 rounded-lg inline-block">
               <div className="border-2 border-dashed border-[#B04A32] p-8">
-                <span className="text-4xl font-semibold text-[#1A2B4A]">IArche</span>
+                <img src="/logos/iarche-main.svg" alt="IArche" className="h-10" />
               </div>
             </div>
             <p className="text-sm text-[#666666] mt-2">
@@ -209,30 +216,124 @@ const CharteGraphique = () => {
             <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Usages Interdits</h3>
             <div className="grid grid-cols-4 gap-4 text-center">
               <div className="p-4 bg-[#FEE] rounded-lg">
-                <span className="text-2xl font-semibold text-[#1A2B4A] opacity-50">IArche</span>
+                <img src="/logos/iarche-main.svg" alt="IArche" className="h-8 mx-auto opacity-50" />
                 <p className="text-xs text-red-600 mt-2">❌ Opacité réduite</p>
               </div>
               <div className="p-4 bg-[#FEE] rounded-lg">
-                <span className="text-2xl font-semibold text-[#FF0000]">IArche</span>
-                <p className="text-xs text-red-600 mt-2">❌ Couleurs non-charte</p>
+                <img src="/logos/iarche-main.svg" alt="IArche" className="h-8 mx-auto" style={{ filter: 'hue-rotate(180deg)' }} />
+                <p className="text-xs text-red-600 mt-2">❌ Couleurs modifiées</p>
               </div>
               <div className="p-4 bg-[#FEE] rounded-lg">
-                <span className="text-2xl font-semibold text-[#1A2B4A]" style={{ transform: 'scaleX(1.5)', display: 'inline-block' }}>IArche</span>
+                <img src="/logos/iarche-main.svg" alt="IArche" className="h-8 mx-auto" style={{ transform: 'scaleX(1.5)' }} />
                 <p className="text-xs text-red-600 mt-2">❌ Déformation</p>
               </div>
               <div className="p-4 bg-[#FEE] rounded-lg">
-                <span className="text-2xl text-[#1A2B4A]" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>IArche</span>
+                <img src="/logos/iarche-main.svg" alt="IArche" className="h-8 mx-auto" style={{ filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.5))' }} />
                 <p className="text-xs text-red-600 mt-2">❌ Ombres portées</p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ========== PAGE 4: COULEURS ========== */}
+        {/* ========== PAGE 4: ARC DÉCORATIF (NOUVEAU v4.0) ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
-            02. Palette de Couleurs
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-2">
+            02. Arc Décoratif
           </h2>
+          <LogoArc size="md" className="mb-8" />
+
+          {/* Explication */}
+          <div className="mb-12 bg-[#E8F5E9] p-6 rounded-lg">
+            <h3 className="text-lg font-semibold text-[#2E7D32] mb-3">Nouveau en v4.0</h3>
+            <p className="text-[#1A2B4A]">
+              L'arc de cercle est l'<strong>UNIQUE élément décoratif</strong> du site. Il reproduit la "virgule" 
+              du logo officiel (courbe reliant I→E). Cet arc remplace TOUTES les barres gradient horizontales 
+              précédemment utilisées.
+            </p>
+          </div>
+
+          {/* Image de référence */}
+          <div className="mb-12">
+            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Fichier de Référence</h3>
+            <div className="bg-[#FAF9F7] p-12 rounded-lg flex items-center justify-center">
+              <img 
+                src={arcImage} 
+                alt="Arc IArche" 
+                className="block"
+                style={{ width: '300px', height: 'auto' }}
+              />
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+              <div className="bg-[#FAF9F7] p-4 rounded font-mono text-xs">
+                <p className="font-semibold text-[#1A2B4A] mb-2">Fichiers</p>
+                <p className="text-[#666666]">src/assets/arc-iarche-v4.png (import ES6)</p>
+                <p className="text-[#666666]">public/assets/arc-iarche-v4.png (URLs directes)</p>
+              </div>
+              <div className="bg-[#FAF9F7] p-4 rounded font-mono text-xs">
+                <p className="font-semibold text-[#1A2B4A] mb-2">Caractéristiques</p>
+                <p className="text-[#666666]">Gradient: Bleu Nuit (#1A2B4A) → Terracotta (#B04A32)</p>
+                <p className="text-[#666666]">Forme: Courbe de Bézier affinée (épais→fin)</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Tailles */}
+          <div className="mb-12">
+            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Tailles Disponibles</h3>
+            <div className="bg-[#FAF9F7] p-8 rounded-lg space-y-6">
+              {arcSizes.map((arc) => (
+                <div key={arc.label} className="flex items-center gap-4">
+                  <span className="w-8 text-sm font-mono text-[#666666]">{arc.label}</span>
+                  <LogoArc size={arc.label.toLowerCase() as 'sm' | 'md' | 'lg' | 'xl'} />
+                  <span className="text-xs text-[#666666]">{arc.width} × {arc.height} — {arc.usage}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Règles d'utilisation */}
+          <div className="grid grid-cols-2 gap-8">
+            <div className="bg-[#E8F5E9] p-6 rounded-lg">
+              <h4 className="font-semibold text-[#2E7D32] mb-3">✓ Utiliser sous</h4>
+              <ul className="text-sm text-[#1A2B4A] space-y-1">
+                <li>• Titres de page (H1)</li>
+                <li>• Titres de section (H2)</li>
+                <li>• Sous-titres (H3)</li>
+                <li>• Cards (petits titres)</li>
+              </ul>
+            </div>
+            <div className="bg-[#FFEBEE] p-6 rounded-lg">
+              <h4 className="font-semibold text-[#C62828] mb-3">✗ Ne PAS utiliser</h4>
+              <ul className="text-sm text-[#1A2B4A] space-y-1">
+                <li>• Sous le logo (réservé aux titres)</li>
+                <li>• En remplacement du logo</li>
+                <li>• Avec des couleurs modifiées</li>
+                <li>• Avec rotation ou déformation</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Composant */}
+          <div className="mt-8 bg-[#FAF9F7] p-6 rounded-lg">
+            <h4 className="font-semibold text-[#1A2B4A] mb-3">Composant React</h4>
+            <pre className="text-xs font-mono bg-white p-4 rounded border border-[#E5E0DA] overflow-x-auto">
+{`import LogoArc from '@/components/ui/LogoArc';
+
+// Utilisation
+<LogoArc size="md" className="mt-2" />
+
+// Le composant utilise directement le fichier PNG
+import arcImage from '@/assets/arc-iarche-v4.png';`}
+            </pre>
+          </div>
+        </section>
+
+        {/* ========== PAGE 5: COULEURS ========== */}
+        <section className="min-h-screen p-12 bg-white print:break-after-page">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-2">
+            03. Palette de Couleurs
+          </h2>
+          <LogoArc size="md" className="mb-8" />
 
           {/* Couleurs principales */}
           <div className="grid grid-cols-3 gap-8 mb-12">
@@ -289,11 +390,12 @@ const CharteGraphique = () => {
           </div>
         </section>
 
-        {/* ========== PAGE 5: TYPOGRAPHIE ========== */}
+        {/* ========== PAGE 6: TYPOGRAPHIE ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
-            03. Typographie
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-2">
+            04. Typographie
           </h2>
+          <LogoArc size="md" className="mb-8" />
 
           {/* Police principale */}
           <div className="mb-12">
@@ -368,11 +470,12 @@ const CharteGraphique = () => {
           </div>
         </section>
 
-        {/* ========== PAGE 6: ESPACEMENTS ========== */}
+        {/* ========== PAGE 7: ESPACEMENTS ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
-            04. Espacements & Dimensions
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-2">
+            05. Espacements & Dimensions
           </h2>
+          <LogoArc size="md" className="mb-8" />
 
           {/* Espacements */}
           <div className="mb-12">
@@ -460,77 +563,23 @@ const CharteGraphique = () => {
           </div>
         </section>
 
-        {/* ========== PAGE 7: GRADIENTS ========== */}
-        <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
-            05. Gradients
-          </h2>
-
-          <div className="space-y-8">
-            {gradients.map((gradient, index) => (
-              <div key={index} className="bg-[#FAF9F7] p-6 rounded-lg">
-                <h3 className="text-lg font-semibold text-[#1A2B4A] mb-2">{gradient.name}</h3>
-                <div 
-                  className="h-16 rounded-lg mb-3"
-                  style={{ background: gradient.css }}
-                />
-                <p className="text-sm text-[#666666] mb-2">{gradient.usage}</p>
-                <pre className="text-xs font-mono bg-white p-3 rounded border border-[#E5E0DA] overflow-x-auto">
-                  {gradient.css}
-                </pre>
-              </div>
-            ))}
-          </div>
-
-          {/* Gradient sur texte */}
-          <div className="mt-8 bg-[#FAF9F7] p-6 rounded-lg">
-            <h3 className="text-lg font-semibold text-[#1A2B4A] mb-4">Application sur Texte</h3>
-            <div className="flex gap-8 items-center">
-              <span className="text-4xl font-semibold hero-gradient-text">IArche</span>
-              <div className="text-sm text-[#666666]">
-                <p>background-clip: text</p>
-                <p>-webkit-text-fill-color: transparent</p>
-                <p>animation: gradientText 8s ease infinite</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* ========== PAGE 8: ÉLÉMENTS VISUELS ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-2">
             06. Éléments Visuels
           </h2>
+          <LogoArc size="md" className="mb-8" />
 
-          {/* Arc Décoratif - Nouveau v4.0 */}
-          <div className="mb-12">
-            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Arc Décoratif (Virgule du Logo)</h3>
-            <div className="bg-[#FAF9F7] p-8 rounded-lg flex items-center justify-center">
-              <svg viewBox="0 0 100 12" width="300" height="36" className="block">
-                <defs>
-                  <linearGradient id="arcGradDemo" x1="0%" y1="50%" x2="100%" y2="50%">
-                    <stop offset="0%" stopColor="#1A2B4A" />
-                    <stop offset="100%" stopColor="#B04A32" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M 0 10 C 25 0, 50 2, 75 6 C 85 7.5, 95 9, 100 10 L 100 12 C 95 11, 85 9.5, 75 8 C 50 4, 25 2, 0 12 Z"
-                  fill="url(#arcGradDemo)"
-                />
-              </svg>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-              <div className="bg-[#FAF9F7] p-4 rounded">
-                <p className="font-mono text-xs text-[#666666]">Origine: Virgule du logo officiel</p>
-                <p className="font-mono text-xs text-[#666666]">Gradient: Bleu Nuit → Terracotta</p>
-                <p className="font-mono text-xs text-[#666666]">Forme: Courbe bézier affinée</p>
-              </div>
-              <div className="bg-[#FAF9F7] p-4 rounded">
-                <p className="font-mono text-xs text-[#666666]">Tailles: sm (60px), md (100px), lg (160px), xl (220px)</p>
-                <p className="font-mono text-xs text-[#666666]">Usage: Sous les titres, cards, CTAs</p>
-                <p className="font-mono text-xs text-[#666666]">Remplace: Barre gradient horizontale</p>
-              </div>
-            </div>
+          {/* Suppressions v4.0 */}
+          <div className="mb-12 bg-[#FFEBEE] p-6 rounded-lg">
+            <h3 className="text-lg font-semibold text-[#C62828] mb-3">Éléments Supprimés en v4.0</h3>
+            <ul className="text-sm text-[#1A2B4A] space-y-1">
+              <li>❌ <strong>Barres gradient horizontales</strong> — Remplacées par l'arc décoratif</li>
+              <li>❌ <strong>HTMLGradientBar / PDFGradientBar</strong> — Composants supprimés</li>
+              <li>❌ <strong>Lignes canalisation (HTMLCanalisationLines, PDFCanalisationLines)</strong> — Supprimées</li>
+              <li>❌ <strong>AnimatedArcs</strong> — Remplacé par arc statique</li>
+              <li>❌ <strong>Texte gradient "IArche"</strong> — Remplacé par logo SVG</li>
+            </ul>
           </div>
 
           {/* Quadrillage */}
@@ -556,13 +605,38 @@ const CharteGraphique = () => {
             </p>
           </div>
 
+          {/* Récapitulatif éléments restants */}
+          <div className="bg-[#FAF9F7] p-6 rounded-lg">
+            <h3 className="text-lg font-semibold text-[#1A2B4A] mb-4">Éléments Décoratifs v4.0</h3>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-medium text-[#1A2B4A] mb-2">Conservés</h4>
+                <ul className="text-sm text-[#666666] space-y-1">
+                  <li>✓ Logo SVG officiel (3 variantes)</li>
+                  <li>✓ Arc décoratif PNG (4 tailles)</li>
+                  <li>✓ Fond quadrillé animé (mesh)</li>
+                  <li>✓ Gradient texte animé (GradientTitle)</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium text-[#1A2B4A] mb-2">Composants</h4>
+                <ul className="text-sm text-[#666666] space-y-1 font-mono text-xs">
+                  <li>LogoArc.tsx — UI public</li>
+                  <li>HTMLLogoArc.tsx — Éditeurs média HTML</li>
+                  <li>PDFLogoArc.tsx — Exports PDF</li>
+                  <li>GradientTitle.tsx — Titre + arc</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* ========== PAGE 9: BOUTONS & CTA ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-2">
             07. Boutons & CTA
           </h2>
+          <LogoArc size="md" className="mb-8" />
 
           {/* GradientButton */}
           <div className="mb-12">
@@ -639,9 +713,10 @@ const CharteGraphique = () => {
 
         {/* ========== PAGE 10: ANIMATIONS ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-2">
             08. Animations
           </h2>
+          <LogoArc size="md" className="mb-8" />
 
           <div className="grid grid-cols-2 gap-6">
             {/* FadeIn */}
@@ -660,7 +735,7 @@ animation: fadeIn 0.6s ease-out;`}
             {/* GradientText */}
             <div className="bg-[#FAF9F7] p-5 rounded-lg">
               <h3 className="text-lg font-semibold text-[#1A2B4A] mb-2">gradientText</h3>
-              <p className="text-sm text-[#666666] mb-2">Animation gradient logo.</p>
+              <p className="text-sm text-[#666666] mb-2">Animation gradient titres.</p>
               <pre className="text-xs font-mono bg-white p-3 rounded border border-[#E5E0DA] overflow-x-auto">
 {`@keyframes gradientText {
   0%, 100% { background-position: 0% 50%; }
@@ -680,19 +755,6 @@ animation: gradientText 8s ease infinite;`}
   100% { transform: translate(50px, 50px); }
 }
 animation: patternScroll 40s linear infinite;`}
-              </pre>
-            </div>
-
-
-            {/* Line Draw */}
-            <div className="bg-[#FAF9F7] p-5 rounded-lg">
-              <h3 className="text-lg font-semibold text-[#1A2B4A] mb-2">lineDraw (SVG)</h3>
-              <p className="text-sm text-[#666666] mb-2">Tracé progressif lignes.</p>
-              <pre className="text-xs font-mono bg-white p-3 rounded border border-[#E5E0DA] overflow-x-auto">
-{`strokeDasharray: length
-strokeDashoffset: length → 0
-transition: 6s ease-in-out
-delay: 0.5s`}
               </pre>
             </div>
 
@@ -730,9 +792,10 @@ delay: 0.5s`}
 
         {/* ========== PAGE 11: APPLICATIONS ========== */}
         <section className="min-h-screen p-12 bg-white print:break-after-page">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-2">
             09. Applications
           </h2>
+          <LogoArc size="md" className="mb-8" />
 
           {/* Signature email */}
           <div className="mb-12">
@@ -740,8 +803,8 @@ delay: 0.5s`}
             <div className="bg-[#FAF9F7] p-6 rounded-lg inline-block">
               <p className="font-semibold text-[#1A2B4A]">Nicolas Laquerrière-Music</p>
               <p className="text-sm text-[#666666]">Fondateur</p>
-              <p className="text-sm text-[#1A2B4A] font-medium mt-2">IArche</p>
-              <p className="text-xs text-[#666666]">nlq@iarche.fr · Bayonne, France</p>
+              <img src="/logos/iarche-main.svg" alt="IArche" className="h-6 mt-2" />
+              <p className="text-xs text-[#666666] mt-1">nlq@iarche.fr · Bayonne, France</p>
               <p className="text-xs text-[#B04A32] mt-1">L'IA se construit avec vous</p>
             </div>
             <p className="text-sm text-[#666666] mt-2">Export: 600 × 200px PNG via /admin/medias/signature</p>
@@ -752,7 +815,7 @@ delay: 0.5s`}
             <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Carte de Visite</h3>
             <div className="flex gap-8">
               <div className="w-80 h-48 bg-[#FAF9F7] rounded-lg p-6 flex flex-col justify-between border border-[#E5E0DA]">
-                <span className="text-2xl font-semibold hero-gradient-text">IArche</span>
+                <img src="/logos/iarche-main.svg" alt="IArche" className="h-8" />
                 <div>
                   <p className="font-semibold text-[#1A2B4A]">Nicolas Laquerrière-Music</p>
                   <p className="text-xs text-[#666666]">Fondateur</p>
@@ -813,9 +876,10 @@ delay: 0.5s`}
 
         {/* ========== PAGE 12: USAGES & RÈGLES ========== */}
         <section className="min-h-screen p-12 bg-white">
-          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-8 border-b-2 border-[#B04A32] pb-4">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-2">
             10. Usages & Règles
           </h2>
+          <LogoArc size="md" className="mb-8" />
 
           <div className="grid grid-cols-2 gap-8 mb-12">
             {/* À faire */}
@@ -828,7 +892,7 @@ delay: 0.5s`}
                 <li>• Utiliser les tokens CSS (--primary, --accent...)</li>
                 <li>• Appliquer focus-visible avec ring-accent</li>
                 <li>• Respecter la hiérarchie typographique</li>
-                <li>• Exporter en haute résolution (pixelRatio 3)</li>
+                <li>• Utiliser l'arc décoratif sous les titres uniquement</li>
                 <li>• Inclure prefers-reduced-motion</li>
               </ul>
             </div>
@@ -837,14 +901,14 @@ delay: 0.5s`}
             <div className="bg-[#FFEBEE] p-6 rounded-lg">
               <h3 className="text-xl font-semibold text-[#C62828] mb-4">✗ À éviter</h3>
               <ul className="space-y-2 text-[#1A2B4A]">
-                <li>• Modifier les couleurs du logo</li>
+                <li>• Modifier les couleurs du logo ou de l'arc</li>
                 <li>• Utiliser des fonds trop chargés</li>
                 <li>• Hardcoder des valeurs HEX</li>
                 <li>• Réduire le logo sous 100px de large</li>
-                <li>• Déformer ou pivoter le logo</li>
-                <li>• Ajouter des ombres portées au logo</li>
+                <li>• Déformer ou pivoter le logo / l'arc</li>
+                <li>• Ajouter des ombres portées</li>
                 <li>• Utiliser d'autres polices que Manrope</li>
-                <li>• Mélanger les styles de CTA</li>
+                <li>• Placer l'arc sous le logo (réservé aux titres)</li>
               </ul>
             </div>
           </div>
@@ -880,8 +944,8 @@ delay: 0.5s`}
 
         {/* ========== FOOTER ========== */}
         <footer className="p-8 bg-[#1A2B4A] text-white text-center print:break-before-avoid">
-          <p className="text-xl font-semibold mb-2">IArche</p>
-          <p className="text-sm text-white/70">Charte Graphique Complète v3.0 — Document confidentiel</p>
+          <img src="/logos/iarche-white.svg" alt="IArche" className="h-8 mx-auto mb-4" />
+          <p className="text-sm text-white/70">Charte Graphique Complète v4.0 — Document confidentiel</p>
           <p className="text-xs text-white/50 mt-4">© 2025 IArche · Tous droits réservés</p>
           <p className="text-xs text-white/30 mt-2">Mise à jour : Décembre 2025</p>
         </footer>
