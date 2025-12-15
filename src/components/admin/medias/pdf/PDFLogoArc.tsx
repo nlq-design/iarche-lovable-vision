@@ -1,18 +1,25 @@
-import { Svg, Defs, LinearGradient, Stop, Path } from '@react-pdf/renderer';
-import { IARCHE_COLORS, ArcSize } from './tokens';
+import { Image } from '@react-pdf/renderer';
 
-// Counter for unique gradient IDs
-let arcGradientCounter = 0;
+type ArcSize = 'sm' | 'md' | 'lg' | 'xl';
 
 interface PDFLogoArcProps {
   size?: ArcSize;
   style?: object;
 }
 
+// URL absolue pour react-pdf (ne peut pas utiliser les imports ES6)
+const getArcUrl = () => {
+  // En production, utiliser le chemin absolu
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}/assets/arc-iarche-v4.png`;
+  }
+  return '/assets/arc-iarche-v4.png';
+};
+
 /**
  * Arc décoratif IArche pour PDF - Version v4.0
  * 
- * Reproduction exacte de la virgule du logo officiel
+ * Utilise directement le fichier PNG de référence fourni
  * Remplace PDFGradientBar pour les exports PDF
  */
 export const PDFLogoArc = ({ 
@@ -27,35 +34,18 @@ export const PDFLogoArc = ({
   };
 
   const { width, height } = sizeConfig[size];
-  const gradientId = `pdfLogoArc-${arcGradientCounter++}`;
-
-  // ViewBox et path extraits EXACTEMENT du logo officiel iarche-main.svg
-  const viewBoxWidth = 200;
-  const viewBoxHeight = 24;
-  
-  // Path exact de l'arc officiel IArche v4.0
-  const arcPath = `M 0 22 C 0 22 58 -6 100 10 C 142 26 200 18 200 18 L 200 20 C 200 20 142 30 100 14 C 58 -2 0 24 0 24 Z`;
 
   return (
-    <Svg 
-      viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`} 
+    <Image 
+      src={getArcUrl()}
       style={{ 
         width, 
         height, 
-        marginTop: 8,
+        objectFit: 'contain',
         ...style,
       }}
-    >
-      <Defs>
-        <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-          <Stop offset="0%" stopColor={IARCHE_COLORS.bleuNuit} />
-          <Stop offset="100%" stopColor={IARCHE_COLORS.terracotta} />
-        </LinearGradient>
-      </Defs>
-      <Path 
-        d={arcPath}
-        fill={`url(#${gradientId})`} 
-      />
-    </Svg>
+    />
   );
 };
+
+export default PDFLogoArc;
