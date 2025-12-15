@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import GradientLink from '@/components/ui/GradientLink';
 import Logo from '@/components/ui/Logo';
-import LogoArc from '@/components/ui/LogoArc';
 import { ChevronDown } from 'lucide-react';
 import { useAnimationPause } from '@/hooks/useAnimationPause';
 import { useCTATracking } from '@/hooks/useCTATracking';
@@ -17,8 +16,7 @@ const HeroSection = () => {
       <div className="container text-center z-10 relative px-6 py-20">
         {/* Logo officiel SVG + Arc décoratif */}
         <div className="mb-20 md:mb-28 invisible animate-fadeIn [animation-delay:0.1s] flex flex-col items-center">
-          <Logo variant="main" size="xl" className="mb-4" />
-          <LogoArc size="xl" />
+          <Logo variant="main" size="xl" />
           <span className="sr-only">IArche · Agence IA Bayonne | Conseil & Intégration PME</span>
         </div>
         
