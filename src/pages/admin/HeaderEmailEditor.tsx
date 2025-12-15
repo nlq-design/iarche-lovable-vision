@@ -20,9 +20,10 @@ import CharterSelector, { CharterType, getCharterColors } from '@/components/adm
 import {
   HTMLBaseTemplate,
   HTMLLogo,
-  HTMLGradientBar,
   IARCHE_FONTS,
 } from '@/components/admin/medias/html';
+import { HTMLLogoArc } from '@/components/admin/medias/html/HTMLLogoArc';
+import { ArcSize } from '@/components/admin/medias/html/tokens';
 
 type HeaderTemplate = 'newsletter' | 'annonce' | 'minimal';
 
@@ -153,7 +154,7 @@ const HeaderEmailEditor: React.FC = () => {
             }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <HTMLLogo size="lg" theme="dark" />
-                {showBar && <HTMLGradientBar size={barSize} />}
+                {showBar && <HTMLLogoArc size={barSize} />}
               </div>
               <div style={{ 
                 display: 'flex', 
@@ -214,7 +215,7 @@ const HeaderEmailEditor: React.FC = () => {
               }}>
                 {formData.titre}
               </span>
-              {showBar && <HTMLGradientBar size={barSize} />}
+              {showBar && <HTMLLogoArc size={barSize} />}
             </div>
           </HTMLBaseTemplate>
         );
@@ -237,9 +238,9 @@ const HeaderEmailEditor: React.FC = () => {
               height: '100%',
               gap: '16px',
             }}>
-              {showBar && <HTMLGradientBar size={barSize} />}
+              {showBar && <HTMLLogoArc size={barSize} />}
               <HTMLLogo size="xl" theme="light" />
-              {showBar && <HTMLGradientBar size={barSize} reverse />}
+              {showBar && <HTMLLogoArc size={barSize} />}
             </div>
           </HTMLBaseTemplate>
         );

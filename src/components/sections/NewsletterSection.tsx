@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { newsletterSchema } from '@/schemas/contact';
 import GradientLink from '@/components/ui/GradientLink';
+import GradientTitle from '@/components/ui/GradientTitle';
 import { useCTATracking } from '@/hooks/useCTATracking';
 
 const NewsletterSection = () => {
@@ -104,10 +105,9 @@ const NewsletterSection = () => {
     <section id="newsletter" className="pt-8 md:pt-10 pb-12 md:pb-16 bg-muted">
       <div className="container mx-auto px-6">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-semibold hero-gradient-text mb-2 invisible animate-fadeIn [animation-delay:0.2s]">
+          <GradientTitle size="md" as="h2" className="mb-4 invisible animate-fadeIn [animation-delay:0.2s]">
             Restez informé
-          </h2>
-          <div className="w-20 h-1 mx-auto mb-4 rounded-full bg-gradient-to-r from-primary via-accent to-primary invisible animate-fadeIn [animation-delay:0.25s]"></div>
+          </GradientTitle>
           <p className="text-base md:text-lg text-muted-foreground mb-6 leading-relaxed max-w-xl mx-auto invisible animate-fadeIn [animation-delay:0.4s]">
             Recevez nos actualités et conseils IA directement dans votre boîte mail.
           </p>

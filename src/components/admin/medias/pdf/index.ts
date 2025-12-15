@@ -1,14 +1,17 @@
-// IArche PDF Brand Components
+// IArche PDF Brand Components - v4.0
 // High-fidelity static versions of animated brand elements
 
-// SVG-based components (may have rendering issues)
+// SVG-based components
 export { PDFLogo, PDFLogoText } from './PDFLogo';
-export { PDFGradientBar } from './PDFGradientBar';
 export { PDFLogoArc } from './PDFLogoArc';
 export { PDFMeshBackground } from './PDFMeshBackground';
 export { PDFArches } from './PDFArches';
 
-// Logo + Barre/Arc obligatoire (Charte 4.0)
+// Logo + Arc (Charte 4.0)
+export { PDFLogoWithArc } from './PDFLogoWithArc';
+
+// Legacy exports - deprecated, use PDFLogoArc instead
+export { PDFGradientBar } from './PDFGradientBar';
 export { PDFLogoWithBar } from './PDFLogoWithBar';
 
 // Base64 SVG components (reliable rendering) - RECOMMENDED

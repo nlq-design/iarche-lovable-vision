@@ -21,12 +21,12 @@ import CharterSelector, { CharterType, getCharterColors, getCharterGradients } f
 import {
   HTMLBaseTemplate,
   HTMLLogoWithBar,
-  HTMLGradientBar,
   IARCHE_COLORS,
   IARCHE_FONTS,
   ThemeType,
-  BarSize,
 } from '@/components/admin/medias/html';
+import { HTMLLogoArc } from '@/components/admin/medias/html/HTMLLogoArc';
+import { ArcSize } from '@/components/admin/medias/html/tokens';
 
 type StoryTemplate = 'annonce' | 'chiffre';
 
@@ -63,7 +63,7 @@ export default function StoryEditor() {
   const [charter, setCharter] = useState<CharterType>('iarche');
   const [preset, setPreset] = useState<string>('');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
-  const [barSize, setBarSize] = useState<BarSize>('xl');
+  const [barSize, setBarSize] = useState<ArcSize>('xl');
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
   
   // Get colors based on charter
@@ -110,7 +110,7 @@ export default function StoryEditor() {
     if (data.template) setTemplate(data.template as StoryTemplate);
     if (data.theme) setTheme(data.theme as ThemeType);
     if (data.exportMode) setExportMode(data.exportMode as ExportMode);
-    if (data.barSize) setBarSize(data.barSize as BarSize);
+    if (data.barSize) setBarSize(data.barSize as ArcSize);
     if (data.pngQuality) setPngQuality(data.pngQuality as PngQuality);
     if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
     if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);

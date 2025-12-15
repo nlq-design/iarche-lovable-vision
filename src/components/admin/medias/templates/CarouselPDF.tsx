@@ -1,7 +1,7 @@
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
 import { PDFImageLogo, PDFPatternBackground } from '../pdf/PDFImageAssets';
-import { PDFGradientBar } from '../pdf/PDFGradientBar';
+import { PDFLogoArc } from '../pdf/PDFLogoArc';
 
 export type ExportMode = 'simple' | 'with-bar' | 'full';
 export type BarSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -161,10 +161,8 @@ export const CarouselPDF: React.FC<CarouselPDFProps> = ({
                     variant={isDark ? 'terracotta' : 'gradient'} 
                   />
                   {showBar && (
-                    <PDFGradientBar 
+                    <PDFLogoArc 
                       size={barSize} 
-                      width={120} 
-                      isDark={isDark}
                       style={{ marginTop: 8 }}
                     />
                   )}

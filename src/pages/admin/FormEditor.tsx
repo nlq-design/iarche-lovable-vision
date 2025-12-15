@@ -979,28 +979,28 @@ const FormEditor = () => {
                 
                 <div className="pt-4 border-t space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label>Afficher barre gradient</Label>
+                    <Label>Afficher arc décoratif</Label>
                     <Switch
-                      checked={form.settings.design.showGradientBar}
+                      checked={form.settings.design.showArc ?? form.settings.design.showGradientBar}
                       onCheckedChange={(checked) => setForm({
                         ...form,
                         settings: {
                           ...form.settings,
-                          design: { ...form.settings.design, showGradientBar: checked }
+                          design: { ...form.settings.design, showArc: checked }
                         }
                       })}
                     />
                   </div>
-                  {form.settings.design.showGradientBar && (
+                  {(form.settings.design.showArc ?? form.settings.design.showGradientBar) && (
                     <div>
-                      <Label>Taille de la barre</Label>
+                      <Label>Taille de l'arc</Label>
                       <Select
-                        value={form.settings.design.barSize}
+                        value={form.settings.design.arcSize ?? form.settings.design.barSize}
                         onValueChange={(v) => setForm({
                           ...form,
                           settings: {
                             ...form.settings,
-                            design: { ...form.settings.design, barSize: v as any }
+                            design: { ...form.settings.design, arcSize: v as any }
                           }
                         })}
                       >
