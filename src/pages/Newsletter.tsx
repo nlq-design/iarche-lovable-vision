@@ -11,6 +11,7 @@ import { CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { newsletterSchema } from '@/schemas/contact';
+import LogoArc from '@/components/ui/LogoArc';
 import { useCTATracking } from '@/hooks/useCTATracking';
 
 const Newsletter = () => {
@@ -136,7 +137,7 @@ const Newsletter = () => {
             <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
               Newsletter
             </h1>
-            <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary animate-fadeIn [animation-delay:0.15s]"></div>
+            <LogoArc size="md" className="mx-auto mb-6 animate-fadeIn [animation-delay:0.15s]" />
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
               Actualités et conseils IA, sans spam
             </p>

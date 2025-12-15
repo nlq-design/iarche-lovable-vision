@@ -4,6 +4,7 @@ import { NavLink } from '@/components/NavLink';
 import { Calendar } from 'lucide-react';
 import { Card } from './card';
 import GradientTitle from './GradientTitle';
+import LogoArc from './LogoArc';
 
 interface RelatedArticle {
   id: string;
@@ -92,7 +93,7 @@ const RelatedArticles: React.FC<RelatedArticlesProps> = ({
         <h2 className="text-2xl font-semibold text-primary mb-2 text-center">
           Articles similaires
         </h2>
-        <div className="w-20 h-1 mx-auto mb-8 rounded-full bg-gradient-to-r from-primary via-accent to-primary"></div>
+        <LogoArc size="sm" className="mx-auto mb-8" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {articles.map((article, index) => (

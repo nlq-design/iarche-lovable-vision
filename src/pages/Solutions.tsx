@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import GradientLink from '@/components/ui/GradientLink';
 import IArcheLink from '@/components/ui/IArcheLink';
 import { useCTATracking } from '@/hooks/useCTATracking';
+import LogoArc from '@/components/ui/LogoArc';
 
 const Solutions = () => {
   const { trackCTAClick } = useCTATracking();
@@ -95,7 +96,7 @@ const Solutions = () => {
             <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
               Nos solutions
             </h1>
-            <div className="w-24 h-1 mx-auto mb-6 rounded-full bg-gradient-to-r from-primary via-accent to-primary animate-fadeIn [animation-delay:0.15s]"></div>
+            <LogoArc size="md" className="mx-auto mb-6 animate-fadeIn [animation-delay:0.15s]" />
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
               <span className="hero-gradient-text">IArche</span> déploie des solutions SaaS conçues à partir de besoins concrets identifiés sur le terrain.
             </p>
