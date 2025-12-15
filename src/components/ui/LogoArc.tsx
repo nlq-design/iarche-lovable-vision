@@ -37,19 +37,17 @@ const LogoArc: React.FC<LogoArcProps> = ({
   const viewBoxWidth = 200;
   const viewBoxHeight = 24;
   
-  // Path de l'arc exactement conforme au logo IArche
-  // Courbe de Bézier qui :
-  // - Part légèrement en bas à gauche
-  // - Monte en courbe douce vers le centre-haut
-  // - Redescend légèrement vers la droite
+  // Path de l'arc exactement conforme au logo IArche v4.0
+  // Arc de cercle classique qui :
+  // - Part en bas à gauche (épaisseur max)
+  // - Monte en courbe vers le centre-haut
+  // - Redescend vers le bas à droite (épaisseur min)
   // - S'affine progressivement de gauche à droite
   const arcPath = `
-    M 0 20
-    Q 50 0, 100 8
-    Q 150 14, 200 18
-    L 200 22
-    Q 150 19, 100 14
-    Q 50 8, 0 24
+    M 0 18
+    Q 100 0, 200 14
+    L 200 16
+    Q 100 4, 0 22
     Z
   `.replace(/\s+/g, ' ').trim();
 

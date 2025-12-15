@@ -32,7 +32,7 @@ export const PDFLogoArc = ({
   const viewBoxWidth = 200;
   const viewBoxHeight = 24;
   
-  const arcPath = `M 0 20 Q 50 0, 100 8 Q 150 14, 200 18 L 200 22 Q 150 19, 100 14 Q 50 8, 0 24 Z`;
+  const arcPath = `M 0 18 Q 100 0, 200 14 L 200 16 Q 100 4, 0 22 Z`;
 
   return (
     <Svg 
