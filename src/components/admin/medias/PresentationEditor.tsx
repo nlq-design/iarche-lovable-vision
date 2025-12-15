@@ -277,15 +277,14 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                       </>
                     )}
 
-                    {/* Header bar */}
+                    {/* Header with logo */}
                     <div className="flex items-center justify-between mb-6">
                       <div>
-                        <span 
-                          className="text-lg font-bold"
-                          style={{ color: isDark ? '#FFFFFF' : '#1A2B4A' }}
-                        >
-                          IArche
-                        </span>
+                        <img 
+                          src={isDark ? '/logos/iarche-white.svg' : '/logos/iarche-main.svg'}
+                          alt="IArche"
+                          style={{ height: 24, display: 'inline-block' }}
+                        />
                         {showBarInPreview && (
                           <HTMLLogoArc size="sm" className="mt-1" />
                         )}
