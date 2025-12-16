@@ -59,7 +59,7 @@ const Solutions = () => {
         <meta property="og:description" content="Solutions IA développées par IArche : Team 5 Connect, Lexia, Dialogue Plus." />
         <meta property="og:url" content="https://iarche.fr/solutions" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://iarche.fr/og-image-v4.png" />
+        <meta property="og:image" content="https://iarche.fr/og-solutions.png" />
         <meta property="og:image:width" content="1512" />
         <meta property="og:image:height" content="794" />
         <meta property="og:locale" content="fr_FR" />
