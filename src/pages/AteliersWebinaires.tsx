@@ -11,6 +11,7 @@ import { NavLink } from '@/components/NavLink';
 import { Loader2, Calendar } from 'lucide-react';
 import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
 import GradientTitle from '@/components/ui/GradientTitle';
+import LogoArc from '@/components/ui/LogoArc';
 import { usePagination } from '@/hooks/usePagination';
 import {
   Pagination,
@@ -195,12 +196,12 @@ const AteliersWebinaires = () => {
                   className="group"
                 >
                   <Card 
-                    className="h-full hover:shadow-lg transition-shadow duration-300 bg-background border border-border rounded-lg overflow-hidden animate-fadeIn"
-                    style={{ animationDelay: `${0.3 + index * 0.1}s` }}
+                    className="h-full hover:shadow-md transition-all duration-300 bg-background border border-border/60 rounded-lg overflow-hidden animate-fadeIn"
+                    style={{ animationDelay: `${0.2 + index * 0.08}s` }}
                   >
-                    {/* Image de couverture compacte */}
+                    {/* Image de couverture */}
                     {item.cover_image_url ? (
-                      <div className="h-40 overflow-hidden">
+                      <div className="h-36 overflow-hidden">
                         <img
                           src={item.cover_image_url}
                           alt={item.title}
@@ -208,13 +209,17 @@ const AteliersWebinaires = () => {
                         />
                       </div>
                     ) : (
-                      <ArticlePlaceholder className="h-40" />
+                      <ArticlePlaceholder className="h-36" />
                     )}
 
-                    <CardHeader className="pb-2">
-                      <GradientTitle size="sm" as="h2" centered={false} textClassName="line-clamp-2">
+                    <CardHeader className="pb-2 pt-4">
+                      <GradientTitle size="sm" as="h2" centered={false} textClassName="line-clamp-2 text-base" showArc={false}>
                         {item.title}
                       </GradientTitle>
+                      {/* Arc décoratif */}
+                      <div className="mt-2">
+                        <LogoArc size="sm" />
+                      </div>
                     </CardHeader>
 
                     <CardContent className="space-y-2">

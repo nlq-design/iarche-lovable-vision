@@ -4,20 +4,21 @@ import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import GradientLink from '@/components/ui/GradientLink';
-import IArcheLink from '@/components/ui/IArcheLink';
 import { useCTATracking } from '@/hooks/useCTATracking';
 import GradientTitle from '@/components/ui/GradientTitle';
 import { Loader2 } from 'lucide-react';
 import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
+import ResourceCard from '@/components/ui/ResourceCard';
 
 interface Solution {
   id: string;
   title: string;
   slug: string;
   excerpt: string | null;
+  cover_image_url: string | null;
+  created_at: string;
 }
 
 const Solutions = () => {
@@ -33,7 +34,7 @@ const Solutions = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('articles')
-      .select('id, title, slug, excerpt')
+      .select('id, title, slug, excerpt, cover_image_url, created_at')
       .eq('published', true)
       .eq('resource_type', 'solution')
       .order('created_at', { ascending: false });
@@ -97,63 +98,53 @@ const Solutions = () => {
             </p>
           </div>
 
-          {/* SaaS IArche */}
-          <div className="mb-12 pb-8">
-            <div className="text-center mb-8 animate-fadeIn [animation-delay:0.3s]">
-              <GradientLink 
-                href="/contact" 
-                className="text-lg"
-                onClick={() => trackCTAClick('en_savoir_plus', 'solutions_page_top')}
-              >
-                Je veux en savoir plus
-              </GradientLink>
-            </div>
-
-            {loading ? (
-              <div className="flex justify-center items-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              </div>
-            ) : solutions.length === 0 ? (
-              <div className="text-center py-20">
-                <ArticlePlaceholder />
-                <p className="text-muted-foreground mt-4">
-                  Aucune solution disponible pour le moment.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {solutions.map((solution, index) => (
-                  <Card 
-                    key={solution.id}
-                    className="animate-fadeIn hover:shadow-lg transition-shadow duration-300"
-                    style={{ animationDelay: `${0.4 + index * 0.1}s` }}
-                  >
-                    <CardHeader>
-                      <CardTitle className="text-xl text-foreground">
-                        {solution.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {solution.excerpt && (
-                        <p className="text-muted-foreground mb-4">
-                          {solution.excerpt}
-                        </p>
-                      )}
-                      <IArcheLink 
-                        href={`/solutions/${solution.slug}`}
-                        onClick={() => trackCTAClick('en_savoir_plus_solution', 'solutions_page', solution.slug)}
-                      >
-                        Découvrir {solution.title}
-                      </IArcheLink>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+          {/* CTA en-tête */}
+          <div className="text-center mb-10 animate-fadeIn [animation-delay:0.3s]">
+            <GradientLink 
+              href="/contact" 
+              className="text-lg"
+              onClick={() => trackCTAClick('en_savoir_plus', 'solutions_page_top')}
+            >
+              Je veux en savoir plus
+            </GradientLink>
           </div>
 
-          {/* CTA */}
-          <div className="text-center mt-4 animate-fadeIn [animation-delay:1.6s]">
+          {/* Liste des solutions */}
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : solutions.length === 0 ? (
+            <div className="text-center py-20">
+              <ArticlePlaceholder />
+              <p className="text-muted-foreground mt-4">
+                Aucune solution disponible pour le moment.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {solutions.map((solution, index) => (
+                <ResourceCard
+                  key={solution.id}
+                  id={solution.id}
+                  title={solution.title}
+                  slug={solution.slug}
+                  excerpt={solution.excerpt}
+                  coverImageUrl={solution.cover_image_url}
+                  createdAt={solution.created_at}
+                  basePath="/solutions"
+                  index={index}
+                  showDate={false}
+                  showArc={true}
+                  arcSize="sm"
+                  onClick={() => trackCTAClick('solution_card', 'solutions_page', solution.slug)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* CTA bas de page */}
+          <div className="text-center mt-12 animate-fadeIn [animation-delay:0.8s]">
             <p className="text-lg text-foreground mb-6">
               Envie de créer votre propre solution ?
             </p>

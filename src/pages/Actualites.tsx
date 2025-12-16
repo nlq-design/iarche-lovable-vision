@@ -4,12 +4,11 @@ import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { NavLink } from '@/components/NavLink';
-import { Loader2, Calendar } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
 import GradientTitle from '@/components/ui/GradientTitle';
+import ResourceCard from '@/components/ui/ResourceCard';
 import { usePagination } from '@/hooks/usePagination';
 import {
   Pagination,
@@ -192,55 +191,23 @@ const Actualites = () => {
             </div>
           ) : (
             <>
-              {/* Grille 3 colonnes compacte - Style Timeline */}
+              {/* Grille 3 colonnes */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {currentItems.map((article, index) => (
-                <NavLink
-                  key={article.id}
-                  to={`/actualites/${article.slug}`}
-                  className="group"
-                >
-                  <Card 
-                    className="h-full hover:shadow-lg transition-shadow duration-300 bg-background border border-border rounded-lg overflow-hidden animate-fadeIn"
-                    style={{ animationDelay: `${0.3 + index * 0.1}s` }}
-                  >
-                    {/* Image de couverture compacte */}
-                    {article.cover_image_url ? (
-                      <div className="h-40 overflow-hidden">
-                        <img
-                          src={article.cover_image_url}
-                          alt={article.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                    ) : (
-                      <ArticlePlaceholder className="h-40" />
-                    )}
-
-                    <CardHeader className="pb-2">
-                      <GradientTitle size="sm" as="h2" centered={false} textClassName="line-clamp-2">
-                        {article.title}
-                      </GradientTitle>
-                    </CardHeader>
-
-                    <CardContent className="space-y-2">
-                      {article.excerpt && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {article.excerpt}
-                        </p>
-                      )}
-                      {/* Date discrète en bas */}
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70 pt-1">
-                        <Calendar className="h-3 w-3" aria-hidden="true" />
-                        {new Date(article.created_at).toLocaleDateString('fr-FR', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </NavLink>
+                  <ResourceCard
+                    key={article.id}
+                    id={article.id}
+                    title={article.title}
+                    slug={article.slug}
+                    excerpt={article.excerpt}
+                    coverImageUrl={article.cover_image_url}
+                    createdAt={article.created_at}
+                    basePath="/actualites"
+                    index={index}
+                    showDate={true}
+                    showArc={true}
+                    arcSize="sm"
+                  />
                 ))}
               </div>
 
