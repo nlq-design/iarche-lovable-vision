@@ -5,6 +5,7 @@ import { PDFLogoArc } from '../pdf/PDFLogoArc';
 
 export type ExportMode = 'simple' | 'with-bar' | 'full';
 export type BarSize = 'sm' | 'md' | 'lg' | 'xl';
+export type ThemeType = 'dark' | 'light' | 'terra' | 'contrast';
 
 interface SlideData {
   id: number;
@@ -19,18 +20,54 @@ interface SlideData {
 interface CarouselPDFProps {
   slides: SlideData[];
   format?: 'linkedin' | 'instagram';
-  startTheme?: 'dark' | 'light';
+  startTheme?: ThemeType;
 }
 
+// Theme configurations
+const THEME_COLORS = {
+  dark: {
+    background: IARCHE_COLORS.bleuNuit,
+    text: IARCHE_COLORS.blancCasse,
+    subtext: 'rgba(250, 249, 247, 0.7)',
+    highlightBg: 'rgba(176, 74, 50, 0.15)',
+    highlightText: IARCHE_COLORS.terracotta,
+    logoVariant: 'terracotta' as const,
+  },
+  light: {
+    background: IARCHE_COLORS.blancCasse,
+    text: IARCHE_COLORS.bleuNuit,
+    subtext: IARCHE_COLORS.subtle,
+    highlightBg: 'rgba(26, 43, 74, 0.08)',
+    highlightText: IARCHE_COLORS.bleuNuit,
+    logoVariant: 'gradient' as const,
+  },
+  terra: {
+    background: '#8B3A2F',
+    text: IARCHE_COLORS.blancCasse,
+    subtext: 'rgba(250, 249, 247, 0.7)',
+    highlightBg: 'rgba(26, 43, 74, 0.15)',
+    highlightText: IARCHE_COLORS.bleuNuit,
+    logoVariant: 'white' as const,
+  },
+  contrast: {
+    background: '#0A0A0A',
+    text: '#FAFAFA',
+    subtext: 'rgba(250, 250, 250, 0.7)',
+    highlightBg: 'rgba(176, 74, 50, 0.2)',
+    highlightText: IARCHE_COLORS.terracotta,
+    logoVariant: 'white' as const,
+  },
+};
+
+// Theme alternation pairs
+const THEME_ALTERNATES: Record<ThemeType, ThemeType> = {
+  dark: 'light',
+  light: 'dark',
+  terra: 'dark',
+  contrast: 'light',
+};
+
 const styles = StyleSheet.create({
-  pageDark: {
-    position: 'relative',
-    backgroundColor: IARCHE_COLORS.bleuNuit,
-  },
-  pageLight: {
-    position: 'relative',
-    backgroundColor: IARCHE_COLORS.blancCasse,
-  },
   content: {
     flex: 1,
     padding: 40,
@@ -110,6 +147,12 @@ const FORMATS = {
   instagram: { width: 1080, height: 1350 },
 };
 
+// Get theme for a specific slide index
+const getSlideTheme = (index: number, startTheme: ThemeType): ThemeType => {
+  if (index % 2 === 0) return startTheme;
+  return THEME_ALTERNATES[startTheme];
+};
+
 export const CarouselPDF: React.FC<CarouselPDFProps> = ({ 
   slides, 
   format = 'linkedin',
@@ -120,17 +163,8 @@ export const CarouselPDF: React.FC<CarouselPDFProps> = ({
   return (
     <Document>
       {slides.map((slide, index) => {
-        // Alternate themes starting from startTheme
-        const isDark = startTheme === 'dark' ? index % 2 === 0 : index % 2 !== 0;
-        
-        const textColor = isDark ? IARCHE_COLORS.blancCasse : IARCHE_COLORS.bleuNuit;
-        const subtextColor = isDark ? 'rgba(250, 249, 247, 0.7)' : IARCHE_COLORS.subtle;
-        const highlightBg = isDark 
-          ? 'rgba(176, 74, 50, 0.15)' 
-          : 'rgba(26, 43, 74, 0.08)';
-        const highlightTextColor = isDark 
-          ? IARCHE_COLORS.terracotta 
-          : IARCHE_COLORS.bleuNuit;
+        const currentTheme = getSlideTheme(index, startTheme);
+        const colors = THEME_COLORS[currentTheme];
         
         // Per-slide export mode (default to 'full' for backward compatibility)
         const exportMode = slide.exportMode || 'full';
@@ -141,7 +175,7 @@ export const CarouselPDF: React.FC<CarouselPDFProps> = ({
           <Page 
             key={slide.id} 
             size={[width, height]} 
-            style={isDark ? styles.pageDark : styles.pageLight}
+            style={{ position: 'relative', backgroundColor: colors.background }}
           >
             
             {/* Main content */}
@@ -151,33 +185,33 @@ export const CarouselPDF: React.FC<CarouselPDFProps> = ({
                 <View style={styles.logoContainer}>
                   <PDFImageLogo 
                     width={120} 
-                    variant={isDark ? 'terracotta' : 'gradient'} 
+                    variant={colors.logoVariant} 
                   />
                   {/* v4.0: pas d'arc sous le logo */}
                 </View>
-                <Text style={[styles.slideNumber, { color: subtextColor }]}>
+                <Text style={[styles.slideNumber, { color: colors.subtext }]}>
                   {String(index + 1).padStart(2, '0')}/{String(slides.length).padStart(2, '0')}
                 </Text>
               </View>
 
               {/* Body content */}
               <View style={styles.body}>
-                <Text style={[styles.title, { color: textColor }]}>
+                <Text style={[styles.title, { color: colors.text }]}>
                   {slide.title}
                 </Text>
                 {slide.subtitle && (
-                  <Text style={[styles.subtitle, { color: subtextColor }]}>
+                  <Text style={[styles.subtitle, { color: colors.subtext }]}>
                     {slide.subtitle}
                   </Text>
                 )}
                 {slide.content && (
-                  <Text style={[styles.contentText, { color: textColor }]}>
+                  <Text style={[styles.contentText, { color: colors.text }]}>
                     {slide.content}
                   </Text>
                 )}
                 {slide.highlight && (
-                  <View style={[styles.highlight, { backgroundColor: highlightBg }]}>
-                    <Text style={[styles.highlightText, { color: highlightTextColor }]}>
+                  <View style={[styles.highlight, { backgroundColor: colors.highlightBg }]}>
+                    <Text style={[styles.highlightText, { color: colors.highlightText }]}>
                       {slide.highlight}
                     </Text>
                   </View>
@@ -186,12 +220,12 @@ export const CarouselPDF: React.FC<CarouselPDFProps> = ({
 
               {/* Footer */}
               <View style={styles.footer}>
-                <Text style={[styles.footerText, { color: subtextColor }]}>
+                <Text style={[styles.footerText, { color: colors.subtext }]}>
                   iarche.fr
                 </Text>
                 {index < slides.length - 1 && (
                   <View style={styles.swipeIndicator}>
-                    <Text style={[styles.footerText, { color: subtextColor }]}>
+                    <Text style={[styles.footerText, { color: colors.subtext }]}>
                       Swipe
                     </Text>
                     <Text style={[styles.swipeArrow, { color: IARCHE_COLORS.terracotta }]}>

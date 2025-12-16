@@ -5,6 +5,7 @@ import { PDFLogoArc } from '../pdf/PDFLogoArc';
 
 export type ExportMode = 'simple' | 'with-bar' | 'full';
 export type BarSize = 'sm' | 'md' | 'lg' | 'xl';
+export type ThemeType = 'dark' | 'light' | 'terra' | 'contrast';
 
 interface SlideData {
   id: number;
@@ -19,8 +20,56 @@ interface SlideData {
 
 interface PresentationPDFProps {
   slides: SlideData[];
-  startTheme?: 'dark' | 'light';
+  startTheme?: ThemeType;
 }
+
+// Theme configurations
+const THEME_COLORS = {
+  dark: {
+    background: IARCHE_COLORS.bleuNuit,
+    text: IARCHE_COLORS.white,
+    subtext: 'rgba(255, 255, 255, 0.8)',
+    accent: IARCHE_COLORS.terracotta,
+    logoVariant: 'terracotta' as const,
+    sectionNumberColor: IARCHE_COLORS.white,
+    footerOpacity: 0.4,
+  },
+  light: {
+    background: IARCHE_COLORS.blancCasse,
+    text: IARCHE_COLORS.bleuNuit,
+    subtext: IARCHE_COLORS.subtle,
+    accent: IARCHE_COLORS.terracotta,
+    logoVariant: 'gradient' as const,
+    sectionNumberColor: IARCHE_COLORS.terracotta,
+    footerOpacity: 1,
+  },
+  terra: {
+    background: '#8B3A2F',
+    text: IARCHE_COLORS.blancCasse,
+    subtext: 'rgba(250, 249, 247, 0.8)',
+    accent: IARCHE_COLORS.bleuNuit,
+    logoVariant: 'white' as const,
+    sectionNumberColor: IARCHE_COLORS.blancCasse,
+    footerOpacity: 0.5,
+  },
+  contrast: {
+    background: '#0A0A0A',
+    text: '#FAFAFA',
+    subtext: 'rgba(250, 250, 250, 0.8)',
+    accent: IARCHE_COLORS.terracotta,
+    logoVariant: 'white' as const,
+    sectionNumberColor: '#FAFAFA',
+    footerOpacity: 0.5,
+  },
+};
+
+// Theme alternation pairs
+const THEME_ALTERNATES: Record<ThemeType, ThemeType> = {
+  dark: 'light',
+  light: 'dark',
+  terra: 'dark',
+  contrast: 'light',
+};
 
 const { width: PAGE_WIDTH, height: PAGE_HEIGHT } = PDF_FORMATS.presentation;
 
@@ -221,18 +270,17 @@ const styles = StyleSheet.create({
 });
 
 export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDFProps) => {
-  const getSlideTheme = (slideIndex: number): boolean => {
-    if (startTheme === 'dark') {
-      return slideIndex % 2 === 0;
-    } else {
-      return slideIndex % 2 !== 0;
-    }
+  const getSlideTheme = (slideIndex: number): ThemeType => {
+    if (slideIndex % 2 === 0) return startTheme;
+    return THEME_ALTERNATES[startTheme];
   };
 
   return (
     <Document>
       {slides.map((slide, index) => {
-        const isDark = getSlideTheme(index);
+        const currentTheme = getSlideTheme(index);
+        const colors = THEME_COLORS[currentTheme];
+        const isDark = currentTheme !== 'light'; // For backward compatibility with existing styles
         const isCentered = slide.type === 'title' || slide.type === 'cta';
         const showSectionNumber = slide.type === 'content' || slide.type === 'bullets';
         
@@ -245,7 +293,12 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
           <Page 
             key={slide.id} 
             size={[PAGE_WIDTH, PAGE_HEIGHT]} 
-            style={isDark ? styles.pageDark : styles.pageLight}
+            style={{ 
+              width: PAGE_WIDTH, 
+              height: PAGE_HEIGHT, 
+              backgroundColor: colors.background, 
+              position: 'relative' 
+            }}
           >
 
             {/* Main content */}
@@ -255,7 +308,7 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
                 <View style={styles.logoContainer}>
                   <PDFImageLogo 
                     width={140} 
-                    variant={isDark ? 'terracotta' : 'gradient'} 
+                    variant={colors.logoVariant} 
                   />
                   {/* v4.0: pas d'arc sous le logo */}
                 </View>

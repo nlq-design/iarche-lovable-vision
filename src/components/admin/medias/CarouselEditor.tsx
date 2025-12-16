@@ -74,7 +74,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
   const [sourceMode, setSourceMode] = useState<'libre' | 'article'>('libre');
   const [articles, setArticles] = useState<{ id: string; title: string; slug: string }[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<string>('');
-  const [startTheme, setStartTheme] = useState<'dark' | 'light'>('dark');
+  const [startTheme, setStartTheme] = useState<'dark' | 'light' | 'terra' | 'contrast'>('dark');
 
   useEffect(() => {
     const fetchArticles = async () => {
@@ -211,8 +211,8 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
             <Label>Thème de départ :</Label>
             <RadioGroup 
               value={startTheme} 
-              onValueChange={(v) => setStartTheme(v as 'dark' | 'light')}
-              className="flex gap-4"
+              onValueChange={(v) => setStartTheme(v as 'dark' | 'light' | 'terra' | 'contrast')}
+              className="flex flex-wrap gap-4"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="dark" id="dark" />
@@ -226,6 +226,20 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                 <Label htmlFor="light" className="flex items-center gap-2 cursor-pointer">
                   <div className="w-5 h-5 rounded border" style={{ backgroundColor: '#FAF9F7' }} />
                   <span className="text-sm">Blanc Cassé</span>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="terra" id="terra" />
+                <Label htmlFor="terra" className="flex items-center gap-2 cursor-pointer">
+                  <div className="w-5 h-5 rounded border" style={{ backgroundColor: '#8B3A2F' }} />
+                  <span className="text-sm">Terra Nova</span>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="contrast" id="contrast" />
+                <Label htmlFor="contrast" className="flex items-center gap-2 cursor-pointer">
+                  <div className="w-5 h-5 rounded border" style={{ backgroundColor: '#0A0A0A' }} />
+                  <span className="text-sm">Contraste</span>
                 </Label>
               </div>
             </RadioGroup>
@@ -261,15 +275,23 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
             {/* Slide preview */}
             <Card className="overflow-hidden">
               {(() => {
-                const isDark = startTheme === 'dark' ? currentSlide % 2 === 0 : currentSlide % 2 !== 0;
+                // Theme configuration for preview
+                const PREVIEW_THEMES = {
+                  dark: { bg: '#1A2B4A', text: '#FFFFFF', subtext: 'rgba(255,255,255,0.6)', logo: '/logos/iarche-white.svg' },
+                  light: { bg: '#FAF9F7', text: '#1A2B4A', subtext: 'rgba(26,43,74,0.5)', logo: '/logos/iarche-main.svg' },
+                  terra: { bg: '#8B3A2F', text: '#FAF9F7', subtext: 'rgba(250,249,247,0.6)', logo: '/logos/iarche-white.svg' },
+                  contrast: { bg: '#0A0A0A', text: '#FAFAFA', subtext: 'rgba(250,250,250,0.6)', logo: '/logos/iarche-white.svg' },
+                };
+                const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light' };
+                
+                const currentTheme = currentSlide % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme);
+                const colors = PREVIEW_THEMES[currentTheme];
+                const isDark = currentTheme !== 'light';
+                
                 return (
                   <div 
                     className="aspect-[4/5] p-8 flex flex-col justify-between relative"
-                    style={{
-                      background: isDark 
-                        ? 'linear-gradient(135deg, #1A2B4A 0%, #14203A 100%)'
-                        : '#FAF9F7'
-                    }}
+                    style={{ background: colors.bg }}
                   >
                     {/* Canalisations decoration preview - only if 'full' mode */}
                     {showCanalisationsInPreview && (
@@ -290,7 +312,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                     {/* Logo seul (v4.0: pas d'arc sous le logo) */}
                     <div className="text-center">
                       <img 
-                        src={isDark ? '/logos/iarche-white.svg' : '/logos/iarche-main.svg'}
+                        src={colors.logo}
                         alt="IArche"
                         style={{ height: 32, display: 'inline-block' }}
                       />
@@ -299,16 +321,16 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                     {/* Content */}
                     <div className="flex-1 flex flex-col justify-center text-center space-y-4">
                       {current?.subtitle && (
-                        <p className={`text-sm uppercase tracking-wider ${isDark ? 'text-white/60' : 'text-[#1A2B4A]/50'}`}>{current.subtitle}</p>
+                        <p className="text-sm uppercase tracking-wider" style={{ color: colors.subtext }}>{current.subtitle}</p>
                       )}
                       {current?.title && (
-                        <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-[#1A2B4A]'}`}>{current.title}</h2>
+                        <h2 className="text-2xl font-bold" style={{ color: colors.text }}>{current.title}</h2>
                       )}
                       {showBarInPreview && current?.title && (
                         <HTMLLogoArc size="sm" className="mx-auto" />
                       )}
                       {current?.content && (
-                        <p className={`text-sm leading-relaxed ${isDark ? 'text-white/80' : 'text-[#1A2B4A]/80'}`}>{current.content}</p>
+                        <p className="text-sm leading-relaxed" style={{ color: colors.text, opacity: 0.8 }}>{current.content}</p>
                       )}
                       {current?.highlight && (
                         <p 
@@ -325,7 +347,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                       {showBarInPreview && (
                         <HTMLLogoArc size="sm" className="w-full opacity-50 mb-2" />
                       )}
-                      <p className={`text-xs ${isDark ? 'text-white/40' : 'text-[#1A2B4A]/40'}`}>iarche.fr</p>
+                      <p className="text-xs" style={{ color: colors.subtext }}>iarche.fr</p>
                     </div>
                   </div>
                 );
@@ -335,7 +357,16 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
             {/* Slide thumbnails with theme alternation */}
             <div className="flex gap-2 overflow-x-auto pb-2">
               {slides.map((slide, idx) => {
-                const thumbIsDark = startTheme === 'dark' ? idx % 2 === 0 : idx % 2 !== 0;
+                const PREVIEW_THEMES = {
+                  dark: { bg: '#1A2B4A' },
+                  light: { bg: '#FAF9F7' },
+                  terra: { bg: '#8B3A2F' },
+                  contrast: { bg: '#0A0A0A' },
+                };
+                const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light' };
+                const thumbTheme = idx % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme);
+                const isDarkThumb = thumbTheme !== 'light';
+                
                 return (
                   <button
                     key={slide.id}
@@ -343,11 +374,9 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                     className={`flex-shrink-0 w-16 h-20 rounded border-2 transition-all flex items-center justify-center ${
                       idx === currentSlide ? 'border-primary' : 'border-border hover:border-primary/50'
                     }`}
-                    style={{
-                      background: thumbIsDark ? '#1A2B4A' : '#FAF9F7'
-                    }}
+                    style={{ background: PREVIEW_THEMES[thumbTheme].bg }}
                   >
-                    <span className={`text-xs ${thumbIsDark ? 'text-white/60' : 'text-[#1A2B4A]/60'}`}>{idx + 1}</span>
+                    <span className={`text-xs ${isDarkThumb ? 'text-white/60' : 'text-[#1A2B4A]/60'}`}>{idx + 1}</span>
                   </button>
                 );
               })}
