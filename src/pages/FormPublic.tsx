@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import LogoArc from '@/components/ui/LogoArc';
 import { Button } from '@/components/ui/button';
 import { useForms } from '@/hooks/useForms';
 import { useFormResponses } from '@/hooks/useFormResponses';
@@ -352,37 +353,19 @@ const FormPublic = () => {
         style={{ backgroundColor: colors.background }}
       >
         <div className="max-w-2xl mx-auto">
-          {/* Header with optional arc */}
-          {(design.showArc ?? design.showGradientBar) && (
-            <div className="mb-8 flex justify-center">
-              <svg
-                viewBox="0 0 200 24"
-                width="120"
-                height="14"
-                aria-hidden="true"
-              >
-                <defs>
-                  <linearGradient id="formArcGradient" x1="0%" y1="50%" x2="100%" y2="50%">
-                    <stop offset="0%" stopColor={colors.primary} />
-                    <stop offset="100%" stopColor={colors.secondary} />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M 0 20 Q 50 0, 100 8 Q 150 14, 200 18 L 200 22 Q 150 19, 100 14 Q 50 8, 0 24 Z"
-                  fill="url(#formArcGradient)"
-                />
-              </svg>
-            </div>
-          )}
+          {/* Logo officiel IArche v4.0 */}
+          <div className="flex justify-center mb-6">
+            <img 
+              src={design.logo || "/logos/iarche-main.svg"} 
+              alt="IArche" 
+              className="h-10 object-contain"
+            />
+          </div>
           
-          {/* Logo */}
-          {design.logo && (
-            <div className="flex justify-center mb-6">
-              <img 
-                src={design.logo} 
-                alt="Logo" 
-                className="h-12 object-contain"
-              />
+          {/* Arc v4.0 sous le logo uniquement si showArc activé ET pas de logo custom */}
+          {(design.showArc ?? design.showGradientBar) && !design.logo && (
+            <div className="flex justify-center mb-8">
+              <LogoArc size="md" />
             </div>
           )}
           

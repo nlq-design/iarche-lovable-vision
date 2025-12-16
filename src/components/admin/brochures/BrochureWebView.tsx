@@ -70,28 +70,20 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
     }
   }, [isHorizontal]);
 
-  // Logo component with official SVG and decorative arc v4.0
+  // Logo component - v4.0: arc JAMAIS sous le logo
   const BrandLogo = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) => {
     const logoSizes = {
       sm: 24,
       md: 32,
       lg: 40,
     };
-    const arcSizes: Record<string, 'sm' | 'md' | 'lg'> = {
-      sm: 'sm',
-      md: 'sm',
-      lg: 'md',
-    };
     
     return (
-      <div className="flex flex-col items-center gap-2">
-        <img 
-          src="/logos/iarche-main.svg" 
-          alt="IArche" 
-          style={{ height: logoSizes[size], width: 'auto' }}
-        />
-        <LogoArc size={arcSizes[size]} />
-      </div>
+      <img 
+        src="/logos/iarche-main.svg" 
+        alt="IArche" 
+        style={{ height: logoSizes[size], width: 'auto' }}
+      />
     );
   };
 
@@ -111,8 +103,12 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
             style={{ backgroundColor: COLORS.blancCasse }}
           >
             <div className="relative z-10 flex flex-col items-center">
-              {/* Arc décoratif v4.0 above title */}
-              <LogoArc size="xl" className="mb-8" />
+              {/* Logo SVG officiel v4.0 en haut */}
+              <img 
+                src="/logos/iarche-main.svg" 
+                alt="IArche" 
+                className="h-12 mb-8"
+              />
               <h1
                 className="text-5xl md:text-7xl font-bold text-center mb-4"
                 style={{ 
@@ -125,6 +121,8 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
               >
                 {brochure.cover_title || 'Titre'}
               </h1>
+              {/* Arc v4.0 sous le titre */}
+              <LogoArc size="lg" className="mb-4" />
               {brochure.cover_subtitle && (
                 <p 
                   className="text-xl md:text-2xl text-center max-w-2xl"
