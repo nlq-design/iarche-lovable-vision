@@ -235,8 +235,10 @@ export default function ThumbnailEditor() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="dark">Sombre</SelectItem>
-                    <SelectItem value="light">Clair</SelectItem>
+                    <SelectItem value="dark">Sombre (Bleu Nuit)</SelectItem>
+                    <SelectItem value="light">Clair (Blanc Cassé)</SelectItem>
+                    <SelectItem value="terra">Terra Nova (Terracotta)</SelectItem>
+                    <SelectItem value="contrast">Contraste fort</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -7,13 +7,6 @@ interface HTMLLogoProps {
   className?: string;
 }
 
-const FONT_SIZES: Record<LogoSize, number> = {
-  sm: 24,
-  md: 32,
-  lg: 48,
-  xl: 64,
-};
-
 const LOGO_HEIGHTS: Record<LogoSize, number> = {
   sm: 24,
   md: 40,
@@ -24,10 +17,10 @@ const LOGO_HEIGHTS: Record<LogoSize, number> = {
 /**
  * Logo IArche v4.0
  * 
- * Par défaut, utilise le nouveau logo SVG avec arc
- * Option fallback: texte gradient animé (legacy)
+ * Utilise les logos SVG officiels
+ * v4.1: Support des 4 thèmes (dark, light, terra, contrast)
  * 
- * - Theme dark: logo blanc (sur fond bleu nuit)
+ * - Theme dark/terra/contrast: logo blanc (sur fond sombre)
  * - Theme light: logo gradient (fond clair)
  */
 export const HTMLLogo: React.FC<HTMLLogoProps> = ({
@@ -37,10 +30,10 @@ export const HTMLLogo: React.FC<HTMLLogoProps> = ({
 }) => {
   const height = LOGO_HEIGHTS[size];
 
-  // v4.0: Toujours utiliser le logo SVG officiel
-  const logoSrc = theme === 'dark' 
-    ? '/logos/iarche-white.svg' 
-    : '/logos/iarche-main.svg';
+  // v4.1: Logo blanc pour tous les thèmes sombres (dark, terra, contrast)
+  const logoSrc = theme === 'light' 
+    ? '/logos/iarche-main.svg'
+    : '/logos/iarche-white.svg';
   
   return (
     <img

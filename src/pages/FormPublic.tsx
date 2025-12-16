@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import LogoArc from '@/components/ui/LogoArc';
 import { Button } from '@/components/ui/button';
 import { useForms } from '@/hooks/useForms';
 import { useFormResponses } from '@/hooks/useFormResponses';
@@ -353,7 +352,7 @@ const FormPublic = () => {
         style={{ backgroundColor: colors.background }}
       >
         <div className="max-w-2xl mx-auto">
-          {/* Logo officiel IArche v4.0 */}
+          {/* Logo v4.0: logo custom ou logo officiel IArche */}
           <div className="flex justify-center mb-6">
             <img 
               src={design.logo || "/logos/iarche-main.svg"} 
@@ -361,13 +360,6 @@ const FormPublic = () => {
               className="h-10 object-contain"
             />
           </div>
-          
-          {/* Arc v4.0 sous le logo uniquement si showArc activé ET pas de logo custom */}
-          {(design.showArc ?? design.showGradientBar) && !design.logo && (
-            <div className="flex justify-center mb-8">
-              <LogoArc size="md" />
-            </div>
-          )}
           
           {/* Form container */}
           <div 

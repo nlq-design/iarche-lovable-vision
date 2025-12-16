@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { IARCHE_COLORS, IARCHE_FONTS, ThemeType } from './tokens';
+import { IARCHE_COLORS, IARCHE_FONTS, ThemeType, getBackgroundColor } from './tokens';
 import { HTMLArches } from './HTMLArches';
 
 interface HTMLBaseTemplateProps {
@@ -15,9 +15,10 @@ interface HTMLBaseTemplateProps {
 
 /**
  * Template de base pour tous les visuels HTML/PNG
- * Inclut: fond, maillé, arches décoratives
+ * Inclut: fond, arches décoratives
  * 
- * v4.0: Suppression des canalisations
+ * v4.0: Suppression des canalisations et fond quadrillé
+ * v4.1: Support des 4 thèmes (dark, light, terra, contrast)
  */
 export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps>(
   (
@@ -33,9 +34,8 @@ export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps
     },
     ref
   ) => {
-    const backgroundColor = theme === 'dark' 
-      ? IARCHE_COLORS.bleuNuit 
-      : IARCHE_COLORS.blancCasse;
+    // v4.1: Utiliser getBackgroundColor pour tous les thèmes
+    const backgroundColor = getBackgroundColor(theme);
 
     // Auto-calculate arch size based on smallest dimension
     const calculatedArchSize = archSize ?? Math.min(width, height) * 0.15;
