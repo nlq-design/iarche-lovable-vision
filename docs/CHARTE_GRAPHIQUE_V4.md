@@ -34,12 +34,19 @@ L'arc utilise directement le fichier PNG de référence fourni :
 
 Aucun path SVG n'est généré - le fichier PNG exact est utilisé tel quel.
 
+### Fond de page
+- **Fond uni** : `#FAF9F7` (Blanc Cassé) - `hsl(30, 14%, 98%)`
+- Remplace le fond quadrillé animé (mesh)
+
 ### Suppressions v4.0
 - ❌ Barres gradient horizontales (`div bg-gradient-to-r`)
 - ❌ HTMLGradientBar / PDFGradientBar (remplacés par HTMLLogoArc / PDFLogoArc)
 - ❌ Lignes canalisation (HTMLCanalisationLines, PDFCanalisationLines)
 - ❌ AnimatedArcs (remplacé par arc statique)
 - ❌ Texte gradient "IArche" (remplacé par logo SVG)
+- ❌ Fond quadrillé animé (mesh) - remplacé par fond uni #FAF9F7
+- ❌ HTMLMeshBackground / PDFMeshBackground (supprimés)
+- ❌ Animation patternScroll (supprimée)
 
 ### Fichiers logo
 - `/logos/iarche-main.svg` - Logo principal gradient
