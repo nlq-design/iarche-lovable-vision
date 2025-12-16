@@ -141,7 +141,6 @@ const HeaderEmailEditor: React.FC = () => {
             width={600}
             height={150}
             theme="dark"
-            showMesh={exportMode === 'full'}
             showArches={false}
             padding={24}
           >
@@ -190,7 +189,6 @@ const HeaderEmailEditor: React.FC = () => {
             width={600}
             height={150}
             theme="light"
-            showMesh={false}
             showArches={false}
             padding={24}
           >
@@ -226,7 +224,6 @@ const HeaderEmailEditor: React.FC = () => {
             width={600}
             height={150}
             theme="light"
-            showMesh={false}
             showArches={false}
             padding={24}
           >
