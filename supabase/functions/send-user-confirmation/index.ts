@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { logEmail } from '../_shared/emailLogger.ts';
 import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
 import { EMAIL_COLORS, LOGO_URL, getEmailHeader, getEmailFooter, wrapEmailContent, getCtaButton, getInfoCard, getSignature } from '../_shared/emailTemplate.ts';
+import { userConfirmationSchema, validateRequest, type UserConfirmationRequest } from '../_shared/validation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -38,17 +39,6 @@ const validateFileUrl = (url: string | null | undefined): string => {
     return '';
   }
 };
-
-interface UserConfirmationRequest {
-  email: string;
-  name: string;
-  source_type: 'contact' | 'newsletter' | 'livre-blanc' | 'solution-contact' | 'booking';
-  source_context?: string;
-  source_id?: string;
-  // Livre blanc specific
-  livre_blanc_title?: string;
-  file_url?: string;
-}
 
 const getEmailContent = (data: UserConfirmationRequest) => {
   // Échapper toutes les données utilisateur
@@ -195,8 +185,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    const data: UserConfirmationRequest = await req.json();
+    // Parse and validate request body
+    const rawData = await req.json();
+    const validation = validateRequest(userConfirmationSchema, rawData, corsHeaders);
+    if (!validation.success) {
+      return validation.response;
+    }
     
+    const data = validation.data;
     console.log(`Sending user confirmation to ${data.email} for source: ${data.source_type}`);
 
     const emailContent = getEmailContent(data);
