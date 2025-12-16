@@ -582,28 +582,6 @@ import arcImage from '@/assets/arc-iarche-v4.png';`}
             </ul>
           </div>
 
-          {/* Quadrillage */}
-          <div className="mb-12">
-            <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Fond Quadrillé Animé (Mesh)</h3>
-            <div className="relative h-48 rounded-lg overflow-hidden border border-[#E5E0DA]">
-              <div 
-                className="absolute inset-0 opacity-20"
-                style={{
-                  background: 'repeating-linear-gradient(45deg, transparent, transparent 20px, #E5E0DA 20px, #E5E0DA 22px)'
-                }}
-              ></div>
-              <div 
-                className="absolute inset-0 opacity-10"
-                style={{
-                  background: 'repeating-linear-gradient(-45deg, transparent, transparent 20px, #E5E0DA 20px, #E5E0DA 22px)'
-                }}
-              ></div>
-            </div>
-            <p className="text-sm text-[#666666] mt-2">
-              Deux quadrillages diagonaux (45° et -45°) avec animation de translation continue (40s).
-              Opacités: 20% et 10%. Espacement lignes: 20px.
-            </p>
-          </div>
 
           {/* Récapitulatif éléments restants */}
           <div className="bg-[#FAF9F7] p-6 rounded-lg">
@@ -614,8 +592,8 @@ import arcImage from '@/assets/arc-iarche-v4.png';`}
                 <ul className="text-sm text-[#666666] space-y-1">
                   <li>✓ Logo SVG officiel (3 variantes)</li>
                   <li>✓ Arc décoratif PNG (4 tailles)</li>
-                  <li>✓ Fond quadrillé animé (mesh)</li>
                   <li>✓ Gradient texte animé (GradientTitle)</li>
+                  <li>✓ Fond uni #FAF9F7</li>
                 </ul>
               </div>
               <div>
