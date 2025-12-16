@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { Resend } from "https://esm.sh/resend@4.0.0";
 import { logEmailBatch } from '../_shared/emailLogger.ts';
+import { EMAIL_COLORS, LOGO_URL, getEmailHeader, getEmailFooter, wrapEmailContent, getCtaButton } from '../_shared/emailTemplate.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -107,7 +108,23 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const articleUrl = `https://iarche.fr/actualites/${article.slug}`;
-    const emailSubject = `Nouvel article : ${article.title}`;
+    const emailSubject = `📰 Nouvel article : ${article.title}`;
+
+    // Generate email HTML with v4.0 template
+    const header = getEmailHeader('Nouvel article sur IArche');
+    const content = `
+      <h2 style="color: ${EMAIL_COLORS.nightBlue}; font-size: 20px; margin: 0 0 16px 0;">${article.title}</h2>
+      ${article.excerpt ? `<p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; line-height: 1.7; margin-bottom: 24px;">${article.excerpt}</p>` : ''}
+      <div style="text-align: center; margin: 32px 0;">
+        ${getCtaButton('Lire l\'article →', articleUrl)}
+      </div>
+      <p style="color: ${EMAIL_COLORS.mutedGray}; font-size: 14px; margin-top: 24px;">
+        À bientôt,<br>
+        <strong style="color: ${EMAIL_COLORS.nightBlue};">L'équipe IArche</strong>
+      </p>
+    `;
+    const footer = getEmailFooter();
+    const emailHtml = wrapEmailContent(header, content, footer);
 
     // Send emails to all subscribers
     const emailResults: Array<{ email: string; success: boolean; error?: string; resendId?: string }> = [];
@@ -119,20 +136,7 @@ const handler = async (req: Request): Promise<Response> => {
           to: [subscriber.email],
           replyTo: 'nlq@iarche.fr',
           subject: emailSubject,
-          html: `
-            <h1>Nouvel article sur IArche</h1>
-            <h2>${article.title}</h2>
-            ${article.excerpt ? `<p>${article.excerpt}</p>` : ''}
-            <p>
-              <a href="${articleUrl}" style="background: #C9652E; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">
-                Lire l'article
-              </a>
-            </p>
-            <p style="color: #666; font-size: 14px; margin-top: 32px;">
-              Vous recevez cet email car vous êtes inscrit à la newsletter IArche.<br>
-              <a href="https://iarche.fr" style="color: #C9652E;">Visiter notre site</a>
-            </p>
-          `,
+          html: emailHtml,
         });
 
         if (error) {

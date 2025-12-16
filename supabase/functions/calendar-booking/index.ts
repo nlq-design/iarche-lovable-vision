@@ -344,6 +344,18 @@ END:VCALENDAR`;
 // Address for in-person meetings
 const IARCHE_ADDRESS = '25 All. Marines, 64100 Bayonne';
 
+// Email template constants
+const EMAIL_COLORS = {
+  nightBlue: '#1A2B4A',
+  terracotta: '#B04A32',
+  offWhite: '#FAF9F7',
+  textGray: '#374151',
+  mutedGray: '#6B7280',
+  lightGray: '#9CA3AF',
+  borderGray: '#E5E7EB',
+};
+const LOGO_URL = 'https://iarche.fr/logos/iarche-main.png';
+
 // Generate HTML email template
 function generateEmailHTML(
   name: string,
@@ -377,8 +389,8 @@ function generateEmailHTML(
   const guestsHtml = additionalGuests && additionalGuests.length > 0 
     ? `<tr>
         <td style="padding-top: 12px;">
-          <strong style="color: hsl(218, 47%, 20%); font-size: 14px;">👥 Participants invités</strong><br>
-          <span style="color: #4A5568; font-size: 16px;">${additionalGuests.join(', ')}</span>
+          <strong style="color: ${EMAIL_COLORS.nightBlue}; font-size: 14px;">👥 Participants invités</strong><br>
+          <span style="color: ${EMAIL_COLORS.textGray}; font-size: 16px;">${additionalGuests.join(', ')}</span>
         </td>
       </tr>`
     : '';
@@ -389,25 +401,25 @@ function generateEmailHTML(
       <table role="presentation" style="width: 100%; margin-bottom: 24px;">
         <tr>
           <td style="text-align: center;">
-            <a href="${meetLink}" target="_blank" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, hsl(218, 47%, 20%) 0%, hsl(218, 47%, 35%) 100%); color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px;">
+            <a href="${meetLink}" target="_blank" style="display: inline-block; padding: 14px 32px; background-color: ${EMAIL_COLORS.nightBlue}; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px;">
               🎥 Rejoindre la réunion Visio
             </a>
           </td>
         </tr>
         <tr>
           <td style="text-align: center; padding-top: 12px;">
-            <span style="font-size: 12px; color: #718096;">ou copiez ce lien : ${meetLink}</span>
-            ${zoomPassword ? `<br><span style="font-size: 12px; color: #718096;">Mot de passe : <strong>${zoomPassword}</strong></span>` : ''}
+            <span style="font-size: 12px; color: ${EMAIL_COLORS.mutedGray};">ou copiez ce lien : ${meetLink}</span>
+            ${zoomPassword ? `<br><span style="font-size: 12px; color: ${EMAIL_COLORS.mutedGray};">Mot de passe : <strong>${zoomPassword}</strong></span>` : ''}
           </td>
         </tr>
       </table>
     `;
   } else if (meetingType === 'telephone') {
     connectionSection = `
-      <table role="presentation" style="width: 100%; margin-bottom: 24px; background-color: #F7FAFC; border-radius: 8px;">
+      <table role="presentation" style="width: 100%; margin-bottom: 24px; background-color: ${EMAIL_COLORS.offWhite}; border-radius: 8px;">
         <tr>
           <td style="padding: 16px; text-align: center;">
-            <p style="margin: 0; color: #4A5568; font-size: 14px;">
+            <p style="margin: 0; color: ${EMAIL_COLORS.textGray}; font-size: 14px;">
               📞 Nous vous appellerons au <strong>${phone || 'numéro que vous avez indiqué'}</strong> à l'heure du rendez-vous.
             </p>
           </td>
@@ -416,14 +428,14 @@ function generateEmailHTML(
     `;
   } else if (meetingType === 'presentiel') {
     connectionSection = `
-      <table role="presentation" style="width: 100%; margin-bottom: 24px; background-color: #F7FAFC; border-radius: 8px;">
+      <table role="presentation" style="width: 100%; margin-bottom: 24px; background-color: ${EMAIL_COLORS.offWhite}; border-radius: 8px;">
         <tr>
           <td style="padding: 16px; text-align: center;">
-            <p style="margin: 0; color: #4A5568; font-size: 14px;">
+            <p style="margin: 0; color: ${EMAIL_COLORS.textGray}; font-size: 14px;">
               📍 Rendez-vous dans nos locaux :<br>
               <strong>${IARCHE_ADDRESS}</strong>
             </p>
-            <a href="https://maps.google.com/?q=${encodeURIComponent(IARCHE_ADDRESS)}" target="_blank" style="display: inline-block; margin-top: 12px; padding: 8px 16px; background-color: hsl(218, 47%, 20%); color: #ffffff; text-decoration: none; font-size: 12px; border-radius: 4px;">
+            <a href="https://maps.google.com/?q=${encodeURIComponent(IARCHE_ADDRESS)}" target="_blank" style="display: inline-block; margin-top: 12px; padding: 8px 16px; background-color: ${EMAIL_COLORS.nightBlue}; color: #ffffff; text-decoration: none; font-size: 12px; border-radius: 4px;">
               🗺️ Voir sur Google Maps
             </a>
           </td>
@@ -440,56 +452,48 @@ function generateEmailHTML(
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Confirmation de rendez-vous</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #FAF9F7;">
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: ${EMAIL_COLORS.offWhite};">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
     <tr>
       <td style="padding: 40px 20px;">
         <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
-          <!-- Header with gradient bar -->
+          <!-- Header with gradient and logo -->
           <tr>
-            <td style="height: 8px; background: linear-gradient(90deg, hsl(218, 47%, 20%) 0%, hsl(12, 60%, 44%) 100%);"></td>
-          </tr>
-          
-          <!-- Logo -->
-          <tr>
-            <td style="padding: 32px 40px 24px; text-align: center;">
-              <h1 style="margin: 0; font-size: 28px; font-weight: 700; background: linear-gradient(270deg, hsl(218, 47%, 20%), hsl(12, 60%, 44%), hsl(218, 47%, 35%), hsl(12, 60%, 44%)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">IArche</h1>
+            <td style="background: linear-gradient(135deg, ${EMAIL_COLORS.nightBlue} 0%, ${EMAIL_COLORS.terracotta} 100%); padding: 32px 40px; text-align: center;">
+              <img src="${LOGO_URL}" alt="IArche" style="height: 40px; margin-bottom: 16px;" />
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Votre rendez-vous est confirmé !</h1>
             </td>
           </tr>
           
           <!-- Content -->
           <tr>
-            <td style="padding: 0 40px 32px;">
-              <h2 style="margin: 0 0 16px; font-size: 24px; font-weight: 600; color: hsl(218, 47%, 20%);">
-                Votre rendez-vous est confirmé !
-              </h2>
-              
-              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #4A5568;">
+            <td style="padding: 32px 40px;">
+              <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: ${EMAIL_COLORS.textGray};">
                 Bonjour ${name},<br><br>
                 Votre rendez-vous <strong>${bookingTypeName}</strong> a bien été enregistré.
               </p>
               
               <!-- Booking details card -->
-              <table role="presentation" style="width: 100%; background-color: #F7FAFC; border-radius: 8px; margin-bottom: 24px;">
+              <table role="presentation" style="width: 100%; background-color: ${EMAIL_COLORS.offWhite}; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid ${EMAIL_COLORS.terracotta};">
                 <tr>
                   <td style="padding: 24px;">
                     <table role="presentation" style="width: 100%;">
                       <tr>
                         <td style="padding-bottom: 12px;">
-                          <strong style="color: hsl(218, 47%, 20%); font-size: 14px;">📅 Date</strong><br>
-                          <span style="color: #4A5568; font-size: 16px;">${formatDateFr(startTime)}</span>
+                          <strong style="color: ${EMAIL_COLORS.nightBlue}; font-size: 14px;">📅 Date</strong><br>
+                          <span style="color: ${EMAIL_COLORS.textGray}; font-size: 16px;">${formatDateFr(startTime)}</span>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding-bottom: 12px;">
-                          <strong style="color: hsl(218, 47%, 20%); font-size: 14px;">🕐 Horaire</strong><br>
-                          <span style="color: #4A5568; font-size: 16px;">${formatTimeFr(startTime)} - ${formatTimeFr(endTime)}</span>
+                          <strong style="color: ${EMAIL_COLORS.nightBlue}; font-size: 14px;">🕐 Horaire</strong><br>
+                          <span style="color: ${EMAIL_COLORS.textGray}; font-size: 16px;">${formatTimeFr(startTime)} - ${formatTimeFr(endTime)}</span>
                         </td>
                       </tr>
                       <tr>
                         <td>
-                          <strong style="color: hsl(218, 47%, 20%); font-size: 14px;">${locationIcon} Format</strong><br>
-                          <span style="color: #4A5568; font-size: 16px;">${locationText}</span>
+                          <strong style="color: ${EMAIL_COLORS.nightBlue}; font-size: 14px;">${locationIcon} Format</strong><br>
+                          <span style="color: ${EMAIL_COLORS.textGray}; font-size: 16px;">${locationText}</span>
                         </td>
                       </tr>
                       ${guestsHtml}
@@ -500,22 +504,27 @@ function generateEmailHTML(
               
               ${connectionSection}
               
-              <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.6; color: #718096;">
+              <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.6; color: ${EMAIL_COLORS.mutedGray};">
                 📎 Un fichier .ics est joint à cet email pour ajouter le rendez-vous à votre calendrier.
               </p>
               
-              <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #718096;">
-                Si vous avez des questions ou devez modifier votre rendez-vous, n'hésitez pas à nous contacter à <a href="mailto:nlq@nlq.fr" style="color: hsl(12, 60%, 44%);">nlq@nlq.fr</a>
+              <p style="margin: 0; font-size: 14px; line-height: 1.6; color: ${EMAIL_COLORS.mutedGray};">
+                Si vous avez des questions ou devez modifier votre rendez-vous, n'hésitez pas à nous contacter à <a href="mailto:nlq@iarche.fr" style="color: ${EMAIL_COLORS.terracotta};">nlq@iarche.fr</a>
               </p>
             </td>
           </tr>
           
           <!-- Footer -->
           <tr>
-            <td style="padding: 24px 40px; background-color: #F7FAFC; border-top: 1px solid #E2E8F0;">
-              <p style="margin: 0; font-size: 12px; color: #718096; text-align: center;">
-                IArche · Bayonne · France<br>
-                <a href="https://iarche.fr" style="color: hsl(12, 60%, 44%); text-decoration: none;">iarche.fr</a>
+            <td style="padding: 24px 40px; background-color: ${EMAIL_COLORS.offWhite}; border-top: 1px solid ${EMAIL_COLORS.borderGray}; text-align: center;">
+              <img src="${LOGO_URL}" alt="IArche" style="height: 28px; margin-bottom: 12px; opacity: 0.8;" />
+              <p style="margin: 0 0 8px; font-size: 12px; color: ${EMAIL_COLORS.lightGray};">
+                IArche · Agence IA · Bayonne, France
+              </p>
+              <p style="margin: 0;">
+                <a href="https://iarche.fr" style="color: ${EMAIL_COLORS.terracotta}; text-decoration: none; font-size: 12px; font-weight: 500;">iarche.fr</a>
+                <span style="color: ${EMAIL_COLORS.lightGray}; margin: 0 8px;">·</span>
+                <a href="mailto:nlq@iarche.fr" style="color: ${EMAIL_COLORS.nightBlue}; text-decoration: none; font-size: 12px;">nlq@iarche.fr</a>
               </p>
             </td>
           </tr>

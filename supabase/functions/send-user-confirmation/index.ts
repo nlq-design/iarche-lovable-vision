@@ -2,6 +2,7 @@ import { Resend } from 'https://esm.sh/resend@2.0.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { logEmail } from '../_shared/emailLogger.ts';
 import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
+import { EMAIL_COLORS, LOGO_URL, getEmailHeader, getEmailFooter, wrapEmailContent, getCtaButton, getInfoCard, getSignature } from '../_shared/emailTemplate.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -56,156 +57,107 @@ const getEmailContent = (data: UserConfirmationRequest) => {
   const safeLivreBlanctitle = escapeHtml(data.livre_blanc_title);
   const safeFileUrl = validateFileUrl(data.file_url);
 
+  const header = (title: string) => getEmailHeader(title);
+  const footer = getEmailFooter();
+
   switch (data.source_type) {
     case 'contact':
       return {
         subject: '✅ Demande reçue · IArche',
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #1A2B4A; font-size: 24px; margin-bottom: 10px;">Demande reçue !</h1>
-            </div>
-            <p>Bonjour <strong>${safeName}</strong>,</p>
-            <p>Nous avons bien reçu votre message${safeSourceContext ? ` concernant "${safeSourceContext}"` : ''}.</p>
-            <p>Notre équipe vous répondra dans les plus brefs délais, généralement sous 24h.</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #666; font-size: 14px;">À bientôt,<br><strong style="color: #1A2B4A;">L'équipe IArche</strong></p>
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
-              <p>IArche · Bayonne · France</p>
-              <p><a href="https://iarche.fr" style="color: #B04A32;">iarche.fr</a></p>
-            </div>
-          </body>
-          </html>
-        `,
+        html: wrapEmailContent(
+          header('Demande reçue !'),
+          `
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Bonjour <strong>${safeName}</strong>,</p>
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Nous avons bien reçu votre message${safeSourceContext ? ` concernant "${safeSourceContext}"` : ''}.</p>
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 24px;">Notre équipe vous répondra dans les plus brefs délais, généralement sous 24h.</p>
+            ${getSignature()}
+          `,
+          footer
+        ),
       };
 
     case 'solution-contact':
       return {
         subject: `✅ Demande pour ${safeSourceContext || 'nos solutions'} · IArche`,
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #1A2B4A; font-size: 24px; margin-bottom: 10px;">Demande reçue !</h1>
-            </div>
-            <p>Bonjour <strong>${safeName}</strong>,</p>
-            <p>Nous avons bien reçu votre demande concernant <strong>${safeSourceContext || 'nos solutions'}</strong>.</p>
-            <p>Un membre de notre équipe vous contactera rapidement pour organiser une présentation personnalisée.</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #666; font-size: 14px;">À bientôt,<br><strong style="color: #1A2B4A;">L'équipe IArche</strong></p>
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
-              <p>IArche · Bayonne · France</p>
-              <p><a href="https://iarche.fr" style="color: #B04A32;">iarche.fr</a></p>
-            </div>
-          </body>
-          </html>
-        `,
+        html: wrapEmailContent(
+          header('Demande reçue !'),
+          `
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Bonjour <strong>${safeName}</strong>,</p>
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Nous avons bien reçu votre demande concernant <strong>${safeSourceContext || 'nos solutions'}</strong>.</p>
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 24px;">Un membre de notre équipe vous contactera rapidement pour organiser une présentation personnalisée.</p>
+            ${getSignature()}
+          `,
+          footer
+        ),
       };
 
     case 'livre-blanc':
       return {
         subject: `📚 Votre livre blanc : ${safeLivreBlanctitle || 'Document'}`,
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #1A2B4A; font-size: 24px; margin-bottom: 10px;">Votre livre blanc est prêt !</h1>
-            </div>
-            <p>Bonjour <strong>${safeName}</strong>,</p>
-            <p>Merci pour votre intérêt ! Voici votre livre blanc :</p>
-            <div style="background: linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%); color: white; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-              <h2 style="margin: 0 0 15px 0; font-size: 18px;">${safeLivreBlanctitle || 'Document'}</h2>
-              ${safeFileUrl ? `<a href="${safeFileUrl}" style="display: inline-block; background: white; color: #1A2B4A; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">📥 Télécharger le PDF</a>` : ''}
-            </div>
-            <p>Bonne lecture ! N'hésitez pas à nous contacter si vous avez des questions.</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #666; font-size: 14px;">À bientôt,<br><strong style="color: #1A2B4A;">L'équipe IArche</strong></p>
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
-              <p>IArche · Bayonne · France</p>
-              <p><a href="https://iarche.fr" style="color: #B04A32;">iarche.fr</a></p>
-            </div>
-          </body>
-          </html>
-        `,
+        html: wrapEmailContent(
+          header('Votre livre blanc est prêt !'),
+          `
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Bonjour <strong>${safeName}</strong>,</p>
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 20px;">Merci pour votre intérêt ! Voici votre livre blanc :</p>
+            
+            ${getInfoCard(`<h3 style="margin: 0 0 12px 0; font-size: 18px; color: ${EMAIL_COLORS.nightBlue};">${safeLivreBlanctitle || 'Document'}</h3>
+            ${safeFileUrl ? `<div style="text-align: center; margin-top: 12px;">${getCtaButton('📥 Télécharger le PDF', safeFileUrl)}</div>` : ''}`)}
+            
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-top: 24px;">Bonne lecture ! N'hésitez pas à nous contacter si vous avez des questions.</p>
+            ${getSignature()}
+          `,
+          footer
+        ),
       };
 
     case 'newsletter':
       return {
         subject: '✅ Bienvenue dans la newsletter IArche !',
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #1A2B4A; font-size: 24px; margin-bottom: 10px;">Bienvenue !</h1>
-            </div>
-            <p>Bonjour <strong>${safeName}</strong>,</p>
-            <p>Merci de vous être inscrit à notre newsletter !</p>
-            <p>Vous recevrez régulièrement :</p>
-            <ul style="color: #666;">
+        html: wrapEmailContent(
+          header('Bienvenue !'),
+          `
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Bonjour <strong>${safeName}</strong>,</p>
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 20px;">Merci de vous être inscrit à notre newsletter !</p>
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 8px;">Vous recevrez régulièrement :</p>
+            <ul style="color: ${EMAIL_COLORS.mutedGray}; margin-bottom: 24px;">
               <li>Veille technologique et actualités IA</li>
               <li>Conseils pratiques pour dirigeants</li>
               <li>Retours d'expérience et cas d'usage</li>
             </ul>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #666; font-size: 14px;">À bientôt,<br><strong style="color: #1A2B4A;">L'équipe IArche</strong></p>
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
-              <p>IArche · Bayonne · France</p>
-              <p><a href="https://iarche.fr" style="color: #B04A32;">iarche.fr</a></p>
-            </div>
-          </body>
-          </html>
-        `,
+            ${getSignature()}
+          `,
+          footer
+        ),
       };
 
     case 'booking':
       return {
         subject: `✅ Rendez-vous confirmé : ${safeSourceContext || 'IArche'}`,
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #1A2B4A; font-size: 24px; margin-bottom: 10px;">Rendez-vous confirmé !</h1>
-            </div>
-            <p>Bonjour <strong>${safeName}</strong>,</p>
-            <p>Votre rendez-vous <strong>${safeSourceContext || ''}</strong> est bien confirmé.</p>
-            <p>Vous recevrez une invitation Google Calendar avec le lien de visioconférence.</p>
-            <p>À très bientôt !</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #666; font-size: 14px;">À bientôt,<br><strong style="color: #1A2B4A;">L'équipe IArche</strong></p>
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
-              <p>IArche · Bayonne · France</p>
-              <p><a href="https://iarche.fr" style="color: #B04A32;">iarche.fr</a></p>
-            </div>
-          </body>
-          </html>
-        `,
+        html: wrapEmailContent(
+          header('Rendez-vous confirmé !'),
+          `
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Bonjour <strong>${safeName}</strong>,</p>
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Votre rendez-vous <strong>${safeSourceContext || ''}</strong> est bien confirmé.</p>
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 24px;">Vous recevrez une invitation Google Calendar avec le lien de visioconférence.</p>
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px;">À très bientôt !</p>
+            ${getSignature()}
+          `,
+          footer
+        ),
       };
 
     default:
       return {
         subject: '✅ Confirmation · IArche',
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head><meta charset="utf-8"></head>
-          <body style="font-family: sans-serif; padding: 20px;">
-            <p>Bonjour ${safeName},</p>
-            <p>Nous avons bien reçu votre demande.</p>
-            <p>L'équipe IArche</p>
-          </body>
-          </html>
-        `,
+        html: wrapEmailContent(
+          header('Confirmation'),
+          `
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Bonjour ${safeName},</p>
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px;">Nous avons bien reçu votre demande.</p>
+            ${getSignature()}
+          `,
+          footer
+        ),
       };
   }
 };

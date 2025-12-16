@@ -2,6 +2,7 @@ import { Resend } from 'https://esm.sh/resend@2.0.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { logEmail } from '../_shared/emailLogger.ts';
 import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
+import { EMAIL_COLORS, LOGO_URL, getEmailHeader, getEmailFooter, wrapEmailContent, getInfoCard, getSignature } from '../_shared/emailTemplate.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -117,65 +118,41 @@ Deno.serve(async (req) => {
     let eventDetailsHtml = '';
     if (event_date || safeEventLocation || safeHeureDebut || safeTypeEvenement) {
       eventDetailsHtml = `
-        <div style="background-color: #f8f7f5; border-radius: 8px; padding: 20px; margin: 20px 0;">
-          <h3 style="color: #1A2B4A; margin-top: 0;">Détails de l'événement</h3>
-          <table style="width: 100%; border-collapse: collapse;">
-            ${event_date ? `<tr><td style="padding: 8px 0; color: #666;">📅 Date</td><td style="padding: 8px 0; color: #1A2B4A; font-weight: 500;">${formattedDate}${safeHeureDebut ? ` à ${safeHeureDebut}` : ''}</td></tr>` : ''}
-            ${safeEventLocation ? `<tr><td style="padding: 8px 0; color: #666;">📍 Lieu</td><td style="padding: 8px 0; color: #1A2B4A; font-weight: 500;">${safeEventLocation}</td></tr>` : ''}
-            ${safeTypeEvenement ? `<tr><td style="padding: 8px 0; color: #666;">🎯 Format</td><td style="padding: 8px 0; color: #1A2B4A; font-weight: 500;">${safeTypeEvenement}</td></tr>` : ''}
-          </table>
-        </div>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          ${event_date ? `<tr><td style="padding: 10px 0; color: ${EMAIL_COLORS.mutedGray}; width: 100px;">📅 Date</td><td style="padding: 10px 0; color: ${EMAIL_COLORS.nightBlue}; font-weight: 500;">${formattedDate}${safeHeureDebut ? ` à ${safeHeureDebut}` : ''}</td></tr>` : ''}
+          ${safeEventLocation ? `<tr><td style="padding: 10px 0; color: ${EMAIL_COLORS.mutedGray};">📍 Lieu</td><td style="padding: 10px 0; color: ${EMAIL_COLORS.nightBlue}; font-weight: 500;">${safeEventLocation}</td></tr>` : ''}
+          ${safeTypeEvenement ? `<tr><td style="padding: 10px 0; color: ${EMAIL_COLORS.mutedGray};">🎯 Format</td><td style="padding: 10px 0; color: ${EMAIL_COLORS.nightBlue}; font-weight: 500;">${safeTypeEvenement}</td></tr>` : ''}
+        </table>
       `;
     }
 
     const emailSubject = subject(safeAtelierTitle);
 
+    // Generate email with v4.0 template
+    const header = getEmailHeader('Inscription confirmée !');
+    const content = `
+      <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Bonjour <strong>${safeName}</strong>,</p>
+      
+      <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 20px;">Nous avons bien reçu votre inscription à l'événement :</p>
+      
+      ${getInfoCard(`<h3 style="margin: 0; font-size: 18px; color: ${EMAIL_COLORS.nightBlue};">${safeAtelierTitle}</h3>`)}
+      
+      ${eventDetailsHtml}
+      
+      <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Vous recevrez un rappel quelques jours avant l'événement avec toutes les informations pratiques.</p>
+      
+      <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px;">En attendant, n'hésitez pas à nous contacter si vous avez des questions.</p>
+      
+      ${getSignature()}
+    `;
+    const footer = getEmailFooter();
+    const emailHtml = wrapEmailContent(header, content, footer);
+
     const { data, error } = await resend.emails.send({
       from: 'IArche <contact@iarche.fr>',
       to: [email],
       subject: emailSubject,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #1A2B4A; font-size: 24px; margin-bottom: 10px;">Inscription confirmée !</h1>
-          </div>
-          
-          <p>Bonjour <strong>${safeName}</strong>,</p>
-          
-          <p>Nous avons bien reçu votre inscription à l'événement :</p>
-          
-          <div style="background: linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%); color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h2 style="margin: 0; font-size: 20px;">${safeAtelierTitle}</h2>
-          </div>
-          
-          ${eventDetailsHtml}
-          
-          <p>Vous recevrez un rappel quelques jours avant l'événement avec toutes les informations pratiques.</p>
-          
-          <p>En attendant, n'hésitez pas à nous contacter si vous avez des questions.</p>
-          
-          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-          
-          <p style="color: #666; font-size: 14px;">
-            À bientôt,<br>
-            <strong style="color: #1A2B4A;">L'équipe IArche</strong>
-          </p>
-          
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
-            <p>IArche · Bayonne · France</p>
-            <p><a href="https://iarche.fr" style="color: #B04A32;">iarche.fr</a></p>
-          </div>
-          
-        </body>
-        </html>
-      `,
+      html: emailHtml,
     });
 
     if (error) {
