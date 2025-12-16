@@ -13,14 +13,16 @@ import ServiceDetail from "./pages/ServiceDetail";
 import Solutions from "./pages/Solutions";
 import Actualites from "./pages/Actualites";
 import Articles from "./pages/Articles";
-import CasClients from "./pages/CasClients";
-import LivresBlancs from "./pages/LivresBlancs";
-import AteliersWebinaires from "./pages/AteliersWebinaires";
 import ArticleDetail from "./pages/ArticleDetail";
 import Contact from "./pages/Contact";
-import Newsletter from "./pages/Newsletter";
-import LivreOr from "./pages/LivreOr";
-import Status from "./pages/Status";
+
+// Lazy load secondary public pages for bundle optimization
+const CasClients = lazy(() => import("./pages/CasClients"));
+const LivresBlancs = lazy(() => import("./pages/LivresBlancs"));
+const AteliersWebinaires = lazy(() => import("./pages/AteliersWebinaires"));
+const Newsletter = lazy(() => import("./pages/Newsletter"));
+const LivreOr = lazy(() => import("./pages/LivreOr"));
+const Status = lazy(() => import("./pages/Status"));
 import MentionsLegales from "./pages/MentionsLegales";
 import ConditionsGenerales from "./pages/ConditionsGenerales";
 import Confidentialite from "./pages/Confidentialite";
@@ -122,9 +124,21 @@ const App = () => (
           <Route path="/solutions/:slug" element={<ArticleDetail />} />
           <Route path="/actualites" element={<Actualites />} />
           <Route path="/articles" element={<Articles />} />
-          <Route path="/cas-clients" element={<CasClients />} />
-          <Route path="/livres-blancs" element={<LivresBlancs />} />
-          <Route path="/ateliers-webinaires" element={<AteliersWebinaires />} />
+          <Route path="/cas-clients" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <CasClients />
+            </Suspense>
+          } />
+          <Route path="/livres-blancs" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <LivresBlancs />
+            </Suspense>
+          } />
+          <Route path="/ateliers-webinaires" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <AteliersWebinaires />
+            </Suspense>
+          } />
           <Route path="/actualites/:slug" element={<ArticleDetail />} />
           <Route path="/articles/:slug" element={<ArticleDetail />} />
           <Route path="/cas-clients/:slug" element={<ArticleDetail />} />
@@ -140,9 +154,21 @@ const App = () => (
           } />
           
           {/* Pages secondaires */}
-          <Route path="/newsletter" element={<Newsletter />} />
-          <Route path="/livre-or" element={<LivreOr />} />
-          <Route path="/status" element={<Status />} />
+          <Route path="/newsletter" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <Newsletter />
+            </Suspense>
+          } />
+          <Route path="/livre-or" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <LivreOr />
+            </Suspense>
+          } />
+          <Route path="/status" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <Status />
+            </Suspense>
+          } />
           
           {/* Formulaires publics */}
           <Route path="/formulaires/:slug" element={
