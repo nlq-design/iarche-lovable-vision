@@ -21,7 +21,7 @@ import { Download } from 'lucide-react';
 import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
-  HTMLLogoWithBar,
+  HTMLLogo,
   IARCHE_COLORS,
   IARCHE_FONTS,
   ThemeType,
@@ -170,7 +170,7 @@ export default function OpenGraphEditor() {
             gap: '32px',
             textAlign: titleAlignment,
           }}>
-            <HTMLLogoWithBar size="xl" theme={theme} barSize={barSize} />
+            <HTMLLogo size="xl" theme={theme} />
             <h1 style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: `${titleFontSize}px`,
@@ -203,7 +203,7 @@ export default function OpenGraphEditor() {
           }}>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <HTMLLogoWithBar size="lg" theme={theme} barSize={barSize} />
+              <HTMLLogo size="lg" theme={theme} />
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: '18px',
@@ -266,7 +266,7 @@ export default function OpenGraphEditor() {
           }}>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <HTMLLogoWithBar size="lg" theme={theme} barSize={barSize} />
+              <HTMLLogo size="lg" theme={theme} />
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: '16px',

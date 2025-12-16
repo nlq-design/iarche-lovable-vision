@@ -264,12 +264,9 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
                     width={140} 
                     variant={isDark ? 'terracotta' : 'gradient'} 
                   />
-                  {showBar && <PDFLogoArc size={barSize} style={{ marginTop: 6 }} />}
+                  {/* v4.0: pas d'arc sous le logo */}
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  {showBar && (
-                    <PDFLogoArc size={barSize} style={{ marginRight: 20 }} />
-                  )}
                   <Text style={styles.slideNumber}>
                     {String(index + 1).padStart(2, '0')}
                   </Text>

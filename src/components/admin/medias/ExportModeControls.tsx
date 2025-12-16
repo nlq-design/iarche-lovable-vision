@@ -9,8 +9,8 @@ export type ExportMode = 'simple' | 'with-bar' | 'full';
 interface ExportModeControlsProps {
   exportMode: ExportMode;
   onExportModeChange: (mode: ExportMode) => void;
-  barSize: BarSize;
-  onBarSizeChange: (size: BarSize) => void;
+  barSize?: BarSize;
+  onBarSizeChange?: (size: BarSize) => void;
   showBarSizeSelector?: boolean;
   compact?: boolean;
 }
@@ -31,7 +31,7 @@ export const ExportModeControls: React.FC<ExportModeControlsProps> = ({
   showBarSizeSelector = true,
   compact = false,
 }) => {
-  const showBarSize = showBarSizeSelector && (exportMode === 'with-bar' || exportMode === 'full');
+  const showBarSize = showBarSizeSelector && barSize && onBarSizeChange && (exportMode === 'with-bar' || exportMode === 'full');
 
   if (compact) {
     return (
@@ -64,7 +64,7 @@ export const ExportModeControls: React.FC<ExportModeControlsProps> = ({
                   variant={barSize === size ? 'default' : 'outline'}
                   size="sm"
                   className="h-6 px-2 text-xs"
-                  onClick={() => onBarSizeChange(size)}
+                  onClick={() => onBarSizeChange?.(size)}
                 >
                   {size.toUpperCase()}
                 </Button>
@@ -106,7 +106,7 @@ export const ExportModeControls: React.FC<ExportModeControlsProps> = ({
                 variant={barSize === size ? 'default' : 'outline'}
                 size="sm"
                 className="flex-1"
-                onClick={() => onBarSizeChange(size)}
+                onClick={() => onBarSizeChange?.(size)}
               >
                 {size.toUpperCase()}
               </Button>

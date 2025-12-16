@@ -160,12 +160,7 @@ export const CarouselPDF: React.FC<CarouselPDFProps> = ({
                     width={120} 
                     variant={isDark ? 'terracotta' : 'gradient'} 
                   />
-                  {showBar && (
-                    <PDFLogoArc 
-                      size={barSize} 
-                      style={{ marginTop: 8 }}
-                    />
-                  )}
+                  {/* v4.0: pas d'arc sous le logo */}
                 </View>
                 <Text style={[styles.slideNumber, { color: subtextColor }]}>
                   {String(index + 1).padStart(2, '0')}/{String(slides.length).padStart(2, '0')}

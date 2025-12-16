@@ -264,10 +264,7 @@ export default function FooterEmailEditor() {
                         </a>
                       </div>
                       
-                      {/* Arc below logo */}
-                      <div style={{ marginTop: '8px' }}>
-                        <HTMLLogoArc size={barSize} />
-                      </div>
+                      {/* v4.0: pas d'arc sous le logo */}
 
                       {/* Contact */}
                       <div style={{ marginTop: '16px' }}>
@@ -340,11 +337,7 @@ export default function FooterEmailEditor() {
                           IArche
                         </span>
                       </div>
-                      
-                      {/* Arc below logo - one size smaller for mobile */}
-                      <div style={{ marginTop: '6px' }}>
-                        <HTMLLogoArc size={barSize === 'sm' ? 'sm' : barSize === 'md' ? 'sm' : barSize === 'lg' ? 'md' : 'lg'} />
-                      </div>
+                      {/* v4.0: pas d'arc sous le logo */}
 
                       {/* Contact */}
                       <div style={{ marginTop: '12px' }}>
