@@ -13,7 +13,7 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { toPng, toSvg } from 'html-to-image';
-import { pdf, Document, Page, View, Text, Svg, Defs, LinearGradient, Stop, Rect } from '@react-pdf/renderer';
+import { pdf, Document, Page, View, Text, Svg, Defs, LinearGradient, Stop, Rect, Image } from '@react-pdf/renderer';
 import { IARCHE_COLORS } from '@/components/admin/medias/html';
 import { BAR_SIZES, LOGO_SIZES, GRADIENTS } from '@/components/admin/medias/shared/tokens';
 
@@ -97,7 +97,7 @@ const getLogoVariants = (charterColors: typeof IARCHE_COLORS) => ({
 
 type LogoVariant = 'gradient' | 'terracotta';
 
-// PDF Logo Document Component
+// PDF Logo Document Component - v4.0: Logo PNG officiel sans arc sous le logo
 const PDFLogoDocument: React.FC<{
   variant: LogoVariant;
   size: number;
@@ -107,11 +107,14 @@ const PDFLogoDocument: React.FC<{
 }> = ({ variant, size, isProfile, showBackground, charterColors }) => {
   const logoVariants = getLogoVariants(charterColors);
   const variantData = logoVariants[variant];
-  const fontSize = Math.max(size * 0.12, 24);
-  const barWidth = Math.max(size * 0.25, 48);
-  const barHeight = Math.max(size * 0.012, 3);
   
-  const textColor = variant === 'terracotta' ? charterColors.terracotta : charterColors.bleuNuit;
+  // v4.0: Utiliser les images PNG officielles du logo
+  const logoSrc = variant === 'terracotta' 
+    ? '/logos/iarche-white.png'  // Logo blanc sur fond sombre
+    : '/logos/iarche-main.png';  // Logo gradient sur fond clair
+  
+  const logoWidth = Math.max(size * 0.5, 80);
+  const logoHeight = logoWidth / 3.5; // Ratio approximatif du logo
   
   return (
     <Document>
@@ -124,36 +127,15 @@ const PDFLogoDocument: React.FC<{
           justifyContent: 'center', 
           alignItems: 'center',
         }}>
-          {/* Logo Text */}
-          <Text style={{
-            fontSize,
-            fontWeight: 700,
-            color: textColor,
-            fontFamily: 'Helvetica-Bold',
-            letterSpacing: -0.5,
-          }}>
-            IArche
-          </Text>
-          
-          {/* Gradient Bar */}
-          <Svg
-            viewBox={`0 0 ${barWidth} ${barHeight}`}
-            style={{ width: barWidth, height: barHeight, marginTop: 8 }}
-          >
-            <Defs>
-              <LinearGradient id="barGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <Stop offset="0%" stopColor={charterColors.bleuNuit} />
-                <Stop offset="50%" stopColor={charterColors.terracotta} />
-                <Stop offset="100%" stopColor={charterColors.bleuNuit} />
-              </LinearGradient>
-            </Defs>
-            <Rect
-              width={barWidth}
-              height={barHeight}
-              rx={barHeight / 2}
-              fill="url(#barGrad)"
-            />
-          </Svg>
+          {/* Logo PNG officiel v4.0 - sans arc sous le logo */}
+          <Image
+            src={logoSrc}
+            style={{ 
+              width: logoWidth, 
+              height: logoHeight,
+              objectFit: 'contain',
+            }}
+          />
         </View>
       </Page>
     </Document>

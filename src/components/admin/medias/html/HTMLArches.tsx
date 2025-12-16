@@ -1,5 +1,5 @@
 import React from 'react';
-import { IARCHE_COLORS, ThemeType } from './tokens';
+import { IARCHE_COLORS, ThemeType, getAccentColor } from './tokens';
 
 type ArchPosition = 'top-right' | 'bottom-left' | 'both';
 
@@ -14,7 +14,7 @@ interface HTMLArchesProps {
 
 /**
  * Arches décoratives dans les coins
- * Reproduction des lignes canalisation du hero section
+ * v4.1: Support des 4 thèmes (dark, light, terra, contrast)
  */
 export const HTMLArches: React.FC<HTMLArchesProps> = ({
   position = 'both',
@@ -24,9 +24,8 @@ export const HTMLArches: React.FC<HTMLArchesProps> = ({
   opacity = 0.4,
   className = '',
 }) => {
-  const strokeColor = theme === 'dark' 
-    ? IARCHE_COLORS.terracotta 
-    : IARCHE_COLORS.bleuNuit;
+  // v4.1: Couleur d'accent selon le thème
+  const strokeColor = getAccentColor(theme);
 
   const renderArch = (pos: 'top-right' | 'bottom-left') => {
     const isTopRight = pos === 'top-right';
