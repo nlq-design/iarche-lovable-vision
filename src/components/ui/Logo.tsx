@@ -10,6 +10,8 @@ interface LogoProps {
   className?: string;
   /** Afficher uniquement l'icône (arc) */
   iconOnly?: boolean;
+  /** Priorité haute pour LCP (ajoute fetchpriority="high") */
+  priority?: boolean;
 }
 
 /**
@@ -25,15 +27,17 @@ const Logo: React.FC<LogoProps> = ({
   size = 'md',
   className = '',
   iconOnly = false,
+  priority = false,
 }) => {
+  // Dimensions basées sur le ratio réel du SVG (environ 3.23:1)
   const sizeConfig = {
-    sm: { height: 24, iconSize: 20 },
-    md: { height: 40, iconSize: 32 },
-    lg: { height: 56, iconSize: 48 },
-    xl: { height: 80, iconSize: 64 },
+    sm: { height: 24, width: 78, iconSize: 20 },
+    md: { height: 40, width: 129, iconSize: 32 },
+    lg: { height: 56, width: 181, iconSize: 48 },
+    xl: { height: 80, width: 258, iconSize: 64 },
   };
 
-  const { height, iconSize } = sizeConfig[size];
+  const { height, width, iconSize } = sizeConfig[size];
 
   // Si iconOnly, utiliser l'icône SVG
   if (iconOnly) {
@@ -59,7 +63,10 @@ const Logo: React.FC<LogoProps> = ({
       src={logoSrc[variant]}
       alt="IArche · Agence IA Bayonne"
       className={cn('inline-block', className)}
+      width={width}
+      height={height}
       style={{ height }}
+      {...(priority && { fetchPriority: 'high' as const })}
     />
   );
 };
