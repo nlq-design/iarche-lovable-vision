@@ -121,14 +121,14 @@ Cette baseline exprime :
 
 **Composant principal :** `src/components/ui/LogoArc.tsx`
 
-**Spécifications de l'arc :**
+**Spécifications de l'arc (ratio 16:1) :**
 
 | Taille | Largeur | Hauteur | Usage |
 |--------|---------|---------|-------|
-| sm | 80px | 10px | Cards, petits titres |
-| md | 120px | 14px | Titres de section (défaut) |
-| lg | 180px | 20px | Grands titres de page |
-| xl | 260px | 28px | Hero section |
+| sm | 100px | 6px | Cards, petits titres |
+| md | 160px | 10px | Titres de section (défaut) |
+| lg | 240px | 15px | Grands titres de page |
+| xl | 360px | 22px | Hero section |
 
 **Gradient :** Bleu Nuit (#1A2B4A) → Terracotta (#B04A32)
 
@@ -223,10 +223,10 @@ Le composant `GradientTitle` standardise l'affichage des titres avec gradient an
 
 | Taille | Typographie | Arc décoratif | Usage |
 |--------|-------------|---------------|-------|
-| **sm** | text-base md:text-lg font-semibold | arc sm (80×10px) | Titres dans les cards |
-| **md** | text-2xl md:text-3xl font-bold | arc md (120×14px) | Titres de sections |
-| **lg** | text-3xl md:text-5xl font-bold | arc lg (180×20px) | Titres de pages |
-| **xl** | text-5xl md:text-6xl lg:text-7xl font-semibold | arc xl (260×28px) | Hero principal |
+| **sm** | text-base md:text-lg font-semibold | arc sm (100×6px) | Titres dans les cards |
+| **md** | text-2xl md:text-3xl font-bold | arc md (160×10px) | Titres de sections |
+| **lg** | text-3xl md:text-5xl font-bold | arc lg (240×15px) | Titres de pages |
+| **xl** | text-5xl md:text-6xl lg:text-7xl font-semibold | arc xl (360×22px) | Hero principal |
 
 
 ### 3.3 Props du composant

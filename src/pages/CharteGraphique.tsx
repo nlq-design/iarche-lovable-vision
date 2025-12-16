@@ -34,10 +34,10 @@ const CharteGraphique = () => {
   ];
 
   const arcSizes = [
-    { label: 'SM', width: '80px', height: '10px', usage: 'Cards, petits titres' },
-    { label: 'MD', width: '120px', height: '14px', usage: 'Titres de section (défaut)' },
-    { label: 'LG', width: '180px', height: '20px', usage: 'Grands titres de page' },
-    { label: 'XL', width: '260px', height: '28px', usage: 'Hero section' },
+    { label: 'SM', width: '100px', height: '6px', usage: 'Cards, petits titres' },
+    { label: 'MD', width: '160px', height: '10px', usage: 'Titres de section (défaut)' },
+    { label: 'LG', width: '240px', height: '15px', usage: 'Grands titres de page' },
+    { label: 'XL', width: '360px', height: '22px', usage: 'Hero section' },
   ];
 
   return (
