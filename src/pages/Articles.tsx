@@ -139,7 +139,7 @@ const Articles = () => {
         />
         <meta property="og:url" content="https://iarche.fr/articles" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://iarche.fr/og-image-v4.png" />
+        <meta property="og:image" content="https://iarche.fr/og-articles.png" />
         <meta property="og:image:width" content="1512" />
         <meta property="og:image:height" content="794" />
         <meta property="og:locale" content="fr_FR" />
