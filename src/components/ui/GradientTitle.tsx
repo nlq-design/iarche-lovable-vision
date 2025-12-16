@@ -36,23 +36,23 @@ const GradientTitle: React.FC<GradientTitleProps> = ({
   const sizeConfig = {
     sm: {
       text: 'text-base md:text-lg font-semibold',
-      arcSize: 'sm' as const,
-      gap: 'mt-1',
-    },
-    md: {
-      text: 'text-2xl md:text-3xl font-bold',
       arcSize: 'md' as const,
       gap: 'mt-2',
     },
-    lg: {
-      text: 'text-3xl md:text-5xl font-bold',
+    md: {
+      text: 'text-2xl md:text-3xl font-bold',
       arcSize: 'lg' as const,
       gap: 'mt-3',
+    },
+    lg: {
+      text: 'text-3xl md:text-5xl font-bold',
+      arcSize: 'xl' as const,
+      gap: 'mt-4',
     },
     xl: {
       text: 'text-5xl md:text-6xl lg:text-7xl font-semibold',
       arcSize: 'xl' as const,
-      gap: 'mt-4',
+      gap: 'mt-5',
     },
   };
 
