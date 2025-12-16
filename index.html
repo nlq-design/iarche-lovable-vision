@@ -1,12 +1,24 @@
 <!doctype html>
 <html lang="fr" class="light" style="color-scheme: only light; background-color: #FAF9F7;">
   <head>
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-TR7LC8KN');</script>
+    <!-- Google Tag Manager - Deferred loading for better FCP -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function loadGTM() {
+        if (window.gtmLoaded) return;
+        window.gtmLoaded = true;
+        var j = document.createElement('script');
+        j.async = true;
+        j.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-TR7LC8KN';
+        document.head.appendChild(j);
+        window.dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+      }
+      // Load on first interaction or after 4s timeout
+      ['scroll', 'click', 'touchstart', 'keydown'].forEach(function(e) {
+        window.addEventListener(e, loadGTM, {once: true, passive: true});
+      });
+      setTimeout(loadGTM, 4000);
+    </script>
     <!-- End Google Tag Manager -->
     
     <meta charset="UTF-8" />
