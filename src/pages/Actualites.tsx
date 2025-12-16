@@ -112,6 +112,10 @@ const Actualites = () => {
         <meta property="og:description" content="Articles de fond sur l'IA : guides pratiques, analyses techniques et retours d'expérience pour PME." />
         <meta property="og:url" content="https://iarche.fr/actualites" />
         <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://iarche.fr/og-image-v4.png" />
+        <meta property="og:image:width" content="1512" />
+        <meta property="og:image:height" content="794" />
+        <meta property="og:locale" content="fr_FR" />
 
         {/* Schema.org BreadcrumbList */}
         <script type="application/ld+json">
