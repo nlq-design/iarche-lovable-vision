@@ -1,5 +1,5 @@
 /**
- * IArche Design System Tokens for HTML/PNG exports
+ * IArche Design System Tokens for HTML/PNG exports v4.1
  * Réexporte les tokens partagés + adaptations HTML spécifiques
  */
 
@@ -14,6 +14,12 @@ import {
   EXPORT_FORMATS,
   LOGO_BAR_MAPPING,
   LOGO_BAR_GAP,
+  THEMES,
+  getThemeColors,
+  getBackgroundColor,
+  getTextColor,
+  getSubtextColor,
+  getAccentColor,
 } from '../shared/tokens';
 
 // Réexport pour compatibilité avec le code existant
@@ -29,6 +35,10 @@ export const IARCHE_COLORS = {
   foreground: COLORS.foreground,
   secondary: COLORS.secondary,
   border: COLORS.border,
+  // v4.1 - Nouveaux
+  terracottaDark: COLORS.terracottaDark,
+  contrastDark: COLORS.contrastDark,
+  contrastLight: COLORS.contrastLight,
 } as const;
 
 export const IARCHE_GRADIENTS = {
@@ -36,6 +46,10 @@ export const IARCHE_GRADIENTS = {
   bar: GRADIENTS.bar.css,
   barReverse: GRADIENTS.barReverse.css,
   text: GRADIENTS.text.css,
+  // v4.1 - Nouveaux
+  arc: GRADIENTS.arc.css,
+  arcReverse: GRADIENTS.arcReverse.css,
+  backgroundTerra: GRADIENTS.backgroundTerra.css,
 } as const;
 
 export const IARCHE_FONTS = {
@@ -61,7 +75,10 @@ export { LOGO_BAR_MAPPING, LOGO_BAR_GAP };
 export { EXPORT_BAR_MAPPING } from '../shared/tokens';
 
 // Types
-export type { ThemeType, BarSize, LogoSize, ArchSize, ExportSize, ArcSize } from '../shared/tokens';
+export type { ThemeType, BarSize, LogoSize, ArchSize, ExportSize, ArcSize, GradientDirection, ExportFormat } from '../shared/tokens';
 
 // Réexport des formats pour référence
 export { EXPORT_FORMATS };
+
+// v4.1 - Helpers pour les thèmes
+export { THEMES, getThemeColors, getBackgroundColor, getTextColor, getSubtextColor, getAccentColor };

@@ -29,7 +29,7 @@ import {
 
 type PostFormat = 'square' | 'landscape';
 type PostTemplate = 'annonce' | 'chiffre' | 'temoignage' | 'conseil';
-type PresetTemplate = 'custom' | 'citation' | 'statistique' | 'evenement' | 'question' | 'temoignage-client';
+type PresetTemplate = 'custom' | 'citation' | 'statistique' | 'evenement' | 'question' | 'temoignage-client' | 'recrutement' | 'milestone' | 'partenariat' | 'offre-promo' | 'lancement';
 
 const DIMENSIONS = {
   square: { width: 1200, height: 1200 },
@@ -38,7 +38,7 @@ const DIMENSIONS = {
 
 const SCALE = 0.35;
 
-// Pre-filled templates data
+// Pre-filled templates data (v4.1 - enrichi avec templates métiers)
 const PRESET_TEMPLATES: Record<PresetTemplate, {
   template: PostTemplate;
   badge?: string;
@@ -89,6 +89,41 @@ const PRESET_TEMPLATES: Record<PresetTemplate, {
     temoinNom: 'Jean-Pierre Martin',
     temoinFonction: 'Directeur des Opérations',
     temoinEntreprise: 'Groupe Industriel ABC',
+  },
+  // v4.1 - Nouveaux templates métiers
+  recrutement: {
+    template: 'annonce',
+    badge: 'Recrutement',
+    title: 'Nous recrutons !',
+    description: 'Rejoignez notre équipe et participez à la transformation IA des entreprises françaises.',
+    cta: 'Postuler maintenant →',
+  },
+  milestone: {
+    template: 'chiffre',
+    chiffre: '100',
+    contexte: 'entreprises accompagnées dans leur transformation IA',
+    source: 'Un cap symbolique franchi en 2024',
+  },
+  partenariat: {
+    template: 'annonce',
+    badge: 'Partenariat',
+    title: 'Nouveau partenaire stratégique',
+    description: 'IArche s\'associe à [Nom du partenaire] pour renforcer son offre d\'accompagnement.',
+    cta: 'En savoir plus →',
+  },
+  'offre-promo': {
+    template: 'annonce',
+    badge: 'Offre limitée',
+    title: 'Audit IA gratuit',
+    description: 'Profitez d\'un diagnostic personnalisé de votre maturité IA sans engagement.',
+    cta: 'Réserver mon audit →',
+  },
+  lancement: {
+    template: 'annonce',
+    badge: 'Nouveau',
+    title: 'Découvrez notre nouvelle solution',
+    description: 'Une innovation conçue pour simplifier votre quotidien et booster votre productivité.',
+    cta: 'Découvrir →',
   },
 };
 

@@ -2,7 +2,16 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-export type Platform = 'custom' | 'linkedin-banner' | 'linkedin-post' | 'twitter-banner' | 'twitter-post' | 'instagram-square' | 'instagram-story' | 'facebook-banner' | 'facebook-post' | 'youtube-thumbnail' | 'opengraph';
+export type Platform = 
+  | 'custom' 
+  | 'linkedin-banner' | 'linkedin-post' | 'linkedin-landscape'
+  | 'twitter-banner' | 'twitter-post' 
+  | 'instagram-square' | 'instagram-story' 
+  | 'facebook-banner' | 'facebook-post' 
+  | 'youtube-cover' | 'youtube-thumbnail'
+  | 'reels-tiktok'
+  | 'business-card'
+  | 'opengraph';
 
 export interface PlatformPreset {
   id: Platform;
@@ -16,7 +25,8 @@ export const PLATFORM_PRESETS: PlatformPreset[] = [
   { id: 'custom', label: 'Personnalisé', width: 0, height: 0, category: 'Général' },
   // LinkedIn
   { id: 'linkedin-banner', label: 'LinkedIn Banner', width: 1584, height: 396, category: 'LinkedIn' },
-  { id: 'linkedin-post', label: 'LinkedIn Post', width: 1200, height: 1200, category: 'LinkedIn' },
+  { id: 'linkedin-post', label: 'LinkedIn Carré', width: 1200, height: 1200, category: 'LinkedIn' },
+  { id: 'linkedin-landscape', label: 'LinkedIn Paysage', width: 1200, height: 627, category: 'LinkedIn' },
   // Twitter/X
   { id: 'twitter-banner', label: 'Twitter/X Banner', width: 1500, height: 500, category: 'Twitter/X' },
   { id: 'twitter-post', label: 'Twitter/X Post', width: 1600, height: 900, category: 'Twitter/X' },
@@ -26,8 +36,13 @@ export const PLATFORM_PRESETS: PlatformPreset[] = [
   // Facebook
   { id: 'facebook-banner', label: 'Facebook Couverture', width: 820, height: 312, category: 'Facebook' },
   { id: 'facebook-post', label: 'Facebook Post', width: 1200, height: 630, category: 'Facebook' },
-  // YouTube
+  // YouTube (v4.1)
+  { id: 'youtube-cover', label: 'YouTube Bannière', width: 2560, height: 1440, category: 'YouTube' },
   { id: 'youtube-thumbnail', label: 'YouTube Miniature', width: 1280, height: 720, category: 'YouTube' },
+  // TikTok/Reels (v4.1)
+  { id: 'reels-tiktok', label: 'Reels / TikTok', width: 1080, height: 1920, category: 'Vidéo verticale' },
+  // Business (v4.1)
+  { id: 'business-card', label: 'Carte de visite digitale', width: 1050, height: 600, category: 'Business' },
   // Web
   { id: 'opengraph', label: 'Open Graph', width: 1200, height: 630, category: 'Web' },
 ];

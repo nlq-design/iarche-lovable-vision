@@ -43,6 +43,10 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
   { id: 'solutions', label: 'Solutions', tagline: 'Des solutions IA sur mesure pour PME', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Fondateur IArche' },
   { id: 'accompagnement', label: 'Accompagnement', tagline: 'Votre partenaire IA de confiance', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'CEO & Fondateur' },
   { id: 'expert', label: 'Expert', tagline: 'L\'expertise IA au service de votre croissance', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Expert en Intelligence Artificielle' },
+  // v4.1 - Nouveaux templates métiers
+  { id: 'evenement-live', label: 'Événement live', tagline: '🔴 En direct | Webinaire IA & PME', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Animateur' },
+  { id: 'recrutement', label: 'Recrutement', tagline: 'Rejoignez l\'aventure IArche !', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Nous recrutons' },
+  { id: 'anniversaire', label: 'Anniversaire', tagline: '5 ans d\'innovation au service des PME', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Fondateur' },
 ];
 
 const SOLUTIONS = [
@@ -316,7 +320,7 @@ export default function BannerEditor() {
                 </Tabs>
               </div>
 
-              {/* Theme selector */}
+{/* Theme selector */}
               <div className="space-y-2">
                 <Label>Thème</Label>
                 <Select value={theme} onValueChange={(v) => setTheme(v as ThemeType)}>
@@ -324,8 +328,10 @@ export default function BannerEditor() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="dark">Sombre</SelectItem>
-                    <SelectItem value="light">Clair</SelectItem>
+                    <SelectItem value="dark">Sombre (Bleu Nuit)</SelectItem>
+                    <SelectItem value="light">Clair (Blanc Cassé)</SelectItem>
+                    <SelectItem value="terra">Terra Nova (Terracotta)</SelectItem>
+                    <SelectItem value="contrast">Contraste fort</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
