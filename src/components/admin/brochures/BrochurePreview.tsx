@@ -46,9 +46,6 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
           {brochure.cover_title || 'Titre'}
         </h1>
         
-        {/* Arc sous le titre */}
-        <LogoArc size="lg" className="mb-4" />
-        
         {brochure.cover_subtitle && (
           <p className="text-xl md:text-2xl text-muted-foreground text-center max-w-2xl">
             {brochure.cover_subtitle}
@@ -175,7 +172,19 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
       {sections.contact.enabled && (
         <section className="relative px-6 py-20 text-center">
           <div className="max-w-xl mx-auto">
-            <h2 className="text-3xl font-bold mb-6" style={{ color: primaryColor }}>Intéressé ?</h2>
+            {/* Logo SVG officiel au-dessus du titre */}
+            <img 
+              src="/logos/iarche-main.svg" 
+              alt="IArche" 
+              className="h-10 mx-auto mb-8"
+            />
+            
+            <h2 className="text-3xl font-bold mb-4" style={{ color: primaryColor }}>Intéressé ?</h2>
+            
+            {/* Arc v4.0 sous "Intéressé ?" */}
+            <div className="flex justify-center mb-8">
+              <LogoArc size="md" />
+            </div>
             
             <a 
               href="/contact"
