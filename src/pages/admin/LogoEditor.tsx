@@ -16,7 +16,7 @@ import { toPng, toSvg } from 'html-to-image';
 import { pdf, Document, Page, View, Text, Svg, Defs, LinearGradient, Stop, Rect } from '@react-pdf/renderer';
 import { IARCHE_COLORS } from '@/components/admin/medias/html';
 import { BAR_SIZES, LOGO_SIZES, GRADIENTS } from '@/components/admin/medias/shared/tokens';
-import { HTMLMeshBackground } from '@/components/admin/medias/html/HTMLMeshBackground';
+
 import { HTMLLogo } from '@/components/admin/medias/html/HTMLLogo';
 import { BarSize, LogoSize as LogoSizeToken } from '@/components/admin/medias/html/tokens';
 
@@ -256,9 +256,6 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
             className={`${isProfile ? 'aspect-square' : 'aspect-[3/2]'} rounded-lg overflow-hidden relative`}
             style={{ backgroundColor: variant.bgColor }}
           >
-            {showBackground && (
-              <HTMLMeshBackground theme={variant.theme} opacity={0.05} />
-            )}
             
             <div className="absolute inset-0 flex items-center justify-center p-6 z-10">
               <HTMLLogo 

@@ -33,17 +33,8 @@ const HeroSection = () => {
             to { opacity: 1; transform: translateY(0); }
           }
           
-          @keyframes patternScroll {
-            0% { transform: translate(-5%, -5%); }
-            100% { transform: translate(5%, 5%); }
-          }
-          
           .animate-fadeIn {
             animation: fadeIn 1s ease-out forwards;
-          }
-          
-          .animate-patternScroll {
-            animation: patternScroll 20s linear infinite;
           }
           
           .gradient-text {
@@ -102,10 +93,6 @@ const HeroSection = () => {
             />
           </svg>
         </div>
-
-        {/* Background Patterns */}
-        <div className="pattern absolute w-[200%] h-[200%] bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(255,255,255,0.1)_10px,rgba(255,255,255,0.1)_20px)] animate-patternScroll" style={{ top: '-50%', left: '-50%' }}></div>
-        <div className="pattern absolute w-[200%] h-[200%] bg-[repeating-linear-gradient(45deg,transparent,transparent_10px,rgba(255,255,255,0.1)_10px,rgba(255,255,255,0.1)_20px)] animate-patternScroll" style={{ top: '50%', left: '50%' }}></div>
       </div>
     </>
   );

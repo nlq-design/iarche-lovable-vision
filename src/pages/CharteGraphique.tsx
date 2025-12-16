@@ -745,19 +745,6 @@ animation: gradientText 8s ease infinite;`}
               </pre>
             </div>
 
-            {/* PatternScroll */}
-            <div className="bg-[#FAF9F7] p-5 rounded-lg">
-              <h3 className="text-lg font-semibold text-[#1A2B4A] mb-2">patternScroll</h3>
-              <p className="text-sm text-[#666666] mb-2">Translation quadrillage.</p>
-              <pre className="text-xs font-mono bg-white p-3 rounded border border-[#E5E0DA] overflow-x-auto">
-{`@keyframes patternScroll {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(50px, 50px); }
-}
-animation: patternScroll 40s linear infinite;`}
-              </pre>
-            </div>
-
             {/* Underline Hover */}
             <div className="bg-[#FAF9F7] p-5 rounded-lg">
               <h3 className="text-lg font-semibold text-[#1A2B4A] mb-2">underlineHover</h3>

@@ -19,27 +19,6 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
   const primaryColor = custom_colors?.primary || COLORS.bleuNuit;
   const accentColor = custom_colors?.accent || COLORS.terracotta;
 
-  // Mesh background component
-  const MeshBackground = () => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-      <div 
-        className="absolute w-[200%] h-[200%] opacity-[0.15]" 
-        style={{ 
-          top: '-50%', 
-          left: '-50%',
-          background: `repeating-linear-gradient(45deg, transparent, transparent 20px, ${COLORS.border} 20px, ${COLORS.border} 22px)`,
-        }}
-      />
-      <div 
-        className="absolute w-[200%] h-[200%] opacity-[0.08]" 
-        style={{ 
-          top: '-50%', 
-          left: '-50%',
-          background: `repeating-linear-gradient(-45deg, transparent, transparent 20px, ${COLORS.border} 20px, ${COLORS.border} 22px)`,
-        }}
-      />
-    </div>
-  );
 
   switch (slide.type) {
     case 'cover':
@@ -48,7 +27,6 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
           className="relative min-h-[800px] flex flex-col items-center justify-center px-12 py-20"
           style={{ backgroundColor: COLORS.blancCasse }}
         >
-          <MeshBackground />
           <div className="relative z-10 flex flex-col items-center">
             {/* Arc décoratif v4.0 */}
             <LogoArc size="xl" className="mb-8" />
@@ -89,7 +67,6 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
           className="relative min-h-[800px] px-12 py-20 flex items-center justify-center"
           style={{ backgroundColor: COLORS.blancCasse }}
         >
-          <MeshBackground />
           <div className="relative z-10 max-w-4xl">
             <p 
               className="text-xl leading-relaxed"
@@ -160,7 +137,6 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
           className="relative min-h-[800px] px-12 py-20 flex items-center"
           style={{ backgroundColor: COLORS.blancCasse }}
         >
-          <MeshBackground />
           <div className="max-w-4xl mx-auto relative z-10">
             <h2 
               className="text-4xl font-bold mb-4"
@@ -297,7 +273,6 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
           className="relative min-h-[800px] px-12 py-20 flex items-center"
           style={{ backgroundColor: COLORS.blancCasse }}
         >
-          <MeshBackground />
           <div className="max-w-4xl mx-auto relative z-10">
             <div 
               className="p-12 rounded-xl"
@@ -341,7 +316,7 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
           className="relative min-h-[800px] px-12 py-20 text-center flex items-center justify-center"
           style={{ backgroundColor: COLORS.blancCasse }}
         >
-          <MeshBackground />
+          
           <div className="max-w-xl mx-auto relative z-10">
             <h2 
               className="text-4xl font-bold mb-4"

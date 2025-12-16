@@ -1,6 +1,6 @@
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
-import { PDFImageLogo, PDFPatternBackground } from '../pdf/PDFImageAssets';
+import { PDFImageLogo } from '../pdf/PDFImageAssets';
 import { PDFLogoArc } from '../pdf/PDFLogoArc';
 
 export type ExportMode = 'simple' | 'with-bar' | 'full';
@@ -247,13 +247,6 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
             size={[PAGE_WIDTH, PAGE_HEIGHT]} 
             style={isDark ? styles.pageDark : styles.pageLight}
           >
-            {/* Background elements */}
-            <PDFPatternBackground 
-              pageWidth={PAGE_WIDTH} 
-              pageHeight={PAGE_HEIGHT} 
-              opacity={isDark ? 0.05 : 0.07}
-              isDark={isDark}
-            />
 
             {/* Main content */}
             <View style={styles.content}>
