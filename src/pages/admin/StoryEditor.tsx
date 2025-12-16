@@ -46,6 +46,10 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
   { id: 'conseil', label: 'Conseil du jour', badge: 'Conseil', titre: '3 étapes pour intégrer l\'IA dans votre PME', ctaText: 'Découvrir', chiffre: '3x', contexte: 'plus efficace avec l\'automatisation IA', source: 'Étude interne' },
   { id: 'resultat', label: 'Résultat client', badge: 'Success Story', titre: 'Comment notre client a doublé sa productivité', ctaText: 'Voir le cas', chiffre: '+200%', contexte: 'de gain de productivité en 6 mois', source: 'Cas client 2024' },
   { id: 'offre', label: 'Offre spéciale', badge: 'Offre limitée', titre: 'Audit IA gratuit pour les 10 prochaines PME', ctaText: 'En profiter', chiffre: '-50%', contexte: 'sur votre premier accompagnement', source: 'Offre valable en janvier' },
+  // v4.1 - Nouveaux templates métiers
+  { id: 'teaser-webinaire', label: 'Teaser webinaire', badge: 'Bientôt', titre: 'Webinaire exclusif en préparation', ctaText: 'Réserver ma place', chiffre: '24', contexte: 'janvier 2025 à 14h', source: 'Places limitées' },
+  { id: 'coulisses', label: 'Coulisses', badge: 'Behind the scenes', titre: 'Les coulisses de notre dernière mission', ctaText: 'Voir le parcours', chiffre: '3', contexte: 'mois de transformation IA', source: 'Chez notre client' },
+  { id: 'question-jour', label: 'Question du jour', badge: 'Votre avis', titre: 'L\'IA va-t-elle remplacer votre métier ?', ctaText: 'Répondre en commentaire', chiffre: '?', contexte: 'Partagez votre opinion', source: 'Débat' },
 ];
 
 const STORY_WIDTH = 1080;
