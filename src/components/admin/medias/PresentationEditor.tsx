@@ -81,7 +81,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
   const [isExporting, setIsExporting] = useState(false);
   const [sourceMode, setSourceMode] = useState<'libre' | 'solution'>('libre');
   const [solutions, setSolutions] = useState<{ id: string; title: string }[]>([]);
-  const [startTheme, setStartTheme] = useState<'dark' | 'light'>('dark');
+  const [startTheme, setStartTheme] = useState<'dark' | 'light' | 'terra' | 'contrast'>('dark');
 
   useEffect(() => {
     const fetchSolutions = async () => {
@@ -204,8 +204,8 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
             <Label>Thème de départ :</Label>
             <RadioGroup 
               value={startTheme} 
-              onValueChange={(v) => setStartTheme(v as 'dark' | 'light')}
-              className="flex gap-4"
+              onValueChange={(v) => setStartTheme(v as 'dark' | 'light' | 'terra' | 'contrast')}
+              className="flex flex-wrap gap-4"
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="dark" id="pres-dark" />
@@ -219,6 +219,20 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                 <Label htmlFor="pres-light" className="flex items-center gap-2 cursor-pointer">
                   <div className="w-5 h-5 rounded border" style={{ backgroundColor: '#FAF9F7' }} />
                   <span className="text-sm">Blanc Cassé</span>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="terra" id="pres-terra" />
+                <Label htmlFor="pres-terra" className="flex items-center gap-2 cursor-pointer">
+                  <div className="w-5 h-5 rounded border" style={{ backgroundColor: '#8B3A2F' }} />
+                  <span className="text-sm">Terra Nova</span>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="contrast" id="pres-contrast" />
+                <Label htmlFor="pres-contrast" className="flex items-center gap-2 cursor-pointer">
+                  <div className="w-5 h-5 rounded border" style={{ backgroundColor: '#0A0A0A' }} />
+                  <span className="text-sm">Contraste</span>
                 </Label>
               </div>
             </RadioGroup>
@@ -253,13 +267,23 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
             
             <Card className="overflow-hidden">
               {(() => {
-                const isDark = startTheme === 'dark' ? currentSlide % 2 === 0 : currentSlide % 2 !== 0;
+                // Theme configuration for preview
+                const PREVIEW_THEMES = {
+                  dark: { bg: '#1A2B4A', text: '#FFFFFF', subtext: 'rgba(255,255,255,0.6)', logo: '/logos/iarche-white.svg' },
+                  light: { bg: '#FAF9F7', text: '#1A2B4A', subtext: 'rgba(26,43,74,0.5)', logo: '/logos/iarche-main.svg' },
+                  terra: { bg: '#8B3A2F', text: '#FAF9F7', subtext: 'rgba(250,249,247,0.6)', logo: '/logos/iarche-white.svg' },
+                  contrast: { bg: '#0A0A0A', text: '#FAFAFA', subtext: 'rgba(250,250,250,0.6)', logo: '/logos/iarche-white.svg' },
+                };
+                const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light' };
+                
+                const currentTheme = currentSlide % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme);
+                const colors = PREVIEW_THEMES[currentTheme];
+                const isDark = currentTheme !== 'light';
+                
                 return (
                   <div 
                     className="aspect-video p-8 flex flex-col relative"
-                    style={{
-                      background: isDark ? '#1A2B4A' : '#FAF9F7'
-                    }}
+                    style={{ background: colors.bg }}
                   >
                     {/* Canalisations decoration preview - only if 'full' mode */}
                     {showCanalisationsInPreview && (
@@ -281,7 +305,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                     <div className="flex items-center justify-between mb-6">
                       <div>
                         <img 
-                          src={isDark ? '/logos/iarche-white.svg' : '/logos/iarche-main.svg'}
+                          src={colors.logo}
                           alt="IArche"
                           style={{ height: 24, display: 'inline-block' }}
                         />
@@ -291,18 +315,18 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                     {/* Content */}
                     <div className={`flex-1 flex flex-col ${current?.type === 'title' ? 'justify-center items-center text-center' : 'justify-start'}`}>
                       {current?.subtitle && (
-                        <p className={`text-xs uppercase tracking-wider mb-2 ${isDark ? 'text-white/60' : 'text-[#1A2B4A]/50'}`}>
+                        <p className="text-xs uppercase tracking-wider mb-2" style={{ color: colors.subtext }}>
                           {current.subtitle}
                         </p>
                       )}
-                      <h2 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-[#1A2B4A]'}`}>
+                      <h2 className="text-xl font-bold mb-4" style={{ color: colors.text }}>
                         {current?.title}
                       </h2>
                       {showBarInPreview && current?.title && (
                         <HTMLLogoArc size="sm" className="mb-4" />
                       )}
                       {current?.content && (
-                        <p className={`text-sm leading-relaxed ${isDark ? 'text-white/80' : 'text-[#1A2B4A]/80'}`}>
+                        <p className="text-sm leading-relaxed" style={{ color: colors.text, opacity: 0.8 }}>
                           {current.content}
                         </p>
                       )}
@@ -311,7 +335,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                           {current.bullets.map((bullet, idx) => (
                             <li key={idx} className="flex items-start gap-2 text-sm">
                               <span style={{ color: '#B04A32' }}>—</span>
-                              <span className={isDark ? 'text-white/80' : 'text-[#1A2B4A]/80'}>{bullet}</span>
+                              <span style={{ color: colors.text, opacity: 0.8 }}>{bullet}</span>
                             </li>
                           ))}
                         </ul>
@@ -325,7 +349,16 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
             {/* Thumbnails with theme alternation */}
             <div className="flex gap-2 overflow-x-auto pb-2">
               {slides.map((slide, idx) => {
-                const thumbIsDark = startTheme === 'dark' ? idx % 2 === 0 : idx % 2 !== 0;
+                const PREVIEW_THEMES = {
+                  dark: { bg: '#1A2B4A' },
+                  light: { bg: '#FAF9F7' },
+                  terra: { bg: '#8B3A2F' },
+                  contrast: { bg: '#0A0A0A' },
+                };
+                const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light' };
+                const thumbTheme = idx % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme);
+                const isDarkThumb = thumbTheme !== 'light';
+                
                 return (
                   <button
                     key={slide.id}
@@ -333,11 +366,9 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                     className={`flex-shrink-0 w-24 h-14 rounded border-2 transition-all flex items-center justify-center ${
                       idx === currentSlide ? 'border-primary' : 'border-border hover:border-primary/50'
                     }`}
-                    style={{
-                      background: thumbIsDark ? '#1A2B4A' : '#FAF9F7'
-                    }}
+                    style={{ background: PREVIEW_THEMES[thumbTheme].bg }}
                   >
-                    <span className={`text-xs ${thumbIsDark ? 'text-white/60' : 'text-[#1A2B4A]/60'}`}>{idx + 1}</span>
+                    <span className={`text-xs ${isDarkThumb ? 'text-white/60' : 'text-[#1A2B4A]/60'}`}>{idx + 1}</span>
                   </button>
                 );
               })}
