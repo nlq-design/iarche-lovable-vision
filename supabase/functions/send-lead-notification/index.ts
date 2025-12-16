@@ -3,6 +3,7 @@ import { Resend } from 'https://esm.sh/resend@2.0.0';
 import { logEmail } from '../_shared/emailLogger.ts';
 import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
 import { EMAIL_COLORS, LOGO_URL, getEmailHeader, getEmailFooter, wrapEmailContent, getInfoCard } from '../_shared/emailTemplate.ts';
+import { leadNotificationSchema, validateRequest } from '../_shared/validation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,23 +21,6 @@ function escapeHtml(text: string | null | undefined): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
-}
-
-interface LeadNotificationRequest {
-  lead_id: string;
-  name: string;
-  email: string;
-  company?: string;
-  phone?: string;
-  source: string;
-  source_context?: string;
-  message?: string;
-  event_details?: {
-    date: string | null;
-    location: string | null;
-    heure_debut: string | null;
-    type_evenement: string | null;
-  };
 }
 
 Deno.serve(async (req) => {
@@ -71,8 +55,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { lead_id, name, email, company, phone, source, source_context, message, event_details }: LeadNotificationRequest = await req.json();
-
+    // Parse and validate request body
+    const rawData = await req.json();
+    const validation = validateRequest(leadNotificationSchema, rawData, corsHeaders);
+    if (!validation.success) {
+      return validation.response;
+    }
+    
+    const { lead_id, name, email, company, phone, source, source_context, message, event_details } = validation.data;
     console.log('Sending lead notification for:', lead_id);
 
     // Escape all user-provided data

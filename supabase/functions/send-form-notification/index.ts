@@ -3,6 +3,7 @@ import { Resend } from 'https://esm.sh/resend@2.0.0';
 import { logEmail } from '../_shared/emailLogger.ts';
 import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
 import { EMAIL_COLORS, LOGO_URL, getEmailHeader, getEmailFooter, wrapEmailContent, getCtaButton, getInfoCard, getSignature } from '../_shared/emailTemplate.ts';
+import { formNotificationSchema, validateRequest, type FormNotificationRequest } from '../_shared/validation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,24 +21,6 @@ function escapeHtml(text: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
-}
-
-interface FormField {
-  id: string;
-  label: string;
-  type: string;
-}
-
-interface FormNotificationRequest {
-  form_id: string;
-  form_title: string;
-  form_fields?: FormField[];
-  response_data: Record<string, any>;
-  respondent_email?: string;
-  admin_email?: string;
-  send_to_respondent?: boolean;
-  custom_subject?: string;
-  custom_message?: string;
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
@@ -72,6 +55,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
       );
     }
 
+    // Parse and validate request body
+    const rawData = await req.json();
+    const validation = validateRequest(formNotificationSchema, rawData, corsHeaders);
+    if (!validation.success) {
+      return validation.response;
+    }
+    
     const {
       form_id,
       form_title,
@@ -82,7 +72,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       send_to_respondent,
       custom_subject,
       custom_message,
-    }: FormNotificationRequest = await req.json();
+    } = validation.data;
 
     // Échapper le titre du formulaire
     const safeFormTitle = escapeHtml(form_title);

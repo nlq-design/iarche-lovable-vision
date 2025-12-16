@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { checkRateLimit, getRateLimitHeaders } from "../_shared/rateLimit.ts";
+import { calendarBookingSchema, validateRequest, type CalendarBookingRequest, type BookingData } from "../_shared/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,25 +12,6 @@ const corsHeaders = {
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
 type MeetingType = 'visio' | 'telephone' | 'presentiel';
-
-interface BookingRequest {
-  action: 'get-slots' | 'create-booking' | 'cancel-booking';
-  bookingTypeSlug?: string;
-  date?: string;
-  bookingData?: {
-    name: string;
-    email: string;
-    phone?: string;
-    company?: string;
-    message?: string;
-    startTime: string;
-    bookingTypeId: string;
-    meetingType?: MeetingType;
-    additionalGuests?: string[];
-    solutionSlug?: string; // Track which solution page the booking came from
-  };
-  bookingId?: string;
-}
 
 // Map solution slugs to display names
 function getSolutionDisplayName(slug: string | undefined): string | undefined {
@@ -610,7 +592,14 @@ serve(async (req) => {
                      req.headers.get('cf-connecting-ip') || 
                      'unknown';
     
-    const { action, bookingTypeSlug, date, bookingData, bookingId }: BookingRequest = await req.json();
+    // Parse and validate request body
+    const rawData = await req.json();
+    const validation = validateRequest(calendarBookingSchema, rawData, corsHeaders);
+    if (!validation.success) {
+      return validation.response;
+    }
+    
+    const { action, bookingTypeSlug, date, bookingData, bookingId } = validation.data;
 
     // Apply stricter rate limiting for create-booking action
     const rateLimitConfig = action === 'create-booking' 

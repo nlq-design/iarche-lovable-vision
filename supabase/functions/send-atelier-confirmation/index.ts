@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { logEmail } from '../_shared/emailLogger.ts';
 import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
 import { EMAIL_COLORS, LOGO_URL, getEmailHeader, getEmailFooter, wrapEmailContent, getInfoCard, getSignature } from '../_shared/emailTemplate.ts';
+import { atelierConfirmationSchema, validateRequest } from '../_shared/validation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,17 +11,6 @@ const corsHeaders = {
 };
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
-
-interface AtelierConfirmationRequest {
-  name: string;
-  email: string;
-  atelier_title: string;
-  atelier_id?: string;
-  event_date: string | null;
-  event_location: string | null;
-  heure_debut: string | null;
-  type_evenement: string | null;
-}
 
 // Fonction d'échappement HTML pour prévenir les attaques XSS dans les emails
 const escapeHtml = (text: string): string => {
@@ -84,6 +74,13 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Parse and validate request body
+    const rawData = await req.json();
+    const validation = validateRequest(atelierConfirmationSchema, rawData, corsHeaders);
+    if (!validation.success) {
+      return validation.response;
+    }
+    
     const { 
       name, 
       email, 
@@ -93,7 +90,7 @@ Deno.serve(async (req) => {
       event_location,
       heure_debut,
       type_evenement 
-    }: AtelierConfirmationRequest = await req.json();
+    } = validation.data;
 
     console.log(`Sending atelier confirmation to ${email} for "${atelier_title}"`);
 
