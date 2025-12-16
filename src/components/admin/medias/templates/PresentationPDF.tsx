@@ -339,11 +339,8 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
                 ) : null}
               </View>
 
-              {/* Footer */}
+              {/* Footer - v4.0: pas d'arc décoratif dans le footer */}
               <View>
-                {showBar && (
-                  <PDFLogoArc size="xl" style={{ marginBottom: 16 }} />
-                )}
                 <View style={styles.footer}>
                   <Text style={isDark ? styles.footerTextDark : styles.footerTextLight}>
                     IArche · L'IA se construit avec vous
