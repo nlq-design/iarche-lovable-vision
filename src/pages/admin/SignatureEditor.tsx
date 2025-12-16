@@ -38,18 +38,8 @@ export default function SignatureEditor() {
   const [tagline, setTagline] = useState("L'IA se construit avec vous");
 
   const generateHTML = () => {
-    // Inline SVG gradient logo for email compatibility
-    const gradientLogoSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="28" viewBox="0 0 80 28">
-      <defs>
-        <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="${charterColors.bleuNuit}"/>
-          <stop offset="50%" stop-color="${charterColors.terracotta}"/>
-          <stop offset="100%" stop-color="${charterColors.bleuNuit}"/>
-        </linearGradient>
-      </defs>
-      <text x="0" y="22" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="bold" fill="url(#logoGrad)">IArche</text>
-    </svg>`;
-    const gradientLogoBase64 = btoa(gradientLogoSVG);
+    // v4.0: Logo PNG hébergé pour compatibilité email
+    const logoUrl = 'https://iarche.fr/logos/iarche-main.png';
 
     const phoneRow = telephone ? `
       <tr>
@@ -65,7 +55,7 @@ export default function SignatureEditor() {
         <tr>
           <td style="padding-bottom: 8px;">
             <a href="https://iarche.fr" style="text-decoration:none;display:block;">
-              <img src="data:image/svg+xml;base64,${gradientLogoBase64}" alt="IArche" width="80" height="28" style="display:block;">
+              <img src="${logoUrl}" alt="IArche" width="80" height="32" style="display:block;">
             </a>
           </td>
         </tr>
@@ -230,16 +220,11 @@ export default function SignatureEditor() {
                           verticalAlign: 'top', 
                           borderRight: `3px solid ${charterColors.terracotta}` 
                         }}>
-                          <span style={{ 
-                            fontSize: '24px', 
-                            fontWeight: 'bold', 
-                            background: `linear-gradient(90deg, ${charterColors.bleuNuit} 0%, ${charterColors.terracotta} 50%, ${charterColors.bleuNuit} 100%)`,
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text',
-                          }}>
-                            IArche
-                          </span>
+                          <img 
+                            src="/logos/iarche-main.svg" 
+                            alt="IArche" 
+                            style={{ height: '28px', display: 'block' }}
+                          />
                         </td>
                         <td style={{ paddingLeft: '20px', verticalAlign: 'top' }}>
                           <div style={{ marginBottom: '4px' }}>

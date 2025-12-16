@@ -30,34 +30,8 @@ export default function FooterEmailEditor() {
 
   // Generate HTML code
   const generateHTML = () => {
-    // Get bar dimensions from the selected size
-    const barDimensions = IARCHE_SIZES.bar[barSize];
-    
-    // Inline SVG gradient bar for email compatibility
-    const gradientBarSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="${barDimensions.width}" height="${barDimensions.height}" viewBox="0 0 ${barDimensions.width} ${barDimensions.height}">
-      <defs>
-        <linearGradient id="barGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#1A2B4A"/>
-          <stop offset="50%" stop-color="#B04A32"/>
-          <stop offset="100%" stop-color="#1A2B4A"/>
-        </linearGradient>
-      </defs>
-      <rect width="${barDimensions.width}" height="${barDimensions.height}" rx="${barDimensions.height / 2}" fill="url(#barGrad)"/>
-    </svg>`;
-    const gradientBarBase64 = btoa(gradientBarSVG);
-    
-    // Inline SVG gradient logo for email compatibility
-    const gradientLogoSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="28" viewBox="0 0 80 28">
-      <defs>
-        <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#1A2B4A"/>
-          <stop offset="50%" stop-color="#B04A32"/>
-          <stop offset="100%" stop-color="#1A2B4A"/>
-        </linearGradient>
-      </defs>
-      <text x="0" y="22" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="bold" fill="url(#logoGrad)">IArche</text>
-    </svg>`;
-    const gradientLogoBase64 = btoa(gradientLogoSVG);
+    // v4.0: Logo PNG hébergé pour compatibilité email (pas d'arc sous le logo)
+    const logoUrl = 'https://iarche.fr/logos/iarche-main.png';
     
     return `<!--[if mso]>
 <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" align="center">
@@ -66,13 +40,12 @@ export default function FooterEmailEditor() {
 <table role="presentation" style="max-width:600px;width:100%;margin:0 auto;font-family:Arial,Helvetica,sans-serif;border-collapse:collapse;">
   <tr>
     <td style="padding:24px 0;">
-      <!-- Logo Gradient -->
+      <!-- Logo SVG officiel v4.0 -->
       <a href="https://iarche.fr" style="text-decoration:none;display:block;">
-        <img src="data:image/svg+xml;base64,${gradientLogoBase64}" alt="IArche" width="80" height="28" style="display:block;">
+        <img src="${logoUrl}" alt="IArche" width="80" height="32" style="display:block;">
       </a>
       
-      <!-- Gradient Bar below logo -->
-      <img src="data:image/svg+xml;base64,${gradientBarBase64}" alt="" width="${barDimensions.width}" height="${barDimensions.height}" style="display:block;margin-top:8px;margin-bottom:16px;">
+      <!-- v4.0: pas d'arc sous le logo -->
       
       <!-- Contact Info -->
       <table role="presentation" width="100%" style="margin-top:16px;">
@@ -248,19 +221,14 @@ export default function FooterEmailEditor() {
                   <p className="text-sm font-medium text-muted-foreground mb-2">Desktop</p>
                   <div className="border rounded-lg bg-white p-6" style={{ maxWidth: '600px' }}>
                     <div style={{ paddingTop: '24px' }}>
-                      {/* Logo gradient */}
+                      {/* Logo SVG officiel v4.0 */}
                       <div>
                         <a href="#" style={{ textDecoration: 'none' }}>
-                          <span style={{ 
-                            fontSize: '24px', 
-                            fontWeight: 'bold', 
-                            background: `linear-gradient(90deg, ${COLORS.bleuNuit} 0%, ${COLORS.terracotta} 50%, ${COLORS.bleuNuit} 100%)`,
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text',
-                          }}>
-                            IArche
-                          </span>
+                          <img 
+                            src="/logos/iarche-main.svg" 
+                            alt="IArche" 
+                            style={{ height: '32px', display: 'block' }}
+                          />
                         </a>
                       </div>
                       
@@ -324,18 +292,13 @@ export default function FooterEmailEditor() {
                   <p className="text-sm font-medium text-muted-foreground mb-2">Mobile</p>
                   <div className="border rounded-lg bg-white p-4" style={{ maxWidth: '320px' }}>
                     <div style={{ paddingTop: '16px' }}>
-                      {/* Logo gradient */}
+                      {/* Logo SVG officiel v4.0 */}
                       <div>
-                        <span style={{ 
-                          fontSize: '20px', 
-                          fontWeight: 'bold', 
-                          background: `linear-gradient(90deg, ${COLORS.bleuNuit} 0%, ${COLORS.terracotta} 50%, ${COLORS.bleuNuit} 100%)`,
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
-                        }}>
-                          IArche
-                        </span>
+                        <img 
+                          src="/logos/iarche-main.svg" 
+                          alt="IArche" 
+                          style={{ height: '24px', display: 'block' }}
+                        />
                       </div>
                       {/* v4.0: pas d'arc sous le logo */}
 

@@ -1,12 +1,11 @@
 import React from 'react';
-import { IARCHE_SIZES, LogoSize, ThemeType, BarSize } from './tokens';
-import { HTMLLogoArc } from './HTMLLogoArc';
+import { LogoSize, ThemeType, BarSize } from './tokens';
 
 interface HTMLLogoWithBarProps {
   size?: LogoSize;
   theme?: ThemeType;
   className?: string;
-  /** Taille de la barre (arc) proportionnelle au logo par défaut */
+  /** @deprecated v4.0 - Arc n'est plus affiché sous le logo */
   barSize?: BarSize;
 }
 
@@ -18,44 +17,33 @@ const LOGO_HEIGHTS: Record<LogoSize, number> = {
 };
 
 /**
- * Logo IArche v4.0 avec arc décoratif
+ * Logo IArche v4.0
  * 
- * Utilise le logo SVG officiel + arc décoratif
- * Conforme à la charte graphique 4.0
+ * @deprecated Utiliser HTMLLogo directement
+ * v4.0: L'arc ne doit JAMAIS être placé sous le logo
+ * L'arc est réservé aux titres de sections uniquement
  */
 export const HTMLLogoWithBar: React.FC<HTMLLogoWithBarProps> = ({
   size = 'md',
   theme = 'light',
   className = '',
-  barSize,
 }) => {
   const height = LOGO_HEIGHTS[size];
-  const effectiveBarSize = barSize || size;
-  
-  // Espacement entre logo et arc proportionnel à la taille
-  const gap = size === 'sm' ? 8 : size === 'md' ? 12 : size === 'lg' ? 16 : 20;
 
   // Logo SVG selon le thème
   const logoSrc = theme === 'dark' 
     ? '/logos/iarche-white.svg' 
     : '/logos/iarche-main.svg';
 
-  const containerStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: `${gap}px`,
-  };
-
   return (
-    <div className={className} style={containerStyle}>
+    <div className={className}>
       <img
         src={logoSrc}
         alt="IArche"
         style={{ height, display: 'inline-block' }}
         draggable={false}
       />
-      <HTMLLogoArc size={effectiveBarSize} />
+      {/* v4.0: Arc SUPPRIMÉ - ne jamais placer d'arc sous le logo */}
     </div>
   );
 };

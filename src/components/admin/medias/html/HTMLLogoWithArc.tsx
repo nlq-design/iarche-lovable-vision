@@ -1,6 +1,5 @@
 import React from 'react';
 import { LogoSize, ThemeType } from './tokens';
-import LogoArc from '@/components/ui/LogoArc';
 
 interface HTMLLogoWithArcProps {
   size?: LogoSize;
@@ -8,11 +7,20 @@ interface HTMLLogoWithArcProps {
   className?: string;
 }
 
+const LOGO_HEIGHTS: Record<LogoSize, number> = {
+  sm: 24,
+  md: 40,
+  lg: 56,
+  xl: 80,
+};
+
 /**
- * Logo IArche v4.0 avec arc décoratif
+ * Logo IArche v4.0 (sans arc)
  * 
- * Remplace HTMLLogoWithBar (Charte 3.x)
- * L'arc est positionné au-dessus du texte, conformément au nouveau design
+ * v4.0: L'arc ne doit JAMAIS être placé sous le logo
+ * L'arc est réservé aux titres de sections uniquement
+ * 
+ * @see HTMLLogoArc pour l'arc décoratif (à utiliser sous les titres)
  */
 export const HTMLLogoWithArc: React.FC<HTMLLogoWithArcProps> = ({
   size = 'md',
@@ -23,20 +31,17 @@ export const HTMLLogoWithArc: React.FC<HTMLLogoWithArcProps> = ({
     ? '/logos/iarche-white.svg' 
     : '/logos/iarche-main.svg';
 
-  const heights: Record<LogoSize, number> = {
-    sm: 24,
-    md: 40,
-    lg: 56,
-    xl: 80,
-  };
+  const height = LOGO_HEIGHTS[size];
 
   return (
     <div className={`flex flex-col items-center ${className}`}>
       <img
         src={logoSrc}
         alt="IArche"
-        style={{ height: heights[size] }}
+        style={{ height }}
+        draggable={false}
       />
+      {/* v4.0: Arc JAMAIS sous le logo */}
     </div>
   );
 };

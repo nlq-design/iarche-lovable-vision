@@ -17,7 +17,7 @@ interface ExportModeControlsProps {
 
 const EXPORT_MODES: { value: ExportMode; label: string; description: string }[] = [
   { value: 'simple', label: 'Simple', description: 'Contenu uniquement' },
-  { value: 'with-bar', label: '+ Barre', description: 'Avec barre décorative' },
+  { value: 'with-bar', label: '+ Arc', description: 'Avec arc décoratif sous titre' },
   { value: 'full', label: 'Complet', description: 'Tous les éléments visuels' },
 ];
 
@@ -56,7 +56,7 @@ export const ExportModeControls: React.FC<ExportModeControlsProps> = ({
 
         {showBarSize && (
           <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground whitespace-nowrap">Barre :</Label>
+            <Label className="text-xs text-muted-foreground whitespace-nowrap">Arc :</Label>
             <div className="flex gap-1">
               {BAR_SIZES.map((size) => (
                 <Button
@@ -98,7 +98,7 @@ export const ExportModeControls: React.FC<ExportModeControlsProps> = ({
 
       {showBarSize && (
         <div className="space-y-2">
-          <Label>Taille de barre</Label>
+          <Label>Taille de l'arc</Label>
           <div className="flex gap-2">
             {BAR_SIZES.map((size) => (
               <Button
