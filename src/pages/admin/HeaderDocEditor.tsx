@@ -143,21 +143,15 @@ export default function HeaderDocEditor() {
                   }}
                 >
                   <div className="flex items-start justify-between">
-                    {/* Logo gradient */}
+                    {/* Logo SVG officiel v4.0 */}
                     <div>
-                      <h1 
-                        className="text-3xl font-bold"
-                        style={{ 
-                          background: `linear-gradient(90deg, ${COLORS.bleuNuit} 0%, ${COLORS.terracotta} 50%, ${COLORS.bleuNuit} 100%)`,
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
-                        }}
-                      >
-                        IArche
-                      </h1>
+                      <img 
+                        src="/logos/iarche-main.svg" 
+                        alt="IArche" 
+                        style={{ height: '48px', display: 'block' }}
+                      />
                       <p 
-                        className="text-sm mt-1"
+                        className="text-sm mt-2"
                         style={{ color: COLORS.terracotta }}
                       >
                         L'IA se construit avec vous

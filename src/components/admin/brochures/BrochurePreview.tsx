@@ -22,24 +22,17 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
   const accentColor = custom_colors?.accent || 'hsl(var(--accent))';
 
   return (
-    <div className="min-h-screen bg-background" style={customStyle}>
-      {/* Animated Background Pattern */}
-      <div className="fixed inset-0 pointer-events-none" aria-hidden="true">
-        <div 
-          className="absolute w-[150%] h-[150%] opacity-20 animate-patternScroll" 
-          style={{ 
-            top: '-25%', 
-            left: '-25%',
-            background: 'repeating-linear-gradient(45deg, transparent, transparent 20px, hsl(var(--border)) 20px, hsl(var(--border)) 22px)',
-          }}
-        />
-      </div>
-
+    <div className="min-h-screen" style={{ ...customStyle, backgroundColor: '#FAF9F7' }}>
       {/* Cover Section */}
       <section className="relative min-h-[60vh] flex flex-col items-center justify-center px-6 py-20">
-        {/* Arc décoratif */}
-        <LogoArc size="lg" className="mb-8" />
+        {/* Logo SVG officiel v4.0 en haut */}
+        <img 
+          src="/logos/iarche-main.svg" 
+          alt="IArche" 
+          className="h-12 mb-6"
+        />
         
+        {/* Arc décoratif sous le titre (pas sous le logo) */}
         <h1 
           className={`text-5xl md:text-7xl font-bold text-center mb-4 ${custom_colors?.primary || custom_colors?.accent ? '' : 'hero-gradient-text'}`}
           style={custom_colors?.primary || custom_colors?.accent ? { 
@@ -52,6 +45,9 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
         >
           {brochure.cover_title || 'Titre'}
         </h1>
+        
+        {/* Arc sous le titre */}
+        <LogoArc size="lg" className="mb-4" />
         
         {brochure.cover_subtitle && (
           <p className="text-xl md:text-2xl text-muted-foreground text-center max-w-2xl">

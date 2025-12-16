@@ -152,7 +152,7 @@ const HeaderEmailEditor: React.FC = () => {
             }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <HTMLLogo size="lg" theme="dark" />
-                {showBar && <HTMLLogoArc size={barSize} />}
+                {/* v4.0: arc sous les titres, PAS sous le logo */}
               </div>
               <div style={{ 
                 display: 'flex', 
@@ -212,6 +212,7 @@ const HeaderEmailEditor: React.FC = () => {
               }}>
                 {formData.titre}
               </span>
+              {/* v4.0: arc sous le titre, pas sous le logo */}
               {showBar && <HTMLLogoArc size={barSize} />}
             </div>
           </HTMLBaseTemplate>
@@ -234,6 +235,7 @@ const HeaderEmailEditor: React.FC = () => {
               height: '100%',
               gap: '16px',
             }}>
+              {/* v4.0: arc décoratif à côté du logo (contexte minimal acceptable) */}
               {showBar && <HTMLLogoArc size={barSize} />}
               <HTMLLogo size="xl" theme="light" />
               {showBar && <HTMLLogoArc size={barSize} />}
