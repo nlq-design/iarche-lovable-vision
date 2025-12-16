@@ -19,7 +19,7 @@ import PlatformPresets, { Platform } from '@/components/admin/medias/PlatformPre
 import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
 import {
   HTMLBaseTemplate,
-  HTMLLogoWithBar,
+  HTMLLogo,
   IARCHE_COLORS,
   IARCHE_FONTS,
   ThemeType,
@@ -156,7 +156,7 @@ export default function StoryEditor() {
             textAlign: titleAlignment,
           }}>
             {/* Header */}
-            <HTMLLogoWithBar size="xl" theme={theme} barSize={barSize} />
+            <HTMLLogo size="xl" theme={theme} />
             
             {/* Main Content */}
             <div style={{ 
@@ -222,7 +222,7 @@ export default function StoryEditor() {
             textAlign: titleAlignment,
           }}>
             {/* Header */}
-            <HTMLLogoWithBar size="xl" theme={theme} barSize={barSize} />
+            <HTMLLogo size="xl" theme={theme} />
             
             {/* Main Content - Big Number */}
             <div style={{ 

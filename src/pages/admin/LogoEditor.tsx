@@ -17,7 +17,7 @@ import { pdf, Document, Page, View, Text, Svg, Defs, LinearGradient, Stop, Rect 
 import { IARCHE_COLORS } from '@/components/admin/medias/html';
 import { BAR_SIZES, LOGO_SIZES, GRADIENTS } from '@/components/admin/medias/shared/tokens';
 import { HTMLMeshBackground } from '@/components/admin/medias/html/HTMLMeshBackground';
-import { HTMLLogoWithBar } from '@/components/admin/medias/html/HTMLLogoWithBar';
+import { HTMLLogo } from '@/components/admin/medias/html/HTMLLogo';
 import { BarSize, LogoSize as LogoSizeToken } from '@/components/admin/medias/html/tokens';
 
 // Types
@@ -261,10 +261,9 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
             )}
             
             <div className="absolute inset-0 flex items-center justify-center p-6 z-10">
-              <HTMLLogoWithBar 
+              <HTMLLogo 
                 size={logoSize} 
                 theme={variant.theme}
-                barSize={barSize}
               />
             </div>
           </div>

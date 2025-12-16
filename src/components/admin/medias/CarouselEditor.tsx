@@ -287,16 +287,13 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                       </>
                     )}
 
-                    {/* Logo + arc */}
+                    {/* Logo seul (v4.0: pas d'arc sous le logo) */}
                     <div className="text-center">
                       <img 
                         src={isDark ? '/logos/iarche-white.svg' : '/logos/iarche-main.svg'}
                         alt="IArche"
                         style={{ height: 32, display: 'inline-block' }}
                       />
-                      {showBarInPreview && (
-                        <HTMLLogoArc size="sm" className="mx-auto mt-1" />
-                      )}
                     </div>
 
                     {/* Content */}

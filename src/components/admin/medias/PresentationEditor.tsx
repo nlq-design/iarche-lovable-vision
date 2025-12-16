@@ -277,7 +277,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                       </>
                     )}
 
-                    {/* Header with logo */}
+                    {/* Header with logo seul (v4.0: pas d'arc sous le logo) */}
                     <div className="flex items-center justify-between mb-6">
                       <div>
                         <img 
@@ -285,13 +285,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                           alt="IArche"
                           style={{ height: 24, display: 'inline-block' }}
                         />
-                        {showBarInPreview && (
-                          <HTMLLogoArc size="sm" className="mt-1" />
-                        )}
                       </div>
-                      {showBarInPreview && (
-                        <HTMLLogoArc size="sm" />
-                      )}
                     </div>
 
                     {/* Content */}

@@ -19,7 +19,7 @@ import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport'
 import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
-  HTMLLogoWithBar,
+  HTMLLogo,
   IARCHE_COLORS,
   IARCHE_FONTS,
   ThemeType,
@@ -413,7 +413,7 @@ export default function ThumbnailEditor() {
                     }}>
                       {/* Header */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <HTMLLogoWithBar size="xl" theme={theme} barSize={barSize} />
+                        <HTMLLogo size="xl" theme={theme} />
                         <span style={{
                           fontFamily: IARCHE_FONTS.primary,
                           fontSize: '20px',

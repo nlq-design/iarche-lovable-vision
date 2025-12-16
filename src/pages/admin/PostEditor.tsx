@@ -21,7 +21,7 @@ import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport'
 import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
   HTMLBaseTemplate,
-  HTMLLogoWithBar,
+  HTMLLogo,
   IARCHE_COLORS,
   IARCHE_FONTS,
   ThemeType,
@@ -248,7 +248,7 @@ export default function PostEditor() {
             height: '100%',
             textAlign: titleAlignment,
           }}>
-            <HTMLLogoWithBar size="lg" theme={theme} barSize={barSize} />
+            <HTMLLogo size="lg" theme={theme} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start' }}>
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
@@ -308,7 +308,7 @@ export default function PostEditor() {
             textAlign: titleAlignment,
             gap: '32px',
           }}>
-            <HTMLLogoWithBar size="md" theme={theme} barSize={barSize} />
+            <HTMLLogo size="md" theme={theme} />
             <div style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: `${titleFontSize}px`,
@@ -358,7 +358,7 @@ export default function PostEditor() {
             height: '100%',
             textAlign: titleAlignment,
           }}>
-            <HTMLLogoWithBar size="md" theme={theme} barSize={barSize} />
+            <HTMLLogo size="md" theme={theme} />
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '32px', width: '100%' }}>
               {temoinPhoto && (
                 <div style={{
@@ -430,7 +430,7 @@ export default function PostEditor() {
             textAlign: titleAlignment,
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'flex-start' }}>
-              <HTMLLogoWithBar size="md" theme={theme} barSize={barSize} />
+              <HTMLLogo size="md" theme={theme} />
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: '16px',

@@ -19,11 +19,10 @@ import { ImageLibrary } from '@/components/admin/medias/ImageLibrary';
 import { PngQuality, PNG_QUALITY_OPTIONS } from '@/lib/mediaExport';
 import {
   HTMLBaseTemplate,
-  HTMLLogoWithBar,
+  HTMLLogo,
   IARCHE_COLORS,
   IARCHE_FONTS,
   ThemeType,
-  BarSize,
 } from '@/components/admin/medias/html';
 
 const BANNER_WIDTH = 1584;
@@ -65,7 +64,7 @@ export default function BannerEditor() {
   const [theme, setTheme] = useState<ThemeType>('dark');
   const [preset, setPreset] = useState<string>('');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
-  const [barSize, setBarSize] = useState<BarSize>('lg');
+  // barSize removed - arc no longer under logo per v4.0
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
   const [platformPreset, setPlatformPreset] = useState<Platform>('linkedin-banner');
   
@@ -98,17 +97,17 @@ export default function BannerEditor() {
 
   // Get current data for saving template
   const getCurrentData = useCallback(() => ({
-    template, theme, preset, exportMode, barSize, pngQuality, platformPreset,
+    template, theme, preset, exportMode, pngQuality, platformPreset,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     tagline, selectedSolution, ceoName, ceoTitle, ceoPhoto,
-  }), [template, theme, preset, exportMode, barSize, pngQuality, platformPreset, titleFontSize, titleBold, titleItalic, titleAlignment, tagline, selectedSolution, ceoName, ceoTitle, ceoPhoto]);
+  }), [template, theme, preset, exportMode, pngQuality, platformPreset, titleFontSize, titleBold, titleItalic, titleAlignment, tagline, selectedSolution, ceoName, ceoTitle, ceoPhoto]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
     if (data.template) setTemplate(data.template as BannerTemplate);
     if (data.theme) setTheme(data.theme as ThemeType);
     if (data.exportMode) setExportMode(data.exportMode as ExportMode);
-    if (data.barSize) setBarSize(data.barSize as BarSize);
+    // barSize removed per v4.0
     if (data.pngQuality) setPngQuality(data.pngQuality as PngQuality);
     if (data.platformPreset) setPlatformPreset(data.platformPreset as Platform);
     if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
@@ -149,7 +148,7 @@ export default function BannerEditor() {
             gap: '24px',
             textAlign: titleAlignment,
           }}>
-            <HTMLLogoWithBar size="xl" theme={theme} barSize={barSize} />
+            <HTMLLogo size="xl" theme={theme} />
             <p style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: `${titleFontSize}px`,
@@ -176,7 +175,7 @@ export default function BannerEditor() {
             gap: '20px',
             textAlign: titleAlignment,
           }}>
-            <HTMLLogoWithBar size="lg" theme={theme} barSize={barSize} />
+            <HTMLLogo size="lg" theme={theme} />
             <h2 style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: `${titleFontSize + 16}px`,
@@ -234,7 +233,7 @@ export default function BannerEditor() {
               gap: '16px',
               textAlign: titleAlignment,
             }}>
-              <HTMLLogoWithBar size="lg" theme={theme} barSize={barSize} />
+              <HTMLLogo size="lg" theme={theme} />
               <h2 style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${titleFontSize + 4}px`,
@@ -346,12 +345,10 @@ export default function BannerEditor() {
                 maxFontSize={48}
               />
 
-              {/* Export mode controls */}
+              {/* Export mode controls - barSize removed per v4.0 */}
               <ExportModeControls
                 exportMode={exportMode}
                 onExportModeChange={setExportMode}
-                barSize={barSize}
-                onBarSizeChange={setBarSize}
               />
 
               {/* Platform Presets */}
