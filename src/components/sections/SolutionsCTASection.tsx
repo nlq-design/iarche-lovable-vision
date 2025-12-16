@@ -11,12 +11,8 @@ const SolutionsCTASection = () => {
         <a 
           href="/solutions"
           onClick={() => trackCTAClick('nos_solutions', 'solutions_cta_section')}
-          className="block relative rounded-lg py-12 md:py-16 px-6 md:px-8 overflow-hidden transition-all duration-500 group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          className="block relative rounded-lg py-12 md:py-16 px-6 md:px-8 overflow-hidden transition-all duration-500 group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-background"
         >
-            {/* Quadrillages diagonaux animés */}
-            <div className="pattern absolute w-[150%] h-[150%] -top-1/4 -left-1/4 opacity-20 animate-patternScroll pointer-events-none z-0 [background:repeating-linear-gradient(45deg,transparent,transparent_20px,hsl(var(--border))_20px,hsl(var(--border))_22px)]" aria-hidden="true" />
-            <div className="pattern absolute w-[150%] h-[150%] top-1/4 left-1/4 opacity-10 animate-patternScroll [animation-delay:10s] pointer-events-none z-0 [background:repeating-linear-gradient(-45deg,transparent,transparent_20px,hsl(var(--border))_20px,hsl(var(--border))_22px)]" aria-hidden="true" />
-            
             <div className="max-w-3xl mx-auto text-center invisible animate-fadeIn [animation-delay:0.2s] relative z-10">
               <div className="inline-flex items-center group-hover:opacity-80 transition-opacity text-xl md:text-2xl font-semibold">
                 <span className="hero-gradient-text relative">

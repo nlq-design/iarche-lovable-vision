@@ -95,32 +95,6 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
     );
   };
 
-  // Mesh background component
-  const MeshBackground = () => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-      {/* Quadrillage 1 - 45° */}
-      <div 
-        className="absolute w-[200%] h-[200%] opacity-[0.15]" 
-        style={{ 
-          top: '-50%', 
-          left: '-50%',
-          background: `repeating-linear-gradient(45deg, transparent, transparent 20px, ${COLORS.border} 20px, ${COLORS.border} 22px)`,
-          animation: 'patternScroll 40s linear infinite',
-        }}
-      />
-      {/* Quadrillage 2 - -45° */}
-      <div 
-        className="absolute w-[200%] h-[200%] opacity-[0.08]" 
-        style={{ 
-          top: '-50%', 
-          left: '-50%',
-          background: `repeating-linear-gradient(-45deg, transparent, transparent 20px, ${COLORS.border} 20px, ${COLORS.border} 22px)`,
-          animation: 'patternScroll 40s linear infinite',
-          animationDelay: '-10s',
-        }}
-      />
-    </div>
-  );
 
   // Render individual sections
   const renderSection = (slide: { type: string; data: any }, index: number) => {
@@ -136,7 +110,6 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
             className={`relative min-h-screen flex flex-col items-center justify-center px-6 py-20 ${slideClass}`}
             style={{ backgroundColor: COLORS.blancCasse }}
           >
-            <MeshBackground />
             <div className="relative z-10 flex flex-col items-center">
               {/* Arc décoratif v4.0 above title */}
               <LogoArc size="xl" className="mb-8" />
@@ -186,7 +159,6 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
             className={`relative px-6 py-16 flex items-center justify-center ${isHorizontal ? 'min-h-screen' : ''} ${slideClass}`}
             style={{ backgroundColor: COLORS.blancCasse }}
           >
-            <MeshBackground />
             <div className="relative z-10 max-w-3xl">
               <p 
                 className="text-lg leading-relaxed"
@@ -260,7 +232,6 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
             className={`relative px-6 py-16 ${isHorizontal ? 'min-h-screen flex items-center' : ''} ${slideClass}`}
             style={{ backgroundColor: COLORS.blancCasse }}
           >
-            <MeshBackground />
             <div className="max-w-3xl mx-auto relative z-10">
               <h2 
                 className="text-3xl font-bold mb-4"
@@ -391,7 +362,6 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
             className={`relative px-6 py-16 ${isHorizontal ? 'min-h-screen flex items-center' : ''} ${slideClass}`}
             style={{ backgroundColor: COLORS.blancCasse }}
           >
-            <MeshBackground />
             <div className="max-w-3xl mx-auto relative z-10">
               <div 
                 className="p-8 rounded-lg"
@@ -436,7 +406,7 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
             className={`relative px-6 py-20 text-center ${isHorizontal ? 'min-h-screen flex items-center justify-center' : ''} ${slideClass}`}
             style={{ backgroundColor: COLORS.blancCasse }}
           >
-            <MeshBackground />
+            
             <div className="max-w-xl mx-auto relative z-10">
               <h2 
                 className="text-3xl font-bold mb-4"

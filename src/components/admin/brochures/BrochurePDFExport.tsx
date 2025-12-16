@@ -46,44 +46,6 @@ const QuoteIcon = ({ color = COLORS.terracotta, size = 32 }: { color?: string; s
   </Svg>
 );
 
-// Mesh Background Pattern Component
-const MeshBackground = ({ width, height }: { width: number; height: number }) => {
-  const spacing = 20;
-  const lines: React.ReactNode[] = [];
-  
-  // Diagonal lines at 45°
-  for (let i = -height; i < width + height; i += spacing) {
-    lines.push(
-      <Path
-        key={`d1-${i}`}
-        d={`M ${i} 0 L ${i + height} ${height}`}
-        stroke={COLORS.border}
-        strokeWidth={0.5}
-        opacity={0.15}
-      />
-    );
-  }
-  
-  // Diagonal lines at -45°
-  for (let i = -height; i < width + height; i += spacing) {
-    lines.push(
-      <Path
-        key={`d2-${i}`}
-        d={`M ${i + height} 0 L ${i} ${height}`}
-        stroke={COLORS.border}
-        strokeWidth={0.5}
-        opacity={0.1}
-      />
-    );
-  }
-  
-  return (
-    <Svg width={width} height={height} style={{ position: 'absolute', top: 0, left: 0 }}>
-      <Rect width={width} height={height} fill={COLORS.blancCasse} />
-      {lines}
-    </Svg>
-  );
-};
 
 // Logo Component v4.0 avec arc
 const BrandLogo = ({ size = 'md', isDark = false }: { size?: 'sm' | 'md' | 'lg'; isDark?: boolean }) => {
@@ -363,7 +325,6 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
     <Document>
       {/* Cover Page */}
       <Page size={[pageSize.width, pageSize.height]} style={styles.coverPage}>
-        <MeshBackground width={pageSize.width} height={pageSize.height} />
         
         <View style={{ zIndex: 1, alignItems: 'center' }}>
           {/* Decorative arc */}
@@ -397,7 +358,6 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
       {/* Introduction + Key Points */}
       {(sections.introduction.enabled || sections.keyPoints.enabled) && (
         <Page size={[pageSize.width, pageSize.height]} style={styles.page}>
-          <MeshBackground width={pageSize.width} height={pageSize.height} />
           
           <View style={{ zIndex: 1 }}>
             {isLandscape ? (
@@ -468,7 +428,6 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
       {/* Details */}
       {sections.details.enabled && (sections.details.content || sections.details.features?.length > 0) && (
         <Page size={[pageSize.width, pageSize.height]} style={styles.page}>
-          <MeshBackground width={pageSize.width} height={pageSize.height} />
           
           <View style={{ zIndex: 1 }}>
             <Text style={styles.sectionTitle}>Détails</Text>
@@ -550,7 +509,7 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
       {/* Testimonial + Contact */}
       {(sections.testimonial.enabled || sections.contact.enabled) && (
         <Page size={[pageSize.width, pageSize.height]} style={styles.page}>
-          <MeshBackground width={pageSize.width} height={pageSize.height} />
+          
           
           <View style={{ zIndex: 1 }}>
             {isLandscape ? (
@@ -711,7 +670,7 @@ const BrochurePDFExport = ({ brochure, onClose }: BrochurePDFExportProps) => {
         >
           <strong style={{ color: COLORS.foreground }}>Format A4</strong> · {orientation === 'portrait' ? '210 × 297 mm' : '297 × 210 mm'}
           <br />
-          Export avec mesh background, logo officiel et icônes SVG.
+          Export avec logo officiel et icônes SVG.
         </div>
 
         <div className="flex gap-2">

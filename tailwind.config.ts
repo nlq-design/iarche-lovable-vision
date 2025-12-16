@@ -89,10 +89,6 @@ export default {
           "0%, 100%": { backgroundPosition: "0% 50%" },
           "50%": { backgroundPosition: "100% 50%" },
         },
-        "patternScroll": {
-          "0%": { transform: "translate(0, 0)" },
-          "100%": { transform: "translate(50px, 50px)" },
-        },
         "constructionFade": {
           "0%, 100%": { opacity: "0.3" },
           "50%": { opacity: "0.6" },
@@ -107,7 +103,7 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "fadeIn": "fadeIn 0.6s ease-out forwards",
         "gradientText": "gradientText 8s ease infinite",
-        "patternScroll": "patternScroll 40s linear infinite", // Optimisé: 20s → 40s (2× moins de cycles CPU)
+        
         "constructionFade": "constructionFade 6s ease-in-out infinite", // Optimisé: 4s → 6s
         "subtlePulse": "subtlePulse 3s ease-in-out infinite",
       },

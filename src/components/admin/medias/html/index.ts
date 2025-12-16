@@ -5,6 +5,7 @@
  * - HTMLLogoWithArc remplace HTMLLogoWithBar
  * - Arcs au lieu de barres gradient
  * - Suppression des canalisations
+ * - Suppression du fond quadrillé (mesh)
  */
 
 // Tokens - Source unique de vérité
@@ -16,7 +17,6 @@ export { HTMLLogoArc } from './HTMLLogoArc';
 export { HTMLLogoWithArc } from './HTMLLogoWithArc';
 export { HTMLLogoWithBar } from './HTMLLogoWithBar'; // Legacy
 export { HTMLGradientBar } from './HTMLGradientBar'; // Legacy
-export { HTMLMeshBackground } from './HTMLMeshBackground';
 export { HTMLBaseTemplate } from './HTMLBaseTemplate';
 
 // Image Library (Supabase Storage)

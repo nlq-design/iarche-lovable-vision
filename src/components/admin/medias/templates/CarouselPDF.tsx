@@ -1,6 +1,6 @@
 import { Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import { IARCHE_COLORS, PDF_FORMATS } from '../pdf';
-import { PDFImageLogo, PDFPatternBackground } from '../pdf/PDFImageAssets';
+import { PDFImageLogo } from '../pdf/PDFImageAssets';
 import { PDFLogoArc } from '../pdf/PDFLogoArc';
 
 export type ExportMode = 'simple' | 'with-bar' | 'full';
@@ -143,13 +143,6 @@ export const CarouselPDF: React.FC<CarouselPDFProps> = ({
             size={[width, height]} 
             style={isDark ? styles.pageDark : styles.pageLight}
           >
-            {/* Mesh background pattern - always shown */}
-            <PDFPatternBackground 
-              pageWidth={width} 
-              pageHeight={height} 
-              opacity={isDark ? 0.06 : 0.08}
-              isDark={isDark}
-            />
             
             {/* Main content */}
             <View style={styles.content}>

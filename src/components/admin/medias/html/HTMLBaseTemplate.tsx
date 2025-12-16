@@ -1,13 +1,11 @@
 import React, { forwardRef } from 'react';
 import { IARCHE_COLORS, IARCHE_FONTS, ThemeType } from './tokens';
-import { HTMLMeshBackground } from './HTMLMeshBackground';
 import { HTMLArches } from './HTMLArches';
 
 interface HTMLBaseTemplateProps {
   width: number;
   height: number;
   theme?: ThemeType;
-  showMesh?: boolean;
   showArches?: boolean;
   archSize?: number;
   padding?: number;
@@ -27,7 +25,6 @@ export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps
       width,
       height,
       theme = 'light',
-      showMesh = true,
       showArches = true,
       archSize,
       padding = 40,
@@ -56,9 +53,6 @@ export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps
           fontFamily: IARCHE_FONTS.primary,
         }}
       >
-        {/* Mesh background pattern */}
-        {showMesh && <HTMLMeshBackground theme={theme} />}
-        
         {/* Decorative arches in corners */}
         {showArches && (
           <HTMLArches 
