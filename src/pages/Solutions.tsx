@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import GradientLink from '@/components/ui/GradientLink';
 import IArcheLink from '@/components/ui/IArcheLink';
 import { useCTATracking } from '@/hooks/useCTATracking';
-import LogoArc from '@/components/ui/LogoArc';
+import GradientTitle from '@/components/ui/GradientTitle';
 import { Loader2 } from 'lucide-react';
 import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
 
@@ -89,10 +89,9 @@ const Solutions = () => {
         <section className="max-w-6xl mx-auto px-6 py-4">
           {/* En-tête */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
+            <GradientTitle size="lg" className="mb-6 animate-fadeIn [animation-delay:0.1s]">
               Nos solutions
-            </h1>
-            <LogoArc size="md" className="mx-auto mb-6 animate-fadeIn [animation-delay:0.15s]" />
+            </GradientTitle>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
               <span className="hero-gradient-text">IArche</span> déploie des solutions SaaS conçues à partir de besoins concrets identifiés sur le terrain.
             </p>
