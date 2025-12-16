@@ -17,14 +17,14 @@
 - **Remplace TOUTES les barres gradient horizontales**
 - **NE JAMAIS placer sous un logo** (réservé aux titres et identité site)
 
-### Tailles de l'arc
+### Tailles de l'arc (ratio 16:1)
 
 | Taille | Largeur | Hauteur | Usage |
 |--------|---------|---------|-------|
-| sm | 80px | 10px | Cards, petits titres |
-| md | 120px | 14px | Titres de section (défaut) |
-| lg | 180px | 20px | Grands titres de page |
-| xl | 260px | 28px | Hero section |
+| sm | 100px | 6px | Cards, petits titres |
+| md | 160px | 10px | Titres de section (défaut) |
+| lg | 240px | 15px | Grands titres de page |
+| xl | 360px | 22px | Hero section |
 
 ### Fichier de référence
 

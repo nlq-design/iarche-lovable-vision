@@ -19,10 +19,10 @@ export const HTMLLogoArc: React.FC<HTMLLogoArcProps> = ({
   className = '',
 }) => {
   const sizeConfig = {
-    sm: { width: 80, height: 10 },
-    md: { width: 120, height: 14 },
-    lg: { width: 180, height: 20 },
-    xl: { width: 260, height: 28 },
+    sm: { width: 100, height: 6 },
+    md: { width: 160, height: 10 },
+    lg: { width: 240, height: 15 },
+    xl: { width: 360, height: 22 },
   };
 
   const { width, height } = sizeConfig[size];
