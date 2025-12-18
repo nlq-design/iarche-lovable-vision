@@ -121,22 +121,20 @@ Cette baseline exprime :
 
 **Composant principal :** `src/components/ui/LogoArc.tsx`
 
-**Spécifications de l'arc (ratio 16:1) :**
+**Fichier SVG officiel :**
+- **Source** : `/public/logos/iarche-arc.svg` (URLs directes)
+- **Assets** : `src/assets/arc-iarche-v4.svg` (import ES6 pour composants React)
+
+**Spécifications de l'arc (ratio ~3.27:1) :**
 
 | Taille | Largeur | Hauteur | Usage |
 |--------|---------|---------|-------|
-| sm | 100px | 6px | Cards, petits titres |
-| md | 160px | 10px | Titres de section (défaut) |
-| lg | 240px | 15px | Grands titres de page |
-| xl | 360px | 22px | Hero section |
+| sm | 100px | 30px | Cards, petits titres |
+| md | 160px | 49px | Titres de section (défaut) |
+| lg | 240px | 73px | Grands titres de page |
+| xl | 360px | 110px | Hero section |
 
-**Gradient :** Bleu Nuit (#1A2B4A) → Terracotta (#B04A32)
-
-**Path SVG normalisé (viewBox 0 0 200 24) :**
-
-```svg
-M 0 20 Q 50 0, 100 8 Q 150 14, 200 18 L 200 22 Q 150 19, 100 14 Q 50 8, 0 24 Z
-```
+**Gradient :** Bleu Nuit (#1A2B4A) → Terracotta (#B04A32) (intégré dans le SVG)
 
 **Usage :**
 
