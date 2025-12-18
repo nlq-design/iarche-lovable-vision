@@ -12,15 +12,18 @@ export const EMAIL_COLORS = {
 };
 
 export const LOGO_URL = 'https://iarche.fr/logos/iarche-main.png';
+export const ARC_URL = 'https://iarche.fr/logos/iarche-arc.svg';
 
-// Generate standardized email header with logo and gradient
+// Generate standardized email header with logo, title and decorative arc (v4.0)
 export function getEmailHeader(title: string): string {
   return `
     <!-- Header with gradient -->
     <tr>
       <td style="background: linear-gradient(135deg, ${EMAIL_COLORS.nightBlue} 0%, ${EMAIL_COLORS.terracotta} 100%); padding: 32px 40px; text-align: center; border-radius: 12px 12px 0 0;">
         <img src="${LOGO_URL}" alt="IArche" style="height: 40px; margin-bottom: 16px;" />
-        <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">${title}</h1>
+        <h1 style="color: #ffffff; margin: 0 0 16px 0; font-size: 24px; font-weight: 600;">${title}</h1>
+        <!-- Arc décoratif v4.0 -->
+        <img src="${ARC_URL}" alt="" style="width: 160px; height: 49px; display: block; margin: 0 auto;" />
       </td>
     </tr>
   `;
