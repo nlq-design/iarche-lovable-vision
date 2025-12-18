@@ -39,7 +39,7 @@ const DEFAULT_TEMPLATE = `<!DOCTYPE html>
   <div class="container">
     <div class="header">
       <img src="https://iarche.fr/logos/iarche-white.svg" alt="IArche" />
-      <img src="https://iarche.fr/assets/arc-iarche-v4.png" alt="" class="header-arc" />
+      <img src="https://iarche.fr/logos/iarche-arc.svg" alt="" class="header-arc" />
     </div>
     <div class="content">
       <h2>{{title}}</h2>

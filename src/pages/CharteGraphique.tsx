@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { Printer } from 'lucide-react';
 import GradientButton from '@/components/ui/GradientButton';
 import LogoArc from '@/components/ui/LogoArc';
-import arcImage from '@/assets/arc-iarche-v4.png';
+const arcImage = '/logos/iarche-arc.svg';
 
 const CharteGraphique = () => {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -34,10 +34,10 @@ const CharteGraphique = () => {
   ];
 
   const arcSizes = [
-    { label: 'SM', width: '100px', height: '6px', usage: 'Cards, petits titres' },
-    { label: 'MD', width: '160px', height: '10px', usage: 'Titres de section (défaut)' },
-    { label: 'LG', width: '240px', height: '15px', usage: 'Grands titres de page' },
-    { label: 'XL', width: '360px', height: '22px', usage: 'Hero section' },
+    { label: 'SM', width: '100px', height: '30px', usage: 'Cards, petits titres' },
+    { label: 'MD', width: '160px', height: '49px', usage: 'Titres de section (défaut)' },
+    { label: 'LG', width: '240px', height: '73px', usage: 'Grands titres de page' },
+    { label: 'XL', width: '360px', height: '110px', usage: 'Hero section' },
   ];
 
   return (
@@ -128,7 +128,7 @@ const CharteGraphique = () => {
             <h3 className="text-lg font-semibold text-[#2E7D32] mb-3">Nouveautés v4.0</h3>
             <ul className="text-sm text-[#1A2B4A] space-y-1">
               <li>✓ <strong>Logo SVG officiel</strong> — Remplace le texte gradient animé</li>
-              <li>✓ <strong>Arc décoratif PNG</strong> — Fichier exact, remplace toutes les barres gradient</li>
+              <li>✓ <strong>Arc décoratif SVG</strong> — Fichier exact, remplace toutes les barres gradient</li>
               <li>✓ <strong>Suppression</strong> — Lignes canalisation, AnimatedArcs, gradient bars</li>
               <li>✓ <strong>Composant LogoArc</strong> — Unique élément décoratif (sous titres uniquement)</li>
             </ul>
@@ -266,13 +266,13 @@ const CharteGraphique = () => {
             <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
               <div className="bg-[#FAF9F7] p-4 rounded font-mono text-xs">
                 <p className="font-semibold text-[#1A2B4A] mb-2">Fichiers</p>
-                <p className="text-[#666666]">src/assets/arc-iarche-v4.png (import ES6)</p>
-                <p className="text-[#666666]">public/assets/arc-iarche-v4.png (URLs directes)</p>
+                <p className="text-[#666666]">src/assets/arc-iarche-v4.svg (import ES6)</p>
+                <p className="text-[#666666]">public/logos/iarche-arc.svg (URLs directes)</p>
               </div>
               <div className="bg-[#FAF9F7] p-4 rounded font-mono text-xs">
                 <p className="font-semibold text-[#1A2B4A] mb-2">Caractéristiques</p>
                 <p className="text-[#666666]">Gradient: Bleu Nuit (#1A2B4A) → Terracotta (#B04A32)</p>
-                <p className="text-[#666666]">Forme: Courbe de Bézier affinée (épais→fin)</p>
+                <p className="text-[#666666]">Format: SVG vectoriel avec gradient intégré</p>
               </div>
             </div>
           </div>
@@ -322,8 +322,8 @@ const CharteGraphique = () => {
 // Utilisation
 <LogoArc size="md" className="mt-2" />
 
-// Le composant utilise directement le fichier PNG
-import arcImage from '@/assets/arc-iarche-v4.png';`}
+// Le composant utilise directement le fichier SVG officiel
+// Source: /logos/iarche-arc.svg`}
             </pre>
           </div>
         </section>

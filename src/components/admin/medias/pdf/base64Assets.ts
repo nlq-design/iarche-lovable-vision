@@ -1,12 +1,12 @@
 // Base64 encoded PNG assets for react-pdf compatibility
-// v4.0: Utilise les logos officiels en PNG
+// v4.0: Utilise les logos officiels en SVG
 
 import { IARCHE_COLORS } from './tokens';
 
-// Arc v4.0 - URL directe vers le fichier PNG de référence
+// Arc v4.0 - URL directe vers le fichier SVG de référence
 const getArcUrl = (): string => {
-  // Utilise le fichier PNG exact fourni
-  return '/assets/arc-iarche-v4.png';
+  // Utilise le fichier SVG exact fourni
+  return '/logos/iarche-arc.svg';
 };
 
 // Generate gradient bar as SVG data URI (legacy - kept for compatibility)
@@ -26,7 +26,7 @@ const createGradientBarSVG = (width: number, height: number): string => {
 
 // Export pre-generated assets
 export const BASE64_ASSETS = {
-  // Arc décoratifs (v4.0) - URL directe vers le PNG de référence
+  // Arc décoratifs (v4.0) - URL directe vers le SVG de référence
   arcSm: getArcUrl(),
   arcMd: getArcUrl(),
   arcLg: getArcUrl(),
@@ -39,10 +39,10 @@ export const BASE64_ASSETS = {
   barXl: createGradientBarSVG(128, 6),
   barFull: createGradientBarSVG(400, 4),
   
-  // Logo variants v4.0 - URLs vers les fichiers PNG officiels
-  logoGradient: '/logos/iarche-main.png',
-  logoWhite: '/logos/iarche-white.png',
-  logoTerracotta: '/logos/iarche-main.png', // Fallback vers le logo principal
+  // Logo variants v4.0 - URLs vers les fichiers SVG officiels
+  logoGradient: '/logos/iarche-main.svg',
+  logoWhite: '/logos/iarche-white.svg',
+  logoTerracotta: '/logos/iarche-main.svg', // Fallback vers le logo principal
 };
 
 // Bullet styles as React Native compatible objects
