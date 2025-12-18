@@ -1,6 +1,5 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import arcImage from '@/assets/arc-iarche-v4.png';
 
 interface LogoArcProps {
   /** Taille de l'arc */
@@ -10,9 +9,9 @@ interface LogoArcProps {
 }
 
 /**
- * Arc décoratif IArche v4.0 - Image PNG officielle
+ * Arc décoratif IArche v4.0 - SVG officiel
  * 
- * Utilise directement le fichier PNG de référence fourni
+ * Utilise directement le fichier SVG de référence fourni
  * Remplace toutes les barres gradient horizontales du site
  */
 const LogoArc: React.FC<LogoArcProps> = ({
@@ -20,17 +19,17 @@ const LogoArc: React.FC<LogoArcProps> = ({
   className = '',
 }) => {
   const sizeConfig = {
-    sm: { width: 100, height: 6 },
-    md: { width: 160, height: 10 },
-    lg: { width: 240, height: 15 },
-    xl: { width: 360, height: 22 },
+    sm: { width: 100, height: 30 },
+    md: { width: 160, height: 49 },
+    lg: { width: 240, height: 73 },
+    xl: { width: 360, height: 110 },
   };
 
   const { width, height } = sizeConfig[size];
 
   return (
     <img
-      src={arcImage}
+      src="/logos/iarche-arc.svg"
       alt=""
       aria-hidden="true"
       className={cn('block object-contain', className)}

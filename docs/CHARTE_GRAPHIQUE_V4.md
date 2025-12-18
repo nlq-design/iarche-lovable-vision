@@ -17,22 +17,22 @@
 - **Remplace TOUTES les barres gradient horizontales**
 - **NE JAMAIS placer sous un logo** (réservé aux titres et identité site)
 
-### Tailles de l'arc (ratio 16:1)
+### Tailles de l'arc (ratio ~3.27:1)
 
 | Taille | Largeur | Hauteur | Usage |
 |--------|---------|---------|-------|
-| sm | 100px | 6px | Cards, petits titres |
-| md | 160px | 10px | Titres de section (défaut) |
-| lg | 240px | 15px | Grands titres de page |
-| xl | 360px | 22px | Hero section |
+| sm | 100px | 30px | Cards, petits titres |
+| md | 160px | 49px | Titres de section (défaut) |
+| lg | 240px | 73px | Grands titres de page |
+| xl | 360px | 110px | Hero section |
 
 ### Fichier de référence
 
-L'arc utilise directement le fichier PNG de référence fourni :
-- **Source** : `src/assets/arc-iarche-v4.png` (import ES6 pour composants React)
-- **Public** : `public/assets/arc-iarche-v4.png` (pour PDF et URLs directes)
+L'arc utilise directement le fichier SVG officiel fourni :
+- **Source** : `/public/logos/iarche-arc.svg` (URLs directes)
+- **Assets** : `src/assets/arc-iarche-v4.svg` (import ES6 pour composants React)
 
-Aucun path SVG n'est généré - le fichier PNG exact est utilisé tel quel.
+Le SVG contient le gradient officiel Night Blue → Terracotta intégré.
 
 ### Fond de page
 - **Fond uni** : `#FAF9F7` (Blanc Cassé) - `hsl(30, 14%, 98%)`
@@ -47,14 +47,15 @@ Aucun path SVG n'est généré - le fichier PNG exact est utilisé tel quel.
 - ❌ Fond quadrillé animé (mesh) - remplacé par fond uni #FAF9F7
 - ❌ HTMLMeshBackground / PDFMeshBackground (supprimés)
 - ❌ Animation patternScroll (supprimée)
+- ❌ arc-iarche-v4.png (remplacé par SVG officiel)
 
 ### Fichiers logo
 - `/logos/iarche-main.svg` - Logo principal gradient
 - `/logos/iarche-white.svg` - Logo blanc
 - `/logos/iarche-dark.svg` - Logo Bleu Nuit
+- `/logos/iarche-arc.svg` - Arc décoratif officiel (virgule)
 - `/logos/iarche-icon-32.svg` - Favicon
 - `/logos/iarche-icon-512.svg` - PWA icon
-- `/public/assets/arc-reference-v4.png` - Image de référence de l'arc
 
 ### Composants
 
