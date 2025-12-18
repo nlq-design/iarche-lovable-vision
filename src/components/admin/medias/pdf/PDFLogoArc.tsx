@@ -11,15 +11,15 @@ interface PDFLogoArcProps {
 const getArcUrl = () => {
   // En production, utiliser le chemin absolu
   if (typeof window !== 'undefined') {
-    return `${window.location.origin}/assets/arc-iarche-v4.png`;
+    return `${window.location.origin}/logos/iarche-arc.svg`;
   }
-  return '/assets/arc-iarche-v4.png';
+  return '/logos/iarche-arc.svg';
 };
 
 /**
  * Arc décoratif IArche pour PDF - Version v4.0
  * 
- * Utilise directement le fichier PNG de référence fourni
+ * Utilise directement le fichier SVG de référence fourni
  * Remplace PDFGradientBar pour les exports PDF
  */
 export const PDFLogoArc = ({ 
@@ -27,10 +27,10 @@ export const PDFLogoArc = ({
   style = {} 
 }: PDFLogoArcProps) => {
   const sizeConfig = {
-    sm: { width: 100, height: 6 },
-    md: { width: 160, height: 10 },
-    lg: { width: 240, height: 15 },
-    xl: { width: 360, height: 22 },
+    sm: { width: 100, height: 30 },
+    md: { width: 160, height: 49 },
+    lg: { width: 240, height: 73 },
+    xl: { width: 360, height: 110 },
   };
 
   const { width, height } = sizeConfig[size];
