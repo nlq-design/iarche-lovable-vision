@@ -146,8 +146,6 @@ const LivresBlancs = () => {
                     basePath="/livres-blancs"
                     index={index}
                     showDate={true}
-                    showArc={true}
-                    arcSize="sm"
                   />
                 ))}
               </div>

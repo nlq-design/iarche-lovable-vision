@@ -146,8 +146,6 @@ const CasClients = () => {
                     basePath="/cas-clients"
                     index={index}
                     showDate={true}
-                    showArc={true}
-                    arcSize="sm"
                   />
                 ))}
               </div>
