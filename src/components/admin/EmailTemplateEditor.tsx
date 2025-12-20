@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Save, Eye, Code, Copy, Check, Sparkles } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Save, Eye, Code, Copy, Check, Sparkles, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface EmailTemplateEditorProps {
@@ -17,32 +18,104 @@ interface EmailTemplateEditorProps {
   onSave: (template: string, subject: string) => Promise<void>;
 }
 
-const DEFAULT_TEMPLATE = `<!DOCTYPE html>
+// Couleurs IArche v4.0
+const EMAIL_COLORS = {
+  bleuNuit: '#1A2B4A',
+  terracotta: '#B04A32',
+  blancCasse: '#FAF9F7',
+  white: '#FFFFFF',
+  grey: '#6B7280',
+  lightGrey: '#E5E7EB',
+};
+
+type EmailTheme = 'bleu-nuit' | 'blanc-casse' | 'terracotta' | 'minimaliste';
+
+const EMAIL_THEMES: Record<EmailTheme, {
+  label: string;
+  headerBg: string;
+  headerText: string;
+  bodyBg: string;
+  bodyText: string;
+  footerBg: string;
+  accent: string;
+  logoSrc: string;
+}> = {
+  'bleu-nuit': {
+    label: 'Bleu Nuit (Gradient)',
+    headerBg: `linear-gradient(135deg, ${EMAIL_COLORS.bleuNuit} 0%, ${EMAIL_COLORS.terracotta} 100%)`,
+    headerText: EMAIL_COLORS.white,
+    bodyBg: EMAIL_COLORS.white,
+    bodyText: '#374151',
+    footerBg: EMAIL_COLORS.blancCasse,
+    accent: EMAIL_COLORS.terracotta,
+    logoSrc: 'https://iarche.fr/logos/iarche-white.svg',
+  },
+  'blanc-casse': {
+    label: 'Blanc Cassé (Élégant)',
+    headerBg: EMAIL_COLORS.blancCasse,
+    headerText: EMAIL_COLORS.bleuNuit,
+    bodyBg: EMAIL_COLORS.white,
+    bodyText: '#374151',
+    footerBg: EMAIL_COLORS.blancCasse,
+    accent: EMAIL_COLORS.terracotta,
+    logoSrc: 'https://iarche.fr/logos/iarche-dark.svg',
+  },
+  'terracotta': {
+    label: 'Terracotta (Chaleureux)',
+    headerBg: EMAIL_COLORS.terracotta,
+    headerText: EMAIL_COLORS.white,
+    bodyBg: EMAIL_COLORS.white,
+    bodyText: '#374151',
+    footerBg: EMAIL_COLORS.blancCasse,
+    accent: EMAIL_COLORS.bleuNuit,
+    logoSrc: 'https://iarche.fr/logos/iarche-white.svg',
+  },
+  'minimaliste': {
+    label: 'Minimaliste (Simple)',
+    headerBg: EMAIL_COLORS.white,
+    headerText: EMAIL_COLORS.bleuNuit,
+    bodyBg: EMAIL_COLORS.white,
+    bodyText: '#374151',
+    footerBg: EMAIL_COLORS.white,
+    accent: EMAIL_COLORS.terracotta,
+    logoSrc: 'https://iarche.fr/logos/iarche-dark.svg',
+  },
+};
+
+const generateTemplate = (theme: EmailTheme): string => {
+  const t = EMAIL_THEMES[theme];
+  const isGradient = t.headerBg.includes('gradient');
+  const headerStyle = isGradient 
+    ? `background: ${t.headerBg};` 
+    : `background-color: ${t.headerBg};`;
+
+  return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
-    .container { max-width: 600px; margin: 0 auto; background: #ffffff; }
-    .header { background: linear-gradient(135deg, #1A2B4A 0%, #2d4a7c 100%); padding: 32px; text-align: center; }
+    .container { max-width: 600px; margin: 0 auto; background: ${t.bodyBg}; }
+    .header { ${headerStyle} padding: 32px; text-align: center; }
     .header img { height: 40px; }
-    .content { padding: 32px; color: #374151; line-height: 1.6; }
-    .content h2 { color: #1A2B4A; margin-top: 0; }
-    .button { display: inline-block; background: #B04A32; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0; }
-    .footer { background: #f9fafb; padding: 24px; text-align: center; font-size: 14px; }
-    .footer p { color: #374151; margin: 8px 0; }
-    .footer .baseline { color: #B04A32; font-weight: 500; font-style: italic; }
-    .footer a { color: #B04A32; }
+    .header h1 { color: ${t.headerText}; margin: 16px 0 0 0; font-size: 22px; font-weight: 600; }
+    .content { padding: 32px; color: ${t.bodyText}; line-height: 1.6; }
+    .content h2 { color: ${EMAIL_COLORS.bleuNuit}; margin-top: 0; }
+    .button { display: inline-block; background: ${t.accent}; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0; font-weight: 500; }
+    .footer { background: ${t.footerBg}; padding: 24px; text-align: center; font-size: 14px; border-top: 1px solid ${EMAIL_COLORS.lightGrey}; }
+    .footer p { color: ${EMAIL_COLORS.grey}; margin: 8px 0; }
+    .footer .baseline { color: ${EMAIL_COLORS.terracotta}; font-weight: 500; font-style: italic; }
+    .footer a { color: ${EMAIL_COLORS.terracotta}; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <img src="https://iarche.fr/logos/iarche-white.svg" alt="IArche" />
+      <img src="${t.logoSrc}" alt="IArche" />
+      <h1>{{title}}</h1>
     </div>
     <div class="content">
-      <h2>{{title}}</h2>
       <p>Bonjour {{name}},</p>
       <p>{{message}}</p>
       <a href="{{cta_url}}" class="button">{{cta_text}}</a>
@@ -55,6 +128,7 @@ const DEFAULT_TEMPLATE = `<!DOCTYPE html>
   </div>
 </body>
 </html>`;
+};
 
 const VARIABLES = [
   { key: '{{name}}', desc: 'Nom du destinataire' },
@@ -74,11 +148,17 @@ export function EmailTemplateEditor({
   initialSubject,
   onSave 
 }: EmailTemplateEditorProps) {
-  const [template, setTemplate] = useState(initialTemplate || DEFAULT_TEMPLATE);
+  const [selectedTheme, setSelectedTheme] = useState<EmailTheme>('bleu-nuit');
+  const [template, setTemplate] = useState(initialTemplate || generateTemplate('bleu-nuit'));
   const [subject, setSubject] = useState(initialSubject || '');
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const handleThemeChange = (theme: EmailTheme) => {
+    setSelectedTheme(theme);
+    setTemplate(generateTemplate(theme));
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -89,12 +169,6 @@ export function EmailTemplateEditor({
       toast({ title: 'Erreur', description: 'Impossible de sauvegarder', variant: 'destructive' });
     }
     setSaving(false);
-  };
-
-  const copyVariable = (variable: string) => {
-    navigator.clipboard.writeText(variable);
-    setCopied(variable);
-    setTimeout(() => setCopied(null), 2000);
   };
 
   const insertVariable = (variable: string) => {
@@ -119,10 +193,6 @@ export function EmailTemplateEditor({
       .replace(/\{\{company\}\}/g, 'Entreprise SAS');
   };
 
-  const resetToDefault = () => {
-    setTemplate(DEFAULT_TEMPLATE);
-  };
-
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -135,6 +205,36 @@ export function EmailTemplateEditor({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Sélection du thème */}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            <Palette className="w-4 h-4" />
+            Thème du template
+          </Label>
+          <Select value={selectedTheme} onValueChange={(v) => handleThemeChange(v as EmailTheme)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(EMAIL_THEMES).map(([key, theme]) => (
+                <SelectItem key={key} value={key}>
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-4 h-4 rounded-full border" 
+                      style={{ 
+                        background: theme.headerBg.includes('gradient') 
+                          ? theme.headerBg 
+                          : theme.headerBg 
+                      }} 
+                    />
+                    {theme.label}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="space-y-2">
           <Label>Sujet de l'email</Label>
           <Input
@@ -190,7 +290,7 @@ export function EmailTemplateEditor({
                 <Save className="w-4 h-4 mr-2" />
                 {saving ? 'Sauvegarde...' : 'Sauvegarder'}
               </Button>
-              <Button variant="outline" onClick={resetToDefault}>
+              <Button variant="outline" onClick={() => setTemplate(generateTemplate(selectedTheme))}>
                 Réinitialiser
               </Button>
             </div>

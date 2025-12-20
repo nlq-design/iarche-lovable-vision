@@ -1,5 +1,5 @@
 import React from 'react';
-import { IARCHE_COLORS, IARCHE_FONTS } from './tokens';
+import { IARCHE_COLORS } from './tokens';
 
 interface HTMLLogoDiscretProps {
   theme?: 'dark' | 'light' | 'terra' | 'contrast';
@@ -8,11 +8,15 @@ interface HTMLLogoDiscretProps {
 }
 
 const SIZES = {
-  xs: { logo: 80, text: 12, gap: 6 },
-  sm: { logo: 100, text: 14, gap: 8 },
-  md: { logo: 120, text: 16, gap: 10 },
+  xs: 60,
+  sm: 80,
+  md: 100,
 };
 
+/**
+ * Logo IArche discret - petit logo en coin SANS arc décoratif
+ * Idéal pour bannières LinkedIn (évite redondance avec photo de profil)
+ */
 export const HTMLLogoDiscret: React.FC<HTMLLogoDiscretProps> = ({
   theme = 'dark',
   position = 'bottom-right',
@@ -21,8 +25,12 @@ export const HTMLLogoDiscret: React.FC<HTMLLogoDiscretProps> = ({
   const isDark = theme === 'dark' || theme === 'contrast';
   const isTerra = theme === 'terra';
   
-  const textColor = isDark ? IARCHE_COLORS.white : isTerra ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
-  const { logo: logoWidth, text: fontSize } = SIZES[size];
+  // Choisir le bon logo selon le thème
+  const logoSrc = isDark || isTerra 
+    ? 'https://iarche.fr/logos/iarche-white.svg'
+    : 'https://iarche.fr/logos/iarche-dark.svg';
+
+  const logoWidth = SIZES[size];
 
   const positionStyles: React.CSSProperties = {
     position: 'absolute',
@@ -35,28 +43,16 @@ export const HTMLLogoDiscret: React.FC<HTMLLogoDiscretProps> = ({
       ...positionStyles,
       display: 'flex',
       alignItems: 'center',
-      gap: SIZES[size].gap,
-      opacity: 0.85,
+      opacity: 0.9,
     }}>
-      {/* Simple text logo - very discrete */}
-      <span style={{
-        fontFamily: IARCHE_FONTS.primary,
-        fontSize: `${fontSize}px`,
-        fontWeight: 600,
-        color: textColor,
-        letterSpacing: '0.05em',
-      }}>
-        IArche
-      </span>
-      <span style={{
-        fontFamily: IARCHE_FONTS.primary,
-        fontSize: `${fontSize * 0.9}px`,
-        fontWeight: 400,
-        color: textColor,
-        opacity: 0.7,
-      }}>
-        iarche.fr
-      </span>
+      <img 
+        src={logoSrc} 
+        alt="IArche" 
+        style={{
+          width: `${logoWidth}px`,
+          height: 'auto',
+        }}
+      />
     </div>
   );
 };
