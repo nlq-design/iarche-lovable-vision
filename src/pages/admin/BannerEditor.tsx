@@ -72,10 +72,10 @@ type BannerTemplate = 'entreprise' | 'solution' | 'ceo' | 'services';
 
 // Les 4 services IArche pour le template "services"
 const IARCHE_SERVICES = [
-  { icon: '🔍', title: 'Audit & Conseil', desc: 'Roadmap IA' },
-  { icon: '⚙️', title: 'Développement', desc: 'Solutions sur mesure' },
-  { icon: '🎓', title: 'Accompagnement', desc: 'Formation & autonomie' },
-  { icon: '🛡️', title: 'Conformité', desc: 'AI Act & RGPD' },
+  { title: 'Audit & Conseil', desc: 'Roadmap IA' },
+  { title: 'Développement', desc: 'Solutions sur mesure' },
+  { title: 'Accompagnement', desc: 'Formation & autonomie' },
+  { title: 'Conformité', desc: 'AI Act & RGPD' },
 ];
 
 export default function BannerEditor() {
@@ -320,9 +320,8 @@ export default function BannerEditor() {
                   display: 'flex', 
                   flexDirection: 'column', 
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '4px',
                 }}>
-                  <span style={{ fontSize: '28px' }}>{service.icon}</span>
                   <span style={{
                     fontFamily: IARCHE_FONTS.primary,
                     fontSize: '16px',
