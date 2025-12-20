@@ -25,6 +25,10 @@ import {
   HTMLLogo,
   IARCHE_COLORS,
   IARCHE_FONTS,
+  IARCHE_TYPOGRAPHY,
+  IARCHE_SPACING,
+  IARCHE_EFFECTS,
+  IARCHE_BADGES,
   ThemeType,
 } from '@/components/admin/medias/html';
 import { HTMLLogoArc } from '@/components/admin/medias/html/HTMLLogoArc';
@@ -235,57 +239,69 @@ export default function StoryEditor() {
 
     switch (template) {
       case 'annonce':
+        // v4.2: Scroll-stopper - titre 80px+, badge avec fond, spacing amélioré
+        const storyDisplaySize = Math.max(80, Math.round(titleFontSize * IARCHE_TYPOGRAPHY.display.multiplier));
+        
         return (
           <div style={mainContentStyle}>
             {/* Header */}
             <HTMLLogo size="xl" theme={theme} />
             
-            {/* Main Content */}
+            {/* Main Content - Scroll-stopper v4.2 */}
             <div style={{ 
               display: 'flex', 
               flexDirection: 'column', 
-              gap: '40px', 
+              gap: `${IARCHE_SPACING.xl}px`, 
               alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
-              padding: '0 20px',
+              padding: `0 ${IARCHE_SPACING.md}px`,
             }}>
+              {/* Badge v4.2 avec icône contextuelle et fond */}
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: '28px',
-                fontWeight: 700,
-                color: IARCHE_COLORS.terracotta,
+                fontSize: '24px',
+                fontWeight: IARCHE_BADGES.solid.fontWeight,
+                color: theme === 'light' ? IARCHE_COLORS.terracotta : IARCHE_COLORS.white,
+                background: theme === 'light' ? IARCHE_COLORS.terracottaLight30 : 'rgba(176, 74, 50, 0.3)',
+                padding: '12px 24px',
+                borderRadius: '8px',
                 textTransform: 'uppercase',
-                letterSpacing: '0.15em',
+                letterSpacing: '0.12em',
+                boxShadow: theme === 'dark' ? IARCHE_EFFECTS.shadow.md : 'none',
               }}>
                 {badge}
               </span>
+              {/* Titre v4.2 scroll-stopper (80px minimum) */}
               <h1 style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: `${titleFontSize}px`,
-                fontWeight: titleBold ? 700 : 400,
+                fontSize: `${storyDisplaySize}px`,
+                fontWeight: titleBold ? IARCHE_TYPOGRAPHY.display.weight : 700,
                 fontStyle: titleItalic ? 'italic' : 'normal',
                 color: textColor,
                 margin: 0,
-                lineHeight: 1.15,
+                lineHeight: IARCHE_TYPOGRAPHY.display.lineHeight,
+                letterSpacing: IARCHE_TYPOGRAPHY.display.letterSpacing,
+                textShadow: theme === 'dark' ? IARCHE_EFFECTS.shadow.sm : 'none',
               }}>
                 {titre}
               </h1>
             </div>
 
-            {/* Swipe Up CTA */}
+            {/* Swipe Up CTA v4.2 avec animation hint */}
             <div style={{ 
               display: 'flex', 
               flexDirection: 'column', 
               alignItems: 'center',
-              gap: '12px',
+              gap: `${IARCHE_SPACING.sm}px`,
             }}>
-              <ChevronUp size={40} color={IARCHE_COLORS.terracotta} />
+              <ChevronUp size={48} color={IARCHE_COLORS.terracotta} />
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: '24px',
-                fontWeight: 600,
+                fontSize: '22px',
+                fontWeight: 700,
                 color: IARCHE_COLORS.terracotta,
                 textTransform: 'uppercase',
-                letterSpacing: '0.1em',
+                letterSpacing: '0.12em',
+                textShadow: IARCHE_EFFECTS.glow.terracotta,
               }}>
                 {ctaText}
               </span>
@@ -294,62 +310,68 @@ export default function StoryEditor() {
         );
 
       case 'chiffre':
+        // v4.2: Chiffre géant avec glow + scroll-stopper
+        const storyChiffreSize = Math.round(titleFontSize * 3.5); // +17% vs avant
+        
         return (
           <div style={mainContentStyle}>
             {/* Header */}
             <HTMLLogo size="xl" theme={theme} />
             
-            {/* Main Content - Big Number */}
+            {/* Main Content - Big Number v4.2 avec glow */}
             <div style={{ 
               display: 'flex', 
               flexDirection: 'column', 
-              gap: '48px', 
+              gap: `${IARCHE_SPACING.xl}px`, 
               alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
             }}>
               <div style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: `${titleFontSize * 3}px`,
-                fontWeight: titleBold ? 800 : 700,
+                fontSize: `${storyChiffreSize}px`,
+                fontWeight: titleBold ? IARCHE_TYPOGRAPHY.display.weight : 700,
                 fontStyle: titleItalic ? 'italic' : 'normal',
                 color: IARCHE_COLORS.terracotta,
                 lineHeight: 1,
+                textShadow: IARCHE_EFFECTS.glow.terracottaStrong,
+                letterSpacing: IARCHE_TYPOGRAPHY.display.letterSpacing,
               }}>
                 {chiffre}
               </div>
               <p style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: `${titleFontSize * 0.55}px`,
-                fontWeight: 500,
+                fontSize: `${Math.round(titleFontSize * 0.6)}px`,
+                fontWeight: IARCHE_TYPOGRAPHY.heading.weight,
                 color: textColor,
                 margin: 0,
                 maxWidth: '85%',
-                lineHeight: 1.4,
+                lineHeight: IARCHE_TYPOGRAPHY.heading.lineHeight,
               }}>
                 {contexte}
               </p>
             </div>
 
-            {/* Footer */}
+            {/* Footer v4.2 */}
             <div style={{ 
               display: 'flex', 
               flexDirection: 'column', 
               alignItems: 'center',
-              gap: '16px',
+              gap: `${IARCHE_SPACING.sm}px`,
             }}>
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: '18px',
-                fontWeight: 400,
+                fontSize: `${Math.round(18 * IARCHE_TYPOGRAPHY.caption.multiplier)}px`,
+                fontWeight: IARCHE_TYPOGRAPHY.caption.weight,
                 color: subtextColor,
                 fontStyle: 'italic',
+                letterSpacing: IARCHE_TYPOGRAPHY.caption.letterSpacing,
               }}>
                 {source}
               </span>
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: '20px',
-                fontWeight: 500,
-                color: subtextColor,
+                fontWeight: 600,
+                color: IARCHE_COLORS.terracotta,
               }}>
                 iarche.fr
               </span>

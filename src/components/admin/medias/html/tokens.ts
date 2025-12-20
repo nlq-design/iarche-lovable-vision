@@ -1,5 +1,5 @@
 /**
- * IArche Design System Tokens for HTML/PNG exports v4.1
+ * IArche Design System Tokens for HTML/PNG exports v4.2
  * Réexporte les tokens partagés + adaptations HTML spécifiques
  */
 
@@ -20,6 +20,12 @@ import {
   getTextColor,
   getSubtextColor,
   getAccentColor,
+  // v4.2 - Nouveaux tokens
+  TYPOGRAPHY_SCALE,
+  SPACING,
+  TEMPLATE_GAPS,
+  EFFECTS,
+  BADGE_STYLES,
 } from '../shared/tokens';
 
 // Réexport pour compatibilité avec le code existant
@@ -29,6 +35,7 @@ export const IARCHE_COLORS = {
   blancCasse: COLORS.blancCasse,
   bleuNuitLight: COLORS.bleuNuitLight10,
   terracottaLight: COLORS.terracottaLight20,
+  terracottaLight30: COLORS.terracottaLight30,
   white: COLORS.white,
   grey: COLORS.subtle,
   greyLight: COLORS.muted,
@@ -67,6 +74,13 @@ export const IARCHE_SIZES = {
   },
   arch: ARCH_SIZES,
 } as const;
+
+// v4.2 - Exports des nouveaux tokens
+export const IARCHE_TYPOGRAPHY = TYPOGRAPHY_SCALE;
+export const IARCHE_SPACING = SPACING;
+export const IARCHE_GAPS = TEMPLATE_GAPS;
+export const IARCHE_EFFECTS = EFFECTS;
+export const IARCHE_BADGES = BADGE_STYLES;
 
 // Logo + Barre proportions (Charte 3.1)
 export { LOGO_BAR_MAPPING, LOGO_BAR_GAP };
