@@ -341,19 +341,36 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
                 
                 {slide.type === 'title' ? (
                   <View style={{ alignItems: 'center' }}>
+                    {/* v4.2 - Styled subtitle badge */}
                     {slide.subtitle && slide.subtitle.length > 0 ? (
-                      <Text style={isDark ? styles.subtitleDark : styles.subtitleLight}>
-                        {slide.subtitle}
-                      </Text>
+                      <View style={{
+                        backgroundColor: isDark ? 'rgba(176, 74, 50, 0.2)' : 'rgba(176, 74, 50, 0.12)',
+                        paddingHorizontal: 20,
+                        paddingVertical: 10,
+                        borderRadius: 24,
+                        marginBottom: 16,
+                        borderWidth: 1,
+                        borderColor: isDark ? 'rgba(176, 74, 50, 0.35)' : 'rgba(176, 74, 50, 0.25)',
+                      }}>
+                        <Text style={{ 
+                          fontSize: 14, 
+                          color: isDark ? '#E8B4A0' : '#8B3A2F',
+                          textTransform: 'uppercase',
+                          letterSpacing: 3,
+                          fontWeight: 'bold',
+                        }}>
+                          {slide.subtitle}
+                        </Text>
+                      </View>
                     ) : null}
                     {slide.title && slide.title.length > 0 ? (
-                      <Text style={isDark ? styles.titleDark : styles.titleLight}>
+                      <Text style={[isDark ? styles.titleDark : styles.titleLight, { letterSpacing: -1 }]}>
                         {slide.title}
                       </Text>
                     ) : null}
                     {showBar && <PDFLogoArc size="xl" style={{ marginTop: 16 }} />}
                     {slide.content && slide.content.length > 0 ? (
-                      <Text style={[isDark ? styles.textDark : styles.textLight, { marginTop: 24, textAlign: 'center' }]}>
+                      <Text style={[isDark ? styles.textDark : styles.textLight, { marginTop: 24, textAlign: 'center', lineHeight: 1.7 }]}>
                         {slide.content}
                       </Text>
                     ) : null}
@@ -366,12 +383,30 @@ export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDF
                   </Text>
                 ) : null}
                 
+                {/* v4.2 - Enhanced bullet list with numbered badges */}
                 {slide.type === 'bullets' && slide.bullets && slide.bullets.length > 0 ? (
                   <View style={styles.bulletsContainer}>
                     {slide.bullets.map((bullet, idx) => (
                       <View key={idx} style={styles.bulletItem}>
                         <View style={styles.bulletRow}>
-                          <Text style={styles.bulletDash}>—</Text>
+                          {/* v4.2 - Numbered badge instead of dash */}
+                          <View style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 14,
+                            backgroundColor: 'rgba(176, 74, 50, 0.15)',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            marginRight: 12,
+                          }}>
+                            <Text style={{
+                              fontSize: 14,
+                              fontWeight: 'bold',
+                              color: IARCHE_COLORS.terracotta,
+                            }}>
+                              {idx + 1}
+                            </Text>
+                          </View>
                           <Text style={[styles.bulletText, isDark ? styles.bulletTextDark : styles.bulletTextLight]}>
                             {bullet}
                           </Text>

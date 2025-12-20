@@ -175,6 +175,9 @@ export const CarouselPDF: React.FC<CarouselPDFProps> = ({
         const barSize = slide.barSize || 'md';
         const showBar = exportMode === 'with-bar' || exportMode === 'full';
         
+        // v4.2 - Detect if highlight is a number/stat for special styling
+        const isStatHighlight = slide.highlight && /^[+\-]?\d/.test(slide.highlight);
+        
         return (
           <Page 
             key={slide.id} 
@@ -193,16 +196,52 @@ export const CarouselPDF: React.FC<CarouselPDFProps> = ({
                   />
                   {/* v4.0: pas d'arc sous le logo */}
                 </View>
-                <Text style={[styles.slideNumber, { color: colors.subtext }]}>
-                  {String(index + 1).padStart(2, '0')}/{String(slides.length).padStart(2, '0')}
-                </Text>
+                {/* v4.2 - Enhanced slide number */}
+                <View style={{ 
+                  backgroundColor: currentTheme !== 'light' ? 'rgba(255,255,255,0.1)' : 'rgba(26,43,74,0.08)',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 12,
+                }}>
+                  <Text style={[styles.slideNumber, { color: colors.subtext, opacity: 0.8 }]}>
+                    {String(index + 1).padStart(2, '0')}/{String(slides.length).padStart(2, '0')}
+                  </Text>
+                </View>
               </View>
 
               {/* Body content */}
               <View style={styles.body}>
+                {/* v4.2 - Styled subtitle badge */}
+                {slide.subtitle && (
+                  <View style={{
+                    backgroundColor: currentTheme !== 'light' ? 'rgba(176, 74, 50, 0.25)' : 'rgba(176, 74, 50, 0.15)',
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    borderRadius: 20,
+                    alignSelf: 'flex-start',
+                    marginBottom: 16,
+                    borderWidth: 1,
+                    borderColor: currentTheme !== 'light' ? 'rgba(176, 74, 50, 0.4)' : 'rgba(176, 74, 50, 0.3)',
+                  }}>
+                    <Text style={{ 
+                      fontSize: 12, 
+                      color: currentTheme !== 'light' ? '#E8B4A0' : '#8B3A2F',
+                      textTransform: 'uppercase',
+                      letterSpacing: 1.5,
+                      fontWeight: 'bold',
+                    }}>
+                      {slide.subtitle}
+                    </Text>
+                  </View>
+                )}
+                
                 {slide.title && (
                   <>
-                    <Text style={[styles.title, { color: colors.text }]}>
+                    <Text style={[styles.title, { 
+                      color: colors.text,
+                      fontSize: slide.highlight ? 28 : 32, // Slightly smaller if there's a highlight
+                      letterSpacing: -0.5,
+                    }]}>
                       {slide.title}
                     </Text>
                     {/* v4.1: Arc sous le titre H1 (Règle 1) */}
@@ -211,19 +250,31 @@ export const CarouselPDF: React.FC<CarouselPDFProps> = ({
                     )}
                   </>
                 )}
-                {slide.subtitle && (
-                  <Text style={[styles.subtitle, { color: colors.subtext, opacity: 0.88 }]}>
-                    {slide.subtitle}
-                  </Text>
-                )}
+                
                 {slide.content && (
-                  <Text style={[styles.contentText, { color: colors.text }]}>
+                  <Text style={[styles.contentText, { 
+                    color: colors.text,
+                    lineHeight: 1.7,
+                    opacity: 0.85,
+                  }]}>
                     {slide.content}
                   </Text>
                 )}
+                
+                {/* v4.2 - Enhanced highlight with gradient-like styling */}
                 {slide.highlight && (
-                  <View style={[styles.highlight, { backgroundColor: colors.highlightBg }]}>
-                    <Text style={[styles.highlightText, { color: colors.highlightText }]}>
+                  <View style={[styles.highlight, { 
+                    backgroundColor: colors.highlightBg,
+                    borderLeftWidth: 3,
+                    borderLeftColor: IARCHE_COLORS.terracotta,
+                    marginTop: 24,
+                  }]}>
+                    <Text style={[styles.highlightText, { 
+                      color: colors.highlightText,
+                      fontSize: isStatHighlight ? 36 : 16,
+                      fontWeight: 'bold',
+                      letterSpacing: isStatHighlight ? -1 : 0,
+                    }]}>
                       {slide.highlight}
                     </Text>
                   </View>
