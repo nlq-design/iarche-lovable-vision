@@ -17,6 +17,7 @@ import { ExportModeControls } from './ExportModeControls';
 import { HTMLLogoArc } from './html/HTMLLogoArc';
 import { VerticalAlignmentControls, VerticalAlignment, getJustifyContent } from './VerticalAlignmentControls';
 import { CompositionPresets, CompositionPreset, COMPOSITION_PRESETS } from './CompositionPresets';
+import { TopMarginSlider, getContentSpacing } from './TopMarginSlider';
 
 interface PresentationEditorProps {
   templateId: string;
@@ -179,11 +180,13 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
   const [startTheme, setStartTheme] = useState<'dark' | 'light' | 'terra' | 'contrast'>('dark');
   const [selectedCompositionPreset, setSelectedCompositionPreset] = useState<string>('centered');
   const [verticalAlignment, setVerticalAlignment] = useState<VerticalAlignment>('center');
+  const [topMargin, setTopMargin] = useState<number>(0);
 
   // Apply composition preset
   const applyCompositionPreset = (preset: CompositionPreset) => {
     setSelectedCompositionPreset(preset.id);
     setVerticalAlignment(preset.verticalAlignment);
+    setTopMargin(preset.topMargin);
     handleSlideChange('verticalAlignment', preset.verticalAlignment);
   };
 
@@ -569,6 +572,12 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                   selectedPreset={selectedCompositionPreset}
                   onSelectPreset={applyCompositionPreset}
                   compact
+                />
+
+                {/* Top Margin Slider */}
+                <TopMarginSlider
+                  value={topMargin}
+                  onChange={setTopMargin}
                 />
 
                 {/* Export mode controls for current slide */}

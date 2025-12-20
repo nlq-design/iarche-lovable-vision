@@ -17,6 +17,7 @@ import { ExportModeControls } from './ExportModeControls';
 import { HTMLLogoArc } from './html/HTMLLogoArc';
 import { VerticalAlignmentControls, VerticalAlignment, getJustifyContent } from './VerticalAlignmentControls';
 import { CompositionPresets, CompositionPreset, COMPOSITION_PRESETS } from './CompositionPresets';
+import { TopMarginSlider, getContentSpacing } from './TopMarginSlider';
 
 interface CarouselEditorProps {
   templateId: string;
@@ -172,11 +173,13 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
   const [startTheme, setStartTheme] = useState<'dark' | 'light' | 'terra' | 'contrast'>('dark');
   const [selectedCompositionPreset, setSelectedCompositionPreset] = useState<string>('centered');
   const [verticalAlignment, setVerticalAlignment] = useState<VerticalAlignment>('center');
+  const [topMargin, setTopMargin] = useState<number>(0);
 
   // Apply composition preset
   const applyCompositionPreset = (preset: CompositionPreset) => {
     setSelectedCompositionPreset(preset.id);
     setVerticalAlignment(preset.verticalAlignment);
+    setTopMargin(preset.topMargin);
     // Apply to current slide
     handleSlideChange('verticalAlignment', preset.verticalAlignment);
   };
@@ -479,10 +482,13 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                       />
                     </div>
 
-                    {/* Content - with vertical alignment */}
+                    {/* Content - with vertical alignment and top margin */}
                     <div 
                       className="flex-1 flex flex-col text-center space-y-4"
-                      style={{ justifyContent: getJustifyContent(current?.verticalAlignment || verticalAlignment) }}
+                      style={{ 
+                        justifyContent: getJustifyContent(current?.verticalAlignment || verticalAlignment),
+                        paddingTop: (current?.verticalAlignment || verticalAlignment) === 'top' ? `${getContentSpacing(topMargin, 5)}%` : 0,
+                      }}
                     >
                       {current?.subtitle && (
                         <p className="text-sm uppercase tracking-wider" style={{ color: colors.subtext, opacity: 0.88 }}>{current.subtitle}</p>
@@ -576,6 +582,12 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                   selectedPreset={selectedCompositionPreset}
                   onSelectPreset={applyCompositionPreset}
                   compact
+                />
+
+                {/* Top Margin Slider */}
+                <TopMarginSlider
+                  value={topMargin}
+                  onChange={setTopMargin}
                 />
 
                 {/* Export mode controls for current slide */}
