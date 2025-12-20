@@ -43,7 +43,7 @@ const ResourceCard = ({
   basePath,
   index = 0,
   showDate = true,
-  showArc = true,
+  showArc = false, // v4.0: Arc disabled by default in cards
   arcSize = 'sm',
   footer,
   onClick,
