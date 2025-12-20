@@ -29,7 +29,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 // Thèmes disponibles pour l'email
-type EmailTheme = 'bleu-nuit' | 'blanc-casse' | 'terra';
+type EmailTheme = 'bleu-nuit' | 'blanc-casse' | 'terra' | 'gradient';
 
 const EMAIL_THEMES = {
   'bleu-nuit': {
@@ -42,6 +42,7 @@ const EMAIL_THEMES = {
     titleText: '#1A2B4A',
     accent: '#B04A32',
     logo: 'https://iarche.fr/logos/iarche-white.png',
+    useGradient: false,
   },
   'blanc-casse': {
     headerBg: '#FAF9F7',
@@ -53,6 +54,7 @@ const EMAIL_THEMES = {
     titleText: '#1A2B4A',
     accent: '#B04A32',
     logo: 'https://iarche.fr/logos/iarche-main.png',
+    useGradient: false,
   },
   'terra': {
     headerBg: '#B04A32',
@@ -64,6 +66,19 @@ const EMAIL_THEMES = {
     titleText: '#1A2B4A',
     accent: '#1A2B4A',
     logo: 'https://iarche.fr/logos/iarche-white.png',
+    useGradient: false,
+  },
+  'gradient': {
+    headerBg: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)',
+    headerText: '#FFFFFF',
+    footerBg: 'linear-gradient(135deg, #B04A32 0%, #1A2B4A 100%)',
+    footerText: '#FFFFFF',
+    bodyBg: '#FFFFFF',
+    bodyText: '#4A5568',
+    titleText: '#1A2B4A',
+    accent: '#B04A32',
+    logo: 'https://iarche.fr/logos/iarche-white.png',
+    useGradient: true,
   },
 };
 
@@ -350,7 +365,7 @@ const BrevoHTMLEditor = () => {
           
           <!-- Header -->
           <tr>
-            <td style="background-color: ${theme.headerBg}; padding: 24px; text-align: center;">
+            <td style="${theme.useGradient ? `background: ${theme.headerBg}` : `background-color: ${theme.headerBg}`}; padding: 24px; text-align: center;">
               ${headerContent}
               <img src="${theme.logo}" alt="IArche" style="height: 36px;" />
             </td>
@@ -365,10 +380,10 @@ const BrevoHTMLEditor = () => {
           
           <!-- Footer -->
           <tr>
-            <td style="background-color: ${theme.footerBg}; padding: 16px 24px; text-align: center;">
+            <td style="${theme.useGradient ? `background: ${theme.footerBg}` : `background-color: ${theme.footerBg}`}; padding: 16px 24px; text-align: center;">
               <p style="margin: 0; color: ${theme.footerText}; font-size: 13px;">${footerText}</p>
               <p style="margin: 6px 0 0; color: ${emailTheme === 'blanc-casse' ? '#6B7280' : 'rgba(255,255,255,0.7)'}; font-size: 11px;">
-                <a href="https://iarche.fr" style="color: ${theme.accent}; text-decoration: none;">iarche.fr</a>
+                <a href="https://iarche.fr" style="color: ${emailTheme === 'gradient' ? '#FAF9F7' : theme.accent}; text-decoration: none;">iarche.fr</a>
               </p>
             </td>
           </tr>
@@ -446,6 +461,12 @@ const BrevoHTMLEditor = () => {
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 rounded-full bg-[#B04A32]" />
                       Terracotta
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="gradient">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full" style={{ background: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)' }} />
+                      Gradient IArche
                     </div>
                   </SelectItem>
                 </SelectContent>
