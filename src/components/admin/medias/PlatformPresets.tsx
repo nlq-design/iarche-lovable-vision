@@ -6,12 +6,13 @@ export type Platform =
   | 'custom' 
   | 'linkedin-banner' | 'linkedin-post' | 'linkedin-landscape'
   | 'twitter-banner' | 'twitter-post' 
-  | 'instagram-square' | 'instagram-story' 
+  | 'instagram-square' | 'instagram-story' | 'instagram-portrait'
   | 'facebook-banner' | 'facebook-post' 
-  | 'youtube-cover' | 'youtube-thumbnail'
-  | 'reels-tiktok'
+  | 'youtube-cover' | 'youtube-thumbnail' | 'youtube-shorts'
+  | 'tiktok' | 'reels'
   | 'business-card'
-  | 'opengraph';
+  | 'opengraph'
+  | 'pinterest';
 
 export interface PlatformPreset {
   id: Platform;
@@ -33,18 +34,22 @@ export const PLATFORM_PRESETS: PlatformPreset[] = [
   // Instagram
   { id: 'instagram-square', label: 'Instagram Carré', width: 1080, height: 1080, category: 'Instagram' },
   { id: 'instagram-story', label: 'Instagram Story', width: 1080, height: 1920, category: 'Instagram' },
+  { id: 'instagram-portrait', label: 'Instagram Portrait', width: 1080, height: 1350, category: 'Instagram' },
   // Facebook
   { id: 'facebook-banner', label: 'Facebook Couverture', width: 820, height: 312, category: 'Facebook' },
   { id: 'facebook-post', label: 'Facebook Post', width: 1200, height: 630, category: 'Facebook' },
-  // YouTube (v4.1)
+  // YouTube
   { id: 'youtube-cover', label: 'YouTube Bannière', width: 2560, height: 1440, category: 'YouTube' },
   { id: 'youtube-thumbnail', label: 'YouTube Miniature', width: 1280, height: 720, category: 'YouTube' },
-  // TikTok/Reels (v4.1)
-  { id: 'reels-tiktok', label: 'Reels / TikTok', width: 1080, height: 1920, category: 'Vidéo verticale' },
-  // Business (v4.1)
+  // TikTok/Reels (v4.2 - séparé)
+  { id: 'tiktok', label: 'TikTok', width: 1080, height: 1920, category: 'Vidéo verticale' },
+  { id: 'reels', label: 'Instagram Reels', width: 1080, height: 1920, category: 'Vidéo verticale' },
+  { id: 'youtube-shorts', label: 'YouTube Shorts', width: 1080, height: 1920, category: 'Vidéo verticale' },
+  // Business
   { id: 'business-card', label: 'Carte de visite digitale', width: 1050, height: 600, category: 'Business' },
   // Web
   { id: 'opengraph', label: 'Open Graph', width: 1200, height: 630, category: 'Web' },
+  { id: 'pinterest', label: 'Pinterest', width: 1000, height: 1500, category: 'Pinterest' },
 ];
 
 interface PlatformPresetsProps {
