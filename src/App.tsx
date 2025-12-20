@@ -63,7 +63,6 @@ const AdminMedias = lazy(() => import("./pages/admin/AdminMedias"));
 
 const BannerEditor = lazy(() => import("./pages/admin/BannerEditor"));
 const PostEditor = lazy(() => import("./pages/admin/PostEditor"));
-const CarouselHookTemplate = lazy(() => import("./pages/admin/CarouselHookTemplate"));
 const SignatureEditor = lazy(() => import("./pages/admin/SignatureEditor"));
 const ThumbnailEditor = lazy(() => import("./pages/admin/ThumbnailEditor"));
 const StoryEditor = lazy(() => import("./pages/admin/StoryEditor"));
@@ -426,11 +425,6 @@ const App = () => (
           <Route path="/admin/medias/banner" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><BannerEditor /></ProtectedAdminRoute>
-            </Suspense>
-          } />
-          <Route path="/admin/medias/carousel-hook" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-              <ProtectedAdminRoute><CarouselHookTemplate /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/post" element={
