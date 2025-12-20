@@ -175,11 +175,18 @@ const BrochureEditor = () => {
 
     if (isNew) {
       createBrochure.mutate(formData, {
-        onSuccess: () => navigate('/admin/brochures'),
+        onSuccess: (data) => {
+          // Rediriger vers l'éditeur de la brochure créée (pas la liste)
+          if (data?.id) {
+            navigate(`/admin/brochures/${data.id}`, { replace: true });
+          }
+        },
       });
     } else {
       updateBrochure.mutate({ id, ...formData } as Brochure, {
-        onSuccess: () => navigate('/admin/brochures'),
+        onSuccess: () => {
+          // Rester sur la page, le toast de confirmation est déjà affiché par le hook
+        },
       });
     }
   };

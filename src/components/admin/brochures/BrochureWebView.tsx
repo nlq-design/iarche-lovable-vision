@@ -110,7 +110,7 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
                 className="h-12 mb-8"
               />
               <h1
-                className="text-5xl md:text-7xl font-bold text-center mb-4"
+                className="text-5xl md:text-7xl font-bold text-center mb-6"
                 style={{ 
                   background: GRADIENTS.text.css,
                   backgroundSize: '600% 600%',
@@ -121,8 +121,6 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
               >
                 {brochure.cover_title || 'Titre'}
               </h1>
-              {/* Arc v4.0 sous le titre */}
-              <LogoArc size="lg" className="mb-4" />
               {brochure.cover_subtitle && (
                 <p 
                   className="text-xl md:text-2xl text-center max-w-2xl"

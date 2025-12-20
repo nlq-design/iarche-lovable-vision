@@ -397,11 +397,6 @@ const BrochurePDF = ({ brochure, orientation, pdfTheme }: BrochurePDFProps) => {
           {/* Titre principal */}
           <Text style={styles.coverTitle}>{brochure.cover_title}</Text>
           
-          {/* Arc décoratif */}
-          <View style={styles.arcContainer}>
-            <Image src={BASE64_ASSETS.arcLg} style={{ width: arcWidth, height: arcWidth * 0.3, objectFit: 'contain' }} />
-          </View>
-          
           {/* Sous-titre */}
           {brochure.cover_subtitle && (
             <Text style={styles.coverSubtitle}>{brochure.cover_subtitle}</Text>
