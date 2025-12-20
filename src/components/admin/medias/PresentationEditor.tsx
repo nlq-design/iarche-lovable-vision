@@ -36,11 +36,20 @@ interface SlideData {
 type PresetTemplate = {
   id: string;
   label: string;
-  category: 'annonce' | 'chiffre' | 'temoignage' | 'conseil' | 'question';
+  category: 'annonce' | 'chiffre' | 'temoignage' | 'conseil' | 'question' | 'services';
   slides: Partial<SlideData>[];
 };
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
+  // ========== 4 SERVICES ==========
+  { id: 'services-iarche', label: '🎯 4 Services IArche', category: 'services', slides: [
+    { type: 'title', title: 'Nos Services', subtitle: 'L\'IA au service de votre entreprise' },
+    { type: 'content', title: '🔍 Audit & Conseil', content: 'Diagnostic complet de votre maturité IA et stratégie personnalisée' },
+    { type: 'content', title: '⚙️ Développement', content: 'Solutions IA sur mesure : chatbots, automatisation, RAG' },
+    { type: 'content', title: '🤝 Accompagnement', content: 'Formation, conduite du changement et autonomisation de vos équipes' },
+    { type: 'content', title: '✓ Conformité', content: 'RGPD, gouvernance des données et IA responsable' },
+    { type: 'cta', title: 'Passez à l\'action', content: 'iarche.fr/contact' },
+  ]},
   // ========== ANNONCE ==========
   { id: 'nouveaute', label: 'Nouveauté', category: 'annonce', slides: [
     { type: 'title', title: 'Nouveauté', subtitle: 'IArche présente' },
@@ -309,6 +318,10 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                   <SelectValue placeholder="Choisir un preset..." />
                 </SelectTrigger>
                 <SelectContent>
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">4 Services</div>
+                  {PRESET_TEMPLATES.filter(p => p.category === 'services').map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
                   <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Annonce</div>
                   {PRESET_TEMPLATES.filter(p => p.category === 'annonce').map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
