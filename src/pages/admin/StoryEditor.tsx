@@ -20,6 +20,7 @@ import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport'
 import { VerticalAlignmentControls, VerticalAlignment, getJustifyContent } from '@/components/admin/medias/VerticalAlignmentControls';
 import { CompositionPresets, CompositionPreset, COMPOSITION_PRESETS } from '@/components/admin/medias/CompositionPresets';
 import { TopMarginSlider, getContentSpacing } from '@/components/admin/medias/TopMarginSlider';
+import { DecorativeArcToggle } from '@/components/admin/medias/DecorativeArcToggle';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -102,6 +103,7 @@ export default function StoryEditor() {
   const [verticalAlignment, setVerticalAlignment] = useState<VerticalAlignment>('center');
   const [selectedCompositionPreset, setSelectedCompositionPreset] = useState<string>('centered');
   const [topMargin, setTopMargin] = useState<number>(0); // pourcentage de marge supérieure
+  const [showDecorativeArc, setShowDecorativeArc] = useState<boolean>(true);
   
   // Annonce fields
   const [badge, setBadge] = useState('Nouveauté');
@@ -684,7 +686,12 @@ export default function StoryEditor() {
                 compact
               />
 
-              {/* Export mode controls */}
+              {/* Arcs décoratifs toggle */}
+              <DecorativeArcToggle
+                enabled={showDecorativeArc}
+                onChange={setShowDecorativeArc}
+                compact
+              />
               <ExportModeControls
                 exportMode={exportMode}
                 onExportModeChange={setExportMode}
@@ -829,12 +836,12 @@ export default function StoryEditor() {
                     theme={theme}
                     padding={80}
                     showArches={false}
-                    decorativeArc={{ 
+                    decorativeArc={showDecorativeArc ? { 
                       position: 'top-right', 
                       size: 160, 
                       opacity: 0.05, 
                       strokeWidth: 1.5 
-                    }}
+                    } : undefined}
                   >
                     {renderStoryContent()}
                   </HTMLBaseTemplate>

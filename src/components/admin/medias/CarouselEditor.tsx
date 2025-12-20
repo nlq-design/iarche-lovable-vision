@@ -18,6 +18,7 @@ import { HTMLLogoArc } from './html/HTMLLogoArc';
 import { VerticalAlignmentControls, VerticalAlignment, getJustifyContent } from './VerticalAlignmentControls';
 import { CompositionPresets, CompositionPreset, COMPOSITION_PRESETS } from './CompositionPresets';
 import { TopMarginSlider, getContentSpacing } from './TopMarginSlider';
+import { DecorativeArcToggle } from './DecorativeArcToggle';
 
 interface CarouselEditorProps {
   templateId: string;
@@ -174,6 +175,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
   const [selectedCompositionPreset, setSelectedCompositionPreset] = useState<string>('centered');
   const [verticalAlignment, setVerticalAlignment] = useState<VerticalAlignment>('center');
   const [topMargin, setTopMargin] = useState<number>(0);
+  const [showDecorativeArc, setShowDecorativeArc] = useState<boolean>(true);
 
   // Apply composition preset
   const applyCompositionPreset = (preset: CompositionPreset) => {
@@ -475,16 +477,18 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                     }}
                   >
                     {/* v4.2 - Arc décoratif en zone morte extrême (jamais proche du logo/titre) */}
-                    <div className="absolute -bottom-24 -right-24 w-48 h-48 pointer-events-none opacity-[0.05]">
-                      <svg viewBox="0 0 200 200" className="w-full h-full">
-                        <path 
-                          d="M200 0 Q200 200 0 200" 
-                          fill="none" 
-                          stroke={isDark ? '#ffffff' : '#B04A32'} 
-                          strokeWidth="1.5"
-                        />
-                      </svg>
-                    </div>
+                    {showDecorativeArc && (
+                      <div className="absolute -bottom-24 -right-24 w-48 h-48 pointer-events-none opacity-[0.05]">
+                        <svg viewBox="0 0 200 200" className="w-full h-full">
+                          <path 
+                            d="M200 0 Q200 200 0 200" 
+                            fill="none" 
+                            stroke={isDark ? '#ffffff' : '#B04A32'} 
+                            strokeWidth="1.5"
+                          />
+                        </svg>
+                      </div>
+                    )}
                     
                     {/* Canalisations decoration preview - only if 'full' mode */}
                     {showCanalisationsInPreview && (
@@ -677,7 +681,12 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                   onChange={setTopMargin}
                 />
 
-                {/* Export mode controls for current slide */}
+                {/* Arcs décoratifs toggle */}
+                <DecorativeArcToggle
+                  enabled={showDecorativeArc}
+                  onChange={setShowDecorativeArc}
+                  compact
+                />
                 <div className="space-y-2">
                   <ExportModeControls
                     exportMode={currentExportMode}

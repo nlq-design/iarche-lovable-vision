@@ -42,6 +42,7 @@ const BrochureEditor = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [showPDFExport, setShowPDFExport] = useState(false);
   const [showSVGExport, setShowSVGExport] = useState(false);
+  const [showDecorativeArc, setShowDecorativeArc] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -721,6 +722,27 @@ const BrochureEditor = () => {
                   </CardContent>
                 </Card>
 
+                {/* Arcs décoratifs */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Éléments visuels</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label>Arcs décoratifs</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Afficher les arcs décoratifs v4.2 dans l'aperçu et les exports
+                        </p>
+                      </div>
+                      <Switch
+                        checked={showDecorativeArc}
+                        onCheckedChange={setShowDecorativeArc}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Export Settings */}
                 <BrochureExportSettingsComponent
                   settings={formData.export_settings || defaultExportSettings}
@@ -758,7 +780,7 @@ const BrochureEditor = () => {
               </CardHeader>
               <CardContent className="p-0 h-full overflow-auto">
                 <div className="transform scale-50 origin-top-left w-[200%]">
-                  <BrochureWebView brochure={formData as Brochure} />
+                  <BrochureWebView brochure={formData as Brochure} showDecorativeArc={showDecorativeArc} />
                 </div>
               </CardContent>
             </Card>
@@ -775,7 +797,7 @@ const BrochureEditor = () => {
               Fermer
             </Button>
           </div>
-          <BrochureWebView brochure={formData as Brochure} />
+          <BrochureWebView brochure={formData as Brochure} showDecorativeArc={showDecorativeArc} />
         </div>
       )}
 
