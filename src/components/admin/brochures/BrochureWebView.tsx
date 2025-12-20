@@ -99,9 +99,23 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
         return (
           <section 
             key={index} 
-            className={`relative min-h-screen flex flex-col items-center justify-center px-6 py-20 ${slideClass}`}
-            style={{ backgroundColor: COLORS.blancCasse }}
+            className={`relative min-h-screen flex flex-col items-center justify-center px-6 py-20 overflow-hidden ${slideClass}`}
+            style={{ 
+              background: `radial-gradient(ellipse at 50% 0%, rgba(176, 74, 50, 0.08) 0%, transparent 50%), ${COLORS.blancCasse}`,
+            }}
           >
+            {/* v4.2 - Decorative arc in corner */}
+            <div className="absolute -top-24 -right-24 w-96 h-96 pointer-events-none opacity-5">
+              <svg viewBox="0 0 400 400" className="w-full h-full">
+                <path d="M400 0 Q400 400 0 400" fill="none" stroke={COLORS.terracotta} strokeWidth="3" />
+              </svg>
+            </div>
+            <div className="absolute -bottom-24 -left-24 w-96 h-96 pointer-events-none opacity-5">
+              <svg viewBox="0 0 400 400" className="w-full h-full">
+                <path d="M0 0 Q0 400 400 400" fill="none" stroke={COLORS.bleuNuit} strokeWidth="3" />
+              </svg>
+            </div>
+            
             <div className="relative z-10 flex flex-col items-center">
               {/* Logo SVG officiel v4.0 en haut */}
               <img 
@@ -109,7 +123,7 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
                 alt="IArche" 
                 className="h-12 mb-8"
               />
-              {/* Titre avec gradient animé (web uniquement) */}
+              {/* v4.2 - Titre avec gradient animé et typography renforcée */}
               <h1
                 className="text-5xl md:text-7xl font-bold text-center mb-6"
                 style={{ 
@@ -118,34 +132,40 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   animation: 'hero-gradient 8s ease infinite',
+                  letterSpacing: '-0.03em',
+                  lineHeight: 1.1,
                 }}
               >
                 {brochure.cover_title || 'Titre'}
               </h1>
-              {/* Sous-titre */}
+              {/* Sous-titre avec meilleure opacité */}
               {brochure.cover_subtitle && (
                 <p 
-                  className="text-xl md:text-2xl text-center max-w-2xl"
-                  style={{ color: COLORS.muted }}
+                  className="text-xl md:text-2xl text-center max-w-2xl leading-relaxed"
+                  style={{ color: COLORS.muted, opacity: 0.85 }}
                 >
                   {brochure.cover_subtitle}
                 </p>
               )}
-              {/* Image de couverture */}
+              {/* Image de couverture avec ombre profonde */}
               {brochure.cover_image_url && (
                 <img 
                   src={brochure.cover_image_url} 
                   alt={brochure.cover_title}
-                  className="mt-12 max-w-md rounded-lg shadow-lg"
+                  className="mt-12 max-w-md rounded-lg"
+                  style={{
+                    boxShadow: `0 25px 50px -12px rgba(26, 43, 74, 0.25), 0 0 0 1px rgba(176, 74, 50, 0.1)`,
+                  }}
                 />
               )}
             </div>
             {isHorizontal && (
               <div 
-                className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-pulse"
+                className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-pulse flex items-center gap-2"
                 style={{ color: COLORS.muted }}
               >
-                Glissez pour continuer →
+                <span>Glissez pour continuer</span>
+                <span style={{ color: accentColor }}>→</span>
               </div>
             )}
           </section>
@@ -173,13 +193,29 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
         return (
           <section 
             key={index} 
-            className={`relative px-6 py-16 ${isHorizontal ? 'min-h-screen flex items-center' : ''} ${slideClass}`}
-            style={{ backgroundColor: COLORS.secondary }}
+            className={`relative px-6 py-16 overflow-hidden ${isHorizontal ? 'min-h-screen flex items-center' : ''} ${slideClass}`}
+            style={{ 
+              background: `radial-gradient(ellipse at 80% 20%, rgba(176, 74, 50, 0.06) 0%, transparent 40%), ${COLORS.secondary}`,
+            }}
           >
             <div className="max-w-5xl mx-auto w-full relative z-10">
+              {/* v4.2 - Badge stylisé */}
+              <div className="flex justify-center mb-4">
+                <span 
+                  className="inline-flex items-center gap-2 text-xs uppercase tracking-wider font-medium px-4 py-2 rounded-full"
+                  style={{ 
+                    background: 'rgba(176, 74, 50, 0.12)',
+                    color: accentColor,
+                    border: `1px solid rgba(176, 74, 50, 0.25)`,
+                  }}
+                >
+                  <span>📋</span>
+                  Essentiel
+                </span>
+              </div>
               <h2 
                 className="text-3xl font-bold text-center mb-4"
-                style={{ color: primaryColor }}
+                style={{ color: primaryColor, letterSpacing: '-0.02em' }}
               >
                 Points clés
               </h2>
@@ -188,20 +224,27 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
                 <LogoArc size="md" />
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {slide.data.points.map((point: any) => (
+                {slide.data.points.map((point: any, pointIdx: number) => (
                   <div 
                     key={point.id} 
-                    className="p-6 rounded-lg shadow-sm"
+                    className="p-6 rounded-lg transition-all hover:translate-y-[-2px]"
                     style={{ 
                       backgroundColor: COLORS.blancCasse,
                       border: `1px solid ${COLORS.border}`,
+                      boxShadow: '0 4px 20px -4px rgba(26, 43, 74, 0.12)',
                     }}
                   >
                     <div className="flex items-start gap-3">
-                      <CheckCircle 
-                        className="h-6 w-6 flex-shrink-0 mt-1" 
-                        style={{ color: accentColor }} 
-                      />
+                      {/* v4.2 - Numéro stylisé au lieu de CheckCircle */}
+                      <span 
+                        className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                        style={{ 
+                          background: 'rgba(176, 74, 50, 0.15)',
+                          color: accentColor,
+                        }}
+                      >
+                        {pointIdx + 1}
+                      </span>
                       <div>
                         <h3 
                           className="font-semibold mb-2"
@@ -210,7 +253,7 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
                           {point.title}
                         </h3>
                         <p 
-                          className="text-sm"
+                          className="text-sm leading-relaxed"
                           style={{ color: COLORS.muted }}
                         >
                           {point.description}
@@ -358,40 +401,75 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
         return (
           <section 
             key={index} 
-            className={`relative px-6 py-16 ${isHorizontal ? 'min-h-screen flex items-center' : ''} ${slideClass}`}
-            style={{ backgroundColor: COLORS.blancCasse }}
+            className={`relative px-6 py-16 overflow-hidden ${isHorizontal ? 'min-h-screen flex items-center' : ''} ${slideClass}`}
+            style={{ 
+              background: `radial-gradient(ellipse at 20% 80%, rgba(26, 43, 74, 0.05) 0%, transparent 40%), ${COLORS.blancCasse}`,
+            }}
           >
             <div className="max-w-3xl mx-auto relative z-10">
+              {/* v4.2 - Badge témoignage */}
+              <div className="flex justify-center mb-6">
+                <span 
+                  className="inline-flex items-center gap-2 text-xs uppercase tracking-wider font-medium px-4 py-2 rounded-full"
+                  style={{ 
+                    background: 'rgba(176, 74, 50, 0.12)',
+                    color: accentColor,
+                    border: `1px solid rgba(176, 74, 50, 0.25)`,
+                  }}
+                >
+                  <span>💬</span>
+                  Témoignage
+                </span>
+              </div>
+              
               <div 
-                className="p-8 rounded-lg"
+                className="p-8 rounded-xl relative"
                 style={{ 
                   backgroundColor: COLORS.bleuNuitLight10,
                   borderLeft: `4px solid ${accentColor}`,
+                  boxShadow: '0 10px 40px -10px rgba(26, 43, 74, 0.15)',
                 }}
               >
-                <Quote 
-                  className="h-8 w-8 mb-4" 
-                  style={{ color: accentColor }} 
-                />
+                {/* v4.2 - Guillemets stylisés grands */}
+                <div 
+                  className="absolute -top-4 -left-2 text-8xl font-serif leading-none opacity-20"
+                  style={{ color: accentColor }}
+                >
+                  "
+                </div>
                 <blockquote 
-                  className="text-lg italic mb-4"
+                  className="text-xl italic mb-6 relative z-10 leading-relaxed"
                   style={{ color: COLORS.foreground }}
                 >
-                  "{slide.data.quote}"
+                  {slide.data.quote}
                 </blockquote>
-                <div className="flex items-center gap-2">
-                  <span 
-                    className="font-semibold"
-                    style={{ color: primaryColor }}
+                <div className="flex items-center gap-3">
+                  {/* v4.2 - Avatar placeholder stylisé */}
+                  <div 
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${accentColor}, ${COLORS.terracottaLight30})`,
+                      color: COLORS.blancCasse,
+                    }}
                   >
-                    {slide.data.author}
-                  </span>
-                  {slide.data.company && (
-                    <>
-                      <span style={{ color: COLORS.muted }}>·</span>
-                      <span style={{ color: COLORS.muted }}>{slide.data.company}</span>
-                    </>
-                  )}
+                    {slide.data.author?.charAt(0) || 'A'}
+                  </div>
+                  <div>
+                    <span 
+                      className="font-semibold block"
+                      style={{ color: primaryColor }}
+                    >
+                      {slide.data.author}
+                    </span>
+                    {slide.data.company && (
+                      <span 
+                        className="text-sm"
+                        style={{ color: COLORS.muted }}
+                      >
+                        {slide.data.company}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
