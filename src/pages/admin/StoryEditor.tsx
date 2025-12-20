@@ -163,11 +163,11 @@ export default function StoryEditor() {
   const getCurrentData = useCallback(() => ({
     template, theme, preset, exportMode, barSize, pngQuality,
     titleFontSize, titleBold, titleItalic, titleAlignment,
-    verticalAlignment, selectedCompositionPreset, topMargin,
+    verticalAlignment, selectedCompositionPreset, topMargin, showDecorativeArc,
     badge, titre, ctaText, chiffre, contexte, source,
     citation, temoinNom, temoinFonction,
     conseilNumero, conseilTitre, conseilContenu,
-  }), [template, theme, preset, exportMode, barSize, pngQuality, titleFontSize, titleBold, titleItalic, titleAlignment, verticalAlignment, selectedCompositionPreset, topMargin, badge, titre, ctaText, chiffre, contexte, source, citation, temoinNom, temoinFonction, conseilNumero, conseilTitre, conseilContenu]);
+  }), [template, theme, preset, exportMode, barSize, pngQuality, titleFontSize, titleBold, titleItalic, titleAlignment, verticalAlignment, selectedCompositionPreset, topMargin, showDecorativeArc, badge, titre, ctaText, chiffre, contexte, source, citation, temoinNom, temoinFonction, conseilNumero, conseilTitre, conseilContenu]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
@@ -198,6 +198,7 @@ export default function StoryEditor() {
     if (data.verticalAlignment !== undefined) setVerticalAlignment(data.verticalAlignment as VerticalAlignment);
     if (data.selectedCompositionPreset !== undefined) setSelectedCompositionPreset(data.selectedCompositionPreset as string);
     if (data.topMargin !== undefined) setTopMargin(data.topMargin as number);
+    if (data.showDecorativeArc !== undefined) setShowDecorativeArc(data.showDecorativeArc as boolean);
   }, []);
 
   // Load template from navigation state

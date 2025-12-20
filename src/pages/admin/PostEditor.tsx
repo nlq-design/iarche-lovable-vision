@@ -290,7 +290,8 @@ export default function PostEditor() {
     conseilNumero, conseilTitre, conseilContenu,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     descFontSize, descBold, descItalic, descAlignment,
-  }), [format, template, theme, exportMode, barSize, pngQuality, platformPreset, width, height, badge, title, description, cta, chiffre, contexte, source, citation, temoinNom, temoinFonction, temoinEntreprise, temoinPhoto, conseilNumero, conseilTitre, conseilContenu, titleFontSize, titleBold, titleItalic, titleAlignment, descFontSize, descBold, descItalic, descAlignment]);
+    verticalAlignment, selectedCompositionPreset, topMargin, showDecorativeArc,
+  }), [format, template, theme, exportMode, barSize, pngQuality, platformPreset, width, height, badge, title, description, cta, chiffre, contexte, source, citation, temoinNom, temoinFonction, temoinEntreprise, temoinPhoto, conseilNumero, conseilTitre, conseilContenu, titleFontSize, titleBold, titleItalic, titleAlignment, descFontSize, descBold, descItalic, descAlignment, verticalAlignment, selectedCompositionPreset, topMargin, showDecorativeArc]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
@@ -326,6 +327,11 @@ export default function PostEditor() {
     if (data.descBold !== undefined) setDescBold(data.descBold as boolean);
     if (data.descItalic !== undefined) setDescItalic(data.descItalic as boolean);
     if (data.descAlignment !== undefined) setDescAlignment(data.descAlignment as TextAlignment);
+    // Composition & decorative arc
+    if (data.verticalAlignment !== undefined) setVerticalAlignment(data.verticalAlignment as VerticalAlignment);
+    if (data.selectedCompositionPreset !== undefined) setSelectedCompositionPreset(data.selectedCompositionPreset as string);
+    if (data.topMargin !== undefined) setTopMargin(data.topMargin as number);
+    if (data.showDecorativeArc !== undefined) setShowDecorativeArc(data.showDecorativeArc as boolean);
   }, []);
 
   // Load template from navigation state
