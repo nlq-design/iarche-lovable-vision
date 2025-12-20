@@ -1,15 +1,16 @@
 // Base64 encoded PNG assets for react-pdf compatibility
-// v4.0: Utilise les logos officiels en SVG
+// v4.1: Utilise les fichiers PNG avec URLs absolues pour react-pdf
+// IMPORTANT: react-pdf ne supporte PAS les SVG externes, uniquement PNG/JPG
 
 import { IARCHE_COLORS } from './tokens';
 
-// Arc v4.0 - URL directe vers le fichier SVG de référence
-const getArcUrl = (): string => {
-  // Utilise le fichier SVG exact fourni
-  return '/logos/iarche-arc.svg';
-};
+// Domaine de production pour les URLs absolues
+const DOMAIN = 'https://iarche.fr';
 
-// Generate gradient bar as SVG data URI (legacy - kept for compatibility)
+// URLs absolues vers les fichiers PNG (obligatoire pour react-pdf)
+const getAssetUrl = (path: string): string => `${DOMAIN}${path}`;
+
+// Generate gradient bar as SVG data URI (fallback inline)
 const createGradientBarSVG = (width: number, height: number): string => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
     <defs>
@@ -24,25 +25,30 @@ const createGradientBarSVG = (width: number, height: number): string => {
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 };
 
-// Export pre-generated assets
+// Export assets avec URLs absolues PNG
 export const BASE64_ASSETS = {
-  // Arc décoratifs (v4.0) - URL directe vers le SVG de référence
-  arcSm: getArcUrl(),
-  arcMd: getArcUrl(),
-  arcLg: getArcUrl(),
-  arcXl: getArcUrl(),
+  // Arc décoratif v4.0 - PNG pour react-pdf
+  arcSm: getAssetUrl('/assets/arc-reference-v4.png'),
+  arcMd: getAssetUrl('/assets/arc-reference-v4.png'),
+  arcLg: getAssetUrl('/assets/arc-reference-v4.png'),
+  arcXl: getAssetUrl('/assets/arc-reference-v4.png'),
   
-  // Gradient bars (legacy - kept for compatibility)
-  barSm: createGradientBarSVG(48, 2),
-  barMd: createGradientBarSVG(80, 4),
-  barLg: createGradientBarSVG(96, 4),
-  barXl: createGradientBarSVG(128, 6),
-  barFull: createGradientBarSVG(400, 4),
+  // Gradient bars - PNG pour react-pdf
+  barSm: getAssetUrl('/assets/bar-sm.png'),
+  barMd: getAssetUrl('/assets/bar-md.png'),
+  barLg: getAssetUrl('/assets/bar-lg.png'),
+  barXl: getAssetUrl('/assets/bar-xl.png'),
+  barFull: createGradientBarSVG(400, 4), // Fallback inline pour barres longues
   
-  // Logo variants v4.0 - URLs vers les fichiers SVG officiels
-  logoGradient: '/logos/iarche-main.svg',
-  logoWhite: '/logos/iarche-white.svg',
-  logoTerracotta: '/logos/iarche-main.svg', // Fallback vers le logo principal
+  // Logo variants v4.0 - PNG pour react-pdf (URLs absolues obligatoires)
+  logoGradient: getAssetUrl('/assets/logo-iarche-gradient.png'),
+  logoWhite: getAssetUrl('/assets/logo-iarche-white.png'),
+  logoTerracotta: getAssetUrl('/assets/logo-iarche-terracotta.png'),
+  
+  // Alternatives dans /logos/
+  logoMain: getAssetUrl('/logos/iarche-main.png'),
+  logoWhiteAlt: getAssetUrl('/logos/iarche-white.png'),
+  logoDark: getAssetUrl('/logos/iarche-dark.png'),
 };
 
 // Bullet styles as React Native compatible objects
