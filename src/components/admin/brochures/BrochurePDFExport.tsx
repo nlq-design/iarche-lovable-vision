@@ -1,13 +1,13 @@
-import { Document, Page, Text, View, StyleSheet, pdf, Image, Svg, Path, Circle } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, pdf, Image, Svg, Path, Circle, PDFViewer } from '@react-pdf/renderer';
 import { Brochure, PDFOrientation } from '@/types/brochure';
 import { COLORS, FONTS, THEMES } from '@/components/admin/medias/shared/tokens';
 import { BASE64_ASSETS } from '@/components/admin/medias/pdf/base64Assets';
 import { Button } from '@/components/ui/button';
-import { Download, X, FileText } from 'lucide-react';
+import { Download, X, FileText, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // A4 dimensions in points (72 points = 1 inch)
@@ -627,126 +627,170 @@ const BrochurePDFExport = ({ brochure, onClose }: BrochurePDFExportProps) => {
     }
   };
 
+  const [showPreview, setShowPreview] = useState(true);
+
+  // Memoize the PDF document to avoid unnecessary re-renders
+  const pdfDocument = useMemo(() => (
+    <BrochurePDF brochure={brochure} orientation={orientation} pdfTheme={pdfTheme} />
+  ), [brochure, orientation, pdfTheme]);
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
       <div 
-        className="rounded-lg p-6 max-w-md w-full mx-4 space-y-6"
+        className="rounded-lg overflow-hidden flex flex-col lg:flex-row w-full max-w-6xl max-h-[90vh]"
         style={{ backgroundColor: COLORS.blancCasse }}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <FileText className="h-5 w-5" style={{ color: COLORS.bleuNuit }} />
-            <h2 className="text-lg font-semibold" style={{ color: COLORS.bleuNuit }}>
-              Export PDF A4
-            </h2>
+        {/* Preview Panel */}
+        {showPreview && (
+          <div className="flex-1 bg-gray-100 border-r border-gray-200 min-h-[400px] lg:min-h-0">
+            <PDFViewer 
+              width="100%" 
+              height="100%" 
+              showToolbar={false}
+              style={{ border: 'none', minHeight: '400px' }}
+            >
+              {pdfDocument}
+            </PDFViewer>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <p style={{ color: COLORS.muted }}>
-          Téléchargez "<span className="font-medium" style={{ color: COLORS.foreground }}>{brochure.title}</span>" au format PDF.
-        </p>
+        )}
 
-        {/* Sélecteur de thème */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium" style={{ color: COLORS.foreground }}>
-            Thème
-          </Label>
-          <Select value={pdfTheme} onValueChange={(v) => setPdfTheme(v as PDFTheme)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="blanc-casse">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: COLORS.blancCasse, borderColor: COLORS.border }} />
-                  Blanc Cassé
-                </div>
-              </SelectItem>
-              <SelectItem value="bleu-nuit">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: COLORS.bleuNuit }} />
-                  Bleu Nuit
-                </div>
-              </SelectItem>
-              <SelectItem value="terra">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: COLORS.terracotta }} />
-                  Terracotta
-                </div>
-              </SelectItem>
-              <SelectItem value="gradient">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full" style={{ background: `linear-gradient(135deg, ${COLORS.bleuNuit} 0%, ${COLORS.terracotta} 100%)` }} />
-                  Gradient IArche
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Sélecteur d'orientation */}
-        <div className="space-y-3">
-          <Label className="text-sm font-medium" style={{ color: COLORS.foreground }}>
-            Orientation
-          </Label>
-          <RadioGroup value={orientation} onValueChange={(v) => setOrientation(v as PDFOrientation)}>
-            <div className="flex gap-4">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="portrait" id="portrait" />
-                <Label htmlFor="portrait" className="flex items-center gap-2 cursor-pointer">
-                  <div 
-                    className="w-6 h-8 rounded-sm" 
-                    style={{ border: `2px solid ${COLORS.bleuNuit}` }}
-                  />
-                  Portrait
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="landscape" id="landscape" />
-                <Label htmlFor="landscape" className="flex items-center gap-2 cursor-pointer">
-                  <div 
-                    className="w-8 h-6 rounded-sm"
-                    style={{ border: `2px solid ${COLORS.bleuNuit}` }}
-                  />
-                  Paysage
-                </Label>
-              </div>
+        {/* Controls Panel */}
+        <div className="w-full lg:w-80 p-6 space-y-5 overflow-y-auto">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <FileText className="h-5 w-5" style={{ color: COLORS.bleuNuit }} />
+              <h2 className="text-lg font-semibold" style={{ color: COLORS.bleuNuit }}>
+                Export PDF A4
+              </h2>
             </div>
-          </RadioGroup>
-        </div>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <p className="text-sm" style={{ color: COLORS.muted }}>
+            Téléchargez "<span className="font-medium" style={{ color: COLORS.foreground }}>{brochure.title}</span>" au format PDF.
+          </p>
 
-        {/* Info box */}
-        <div 
-          className="rounded-lg p-3 text-sm"
-          style={{ 
-            backgroundColor: COLORS.secondary,
-            color: COLORS.muted,
-          }}
-        >
-          <strong style={{ color: COLORS.foreground }}>Format A4</strong> · {orientation === 'portrait' ? '210 × 297 mm' : '297 × 210 mm'}
-          <br />
-          Thème : {PDF_THEMES[pdfTheme].name}
-        </div>
-
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={onClose} className="flex-1">
-            Annuler
-          </Button>
+          {/* Toggle Preview */}
           <Button 
-            onClick={handleDownload} 
-            disabled={isGenerating}
-            className="flex-1"
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowPreview(!showPreview)}
+            className="w-full"
+          >
+            {showPreview ? (
+              <>
+                <EyeOff className="mr-2 h-4 w-4" />
+                Masquer l'aperçu
+              </>
+            ) : (
+              <>
+                <Eye className="mr-2 h-4 w-4" />
+                Afficher l'aperçu
+              </>
+            )}
+          </Button>
+
+          {/* Sélecteur de thème */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium" style={{ color: COLORS.foreground }}>
+              Thème
+            </Label>
+            <Select value={pdfTheme} onValueChange={(v) => setPdfTheme(v as PDFTheme)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="blanc-casse">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: COLORS.blancCasse, borderColor: COLORS.border }} />
+                    Blanc Cassé
+                  </div>
+                </SelectItem>
+                <SelectItem value="bleu-nuit">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: COLORS.bleuNuit }} />
+                    Bleu Nuit
+                  </div>
+                </SelectItem>
+                <SelectItem value="terra">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: COLORS.terracotta }} />
+                    Terracotta
+                  </div>
+                </SelectItem>
+                <SelectItem value="gradient">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full" style={{ background: `linear-gradient(135deg, ${COLORS.bleuNuit} 0%, ${COLORS.terracotta} 100%)` }} />
+                    Gradient IArche
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Sélecteur d'orientation */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium" style={{ color: COLORS.foreground }}>
+              Orientation
+            </Label>
+            <RadioGroup value={orientation} onValueChange={(v) => setOrientation(v as PDFOrientation)}>
+              <div className="flex gap-4">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="portrait" id="portrait" />
+                  <Label htmlFor="portrait" className="flex items-center gap-2 cursor-pointer">
+                    <div 
+                      className="w-6 h-8 rounded-sm" 
+                      style={{ border: `2px solid ${COLORS.bleuNuit}` }}
+                    />
+                    Portrait
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="landscape" id="landscape" />
+                  <Label htmlFor="landscape" className="flex items-center gap-2 cursor-pointer">
+                    <div 
+                      className="w-8 h-6 rounded-sm"
+                      style={{ border: `2px solid ${COLORS.bleuNuit}` }}
+                    />
+                    Paysage
+                  </Label>
+                </div>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {/* Info box */}
+          <div 
+            className="rounded-lg p-3 text-sm"
             style={{ 
-              backgroundColor: COLORS.terracotta,
-              color: COLORS.white,
+              backgroundColor: COLORS.secondary,
+              color: COLORS.muted,
             }}
           >
-            <Download className="mr-2 h-4 w-4" />
-            {isGenerating ? 'Génération...' : 'Télécharger'}
-          </Button>
+            <strong style={{ color: COLORS.foreground }}>Format A4</strong> · {orientation === 'portrait' ? '210 × 297 mm' : '297 × 210 mm'}
+            <br />
+            Thème : {PDF_THEMES[pdfTheme].name}
+          </div>
+
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleDownload} 
+              disabled={isGenerating}
+              className="flex-1"
+              style={{ 
+                backgroundColor: COLORS.terracotta,
+                color: COLORS.white,
+              }}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {isGenerating ? 'Génération...' : 'Télécharger'}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
