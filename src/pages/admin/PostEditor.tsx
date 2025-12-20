@@ -28,7 +28,15 @@ import {
 } from '@/components/admin/medias/html';
 
 type PostFormat = 'square' | 'landscape';
-type PostTemplate = 'annonce' | 'chiffre' | 'temoignage' | 'conseil';
+type PostTemplate = 'annonce' | 'chiffre' | 'temoignage' | 'conseil' | 'services';
+
+// Les 4 services IArche
+const IARCHE_SERVICES = [
+  { icon: '🔍', title: 'Audit & Conseil', description: 'Diagnostic et stratégie IA' },
+  { icon: '⚙️', title: 'Développement', description: 'Solutions IA sur mesure' },
+  { icon: '🤝', title: 'Accompagnement', description: 'Formation et conduite du changement' },
+  { icon: '✓', title: 'Conformité', description: 'RGPD et gouvernance des données' },
+];
 type PresetTemplate = 'custom' | 'citation' | 'statistique' | 'evenement' | 'question' | 'temoignage-client' | 'recrutement' | 'milestone' | 'partenariat' | 'offre-promo' | 'lancement';
 
 const DIMENSIONS = {
@@ -520,6 +528,104 @@ export default function PostEditor() {
               fontWeight: 500,
               color: subtextColor,
             }}>
+            iarche.fr
+            </span>
+          </div>
+        );
+
+      case 'services':
+        return (
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            justifyContent: 'space-between',
+            height: '100%',
+          }}>
+            {/* Header avec logo discret */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <span style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: '18px',
+                fontWeight: 600,
+                color: IARCHE_COLORS.terracotta,
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+              }}>
+                Nos Services
+              </span>
+              <img 
+                src={theme === 'dark' ? '/logos/iarche-white.svg' : '/logos/iarche-dark.svg'}
+                alt="IArche"
+                style={{ height: '40px', opacity: 0.8 }}
+              />
+            </div>
+
+            {/* Titre principal */}
+            <h1 style={{
+              fontFamily: IARCHE_FONTS.primary,
+              fontSize: format === 'square' ? '42px' : '36px',
+              fontWeight: 700,
+              color: textColor,
+              margin: 0,
+              textAlign: 'center',
+              lineHeight: 1.2,
+            }}>
+              L'IA au service de votre entreprise
+            </h1>
+
+            {/* Grille 2x2 des services */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: format === 'square' ? '24px' : '16px',
+              width: '100%',
+            }}>
+              {IARCHE_SERVICES.map((service, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    textAlign: 'center',
+                    padding: format === 'square' ? '24px' : '16px',
+                    backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(26,43,74,0.03)',
+                    borderRadius: '12px',
+                    border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(26,43,74,0.1)'}`,
+                  }}
+                >
+                  <span style={{ fontSize: format === 'square' ? '32px' : '24px', marginBottom: '8px' }}>
+                    {service.icon}
+                  </span>
+                  <span style={{
+                    fontFamily: IARCHE_FONTS.primary,
+                    fontSize: format === 'square' ? '18px' : '14px',
+                    fontWeight: 700,
+                    color: textColor,
+                    marginBottom: '4px',
+                  }}>
+                    {service.title}
+                  </span>
+                  <span style={{
+                    fontFamily: IARCHE_FONTS.primary,
+                    fontSize: format === 'square' ? '14px' : '12px',
+                    fontWeight: 400,
+                    color: subtextColor,
+                  }}>
+                    {service.description}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <span style={{
+              fontFamily: IARCHE_FONTS.primary,
+              fontSize: '16px',
+              fontWeight: 500,
+              color: IARCHE_COLORS.terracotta,
+              textAlign: 'center',
+            }}>
               iarche.fr
             </span>
           </div>
@@ -679,12 +785,13 @@ export default function PostEditor() {
               {/* Template selector */}
               <div className="space-y-2">
                 <Label>Template</Label>
-                <Tabs value={template} onValueChange={(v) => setTemplate(v as PostTemplate)}>
-                  <TabsList className="grid grid-cols-2 gap-1">
+              <Tabs value={template} onValueChange={(v) => setTemplate(v as PostTemplate)}>
+                  <TabsList className="grid grid-cols-3 gap-1">
                     <TabsTrigger value="annonce" className="text-xs">Annonce</TabsTrigger>
                     <TabsTrigger value="chiffre" className="text-xs">Chiffre</TabsTrigger>
                     <TabsTrigger value="temoignage" className="text-xs">Témoignage</TabsTrigger>
                     <TabsTrigger value="conseil" className="text-xs">Conseil</TabsTrigger>
+                    <TabsTrigger value="services" className="text-xs">4 Services</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
