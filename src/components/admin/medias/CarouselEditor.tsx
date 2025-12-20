@@ -40,7 +40,32 @@ type PresetTemplate = {
 };
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
-  // Annonce
+  // ========== SERVICES IARCHE ==========
+  { id: 'service-audit', label: '🔍 Audit & Conseil', category: 'conseil', slides: [
+    { title: 'Audit IA', subtitle: 'Par où commencer ?' },
+    { title: 'Comprendre', content: 'On analyse votre activité, vos outils, vos équipes.' },
+    { title: 'Identifier', content: 'On repère où l\'IA a du sens — et où elle n\'en a pas.' },
+    { title: 'Livrer', content: 'Une roadmap claire, chiffrée, priorisée.', highlight: 'iarche.fr/audit' },
+  ]},
+  { id: 'service-developpement', label: '⚙️ Développement', category: 'annonce', slides: [
+    { title: 'Solutions IA', subtitle: 'Du prototype à la production' },
+    { title: 'Prototypage rapide', content: 'Maquette en 2-4 semaines.' },
+    { title: 'Intégration', content: 'Connecté à vos outils existants.' },
+    { title: 'Passez à l\'action', highlight: 'iarche.fr/solutions' },
+  ]},
+  { id: 'service-accompagnement', label: '🎓 Accompagnement', category: 'conseil', slides: [
+    { title: 'Formation IA', subtitle: 'Rendez vos équipes autonomes' },
+    { title: 'Sessions techniques', content: 'Prompting, fine-tuning, RAG...' },
+    { title: 'Ateliers métier', content: 'Cas d\'usage, ROI, éthique.' },
+    { title: 'On vous accompagne', highlight: 'iarche.fr/formations' },
+  ]},
+  { id: 'service-conformite', label: '🛡️ Conformité', category: 'question', slides: [
+    { title: 'Conformité IA', subtitle: 'AI Act & RGPD' },
+    { title: 'Êtes-vous prêt ?', content: 'Février 2025 : entrée en vigueur des premières obligations.' },
+    { title: 'On audite', content: 'Vos systèmes IA, vos données, vos risques.' },
+    { title: 'On documente', highlight: 'iarche.fr/conformite' },
+  ]},
+  // ========== ANNONCE ==========
   { id: 'nouveaute', label: 'Nouveauté', category: 'annonce', slides: [
     { title: 'Nouveauté', subtitle: 'IArche présente', content: '' },
     { title: 'Découvrez notre nouvelle solution', content: 'Une innovation pour simplifier votre quotidien.' },
@@ -59,7 +84,7 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
     { title: 'Pourquoi ?', content: 'Les bénéfices clés.' },
     { title: 'Disponible maintenant', highlight: 'iarche.fr' },
   ]},
-  // Chiffre
+  // ========== CHIFFRE ==========
   { id: 'statistiques', label: 'Statistiques', category: 'chiffre', slides: [
     { title: 'Les chiffres qui comptent', subtitle: 'IArche en quelques données' },
     { highlight: '73%', content: 'des entreprises constatent un ROI positif' },
@@ -72,7 +97,7 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
     { title: 'Et ce n\'est que le début', content: 'Objectif 2025 : 200 PME.' },
     { title: 'Rejoignez-nous', highlight: 'iarche.fr' },
   ]},
-  // Témoignage
+  // ========== TÉMOIGNAGE ==========
   { id: 'temoignage-client', label: 'Témoignage client', category: 'temoignage', slides: [
     { title: 'Success Story', subtitle: 'Ils nous font confiance' },
     { title: '"Grâce à IArche, nous avons automatisé 40% de nos tâches."', content: 'Jean-Pierre Martin, DG Groupe ABC' },
@@ -85,7 +110,7 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
     { title: 'La solution', content: 'Chatbot RAG + automatisation.' },
     { title: 'Les résultats', highlight: '-40% admin', content: 'et satisfaction client en hausse.' },
   ]},
-  // Conseil
+  // ========== CONSEIL ==========
   { id: 'conseil-tip', label: 'Conseil / Tip', category: 'conseil', slides: [
     { title: 'Conseil #1', subtitle: 'Astuce IA' },
     { title: 'Commencez petit', content: 'Identifiez un cas d\'usage simple et mesurez les résultats.' },
@@ -98,7 +123,7 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
     { title: '#2 Mesurez tout', content: 'Définissez vos KPIs dès le départ.' },
     { title: '#3 Itérez', content: 'Améliorez progressivement.', highlight: 'iarche.fr' },
   ]},
-  // Question
+  // ========== QUESTION ==========
   { id: 'question-sondage', label: 'Question / Sondage', category: 'question', slides: [
     { title: '?', subtitle: 'Votre avis nous intéresse' },
     { title: 'L\'IA va-t-elle remplacer votre métier ?', content: 'Partagez votre opinion en commentaire.' },
