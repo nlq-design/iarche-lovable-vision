@@ -35,11 +35,20 @@ interface SlideData {
 type PresetTemplate = {
   id: string;
   label: string;
-  category: 'annonce' | 'chiffre' | 'temoignage' | 'conseil' | 'question';
+  category: 'annonce' | 'chiffre' | 'temoignage' | 'conseil' | 'question' | 'services';
   slides: Partial<SlideData>[];
 };
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
+  // ========== 4 SERVICES ==========
+  { id: 'services-iarche', label: '🎯 4 Services IArche', category: 'services', slides: [
+    { title: 'Nos Services', subtitle: 'L\'IA au service de votre entreprise', content: '' },
+    { title: '🔍 Audit & Conseil', content: 'Diagnostic complet de votre maturité IA et stratégie personnalisée', highlight: '' },
+    { title: '⚙️ Développement', content: 'Solutions IA sur mesure : chatbots, automatisation, RAG', highlight: '' },
+    { title: '🤝 Accompagnement', content: 'Formation, conduite du changement et autonomisation de vos équipes', highlight: '' },
+    { title: '✓ Conformité', content: 'RGPD, gouvernance des données et IA responsable', highlight: '' },
+    { title: 'Passez à l\'action', highlight: 'iarche.fr/contact', content: 'Prenez rendez-vous avec notre équipe' },
+  ]},
   // ========== ANNONCE ==========
   { id: 'nouveaute', label: 'Nouveauté', category: 'annonce', slides: [
     { title: 'Nouveauté', subtitle: 'IArche présente', content: '' },
@@ -303,6 +312,10 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                   <SelectValue placeholder="Choisir un preset..." />
                 </SelectTrigger>
                 <SelectContent>
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">4 Services</div>
+                  {PRESET_TEMPLATES.filter(p => p.category === 'services').map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
                   <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Annonce</div>
                   {PRESET_TEMPLATES.filter(p => p.category === 'annonce').map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>

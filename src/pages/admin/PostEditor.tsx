@@ -279,6 +279,21 @@ export default function PostEditor() {
   const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
   const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : IARCHE_COLORS.grey;
 
+  // Logo discret helper (petit logo sans arc, en coin)
+  const renderLogoDiscret = (position: 'top-right' | 'bottom-right' = 'bottom-right') => (
+    <img 
+      src={theme === 'dark' || theme === 'terra' || theme === 'contrast' ? '/logos/iarche-white.svg' : '/logos/iarche-dark.svg'}
+      alt="IArche"
+      style={{
+        position: 'absolute',
+        [position.includes('top') ? 'top' : 'bottom']: '24px',
+        [position.includes('left') ? 'left' : 'right']: '24px',
+        height: format === 'square' ? '50px' : '40px',
+        opacity: 0.85,
+      }}
+    />
+  );
+
   const renderPostContent = () => {
     switch (template) {
       case 'annonce':
@@ -290,8 +305,9 @@ export default function PostEditor() {
             alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start',
             height: '100%',
             textAlign: titleAlignment,
+            position: 'relative',
           }}>
-            <HTMLLogo size="lg" theme={theme} />
+            {exportMode === 'logo-discret' ? renderLogoDiscret('top-right') : <HTMLLogo size="lg" theme={theme} />}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start' }}>
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
@@ -350,8 +366,9 @@ export default function PostEditor() {
             height: '100%',
             textAlign: titleAlignment,
             gap: '32px',
+            position: 'relative',
           }}>
-            <HTMLLogo size="md" theme={theme} />
+            {exportMode === 'logo-discret' ? renderLogoDiscret('top-right') : <HTMLLogo size="md" theme={theme} />}
             <div style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: `${titleFontSize}px`,
@@ -400,8 +417,9 @@ export default function PostEditor() {
             alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start',
             height: '100%',
             textAlign: titleAlignment,
+            position: 'relative',
           }}>
-            <HTMLLogo size="md" theme={theme} />
+            {exportMode === 'logo-discret' ? renderLogoDiscret('top-right') : <HTMLLogo size="md" theme={theme} />}
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '32px', width: '100%' }}>
               {temoinPhoto && (
                 <div style={{
@@ -471,20 +489,25 @@ export default function PostEditor() {
             alignItems: titleAlignment === 'left' ? 'flex-start' : titleAlignment === 'right' ? 'flex-end' : 'center',
             height: '100%',
             textAlign: titleAlignment,
+            position: 'relative',
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'flex-start' }}>
-              <HTMLLogo size="md" theme={theme} />
-              <span style={{
-                fontFamily: IARCHE_FONTS.primary,
-                fontSize: '16px',
-                fontWeight: 500,
-                color: subtextColor,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}>
-                Conseil IA
-              </span>
-            </div>
+            {exportMode === 'logo-discret' ? (
+              renderLogoDiscret('top-right')
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'flex-start' }}>
+                <HTMLLogo size="md" theme={theme} />
+                <span style={{
+                  fontFamily: IARCHE_FONTS.primary,
+                  fontSize: '16px',
+                  fontWeight: 500,
+                  color: subtextColor,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}>
+                  Conseil IA
+                </span>
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div style={{
                 fontFamily: IARCHE_FONTS.primary,
@@ -528,7 +551,7 @@ export default function PostEditor() {
               fontWeight: 500,
               color: subtextColor,
             }}>
-            iarche.fr
+              iarche.fr
             </span>
           </div>
         );

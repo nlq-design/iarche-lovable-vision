@@ -530,6 +530,101 @@ export default function ThumbnailEditor() {
                           iarche.fr
                         </span>
                       </div>
+                    ) : exportMode === 'logo-discret' ? (
+                      /* Mode Logo Discret - petit logo en coin */
+                      <div style={{
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        justifyContent: 'space-between',
+                        height: '100%',
+                        position: 'relative',
+                      }}>
+                        {/* Logo discret en coin */}
+                        <img 
+                          src={theme === 'dark' || theme === 'terra' || theme === 'contrast' ? '/logos/iarche-white.svg' : '/logos/iarche-dark.svg'}
+                          alt="IArche"
+                          style={{
+                            position: 'absolute',
+                            top: '20px',
+                            right: '24px',
+                            height: '50px',
+                            opacity: 0.85,
+                          }}
+                        />
+                        
+                        {/* Badge */}
+                        <span style={{
+                          fontFamily: IARCHE_FONTS.primary,
+                          fontSize: '20px',
+                          fontWeight: 700,
+                          color: badgeText,
+                          backgroundColor: badgeBg,
+                          padding: '12px 24px',
+                          borderRadius: '8px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          alignSelf: 'flex-start',
+                        }}>
+                          {EVENT_LABELS[eventType]}
+                        </span>
+
+                        {/* Main Content */}
+                        <div style={{ 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          gap: '24px',
+                          maxWidth: '70%',
+                          textAlign: titleAlignment,
+                        }}>
+                          <h1 style={{
+                            fontFamily: IARCHE_FONTS.primary,
+                            fontSize: `${actualTitleSize}px`,
+                            fontWeight: titleBold ? 700 : 400,
+                            fontStyle: titleItalic ? 'italic' : 'normal',
+                            color: textColor,
+                            margin: 0,
+                            lineHeight: 1.1,
+                          }}>
+                            {titre}
+                          </h1>
+                          <p style={{
+                            fontFamily: IARCHE_FONTS.primary,
+                            fontSize: `${actualSubtitleSize}px`,
+                            fontWeight: 400,
+                            color: subtextColor,
+                            margin: 0,
+                            lineHeight: 1.4,
+                          }}>
+                            {sousTitre}
+                          </p>
+                        </div>
+
+                        {/* Footer */}
+                        <div style={{ display: 'flex', gap: '32px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <Calendar size={24} color={IARCHE_COLORS.terracotta} />
+                            <span style={{
+                              fontFamily: IARCHE_FONTS.primary,
+                              fontSize: '24px',
+                              fontWeight: 600,
+                              color: textColor,
+                            }}>
+                              {date}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <Clock size={24} color={IARCHE_COLORS.terracotta} />
+                            <span style={{
+                              fontFamily: IARCHE_FONTS.primary,
+                              fontSize: '24px',
+                              fontWeight: 600,
+                              color: textColor,
+                            }}>
+                              {heure}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     ) : (
                       /* Template standard événement */
                       <div style={{
