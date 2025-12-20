@@ -39,12 +39,12 @@ const IARCHE_SERVICES = [
 ];
 type PresetTemplate = 'custom' | 'citation' | 'statistique' | 'evenement' | 'question' | 'temoignage-client' | 'recrutement' | 'milestone' | 'partenariat' | 'offre-promo' | 'lancement';
 
-const DIMENSIONS = {
+// Default dimensions
+const DEFAULT_DIMENSIONS = {
   square: { width: 1200, height: 1200 },
   landscape: { width: 1200, height: 627 },
 };
-
-const SCALE = 0.35;
+const MAX_PREVIEW_WIDTH = 420;
 
 // Pre-filled templates data (v4.1 - enrichi avec templates métiers)
 const PRESET_TEMPLATES: Record<PresetTemplate, {
@@ -149,6 +149,13 @@ export default function PostEditor() {
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
   const [platformPreset, setPlatformPreset] = useState<Platform>('linkedin-post');
   
+  // Dynamic dimensions from platform preset
+  const [width, setWidth] = useState(DEFAULT_DIMENSIONS.square.width);
+  const [height, setHeight] = useState(DEFAULT_DIMENSIONS.square.height);
+  
+  // Computed scale for preview
+  const scale = Math.min(MAX_PREVIEW_WIDTH / width, 0.4);
+  
   const backgroundColor = theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse;
 
   // Apply preset template
@@ -212,14 +219,14 @@ export default function PostEditor() {
 
   // Get current data for saving template
   const getCurrentData = useCallback(() => ({
-    format, template, theme, exportMode, barSize, pngQuality,
+    format, template, theme, exportMode, barSize, pngQuality, platformPreset, width, height,
     badge, title, description, cta,
     chiffre, contexte, source,
     citation, temoinNom, temoinFonction, temoinEntreprise, temoinPhoto,
     conseilNumero, conseilTitre, conseilContenu,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     descFontSize, descBold, descItalic, descAlignment,
-  }), [format, template, theme, exportMode, barSize, pngQuality, badge, title, description, cta, chiffre, contexte, source, citation, temoinNom, temoinFonction, temoinEntreprise, temoinPhoto, conseilNumero, conseilTitre, conseilContenu, titleFontSize, titleBold, titleItalic, titleAlignment, descFontSize, descBold, descItalic, descAlignment]);
+  }), [format, template, theme, exportMode, barSize, pngQuality, platformPreset, width, height, badge, title, description, cta, chiffre, contexte, source, citation, temoinNom, temoinFonction, temoinEntreprise, temoinPhoto, conseilNumero, conseilTitre, conseilContenu, titleFontSize, titleBold, titleItalic, titleAlignment, descFontSize, descBold, descItalic, descAlignment]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
@@ -229,6 +236,9 @@ export default function PostEditor() {
     if (data.exportMode) setExportMode(data.exportMode as ExportMode);
     if (data.barSize) setBarSize(data.barSize as BarSize);
     if (data.pngQuality) setPngQuality(data.pngQuality as PngQuality);
+    if (data.platformPreset) setPlatformPreset(data.platformPreset as Platform);
+    if (data.width !== undefined) setWidth(data.width as number);
+    if (data.height !== undefined) setHeight(data.height as number);
     if (data.badge !== undefined) setBadge(data.badge as string);
     if (data.title !== undefined) setTitle(data.title as string);
     if (data.description !== undefined) setDescription(data.description as string);
@@ -263,7 +273,6 @@ export default function PostEditor() {
   }, [location.state, loadTemplateData]);
 
   const handleExport = async () => {
-    const { width, height } = DIMENSIONS[format];
     try {
       await exportToPNG(postRef, `post-${template}-${format}`, {
         pixelRatio: pngQuality,
@@ -275,7 +284,6 @@ export default function PostEditor() {
     }
   };
 
-  const { width, height } = DIMENSIONS[format];
   const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
   const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : IARCHE_COLORS.grey;
 
@@ -788,19 +796,18 @@ export default function PostEditor() {
               <CardTitle>Paramètres</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Format selector */}
-              <div className="space-y-2">
-                <Label>Format</Label>
-                <Select value={format} onValueChange={(v) => setFormat(v as PostFormat)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="square">Carré (1200×1200)</SelectItem>
-                    <SelectItem value="landscape">Paysage (1200×627)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Platform Presets - dimensions dynamiques */}
+              <PlatformPresets
+                value={platformPreset}
+                onChange={setPlatformPreset}
+                onDimensionsChange={(w, h) => { 
+                  setWidth(w); 
+                  setHeight(h);
+                  // Update format based on aspect ratio
+                  setFormat(h > w * 0.8 ? 'square' : 'landscape');
+                }}
+                filterByCategory={['LinkedIn', 'Instagram', 'Facebook', 'Twitter/X']}
+              />
 
               {/* Template selector */}
               <div className="space-y-2">
@@ -931,17 +938,17 @@ export default function PostEditor() {
                 }}
               >
                 <div style={{ 
-                  transform: `scale(${SCALE})`, 
+                  transform: `scale(${scale})`, 
                   transformOrigin: 'top left',
-                  width: width * SCALE,
-                  height: height * SCALE,
+                  width: width * scale,
+                  height: height * scale,
                 }}>
                   <HTMLBaseTemplate
                     ref={postRef}
                     width={width}
                     height={height}
                     theme={theme}
-                    padding={format === 'square' ? 80 : 60}
+                    padding={height > width ? 80 : 60}
                     showArches={false}
                   >
                     {renderPostContent()}
@@ -949,7 +956,7 @@ export default function PostEditor() {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Aperçu à {Math.round(SCALE * 100)}% — Export en taille réelle ({width}×{height}px)
+                Aperçu à {Math.round(scale * 100)}% — Export en taille réelle ({width}×{height}px)
               </p>
             </CardContent>
           </Card>
