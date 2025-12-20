@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { pdf } from '@react-pdf/renderer';
 import { saveAs } from 'file-saver';
 import AdminLayout from '@/components/layouts/AdminLayout';
@@ -19,6 +19,7 @@ import { VerticalAlignmentControls, VerticalAlignment, getJustifyContent } from 
 import { CompositionPresets, CompositionPreset, COMPOSITION_PRESETS } from './CompositionPresets';
 import { TopMarginSlider, getContentSpacing } from './TopMarginSlider';
 import { DecorativeArcToggle } from './DecorativeArcToggle';
+import SavedTemplatesPanel from './SavedTemplatesPanel';
 
 interface CarouselEditorProps {
   templateId: string;
@@ -185,6 +186,25 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
     // Apply to current slide
     handleSlideChange('verticalAlignment', preset.verticalAlignment);
   };
+
+  // Get current data for saving template
+  const getCurrentData = useCallback(() => ({
+    slides, startTheme, sourceMode, selectedPreset,
+    verticalAlignment, selectedCompositionPreset, topMargin, showDecorativeArc,
+  }), [slides, startTheme, sourceMode, selectedPreset, verticalAlignment, selectedCompositionPreset, topMargin, showDecorativeArc]);
+
+  // Load template data
+  const loadTemplateData = useCallback((data: Record<string, unknown>) => {
+    if (data.slides) setSlides(data.slides as SlideData[]);
+    if (data.startTheme) setStartTheme(data.startTheme as 'dark' | 'light' | 'terra' | 'contrast');
+    if (data.sourceMode) setSourceMode(data.sourceMode as 'libre' | 'article' | 'preset');
+    if (data.selectedPreset !== undefined) setSelectedPreset(data.selectedPreset as string);
+    if (data.verticalAlignment !== undefined) setVerticalAlignment(data.verticalAlignment as VerticalAlignment);
+    if (data.selectedCompositionPreset !== undefined) setSelectedCompositionPreset(data.selectedCompositionPreset as string);
+    if (data.topMargin !== undefined) setTopMargin(data.topMargin as number);
+    if (data.showDecorativeArc !== undefined) setShowDecorativeArc(data.showDecorativeArc as boolean);
+    setCurrentSlide(0);
+  }, []);
 
   useEffect(() => {
     const fetchArticles = async () => {
@@ -686,6 +706,13 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                   enabled={showDecorativeArc}
                   onChange={setShowDecorativeArc}
                   compact
+                />
+
+                {/* Saved Templates */}
+                <SavedTemplatesPanel
+                  editorType="carousel"
+                  getCurrentData={getCurrentData}
+                  onLoadTemplate={loadTemplateData}
                 />
                 <div className="space-y-2">
                   <ExportModeControls
