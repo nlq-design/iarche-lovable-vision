@@ -1,5 +1,9 @@
 # IArche Charte Graphique v4.0
 
+> **Mise à jour v4.2** : Voir [MEDIA_MODULES_V4.2.md](./MEDIA_MODULES_V4.2.md) pour les arcs décoratifs des éditeurs médias.
+
+---
+
 ## Changements majeurs
 
 ### Logo
@@ -57,7 +61,9 @@ Le SVG contient le gradient officiel Night Blue → Terracotta intégré.
 - `/logos/iarche-icon-32.svg` - Favicon
 - `/logos/iarche-icon-512.svg` - PWA icon
 
-### Composants
+---
+
+## Composants
 
 | Composant | Fichier | Usage |
 |-----------|---------|-------|
@@ -73,12 +79,38 @@ Le SVG contient le gradient officiel Night Blue → Terracotta intégré.
 3. **Sous le logo dans les cards** : ❌ NON - arc réservé aux titres
 4. **Dans les éditeurs média** : Oui, remplace les anciennes barres
 
-### Couleurs (inchangées)
+---
+
+## Couleurs (inchangées)
+
 - Bleu Nuit: `hsl(218, 47%, 20%)` / #1A2B4A
 - Terracotta: `hsl(12, 60%, 44%)` / #B04A32
 - Blanc Cassé: `hsl(30, 14%, 98%)` / #FAF9F7
 
-### Migration
+---
+
+## Arcs décoratifs dans les éditeurs médias (v4.2)
+
+> Documentation complète : [MEDIA_MODULES_V4.2.md](./MEDIA_MODULES_V4.2.md)
+
+### Résumé
+
+Les éditeurs médias incluent des **arcs décoratifs SVG subtils** en zones mortes extrêmes :
+
+| Module | Position | Opacity |
+|--------|----------|---------|
+| CarouselEditor | `-bottom-24 -right-24` | 0.05 |
+| PresentationEditor | `-top-20 -right-20` | 0.05 |
+| BrochureWebView | `-bottom-48 -right-48` | 0.03 |
+| BannerEditor | `-bottom-6 -right-12` | 0.05 |
+| PostEditor | `-bottom-24 -right-24` | 0.05 |
+| StoryEditor | `-top-20 -right-20` | 0.05 |
+
+**Règle clé** : Les arcs sont toujours en position négative, jamais visibles dans le contenu principal.
+
+---
+
+## Migration
 
 Toutes les occurrences de :
 ```tsx
@@ -89,4 +121,12 @@ Doivent être remplacées par :
 ```tsx
 import LogoArc from '@/components/ui/LogoArc';
 <LogoArc size="md" className="..." />
+```
+
+---
+
+## Documents liés
+
+- [MEDIA_MODULES_V4.2.md](./MEDIA_MODULES_V4.2.md) - Arcs décoratifs éditeurs médias
+- [BrandBook_IArche_V1.md](../BrandBook_IArche_V1.md) - Charte de marque complète
 ```
