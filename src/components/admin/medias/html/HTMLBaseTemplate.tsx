@@ -118,7 +118,13 @@ export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps
       >
         {/* v4.2 - Arc décoratif subtil en zone morte (INCLUS dans l'export) */}
         {arcConfig && (
-          <div style={{ ...getArcStyle(arcConfig.position, arcConfig.size!), opacity: arcConfig.opacity }}>
+          <div 
+            style={{ 
+              ...getArcStyle(arcConfig.position, arcConfig.size!), 
+              opacity: arcConfig.opacity,
+            }}
+            data-decorative-arc="true"
+          >
             <svg 
               viewBox={`0 0 ${arcConfig.size} ${arcConfig.size}`} 
               style={{ width: '100%', height: '100%' }}
