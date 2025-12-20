@@ -1072,6 +1072,7 @@ export default function PostEditor() {
                   transformOrigin: 'top left',
                   width: width * scale,
                   height: height * scale,
+                  position: 'relative',
                 }}>
                   <HTMLBaseTemplate
                     ref={postRef}
@@ -1083,6 +1084,17 @@ export default function PostEditor() {
                   >
                     {renderPostContent()}
                   </HTMLBaseTemplate>
+                  {/* v4.2 - Arc décoratif en zone morte extrême (cohérence avec autres modules) */}
+                  <div className="absolute -bottom-24 -right-24 w-48 h-48 pointer-events-none opacity-[0.05]" style={{ zIndex: 0 }}>
+                    <svg viewBox="0 0 200 200" className="w-full h-full">
+                      <path 
+                        d="M200 0 Q200 200 0 200" 
+                        fill="none" 
+                        stroke={theme === 'dark' || theme === 'terra' || theme === 'contrast' ? '#ffffff' : '#B04A32'} 
+                        strokeWidth="1.5"
+                      />
+                    </svg>
+                  </div>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
