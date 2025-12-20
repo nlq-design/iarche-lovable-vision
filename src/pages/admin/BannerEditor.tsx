@@ -23,6 +23,7 @@ import { PngQuality, PNG_QUALITY_OPTIONS } from '@/lib/mediaExport';
 import VerticalAlignmentControls, { VerticalAlignment, getJustifyContent } from '@/components/admin/medias/VerticalAlignmentControls';
 import CompositionPresets from '@/components/admin/medias/CompositionPresets';
 import TopMarginSlider, { getContentSpacing } from '@/components/admin/medias/TopMarginSlider';
+import { DecorativeArcToggle } from '@/components/admin/medias/DecorativeArcToggle';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -122,6 +123,7 @@ export default function BannerEditor() {
   const [verticalAlignment, setVerticalAlignment] = useState<VerticalAlignment>('center');
   const [topMargin, setTopMargin] = useState(0);
   const [compositionPreset, setCompositionPreset] = useState('centered');
+  const [showDecorativeArc, setShowDecorativeArc] = useState(true);
   
   // Entreprise fields
   const [tagline, setTagline] = useState("L'IA se construit avec vous");
@@ -505,6 +507,12 @@ export default function BannerEditor() {
                 onChange={setTopMargin}
               />
 
+              {/* Decorative arc toggle (v4.3) */}
+              <DecorativeArcToggle
+                enabled={showDecorativeArc}
+                onChange={setShowDecorativeArc}
+              />
+
               {/* Platform Presets - dimensions dynamiques */}
               <PlatformPresets
                 value={platformPreset}
@@ -641,12 +649,12 @@ export default function BannerEditor() {
                     theme={theme}
                     padding={60}
                     showArches={false}
-                    decorativeArc={{ 
+                    decorativeArc={showDecorativeArc ? { 
                       position: 'bottom-right', 
                       size: Math.min(width, height) * 0.25, 
                       opacity: 0.05, 
                       strokeWidth: 1.5 
-                    }}
+                    } : undefined}
                   >
                     {renderBannerContent()}
                   </HTMLBaseTemplate>
