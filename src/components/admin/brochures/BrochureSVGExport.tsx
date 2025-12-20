@@ -5,7 +5,7 @@ import { saveAs } from 'file-saver';
 import { jsPDF } from 'jspdf';
 import { Brochure } from '@/types/brochure';
 import { Button } from '@/components/ui/button';
-import { Download, X, FileImage, Loader2, Package, FileDown, FileText } from 'lucide-react';
+import { Download, X, FileImage, Loader2, Package, FileText, ChevronLeft, ChevronRight, Eye, EyeOff, ZoomIn, ZoomOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -32,6 +32,9 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [previewReady, setPreviewReady] = useState(false);
+  const [showLivePreview, setShowLivePreview] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [previewScale, setPreviewScale] = useState(0.5);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Build slides array
@@ -64,6 +67,7 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
     } else {
       setPreviewReady(false);
       setProgress(0);
+      setCurrentSlide(0);
     }
   }, [isOpen]);
 
@@ -238,203 +242,283 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
     }
   };
 
+  const goToPrevSlide = () => {
+    setCurrentSlide(prev => prev > 0 ? prev - 1 : slides.length - 1);
+  };
+
+  const goToNextSlide = () => {
+    setCurrentSlide(prev => prev < slides.length - 1 ? prev + 1 : 0);
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-background rounded-lg shadow-xl max-w-5xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <div>
-            <h2 className="text-xl font-semibold">Export Haute-Fidélité</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Capture du rendu web avec dégradés et styles préservés
-            </p>
-          </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Options */}
-            <div className="space-y-6">
-              {/* Export Mode */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Mode d'export</Label>
-                <RadioGroup value={mode} onValueChange={(v) => setMode(v as ExportMode)}>
-                  <div className="space-y-3">
-                    {/* PDF HD - Recommended */}
-                    <label 
-                      htmlFor="pdf-hd-mode" 
-                      className={`flex items-start gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                        mode === 'pdf-hd' ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
-                      }`}
-                    >
-                      <RadioGroupItem value="pdf-hd" id="pdf-hd-mode" className="mt-1" />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-5 w-5 text-accent" />
-                          <span className="font-medium">PDF Haute-Fidélité</span>
-                          <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded-full">
-                            Recommandé
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          PDF multi-pages avec capture web (dégradés préservés)
-                        </p>
-                      </div>
-                    </label>
-
-                    {/* Multi PNG */}
-                    <label 
-                      htmlFor="multi-png-mode" 
-                      className={`flex items-start gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                        mode === 'multi-png' ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
-                      }`}
-                    >
-                      <RadioGroupItem value="multi-png" id="multi-png-mode" className="mt-1" />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <Package className="h-5 w-5 text-muted-foreground" />
-                          <span className="font-medium">Images séparées (ZIP)</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {slides.length} fichiers PNG dans une archive
-                        </p>
-                      </div>
-                    </label>
-
-                    {/* Single PNG */}
-                    <label 
-                      htmlFor="single-png-mode" 
-                      className={`flex items-start gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                        mode === 'single-png' ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
-                      }`}
-                    >
-                      <RadioGroupItem value="single-png" id="single-png-mode" className="mt-1" />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <FileImage className="h-5 w-5 text-muted-foreground" />
-                          <span className="font-medium">Image unique</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Toute la brochure en un seul PNG
-                        </p>
-                      </div>
-                    </label>
-                  </div>
-                </RadioGroup>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-background rounded-lg shadow-xl w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col lg:flex-row">
+        {/* Live Preview Panel */}
+        {showLivePreview && (
+          <div className="flex-1 bg-muted/30 border-r flex flex-col min-h-[400px]">
+            {/* Preview Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b bg-background/80">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium">
+                  Page {currentSlide + 1} / {slides.length}
+                </span>
+                <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded">
+                  {slides[currentSlide]?.type}
+                </span>
               </div>
-
-              {/* Info */}
-              <div className="bg-secondary/50 rounded-lg p-4 space-y-2">
-                <h4 className="font-medium text-sm">
-                  {mode === 'pdf-hd' ? 'Avantages du PDF HD' : 'Sections à exporter'}
-                </h4>
-                {mode === 'pdf-hd' ? (
-                  <ul className="text-xs text-muted-foreground space-y-1">
-                    <li>✓ Dégradés de texte préservés à 100%</li>
-                    <li>✓ Format PDF standard partageable</li>
-                    <li>✓ Multi-pages automatique</li>
-                    <li>✓ Résolution 4x pour impression</li>
-                  </ul>
-                ) : (
-                  <ul className="text-xs text-muted-foreground space-y-1">
-                    {slides.map((slide, i) => (
-                      <li key={i} className="flex items-center gap-2">
-                        <span className="w-4 h-4 rounded bg-accent/20 text-accent text-[10px] flex items-center justify-center font-medium">
-                          {i + 1}
-                        </span>
-                        {slide.label.replace(/^\d+-/, '').replace(/-/g, ' ')}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setPreviewScale(s => Math.max(0.2, s - 0.1))}
+                  className="h-8 w-8"
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <span className="text-xs text-muted-foreground w-12 text-center">
+                  {Math.round(previewScale * 100)}%
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setPreviewScale(s => Math.min(1, s + 0.1))}
+                  className="h-8 w-8"
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
-            {/* Preview */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Aperçu des {slides.length} sections</Label>
-              <div className="border rounded-lg overflow-hidden bg-muted/20 h-80 relative">
-                {!previewReady ? (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : (
-                  <div className="w-full h-full overflow-auto p-2">
-                    <div className="grid grid-cols-3 gap-2">
-                      {slides.map((slide, index) => (
-                        <div 
-                          key={index}
-                          className="aspect-[3/4] rounded border border-border overflow-hidden bg-background relative"
-                        >
-                          <div className="transform scale-[0.06] origin-top-left absolute">
-                            <div 
-                              ref={el => sectionRefs.current[index] = el}
-                              style={{ width: '1200px', minHeight: '1600px' }}
-                            >
-                              <BrochureSectionRenderer 
-                                slide={slide} 
-                                brochure={brochure}
-                              />
-                            </div>
-                          </div>
-                          <div className="absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-sm px-1.5 py-1">
-                            <span className="text-[9px] text-muted-foreground truncate block font-medium">
-                              {index + 1}. {slide.type}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+            {/* Preview Content */}
+            <div className="flex-1 relative overflow-auto p-4">
+              {!previewReady ? (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <div className="flex items-center justify-center min-h-full">
+                  <div 
+                    className="bg-white shadow-2xl rounded-lg overflow-hidden transition-transform"
+                    style={{ 
+                      transform: `scale(${previewScale})`,
+                      transformOrigin: 'center center',
+                    }}
+                  >
+                    <div 
+                      ref={el => sectionRefs.current[currentSlide] = el}
+                      style={{ width: '1200px', minHeight: '1600px' }}
+                    >
+                      <BrochureSectionRenderer 
+                        slide={slides[currentSlide]} 
+                        brochure={brochure}
+                      />
                     </div>
                   </div>
-                )}
-              </div>
-
-              {/* Hidden container for single export */}
-              <div className="absolute -left-[9999px] opacity-0 pointer-events-none">
-                <div id="brochure-all-sections" style={{ width: '1200px' }}>
-                  {slides.map((slide, index) => (
-                    <BrochureSectionRenderer 
-                      key={index}
-                      slide={slide} 
-                      brochure={brochure}
-                    />
-                  ))}
                 </div>
+              )}
+            </div>
+
+            {/* Preview Navigation */}
+            <div className="flex items-center justify-between px-4 py-3 border-t bg-background/80">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPrevSlide}
+                className="gap-2"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Précédent
+              </Button>
+              <div className="flex items-center gap-1">
+                {slides.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentSlide(i)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      i === currentSlide ? 'bg-accent' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                    }`}
+                  />
+                ))}
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextSlide}
+                className="gap-2"
+              >
+                Suivant
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t bg-secondary/30">
-          {isGenerating && (
-            <div className="mb-3">
-              <Progress value={progress} className="h-2" />
+        {/* Controls Panel */}
+        <div className="w-full lg:w-96 flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b">
+            <div>
+              <h2 className="text-lg font-semibold">Export Haute-Fidélité</h2>
               <p className="text-xs text-muted-foreground mt-1">
-                {mode === 'pdf-hd' ? 'Génération du PDF HD...' : 'Export en cours...'} {progress}%
+                Capture du rendu web avec dégradés préservés
               </p>
             </div>
-          )}
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {mode === 'pdf-hd' && <>PDF {slides.length} pages · Résolution 4x</>}
-              {mode === 'multi-png' && <>{slides.length} PNG → ZIP</>}
-              {mode === 'single-png' && <>PNG unique · Résolution 3x</>}
-            </p>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={onClose}>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Options */}
+          <div className="flex-1 overflow-auto p-6 space-y-5">
+            {/* Toggle Preview */}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowLivePreview(!showLivePreview)}
+              className="w-full"
+            >
+              {showLivePreview ? (
+                <>
+                  <EyeOff className="mr-2 h-4 w-4" />
+                  Masquer l'aperçu
+                </>
+              ) : (
+                <>
+                  <Eye className="mr-2 h-4 w-4" />
+                  Afficher l'aperçu
+                </>
+              )}
+            </Button>
+
+            {/* Export Mode */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Mode d'export</Label>
+              <RadioGroup value={mode} onValueChange={(v) => setMode(v as ExportMode)}>
+                <div className="space-y-2">
+                  {/* PDF HD - Recommended */}
+                  <label 
+                    htmlFor="pdf-hd-mode" 
+                    className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-colors ${
+                      mode === 'pdf-hd' ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
+                    }`}
+                  >
+                    <RadioGroupItem value="pdf-hd" id="pdf-hd-mode" className="mt-0.5" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-accent" />
+                        <span className="font-medium text-sm">PDF Haute-Fidélité</span>
+                        <span className="text-[10px] bg-accent/20 text-accent px-1.5 py-0.5 rounded-full">
+                          Recommandé
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        PDF multi-pages avec capture web
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* Multi PNG */}
+                  <label 
+                    htmlFor="multi-png-mode" 
+                    className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-colors ${
+                      mode === 'multi-png' ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
+                    }`}
+                  >
+                    <RadioGroupItem value="multi-png" id="multi-png-mode" className="mt-0.5" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium text-sm">Images séparées (ZIP)</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        {slides.length} fichiers PNG dans une archive
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* Single PNG */}
+                  <label 
+                    htmlFor="single-png-mode" 
+                    className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-colors ${
+                      mode === 'single-png' ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
+                    }`}
+                  >
+                    <RadioGroupItem value="single-png" id="single-png-mode" className="mt-0.5" />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <FileImage className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium text-sm">Image unique</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        Toute la brochure en un seul PNG
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Slides thumbnails - for navigation */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Sections ({slides.length})</Label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {slides.map((slide, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`aspect-[3/4] rounded border-2 overflow-hidden transition-colors ${
+                      index === currentSlide ? 'border-accent' : 'border-border hover:border-accent/50'
+                    }`}
+                  >
+                    <div className="w-full h-full bg-muted/50 flex items-center justify-center">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {index + 1}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="bg-secondary/50 rounded-lg p-3 space-y-1">
+              <h4 className="font-medium text-xs">
+                {mode === 'pdf-hd' ? 'Avantages PDF HD' : 'Export sélectionné'}
+              </h4>
+              {mode === 'pdf-hd' ? (
+                <ul className="text-[11px] text-muted-foreground space-y-0.5">
+                  <li>✓ Dégradés de texte préservés</li>
+                  <li>✓ Format PDF partageable</li>
+                  <li>✓ Résolution 4x pour impression</li>
+                </ul>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  {mode === 'multi-png' ? `${slides.length} images PNG en archive ZIP` : 'Image PNG longue unique'}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t bg-secondary/30">
+            {isGenerating && (
+              <div className="mb-3">
+                <Progress value={progress} className="h-2" />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {mode === 'pdf-hd' ? 'Génération du PDF HD...' : 'Export en cours...'} {progress}%
+                </p>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={onClose} className="flex-1">
                 Annuler
               </Button>
               <Button 
                 onClick={handleExport} 
                 disabled={isGenerating || !previewReady}
-                className="gap-2"
+                className="flex-1 gap-2"
               >
                 {isGenerating ? (
                   <>
@@ -444,11 +528,44 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
                 ) : (
                   <>
                     <Download className="h-4 w-4" />
-                    {mode === 'pdf-hd' ? 'Télécharger PDF HD' : 'Télécharger'}
+                    Télécharger
                   </>
                 )}
               </Button>
             </div>
+          </div>
+        </div>
+
+        {/* Hidden containers for export - must render all sections */}
+        <div className="absolute -left-[9999px] opacity-0 pointer-events-none">
+          {/* Individual sections for multi-png */}
+          {slides.map((slide, index) => (
+            <div 
+              key={index}
+              ref={el => {
+                // Only set ref if not the current slide (which is visible in preview)
+                if (index !== currentSlide) {
+                  sectionRefs.current[index] = el;
+                }
+              }}
+              style={{ width: '1200px', minHeight: '1600px' }}
+            >
+              <BrochureSectionRenderer 
+                slide={slide} 
+                brochure={brochure}
+              />
+            </div>
+          ))}
+          
+          {/* All sections for single-png */}
+          <div id="brochure-all-sections" style={{ width: '1200px' }}>
+            {slides.map((slide, index) => (
+              <BrochureSectionRenderer 
+                key={index}
+                slide={slide} 
+                brochure={brochure}
+              />
+            ))}
           </div>
         </div>
       </div>
