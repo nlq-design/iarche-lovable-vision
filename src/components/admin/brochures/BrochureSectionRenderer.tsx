@@ -28,8 +28,14 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
           style={{ backgroundColor: COLORS.blancCasse }}
         >
           <div className="relative z-10 flex flex-col items-center">
-            {/* Arc décoratif v4.0 */}
-            <LogoArc size="xl" className="mb-8" />
+            {/* Logo SVG officiel v4.0 en haut */}
+            <img 
+              src="/logos/iarche-main.svg" 
+              alt="IArche" 
+              className="h-12 mb-8"
+              crossOrigin="anonymous"
+            />
+            {/* Titre avec gradient (pour export PNG) */}
             <h1 
               className="text-7xl font-bold text-center mb-6"
               style={{ 
@@ -41,6 +47,7 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
             >
               {brochure.cover_title || 'Titre'}
             </h1>
+            {/* Sous-titre */}
             {brochure.cover_subtitle && (
               <p 
                 className="text-2xl text-center max-w-2xl"
@@ -49,6 +56,7 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
                 {brochure.cover_subtitle}
               </p>
             )}
+            {/* Image de couverture */}
             {brochure.cover_image_url && (
               <img 
                 src={brochure.cover_image_url} 
