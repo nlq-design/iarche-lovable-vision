@@ -32,21 +32,32 @@ const SCALE = 0.4;
 type PresetTemplate = {
   id: string;
   label: string;
+  category: 'annonce' | 'chiffre' | 'temoignage' | 'conseil' | 'question';
   tagline: string;
   ceoName: string;
   ceoTitle: string;
 };
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
-  { id: 'default', label: 'Par défaut', tagline: "L'IA se construit avec vous", ceoName: 'Nicolas Lara Queralta', ceoTitle: 'CEO & Fondateur' },
-  { id: 'innovation', label: 'Innovation', tagline: 'Transformez votre entreprise avec l\'IA', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Expert IA & Consultant' },
-  { id: 'solutions', label: 'Solutions', tagline: 'Des solutions IA sur mesure pour PME', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Fondateur IArche' },
-  { id: 'accompagnement', label: 'Accompagnement', tagline: 'Votre partenaire IA de confiance', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'CEO & Fondateur' },
-  { id: 'expert', label: 'Expert', tagline: 'L\'expertise IA au service de votre croissance', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Expert en Intelligence Artificielle' },
-  // v4.1 - Nouveaux templates métiers
-  { id: 'evenement-live', label: 'Événement live', tagline: '🔴 En direct | Webinaire IA & PME', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Animateur' },
-  { id: 'recrutement', label: 'Recrutement', tagline: 'Rejoignez l\'aventure IArche !', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Nous recrutons' },
-  { id: 'anniversaire', label: 'Anniversaire', tagline: '5 ans d\'innovation au service des PME', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Fondateur' },
+  // Annonce
+  { id: 'default', label: 'Par défaut', category: 'annonce', tagline: "L'IA se construit avec vous", ceoName: 'Nicolas Lara Queralta', ceoTitle: 'CEO & Fondateur' },
+  { id: 'innovation', label: 'Innovation', category: 'annonce', tagline: 'Transformez votre entreprise avec l\'IA', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Expert IA & Consultant' },
+  { id: 'lancement', label: 'Lancement produit', category: 'annonce', tagline: 'Découvrez notre nouvelle solution IA', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Fondateur IArche' },
+  // Chiffre
+  { id: 'milestone', label: 'Milestone', category: 'chiffre', tagline: '100 entreprises accompagnées', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'CEO & Fondateur' },
+  { id: 'statistiques', label: 'Statistiques', category: 'chiffre', tagline: '73% de ROI positif dès la 1ère année', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Fondateur' },
+  // Témoignage
+  { id: 'temoignage', label: 'Témoignage', category: 'temoignage', tagline: '"Une transformation IA réussie"', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Accompagnateur IA' },
+  { id: 'cas-client', label: 'Cas client', category: 'temoignage', tagline: 'Ils nous font confiance', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Expert IA' },
+  // Conseil
+  { id: 'conseil', label: 'Conseil / Tip', category: 'conseil', tagline: 'Conseil #1 : Commencez petit', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Expert IA' },
+  { id: 'bonnes-pratiques', label: 'Bonnes pratiques', category: 'conseil', tagline: '3 bonnes pratiques pour réussir votre IA', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Consultant IA' },
+  // Question
+  { id: 'question', label: 'Question / Sondage', category: 'question', tagline: 'Êtes-vous prêt pour l\'IA ?', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'CEO & Fondateur' },
+  { id: 'quiz', label: 'Quiz', category: 'question', tagline: 'Testez vos connaissances IA', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Animateur' },
+  // Événements
+  { id: 'evenement-live', label: 'Événement live', category: 'annonce', tagline: '🔴 En direct | Webinaire IA & PME', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Animateur' },
+  { id: 'recrutement', label: 'Recrutement', category: 'annonce', tagline: 'Rejoignez l\'aventure IArche !', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Nous recrutons' },
 ];
 
 const SOLUTIONS = [

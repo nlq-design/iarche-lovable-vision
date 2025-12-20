@@ -33,6 +33,7 @@ type EventType = 'webinaire' | 'atelier' | 'replay';
 type PresetTemplate = {
   id: string;
   label: string;
+  category: 'annonce' | 'chiffre' | 'temoignage' | 'conseil' | 'question';
   titre: string;
   sousTitre: string;
   date: string;
@@ -41,11 +42,24 @@ type PresetTemplate = {
 };
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
-  { id: 'webinaire-ia', label: 'Webinaire IA PME', titre: 'Intégrer l\'IA dans votre PME', sousTitre: 'Les étapes clés pour réussir votre transformation', date: '15 Janvier 2025', heure: '14h00', eventType: 'webinaire' },
-  { id: 'atelier-audit', label: 'Atelier Audit', titre: 'Audit IA : Diagnostiquez votre entreprise', sousTitre: 'Identifiez les opportunités d\'automatisation', date: '22 Janvier 2025', heure: '10h00', eventType: 'atelier' },
-  { id: 'replay-formation', label: 'Replay Formation', titre: 'Formation IA pour dirigeants', sousTitre: 'Comprendre et piloter l\'IA dans votre organisation', date: 'Disponible', heure: '2h30', eventType: 'replay' },
-  { id: 'webinaire-chatbot', label: 'Webinaire Chatbot', titre: 'Créer un chatbot IA performant', sousTitre: 'De la conception au déploiement', date: '5 Février 2025', heure: '11h00', eventType: 'webinaire' },
-  { id: 'atelier-donnees', label: 'Atelier Données', titre: 'Exploitez vos données avec l\'IA', sousTitre: 'Analyse et visualisation avancées', date: '12 Février 2025', heure: '14h30', eventType: 'atelier' },
+  // Annonce / Événement
+  { id: 'webinaire-ia', label: 'Webinaire IA PME', category: 'annonce', titre: 'Intégrer l\'IA dans votre PME', sousTitre: 'Les étapes clés pour réussir votre transformation', date: '15 Janvier 2025', heure: '14h00', eventType: 'webinaire' },
+  { id: 'lancement', label: 'Lancement produit', category: 'annonce', titre: 'Nouvelle solution IArche', sousTitre: 'Découvrez notre dernière innovation', date: 'Disponible', heure: '', eventType: 'webinaire' },
+  { id: 'evenement', label: 'Événement', category: 'annonce', titre: 'Conférence IA & Innovation', sousTitre: 'Rejoignez-nous pour une journée exceptionnelle', date: '20 Mars 2025', heure: '9h00', eventType: 'atelier' },
+  // Chiffre
+  { id: 'statistiques', label: 'Statistiques', category: 'chiffre', titre: '73% de ROI positif', sousTitre: 'Les chiffres clés de l\'IA en entreprise', date: 'Étude 2024', heure: '', eventType: 'webinaire' },
+  { id: 'milestone', label: 'Milestone', category: 'chiffre', titre: '100 entreprises accompagnées', sousTitre: 'Merci pour votre confiance', date: 'Cap franchi', heure: '', eventType: 'replay' },
+  // Témoignage
+  { id: 'temoignage', label: 'Témoignage client', category: 'temoignage', titre: 'Success Story : Groupe ABC', sousTitre: '+200% de productivité en 6 mois', date: 'Cas client', heure: '', eventType: 'replay' },
+  { id: 'cas-client', label: 'Cas client', category: 'temoignage', titre: 'Découvrez leur transformation', sousTitre: 'Une PME qui a osé l\'IA', date: 'En détail', heure: '', eventType: 'replay' },
+  // Conseil
+  { id: 'conseil-tip', label: 'Conseil / Tip', category: 'conseil', titre: 'Conseil #1 : Commencez petit', sousTitre: 'Les bonnes pratiques pour débuter avec l\'IA', date: 'Guide', heure: '', eventType: 'webinaire' },
+  { id: 'atelier-audit', label: 'Atelier Audit', category: 'conseil', titre: 'Audit IA : Diagnostiquez votre entreprise', sousTitre: 'Identifiez les opportunités d\'automatisation', date: '22 Janvier 2025', heure: '10h00', eventType: 'atelier' },
+  // Question
+  { id: 'question-sondage', label: 'Question / Sondage', category: 'question', titre: 'Êtes-vous prêt pour l\'IA ?', sousTitre: 'Participez à notre sondage', date: 'Votre avis', heure: '', eventType: 'webinaire' },
+  { id: 'quiz', label: 'Quiz IA', category: 'question', titre: 'Testez vos connaissances', sousTitre: 'Quiz interactif sur l\'intelligence artificielle', date: 'Jouez', heure: '', eventType: 'webinaire' },
+  // Formations
+  { id: 'replay-formation', label: 'Replay Formation', category: 'conseil', titre: 'Formation IA pour dirigeants', sousTitre: 'Comprendre et piloter l\'IA dans votre organisation', date: 'Disponible', heure: '2h30', eventType: 'replay' },
 ];
 
 const DIMENSIONS = {

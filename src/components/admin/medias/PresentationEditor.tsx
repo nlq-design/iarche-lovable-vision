@@ -32,6 +32,88 @@ interface SlideData {
   barSize?: BarSize;
 }
 
+// Presets pré-remplis uniformisés (comme Post/Story/Banner)
+type PresetTemplate = {
+  id: string;
+  label: string;
+  category: 'annonce' | 'chiffre' | 'temoignage' | 'conseil' | 'question';
+  slides: Partial<SlideData>[];
+};
+
+const PRESET_TEMPLATES: PresetTemplate[] = [
+  // Annonce
+  { id: 'nouveaute', label: 'Nouveauté', category: 'annonce', slides: [
+    { type: 'title', title: 'Nouveauté', subtitle: 'IArche présente' },
+    { type: 'content', title: 'Découvrez notre nouvelle solution', content: 'Une innovation pour simplifier votre quotidien.' },
+    { type: 'bullets', title: 'Les bénéfices', bullets: ['Gain de temps', 'Automatisation', 'ROI mesurable'] },
+    { type: 'cta', title: 'En savoir plus', content: 'iarche.fr' },
+  ]},
+  { id: 'evenement', label: 'Événement', category: 'annonce', slides: [
+    { type: 'title', title: 'Événement', subtitle: 'Save the date' },
+    { type: 'content', title: 'Webinaire IA & PME', content: 'Rejoignez-nous pour découvrir comment l\'IA transforme les entreprises.' },
+    { type: 'bullets', title: 'Au programme', bullets: ['Démonstrations', 'Cas pratiques', 'Q&A'] },
+    { type: 'cta', title: 'S\'inscrire', content: 'iarche.fr/webinaire' },
+  ]},
+  { id: 'lancement', label: 'Lancement produit', category: 'annonce', slides: [
+    { type: 'title', title: 'Nouveau', subtitle: 'Coming soon' },
+    { type: 'content', title: 'Découvrez [Nom du produit]', content: 'Présentation de la solution.' },
+    { type: 'bullets', title: 'Pourquoi ?', bullets: ['Bénéfice 1', 'Bénéfice 2', 'Bénéfice 3'] },
+    { type: 'cta', title: 'Disponible maintenant', content: 'iarche.fr' },
+  ]},
+  // Chiffre
+  { id: 'statistiques', label: 'Statistiques', category: 'chiffre', slides: [
+    { type: 'title', title: 'Les chiffres qui comptent', subtitle: 'IArche en quelques données' },
+    { type: 'content', title: '73%', content: 'des entreprises constatent un ROI positif' },
+    { type: 'content', title: '+200%', content: 'de productivité en moyenne' },
+    { type: 'cta', title: 'Source : Étude IArche 2024', content: 'iarche.fr' },
+  ]},
+  { id: 'milestone', label: 'Milestone', category: 'chiffre', slides: [
+    { type: 'title', title: 'Cap franchi', subtitle: 'Merci à vous' },
+    { type: 'content', title: '100', content: 'entreprises accompagnées' },
+    { type: 'content', title: 'Et ce n\'est que le début', content: 'Objectif 2025 : 200 PME.' },
+    { type: 'cta', title: 'Rejoignez-nous', content: 'iarche.fr' },
+  ]},
+  // Témoignage
+  { id: 'temoignage-client', label: 'Témoignage client', category: 'temoignage', slides: [
+    { type: 'title', title: 'Success Story', subtitle: 'Ils nous font confiance' },
+    { type: 'content', title: '"Grâce à IArche, nous avons automatisé 40% de nos tâches."', content: 'Jean-Pierre Martin, DG Groupe ABC' },
+    { type: 'bullets', title: 'Résultats', bullets: ['+200% productivité', '-40% tâches admin', 'ROI en 6 mois'] },
+    { type: 'cta', title: 'Votre tour ?', content: 'iarche.fr/contact' },
+  ]},
+  { id: 'cas-client', label: 'Cas client', category: 'temoignage', slides: [
+    { type: 'title', title: 'Cas Client', subtitle: 'Découvrez leur transformation' },
+    { type: 'content', title: 'Le contexte', content: 'PME de 50 salariés, secteur industriel.' },
+    { type: 'content', title: 'La solution', content: 'Chatbot RAG + automatisation.' },
+    { type: 'bullets', title: 'Les résultats', bullets: ['-40% admin', 'Satisfaction client +30%', 'ROI 6 mois'] },
+  ]},
+  // Conseil
+  { id: 'conseil-tip', label: 'Conseil / Tip', category: 'conseil', slides: [
+    { type: 'title', title: 'Conseil #1', subtitle: 'Astuce IA' },
+    { type: 'content', title: 'Commencez petit', content: 'Identifiez un cas d\'usage simple et mesurez les résultats.' },
+    { type: 'content', title: 'Pourquoi ?', content: 'Cela permet de valider le ROI avant de généraliser.' },
+    { type: 'cta', title: 'Besoin d\'aide ?', content: 'iarche.fr/audit' },
+  ]},
+  { id: 'bonnes-pratiques', label: 'Bonnes pratiques', category: 'conseil', slides: [
+    { type: 'title', title: '3 bonnes pratiques', subtitle: 'Pour réussir votre projet IA' },
+    { type: 'bullets', title: 'Nos recommandations', bullets: ['#1 Impliquez vos équipes', '#2 Mesurez tout', '#3 Itérez'] },
+    { type: 'content', title: 'Clé du succès', content: 'L\'adoption est plus importante que la technologie.' },
+    { type: 'cta', title: 'Accompagnement', content: 'iarche.fr' },
+  ]},
+  // Question
+  { id: 'question-sondage', label: 'Question / Sondage', category: 'question', slides: [
+    { type: 'title', title: '?', subtitle: 'Votre avis nous intéresse' },
+    { type: 'content', title: 'L\'IA va-t-elle remplacer votre métier ?', content: 'Partagez votre opinion.' },
+    { type: 'content', title: 'Notre vision', content: 'L\'IA augmente, elle ne remplace pas.' },
+    { type: 'cta', title: 'Débattons ensemble', content: 'Commentez !' },
+  ]},
+  { id: 'quiz', label: 'Quiz / Devinette', category: 'question', slides: [
+    { type: 'title', title: 'Quiz IA', subtitle: 'Testez vos connaissances' },
+    { type: 'content', title: 'Question', content: 'Quel % des PME utilisent déjà l\'IA ?' },
+    { type: 'content', title: '35%', content: 'Et vous, en faites-vous partie ?' },
+    { type: 'cta', title: 'Passez à l\'action', content: 'iarche.fr/audit' },
+  ]},
+];
+
 const templateConfigs: Record<string, { name: string; defaultSlides: SlideData[] }> = {
   pitch: {
     name: 'Pitch Commercial',
@@ -79,8 +161,9 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
   const [slides, setSlides] = useState<SlideData[]>(config.defaultSlides);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
-  const [sourceMode, setSourceMode] = useState<'libre' | 'solution'>('libre');
+  const [sourceMode, setSourceMode] = useState<'libre' | 'solution' | 'preset'>('libre');
   const [solutions, setSolutions] = useState<{ id: string; title: string }[]>([]);
+  const [selectedPreset, setSelectedPreset] = useState<string>('');
   const [startTheme, setStartTheme] = useState<'dark' | 'light' | 'terra' | 'contrast'>('dark');
 
   useEffect(() => {
@@ -94,6 +177,28 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
     };
     fetchSolutions();
   }, []);
+
+  // Appliquer un preset pré-rempli
+  const applyPreset = (presetId: string) => {
+    const preset = PRESET_TEMPLATES.find(p => p.id === presetId);
+    if (!preset) return;
+    
+    const newSlides: SlideData[] = preset.slides.map((slide, idx) => ({
+      id: Date.now() + idx,
+      type: slide.type || 'content',
+      title: slide.title || '',
+      subtitle: slide.subtitle || '',
+      content: slide.content || '',
+      bullets: slide.bullets || [],
+      exportMode: 'full' as ExportMode,
+      barSize: 'lg' as BarSize,
+    }));
+    
+    setSlides(newSlides);
+    setCurrentSlide(0);
+    setSelectedPreset(presetId);
+    toast({ title: `Preset "${preset.label}" appliqué` });
+  };
 
   const handleSlideChange = (field: keyof SlideData, value: any) => {
     setSlides(prev => prev.map((slide, idx) => 
@@ -188,15 +293,45 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
         <div className="flex flex-wrap items-center gap-6">
           <div className="flex items-center gap-2">
             <Label>Mode :</Label>
-            <Select value={sourceMode} onValueChange={(v) => setSourceMode(v as 'libre' | 'solution')}>
+            <Select value={sourceMode} onValueChange={(v) => setSourceMode(v as 'libre' | 'solution' | 'preset')}>
               <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="libre">Création libre</SelectItem>
+                <SelectItem value="preset">Preset pré-rempli</SelectItem>
                 <SelectItem value="solution">Depuis une solution</SelectItem>
               </SelectContent>
             </Select>
+            {sourceMode === 'preset' && (
+              <Select value={selectedPreset} onValueChange={(v) => applyPreset(v)}>
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder="Choisir un preset..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Annonce</div>
+                  {PRESET_TEMPLATES.filter(p => p.category === 'annonce').map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Chiffre</div>
+                  {PRESET_TEMPLATES.filter(p => p.category === 'chiffre').map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Témoignage</div>
+                  {PRESET_TEMPLATES.filter(p => p.category === 'temoignage').map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Conseil</div>
+                  {PRESET_TEMPLATES.filter(p => p.category === 'conseil').map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Question</div>
+                  {PRESET_TEMPLATES.filter(p => p.category === 'question').map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           
           {/* Theme selector */}

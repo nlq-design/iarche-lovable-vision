@@ -31,6 +31,88 @@ interface SlideData {
   barSize?: BarSize;
 }
 
+// Presets pré-remplis uniformisés (comme Post/Story/Banner)
+type PresetTemplate = {
+  id: string;
+  label: string;
+  category: 'annonce' | 'chiffre' | 'temoignage' | 'conseil' | 'question';
+  slides: Partial<SlideData>[];
+};
+
+const PRESET_TEMPLATES: PresetTemplate[] = [
+  // Annonce
+  { id: 'nouveaute', label: 'Nouveauté', category: 'annonce', slides: [
+    { title: 'Nouveauté', subtitle: 'IArche présente', content: '' },
+    { title: 'Découvrez notre nouvelle solution', content: 'Une innovation pour simplifier votre quotidien.' },
+    { title: 'Les bénéfices', content: 'Gagnez du temps, automatisez vos tâches.' },
+    { title: 'En savoir plus', highlight: 'iarche.fr' },
+  ]},
+  { id: 'evenement', label: 'Événement', category: 'annonce', slides: [
+    { title: 'Événement', subtitle: 'Save the date' },
+    { title: 'Webinaire IA & PME', content: 'Rejoignez-nous pour découvrir comment l\'IA transforme les entreprises.' },
+    { title: 'Au programme', content: 'Démonstrations, cas pratiques, Q&A.' },
+    { title: 'S\'inscrire', highlight: 'iarche.fr/webinaire' },
+  ]},
+  { id: 'lancement', label: 'Lancement produit', category: 'annonce', slides: [
+    { title: 'Nouveau', subtitle: 'Coming soon' },
+    { title: 'Découvrez [Nom du produit]', content: 'Présentation de la solution.' },
+    { title: 'Pourquoi ?', content: 'Les bénéfices clés.' },
+    { title: 'Disponible maintenant', highlight: 'iarche.fr' },
+  ]},
+  // Chiffre
+  { id: 'statistiques', label: 'Statistiques', category: 'chiffre', slides: [
+    { title: 'Les chiffres qui comptent', subtitle: 'IArche en quelques données' },
+    { highlight: '73%', content: 'des entreprises constatent un ROI positif' },
+    { highlight: '+200%', content: 'de productivité en moyenne' },
+    { title: 'Source', content: 'Étude IArche 2024', highlight: 'iarche.fr' },
+  ]},
+  { id: 'milestone', label: 'Milestone', category: 'chiffre', slides: [
+    { title: 'Cap franchi', subtitle: 'Merci à vous' },
+    { highlight: '100', content: 'entreprises accompagnées' },
+    { title: 'Et ce n\'est que le début', content: 'Objectif 2025 : 200 PME.' },
+    { title: 'Rejoignez-nous', highlight: 'iarche.fr' },
+  ]},
+  // Témoignage
+  { id: 'temoignage-client', label: 'Témoignage client', category: 'temoignage', slides: [
+    { title: 'Success Story', subtitle: 'Ils nous font confiance' },
+    { title: '"Grâce à IArche, nous avons automatisé 40% de nos tâches."', content: 'Jean-Pierre Martin, DG Groupe ABC' },
+    { title: 'Résultats', content: '+200% de productivité en 6 mois' },
+    { title: 'Votre tour ?', highlight: 'iarche.fr/contact' },
+  ]},
+  { id: 'cas-client', label: 'Cas client', category: 'temoignage', slides: [
+    { title: 'Cas Client', subtitle: 'Découvrez leur transformation' },
+    { title: 'Le contexte', content: 'PME de 50 salariés, secteur industriel.' },
+    { title: 'La solution', content: 'Chatbot RAG + automatisation.' },
+    { title: 'Les résultats', highlight: '-40% admin', content: 'et satisfaction client en hausse.' },
+  ]},
+  // Conseil
+  { id: 'conseil-tip', label: 'Conseil / Tip', category: 'conseil', slides: [
+    { title: 'Conseil #1', subtitle: 'Astuce IA' },
+    { title: 'Commencez petit', content: 'Identifiez un cas d\'usage simple et mesurez les résultats.' },
+    { title: 'Pourquoi ?', content: 'Cela permet de valider le ROI avant de généraliser.' },
+    { title: 'Besoin d\'aide ?', highlight: 'iarche.fr/audit' },
+  ]},
+  { id: 'bonnes-pratiques', label: 'Bonnes pratiques', category: 'conseil', slides: [
+    { title: '3 bonnes pratiques', subtitle: 'Pour réussir votre projet IA' },
+    { title: '#1 Impliquez vos équipes', content: 'L\'adoption est clé.' },
+    { title: '#2 Mesurez tout', content: 'Définissez vos KPIs dès le départ.' },
+    { title: '#3 Itérez', content: 'Améliorez progressivement.', highlight: 'iarche.fr' },
+  ]},
+  // Question
+  { id: 'question-sondage', label: 'Question / Sondage', category: 'question', slides: [
+    { title: '?', subtitle: 'Votre avis nous intéresse' },
+    { title: 'L\'IA va-t-elle remplacer votre métier ?', content: 'Partagez votre opinion en commentaire.' },
+    { title: 'Notre vision', content: 'L\'IA augmente, elle ne remplace pas.' },
+    { title: 'Débattons ensemble', highlight: 'Commentez !' },
+  ]},
+  { id: 'quiz', label: 'Quiz / Devinette', category: 'question', slides: [
+    { title: 'Quiz IA', subtitle: 'Testez vos connaissances' },
+    { title: 'Question', content: 'Quel % des PME utilisent déjà l\'IA ?' },
+    { highlight: '35%', content: 'Et vous, en faites-vous partie ?' },
+    { title: 'Passez à l\'action', highlight: 'iarche.fr/audit' },
+  ]},
+];
+
 const templateConfigs: Record<string, { name: string; defaultSlides: SlideData[] }> = {
   solution: {
     name: 'Annonce Solution',
@@ -71,9 +153,10 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
   const [slides, setSlides] = useState<SlideData[]>(config.defaultSlides);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
-  const [sourceMode, setSourceMode] = useState<'libre' | 'article'>('libre');
+  const [sourceMode, setSourceMode] = useState<'libre' | 'article' | 'preset'>('libre');
   const [articles, setArticles] = useState<{ id: string; title: string; slug: string }[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<string>('');
+  const [selectedPreset, setSelectedPreset] = useState<string>('');
   const [startTheme, setStartTheme] = useState<'dark' | 'light' | 'terra' | 'contrast'>('dark');
 
   useEffect(() => {
@@ -88,6 +171,27 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
     };
     fetchArticles();
   }, []);
+
+  // Appliquer un preset pré-rempli
+  const applyPreset = (presetId: string) => {
+    const preset = PRESET_TEMPLATES.find(p => p.id === presetId);
+    if (!preset) return;
+    
+    const newSlides: SlideData[] = preset.slides.map((slide, idx) => ({
+      id: Date.now() + idx,
+      title: slide.title || '',
+      subtitle: slide.subtitle || '',
+      content: slide.content || '',
+      highlight: slide.highlight || '',
+      exportMode: 'full' as ExportMode,
+      barSize: 'md' as BarSize,
+    }));
+    
+    setSlides(newSlides);
+    setCurrentSlide(0);
+    setSelectedPreset(presetId);
+    toast({ title: `Preset "${preset.label}" appliqué` });
+  };
 
   const handleSlideChange = (field: keyof SlideData, value: string | ExportMode | BarSize) => {
     setSlides(prev => prev.map((slide, idx) => 
@@ -183,15 +287,45 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
         <div className="flex flex-wrap items-center gap-6">
           <div className="flex items-center gap-2">
             <Label>Mode :</Label>
-            <Select value={sourceMode} onValueChange={(v) => setSourceMode(v as 'libre' | 'article')}>
+            <Select value={sourceMode} onValueChange={(v) => setSourceMode(v as 'libre' | 'article' | 'preset')}>
               <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="libre">Création libre</SelectItem>
+                <SelectItem value="preset">Preset pré-rempli</SelectItem>
                 <SelectItem value="article">Depuis un article</SelectItem>
               </SelectContent>
             </Select>
+            {sourceMode === 'preset' && (
+              <Select value={selectedPreset} onValueChange={(v) => applyPreset(v)}>
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder="Choisir un preset..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Annonce</div>
+                  {PRESET_TEMPLATES.filter(p => p.category === 'annonce').map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Chiffre</div>
+                  {PRESET_TEMPLATES.filter(p => p.category === 'chiffre').map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Témoignage</div>
+                  {PRESET_TEMPLATES.filter(p => p.category === 'temoignage').map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Conseil</div>
+                  {PRESET_TEMPLATES.filter(p => p.category === 'conseil').map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Question</div>
+                  {PRESET_TEMPLATES.filter(p => p.category === 'question').map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             {sourceMode === 'article' && (
               <Select value={selectedArticle} onValueChange={(v) => { setSelectedArticle(v); loadFromArticle(v); }}>
                 <SelectTrigger className="w-64">
