@@ -27,7 +27,7 @@ import {
 import { HTMLLogoArc } from '@/components/admin/medias/html/HTMLLogoArc';
 import { ArcSize } from '@/components/admin/medias/html/tokens';
 
-type StoryTemplate = 'annonce' | 'chiffre' | 'temoignage' | 'conseil';
+type StoryTemplate = 'annonce' | 'chiffre' | 'temoignage' | 'conseil' | 'question';
 
 type PresetTemplate = {
   id: string;
@@ -101,6 +101,16 @@ export default function StoryEditor() {
   const [contexte, setContexte] = useState('des entreprises accompagnées ont augmenté leur productivité');
   const [source, setSource] = useState('Résultats IArche 2024');
 
+  // Témoignage fields
+  const [citation, setCitation] = useState('"Grâce à IArche, nous avons automatisé 40% de nos tâches."');
+  const [temoinNom, setTemoinNom] = useState('Jean-Pierre Martin');
+  const [temoinFonction, setTemoinFonction] = useState('DG, Groupe ABC');
+
+  // Conseil fields
+  const [conseilNumero, setConseilNumero] = useState('01');
+  const [conseilTitre, setConseilTitre] = useState('Commencez petit');
+  const [conseilContenu, setConseilContenu] = useState('Identifiez un cas d\'usage simple avant de généraliser.');
+
   const applyPreset = (presetId: string) => {
     const selectedPreset = PRESET_TEMPLATES.find(p => p.id === presetId);
     if (selectedPreset) {
@@ -110,6 +120,20 @@ export default function StoryEditor() {
       setChiffre(selectedPreset.chiffre);
       setContexte(selectedPreset.contexte);
       setSource(selectedPreset.source);
+      // Témoignage fields
+      if (selectedPreset.citation) setCitation(selectedPreset.citation);
+      if (selectedPreset.temoinNom) setTemoinNom(selectedPreset.temoinNom);
+      if (selectedPreset.temoinFonction) setTemoinFonction(selectedPreset.temoinFonction);
+      // Conseil fields
+      if (selectedPreset.conseilNumero) setConseilNumero(selectedPreset.conseilNumero);
+      if (selectedPreset.conseilTitre) setConseilTitre(selectedPreset.conseilTitre);
+      if (selectedPreset.conseilContenu) setConseilContenu(selectedPreset.conseilContenu);
+      // Auto-switch template based on category
+      if (selectedPreset.category === 'temoignage') setTemplate('temoignage');
+      else if (selectedPreset.category === 'conseil') setTemplate('conseil');
+      else if (selectedPreset.category === 'question') setTemplate('question');
+      else if (selectedPreset.category === 'chiffre') setTemplate('chiffre');
+      else setTemplate('annonce');
     }
     setPreset(presetId);
   };
@@ -119,7 +143,9 @@ export default function StoryEditor() {
     template, theme, preset, exportMode, barSize, pngQuality,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     badge, titre, ctaText, chiffre, contexte, source,
-  }), [template, theme, preset, exportMode, barSize, pngQuality, titleFontSize, titleBold, titleItalic, titleAlignment, badge, titre, ctaText, chiffre, contexte, source]);
+    citation, temoinNom, temoinFonction,
+    conseilNumero, conseilTitre, conseilContenu,
+  }), [template, theme, preset, exportMode, barSize, pngQuality, titleFontSize, titleBold, titleItalic, titleAlignment, badge, titre, ctaText, chiffre, contexte, source, citation, temoinNom, temoinFonction, conseilNumero, conseilTitre, conseilContenu]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
@@ -138,6 +164,14 @@ export default function StoryEditor() {
     if (data.chiffre !== undefined) setChiffre(data.chiffre as string);
     if (data.contexte !== undefined) setContexte(data.contexte as string);
     if (data.source !== undefined) setSource(data.source as string);
+    // Témoignage
+    if (data.citation !== undefined) setCitation(data.citation as string);
+    if (data.temoinNom !== undefined) setTemoinNom(data.temoinNom as string);
+    if (data.temoinFonction !== undefined) setTemoinFonction(data.temoinFonction as string);
+    // Conseil
+    if (data.conseilNumero !== undefined) setConseilNumero(data.conseilNumero as string);
+    if (data.conseilTitre !== undefined) setConseilTitre(data.conseilTitre as string);
+    if (data.conseilContenu !== undefined) setConseilContenu(data.conseilContenu as string);
   }, []);
 
   // Load template from navigation state
@@ -302,6 +336,211 @@ export default function StoryEditor() {
             </div>
           </div>
         );
+
+      case 'temoignage':
+        return (
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            height: '100%',
+            textAlign: 'center',
+          }}>
+            {/* Header */}
+            <HTMLLogo size="xl" theme={theme} />
+            
+            {/* Main Content - Citation */}
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '48px', 
+              alignItems: 'center',
+              padding: '0 60px',
+            }}>
+              <span style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: '28px',
+                fontWeight: 700,
+                color: IARCHE_COLORS.terracotta,
+                textTransform: 'uppercase',
+                letterSpacing: '0.15em',
+              }}>
+                {badge}
+              </span>
+              
+              {/* Citation avec guillemets décoratifs */}
+              <div style={{
+                position: 'relative',
+                padding: '20px 0',
+              }}>
+                <span style={{
+                  position: 'absolute',
+                  top: '-40px',
+                  left: '-20px',
+                  fontFamily: IARCHE_FONTS.primary,
+                  fontSize: '120px',
+                  fontWeight: 700,
+                  color: IARCHE_COLORS.terracotta,
+                  opacity: 0.3,
+                  lineHeight: 1,
+                }}>
+                  "
+                </span>
+                <p style={{
+                  fontFamily: IARCHE_FONTS.primary,
+                  fontSize: `${titleFontSize * 0.7}px`,
+                  fontWeight: titleBold ? 600 : 400,
+                  fontStyle: 'italic',
+                  color: textColor,
+                  margin: 0,
+                  lineHeight: 1.4,
+                }}>
+                  {citation.replace(/^"|"$/g, '')}
+                </p>
+              </div>
+              
+              {/* Auteur */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                alignItems: 'center',
+              }}>
+                <span style={{
+                  fontFamily: IARCHE_FONTS.primary,
+                  fontSize: '32px',
+                  fontWeight: 700,
+                  color: textColor,
+                }}>
+                  {temoinNom}
+                </span>
+                <span style={{
+                  fontFamily: IARCHE_FONTS.primary,
+                  fontSize: '24px',
+                  fontWeight: 400,
+                  color: subtextColor,
+                }}>
+                  {temoinFonction}
+                </span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              gap: '12px',
+            }}>
+              <ChevronUp size={40} color={IARCHE_COLORS.terracotta} />
+              <span style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: '24px',
+                fontWeight: 600,
+                color: IARCHE_COLORS.terracotta,
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+              }}>
+                {ctaText}
+              </span>
+            </div>
+          </div>
+        );
+
+      case 'conseil':
+      case 'question':
+        return (
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            justifyContent: 'space-between',
+            alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
+            height: '100%',
+            textAlign: titleAlignment,
+          }}>
+            {/* Header */}
+            <HTMLLogo size="xl" theme={theme} />
+            
+            {/* Main Content */}
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '40px', 
+              alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
+              padding: '0 60px',
+            }}>
+              <span style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: '28px',
+                fontWeight: 700,
+                color: IARCHE_COLORS.terracotta,
+                textTransform: 'uppercase',
+                letterSpacing: '0.15em',
+              }}>
+                {badge}
+              </span>
+              
+              {/* Numéro décoratif */}
+              <div style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: `${titleFontSize * 2.5}px`,
+                fontWeight: 800,
+                color: IARCHE_COLORS.terracotta,
+                opacity: 0.2,
+                lineHeight: 1,
+              }}>
+                {conseilNumero}
+              </div>
+              
+              {/* Titre du conseil */}
+              <h2 style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: `${titleFontSize}px`,
+                fontWeight: titleBold ? 700 : 500,
+                fontStyle: titleItalic ? 'italic' : 'normal',
+                color: textColor,
+                margin: 0,
+                lineHeight: 1.2,
+              }}>
+                {conseilTitre}
+              </h2>
+              
+              {/* Contenu */}
+              <p style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: `${titleFontSize * 0.5}px`,
+                fontWeight: 400,
+                color: subtextColor,
+                margin: 0,
+                maxWidth: '90%',
+                lineHeight: 1.5,
+              }}>
+                {conseilContenu}
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              gap: '12px',
+            }}>
+              <ChevronUp size={40} color={IARCHE_COLORS.terracotta} />
+              <span style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: '24px',
+                fontWeight: 600,
+                color: IARCHE_COLORS.terracotta,
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+              }}>
+                {ctaText}
+              </span>
+            </div>
+          </div>
+        );
     }
   };
 
@@ -351,9 +590,12 @@ export default function StoryEditor() {
               <div className="space-y-2">
                 <Label>Template</Label>
                 <Tabs value={template} onValueChange={(v) => setTemplate(v as StoryTemplate)}>
-                  <TabsList className="grid grid-cols-2">
-                    <TabsTrigger value="annonce">Annonce</TabsTrigger>
-                    <TabsTrigger value="chiffre">Chiffre</TabsTrigger>
+                  <TabsList className="grid grid-cols-5">
+                    <TabsTrigger value="annonce" className="text-xs px-2">Annonce</TabsTrigger>
+                    <TabsTrigger value="chiffre" className="text-xs px-2">Chiffre</TabsTrigger>
+                    <TabsTrigger value="temoignage" className="text-xs px-2">Témoin.</TabsTrigger>
+                    <TabsTrigger value="conseil" className="text-xs px-2">Conseil</TabsTrigger>
+                    <TabsTrigger value="question" className="text-xs px-2">Question</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
@@ -443,6 +685,56 @@ export default function StoryEditor() {
                   <div className="space-y-2">
                     <Label>Source</Label>
                     <Input value={source} onChange={(e) => setSource(e.target.value)} />
+                  </div>
+                </>
+              )}
+
+              {template === 'temoignage' && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Badge</Label>
+                    <Input value={badge} onChange={(e) => setBadge(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Citation</Label>
+                    <Textarea value={citation} onChange={(e) => setCitation(e.target.value)} rows={4} placeholder='"Grâce à IArche..."' />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nom du témoin</Label>
+                    <Input value={temoinNom} onChange={(e) => setTemoinNom(e.target.value)} placeholder="Jean-Pierre Martin" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Fonction</Label>
+                    <Input value={temoinFonction} onChange={(e) => setTemoinFonction(e.target.value)} placeholder="DG, Groupe ABC" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>CTA (Swipe up)</Label>
+                    <Input value={ctaText} onChange={(e) => setCtaText(e.target.value)} />
+                  </div>
+                </>
+              )}
+
+              {(template === 'conseil' || template === 'question') && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Badge</Label>
+                    <Input value={badge} onChange={(e) => setBadge(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Numéro / Icône</Label>
+                    <Input value={conseilNumero} onChange={(e) => setConseilNumero(e.target.value)} placeholder="01 ou ?" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Titre du conseil</Label>
+                    <Input value={conseilTitre} onChange={(e) => setConseilTitre(e.target.value)} placeholder="Commencez petit" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Contenu</Label>
+                    <Textarea value={conseilContenu} onChange={(e) => setConseilContenu(e.target.value)} rows={3} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>CTA (Swipe up)</Label>
+                    <Input value={ctaText} onChange={(e) => setCtaText(e.target.value)} />
                   </div>
                 </>
               )}
