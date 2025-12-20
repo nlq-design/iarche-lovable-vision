@@ -23,12 +23,13 @@ interface CarouselPDFProps {
   startTheme?: ThemeType;
 }
 
-// Theme configurations
+// Theme configurations - v4.1 DA compliant
+// Règle 2: Terra Theme - subtext = #FAF9F7 (pas de rgba < 0.88)
 const THEME_COLORS = {
   dark: {
     background: IARCHE_COLORS.bleuNuit,
-    text: IARCHE_COLORS.blancCasse,
-    subtext: 'rgba(250, 249, 247, 0.7)',
+    text: IARCHE_COLORS.blancCasse,           // #FAF9F7
+    subtext: IARCHE_COLORS.blancCasse,        // v4.1: Opaque pour contraste WCAG
     highlightBg: 'rgba(176, 74, 50, 0.15)',
     highlightText: IARCHE_COLORS.terracotta,
     logoVariant: 'terracotta' as const,
@@ -42,9 +43,9 @@ const THEME_COLORS = {
     logoVariant: 'gradient' as const,
   },
   terra: {
-    background: '#8B3A2F',
-    text: IARCHE_COLORS.blancCasse,
-    subtext: 'rgba(250, 249, 247, 0.7)',
+    background: IARCHE_COLORS.terracotta,     // v4.1: Utiliser token (#B04A32)
+    text: IARCHE_COLORS.blancCasse,           // #FAF9F7
+    subtext: IARCHE_COLORS.blancCasse,        // v4.1: Opaque pour contraste WCAG
     highlightBg: 'rgba(26, 43, 74, 0.15)',
     highlightText: IARCHE_COLORS.bleuNuit,
     logoVariant: 'white' as const,
@@ -52,7 +53,7 @@ const THEME_COLORS = {
   contrast: {
     background: '#0A0A0A',
     text: '#FAFAFA',
-    subtext: 'rgba(250, 250, 250, 0.7)',
+    subtext: '#FAFAFA',                       // v4.1: Opaque pour contraste WCAG
     highlightBg: 'rgba(176, 74, 50, 0.2)',
     highlightText: IARCHE_COLORS.terracotta,
     logoVariant: 'white' as const,
@@ -67,10 +68,13 @@ const THEME_ALTERNATES: Record<ThemeType, ThemeType> = {
   contrast: 'light',
 };
 
+// Safe zones - Règle 4: Carousel LinkedIn = 64px min
+const SAFE_ZONE_CAROUSEL = 64;
+
 const styles = StyleSheet.create({
   content: {
     flex: 1,
-    padding: 40,
+    padding: SAFE_ZONE_CAROUSEL,              // v4.1: 64px safe zone
     justifyContent: 'space-between',
     position: 'relative',
     zIndex: 1,
@@ -196,11 +200,19 @@ export const CarouselPDF: React.FC<CarouselPDFProps> = ({
 
               {/* Body content */}
               <View style={styles.body}>
-                <Text style={[styles.title, { color: colors.text }]}>
-                  {slide.title}
-                </Text>
+                {slide.title && (
+                  <>
+                    <Text style={[styles.title, { color: colors.text }]}>
+                      {slide.title}
+                    </Text>
+                    {/* v4.1: Arc sous le titre H1 (Règle 1) */}
+                    {showBar && (
+                      <PDFLogoArc size={barSize} style={{ marginTop: 12, marginBottom: 16 }} />
+                    )}
+                  </>
+                )}
                 {slide.subtitle && (
-                  <Text style={[styles.subtitle, { color: colors.subtext }]}>
+                  <Text style={[styles.subtitle, { color: colors.subtext, opacity: 0.88 }]}>
                     {slide.subtitle}
                   </Text>
                 )}

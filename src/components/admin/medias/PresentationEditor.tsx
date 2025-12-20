@@ -267,12 +267,13 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
             
             <Card className="overflow-hidden">
               {(() => {
-                // Theme configuration for preview
+                // Theme configuration for preview - v4.1 DA compliant
+                // Règle 2: subtext = #FAF9F7 opaque (pas de rgba < 0.88)
                 const PREVIEW_THEMES = {
-                  dark: { bg: '#1A2B4A', text: '#FFFFFF', subtext: 'rgba(255,255,255,0.6)', logo: '/logos/iarche-white.svg' },
-                  light: { bg: '#FAF9F7', text: '#1A2B4A', subtext: 'rgba(26,43,74,0.5)', logo: '/logos/iarche-main.svg' },
-                  terra: { bg: '#8B3A2F', text: '#FAF9F7', subtext: 'rgba(250,249,247,0.6)', logo: '/logos/iarche-white.svg' },
-                  contrast: { bg: '#0A0A0A', text: '#FAFAFA', subtext: 'rgba(250,250,250,0.6)', logo: '/logos/iarche-white.svg' },
+                  dark: { bg: '#1A2B4A', text: '#FAF9F7', subtext: '#FAF9F7', logo: '/logos/iarche-white.svg' },
+                  light: { bg: '#FAF9F7', text: '#1A2B4A', subtext: '#666666', logo: '/logos/iarche-main.svg' },
+                  terra: { bg: '#B04A32', text: '#FAF9F7', subtext: '#FAF9F7', logo: '/logos/iarche-white.svg' },
+                  contrast: { bg: '#0A0A0A', text: '#FAFAFA', subtext: '#FAFAFA', logo: '/logos/iarche-white.svg' },
                 };
                 const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light' };
                 
@@ -282,8 +283,8 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                 
                 return (
                   <div 
-                    className="aspect-video p-8 flex flex-col relative"
-                    style={{ background: colors.bg }}
+                    className="aspect-video flex flex-col relative"
+                    style={{ background: colors.bg, padding: 40 }}  // v4.1: 80px safe zone scaled to preview
                   >
                     {/* Canalisations decoration preview - only if 'full' mode */}
                     {showCanalisationsInPreview && (
@@ -315,18 +316,19 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                     {/* Content */}
                     <div className={`flex-1 flex flex-col ${current?.type === 'title' ? 'justify-center items-center text-center' : 'justify-start'}`}>
                       {current?.subtitle && (
-                        <p className="text-xs uppercase tracking-wider mb-2" style={{ color: colors.subtext }}>
+                        <p className="text-xs uppercase tracking-wider mb-2" style={{ color: colors.subtext, opacity: 0.88 }}>
                           {current.subtitle}
                         </p>
                       )}
                       <h2 className="text-xl font-bold mb-4" style={{ color: colors.text }}>
                         {current?.title}
                       </h2>
+                      {/* v4.1: Arc sous le titre */}
                       {showBarInPreview && current?.title && (
                         <HTMLLogoArc size="sm" className="mb-4" />
                       )}
                       {current?.content && (
-                        <p className="text-sm leading-relaxed" style={{ color: colors.text, opacity: 0.8 }}>
+                        <p className="text-sm leading-relaxed" style={{ color: colors.text, opacity: 0.88 }}>
                           {current.content}
                         </p>
                       )}
@@ -335,7 +337,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                           {current.bullets.map((bullet, idx) => (
                             <li key={idx} className="flex items-start gap-2 text-sm">
                               <span style={{ color: '#B04A32' }}>—</span>
-                              <span style={{ color: colors.text, opacity: 0.8 }}>{bullet}</span>
+                              <span style={{ color: colors.text, opacity: 0.88 }}>{bullet}</span>
                             </li>
                           ))}
                         </ul>
