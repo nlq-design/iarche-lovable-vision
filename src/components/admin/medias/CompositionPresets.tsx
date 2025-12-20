@@ -9,6 +9,7 @@ export interface CompositionPreset {
   description: string;
   icon: React.ReactNode;
   verticalAlignment: VerticalAlignment;
+  topMargin: number; // pourcentage - marge supérieure pour éviter de coller au header
   paddingTop?: number; // pourcentage
   paddingBottom?: number;
   contentGap?: number;
@@ -22,6 +23,7 @@ export const COMPOSITION_PRESETS: CompositionPreset[] = [
     description: 'Contenu principal en haut, espace libre en bas',
     icon: <AlignVerticalJustifyStart className="h-5 w-5" />,
     verticalAlignment: 'top',
+    topMargin: 8, // 8% du haut pour ne pas coller au logo
     paddingTop: 15,
     paddingBottom: 25,
     contentGap: 24,
@@ -32,6 +34,7 @@ export const COMPOSITION_PRESETS: CompositionPreset[] = [
     description: 'Contenu équilibré au centre',
     icon: <AlignVerticalJustifyCenter className="h-5 w-5" />,
     verticalAlignment: 'center',
+    topMargin: 0, // centré, pas de marge forcée
     paddingTop: 20,
     paddingBottom: 20,
     contentGap: 32,
@@ -42,6 +45,7 @@ export const COMPOSITION_PRESETS: CompositionPreset[] = [
     description: 'Espace libre en haut, contenu en bas',
     icon: <AlignVerticalJustifyEnd className="h-5 w-5" />,
     verticalAlignment: 'bottom',
+    topMargin: 0, // en bas, pas de marge haut
     paddingTop: 25,
     paddingBottom: 15,
     contentGap: 24,
@@ -52,6 +56,7 @@ export const COMPOSITION_PRESETS: CompositionPreset[] = [
     description: 'Titre haut avec grand espace central',
     icon: <Layout className="h-5 w-5" />,
     verticalAlignment: 'top',
+    topMargin: 5, // 5% pour respiration après le logo
     paddingTop: 10,
     paddingBottom: 30,
     contentGap: 48,
@@ -62,6 +67,7 @@ export const COMPOSITION_PRESETS: CompositionPreset[] = [
     description: 'CTA en bas bien visible',
     icon: <Layers className="h-5 w-5" />,
     verticalAlignment: 'bottom',
+    topMargin: 0,
     paddingTop: 30,
     paddingBottom: 10,
     contentGap: 40,
@@ -72,6 +78,7 @@ export const COMPOSITION_PRESETS: CompositionPreset[] = [
     description: 'Distribution uniforme du contenu',
     icon: <LayoutTemplate className="h-5 w-5" />,
     verticalAlignment: 'center',
+    topMargin: 0,
     paddingTop: 15,
     paddingBottom: 15,
     contentGap: 28,

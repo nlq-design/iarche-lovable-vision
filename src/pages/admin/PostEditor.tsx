@@ -24,6 +24,7 @@ import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport'
 import { BarSize } from '@/components/admin/medias/html/tokens';
 import { VerticalAlignmentControls, VerticalAlignment, getJustifyContent } from '@/components/admin/medias/VerticalAlignmentControls';
 import { CompositionPresets, CompositionPreset } from '@/components/admin/medias/CompositionPresets';
+import { TopMarginSlider, getContentSpacing } from '@/components/admin/medias/TopMarginSlider';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -194,6 +195,7 @@ export default function PostEditor() {
   const [showBatchExport, setShowBatchExport] = useState(false);
   const [verticalAlignment, setVerticalAlignment] = useState<VerticalAlignment>('center');
   const [selectedCompositionPreset, setSelectedCompositionPreset] = useState<string>('centered');
+  const [topMargin, setTopMargin] = useState<number>(0);
   
   // Dynamic dimensions from platform preset
   const [width, setWidth] = useState(DEFAULT_DIMENSIONS.square.width);
@@ -211,6 +213,7 @@ export default function PostEditor() {
   const applyCompositionPreset = (preset: CompositionPreset) => {
     setSelectedCompositionPreset(preset.id);
     setVerticalAlignment(preset.verticalAlignment);
+    setTopMargin(preset.topMargin);
   };
 
   // Apply preset template
@@ -947,6 +950,12 @@ export default function PostEditor() {
                 selectedPreset={selectedCompositionPreset}
                 onSelectPreset={applyCompositionPreset}
                 compact
+              />
+
+              {/* Top Margin Slider */}
+              <TopMarginSlider
+                value={topMargin}
+                onChange={setTopMargin}
               />
 
               {/* Typography Controls - All templates */}

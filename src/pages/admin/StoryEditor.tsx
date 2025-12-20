@@ -17,6 +17,9 @@ import ExportModeControls, { ExportMode } from '@/components/admin/medias/Export
 import ExportActions from '@/components/admin/medias/ExportActions';
 import PlatformPresets, { Platform } from '@/components/admin/medias/PlatformPresets';
 import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
+import { VerticalAlignmentControls, VerticalAlignment, getJustifyContent } from '@/components/admin/medias/VerticalAlignmentControls';
+import { CompositionPresets, CompositionPreset, COMPOSITION_PRESETS } from '@/components/admin/medias/CompositionPresets';
+import { TopMarginSlider, getContentSpacing } from '@/components/admin/medias/TopMarginSlider';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -91,6 +94,11 @@ export default function StoryEditor() {
   const [titleItalic, setTitleItalic] = useState(false);
   const [titleAlignment, setTitleAlignment] = useState<TextAlignment>('center');
   
+  // Vertical alignment & composition states
+  const [verticalAlignment, setVerticalAlignment] = useState<VerticalAlignment>('center');
+  const [selectedCompositionPreset, setSelectedCompositionPreset] = useState<string>('centered');
+  const [topMargin, setTopMargin] = useState<number>(0); // pourcentage de marge supérieure
+  
   // Annonce fields
   const [badge, setBadge] = useState('Nouveauté');
   const [titre, setTitre] = useState('Découvrez notre nouvelle solution IA');
@@ -138,14 +146,22 @@ export default function StoryEditor() {
     setPreset(presetId);
   };
 
+  // Apply composition preset
+  const applyCompositionPreset = (preset: CompositionPreset) => {
+    setSelectedCompositionPreset(preset.id);
+    setVerticalAlignment(preset.verticalAlignment);
+    setTopMargin(preset.topMargin);
+  };
+
   // Get current data for saving template
   const getCurrentData = useCallback(() => ({
     template, theme, preset, exportMode, barSize, pngQuality,
     titleFontSize, titleBold, titleItalic, titleAlignment,
+    verticalAlignment, selectedCompositionPreset, topMargin,
     badge, titre, ctaText, chiffre, contexte, source,
     citation, temoinNom, temoinFonction,
     conseilNumero, conseilTitre, conseilContenu,
-  }), [template, theme, preset, exportMode, barSize, pngQuality, titleFontSize, titleBold, titleItalic, titleAlignment, badge, titre, ctaText, chiffre, contexte, source, citation, temoinNom, temoinFonction, conseilNumero, conseilTitre, conseilContenu]);
+  }), [template, theme, preset, exportMode, barSize, pngQuality, titleFontSize, titleBold, titleItalic, titleAlignment, verticalAlignment, selectedCompositionPreset, topMargin, badge, titre, ctaText, chiffre, contexte, source, citation, temoinNom, temoinFonction, conseilNumero, conseilTitre, conseilContenu]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
@@ -172,6 +188,10 @@ export default function StoryEditor() {
     if (data.conseilNumero !== undefined) setConseilNumero(data.conseilNumero as string);
     if (data.conseilTitre !== undefined) setConseilTitre(data.conseilTitre as string);
     if (data.conseilContenu !== undefined) setConseilContenu(data.conseilContenu as string);
+    // Vertical alignment & composition
+    if (data.verticalAlignment !== undefined) setVerticalAlignment(data.verticalAlignment as VerticalAlignment);
+    if (data.selectedCompositionPreset !== undefined) setSelectedCompositionPreset(data.selectedCompositionPreset as string);
+    if (data.topMargin !== undefined) setTopMargin(data.topMargin as number);
   }, []);
 
   // Load template from navigation state
@@ -198,18 +218,25 @@ export default function StoryEditor() {
   const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : IARCHE_COLORS.grey;
   const showCanalisations = exportMode === 'full';
 
+  // Minimum spacing from logo to prevent content touching header
+  const effectiveTopMargin = getContentSpacing(topMargin, 5);
+
   const renderStoryContent = () => {
+    // Common main content container style with vertical alignment
+    const mainContentStyle = {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      justifyContent: getJustifyContent(verticalAlignment),
+      alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
+      height: '100%',
+      textAlign: titleAlignment as any,
+      paddingTop: verticalAlignment === 'top' ? `${effectiveTopMargin}%` : 0,
+    };
+
     switch (template) {
       case 'annonce':
         return (
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            justifyContent: 'space-between',
-            alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
-            height: '100%',
-            textAlign: titleAlignment,
-          }}>
+          <div style={mainContentStyle}>
             {/* Header */}
             <HTMLLogo size="xl" theme={theme} />
             
@@ -268,14 +295,7 @@ export default function StoryEditor() {
 
       case 'chiffre':
         return (
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            justifyContent: 'space-between',
-            alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
-            height: '100%',
-            textAlign: titleAlignment,
-          }}>
+          <div style={mainContentStyle}>
             {/* Header */}
             <HTMLLogo size="xl" theme={theme} />
             
@@ -339,13 +359,10 @@ export default function StoryEditor() {
 
       case 'temoignage':
         return (
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            justifyContent: 'space-between',
+          <div style={{
+            ...mainContentStyle,
             alignItems: 'center',
-            height: '100%',
-            textAlign: 'center',
+            textAlign: 'center' as any,
           }}>
             {/* Header */}
             <HTMLLogo size="xl" theme={theme} />
@@ -451,14 +468,7 @@ export default function StoryEditor() {
       case 'conseil':
       case 'question':
         return (
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            justifyContent: 'space-between',
-            alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
-            height: '100%',
-            textAlign: titleAlignment,
-          }}>
+          <div style={mainContentStyle}>
             {/* Header */}
             <HTMLLogo size="xl" theme={theme} />
             
@@ -629,6 +639,25 @@ export default function StoryEditor() {
                 onAlignmentChange={setTitleAlignment}
                 minFontSize={40}
                 maxFontSize={80}
+              />
+
+              {/* Vertical Alignment Controls */}
+              <VerticalAlignmentControls
+                value={verticalAlignment}
+                onChange={setVerticalAlignment}
+              />
+
+              {/* Top Margin Slider */}
+              <TopMarginSlider
+                value={topMargin}
+                onChange={setTopMargin}
+              />
+
+              {/* Composition Presets */}
+              <CompositionPresets
+                selectedPreset={selectedCompositionPreset}
+                onSelectPreset={applyCompositionPreset}
+                compact
               />
 
               {/* Export mode controls */}
