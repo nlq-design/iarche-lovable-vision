@@ -454,14 +454,14 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                       padding: 40,
                     }}
                   >
-                    {/* v4.2 - Decorative arc in corner */}
-                    <div className="absolute -top-12 -right-12 w-40 h-40 pointer-events-none opacity-10">
+                    {/* v4.2 - Arc décoratif en zone morte extrême (jamais proche du logo/titre) */}
+                    <div className="absolute -top-20 -right-20 w-40 h-40 pointer-events-none opacity-[0.05]">
                       <svg viewBox="0 0 160 160" className="w-full h-full">
                         <path 
                           d="M160 0 Q160 160 0 160" 
                           fill="none" 
                           stroke={isDark ? '#ffffff' : '#B04A32'} 
-                          strokeWidth="2"
+                          strokeWidth="1.5"
                         />
                       </svg>
                     </div>
