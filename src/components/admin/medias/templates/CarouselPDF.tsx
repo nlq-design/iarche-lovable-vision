@@ -21,6 +21,7 @@ interface CarouselPDFProps {
   slides: SlideData[];
   format?: 'linkedin' | 'instagram';
   startTheme?: ThemeType;
+  showDecorativeArc?: boolean;
 }
 
 // Theme configurations - v4.1 DA compliant
@@ -160,7 +161,8 @@ const getSlideTheme = (index: number, startTheme: ThemeType): ThemeType => {
 export const CarouselPDF: React.FC<CarouselPDFProps> = ({ 
   slides, 
   format = 'linkedin',
-  startTheme = 'dark' 
+  startTheme = 'dark',
+  showDecorativeArc = true
 }) => {
   const { width, height } = FORMATS[format];
 
@@ -178,12 +180,34 @@ export const CarouselPDF: React.FC<CarouselPDFProps> = ({
         // v4.2 - Detect if highlight is a number/stat for special styling
         const isStatHighlight = slide.highlight && /^[+\-]?\d/.test(slide.highlight);
         
+        const isDark = currentTheme !== 'light';
+        
         return (
           <Page 
             key={slide.id} 
             size={[width, height]} 
             style={{ position: 'relative', backgroundColor: colors.background }}
           >
+            {/* v4.2 - Arc décoratif subtil en bas à droite */}
+            {showDecorativeArc && (
+              <View style={{
+                position: 'absolute',
+                bottom: -width * 0.12,
+                right: -width * 0.12,
+                width: width * 0.25,
+                height: width * 0.25,
+                opacity: 0.05,
+              }}>
+                <View style={{
+                  width: '100%',
+                  height: '100%',
+                  borderWidth: 1.5,
+                  borderColor: isDark ? '#ffffff' : '#B04A32',
+                  borderRadius: width * 0.125,
+                  borderTopLeftRadius: 0,
+                }} />
+              </View>
+            )}
             
             {/* Main content */}
             <View style={styles.content}>
