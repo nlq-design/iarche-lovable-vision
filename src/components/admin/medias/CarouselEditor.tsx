@@ -275,12 +275,13 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
             {/* Slide preview */}
             <Card className="overflow-hidden">
               {(() => {
-                // Theme configuration for preview
+                // Theme configuration for preview - v4.1 DA compliant
+                // Règle 2: subtext = #FAF9F7 opaque (pas de rgba < 0.88)
                 const PREVIEW_THEMES = {
-                  dark: { bg: '#1A2B4A', text: '#FFFFFF', subtext: 'rgba(255,255,255,0.6)', logo: '/logos/iarche-white.svg' },
-                  light: { bg: '#FAF9F7', text: '#1A2B4A', subtext: 'rgba(26,43,74,0.5)', logo: '/logos/iarche-main.svg' },
-                  terra: { bg: '#8B3A2F', text: '#FAF9F7', subtext: 'rgba(250,249,247,0.6)', logo: '/logos/iarche-white.svg' },
-                  contrast: { bg: '#0A0A0A', text: '#FAFAFA', subtext: 'rgba(250,250,250,0.6)', logo: '/logos/iarche-white.svg' },
+                  dark: { bg: '#1A2B4A', text: '#FAF9F7', subtext: '#FAF9F7', logo: '/logos/iarche-white.svg' },
+                  light: { bg: '#FAF9F7', text: '#1A2B4A', subtext: '#666666', logo: '/logos/iarche-main.svg' },
+                  terra: { bg: '#B04A32', text: '#FAF9F7', subtext: '#FAF9F7', logo: '/logos/iarche-white.svg' },
+                  contrast: { bg: '#0A0A0A', text: '#FAFAFA', subtext: '#FAFAFA', logo: '/logos/iarche-white.svg' },
                 };
                 const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light' };
                 
@@ -290,8 +291,8 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                 
                 return (
                   <div 
-                    className="aspect-[4/5] p-8 flex flex-col justify-between relative"
-                    style={{ background: colors.bg }}
+                    className="aspect-[4/5] flex flex-col justify-between relative"
+                    style={{ background: colors.bg, padding: 32 }}  // v4.1: 64px safe zone scaled to preview
                   >
                     {/* Canalisations decoration preview - only if 'full' mode */}
                     {showCanalisationsInPreview && (
@@ -321,16 +322,19 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                     {/* Content */}
                     <div className="flex-1 flex flex-col justify-center text-center space-y-4">
                       {current?.subtitle && (
-                        <p className="text-sm uppercase tracking-wider" style={{ color: colors.subtext }}>{current.subtitle}</p>
+                        <p className="text-sm uppercase tracking-wider" style={{ color: colors.subtext, opacity: 0.88 }}>{current.subtitle}</p>
                       )}
                       {current?.title && (
-                        <h2 className="text-2xl font-bold" style={{ color: colors.text }}>{current.title}</h2>
-                      )}
-                      {showBarInPreview && current?.title && (
-                        <HTMLLogoArc size="sm" className="mx-auto" />
+                        <>
+                          <h2 className="text-2xl font-bold" style={{ color: colors.text }}>{current.title}</h2>
+                          {/* v4.1: Arc sous le titre H1 */}
+                          {showBarInPreview && (
+                            <HTMLLogoArc size="sm" className="mx-auto" />
+                          )}
+                        </>
                       )}
                       {current?.content && (
-                        <p className="text-sm leading-relaxed" style={{ color: colors.text, opacity: 0.8 }}>{current.content}</p>
+                        <p className="text-sm leading-relaxed" style={{ color: colors.text, opacity: 0.88 }}>{current.content}</p>
                       )}
                       {current?.highlight && (
                         <p 
@@ -344,10 +348,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
 
                     {/* Footer */}
                     <div className="text-center">
-                      {showBarInPreview && (
-                        <HTMLLogoArc size="sm" className="w-full opacity-50 mb-2" />
-                      )}
-                      <p className="text-xs" style={{ color: colors.subtext }}>iarche.fr</p>
+                      <p className="text-xs" style={{ color: colors.subtext, opacity: 0.6 }}>iarche.fr</p>
                     </div>
                   </div>
                 );

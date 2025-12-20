@@ -23,16 +23,17 @@ interface PresentationPDFProps {
   startTheme?: ThemeType;
 }
 
-// Theme configurations
+// Theme configurations - v4.1 DA compliant
+// Règle 2: Terra Theme - subtext = #FAF9F7 (min alpha 0.88)
 const THEME_COLORS = {
   dark: {
     background: IARCHE_COLORS.bleuNuit,
-    text: IARCHE_COLORS.white,
-    subtext: 'rgba(255, 255, 255, 0.8)',
+    text: IARCHE_COLORS.blancCasse,           // #FAF9F7
+    subtext: IARCHE_COLORS.blancCasse,        // v4.1: Opaque pour contraste WCAG
     accent: IARCHE_COLORS.terracotta,
     logoVariant: 'terracotta' as const,
-    sectionNumberColor: IARCHE_COLORS.white,
-    footerOpacity: 0.4,
+    sectionNumberColor: IARCHE_COLORS.blancCasse,
+    footerOpacity: 0.6,                       // v4.1: min 0.6 pour lisibilité
   },
   light: {
     background: IARCHE_COLORS.blancCasse,
@@ -44,22 +45,22 @@ const THEME_COLORS = {
     footerOpacity: 1,
   },
   terra: {
-    background: '#8B3A2F',
-    text: IARCHE_COLORS.blancCasse,
-    subtext: 'rgba(250, 249, 247, 0.8)',
+    background: IARCHE_COLORS.terracotta,     // v4.1: Utiliser token (#B04A32)
+    text: IARCHE_COLORS.blancCasse,           // #FAF9F7
+    subtext: IARCHE_COLORS.blancCasse,        // v4.1: Opaque pour contraste WCAG
     accent: IARCHE_COLORS.bleuNuit,
     logoVariant: 'white' as const,
     sectionNumberColor: IARCHE_COLORS.blancCasse,
-    footerOpacity: 0.5,
+    footerOpacity: 0.6,
   },
   contrast: {
     background: '#0A0A0A',
     text: '#FAFAFA',
-    subtext: 'rgba(250, 250, 250, 0.8)',
+    subtext: '#FAFAFA',                       // v4.1: Opaque pour contraste WCAG
     accent: IARCHE_COLORS.terracotta,
     logoVariant: 'white' as const,
     sectionNumberColor: '#FAFAFA',
-    footerOpacity: 0.5,
+    footerOpacity: 0.6,
   },
 };
 
@@ -95,7 +96,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 80,
+    padding: 80,                              // v4.1: 80px safe zone presentation
+    paddingHorizontal: 100,                   // Marges latérales plus larges
     position: 'relative',
     zIndex: 10,
   },
