@@ -27,29 +27,46 @@ import {
 import { HTMLLogoArc } from '@/components/admin/medias/html/HTMLLogoArc';
 import { ArcSize } from '@/components/admin/medias/html/tokens';
 
-type StoryTemplate = 'annonce' | 'chiffre';
+type StoryTemplate = 'annonce' | 'chiffre' | 'temoignage' | 'conseil';
 
 type PresetTemplate = {
   id: string;
   label: string;
+  category: 'annonce' | 'chiffre' | 'temoignage' | 'conseil' | 'question';
   badge: string;
   titre: string;
   ctaText: string;
   chiffre: string;
   contexte: string;
   source: string;
+  // Témoignage fields
+  citation?: string;
+  temoinNom?: string;
+  temoinFonction?: string;
+  // Conseil fields
+  conseilNumero?: string;
+  conseilTitre?: string;
+  conseilContenu?: string;
 };
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
-  { id: 'nouveaute', label: 'Nouveauté', badge: 'Nouveauté', titre: 'Découvrez notre nouvelle solution IA', ctaText: 'En savoir plus', chiffre: '92%', contexte: 'des entreprises accompagnées ont augmenté leur productivité', source: 'Résultats IArche 2024' },
-  { id: 'evenement', label: 'Événement', badge: 'Événement', titre: 'Webinaire exclusif sur l\'IA en entreprise', ctaText: 'S\'inscrire', chiffre: '+150', contexte: 'participants à nos ateliers cette année', source: 'Bilan IArche 2024' },
-  { id: 'conseil', label: 'Conseil du jour', badge: 'Conseil', titre: '3 étapes pour intégrer l\'IA dans votre PME', ctaText: 'Découvrir', chiffre: '3x', contexte: 'plus efficace avec l\'automatisation IA', source: 'Étude interne' },
-  { id: 'resultat', label: 'Résultat client', badge: 'Success Story', titre: 'Comment notre client a doublé sa productivité', ctaText: 'Voir le cas', chiffre: '+200%', contexte: 'de gain de productivité en 6 mois', source: 'Cas client 2024' },
-  { id: 'offre', label: 'Offre spéciale', badge: 'Offre limitée', titre: 'Audit IA gratuit pour les 10 prochaines PME', ctaText: 'En profiter', chiffre: '-50%', contexte: 'sur votre premier accompagnement', source: 'Offre valable en janvier' },
-  // v4.1 - Nouveaux templates métiers
-  { id: 'teaser-webinaire', label: 'Teaser webinaire', badge: 'Bientôt', titre: 'Webinaire exclusif en préparation', ctaText: 'Réserver ma place', chiffre: '24', contexte: 'janvier 2025 à 14h', source: 'Places limitées' },
-  { id: 'coulisses', label: 'Coulisses', badge: 'Behind the scenes', titre: 'Les coulisses de notre dernière mission', ctaText: 'Voir le parcours', chiffre: '3', contexte: 'mois de transformation IA', source: 'Chez notre client' },
-  { id: 'question-jour', label: 'Question du jour', badge: 'Votre avis', titre: 'L\'IA va-t-elle remplacer votre métier ?', ctaText: 'Répondre en commentaire', chiffre: '?', contexte: 'Partagez votre opinion', source: 'Débat' },
+  // Annonce
+  { id: 'nouveaute', label: 'Nouveauté', category: 'annonce', badge: 'Nouveauté', titre: 'Découvrez notre nouvelle solution IA', ctaText: 'En savoir plus', chiffre: '92%', contexte: 'des entreprises accompagnées ont augmenté leur productivité', source: 'Résultats IArche 2024' },
+  { id: 'evenement', label: 'Événement', category: 'annonce', badge: 'Événement', titre: 'Webinaire exclusif sur l\'IA en entreprise', ctaText: 'S\'inscrire', chiffre: '+150', contexte: 'participants à nos ateliers cette année', source: 'Bilan IArche 2024' },
+  { id: 'lancement', label: 'Lancement produit', category: 'annonce', badge: 'Nouveau', titre: 'Lancement de notre nouvelle solution', ctaText: 'Découvrir', chiffre: '100%', contexte: 'pensé pour les PME', source: 'IArche 2025' },
+  // Chiffre
+  { id: 'statistiques', label: 'Statistiques', category: 'chiffre', badge: 'Chiffre clé', titre: 'L\'IA en chiffres', ctaText: 'En savoir plus', chiffre: '73%', contexte: 'des entreprises constatent un ROI positif', source: 'McKinsey 2024' },
+  { id: 'milestone', label: 'Milestone', category: 'chiffre', badge: 'Cap franchi', titre: 'Merci à vous !', ctaText: 'Célébrer', chiffre: '100', contexte: 'entreprises accompagnées', source: 'IArche 2024' },
+  { id: 'resultat', label: 'Résultat client', category: 'chiffre', badge: 'Success Story', titre: 'Comment notre client a doublé sa productivité', ctaText: 'Voir le cas', chiffre: '+200%', contexte: 'de gain de productivité en 6 mois', source: 'Cas client 2024' },
+  // Témoignage
+  { id: 'temoignage-client', label: 'Témoignage client', category: 'temoignage', badge: 'Témoignage', titre: '', ctaText: 'Voir le cas', chiffre: '', contexte: '', source: '', citation: '"Grâce à IArche, nous avons automatisé 40% de nos tâches."', temoinNom: 'Jean-Pierre Martin', temoinFonction: 'DG, Groupe ABC' },
+  { id: 'cas-client', label: 'Cas client', category: 'temoignage', badge: 'Success Story', titre: 'Découvrez leur transformation', ctaText: 'En savoir plus', chiffre: '+200%', contexte: 'de productivité', source: 'Cas client 2024', citation: '"Une transformation réussie"', temoinNom: 'Marie Dupont', temoinFonction: 'Directrice Ops' },
+  // Conseil
+  { id: 'conseil-tip', label: 'Conseil / Tip', category: 'conseil', badge: 'Conseil', titre: '', ctaText: 'Appliquer', chiffre: '', contexte: '', source: '', conseilNumero: '01', conseilTitre: 'Commencez petit', conseilContenu: 'Identifiez un cas d\'usage simple avant de généraliser.' },
+  { id: 'bonnes-pratiques', label: 'Bonnes pratiques', category: 'conseil', badge: 'Best Practice', titre: '', ctaText: 'Découvrir', chiffre: '3', contexte: 'bonnes pratiques IA', source: 'IArche', conseilNumero: '3', conseilTitre: '3 bonnes pratiques', conseilContenu: 'Impliquez vos équipes, mesurez, itérez.' },
+  // Question
+  { id: 'question-sondage', label: 'Question / Sondage', category: 'question', badge: 'Votre avis', titre: 'L\'IA va-t-elle remplacer votre métier ?', ctaText: 'Répondre', chiffre: '?', contexte: 'Partagez votre opinion', source: 'Débat', conseilNumero: '?', conseilTitre: 'Question du jour', conseilContenu: 'Donnez-nous votre avis en commentaire.' },
+  { id: 'quiz', label: 'Quiz / Devinette', category: 'question', badge: 'Quiz', titre: 'Testez vos connaissances IA', ctaText: 'Jouer', chiffre: '?', contexte: 'Saurez-vous répondre ?', source: 'IArche Quiz', conseilNumero: '?', conseilTitre: 'Quiz IA', conseilContenu: 'Quel % des PME utilisent l\'IA ?' },
 ];
 
 const STORY_WIDTH = 1080;
