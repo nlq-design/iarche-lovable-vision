@@ -253,8 +253,6 @@ const Articles = () => {
                     basePath="/articles"
                     index={index}
                     showDate={true}
-                    showArc={true}
-                    arcSize="sm"
                   />
                 ))}
               </div>

@@ -139,8 +139,6 @@ const Solutions = () => {
                   basePath="/solutions"
                   index={index}
                   showDate={false}
-                  showArc={true}
-                  arcSize="sm"
                   onClick={() => trackCTAClick('solution_card', 'solutions_page', solution.slug)}
                 />
               ))}

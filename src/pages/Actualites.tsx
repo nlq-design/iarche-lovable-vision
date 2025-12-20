@@ -209,8 +209,6 @@ const Actualites = () => {
                     basePath="/actualites"
                     index={index}
                     showDate={true}
-                    showArc={true}
-                    arcSize="sm"
                   />
                 ))}
               </div>

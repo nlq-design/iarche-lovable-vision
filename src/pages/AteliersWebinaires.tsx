@@ -220,10 +220,7 @@ const AteliersWebinaires = () => {
                       <GradientTitle size="sm" as="h2" centered={false} textClassName="line-clamp-2 text-base" showArc={false}>
                         {item.title}
                       </GradientTitle>
-                      {/* Arc décoratif */}
-                      <div className="mt-2">
-                        <LogoArc size="sm" />
-                      </div>
+                      {/* v4.0: Arc supprimé des cards */}
                     </CardHeader>
 
                     <CardContent className="space-y-2">
