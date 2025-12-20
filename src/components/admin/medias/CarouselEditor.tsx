@@ -474,14 +474,14 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                       padding: 32,
                     }}
                   >
-                    {/* v4.2 - Decorative arc in negative space */}
-                    <div className="absolute -bottom-16 -right-16 w-48 h-48 pointer-events-none opacity-10">
+                    {/* v4.2 - Arc décoratif en zone morte extrême (jamais proche du logo/titre) */}
+                    <div className="absolute -bottom-24 -right-24 w-48 h-48 pointer-events-none opacity-[0.05]">
                       <svg viewBox="0 0 200 200" className="w-full h-full">
                         <path 
                           d="M200 0 Q200 200 0 200" 
                           fill="none" 
                           stroke={isDark ? '#ffffff' : '#B04A32'} 
-                          strokeWidth="2"
+                          strokeWidth="1.5"
                         />
                       </svg>
                     </div>
