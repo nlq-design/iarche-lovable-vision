@@ -9,6 +9,8 @@ interface DecorativeArcConfig {
   size?: number; // en pixels, défaut 80
   opacity?: number; // défaut 0.05
   strokeWidth?: number; // défaut 1.5
+  /** v4.3 - Mode continuité: l'arc est plus grand et déborde du cadre */
+  extended?: boolean; // défaut true
 }
 
 interface HTMLBaseTemplateProps {
@@ -31,6 +33,7 @@ interface HTMLBaseTemplateProps {
  * v4.0: Suppression des canalisations et fond quadrillé
  * v4.1: Support des 4 thèmes (dark, light, terra, contrast)
  * v4.2: Arc décoratif subtil en zone morte (prop decorativeArc)
+ * v4.3: Mode continuité - l'arc déborde du cadre pour un effet professionnel
  */
 export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps>(
   (
@@ -53,15 +56,16 @@ export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps
     // Auto-calculate arch size based on smallest dimension
     const calculatedArchSize = archSize ?? Math.min(width, height) * 0.15;
 
-    // v4.2: Configuration de l'arc décoratif
-    const arcConfig: DecorativeArcConfig | null = decorativeArc
+    // v4.3: Configuration de l'arc décoratif avec mode continuité par défaut
+    const arcConfig: (DecorativeArcConfig & { extended: boolean }) | null = decorativeArc
       ? typeof decorativeArc === 'boolean'
-        ? { position: 'bottom-right', size: 80, opacity: 0.05, strokeWidth: 1.5 }
+        ? { position: 'bottom-right', size: 80, opacity: 0.05, strokeWidth: 1.5, extended: true }
         : { 
             position: decorativeArc.position, 
             size: decorativeArc.size ?? 80, 
             opacity: decorativeArc.opacity ?? 0.05,
             strokeWidth: decorativeArc.strokeWidth ?? 1.5,
+            extended: decorativeArc.extended !== false, // par défaut true
           }
       : null;
 
@@ -69,8 +73,21 @@ export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps
     const isDark = theme === 'dark' || theme === 'terra' || theme === 'contrast';
     const arcColor = isDark ? '#ffffff' : IARCHE_COLORS.terracotta;
 
-    // Position de l'arc - reste DANS le conteneur (pas de décalage négatif)
-    const getArcStyle = (pos: ArcPosition, size: number): React.CSSProperties => {
+    // v4.3 - Mode continuité: multiplicateur de taille et offset négatif
+    const getExtendedSize = (baseSize: number): number => {
+      return arcConfig?.extended ? baseSize * 1.8 : baseSize;
+    };
+    
+    const getExtendedOffset = (size: number): number => {
+      // L'arc déborde de 40% de sa taille hors du cadre
+      return arcConfig?.extended ? -size * 0.4 : 0;
+    };
+
+    // Position de l'arc - v4.3 avec support mode continuité
+    const getArcStyle = (pos: ArcPosition, baseSize: number): React.CSSProperties => {
+      const size = getExtendedSize(baseSize);
+      const offset = getExtendedOffset(size);
+      
       const baseStyle: React.CSSProperties = {
         position: 'absolute',
         width: size,
@@ -81,18 +98,19 @@ export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps
       
       switch (pos) {
         case 'top-right':
-          return { ...baseStyle, top: 0, right: 0 };
+          return { ...baseStyle, top: offset, right: offset };
         case 'top-left':
-          return { ...baseStyle, top: 0, left: 0 };
+          return { ...baseStyle, top: offset, left: offset };
         case 'bottom-right':
-          return { ...baseStyle, bottom: 0, right: 0 };
+          return { ...baseStyle, bottom: offset, right: offset };
         case 'bottom-left':
-          return { ...baseStyle, bottom: 0, left: 0 };
+          return { ...baseStyle, bottom: offset, left: offset };
       }
     };
 
-    // SVG path selon la position
-    const getArcPath = (pos: ArcPosition, size: number): string => {
+    // SVG path selon la position - v4.3 adapté pour mode continuité
+    const getArcPath = (pos: ArcPosition, baseSize: number): string => {
+      const size = getExtendedSize(baseSize);
       switch (pos) {
         case 'top-right':
         case 'bottom-left':
@@ -116,7 +134,7 @@ export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps
           fontFamily: IARCHE_FONTS.primary,
         }}
       >
-        {/* v4.2 - Arc décoratif subtil en zone morte (INCLUS dans l'export) */}
+        {/* v4.3 - Arc décoratif avec mode continuité (déborde du cadre) */}
         {arcConfig && (
           <div 
             style={{ 
@@ -124,9 +142,10 @@ export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps
               opacity: arcConfig.opacity,
             }}
             data-decorative-arc="true"
+            data-extended={arcConfig.extended}
           >
             <svg 
-              viewBox={`0 0 ${arcConfig.size} ${arcConfig.size}`} 
+              viewBox={`0 0 ${getExtendedSize(arcConfig.size!)} ${getExtendedSize(arcConfig.size!)}`} 
               style={{ width: '100%', height: '100%' }}
             >
               <path 

@@ -188,22 +188,23 @@ export const CarouselPDF: React.FC<CarouselPDFProps> = ({
             size={[width, height]} 
             style={{ position: 'relative', backgroundColor: colors.background }}
           >
-            {/* v4.2 - Arc décoratif subtil en bas à droite */}
+            {/* v4.3 - Arc décoratif mode continuité: plus grand et débordant */}
             {showDecorativeArc && (
               <View style={{
                 position: 'absolute',
-                bottom: -width * 0.12,
-                right: -width * 0.12,
-                width: width * 0.25,
-                height: width * 0.25,
-                opacity: 0.05,
+                // Mode continuité: arc 40% plus grand, déborde de 40% hors cadre
+                bottom: -width * 0.18,
+                right: -width * 0.18,
+                width: width * 0.45,
+                height: width * 0.45,
+                opacity: 0.06,
               }}>
                 <View style={{
                   width: '100%',
                   height: '100%',
-                  borderWidth: 1.5,
+                  borderWidth: 2,
                   borderColor: isDark ? '#ffffff' : '#B04A32',
-                  borderRadius: width * 0.125,
+                  borderRadius: width * 0.225,
                   borderTopLeftRadius: 0,
                 }} />
               </View>

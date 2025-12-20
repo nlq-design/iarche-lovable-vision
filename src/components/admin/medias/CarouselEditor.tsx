@@ -496,15 +496,24 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                       padding: 32,
                     }}
                   >
-                    {/* v4.2 - Arc décoratif en zone morte extrême (jamais proche du logo/titre) */}
+                    {/* v4.3 - Arc décoratif mode continuité: plus grand et débordant */}
                     {showDecorativeArc && (
-                      <div className="absolute -bottom-24 -right-24 w-48 h-48 pointer-events-none opacity-[0.05]">
+                      <div 
+                        className="absolute pointer-events-none"
+                        style={{
+                          bottom: '-30%',
+                          right: '-30%',
+                          width: '65%',
+                          height: '65%',
+                          opacity: 0.06,
+                        }}
+                      >
                         <svg viewBox="0 0 200 200" className="w-full h-full">
                           <path 
                             d="M200 0 Q200 200 0 200" 
                             fill="none" 
                             stroke={isDark ? '#ffffff' : '#B04A32'} 
-                            strokeWidth="1.5"
+                            strokeWidth="2"
                           />
                         </svg>
                       </div>

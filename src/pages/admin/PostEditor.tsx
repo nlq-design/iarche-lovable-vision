@@ -1095,9 +1095,10 @@ export default function PostEditor() {
                     showArches={false}
                     decorativeArc={showDecorativeArc ? { 
                       position: 'bottom-right', 
-                      size: Math.min(width, height) * 0.15, 
-                      opacity: 0.05, 
-                      strokeWidth: 1.5 
+                      size: Math.min(width, height) * 0.18, 
+                      opacity: 0.06, 
+                      strokeWidth: 2,
+                      extended: true, // v4.3 mode continuité
                     } : undefined}
                   >
                     {renderPostContent()}

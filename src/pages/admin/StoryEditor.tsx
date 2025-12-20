@@ -839,9 +839,10 @@ export default function StoryEditor() {
                     showArches={false}
                     decorativeArc={showDecorativeArc ? { 
                       position: 'top-right', 
-                      size: 200, 
+                      size: 220, 
                       opacity: 0.08, 
-                      strokeWidth: 2 
+                      strokeWidth: 2.5,
+                      extended: true, // v4.3 mode continuité
                     } : undefined}
                   >
                     {renderStoryContent()}
