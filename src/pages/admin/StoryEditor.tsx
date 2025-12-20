@@ -657,6 +657,8 @@ export default function StoryEditor() {
               <CompositionPresets
                 selectedPreset={selectedCompositionPreset}
                 onSelectPreset={applyCompositionPreset}
+                currentVerticalAlignment={verticalAlignment}
+                currentTopMargin={topMargin}
                 compact
               />
 
