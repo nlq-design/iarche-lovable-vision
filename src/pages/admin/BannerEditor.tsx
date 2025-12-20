@@ -20,6 +20,9 @@ import { ImageLibrary } from '@/components/admin/medias/ImageLibrary';
 import BatchExport from '@/components/admin/medias/BatchExport';
 import ResponsivePreview, { PreviewDevice, getDeviceWidth } from '@/components/admin/medias/ResponsivePreview';
 import { PngQuality, PNG_QUALITY_OPTIONS } from '@/lib/mediaExport';
+import VerticalAlignmentControls, { VerticalAlignment, getJustifyContent } from '@/components/admin/medias/VerticalAlignmentControls';
+import CompositionPresets from '@/components/admin/medias/CompositionPresets';
+import TopMarginSlider, { getContentSpacing } from '@/components/admin/medias/TopMarginSlider';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -112,6 +115,11 @@ export default function BannerEditor() {
   const [titleItalic, setTitleItalic] = useState(false);
   const [titleAlignment, setTitleAlignment] = useState<TextAlignment>('center');
   
+  // Composition states (v4.3)
+  const [verticalAlignment, setVerticalAlignment] = useState<VerticalAlignment>('center');
+  const [topMargin, setTopMargin] = useState(0);
+  const [compositionPreset, setCompositionPreset] = useState('centered');
+  
   // Entreprise fields
   const [tagline, setTagline] = useState("L'IA se construit avec vous");
   
@@ -137,8 +145,9 @@ export default function BannerEditor() {
   const getCurrentData = useCallback(() => ({
     template, theme, preset, exportMode, pngQuality, platformPreset, width, height,
     titleFontSize, titleBold, titleItalic, titleAlignment,
+    verticalAlignment, topMargin, compositionPreset,
     tagline, selectedSolution, ceoName, ceoTitle, ceoPhoto,
-  }), [template, theme, preset, exportMode, pngQuality, platformPreset, width, height, titleFontSize, titleBold, titleItalic, titleAlignment, tagline, selectedSolution, ceoName, ceoTitle, ceoPhoto]);
+  }), [template, theme, preset, exportMode, pngQuality, platformPreset, width, height, titleFontSize, titleBold, titleItalic, titleAlignment, verticalAlignment, topMargin, compositionPreset, tagline, selectedSolution, ceoName, ceoTitle, ceoPhoto]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
@@ -153,6 +162,9 @@ export default function BannerEditor() {
     if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
     if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
     if (data.titleAlignment !== undefined) setTitleAlignment(data.titleAlignment as TextAlignment);
+    if (data.verticalAlignment !== undefined) setVerticalAlignment(data.verticalAlignment as VerticalAlignment);
+    if (data.topMargin !== undefined) setTopMargin(data.topMargin as number);
+    if (data.compositionPreset !== undefined) setCompositionPreset(data.compositionPreset as string);
     if (data.tagline !== undefined) setTagline(data.tagline as string);
     if (data.selectedSolution !== undefined) setSelectedSolution(data.selectedSolution as string);
     if (data.ceoName !== undefined) setCeoName(data.ceoName as string);
@@ -178,6 +190,10 @@ export default function BannerEditor() {
   const subtextColor = theme === 'light' ? IARCHE_COLORS.grey : IARCHE_COLORS.blancCasse;
   const showCanalisations = exportMode === 'full';
 
+  // Computed spacing for content
+  const contentPaddingTop = getContentSpacing(topMargin, 0);
+  const justifyContent = getJustifyContent(verticalAlignment);
+
   const renderBannerContent = () => {
     switch (template) {
       case 'entreprise':
@@ -185,11 +201,12 @@ export default function BannerEditor() {
           <div style={{ 
             display: 'flex', 
             flexDirection: 'column', 
-            justifyContent: 'center', 
+            justifyContent: justifyContent, 
             alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
             height: '100%',
             gap: '24px',
             textAlign: titleAlignment,
+            paddingTop: `${contentPaddingTop}%`,
           }}>
             <HTMLLogo size="xl" theme={theme} />
             <p style={{
@@ -213,11 +230,12 @@ export default function BannerEditor() {
           <div style={{ 
             display: 'flex', 
             flexDirection: 'column', 
-            justifyContent: 'center', 
+            justifyContent: justifyContent, 
             alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'left' ? 'flex-start' : 'flex-end',
             height: '100%',
             gap: '20px',
             textAlign: titleAlignment,
+            paddingTop: `${contentPaddingTop}%`,
           }}>
             <HTMLLogo size="lg" theme={theme} />
             <h2 style={{
@@ -458,6 +476,30 @@ export default function BannerEditor() {
               <ExportModeControls
                 exportMode={exportMode}
                 onExportModeChange={setExportMode}
+              />
+
+              {/* Composition presets (v4.3) */}
+              <CompositionPresets
+                selectedPreset={compositionPreset}
+                onSelectPreset={(preset) => {
+                  setCompositionPreset(preset.id);
+                  setVerticalAlignment(preset.verticalAlignment);
+                  setTopMargin(preset.topMargin);
+                }}
+                currentVerticalAlignment={verticalAlignment}
+                currentTopMargin={topMargin}
+              />
+
+              {/* Vertical alignment (v4.3) */}
+              <VerticalAlignmentControls
+                value={verticalAlignment}
+                onChange={setVerticalAlignment}
+              />
+
+              {/* Top margin slider (v4.3) */}
+              <TopMarginSlider
+                value={topMargin}
+                onChange={setTopMargin}
               />
 
               {/* Platform Presets - dimensions dynamiques */}
