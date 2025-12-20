@@ -7,6 +7,7 @@ import { Copy, Check, Eye, Code, Plus, Trash2, Columns, GripVertical } from 'luc
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LazyQuill } from '@/components/admin/LazyQuill';
 import SavedTemplatesPanel from '@/components/admin/medias/SavedTemplatesPanel';
 import {
@@ -26,6 +27,45 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+
+// Thèmes disponibles pour l'email
+type EmailTheme = 'bleu-nuit' | 'blanc-casse' | 'terra';
+
+const EMAIL_THEMES = {
+  'bleu-nuit': {
+    headerBg: '#1A2B4A',
+    headerText: '#FFFFFF',
+    footerBg: '#1A2B4A',
+    footerText: '#FFFFFF',
+    bodyBg: '#FFFFFF',
+    bodyText: '#4A5568',
+    titleText: '#1A2B4A',
+    accent: '#B04A32',
+    logo: 'https://iarche.fr/logos/iarche-white.png',
+  },
+  'blanc-casse': {
+    headerBg: '#FAF9F7',
+    headerText: '#1A2B4A',
+    footerBg: '#FAF9F7',
+    footerText: '#1A2B4A',
+    bodyBg: '#FFFFFF',
+    bodyText: '#4A5568',
+    titleText: '#1A2B4A',
+    accent: '#B04A32',
+    logo: 'https://iarche.fr/logos/iarche-main.png',
+  },
+  'terra': {
+    headerBg: '#B04A32',
+    headerText: '#FAF9F7',
+    footerBg: '#B04A32',
+    footerText: '#FAF9F7',
+    bodyBg: '#FFFFFF',
+    bodyText: '#4A5568',
+    titleText: '#1A2B4A',
+    accent: '#1A2B4A',
+    logo: 'https://iarche.fr/logos/iarche-white.png',
+  },
+};
 
 const quillModules = {
   toolbar: [
@@ -177,6 +217,7 @@ const BrevoHTMLEditor = () => {
   const [showHeaderImage, setShowHeaderImage] = useState(false);
   const [footerText, setFooterText] = useState('IArche · Bayonne · France');
   const [copied, setCopied] = useState(false);
+  const [emailTheme, setEmailTheme] = useState<EmailTheme>('bleu-nuit');
   
   const [sections, setSections] = useState<Section[]>([
     { id: '1', type: 'text', title: '', content: '' }
@@ -195,7 +236,8 @@ const BrevoHTMLEditor = () => {
     showHeaderImage,
     footerText,
     sections,
-  }), [headerTitle, headerImage, showHeaderImage, footerText, sections]);
+    emailTheme,
+  }), [headerTitle, headerImage, showHeaderImage, footerText, sections, emailTheme]);
 
   const handleLoadTemplate = useCallback((data: Record<string, unknown>) => {
     if (data.headerTitle !== undefined) setHeaderTitle(data.headerTitle as string);
@@ -203,6 +245,7 @@ const BrevoHTMLEditor = () => {
     if (data.showHeaderImage !== undefined) setShowHeaderImage(data.showHeaderImage as boolean);
     if (data.footerText !== undefined) setFooterText(data.footerText as string);
     if (data.sections !== undefined) setSections(data.sections as Section[]);
+    if (data.emailTheme !== undefined) setEmailTheme(data.emailTheme as EmailTheme);
     toast.success('Template chargé');
   }, []);
 
@@ -242,23 +285,25 @@ const BrevoHTMLEditor = () => {
   };
 
   const generateHTML = () => {
+    const theme = EMAIL_THEMES[emailTheme];
+    
     const sectionsHTML = sections.map(section => {
       switch (section.type) {
         case 'text':
           return `
-              ${section.title ? `<h2 style="margin: 0 0 8px; color: #1A2B4A; font-size: 20px; font-weight: bold;">${section.title}</h2>` : ''}
-              ${section.content ? `<div style="color: #4A5568; font-size: 15px; line-height: 1.5; margin-bottom: 12px;">${section.content}</div>` : ''}`;
+              ${section.title ? `<h2 style="margin: 0 0 8px; color: ${theme.titleText}; font-size: 20px; font-weight: bold;">${section.title}</h2>` : ''}
+              ${section.content ? `<div style="color: ${theme.bodyText}; font-size: 15px; line-height: 1.5; margin-bottom: 12px;">${section.content}</div>` : ''}`;
         
         case 'columns':
           return `
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 12px;">
                 <tr>
                   <td width="48%" valign="top" style="padding-right: 2%;">
-                    <div style="color: #4A5568; font-size: 14px; line-height: 1.5;">${section.leftColumn || ''}</div>
+                    <div style="color: ${theme.bodyText}; font-size: 14px; line-height: 1.5;">${section.leftColumn || ''}</div>
                   </td>
                   <td width="4%"></td>
                   <td width="48%" valign="top" style="padding-left: 2%;">
-                    <div style="color: #4A5568; font-size: 14px; line-height: 1.5;">${section.rightColumn || ''}</div>
+                    <div style="color: ${theme.bodyText}; font-size: 14px; line-height: 1.5;">${section.rightColumn || ''}</div>
                   </td>
                 </tr>
               </table>`;
@@ -267,7 +312,7 @@ const BrevoHTMLEditor = () => {
           return section.ctaText ? `
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 16px auto;">
                 <tr>
-                  <td style="background: linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%); border-radius: 6px;">
+                  <td style="background-color: ${theme.accent}; border-radius: 6px;">
                     <a href="${section.ctaLink || 'https://iarche.fr'}" target="_blank" style="display: inline-block; padding: 12px 28px; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: bold;">${section.ctaText}</a>
                   </td>
                 </tr>
@@ -301,13 +346,13 @@ const BrevoHTMLEditor = () => {
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #FAF9F7;">
     <tr>
       <td align="center" style="padding: 24px 16px;">
-        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: ${theme.bodyBg}; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
           
           <!-- Header -->
           <tr>
-            <td style="background-color: #1A2B4A; padding: 24px; text-align: center;">
+            <td style="background-color: ${theme.headerBg}; padding: 24px; text-align: center;">
               ${headerContent}
-              <img src="https://iarche.fr/logos/iarche-white.png" alt="IArche" style="height: 36px;" />
+              <img src="${theme.logo}" alt="IArche" style="height: 36px;" />
             </td>
           </tr>
           
@@ -320,10 +365,10 @@ const BrevoHTMLEditor = () => {
           
           <!-- Footer -->
           <tr>
-            <td style="background-color: #1A2B4A; padding: 16px 24px; text-align: center;">
-              <p style="margin: 0; color: #ffffff; font-size: 13px;">${footerText}</p>
-              <p style="margin: 6px 0 0; color: rgba(255,255,255,0.7); font-size: 11px;">
-                <a href="https://iarche.fr" style="color: #B04A32; text-decoration: none;">iarche.fr</a>
+            <td style="background-color: ${theme.footerBg}; padding: 16px 24px; text-align: center;">
+              <p style="margin: 0; color: ${theme.footerText}; font-size: 13px;">${footerText}</p>
+              <p style="margin: 6px 0 0; color: ${emailTheme === 'blanc-casse' ? '#6B7280' : 'rgba(255,255,255,0.7)'}; font-size: 11px;">
+                <a href="https://iarche.fr" style="color: ${theme.accent}; text-decoration: none;">iarche.fr</a>
               </p>
             </td>
           </tr>
@@ -371,6 +416,40 @@ const BrevoHTMLEditor = () => {
                 getCurrentData={getCurrentData}
                 onLoadTemplate={handleLoadTemplate}
               />
+            </CardContent>
+          </Card>
+
+          {/* Theme selector */}
+          <Card>
+            <CardHeader className="py-3">
+              <CardTitle className="text-base">Thème</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Select value={emailTheme} onValueChange={(v) => setEmailTheme(v as EmailTheme)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bleu-nuit">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-[#1A2B4A]" />
+                      Bleu Nuit (sombre)
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="blanc-casse">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-[#FAF9F7] border" />
+                      Blanc Cassé (clair)
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="terra">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-[#B04A32]" />
+                      Terracotta
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </CardContent>
           </Card>
 
