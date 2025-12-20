@@ -581,6 +581,8 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                 <CompositionPresets
                   selectedPreset={selectedCompositionPreset}
                   onSelectPreset={applyCompositionPreset}
+                  currentVerticalAlignment={current?.verticalAlignment || verticalAlignment}
+                  currentTopMargin={topMargin}
                   compact
                 />
 

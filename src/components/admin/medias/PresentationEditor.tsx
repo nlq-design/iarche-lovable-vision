@@ -574,6 +574,8 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                 <CompositionPresets
                   selectedPreset={selectedCompositionPreset}
                   onSelectPreset={applyCompositionPreset}
+                  currentVerticalAlignment={current?.verticalAlignment || verticalAlignment}
+                  currentTopMargin={topMargin}
                   compact
                 />
 
