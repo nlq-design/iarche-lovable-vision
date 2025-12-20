@@ -187,11 +187,12 @@ export default function BannerEditor() {
             <p style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: `${titleFontSize}px`,
-              fontWeight: titleBold ? 700 : 400,
+              fontWeight: titleBold ? 600 : 400,
               fontStyle: titleItalic ? 'italic' : 'normal',
               color: subtextColor,
               margin: 0,
-              letterSpacing: '0.02em',
+              letterSpacing: '0.03em',
+              lineHeight: 1.3,
             }}>
               {tagline}
             </p>
@@ -299,49 +300,52 @@ export default function BannerEditor() {
             alignItems: 'center',
             justifyContent: 'space-between',
             height: '100%',
-            padding: '0 60px',
+            padding: `0 ${Math.round(width * 0.04)}px`,
           }}>
-            {/* Logo discret à gauche */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* Logo discret à gauche - v4.2 pro */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: Math.round(height * 0.03) + 'px' }}>
               <img 
                 src={theme === 'dark' || theme === 'terra' ? 'https://iarche.fr/logos/iarche-white.svg' : 'https://iarche.fr/logos/iarche-dark.svg'} 
                 alt="IArche" 
-                style={{ width: '120px', height: 'auto' }}
+                style={{ width: Math.round(width * 0.08) + 'px', height: 'auto' }}
               />
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: '14px',
+                fontSize: Math.round(width * 0.009) + 'px',
                 color: subtextColor,
-                letterSpacing: '0.05em',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
               }}>
                 Agence IA
               </span>
             </div>
             
-            {/* 4 services en ligne */}
+            {/* 4 services en ligne - v4.2 pro */}
             <div style={{ 
               display: 'flex', 
-              gap: '40px',
+              gap: Math.round(width * 0.03) + 'px',
             }}>
               {IARCHE_SERVICES.map((service, idx) => (
                 <div key={idx} style={{ 
                   display: 'flex', 
                   flexDirection: 'column', 
                   alignItems: 'center',
-                  gap: '4px',
+                  gap: Math.round(height * 0.015) + 'px',
                 }}>
                   <span style={{
                     fontFamily: IARCHE_FONTS.primary,
-                    fontSize: '16px',
+                    fontSize: Math.round(width * 0.011) + 'px',
                     fontWeight: 600,
                     color: textColor,
+                    letterSpacing: '0.01em',
                   }}>
                     {service.title}
                   </span>
                   <span style={{
                     fontFamily: IARCHE_FONTS.primary,
-                    fontSize: '12px',
+                    fontSize: Math.round(width * 0.008) + 'px',
                     color: subtextColor,
+                    fontWeight: 400,
                   }}>
                     {service.desc}
                   </span>

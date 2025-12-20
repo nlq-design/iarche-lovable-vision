@@ -319,45 +319,48 @@ export default function PostEditor() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start' }}>
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: '18px',
+                fontSize: Math.max(14, Math.round(width * 0.015)) + 'px',
                 fontWeight: 600,
                 color: IARCHE_COLORS.terracotta,
                 textTransform: 'uppercase',
-                letterSpacing: '0.1em',
+                letterSpacing: '0.15em',
               }}>
                 {badge}
               </span>
               <h1 style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${titleFontSize}px`,
-                fontWeight: titleBold ? 700 : 400,
+                fontWeight: titleBold ? 700 : 500,
                 fontStyle: titleItalic ? 'italic' : 'normal',
                 color: textColor,
                 margin: 0,
-                lineHeight: 1.1,
+                lineHeight: 1.15,
                 textAlign: titleAlignment,
+                letterSpacing: '-0.02em',
               }}>
                 {title}
               </h1>
               <p style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${descFontSize}px`,
-                fontWeight: descBold ? 600 : 400,
+                fontWeight: descBold ? 500 : 400,
                 fontStyle: descItalic ? 'italic' : 'normal',
                 color: subtextColor,
                 margin: 0,
-                maxWidth: '80%',
-                lineHeight: 1.5,
+                maxWidth: '85%',
+                lineHeight: 1.6,
                 textAlign: descAlignment,
+                letterSpacing: '0.01em',
               }}>
                 {description}
               </p>
             </div>
             <span style={{
               fontFamily: IARCHE_FONTS.primary,
-              fontSize: '20px',
+              fontSize: Math.max(16, Math.round(width * 0.018)) + 'px',
               fontWeight: 600,
               color: IARCHE_COLORS.terracotta,
+              letterSpacing: '0.02em',
             }}>
               {cta}
             </span>
@@ -572,43 +575,44 @@ export default function PostEditor() {
             justifyContent: 'space-between',
             height: '100%',
           }}>
-            {/* Header avec logo discret */}
+            {/* Header avec logo discret - v4.2 pro */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: '18px',
+                fontSize: Math.max(14, Math.round(width * 0.015)) + 'px',
                 fontWeight: 600,
                 color: IARCHE_COLORS.terracotta,
                 textTransform: 'uppercase',
-                letterSpacing: '0.1em',
+                letterSpacing: '0.15em',
               }}>
                 Nos Services
               </span>
               <img 
                 src={theme === 'dark' ? '/logos/iarche-white.svg' : '/logos/iarche-dark.svg'}
                 alt="IArche"
-                style={{ height: '40px', opacity: 0.8 }}
+                style={{ height: Math.max(32, Math.round(width * 0.035)) + 'px', opacity: 0.85 }}
               />
             </div>
 
-            {/* Titre principal */}
+            {/* Titre principal - v4.2 pro */}
             <h1 style={{
               fontFamily: IARCHE_FONTS.primary,
-              fontSize: format === 'square' ? '42px' : '36px',
+              fontSize: Math.max(28, Math.round(width * 0.035)) + 'px',
               fontWeight: 700,
               color: textColor,
               margin: 0,
               textAlign: 'center',
-              lineHeight: 1.2,
+              lineHeight: 1.15,
+              letterSpacing: '-0.02em',
             }}>
               L'IA au service de votre entreprise
             </h1>
 
-            {/* Grille 2x2 des services */}
+            {/* Grille 2x2 des services - v4.2 pro */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: format === 'square' ? '24px' : '16px',
+              gap: Math.max(12, Math.round(width * 0.018)) + 'px',
               width: '100%',
             }}>
               {IARCHE_SERVICES.map((service, index) => (
@@ -619,26 +623,28 @@ export default function PostEditor() {
                     flexDirection: 'column',
                     alignItems: 'center',
                     textAlign: 'center',
-                    padding: format === 'square' ? '24px' : '16px',
-                    backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(26,43,74,0.03)',
-                    borderRadius: '12px',
-                    border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(26,43,74,0.1)'}`,
+                    padding: `${Math.max(16, Math.round(width * 0.02))}px`,
+                    backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(26,43,74,0.025)',
+                    borderRadius: Math.round(width * 0.01) + 'px',
+                    border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(26,43,74,0.08)'}`,
                   }}
                 >
                   <span style={{
                     fontFamily: IARCHE_FONTS.primary,
-                    fontSize: format === 'square' ? '18px' : '14px',
-                    fontWeight: 700,
+                    fontSize: Math.max(14, Math.round(width * 0.015)) + 'px',
+                    fontWeight: 600,
                     color: textColor,
-                    marginBottom: '4px',
+                    marginBottom: Math.round(width * 0.004) + 'px',
+                    letterSpacing: '0.01em',
                   }}>
                     {service.title}
                   </span>
                   <span style={{
                     fontFamily: IARCHE_FONTS.primary,
-                    fontSize: format === 'square' ? '14px' : '12px',
+                    fontSize: Math.max(11, Math.round(width * 0.012)) + 'px',
                     fontWeight: 400,
                     color: subtextColor,
+                    lineHeight: 1.4,
                   }}>
                     {service.description}
                   </span>
@@ -796,7 +802,7 @@ export default function PostEditor() {
               <CardTitle>Paramètres</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Platform Presets - dimensions dynamiques */}
+              {/* Platform Presets - dimensions dynamiques (v4.2 - inclut vidéo verticale) */}
               <PlatformPresets
                 value={platformPreset}
                 onChange={setPlatformPreset}
@@ -806,7 +812,7 @@ export default function PostEditor() {
                   // Update format based on aspect ratio
                   setFormat(h > w * 0.8 ? 'square' : 'landscape');
                 }}
-                filterByCategory={['LinkedIn', 'Instagram', 'Facebook', 'Twitter/X']}
+                filterByCategory={['LinkedIn', 'Instagram', 'Facebook', 'Twitter/X', 'Vidéo verticale', 'Pinterest']}
               />
 
               {/* Template selector */}
