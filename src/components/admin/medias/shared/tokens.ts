@@ -170,6 +170,129 @@ export const FONTS = {
 } as const;
 
 // =====================================================
+// HIÉRARCHIE TYPOGRAPHIQUE v4.2 - 3 niveaux distincts
+// =====================================================
+export const TYPOGRAPHY_SCALE = {
+  // Display : Titres principaux (+20% de la taille de base)
+  display: {
+    multiplier: 1.2,
+    weight: 800,
+    letterSpacing: '-0.02em',
+    lineHeight: 1.1,
+  },
+  // Heading : Sous-titres (taille de référence)
+  heading: {
+    multiplier: 1.0,
+    weight: 700,
+    letterSpacing: '-0.01em',
+    lineHeight: 1.2,
+  },
+  // Body : Descriptions (-10% de la taille de base)
+  body: {
+    multiplier: 0.9,
+    weight: 400,
+    letterSpacing: '0.01em',
+    lineHeight: 1.5,
+  },
+  // Caption : Petits textes, sources
+  caption: {
+    multiplier: 0.7,
+    weight: 400,
+    letterSpacing: '0.02em',
+    lineHeight: 1.4,
+  },
+} as const;
+
+// =====================================================
+// SYSTÈME D'ESPACEMENT v4.2 - Échelle harmonique
+// =====================================================
+export const SPACING = {
+  xs: 8,
+  sm: 16,
+  md: 24,
+  lg: 32,
+  xl: 48,
+  '2xl': 64,
+  '3xl': 96,
+} as const;
+
+// Gaps prédéfinis pour les templates
+export const TEMPLATE_GAPS = {
+  tight: 16,      // Éléments très proches
+  normal: 24,     // Espacement standard
+  relaxed: 32,    // Respiration confortable
+  loose: 48,      // Séparation visuelle forte
+  section: 64,    // Entre sections majeures
+} as const;
+
+// =====================================================
+// EFFETS VISUELS v4.2 - Ombres, glows, animations
+// =====================================================
+export const EFFECTS = {
+  // Ombres portées
+  shadow: {
+    sm: '0 2px 4px rgba(26, 43, 74, 0.08)',
+    md: '0 4px 12px rgba(26, 43, 74, 0.12)',
+    lg: '0 8px 24px rgba(26, 43, 74, 0.16)',
+    xl: '0 12px 32px rgba(26, 43, 74, 0.2)',
+  },
+  // Glow terracotta pour chiffres/accents
+  glow: {
+    terracotta: '0 0 20px rgba(176, 74, 50, 0.3)',
+    terracottaStrong: '0 0 40px rgba(176, 74, 50, 0.5)',
+    bleuNuit: '0 0 20px rgba(26, 43, 74, 0.3)',
+  },
+  // Bordures d'accent
+  border: {
+    accent: `2px solid ${COLORS.terracotta}`,
+    accentLight: `1px solid ${COLORS.terracottaLight20}`,
+    gradient: `linear-gradient(90deg, ${COLORS.bleuNuit}, ${COLORS.terracotta})`,
+  },
+  // Dégradés radiaux pour fonds
+  radialGradient: {
+    dark: `radial-gradient(ellipse at center, ${COLORS.bleuNuit} 0%, ${COLORS.bleuNuitDark} 70%)`,
+    terra: `radial-gradient(ellipse at center, ${COLORS.terracotta} 0%, ${COLORS.terracottaDark} 70%)`,
+    subtle: `radial-gradient(ellipse at center, rgba(255,255,255,0.05) 0%, transparent 70%)`,
+  },
+} as const;
+
+// =====================================================
+// BADGES v4.2 - Styles prédéfinis
+// =====================================================
+export const BADGE_STYLES = {
+  default: {
+    background: COLORS.terracottaLight20,
+    color: COLORS.terracotta,
+    padding: '6px 14px',
+    borderRadius: '4px',
+    fontSize: '14px',
+    fontWeight: 700,
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase' as const,
+  },
+  dark: {
+    background: COLORS.bleuNuitLight20,
+    color: COLORS.bleuNuit,
+    padding: '6px 14px',
+    borderRadius: '4px',
+    fontSize: '14px',
+    fontWeight: 700,
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase' as const,
+  },
+  solid: {
+    background: COLORS.terracotta,
+    color: COLORS.white,
+    padding: '8px 16px',
+    borderRadius: '6px',
+    fontSize: '14px',
+    fontWeight: 700,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase' as const,
+  },
+} as const;
+
+// =====================================================
 // DIMENSIONS - Arcs décoratifs (v4.0)
 // =====================================================
 export const ARC_SIZES = {

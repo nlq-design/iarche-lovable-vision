@@ -30,6 +30,10 @@ import {
   HTMLLogo,
   IARCHE_COLORS,
   IARCHE_FONTS,
+  IARCHE_TYPOGRAPHY,
+  IARCHE_SPACING,
+  IARCHE_EFFECTS,
+  IARCHE_BADGES,
   ThemeType,
 } from '@/components/admin/medias/html';
 
@@ -379,54 +383,72 @@ export default function PostEditor() {
 
     switch (template) {
       case 'annonce':
+        // v4.2: Hiérarchie typographique améliorée + badge stylisé
+        const displayFontSize = Math.round(titleFontSize * IARCHE_TYPOGRAPHY.display.multiplier);
+        const bodyFontSize = Math.round(descFontSize * IARCHE_TYPOGRAPHY.body.multiplier);
+        
         return (
           <div style={getContentContainerStyle()}>
             {exportMode === 'logo-discret' ? renderLogoDiscret('top-right') : <HTMLLogo size="lg" theme={theme} />}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start' }}>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: `${IARCHE_SPACING.md}px`, 
+              alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start' 
+            }}>
+              {/* Badge v4.2 avec fond et bordure radius */}
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: Math.max(14, Math.round(width * 0.015)) + 'px',
-                fontWeight: 600,
-                color: IARCHE_COLORS.terracotta,
+                fontSize: Math.max(14, Math.round(width * 0.014)) + 'px',
+                fontWeight: IARCHE_BADGES.default.fontWeight,
+                color: theme === 'light' ? IARCHE_COLORS.terracotta : IARCHE_COLORS.white,
+                background: theme === 'light' ? IARCHE_COLORS.terracottaLight30 : 'rgba(176, 74, 50, 0.25)',
+                padding: '8px 16px',
+                borderRadius: '6px',
                 textTransform: 'uppercase',
-                letterSpacing: '0.15em',
+                letterSpacing: '0.12em',
               }}>
                 {badge}
               </span>
+              {/* Titre Display v4.2 (+20%) */}
               <h1 style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: `${titleFontSize}px`,
-                fontWeight: titleBold ? 700 : 500,
+                fontSize: `${displayFontSize}px`,
+                fontWeight: titleBold ? IARCHE_TYPOGRAPHY.display.weight : 600,
                 fontStyle: titleItalic ? 'italic' : 'normal',
                 color: textColor,
                 margin: 0,
-                lineHeight: 1.15,
+                lineHeight: IARCHE_TYPOGRAPHY.display.lineHeight,
                 textAlign: titleAlignment,
-                letterSpacing: '-0.02em',
+                letterSpacing: IARCHE_TYPOGRAPHY.display.letterSpacing,
               }}>
                 {title}
               </h1>
+              {/* Description Body v4.2 (-10%) */}
               <p style={{
                 fontFamily: IARCHE_FONTS.primary,
-                fontSize: `${descFontSize}px`,
-                fontWeight: descBold ? 500 : 400,
+                fontSize: `${bodyFontSize}px`,
+                fontWeight: descBold ? 500 : IARCHE_TYPOGRAPHY.body.weight,
                 fontStyle: descItalic ? 'italic' : 'normal',
                 color: subtextColor,
                 margin: 0,
                 maxWidth: '85%',
-                lineHeight: 1.6,
+                lineHeight: IARCHE_TYPOGRAPHY.body.lineHeight,
                 textAlign: descAlignment,
-                letterSpacing: '0.01em',
+                letterSpacing: IARCHE_TYPOGRAPHY.body.letterSpacing,
               }}>
                 {description}
               </p>
             </div>
+            {/* CTA v4.2 avec soulignement accent */}
             <span style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: Math.max(16, Math.round(width * 0.018)) + 'px',
               fontWeight: 600,
               color: IARCHE_COLORS.terracotta,
               letterSpacing: '0.02em',
+              borderBottom: `2px solid ${IARCHE_COLORS.terracotta}`,
+              paddingBottom: '4px',
             }}>
               {cta}
             </span>
@@ -434,42 +456,48 @@ export default function PostEditor() {
         );
 
       case 'chiffre':
+        // v4.2: Glow terracotta + typographie améliorée
+        const chiffreDisplaySize = Math.round(titleFontSize * 1.3); // Chiffres encore plus grands
+        const captionFontSize = Math.round(14 * IARCHE_TYPOGRAPHY.caption.multiplier);
+        
         return (
           <div style={getContentContainerStyle('center')}>
             {exportMode === 'logo-discret' ? renderLogoDiscret('top-right') : <HTMLLogo size="md" theme={theme} />}
+            {/* Chiffre v4.2 avec glow terracotta */}
             <div style={{
               fontFamily: IARCHE_FONTS.primary,
-              fontSize: `${titleFontSize}px`,
-              fontWeight: titleBold ? 800 : 400,
+              fontSize: `${chiffreDisplaySize}px`,
+              fontWeight: titleBold ? IARCHE_TYPOGRAPHY.display.weight : 700,
               fontStyle: titleItalic ? 'italic' : 'normal',
-              background: IARCHE_COLORS.terracotta,
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              color: 'transparent',
+              color: IARCHE_COLORS.terracotta,
               lineHeight: 1,
+              textShadow: IARCHE_EFFECTS.glow.terracotta,
+              letterSpacing: IARCHE_TYPOGRAPHY.display.letterSpacing,
             }}>
               {chiffre}
             </div>
+            {/* Contexte v4.2 */}
             <p style={{
               fontFamily: IARCHE_FONTS.primary,
-              fontSize: `${descFontSize}px`,
-              fontWeight: descBold ? 600 : 500,
+              fontSize: `${Math.round(descFontSize * IARCHE_TYPOGRAPHY.heading.multiplier)}px`,
+              fontWeight: descBold ? 600 : IARCHE_TYPOGRAPHY.heading.weight,
               fontStyle: descItalic ? 'italic' : 'normal',
               color: textColor,
               margin: 0,
               maxWidth: '70%',
-              lineHeight: 1.4,
+              lineHeight: IARCHE_TYPOGRAPHY.heading.lineHeight,
               textAlign: descAlignment,
             }}>
               {contexte}
             </p>
+            {/* Source v4.2 caption style */}
             <span style={{
               fontFamily: IARCHE_FONTS.primary,
-              fontSize: '14px',
-              fontWeight: 400,
+              fontSize: `${captionFontSize}px`,
+              fontWeight: IARCHE_TYPOGRAPHY.caption.weight,
               color: subtextColor,
               fontStyle: 'italic',
+              letterSpacing: IARCHE_TYPOGRAPHY.caption.letterSpacing,
             }}>
               {source}
             </span>

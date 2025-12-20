@@ -28,6 +28,9 @@ import {
   HTMLLogo,
   IARCHE_COLORS,
   IARCHE_FONTS,
+  IARCHE_TYPOGRAPHY,
+  IARCHE_SPACING,
+  IARCHE_EFFECTS,
   ThemeType,
 } from '@/components/admin/medias/html';
 
