@@ -303,8 +303,27 @@ export const PresentationPDF = ({ slides, startTheme = 'dark', showDecorativeArc
               position: 'relative' 
             }}
           >
+            {/* v4.3 - Arc décoratif mode continuité: plus grand et débordant */}
+            {showDecorativeArc && (
+              <View style={{
+                position: 'absolute',
+                bottom: -PAGE_WIDTH * 0.12,
+                right: -PAGE_WIDTH * 0.12,
+                width: PAGE_WIDTH * 0.30,
+                height: PAGE_WIDTH * 0.30,
+                opacity: 0.05,
+              }}>
+                <View style={{
+                  width: '100%',
+                  height: '100%',
+                  borderWidth: 2,
+                  borderColor: isDark ? '#ffffff' : '#B04A32',
+                  borderRadius: PAGE_WIDTH * 0.15,
+                  borderTopLeftRadius: 0,
+                }} />
+              </View>
+            )}
 
-            {/* Main content */}
             <View style={styles.content}>
               {/* Header */}
               <View style={styles.header}>
