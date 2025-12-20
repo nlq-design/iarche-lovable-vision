@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { BarSize } from './html/tokens';
 
-export type ExportMode = 'simple' | 'with-bar' | 'full';
+export type ExportMode = 'simple' | 'with-bar' | 'full' | 'logo-discret';
 
 interface ExportModeControlsProps {
   exportMode: ExportMode;
@@ -19,6 +19,7 @@ const EXPORT_MODES: { value: ExportMode; label: string; description: string }[] 
   { value: 'simple', label: 'Simple', description: 'Contenu uniquement' },
   { value: 'with-bar', label: '+ Arc', description: 'Avec arc décoratif sous titre' },
   { value: 'full', label: 'Complet', description: 'Tous les éléments visuels' },
+  { value: 'logo-discret', label: 'Discret', description: 'Petit logo en coin, sans arc' },
 ];
 
 const BAR_SIZES: BarSize[] = ['sm', 'md', 'lg', 'xl'];
@@ -31,7 +32,7 @@ export const ExportModeControls: React.FC<ExportModeControlsProps> = ({
   showBarSizeSelector = true,
   compact = false,
 }) => {
-  const showBarSize = showBarSizeSelector && barSize && onBarSizeChange && (exportMode === 'with-bar' || exportMode === 'full');
+  const showBarSize = showBarSizeSelector && barSize && onBarSizeChange && ['with-bar', 'full'].includes(exportMode);
 
   if (compact) {
     return (
@@ -83,7 +84,7 @@ export const ExportModeControls: React.FC<ExportModeControlsProps> = ({
         <RadioGroup
           value={exportMode}
           onValueChange={(v) => onExportModeChange(v as ExportMode)}
-          className="grid grid-cols-3 gap-2"
+          className="grid grid-cols-2 gap-2"
         >
           {EXPORT_MODES.map((mode) => (
             <div key={mode.value} className="flex items-center space-x-2">

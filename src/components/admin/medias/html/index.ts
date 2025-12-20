@@ -17,6 +17,7 @@ export { HTMLLogoArc } from './HTMLLogoArc';
 export { HTMLLogoWithArc } from './HTMLLogoWithArc';
 export { HTMLLogoWithBar } from './HTMLLogoWithBar'; // Legacy
 export { HTMLGradientBar } from './HTMLGradientBar'; // Legacy
+export { HTMLLogoDiscret } from './HTMLLogoDiscret'; // v4.1 - Logo discret
 export { HTMLBaseTemplate } from './HTMLBaseTemplate';
 
 // Image Library (Supabase Storage)

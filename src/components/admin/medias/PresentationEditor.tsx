@@ -41,7 +41,32 @@ type PresetTemplate = {
 };
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
-  // Annonce
+  // ========== SERVICES IARCHE ==========
+  { id: 'service-audit', label: '🔍 Audit & Conseil', category: 'conseil', slides: [
+    { type: 'title', title: 'Audit IA', subtitle: 'Par où commencer ?' },
+    { type: 'bullets', title: 'Notre approche', bullets: ['Comprendre vos process', 'Analyser vos données', 'Identifier les cas d\'usage'] },
+    { type: 'content', title: 'Livrable', content: 'Une roadmap claire, chiffrée et priorisée.' },
+    { type: 'cta', title: 'Demander un audit', content: 'iarche.fr/audit' },
+  ]},
+  { id: 'service-developpement', label: '⚙️ Développement', category: 'annonce', slides: [
+    { type: 'title', title: 'Solutions IA', subtitle: 'Du prototype à la production' },
+    { type: 'bullets', title: 'Nos services', bullets: ['Prototypage rapide (2-4 sem.)', 'Intégration à vos outils', 'Accompagnement post-production'] },
+    { type: 'content', title: 'Pour qui ?', content: 'TPE, PME, collectivités — l\'IA s\'adresse à tous.' },
+    { type: 'cta', title: 'Découvrir nos solutions', content: 'iarche.fr/solutions' },
+  ]},
+  { id: 'service-accompagnement', label: '🎓 Accompagnement', category: 'conseil', slides: [
+    { type: 'title', title: 'Formation IA', subtitle: 'Rendez vos équipes autonomes' },
+    { type: 'bullets', title: 'Nos formats', bullets: ['Sessions techniques (prompting, RAG)', 'Ateliers métier (ROI, éthique)', 'Accompagnement continu'] },
+    { type: 'content', title: 'Résultat', content: 'Une utilisation de l\'IA maîtrisée, conforme et sécurisée.' },
+    { type: 'cta', title: 'Nos formations', content: 'iarche.fr/formations' },
+  ]},
+  { id: 'service-conformite', label: '🛡️ Conformité', category: 'question', slides: [
+    { type: 'title', title: 'Conformité IA', subtitle: 'AI Act & RGPD' },
+    { type: 'content', title: 'Êtes-vous prêt ?', content: 'Février 2025 : entrée en vigueur des premières obligations AI Act.' },
+    { type: 'bullets', title: 'Nos services', bullets: ['Audit de conformité', 'Documentation réglementaire', 'Veille continue'] },
+    { type: 'cta', title: 'Vérifier ma conformité', content: 'iarche.fr/conformite' },
+  ]},
+  // ========== ANNONCE ==========
   { id: 'nouveaute', label: 'Nouveauté', category: 'annonce', slides: [
     { type: 'title', title: 'Nouveauté', subtitle: 'IArche présente' },
     { type: 'content', title: 'Découvrez notre nouvelle solution', content: 'Une innovation pour simplifier votre quotidien.' },
@@ -60,7 +85,7 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
     { type: 'bullets', title: 'Pourquoi ?', bullets: ['Bénéfice 1', 'Bénéfice 2', 'Bénéfice 3'] },
     { type: 'cta', title: 'Disponible maintenant', content: 'iarche.fr' },
   ]},
-  // Chiffre
+  // ========== CHIFFRE ==========
   { id: 'statistiques', label: 'Statistiques', category: 'chiffre', slides: [
     { type: 'title', title: 'Les chiffres qui comptent', subtitle: 'IArche en quelques données' },
     { type: 'content', title: '73%', content: 'des entreprises constatent un ROI positif' },
@@ -73,7 +98,7 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
     { type: 'content', title: 'Et ce n\'est que le début', content: 'Objectif 2025 : 200 PME.' },
     { type: 'cta', title: 'Rejoignez-nous', content: 'iarche.fr' },
   ]},
-  // Témoignage
+  // ========== TÉMOIGNAGE ==========
   { id: 'temoignage-client', label: 'Témoignage client', category: 'temoignage', slides: [
     { type: 'title', title: 'Success Story', subtitle: 'Ils nous font confiance' },
     { type: 'content', title: '"Grâce à IArche, nous avons automatisé 40% de nos tâches."', content: 'Jean-Pierre Martin, DG Groupe ABC' },
@@ -86,7 +111,7 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
     { type: 'content', title: 'La solution', content: 'Chatbot RAG + automatisation.' },
     { type: 'bullets', title: 'Les résultats', bullets: ['-40% admin', 'Satisfaction client +30%', 'ROI 6 mois'] },
   ]},
-  // Conseil
+  // ========== CONSEIL ==========
   { id: 'conseil-tip', label: 'Conseil / Tip', category: 'conseil', slides: [
     { type: 'title', title: 'Conseil #1', subtitle: 'Astuce IA' },
     { type: 'content', title: 'Commencez petit', content: 'Identifiez un cas d\'usage simple et mesurez les résultats.' },
@@ -99,7 +124,7 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
     { type: 'content', title: 'Clé du succès', content: 'L\'adoption est plus importante que la technologie.' },
     { type: 'cta', title: 'Accompagnement', content: 'iarche.fr' },
   ]},
-  // Question
+  // ========== QUESTION ==========
   { id: 'question-sondage', label: 'Question / Sondage', category: 'question', slides: [
     { type: 'title', title: '?', subtitle: 'Votre avis nous intéresse' },
     { type: 'content', title: 'L\'IA va-t-elle remplacer votre métier ?', content: 'Partagez votre opinion.' },

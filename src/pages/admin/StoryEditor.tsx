@@ -50,21 +50,26 @@ type PresetTemplate = {
 };
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
-  // Annonce
+  // ========== SERVICES IARCHE ==========
+  { id: 'service-audit', label: '🔍 Audit & Conseil', category: 'conseil', badge: 'Audit IA', titre: 'Par où commencer avec l\'IA ?', ctaText: 'Demander un audit →', chiffre: '1 jour', contexte: 'pour identifier vos cas d\'usage prioritaires', source: 'Audit IArche', conseilNumero: '01', conseilTitre: 'Cartographiez avant d\'agir', conseilContenu: 'Un audit permet d\'identifier ce qui a vraiment du sens pour votre activité.', citation: '"L\'audit IArche nous a permis de clarifier notre stratégie IA en une journée."', temoinNom: 'Marie Dubois', temoinFonction: 'DG, PME Services' },
+  { id: 'service-developpement', label: '⚙️ Développement', category: 'annonce', badge: 'Solution IA', titre: 'Du prototype à la production', ctaText: 'Voir nos solutions →', chiffre: '2-4 sem.', contexte: 'pour un premier prototype fonctionnel', source: 'Méthode IArche', conseilNumero: '02', conseilTitre: 'Commencez par un prototype', conseilContenu: 'Validez l\'approche sur un cas simple avant de généraliser.', citation: '"En 3 semaines, IArche a développé un chatbot parfaitement adapté à notre métier."', temoinNom: 'Pierre Leroy', temoinFonction: 'DSI, Groupe Industriel' },
+  { id: 'service-accompagnement', label: '🎓 Accompagnement', category: 'conseil', badge: 'Formation', titre: 'Rendez vos équipes autonomes', ctaText: 'Nos formations →', chiffre: '100%', contexte: 'de nos clients recommandent nos formations', source: 'Satisfaction IArche 2024', conseilNumero: '03', conseilTitre: 'Impliquez vos équipes', conseilContenu: 'L\'adoption est la clé du succès. Formez, accompagnez, itérez.', citation: '"Nos équipes utilisent maintenant l\'IA au quotidien, de manière autonome."', temoinNom: 'Sophie Martin', temoinFonction: 'RH, ETI 150 salariés' },
+  { id: 'service-conformite', label: '🛡️ Conformité', category: 'question', badge: 'Réglementation', titre: 'AI Act & RGPD : êtes-vous prêt ?', ctaText: 'Vérifier ma conformité →', chiffre: 'Fév. 2025', contexte: 'entrée en vigueur des premières obligations AI Act', source: 'Réglementation UE', conseilNumero: '04', conseilTitre: 'Anticipez la réglementation', conseilContenu: 'Les obligations arrivent. Mieux vaut auditer maintenant que subir plus tard.', citation: '"IArche nous a permis d\'anticiper l\'AI Act et d\'être prêts à temps."', temoinNom: 'Laurent Blanc', temoinFonction: 'DPO, Groupe Finance' },
+  // ========== ANNONCE ==========
   { id: 'nouveaute', label: 'Nouveauté', category: 'annonce', badge: 'Nouveauté', titre: 'Découvrez notre nouvelle solution IA', ctaText: 'En savoir plus', chiffre: '92%', contexte: 'des entreprises accompagnées ont augmenté leur productivité', source: 'Résultats IArche 2024' },
   { id: 'evenement', label: 'Événement', category: 'annonce', badge: 'Événement', titre: 'Webinaire exclusif sur l\'IA en entreprise', ctaText: 'S\'inscrire', chiffre: '+150', contexte: 'participants à nos ateliers cette année', source: 'Bilan IArche 2024' },
   { id: 'lancement', label: 'Lancement produit', category: 'annonce', badge: 'Nouveau', titre: 'Lancement de notre nouvelle solution', ctaText: 'Découvrir', chiffre: '100%', contexte: 'pensé pour les PME', source: 'IArche 2025' },
-  // Chiffre
+  // ========== CHIFFRE ==========
   { id: 'statistiques', label: 'Statistiques', category: 'chiffre', badge: 'Chiffre clé', titre: 'L\'IA en chiffres', ctaText: 'En savoir plus', chiffre: '73%', contexte: 'des entreprises constatent un ROI positif', source: 'McKinsey 2024' },
   { id: 'milestone', label: 'Milestone', category: 'chiffre', badge: 'Cap franchi', titre: 'Merci à vous !', ctaText: 'Célébrer', chiffre: '100', contexte: 'entreprises accompagnées', source: 'IArche 2024' },
   { id: 'resultat', label: 'Résultat client', category: 'chiffre', badge: 'Success Story', titre: 'Comment notre client a doublé sa productivité', ctaText: 'Voir le cas', chiffre: '+200%', contexte: 'de gain de productivité en 6 mois', source: 'Cas client 2024' },
-  // Témoignage
+  // ========== TÉMOIGNAGE ==========
   { id: 'temoignage-client', label: 'Témoignage client', category: 'temoignage', badge: 'Témoignage', titre: '', ctaText: 'Voir le cas', chiffre: '', contexte: '', source: '', citation: '"Grâce à IArche, nous avons automatisé 40% de nos tâches."', temoinNom: 'Jean-Pierre Martin', temoinFonction: 'DG, Groupe ABC' },
   { id: 'cas-client', label: 'Cas client', category: 'temoignage', badge: 'Success Story', titre: 'Découvrez leur transformation', ctaText: 'En savoir plus', chiffre: '+200%', contexte: 'de productivité', source: 'Cas client 2024', citation: '"Une transformation réussie"', temoinNom: 'Marie Dupont', temoinFonction: 'Directrice Ops' },
-  // Conseil
+  // ========== CONSEIL ==========
   { id: 'conseil-tip', label: 'Conseil / Tip', category: 'conseil', badge: 'Conseil', titre: '', ctaText: 'Appliquer', chiffre: '', contexte: '', source: '', conseilNumero: '01', conseilTitre: 'Commencez petit', conseilContenu: 'Identifiez un cas d\'usage simple avant de généraliser.' },
   { id: 'bonnes-pratiques', label: 'Bonnes pratiques', category: 'conseil', badge: 'Best Practice', titre: '', ctaText: 'Découvrir', chiffre: '3', contexte: 'bonnes pratiques IA', source: 'IArche', conseilNumero: '3', conseilTitre: '3 bonnes pratiques', conseilContenu: 'Impliquez vos équipes, mesurez, itérez.' },
-  // Question
+  // ========== QUESTION ==========
   { id: 'question-sondage', label: 'Question / Sondage', category: 'question', badge: 'Votre avis', titre: 'L\'IA va-t-elle remplacer votre métier ?', ctaText: 'Répondre', chiffre: '?', contexte: 'Partagez votre opinion', source: 'Débat', conseilNumero: '?', conseilTitre: 'Question du jour', conseilContenu: 'Donnez-nous votre avis en commentaire.' },
   { id: 'quiz', label: 'Quiz / Devinette', category: 'question', badge: 'Quiz', titre: 'Testez vos connaissances IA', ctaText: 'Jouer', chiffre: '?', contexte: 'Saurez-vous répondre ?', source: 'IArche Quiz', conseilNumero: '?', conseilTitre: 'Quiz IA', conseilContenu: 'Quel % des PME utilisent l\'IA ?' },
 ];

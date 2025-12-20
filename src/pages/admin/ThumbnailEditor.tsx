@@ -42,23 +42,28 @@ type PresetTemplate = {
 };
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
-  // Annonce / Événement
+  // ========== SERVICES IARCHE ==========
+  { id: 'service-audit', label: '🔍 Audit & Conseil', category: 'conseil', titre: 'Audit IA : Par où commencer ?', sousTitre: 'Cartographiez vos opportunités et définissez une roadmap claire', date: 'En 1 jour', heure: '', eventType: 'atelier' },
+  { id: 'service-developpement', label: '⚙️ Développement', category: 'annonce', titre: 'Du prototype à la production', sousTitre: 'Des solutions IA conçues pour votre métier', date: '2-4 semaines', heure: '', eventType: 'webinaire' },
+  { id: 'service-accompagnement', label: '🎓 Accompagnement', category: 'conseil', titre: 'Formation IA : Rendez vos équipes autonomes', sousTitre: 'Sessions pratiques pour maîtriser l\'IA au quotidien', date: 'Sur mesure', heure: '', eventType: 'atelier' },
+  { id: 'service-conformite', label: '🛡️ Conformité', category: 'question', titre: 'AI Act & RGPD : Êtes-vous prêt ?', sousTitre: 'Audit de conformité, documentation, veille réglementaire', date: 'Fév. 2025', heure: '', eventType: 'webinaire' },
+  // ========== ANNONCE / ÉVÉNEMENT ==========
   { id: 'webinaire-ia', label: 'Webinaire IA PME', category: 'annonce', titre: 'Intégrer l\'IA dans votre PME', sousTitre: 'Les étapes clés pour réussir votre transformation', date: '15 Janvier 2025', heure: '14h00', eventType: 'webinaire' },
   { id: 'lancement', label: 'Lancement produit', category: 'annonce', titre: 'Nouvelle solution IArche', sousTitre: 'Découvrez notre dernière innovation', date: 'Disponible', heure: '', eventType: 'webinaire' },
   { id: 'evenement', label: 'Événement', category: 'annonce', titre: 'Conférence IA & Innovation', sousTitre: 'Rejoignez-nous pour une journée exceptionnelle', date: '20 Mars 2025', heure: '9h00', eventType: 'atelier' },
-  // Chiffre
+  // ========== CHIFFRE ==========
   { id: 'statistiques', label: 'Statistiques', category: 'chiffre', titre: '73% de ROI positif', sousTitre: 'Les chiffres clés de l\'IA en entreprise', date: 'Étude 2024', heure: '', eventType: 'webinaire' },
   { id: 'milestone', label: 'Milestone', category: 'chiffre', titre: '100 entreprises accompagnées', sousTitre: 'Merci pour votre confiance', date: 'Cap franchi', heure: '', eventType: 'replay' },
-  // Témoignage
+  // ========== TÉMOIGNAGE ==========
   { id: 'temoignage', label: 'Témoignage client', category: 'temoignage', titre: 'Success Story : Groupe ABC', sousTitre: '+200% de productivité en 6 mois', date: 'Cas client', heure: '', eventType: 'replay' },
   { id: 'cas-client', label: 'Cas client', category: 'temoignage', titre: 'Découvrez leur transformation', sousTitre: 'Une PME qui a osé l\'IA', date: 'En détail', heure: '', eventType: 'replay' },
-  // Conseil
+  // ========== CONSEIL ==========
   { id: 'conseil-tip', label: 'Conseil / Tip', category: 'conseil', titre: 'Conseil #1 : Commencez petit', sousTitre: 'Les bonnes pratiques pour débuter avec l\'IA', date: 'Guide', heure: '', eventType: 'webinaire' },
   { id: 'atelier-audit', label: 'Atelier Audit', category: 'conseil', titre: 'Audit IA : Diagnostiquez votre entreprise', sousTitre: 'Identifiez les opportunités d\'automatisation', date: '22 Janvier 2025', heure: '10h00', eventType: 'atelier' },
-  // Question
+  // ========== QUESTION ==========
   { id: 'question-sondage', label: 'Question / Sondage', category: 'question', titre: 'Êtes-vous prêt pour l\'IA ?', sousTitre: 'Participez à notre sondage', date: 'Votre avis', heure: '', eventType: 'webinaire' },
   { id: 'quiz', label: 'Quiz IA', category: 'question', titre: 'Testez vos connaissances', sousTitre: 'Quiz interactif sur l\'intelligence artificielle', date: 'Jouez', heure: '', eventType: 'webinaire' },
-  // Formations
+  // ========== FORMATIONS ==========
   { id: 'replay-formation', label: 'Replay Formation', category: 'conseil', titre: 'Formation IA pour dirigeants', sousTitre: 'Comprendre et piloter l\'IA dans votre organisation', date: 'Disponible', heure: '2h30', eventType: 'replay' },
 ];
 
