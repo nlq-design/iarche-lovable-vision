@@ -104,15 +104,15 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
               background: `radial-gradient(ellipse at 50% 0%, rgba(176, 74, 50, 0.08) 0%, transparent 50%), ${COLORS.blancCasse}`,
             }}
           >
-            {/* v4.2 - Decorative arc in corner */}
-            <div className="absolute -top-24 -right-24 w-96 h-96 pointer-events-none opacity-5">
+            {/* v4.2 - Arcs décoratifs en zones mortes extrêmes (jamais proche du logo/titre) */}
+            <div className="absolute -top-48 -right-48 w-96 h-96 pointer-events-none opacity-[0.03]">
               <svg viewBox="0 0 400 400" className="w-full h-full">
-                <path d="M400 0 Q400 400 0 400" fill="none" stroke={COLORS.terracotta} strokeWidth="3" />
+                <path d="M400 0 Q400 400 0 400" fill="none" stroke={COLORS.terracotta} strokeWidth="2" />
               </svg>
             </div>
-            <div className="absolute -bottom-24 -left-24 w-96 h-96 pointer-events-none opacity-5">
+            <div className="absolute -bottom-48 -left-48 w-96 h-96 pointer-events-none opacity-[0.03]">
               <svg viewBox="0 0 400 400" className="w-full h-full">
-                <path d="M0 0 Q0 400 400 400" fill="none" stroke={COLORS.bleuNuit} strokeWidth="3" />
+                <path d="M0 0 Q0 400 400 400" fill="none" stroke={COLORS.bleuNuit} strokeWidth="2" />
               </svg>
             </div>
             
