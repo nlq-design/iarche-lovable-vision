@@ -21,6 +21,7 @@ interface SlideData {
 interface PresentationPDFProps {
   slides: SlideData[];
   startTheme?: ThemeType;
+  showDecorativeArc?: boolean;
 }
 
 // Theme configurations - v4.1 DA compliant
@@ -271,7 +272,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export const PresentationPDF = ({ slides, startTheme = 'dark' }: PresentationPDFProps) => {
+export const PresentationPDF = ({ slides, startTheme = 'dark', showDecorativeArc = true }: PresentationPDFProps) => {
   const getSlideTheme = (slideIndex: number): ThemeType => {
     if (slideIndex % 2 === 0) return startTheme;
     return THEME_ALTERNATES[startTheme];

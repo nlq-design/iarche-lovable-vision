@@ -18,6 +18,7 @@ import { HTMLLogoArc } from './html/HTMLLogoArc';
 import { VerticalAlignmentControls, VerticalAlignment, getJustifyContent } from './VerticalAlignmentControls';
 import { CompositionPresets, CompositionPreset, COMPOSITION_PRESETS } from './CompositionPresets';
 import { TopMarginSlider, getContentSpacing } from './TopMarginSlider';
+import { DecorativeArcToggle } from './DecorativeArcToggle';
 
 interface PresentationEditorProps {
   templateId: string;
@@ -181,6 +182,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
   const [selectedCompositionPreset, setSelectedCompositionPreset] = useState<string>('centered');
   const [verticalAlignment, setVerticalAlignment] = useState<VerticalAlignment>('center');
   const [topMargin, setTopMargin] = useState<number>(0);
+  const [showDecorativeArc, setShowDecorativeArc] = useState(true);
 
   // Apply composition preset
   const applyCompositionPreset = (preset: CompositionPreset) => {
@@ -274,7 +276,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
   const handleExportPDF = async () => {
     setIsExporting(true);
     try {
-      const blob = await pdf(<PresentationPDF slides={slides} startTheme={startTheme} />).toBlob();
+      const blob = await pdf(<PresentationPDF slides={slides} startTheme={startTheme} showDecorativeArc={showDecorativeArc} />).toBlob();
       saveAs(blob, `presentation-iarche-${templateId}-${Date.now()}.pdf`);
       toast({ title: 'PDF exporté avec succès' });
     } catch (error) {
@@ -400,6 +402,13 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
               </div>
             </RadioGroup>
           </div>
+          
+          {/* Decorative arc toggle */}
+          <DecorativeArcToggle
+            enabled={showDecorativeArc}
+            onChange={setShowDecorativeArc}
+            compact
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -455,16 +464,18 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                     }}
                   >
                     {/* v4.2 - Arc décoratif en zone morte extrême (jamais proche du logo/titre) */}
-                    <div className="absolute -top-20 -right-20 w-40 h-40 pointer-events-none opacity-[0.05]">
-                      <svg viewBox="0 0 160 160" className="w-full h-full">
-                        <path 
-                          d="M160 0 Q160 160 0 160" 
-                          fill="none" 
-                          stroke={isDark ? '#ffffff' : '#B04A32'} 
-                          strokeWidth="1.5"
-                        />
-                      </svg>
-                    </div>
+                    {showDecorativeArc && (
+                      <div className="absolute -top-20 -right-20 w-40 h-40 pointer-events-none opacity-[0.05]">
+                        <svg viewBox="0 0 160 160" className="w-full h-full">
+                          <path 
+                            d="M160 0 Q160 160 0 160" 
+                            fill="none" 
+                            stroke={isDark ? '#ffffff' : '#B04A32'} 
+                            strokeWidth="1.5"
+                          />
+                        </svg>
+                      </div>
+                    )}
                     
                     {/* Canalisations decoration preview - only if 'full' mode */}
                     {showCanalisationsInPreview && (
