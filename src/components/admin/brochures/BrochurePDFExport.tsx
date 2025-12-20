@@ -1,6 +1,6 @@
-import { Document, Page, Text, View, StyleSheet, pdf, Image, Svg, Path, Rect } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, pdf, Image, Svg, Path, Circle, Link } from '@react-pdf/renderer';
 import { Brochure, PDFOrientation } from '@/types/brochure';
-import { COLORS, FONTS, BAR_SIZES } from '@/components/admin/medias/shared/tokens';
+import { COLORS, FONTS, GRADIENTS } from '@/components/admin/medias/shared/tokens';
 import { BASE64_ASSETS } from '@/components/admin/medias/pdf/base64Assets';
 import { Button } from '@/components/ui/button';
 import { Download, X, FileText } from 'lucide-react';
@@ -16,18 +16,13 @@ const A4_LANDSCAPE = { width: 841.89, height: 595.28 };
 // SVG Icons as components for PDF
 const CheckIcon = ({ color = COLORS.terracotta, size = 16 }: { color?: string; size?: number }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth={2} fill="none" />
     <Path
       d="M9 12l2 2 4-4"
       stroke={color}
       strokeWidth={2.5}
       strokeLinecap="round"
       strokeLinejoin="round"
-      fill="none"
-    />
-    <Path
-      d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"
-      stroke={color}
-      strokeWidth={2}
       fill="none"
     />
   </Svg>
@@ -46,20 +41,28 @@ const QuoteIcon = ({ color = COLORS.terracotta, size = 32 }: { color?: string; s
   </Svg>
 );
 
+// Arc décoratif SVG inline (comme dans l'aperçu web)
+const ArcDecorative = ({ width = 80, color1 = COLORS.bleuNuit, color2 = COLORS.terracotta }: { width?: number; color1?: string; color2?: string }) => {
+  const height = width * 0.25;
+  return (
+    <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+      <Path
+        d={`M 0 ${height} Q ${width / 2} 0 ${width} ${height}`}
+        stroke={color1}
+        strokeWidth={2}
+        fill="none"
+      />
+    </Svg>
+  );
+};
 
-// Logo Component v4.0 avec arc
+// Logo Component - utilise PNG pour react-pdf
 const BrandLogo = ({ size = 'md', isDark = false }: { size?: 'sm' | 'md' | 'lg'; isDark?: boolean }) => {
   const logoHeight = size === 'sm' ? 20 : size === 'md' ? 28 : 36;
-  const arcWidth = size === 'sm' ? 60 : size === 'md' ? 80 : 100;
-  const arcHeight = size === 'sm' ? 8 : size === 'md' ? 10 : 12;
-  
   const logoSrc = isDark ? BASE64_ASSETS.logoWhite : BASE64_ASSETS.logoGradient;
   
   return (
-    <View style={{ flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-      <Image src={logoSrc} style={{ height: logoHeight, objectFit: 'contain' }} />
-      <Image src={BASE64_ASSETS.arcMd} style={{ width: arcWidth, height: arcHeight, objectFit: 'contain' }} />
-    </View>
+    <Image src={logoSrc} style={{ height: logoHeight, objectFit: 'contain' }} />
   );
 };
 
@@ -71,6 +74,7 @@ const createStyles = (orientation: PDFOrientation, customColors?: { primary?: st
   const accentColor = customColors?.accent || COLORS.terracotta;
   
   return StyleSheet.create({
+    // Page styles - alignés avec l'aperçu web
     page: {
       backgroundColor: COLORS.blancCasse,
       padding: isLandscape ? 40 : 50,
@@ -85,109 +89,119 @@ const createStyles = (orientation: PDFOrientation, customColors?: { primary?: st
       alignItems: 'center',
       position: 'relative',
     },
-    // Cover elements
+    // Cover elements - alignés avec le style web
+    coverLogo: {
+      height: 48,
+      marginBottom: 32,
+      objectFit: 'contain',
+    },
     coverTitle: {
-      fontSize: isLandscape ? 52 : 44,
+      fontSize: isLandscape ? 56 : 44,
       fontFamily: FONTS.pdf.primary,
       color: primaryColor,
       textAlign: 'center',
       marginBottom: 16,
     },
     coverSubtitle: {
-      fontSize: isLandscape ? 18 : 16,
+      fontSize: isLandscape ? 20 : 18,
       color: COLORS.muted,
       textAlign: 'center',
       maxWidth: isLandscape ? 500 : 380,
       lineHeight: 1.6,
     },
-    arcBar: {
-      width: isLandscape ? 180 : 120,
-      height: isLandscape ? 20 : 14,
-      marginBottom: 24,
+    arcContainer: {
+      alignItems: 'center',
+      marginBottom: 16,
     },
-    arcBarSmall: {
-      width: 120,
-      height: 14,
-      marginBottom: 20,
-    },
-    // Section elements
+    // Section elements - alignés avec l'aperçu web
     sectionTitle: {
-      fontSize: isLandscape ? 26 : 22,
+      fontSize: isLandscape ? 28 : 24,
       fontFamily: FONTS.pdf.primary,
       color: primaryColor,
       marginBottom: 8,
     },
     sectionTitleCentered: {
-      fontSize: isLandscape ? 26 : 22,
+      fontSize: isLandscape ? 28 : 24,
       fontFamily: FONTS.pdf.primary,
       color: primaryColor,
       marginBottom: 8,
       textAlign: 'center',
     },
     paragraph: {
-      fontSize: isLandscape ? 11 : 10,
+      fontSize: isLandscape ? 12 : 11,
       lineHeight: 1.7,
       color: COLORS.foreground,
-      marginBottom: 10,
+      marginBottom: 12,
     },
-    // Key points grid
+    // Key points grid - alignés avec le style cards du web
+    keyPointsContainer: {
+      backgroundColor: COLORS.secondary,
+      margin: isLandscape ? -40 : -50,
+      padding: isLandscape ? 40 : 50,
+      paddingTop: 40,
+    },
     keyPointsGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: 14,
-      marginTop: 8,
+      gap: 16,
+      marginTop: 16,
     },
     keyPointCard: {
       width: isLandscape ? '31%' : '47%',
-      backgroundColor: COLORS.white,
-      padding: isLandscape ? 14 : 16,
+      backgroundColor: COLORS.blancCasse,
+      padding: 20,
       borderRadius: 8,
       borderWidth: 1,
       borderColor: COLORS.border,
     },
     keyPointHeader: {
       flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      marginBottom: 8,
+      alignItems: 'flex-start',
+      gap: 10,
+      marginBottom: 10,
     },
     keyPointTitle: {
-      fontSize: isLandscape ? 11 : 12,
+      fontSize: isLandscape ? 12 : 13,
       fontFamily: FONTS.pdf.primary,
       color: primaryColor,
       flex: 1,
     },
     keyPointDesc: {
-      fontSize: isLandscape ? 8 : 9,
+      fontSize: isLandscape ? 9 : 10,
       color: COLORS.muted,
       lineHeight: 1.5,
     },
     // Details features list
     featureList: {
-      marginTop: 16,
+      marginTop: 20,
     },
     featureItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 10,
-      marginBottom: 10,
+      gap: 12,
+      marginBottom: 12,
     },
     featureText: {
-      fontSize: isLandscape ? 10 : 9,
+      fontSize: isLandscape ? 11 : 10,
       color: COLORS.foreground,
       flex: 1,
     },
-    // Pricing
+    // Pricing - aligné avec le style web
+    pricingContainer: {
+      backgroundColor: COLORS.secondary,
+      margin: isLandscape ? -40 : -50,
+      padding: isLandscape ? 40 : 50,
+    },
     pricingGrid: {
       flexDirection: 'row',
-      gap: 16,
+      gap: 20,
       justifyContent: 'center',
-      marginTop: 16,
+      marginTop: 20,
     },
     pricingCard: {
-      width: isLandscape ? 220 : 180,
-      backgroundColor: COLORS.white,
-      padding: isLandscape ? 20 : 22,
+      width: isLandscape ? 200 : 160,
+      backgroundColor: COLORS.blancCasse,
+      padding: 24,
       borderRadius: 10,
       borderWidth: 2,
       borderColor: COLORS.border,
@@ -196,10 +210,10 @@ const createStyles = (orientation: PDFOrientation, customColors?: { primary?: st
       borderColor: accentColor,
     },
     pricingName: {
-      fontSize: isLandscape ? 14 : 13,
+      fontSize: isLandscape ? 16 : 14,
       fontFamily: FONTS.pdf.primary,
       color: primaryColor,
-      marginBottom: 10,
+      marginBottom: 8,
     },
     pricingPrice: {
       fontSize: isLandscape ? 28 : 24,
@@ -215,61 +229,74 @@ const createStyles = (orientation: PDFOrientation, customColors?: { primary?: st
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
-      marginBottom: 6,
+      marginBottom: 8,
     },
     pricingFeatureText: {
       fontSize: isLandscape ? 9 : 8,
       color: COLORS.foreground,
       flex: 1,
     },
-    // Testimonial
+    // Testimonial - aligné avec le style web
     testimonialBox: {
       backgroundColor: COLORS.bleuNuitLight10,
-      padding: isLandscape ? 28 : 32,
+      padding: isLandscape ? 32 : 36,
       borderRadius: 10,
       borderLeftWidth: 4,
       borderLeftColor: accentColor,
     },
     testimonialQuote: {
-      fontSize: isLandscape ? 13 : 12,
+      fontSize: isLandscape ? 14 : 13,
       fontStyle: 'italic',
       color: COLORS.foreground,
-      marginTop: 12,
-      marginBottom: 16,
+      marginTop: 16,
+      marginBottom: 20,
       lineHeight: 1.7,
     },
     testimonialAuthor: {
-      fontSize: isLandscape ? 11 : 10,
+      fontSize: isLandscape ? 12 : 11,
       fontFamily: FONTS.pdf.primary,
       color: primaryColor,
     },
     testimonialCompany: {
       fontSize: isLandscape ? 10 : 9,
       color: COLORS.muted,
-      marginTop: 2,
+      marginTop: 4,
     },
-    // Contact
+    // Contact - aligné avec l'aperçu web
     contactSection: {
       alignItems: 'center',
-      paddingTop: isLandscape ? 40 : 50,
+      paddingTop: isLandscape ? 50 : 60,
     },
     ctaButton: {
       backgroundColor: accentColor,
-      paddingHorizontal: isLandscape ? 40 : 32,
-      paddingVertical: isLandscape ? 16 : 14,
+      paddingHorizontal: isLandscape ? 48 : 40,
+      paddingVertical: isLandscape ? 18 : 16,
       borderRadius: 8,
+    },
+    ctaButtonOutline: {
+      borderWidth: 2,
+      borderColor: accentColor,
+      paddingHorizontal: isLandscape ? 48 : 40,
+      paddingVertical: isLandscape ? 18 : 16,
+      borderRadius: 8,
+      backgroundColor: 'transparent',
     },
     ctaText: {
       color: COLORS.white,
-      fontSize: isLandscape ? 14 : 12,
+      fontSize: isLandscape ? 16 : 14,
+      fontFamily: FONTS.pdf.primary,
+    },
+    ctaTextOutline: {
+      color: accentColor,
+      fontSize: isLandscape ? 16 : 14,
       fontFamily: FONTS.pdf.primary,
     },
     coordinates: {
-      marginTop: 20,
-      fontSize: isLandscape ? 10 : 9,
+      marginTop: 24,
+      fontSize: isLandscape ? 11 : 10,
       color: COLORS.subtle,
     },
-    // Footer
+    // Footer - aligné avec le web
     footer: {
       position: 'absolute',
       bottom: 24,
@@ -293,7 +320,7 @@ const createStyles = (orientation: PDFOrientation, customColors?: { primary?: st
     // Layout helpers
     twoColumnLayout: {
       flexDirection: 'row',
-      gap: 28,
+      gap: 32,
     },
     column: {
       flex: 1,
@@ -301,10 +328,10 @@ const createStyles = (orientation: PDFOrientation, customColors?: { primary?: st
     centeredContent: {
       alignItems: 'center',
     },
-    sectionWithBackground: {
-      backgroundColor: COLORS.secondary,
-      margin: isLandscape ? -40 : -50,
-      padding: isLandscape ? 40 : 50,
+    // Introduction content
+    introContent: {
+      maxWidth: isLandscape ? 600 : 450,
+      marginHorizontal: 'auto',
     },
   });
 };
@@ -320,26 +347,39 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
   const isLandscape = orientation === 'landscape';
   const pageSize = isLandscape ? A4_LANDSCAPE : A4_PORTRAIT;
   const accentColor = custom_colors?.accent || COLORS.terracotta;
+  const primaryColor = custom_colors?.primary || COLORS.bleuNuit;
+
+  // Arc width based on orientation
+  const arcWidth = isLandscape ? 100 : 80;
+  const arcSmall = isLandscape ? 70 : 60;
 
   return (
     <Document>
-      {/* Cover Page */}
+      {/* Cover Page - aligné avec l'aperçu web */}
       <Page size={[pageSize.width, pageSize.height]} style={styles.coverPage}>
-        
-        <View style={{ zIndex: 1, alignItems: 'center' }}>
-          {/* Decorative arc */}
-          <Image src={BASE64_ASSETS.arcLg} style={styles.arcBar} />
+        <View style={{ alignItems: 'center' }}>
+          {/* Logo officiel en haut */}
+          <Image src={BASE64_ASSETS.logoGradient} style={styles.coverLogo} />
           
+          {/* Titre principal */}
           <Text style={styles.coverTitle}>{brochure.cover_title}</Text>
+          
+          {/* Arc décoratif sous le titre */}
+          <View style={styles.arcContainer}>
+            <Image src={BASE64_ASSETS.arcLg} style={{ width: arcWidth, height: arcWidth * 0.25, objectFit: 'contain' }} />
+          </View>
+          
+          {/* Sous-titre */}
           {brochure.cover_subtitle && (
             <Text style={styles.coverSubtitle}>{brochure.cover_subtitle}</Text>
           )}
           
+          {/* Image de couverture */}
           {brochure.cover_image_url && (
             <Image 
               src={brochure.cover_image_url} 
               style={{ 
-                marginTop: 32, 
+                marginTop: 40, 
                 maxWidth: isLandscape ? 350 : 280, 
                 maxHeight: isLandscape ? 200 : 180,
                 borderRadius: 8,
@@ -348,76 +388,22 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
           )}
         </View>
         
-        {/* Footer with logo */}
+        {/* Footer */}
         <View style={styles.footer}>
-          <BrandLogo size="md" />
+          <BrandLogo size="sm" />
           <Text style={styles.footerText}>iarche.fr</Text>
         </View>
       </Page>
 
-      {/* Introduction + Key Points */}
-      {(sections.introduction.enabled || sections.keyPoints.enabled) && (
+      {/* Introduction Page */}
+      {sections.introduction.enabled && sections.introduction.content && (
         <Page size={[pageSize.width, pageSize.height]} style={styles.page}>
-          
-          <View style={{ zIndex: 1 }}>
-            {isLandscape ? (
-              <View style={styles.twoColumnLayout}>
-                {sections.introduction.enabled && sections.introduction.content && (
-                  <View style={styles.column}>
-                    <Text style={styles.sectionTitle}>Présentation</Text>
-                    <Image src={BASE64_ASSETS.arcMd} style={styles.arcBarSmall} />
-                    <Text style={styles.paragraph}>{sections.introduction.content}</Text>
-                  </View>
-                )}
-                {sections.keyPoints.enabled && sections.keyPoints.points.length > 0 && (
-                  <View style={[styles.column, { flex: sections.introduction.enabled ? 1.3 : 1 }]}>
-                    <Text style={styles.sectionTitle}>Points clés</Text>
-                    <Image src={BASE64_ASSETS.arcMd} style={styles.arcBarSmall} />
-                    <View style={styles.keyPointsGrid}>
-                      {sections.keyPoints.points.map((point) => (
-                        <View key={point.id} style={styles.keyPointCard}>
-                          <View style={styles.keyPointHeader}>
-                            <CheckIcon color={accentColor} size={14} />
-                            <Text style={styles.keyPointTitle}>{point.title}</Text>
-                          </View>
-                          <Text style={styles.keyPointDesc}>{point.description}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-                )}
-              </View>
-            ) : (
-              <>
-                {sections.introduction.enabled && sections.introduction.content && (
-                  <View style={{ marginBottom: 36 }}>
-                    <Text style={styles.sectionTitle}>Présentation</Text>
-                    <Image src={BASE64_ASSETS.arcMd} style={styles.arcBarSmall} />
-                    <Text style={styles.paragraph}>{sections.introduction.content}</Text>
-                  </View>
-                )}
-                {sections.keyPoints.enabled && sections.keyPoints.points.length > 0 && (
-                  <View>
-                    <Text style={styles.sectionTitle}>Points clés</Text>
-                    <Image src={BASE64_ASSETS.arcMd} style={styles.arcBarSmall} />
-                    <View style={styles.keyPointsGrid}>
-                      {sections.keyPoints.points.map((point) => (
-                        <View key={point.id} style={styles.keyPointCard}>
-                          <View style={styles.keyPointHeader}>
-                            <CheckIcon color={accentColor} size={14} />
-                            <Text style={styles.keyPointTitle}>{point.title}</Text>
-                          </View>
-                          <Text style={styles.keyPointDesc}>{point.description}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-                )}
-              </>
-            )}
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={[styles.paragraph, { fontSize: isLandscape ? 14 : 13, textAlign: 'center', maxWidth: isLandscape ? 550 : 420 }]}>
+              {sections.introduction.content}
+            </Text>
           </View>
           
-          {/* Footer */}
           <View style={styles.footer}>
             <BrandLogo size="sm" />
           </View>
@@ -425,13 +411,41 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
         </Page>
       )}
 
-      {/* Details */}
+      {/* Key Points Page */}
+      {sections.keyPoints.enabled && sections.keyPoints.points.length > 0 && (
+        <Page size={[pageSize.width, pageSize.height]} style={[styles.page, { padding: 0 }]}>
+          <View style={styles.keyPointsContainer}>
+            <View style={{ alignItems: 'center', marginBottom: 16 }}>
+              <Text style={styles.sectionTitleCentered}>Points clés</Text>
+              <Image src={BASE64_ASSETS.arcMd} style={{ width: arcSmall, height: arcSmall * 0.25, marginTop: 8 }} />
+            </View>
+            
+            <View style={styles.keyPointsGrid}>
+              {sections.keyPoints.points.map((point) => (
+                <View key={point.id} style={styles.keyPointCard}>
+                  <View style={styles.keyPointHeader}>
+                    <CheckIcon color={accentColor} size={20} />
+                    <Text style={styles.keyPointTitle}>{point.title}</Text>
+                  </View>
+                  <Text style={styles.keyPointDesc}>{point.description}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+          
+          <View style={[styles.footer, { left: isLandscape ? 40 : 50, right: isLandscape ? 40 : 50 }]}>
+            <BrandLogo size="sm" />
+          </View>
+          <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} fixed />
+        </Page>
+      )}
+
+      {/* Details Page */}
       {sections.details.enabled && (sections.details.content || sections.details.features?.length > 0) && (
         <Page size={[pageSize.width, pageSize.height]} style={styles.page}>
-          
-          <View style={{ zIndex: 1 }}>
+          <View>
             <Text style={styles.sectionTitle}>Détails</Text>
-            <Image src={BASE64_ASSETS.arcMd} style={styles.arcBarSmall} />
+            <Image src={BASE64_ASSETS.arcMd} style={{ width: arcSmall, height: arcSmall * 0.25, marginBottom: 20 }} />
             
             {sections.details.content && (
               isLandscape ? (
@@ -458,7 +472,7 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
               <View style={styles.featureList}>
                 {sections.details.features.map((feature, i) => (
                   <View key={i} style={styles.featureItem}>
-                    <CheckIcon color={accentColor} size={12} />
+                    <CheckIcon color={accentColor} size={14} />
                     <Text style={styles.featureText}>{feature}</Text>
                   </View>
                 ))}
@@ -473,13 +487,13 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
         </Page>
       )}
 
-      {/* Pricing */}
+      {/* Pricing Page */}
       {sections.pricing.enabled && sections.pricing.plans.length > 0 && (
-        <Page size={[pageSize.width, pageSize.height]} style={styles.page}>
-          <View style={[styles.sectionWithBackground, { position: 'relative' }]}>
-            <View style={styles.centeredContent}>
+        <Page size={[pageSize.width, pageSize.height]} style={[styles.page, { padding: 0 }]}>
+          <View style={styles.pricingContainer}>
+            <View style={{ alignItems: 'center', marginBottom: 8 }}>
               <Text style={styles.sectionTitleCentered}>{sections.pricing.title}</Text>
-              <Image src={BASE64_ASSETS.arcMd} style={styles.arcBarSmall} />
+              <Image src={BASE64_ASSETS.arcMd} style={{ width: arcSmall, height: arcSmall * 0.25, marginTop: 8 }} />
             </View>
             
             <View style={styles.pricingGrid}>
@@ -490,12 +504,33 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
                   {plan.period && <Text style={styles.pricingPeriod}>{plan.period}</Text>}
                   {plan.features.map((feature, i) => (
                     <View key={i} style={styles.pricingFeature}>
-                      <CheckIcon color={accentColor} size={10} />
+                      <CheckIcon color={accentColor} size={12} />
                       <Text style={styles.pricingFeatureText}>{feature}</Text>
                     </View>
                   ))}
                 </View>
               ))}
+            </View>
+          </View>
+          
+          <View style={[styles.footer, { left: isLandscape ? 40 : 50, right: isLandscape ? 40 : 50 }]}>
+            <BrandLogo size="sm" />
+          </View>
+          <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} fixed />
+        </Page>
+      )}
+
+      {/* Testimonial Page */}
+      {sections.testimonial.enabled && sections.testimonial.quote && (
+        <Page size={[pageSize.width, pageSize.height]} style={styles.page}>
+          <View style={{ flex: 1, justifyContent: 'center' }}>
+            <View style={styles.testimonialBox}>
+              <QuoteIcon color={accentColor} size={32} />
+              <Text style={styles.testimonialQuote}>"{sections.testimonial.quote}"</Text>
+              <Text style={styles.testimonialAuthor}>{sections.testimonial.author}</Text>
+              {sections.testimonial.company && (
+                <Text style={styles.testimonialCompany}>{sections.testimonial.company}</Text>
+              )}
             </View>
           </View>
           
@@ -506,68 +541,22 @@ const BrochurePDF = ({ brochure, orientation }: BrochurePDFProps) => {
         </Page>
       )}
 
-      {/* Testimonial + Contact */}
-      {(sections.testimonial.enabled || sections.contact.enabled) && (
+      {/* Contact Page - aligné avec l'aperçu web */}
+      {sections.contact.enabled && (
         <Page size={[pageSize.width, pageSize.height]} style={styles.page}>
-          
-          
-          <View style={{ zIndex: 1 }}>
-            {isLandscape ? (
-              <View style={styles.twoColumnLayout}>
-                {sections.testimonial.enabled && sections.testimonial.quote && (
-                  <View style={styles.column}>
-                    <View style={styles.testimonialBox}>
-                      <QuoteIcon color={accentColor} size={28} />
-                      <Text style={styles.testimonialQuote}>"{sections.testimonial.quote}"</Text>
-                      <Text style={styles.testimonialAuthor}>{sections.testimonial.author}</Text>
-                      {sections.testimonial.company && (
-                        <Text style={styles.testimonialCompany}>{sections.testimonial.company}</Text>
-                      )}
-                    </View>
-                  </View>
-                )}
-                {sections.contact.enabled && (
-                  <View style={[styles.column, styles.contactSection]}>
-                    <Text style={styles.sectionTitleCentered}>Intéressé ?</Text>
-                    <Image src={BASE64_ASSETS.arcMd} style={[styles.arcBarSmall, { marginBottom: 28 }]} />
-                    <View style={styles.ctaButton}>
-                      <Text style={styles.ctaText}>{sections.contact.cta_text}</Text>
-                    </View>
-                    {sections.contact.show_coordinates && (
-                      <Text style={styles.coordinates}>Bayonne · France · nlq@iarche.fr</Text>
-                    )}
-                  </View>
-                )}
-              </View>
-            ) : (
-              <>
-                {sections.testimonial.enabled && sections.testimonial.quote && (
-                  <View style={[styles.testimonialBox, { marginBottom: 48 }]}>
-                    <QuoteIcon color={accentColor} size={28} />
-                    <Text style={styles.testimonialQuote}>"{sections.testimonial.quote}"</Text>
-                    <Text style={styles.testimonialAuthor}>{sections.testimonial.author}</Text>
-                    {sections.testimonial.company && (
-                      <Text style={styles.testimonialCompany}>{sections.testimonial.company}</Text>
-                    )}
-                  </View>
-                )}
-                {sections.contact.enabled && (
-                  <View style={styles.contactSection}>
-                    <Text style={styles.sectionTitleCentered}>Intéressé ?</Text>
-                    <Image src={BASE64_ASSETS.arcMd} style={[styles.arcBarSmall, { marginBottom: 28 }]} />
-                    <View style={styles.ctaButton}>
-                      <Text style={styles.ctaText}>{sections.contact.cta_text}</Text>
-                    </View>
-                    {sections.contact.show_coordinates && (
-                      <Text style={styles.coordinates}>Bayonne · France · nlq@iarche.fr</Text>
-                    )}
-                  </View>
-                )}
-              </>
+          <View style={styles.contactSection}>
+            <Text style={styles.sectionTitleCentered}>Intéressé ?</Text>
+            <Image src={BASE64_ASSETS.arcMd} style={{ width: arcSmall, height: arcSmall * 0.25, marginTop: 8, marginBottom: 32 }} />
+            
+            <View style={styles.ctaButton}>
+              <Text style={styles.ctaText}>{sections.contact.cta_text || 'Nous contacter'}</Text>
+            </View>
+            
+            {sections.contact.show_coordinates && (
+              <Text style={styles.coordinates}>Bayonne · France · nlq@iarche.fr</Text>
             )}
           </View>
           
-          {/* Footer */}
           <View style={styles.footer}>
             <BrandLogo size="sm" />
             <Text style={styles.footerText}>© {new Date().getFullYear()} IArche</Text>
@@ -670,7 +659,7 @@ const BrochurePDFExport = ({ brochure, onClose }: BrochurePDFExportProps) => {
         >
           <strong style={{ color: COLORS.foreground }}>Format A4</strong> · {orientation === 'portrait' ? '210 × 297 mm' : '297 × 210 mm'}
           <br />
-          Export avec logo officiel et icônes SVG.
+          Export avec logo officiel et arcs décoratifs.
         </div>
 
         <div className="flex gap-2">
