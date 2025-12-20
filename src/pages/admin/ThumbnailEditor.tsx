@@ -28,12 +28,20 @@ import { HTMLLogoArc } from '@/components/admin/medias/html/HTMLLogoArc';
 import { ArcSize } from '@/components/admin/medias/html/tokens';
 
 type ThumbnailFormat = 'standard' | 'youtube';
-type EventType = 'webinaire' | 'atelier' | 'replay';
+type EventType = 'webinaire' | 'atelier' | 'replay' | 'services';
+
+// Les 4 services IArche
+const IARCHE_SERVICES = [
+  { icon: '🔍', title: 'Audit & Conseil', description: 'Diagnostic et stratégie IA' },
+  { icon: '⚙️', title: 'Développement', description: 'Solutions IA sur mesure' },
+  { icon: '🤝', title: 'Accompagnement', description: 'Formation et conduite du changement' },
+  { icon: '✓', title: 'Conformité', description: 'RGPD et gouvernance des données' },
+];
 
 type PresetTemplate = {
   id: string;
   label: string;
-  category: 'annonce' | 'chiffre' | 'temoignage' | 'conseil' | 'question';
+  category: 'annonce' | 'chiffre' | 'temoignage' | 'conseil' | 'question' | 'services';
   titre: string;
   sousTitre: string;
   date: string;
@@ -42,6 +50,8 @@ type PresetTemplate = {
 };
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
+  // ========== 4 SERVICES ==========
+  { id: 'services-iarche', label: '🎯 4 Services IArche', category: 'services', titre: 'L\'IA au service de votre entreprise', sousTitre: 'Nos 4 expertises pour vous accompagner', date: '', heure: '', eventType: 'services' },
   // ========== ANNONCE / ÉVÉNEMENT ==========
   { id: 'webinaire-ia', label: 'Webinaire IA PME', category: 'annonce', titre: 'Intégrer l\'IA dans votre PME', sousTitre: 'Les étapes clés pour réussir votre transformation', date: '15 Janvier 2025', heure: '14h00', eventType: 'webinaire' },
   { id: 'lancement', label: 'Lancement produit', category: 'annonce', titre: 'Nouvelle solution IArche', sousTitre: 'Découvrez notre dernière innovation', date: 'Disponible', heure: '', eventType: 'webinaire' },
@@ -71,6 +81,7 @@ const EVENT_LABELS: Record<EventType, string> = {
   webinaire: 'Webinaire',
   atelier: 'Atelier',
   replay: 'Replay',
+  services: 'Nos Services',
 };
 
 const SCALE = 0.3;
@@ -421,38 +432,34 @@ export default function ThumbnailEditor() {
                     padding={80}
                     showArches={false}
                   >
-                    <div style={{
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      justifyContent: 'space-between',
-                      height: '100%',
-                    }}>
-                      {/* Header */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <HTMLLogo size="xl" theme={theme} />
-                        <span style={{
-                          fontFamily: IARCHE_FONTS.primary,
-                          fontSize: '20px',
-                          fontWeight: 700,
-                          color: badgeText,
-                          backgroundColor: badgeBg,
-                          padding: '12px 24px',
-                          borderRadius: '8px',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
-                        }}>
-                          {EVENT_LABELS[eventType]}
-                        </span>
-                      </div>
-
-                      {/* Main Content */}
-                      <div style={{ 
+                    {eventType === 'services' ? (
+                      /* Template 4 Services */
+                      <div style={{
                         display: 'flex', 
                         flexDirection: 'column', 
-                        gap: '24px',
-                        maxWidth: '70%',
-                        textAlign: titleAlignment,
+                        justifyContent: 'space-between',
+                        height: '100%',
                       }}>
+                        {/* Header avec logo discret */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <span style={{
+                            fontFamily: IARCHE_FONTS.primary,
+                            fontSize: '24px',
+                            fontWeight: 600,
+                            color: IARCHE_COLORS.terracotta,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.1em',
+                          }}>
+                            Nos Services
+                          </span>
+                          <img 
+                            src={theme === 'dark' ? '/logos/iarche-white.svg' : '/logos/iarche-dark.svg'}
+                            alt="IArche"
+                            style={{ height: '50px', opacity: 0.8 }}
+                          />
+                        </div>
+
+                        {/* Titre principal */}
                         <h1 style={{
                           fontFamily: IARCHE_FONTS.primary,
                           fontSize: `${actualTitleSize}px`,
@@ -460,102 +467,207 @@ export default function ThumbnailEditor() {
                           fontStyle: titleItalic ? 'italic' : 'normal',
                           color: textColor,
                           margin: 0,
-                          lineHeight: 1.1,
+                          textAlign: 'center',
+                          lineHeight: 1.2,
                         }}>
                           {titre}
                         </h1>
-                        <p style={{
-                          fontFamily: IARCHE_FONTS.primary,
-                          fontSize: `${actualSubtitleSize}px`,
-                          fontWeight: 400,
-                          color: subtextColor,
-                          margin: 0,
-                          lineHeight: 1.4,
+
+                        {/* Grille horizontale des 4 services */}
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          gap: '24px',
+                          width: '100%',
                         }}>
-                          {sousTitre}
-                        </p>
-                      </div>
-
-                      {/* Footer */}
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'flex-end',
-                      }}>
-                        {/* Date & Time */}
-                        <div style={{ display: 'flex', gap: '32px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <Calendar size={24} color={IARCHE_COLORS.terracotta} />
-                            <span style={{
-                              fontFamily: IARCHE_FONTS.primary,
-                              fontSize: '24px',
-                              fontWeight: 600,
-                              color: textColor,
-                            }}>
-                              {date}
-                            </span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <Clock size={24} color={IARCHE_COLORS.terracotta} />
-                            <span style={{
-                              fontFamily: IARCHE_FONTS.primary,
-                              fontSize: '24px',
-                              fontWeight: 600,
-                              color: textColor,
-                            }}>
-                              {heure}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Speaker */}
-                        {showSpeaker && (
-                          <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '16px',
-                            backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(26,43,74,0.05)',
-                            padding: '16px 24px',
-                            borderRadius: '12px',
-                          }}>
-                            <div style={{
-                              width: '56px',
-                              height: '56px',
-                              borderRadius: '50%',
-                              backgroundColor: IARCHE_COLORS.terracotta,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              overflow: 'hidden',
-                            }}>
-                              {speakerPhoto ? (
-                                <img src={speakerPhoto} alt={speakerNom} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              ) : (
-                                <User size={28} color={IARCHE_COLORS.white} />
-                              )}
-                            </div>
-                            <div>
-                              <div style={{
+                          {IARCHE_SERVICES.map((service, index) => (
+                            <div
+                              key={index}
+                              style={{
+                                flex: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                textAlign: 'center',
+                                padding: '32px 16px',
+                                backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(26,43,74,0.03)',
+                                borderRadius: '16px',
+                                border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(26,43,74,0.1)'}`,
+                              }}
+                            >
+                              <span style={{ fontSize: '48px', marginBottom: '16px' }}>
+                                {service.icon}
+                              </span>
+                              <span style={{
                                 fontFamily: IARCHE_FONTS.primary,
-                                fontSize: '20px',
+                                fontSize: '24px',
                                 fontWeight: 700,
                                 color: textColor,
+                                marginBottom: '8px',
                               }}>
-                                {speakerNom}
-                              </div>
-                              <div style={{
+                                {service.title}
+                              </span>
+                              <span style={{
                                 fontFamily: IARCHE_FONTS.primary,
-                                fontSize: '16px',
+                                fontSize: '18px',
                                 fontWeight: 400,
                                 color: subtextColor,
                               }}>
-                                {speakerFonction}
-                              </div>
+                                {service.description}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Footer */}
+                        <span style={{
+                          fontFamily: IARCHE_FONTS.primary,
+                          fontSize: '20px',
+                          fontWeight: 500,
+                          color: IARCHE_COLORS.terracotta,
+                          textAlign: 'center',
+                        }}>
+                          iarche.fr
+                        </span>
+                      </div>
+                    ) : (
+                      /* Template standard événement */
+                      <div style={{
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        justifyContent: 'space-between',
+                        height: '100%',
+                      }}>
+                        {/* Header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <HTMLLogo size="xl" theme={theme} />
+                          <span style={{
+                            fontFamily: IARCHE_FONTS.primary,
+                            fontSize: '20px',
+                            fontWeight: 700,
+                            color: badgeText,
+                            backgroundColor: badgeBg,
+                            padding: '12px 24px',
+                            borderRadius: '8px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                          }}>
+                            {EVENT_LABELS[eventType]}
+                          </span>
+                        </div>
+
+                        {/* Main Content */}
+                        <div style={{ 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          gap: '24px',
+                          maxWidth: '70%',
+                          textAlign: titleAlignment,
+                        }}>
+                          <h1 style={{
+                            fontFamily: IARCHE_FONTS.primary,
+                            fontSize: `${actualTitleSize}px`,
+                            fontWeight: titleBold ? 700 : 400,
+                            fontStyle: titleItalic ? 'italic' : 'normal',
+                            color: textColor,
+                            margin: 0,
+                            lineHeight: 1.1,
+                          }}>
+                            {titre}
+                          </h1>
+                          <p style={{
+                            fontFamily: IARCHE_FONTS.primary,
+                            fontSize: `${actualSubtitleSize}px`,
+                            fontWeight: 400,
+                            color: subtextColor,
+                            margin: 0,
+                            lineHeight: 1.4,
+                          }}>
+                            {sousTitre}
+                          </p>
+                        </div>
+
+                        {/* Footer */}
+                        <div style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'flex-end',
+                        }}>
+                          {/* Date & Time */}
+                          <div style={{ display: 'flex', gap: '32px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <Calendar size={24} color={IARCHE_COLORS.terracotta} />
+                              <span style={{
+                                fontFamily: IARCHE_FONTS.primary,
+                                fontSize: '24px',
+                                fontWeight: 600,
+                                color: textColor,
+                              }}>
+                                {date}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <Clock size={24} color={IARCHE_COLORS.terracotta} />
+                              <span style={{
+                                fontFamily: IARCHE_FONTS.primary,
+                                fontSize: '24px',
+                                fontWeight: 600,
+                                color: textColor,
+                              }}>
+                                {heure}
+                              </span>
                             </div>
                           </div>
-                        )}
+
+                          {/* Speaker */}
+                          {showSpeaker && (
+                            <div style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '16px',
+                              backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(26,43,74,0.05)',
+                              padding: '16px 24px',
+                              borderRadius: '12px',
+                            }}>
+                              <div style={{
+                                width: '56px',
+                                height: '56px',
+                                borderRadius: '50%',
+                                backgroundColor: IARCHE_COLORS.terracotta,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                overflow: 'hidden',
+                              }}>
+                                {speakerPhoto ? (
+                                  <img src={speakerPhoto} alt={speakerNom} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                  <User size={28} color={IARCHE_COLORS.white} />
+                                )}
+                              </div>
+                              <div>
+                                <div style={{
+                                  fontFamily: IARCHE_FONTS.primary,
+                                  fontSize: '20px',
+                                  fontWeight: 700,
+                                  color: textColor,
+                                }}>
+                                  {speakerNom}
+                                </div>
+                                <div style={{
+                                  fontFamily: IARCHE_FONTS.primary,
+                                  fontSize: '16px',
+                                  fontWeight: 400,
+                                  color: subtextColor,
+                                }}>
+                                  {speakerFonction}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </HTMLBaseTemplate>
                 </div>
               </div>
