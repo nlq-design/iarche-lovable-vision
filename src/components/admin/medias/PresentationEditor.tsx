@@ -15,6 +15,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { PresentationPDF, ExportMode, BarSize } from './templates/PresentationPDF';
 import { ExportModeControls } from './ExportModeControls';
 import { HTMLLogoArc } from './html/HTMLLogoArc';
+import { VerticalAlignmentControls, VerticalAlignment, getJustifyContent } from './VerticalAlignmentControls';
+import { CompositionPresets, CompositionPreset, COMPOSITION_PRESETS } from './CompositionPresets';
 
 interface PresentationEditorProps {
   templateId: string;
@@ -30,6 +32,7 @@ interface SlideData {
   bullets: string[];
   exportMode?: ExportMode;
   barSize?: BarSize;
+  verticalAlignment?: VerticalAlignment;
 }
 
 // Presets pré-remplis uniformisés (comme Post/Story/Banner)
@@ -174,6 +177,15 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
   const [solutions, setSolutions] = useState<{ id: string; title: string }[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<string>('');
   const [startTheme, setStartTheme] = useState<'dark' | 'light' | 'terra' | 'contrast'>('dark');
+  const [selectedCompositionPreset, setSelectedCompositionPreset] = useState<string>('centered');
+  const [verticalAlignment, setVerticalAlignment] = useState<VerticalAlignment>('center');
+
+  // Apply composition preset
+  const applyCompositionPreset = (preset: CompositionPreset) => {
+    setSelectedCompositionPreset(preset.id);
+    setVerticalAlignment(preset.verticalAlignment);
+    handleSlideChange('verticalAlignment', preset.verticalAlignment);
+  };
 
   useEffect(() => {
     const fetchSolutions = async () => {
@@ -462,7 +474,10 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                     </div>
 
                     {/* Content */}
-                    <div className={`flex-1 flex flex-col ${current?.type === 'title' ? 'justify-center items-center text-center' : 'justify-start'}`}>
+                    <div 
+                      className={`flex-1 flex flex-col ${current?.type === 'title' ? 'items-center text-center' : ''}`}
+                      style={{ justifyContent: getJustifyContent(current?.verticalAlignment || verticalAlignment) }}
+                    >
                       {current?.subtitle && (
                         <p className="text-xs uppercase tracking-wider mb-2" style={{ color: colors.subtext, opacity: 0.88 }}>
                           {current.subtitle}
@@ -543,6 +558,19 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
 
             <Card>
               <CardContent className="p-4 space-y-4">
+                {/* Vertical alignment controls */}
+                <VerticalAlignmentControls
+                  value={current?.verticalAlignment || verticalAlignment}
+                  onChange={(v) => handleSlideChange('verticalAlignment', v)}
+                />
+
+                {/* Composition presets */}
+                <CompositionPresets
+                  selectedPreset={selectedCompositionPreset}
+                  onSelectPreset={applyCompositionPreset}
+                  compact
+                />
+
                 {/* Export mode controls for current slide */}
                 <div className="space-y-2">
                   <ExportModeControls
@@ -561,9 +589,10 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                       setSlides(prev => prev.map(slide => ({
                         ...slide,
                         exportMode: currentExportMode,
-                        barSize: currentBarSize
+                        barSize: currentBarSize,
+                        verticalAlignment: current?.verticalAlignment || verticalAlignment
                       })));
-                      toast({ title: 'Mode appliqué à tous les slides' });
+                      toast({ title: 'Paramètres appliqués à tous les slides' });
                     }}
                   >
                     Appliquer à tous les slides

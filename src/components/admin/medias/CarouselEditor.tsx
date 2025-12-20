@@ -15,6 +15,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { CarouselPDF, ExportMode, BarSize } from './templates/CarouselPDF';
 import { ExportModeControls } from './ExportModeControls';
 import { HTMLLogoArc } from './html/HTMLLogoArc';
+import { VerticalAlignmentControls, VerticalAlignment, getJustifyContent } from './VerticalAlignmentControls';
+import { CompositionPresets, CompositionPreset, COMPOSITION_PRESETS } from './CompositionPresets';
 
 interface CarouselEditorProps {
   templateId: string;
@@ -29,6 +31,7 @@ interface SlideData {
   highlight?: string;
   exportMode?: ExportMode;
   barSize?: BarSize;
+  verticalAlignment?: VerticalAlignment;
 }
 
 // Presets pré-remplis uniformisés (comme Post/Story/Banner)
@@ -167,6 +170,16 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
   const [selectedArticle, setSelectedArticle] = useState<string>('');
   const [selectedPreset, setSelectedPreset] = useState<string>('');
   const [startTheme, setStartTheme] = useState<'dark' | 'light' | 'terra' | 'contrast'>('dark');
+  const [selectedCompositionPreset, setSelectedCompositionPreset] = useState<string>('centered');
+  const [verticalAlignment, setVerticalAlignment] = useState<VerticalAlignment>('center');
+
+  // Apply composition preset
+  const applyCompositionPreset = (preset: CompositionPreset) => {
+    setSelectedCompositionPreset(preset.id);
+    setVerticalAlignment(preset.verticalAlignment);
+    // Apply to current slide
+    handleSlideChange('verticalAlignment', preset.verticalAlignment);
+  };
 
   useEffect(() => {
     const fetchArticles = async () => {
@@ -438,7 +451,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                 
                 return (
                   <div 
-                    className="aspect-[4/5] flex flex-col justify-between relative"
+                    className="aspect-[4/5] flex flex-col relative"
                     style={{ background: colors.bg, padding: 32 }}  // v4.1: 64px safe zone scaled to preview
                   >
                     {/* Canalisations decoration preview - only if 'full' mode */}
@@ -466,8 +479,11 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                       />
                     </div>
 
-                    {/* Content */}
-                    <div className="flex-1 flex flex-col justify-center text-center space-y-4">
+                    {/* Content - with vertical alignment */}
+                    <div 
+                      className="flex-1 flex flex-col text-center space-y-4"
+                      style={{ justifyContent: getJustifyContent(current?.verticalAlignment || verticalAlignment) }}
+                    >
                       {current?.subtitle && (
                         <p className="text-sm uppercase tracking-wider" style={{ color: colors.subtext, opacity: 0.88 }}>{current.subtitle}</p>
                       )}
@@ -549,6 +565,19 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
 
             <Card>
               <CardContent className="p-4 space-y-4">
+                {/* Vertical alignment controls */}
+                <VerticalAlignmentControls
+                  value={current?.verticalAlignment || verticalAlignment}
+                  onChange={(v) => handleSlideChange('verticalAlignment', v)}
+                />
+
+                {/* Composition presets */}
+                <CompositionPresets
+                  selectedPreset={selectedCompositionPreset}
+                  onSelectPreset={applyCompositionPreset}
+                  compact
+                />
+
                 {/* Export mode controls for current slide */}
                 <div className="space-y-2">
                   <ExportModeControls
@@ -567,9 +596,10 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                       setSlides(prev => prev.map(slide => ({
                         ...slide,
                         exportMode: currentExportMode,
-                        barSize: currentBarSize
+                        barSize: currentBarSize,
+                        verticalAlignment: current?.verticalAlignment || verticalAlignment
                       })));
-                      toast({ title: 'Mode appliqué à tous les slides' });
+                      toast({ title: 'Paramètres appliqués à tous les slides' });
                     }}
                   >
                     Appliquer à tous les slides

@@ -22,6 +22,8 @@ import BatchExport from '@/components/admin/medias/BatchExport';
 import ResponsivePreview, { PreviewDevice, getDeviceWidth } from '@/components/admin/medias/ResponsivePreview';
 import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
 import { BarSize } from '@/components/admin/medias/html/tokens';
+import { VerticalAlignmentControls, VerticalAlignment, getJustifyContent } from '@/components/admin/medias/VerticalAlignmentControls';
+import { CompositionPresets, CompositionPreset } from '@/components/admin/medias/CompositionPresets';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -190,6 +192,8 @@ export default function PostEditor() {
   const [platformPreset, setPlatformPreset] = useState<Platform>('linkedin-post');
   const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop');
   const [showBatchExport, setShowBatchExport] = useState(false);
+  const [verticalAlignment, setVerticalAlignment] = useState<VerticalAlignment>('center');
+  const [selectedCompositionPreset, setSelectedCompositionPreset] = useState<string>('centered');
   
   // Dynamic dimensions from platform preset
   const [width, setWidth] = useState(DEFAULT_DIMENSIONS.square.width);
@@ -202,6 +206,12 @@ export default function PostEditor() {
   const scale = deviceScale;
   
   const backgroundColor = theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse;
+
+  // Apply composition preset
+  const applyCompositionPreset = (preset: CompositionPreset) => {
+    setSelectedCompositionPreset(preset.id);
+    setVerticalAlignment(preset.verticalAlignment);
+  };
 
   // Apply preset template
   const applyPreset = (presetKey: PresetTemplate) => {
@@ -354,11 +364,12 @@ export default function PostEditor() {
           <div style={{ 
             display: 'flex', 
             flexDirection: 'column', 
-            justifyContent: 'space-between',
+            justifyContent: getJustifyContent(verticalAlignment),
             alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start',
             height: '100%',
             textAlign: titleAlignment,
             position: 'relative',
+            gap: verticalAlignment === 'center' ? '0' : '32px',
           }}>
             {exportMode === 'logo-discret' ? renderLogoDiscret('top-right') : <HTMLLogo size="lg" theme={theme} />}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start' }}>
@@ -417,12 +428,12 @@ export default function PostEditor() {
           <div style={{ 
             display: 'flex', 
             flexDirection: 'column', 
-            justifyContent: 'center',
-            alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start',
+            justifyContent: getJustifyContent(verticalAlignment),
+            alignItems: 'center',
             height: '100%',
-            textAlign: titleAlignment,
-            gap: '32px',
+            textAlign: 'center',
             position: 'relative',
+            gap: verticalAlignment === 'center' ? '0' : '40px',
           }}>
             {exportMode === 'logo-discret' ? renderLogoDiscret('top-right') : <HTMLLogo size="md" theme={theme} />}
             <div style={{
@@ -924,6 +935,19 @@ export default function PostEditor() {
 
               {/* Template-specific fields */}
               {renderFields()}
+
+              {/* Vertical Alignment Controls */}
+              <VerticalAlignmentControls
+                value={verticalAlignment}
+                onChange={setVerticalAlignment}
+              />
+
+              {/* Composition Presets */}
+              <CompositionPresets
+                selectedPreset={selectedCompositionPreset}
+                onSelectPreset={applyCompositionPreset}
+                compact
+              />
 
               {/* Typography Controls - All templates */}
               <TypographyControls
