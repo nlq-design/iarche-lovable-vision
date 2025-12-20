@@ -25,9 +25,10 @@ import {
   ThemeType,
 } from '@/components/admin/medias/html';
 
-const BANNER_WIDTH = 1584;
-const BANNER_HEIGHT = 396;
-const SCALE = 0.4;
+// Default dimensions (can be changed by platform preset)
+const DEFAULT_WIDTH = 1584;
+const DEFAULT_HEIGHT = 396;
+const MAX_PREVIEW_WIDTH = 640;
 
 type PresetTemplate = {
   id: string;
@@ -87,9 +88,15 @@ export default function BannerEditor() {
   const [theme, setTheme] = useState<ThemeType>('dark');
   const [preset, setPreset] = useState<string>('');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
-  // barSize removed - arc no longer under logo per v4.0
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
   const [platformPreset, setPlatformPreset] = useState<Platform>('linkedin-banner');
+  
+  // Dynamic dimensions from platform preset
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [height, setHeight] = useState(DEFAULT_HEIGHT);
+  
+  // Computed scale for preview
+  const scale = Math.min(MAX_PREVIEW_WIDTH / width, 0.5);
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(32);
@@ -120,19 +127,20 @@ export default function BannerEditor() {
 
   // Get current data for saving template
   const getCurrentData = useCallback(() => ({
-    template, theme, preset, exportMode, pngQuality, platformPreset,
+    template, theme, preset, exportMode, pngQuality, platformPreset, width, height,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     tagline, selectedSolution, ceoName, ceoTitle, ceoPhoto,
-  }), [template, theme, preset, exportMode, pngQuality, platformPreset, titleFontSize, titleBold, titleItalic, titleAlignment, tagline, selectedSolution, ceoName, ceoTitle, ceoPhoto]);
+  }), [template, theme, preset, exportMode, pngQuality, platformPreset, width, height, titleFontSize, titleBold, titleItalic, titleAlignment, tagline, selectedSolution, ceoName, ceoTitle, ceoPhoto]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
     if (data.template) setTemplate(data.template as BannerTemplate);
     if (data.theme) setTheme(data.theme as ThemeType);
     if (data.exportMode) setExportMode(data.exportMode as ExportMode);
-    // barSize removed per v4.0
     if (data.pngQuality) setPngQuality(data.pngQuality as PngQuality);
     if (data.platformPreset) setPlatformPreset(data.platformPreset as Platform);
+    if (data.width !== undefined) setWidth(data.width as number);
+    if (data.height !== undefined) setHeight(data.height as number);
     if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
     if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
     if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
@@ -440,10 +448,11 @@ export default function BannerEditor() {
                 onExportModeChange={setExportMode}
               />
 
-              {/* Platform Presets */}
+              {/* Platform Presets - dimensions dynamiques */}
               <PlatformPresets
                 value={platformPreset}
                 onChange={setPlatformPreset}
+                onDimensionsChange={(w, h) => { setWidth(w); setHeight(h); }}
                 filterByCategory={['LinkedIn', 'Twitter/X', 'Facebook']}
               />
 
@@ -563,11 +572,11 @@ export default function BannerEditor() {
                   padding: '16px',
                 }}
               >
-                <div style={{ transform: `scale(${SCALE})`, transformOrigin: 'top left' }}>
+                <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
                   <HTMLBaseTemplate
                     ref={bannerRef}
-                    width={BANNER_WIDTH}
-                    height={BANNER_HEIGHT}
+                    width={width}
+                    height={height}
                     theme={theme}
                     padding={60}
                     showArches={false}
@@ -577,7 +586,7 @@ export default function BannerEditor() {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Aperçu à {Math.round(SCALE * 100)}% — Export en taille réelle (1584×396px)
+                Aperçu à {Math.round(scale * 100)}% — Export en taille réelle ({width}×{height}px)
               </p>
             </CardContent>
           </Card>

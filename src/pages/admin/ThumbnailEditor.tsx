@@ -72,10 +72,12 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
   { id: 'replay-formation', label: 'Replay Formation', category: 'conseil', titre: 'Formation IA pour dirigeants', sousTitre: 'Comprendre et piloter l\'IA dans votre organisation', date: 'Disponible', heure: '2h30', eventType: 'replay' },
 ];
 
-const DIMENSIONS = {
+// Default dimensions
+const DEFAULT_DIMENSIONS = {
   standard: { width: 1920, height: 1080 },
   youtube: { width: 1280, height: 720 },
 };
+const MAX_PREVIEW_WIDTH = 580;
 
 const EVENT_LABELS: Record<EventType, string> = {
   webinaire: 'Webinaire',
@@ -83,8 +85,6 @@ const EVENT_LABELS: Record<EventType, string> = {
   replay: 'Replay',
   services: 'Nos Services',
 };
-
-const SCALE = 0.3;
 
 export default function ThumbnailEditor() {
   const navigate = useNavigate();
@@ -98,6 +98,14 @@ export default function ThumbnailEditor() {
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [barSize, setBarSize] = useState<BarSize>('xl');
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
+  const [platformPreset, setPlatformPreset] = useState<Platform>('youtube-thumbnail');
+  
+  // Dynamic dimensions from platform preset
+  const [width, setWidth] = useState(DEFAULT_DIMENSIONS.standard.width);
+  const [height, setHeight] = useState(DEFAULT_DIMENSIONS.standard.height);
+  
+  // Computed scale for preview
+  const scale = Math.min(MAX_PREVIEW_WIDTH / width, 0.35);
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(72);
@@ -131,11 +139,11 @@ export default function ThumbnailEditor() {
 
   // Get current data for saving template
   const getCurrentData = useCallback(() => ({
-    format, theme, eventType, preset, exportMode, barSize, pngQuality,
+    format, theme, eventType, preset, exportMode, barSize, pngQuality, platformPreset, width, height,
     titleFontSize, titleBold, titleItalic, titleAlignment,
     titre, sousTitre, date, heure,
     speakerNom, speakerFonction, showSpeaker, speakerPhoto,
-  }), [format, theme, eventType, preset, exportMode, barSize, pngQuality, titleFontSize, titleBold, titleItalic, titleAlignment, titre, sousTitre, date, heure, speakerNom, speakerFonction, showSpeaker, speakerPhoto]);
+  }), [format, theme, eventType, preset, exportMode, barSize, pngQuality, platformPreset, width, height, titleFontSize, titleBold, titleItalic, titleAlignment, titre, sousTitre, date, heure, speakerNom, speakerFonction, showSpeaker, speakerPhoto]);
 
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
@@ -145,6 +153,9 @@ export default function ThumbnailEditor() {
     if (data.exportMode) setExportMode(data.exportMode as ExportMode);
     if (data.barSize) setBarSize(data.barSize as BarSize);
     if (data.pngQuality) setPngQuality(data.pngQuality as PngQuality);
+    if (data.platformPreset) setPlatformPreset(data.platformPreset as Platform);
+    if (data.width !== undefined) setWidth(data.width as number);
+    if (data.height !== undefined) setHeight(data.height as number);
     if (data.titleFontSize !== undefined) setTitleFontSize(data.titleFontSize as number);
     if (data.titleBold !== undefined) setTitleBold(data.titleBold as boolean);
     if (data.titleItalic !== undefined) setTitleItalic(data.titleItalic as boolean);
@@ -168,7 +179,6 @@ export default function ThumbnailEditor() {
   }, [location.state, loadTemplateData]);
 
   const handleExport = async () => {
-    const { width, height } = DIMENSIONS[format];
     try {
       await exportToPNG(thumbnailRef, `thumbnail-${eventType}-${format}`, {
         pixelRatio: pngQuality,
@@ -180,7 +190,6 @@ export default function ThumbnailEditor() {
     }
   };
 
-  const { width, height } = DIMENSIONS[format];
   const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
   const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : IARCHE_COLORS.grey;
 
@@ -238,19 +247,17 @@ export default function ThumbnailEditor() {
                 </Select>
               </div>
 
-              {/* Format */}
-              <div className="space-y-2">
-                <Label>Format</Label>
-                <Select value={format} onValueChange={(v) => setFormat(v as ThumbnailFormat)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="standard">Standard (1920×1080)</SelectItem>
-                    <SelectItem value="youtube">YouTube (1280×720)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Platform Presets - dimensions dynamiques */}
+              <PlatformPresets
+                value={platformPreset}
+                onChange={setPlatformPreset}
+                onDimensionsChange={(w, h) => { 
+                  setWidth(w); 
+                  setHeight(h);
+                  setFormat(w > 1500 ? 'standard' : 'youtube');
+                }}
+                filterByCategory={['YouTube', 'Vidéo verticale', 'Web']}
+              />
 
               {/* Theme */}
               <div className="space-y-2">
@@ -419,10 +426,10 @@ export default function ThumbnailEditor() {
                 }}
               >
                 <div style={{ 
-                  transform: `scale(${SCALE})`, 
+                  transform: `scale(${scale})`, 
                   transformOrigin: 'top left',
-                  width: width * SCALE,
-                  height: height * SCALE,
+                  width: width * scale,
+                  height: height * scale,
                 }}>
                   <HTMLBaseTemplate
                     ref={thumbnailRef}
@@ -764,7 +771,7 @@ export default function ThumbnailEditor() {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Aperçu à {Math.round(SCALE * 100)}% — Export en taille réelle ({width}×{height}px)
+                Aperçu à {Math.round(scale * 100)}% — Export en taille réelle ({width}×{height}px)
               </p>
             </CardContent>
           </Card>
