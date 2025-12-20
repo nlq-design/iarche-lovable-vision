@@ -633,7 +633,7 @@ export default function BannerEditor() {
                   padding: '16px',
                 }}
               >
-                <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', position: 'relative' }}>
+                <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
                   <HTMLBaseTemplate
                     ref={bannerRef}
                     width={width}
@@ -641,20 +641,15 @@ export default function BannerEditor() {
                     theme={theme}
                     padding={60}
                     showArches={false}
+                    decorativeArc={{ 
+                      position: 'bottom-right', 
+                      size: Math.min(width, height) * 0.25, 
+                      opacity: 0.05, 
+                      strokeWidth: 1.5 
+                    }}
                   >
                     {renderBannerContent()}
                   </HTMLBaseTemplate>
-                  {/* v4.2 - Arc décoratif en zone morte extrême (cohérence avec autres modules) */}
-                  <div className="absolute -bottom-6 -right-12 w-24 h-24 pointer-events-none opacity-[0.05]" style={{ zIndex: 0 }}>
-                    <svg viewBox="0 0 100 100" className="w-full h-full">
-                      <path 
-                        d="M100 0 Q100 100 0 100" 
-                        fill="none" 
-                        stroke={theme === 'dark' || theme === 'terra' ? '#ffffff' : '#B04A32'} 
-                        strokeWidth="1.5"
-                      />
-                    </svg>
-                  </div>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">

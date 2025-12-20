@@ -821,7 +821,6 @@ export default function StoryEditor() {
                   transformOrigin: 'top center',
                   width: STORY_WIDTH * SCALE,
                   height: STORY_HEIGHT * SCALE,
-                  position: 'relative',
                 }}>
                   <HTMLBaseTemplate
                     ref={storyRef}
@@ -830,20 +829,15 @@ export default function StoryEditor() {
                     theme={theme}
                     padding={80}
                     showArches={false}
+                    decorativeArc={{ 
+                      position: 'top-right', 
+                      size: 160, 
+                      opacity: 0.05, 
+                      strokeWidth: 1.5 
+                    }}
                   >
                     {renderStoryContent()}
                   </HTMLBaseTemplate>
-                  {/* v4.2 - Arc décoratif en zone morte extrême (cohérence avec autres modules) */}
-                  <div className="absolute -top-20 -right-20 w-40 h-40 pointer-events-none opacity-[0.05]" style={{ zIndex: 0 }}>
-                    <svg viewBox="0 0 160 160" className="w-full h-full">
-                      <path 
-                        d="M160 0 Q160 160 0 160" 
-                        fill="none" 
-                        stroke={theme === 'dark' || theme === 'terra' || theme === 'contrast' ? '#ffffff' : '#B04A32'} 
-                        strokeWidth="1.5"
-                      />
-                    </svg>
-                  </div>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2 text-center">
