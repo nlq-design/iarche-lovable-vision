@@ -69,9 +69,8 @@ export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps
     const isDark = theme === 'dark' || theme === 'terra' || theme === 'contrast';
     const arcColor = isDark ? '#ffffff' : IARCHE_COLORS.terracotta;
 
-    // Position de l'arc
+    // Position de l'arc - reste DANS le conteneur (pas de décalage négatif)
     const getArcStyle = (pos: ArcPosition, size: number): React.CSSProperties => {
-      const offset = -size * 0.4; // Décalage en zone morte
       const baseStyle: React.CSSProperties = {
         position: 'absolute',
         width: size,
@@ -82,13 +81,13 @@ export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps
       
       switch (pos) {
         case 'top-right':
-          return { ...baseStyle, top: offset, right: offset };
+          return { ...baseStyle, top: 0, right: 0 };
         case 'top-left':
-          return { ...baseStyle, top: offset, left: offset };
+          return { ...baseStyle, top: 0, left: 0 };
         case 'bottom-right':
-          return { ...baseStyle, bottom: offset, right: offset };
+          return { ...baseStyle, bottom: 0, right: 0 };
         case 'bottom-left':
-          return { ...baseStyle, bottom: offset, left: offset };
+          return { ...baseStyle, bottom: 0, left: 0 };
       }
     };
 
