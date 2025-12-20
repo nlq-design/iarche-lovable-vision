@@ -42,11 +42,6 @@ type PresetTemplate = {
 };
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
-  // ========== SERVICES IARCHE ==========
-  { id: 'service-audit', label: '🔍 Audit & Conseil', category: 'conseil', titre: 'Audit IA : Par où commencer ?', sousTitre: 'Cartographiez vos opportunités et définissez une roadmap claire', date: 'En 1 jour', heure: '', eventType: 'atelier' },
-  { id: 'service-developpement', label: '⚙️ Développement', category: 'annonce', titre: 'Du prototype à la production', sousTitre: 'Des solutions IA conçues pour votre métier', date: '2-4 semaines', heure: '', eventType: 'webinaire' },
-  { id: 'service-accompagnement', label: '🎓 Accompagnement', category: 'conseil', titre: 'Formation IA : Rendez vos équipes autonomes', sousTitre: 'Sessions pratiques pour maîtriser l\'IA au quotidien', date: 'Sur mesure', heure: '', eventType: 'atelier' },
-  { id: 'service-conformite', label: '🛡️ Conformité', category: 'question', titre: 'AI Act & RGPD : Êtes-vous prêt ?', sousTitre: 'Audit de conformité, documentation, veille réglementaire', date: 'Fév. 2025', heure: '', eventType: 'webinaire' },
   // ========== ANNONCE / ÉVÉNEMENT ==========
   { id: 'webinaire-ia', label: 'Webinaire IA PME', category: 'annonce', titre: 'Intégrer l\'IA dans votre PME', sousTitre: 'Les étapes clés pour réussir votre transformation', date: '15 Janvier 2025', heure: '14h00', eventType: 'webinaire' },
   { id: 'lancement', label: 'Lancement produit', category: 'annonce', titre: 'Nouvelle solution IArche', sousTitre: 'Découvrez notre dernière innovation', date: 'Disponible', heure: '', eventType: 'webinaire' },

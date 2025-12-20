@@ -39,11 +39,6 @@ type PresetTemplate = {
 };
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
-  // ========== SERVICES IARCHE ==========
-  { id: 'service-audit', label: '🔍 Audit & Conseil', category: 'conseil', tagline: 'Par où commencer avec l\'IA ?', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Expert Audit IA' },
-  { id: 'service-developpement', label: '⚙️ Développement', category: 'annonce', tagline: 'Du prototype à la production', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Expert Solutions IA' },
-  { id: 'service-accompagnement', label: '🎓 Accompagnement', category: 'conseil', tagline: 'Rendez vos équipes autonomes', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Formateur IA' },
-  { id: 'service-conformite', label: '🛡️ Conformité', category: 'question', tagline: 'AI Act & RGPD : êtes-vous prêt ?', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Expert Conformité IA' },
   // ========== ANNONCE ==========
   { id: 'default', label: 'Par défaut', category: 'annonce', tagline: "L'IA se construit avec vous", ceoName: 'Nicolas Lara Queralta', ceoTitle: 'CEO & Fondateur' },
   { id: 'innovation', label: 'Innovation', category: 'annonce', tagline: 'Transformez votre entreprise avec l\'IA', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Expert IA & Consultant' },
@@ -73,7 +68,15 @@ const SOLUTIONS = [
   { id: 'chatbot-rag', name: 'Chatbot RAG Avancé', description: 'Assistant conversationnel expert' },
 ];
 
-type BannerTemplate = 'entreprise' | 'solution' | 'ceo';
+type BannerTemplate = 'entreprise' | 'solution' | 'ceo' | 'services';
+
+// Les 4 services IArche pour le template "services"
+const IARCHE_SERVICES = [
+  { icon: '🔍', title: 'Audit & Conseil', desc: 'Roadmap IA' },
+  { icon: '⚙️', title: 'Développement', desc: 'Solutions sur mesure' },
+  { icon: '🎓', title: 'Accompagnement', desc: 'Formation & autonomie' },
+  { icon: '🛡️', title: 'Conformité', desc: 'AI Act & RGPD' },
+];
 
 export default function BannerEditor() {
   const navigate = useNavigate();
@@ -280,6 +283,66 @@ export default function BannerEditor() {
             </div>
           </div>
         );
+
+      case 'services':
+        return (
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: '100%',
+            padding: '0 60px',
+          }}>
+            {/* Logo discret à gauche */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <img 
+                src={theme === 'dark' || theme === 'terra' ? 'https://iarche.fr/logos/iarche-white.svg' : 'https://iarche.fr/logos/iarche-dark.svg'} 
+                alt="IArche" 
+                style={{ width: '120px', height: 'auto' }}
+              />
+              <span style={{
+                fontFamily: IARCHE_FONTS.primary,
+                fontSize: '14px',
+                color: subtextColor,
+                letterSpacing: '0.05em',
+              }}>
+                Agence IA
+              </span>
+            </div>
+            
+            {/* 4 services en ligne */}
+            <div style={{ 
+              display: 'flex', 
+              gap: '40px',
+            }}>
+              {IARCHE_SERVICES.map((service, idx) => (
+                <div key={idx} style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center',
+                  gap: '8px',
+                }}>
+                  <span style={{ fontSize: '28px' }}>{service.icon}</span>
+                  <span style={{
+                    fontFamily: IARCHE_FONTS.primary,
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    color: textColor,
+                  }}>
+                    {service.title}
+                  </span>
+                  <span style={{
+                    fontFamily: IARCHE_FONTS.primary,
+                    fontSize: '12px',
+                    color: subtextColor,
+                  }}>
+                    {service.desc}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
     }
   };
 
@@ -332,10 +395,11 @@ export default function BannerEditor() {
               <div className="space-y-2">
                 <Label>Template</Label>
                 <Tabs value={template} onValueChange={(v) => setTemplate(v as BannerTemplate)}>
-                  <TabsList className="grid grid-cols-3">
+                  <TabsList className="grid grid-cols-4">
                     <TabsTrigger value="entreprise">Entreprise</TabsTrigger>
                     <TabsTrigger value="solution">Solution</TabsTrigger>
                     <TabsTrigger value="ceo">CEO</TabsTrigger>
+                    <TabsTrigger value="services">4 Services</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>

@@ -41,31 +41,6 @@ type PresetTemplate = {
 };
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
-  // ========== SERVICES IARCHE ==========
-  { id: 'service-audit', label: '🔍 Audit & Conseil', category: 'conseil', slides: [
-    { type: 'title', title: 'Audit IA', subtitle: 'Par où commencer ?' },
-    { type: 'bullets', title: 'Notre approche', bullets: ['Comprendre vos process', 'Analyser vos données', 'Identifier les cas d\'usage'] },
-    { type: 'content', title: 'Livrable', content: 'Une roadmap claire, chiffrée et priorisée.' },
-    { type: 'cta', title: 'Demander un audit', content: 'iarche.fr/audit' },
-  ]},
-  { id: 'service-developpement', label: '⚙️ Développement', category: 'annonce', slides: [
-    { type: 'title', title: 'Solutions IA', subtitle: 'Du prototype à la production' },
-    { type: 'bullets', title: 'Nos services', bullets: ['Prototypage rapide (2-4 sem.)', 'Intégration à vos outils', 'Accompagnement post-production'] },
-    { type: 'content', title: 'Pour qui ?', content: 'TPE, PME, collectivités — l\'IA s\'adresse à tous.' },
-    { type: 'cta', title: 'Découvrir nos solutions', content: 'iarche.fr/solutions' },
-  ]},
-  { id: 'service-accompagnement', label: '🎓 Accompagnement', category: 'conseil', slides: [
-    { type: 'title', title: 'Formation IA', subtitle: 'Rendez vos équipes autonomes' },
-    { type: 'bullets', title: 'Nos formats', bullets: ['Sessions techniques (prompting, RAG)', 'Ateliers métier (ROI, éthique)', 'Accompagnement continu'] },
-    { type: 'content', title: 'Résultat', content: 'Une utilisation de l\'IA maîtrisée, conforme et sécurisée.' },
-    { type: 'cta', title: 'Nos formations', content: 'iarche.fr/formations' },
-  ]},
-  { id: 'service-conformite', label: '🛡️ Conformité', category: 'question', slides: [
-    { type: 'title', title: 'Conformité IA', subtitle: 'AI Act & RGPD' },
-    { type: 'content', title: 'Êtes-vous prêt ?', content: 'Février 2025 : entrée en vigueur des premières obligations AI Act.' },
-    { type: 'bullets', title: 'Nos services', bullets: ['Audit de conformité', 'Documentation réglementaire', 'Veille continue'] },
-    { type: 'cta', title: 'Vérifier ma conformité', content: 'iarche.fr/conformite' },
-  ]},
   // ========== ANNONCE ==========
   { id: 'nouveaute', label: 'Nouveauté', category: 'annonce', slides: [
     { type: 'title', title: 'Nouveauté', subtitle: 'IArche présente' },
