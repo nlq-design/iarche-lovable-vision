@@ -109,6 +109,7 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
                 alt="IArche" 
                 className="h-12 mb-8"
               />
+              {/* Titre avec gradient animé (web uniquement) */}
               <h1
                 className="text-5xl md:text-7xl font-bold text-center mb-6"
                 style={{ 
@@ -121,6 +122,7 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
               >
                 {brochure.cover_title || 'Titre'}
               </h1>
+              {/* Sous-titre */}
               {brochure.cover_subtitle && (
                 <p 
                   className="text-xl md:text-2xl text-center max-w-2xl"
@@ -129,6 +131,7 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
                   {brochure.cover_subtitle}
                 </p>
               )}
+              {/* Image de couverture */}
               {brochure.cover_image_url && (
                 <img 
                   src={brochure.cover_image_url} 

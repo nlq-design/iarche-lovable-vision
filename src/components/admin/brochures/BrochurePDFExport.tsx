@@ -388,13 +388,13 @@ const BrochurePDF = ({ brochure, orientation, pdfTheme }: BrochurePDFProps) => {
       {/* Cover Page */}
       <Page size={[pageSize.width, pageSize.height]} style={styles.coverPage}>
         <View style={{ alignItems: 'center' }}>
-          {/* Logo officiel */}
+          {/* Logo officiel - PNG pour react-pdf */}
           <Image 
-            src={theme.isDark ? BASE64_ASSETS.logoWhite : BASE64_ASSETS.logoGradient} 
+            src={theme.isDark ? BASE64_ASSETS.logoWhite : BASE64_ASSETS.logoMain} 
             style={styles.coverLogo} 
           />
           
-          {/* Titre principal */}
+          {/* Titre principal - couleur unie (pas de gradient possible en PDF) */}
           <Text style={styles.coverTitle}>{brochure.cover_title}</Text>
           
           {/* Sous-titre */}
