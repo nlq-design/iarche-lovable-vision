@@ -133,10 +133,14 @@ export default function BannerEditor() {
     }
   }, [location.state, loadTemplateData]);
 
-  const backgroundColor = theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse;
+  // v4.1: Gestion des couleurs par thème (dark, light, terra)
+  const backgroundColor = theme === 'dark' ? IARCHE_COLORS.bleuNuit 
+    : theme === 'terra' ? IARCHE_COLORS.terracotta 
+    : IARCHE_COLORS.blancCasse;
 
-  const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
-  const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : IARCHE_COLORS.grey;
+  const textColor = theme === 'light' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.white;
+  // v4.1: Pour terra, utiliser blanc cassé comme le logo (pas rgba)
+  const subtextColor = theme === 'light' ? IARCHE_COLORS.grey : IARCHE_COLORS.blancCasse;
   const showCanalisations = exportMode === 'full';
 
   const renderBannerContent = () => {

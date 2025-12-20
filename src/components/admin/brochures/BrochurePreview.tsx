@@ -179,12 +179,7 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
               className="h-10 mx-auto mb-8"
             />
             
-            <h2 className="text-3xl font-bold mb-4" style={{ color: primaryColor }}>Intéressé ?</h2>
-            
-            {/* Arc v4.0 sous "Intéressé ?" */}
-            <div className="flex justify-center mb-8">
-              <LogoArc size="md" />
-            </div>
+            <h2 className="text-3xl font-bold mb-8" style={{ color: primaryColor }}>Intéressé ?</h2>
             
             <a 
               href="/contact"

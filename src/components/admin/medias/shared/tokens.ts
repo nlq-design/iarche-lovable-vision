@@ -68,7 +68,7 @@ export const THEMES = {
   terra: {
     background: COLORS.terracotta,
     text: COLORS.blancCasse,
-    subtext: COLORS.whiteAlpha80,
+    subtext: COLORS.blancCasse, // v4.1: Blanc cassé pour meilleur contraste (comme le logo)
     accent: COLORS.bleuNuit,
     border: COLORS.whiteAlpha20,
   },
