@@ -476,10 +476,13 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                       </div>
                     </div>
 
-                    {/* Content */}
+                    {/* Content - with vertical alignment and top margin */}
                     <div 
                       className={`flex-1 flex flex-col ${current?.type === 'title' ? 'items-center text-center' : ''}`}
-                      style={{ justifyContent: getJustifyContent(current?.verticalAlignment || verticalAlignment) }}
+                      style={{ 
+                        justifyContent: getJustifyContent(current?.verticalAlignment || verticalAlignment),
+                        paddingTop: (current?.verticalAlignment || verticalAlignment) === 'top' ? `${getContentSpacing(topMargin, 5)}%` : 0,
+                      }}
                     >
                       {current?.subtitle && (
                         <p className="text-xs uppercase tracking-wider mb-2" style={{ color: colors.subtext, opacity: 0.88 }}>

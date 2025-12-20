@@ -360,20 +360,27 @@ export default function PostEditor() {
     />
   );
 
+  // Calculate effective top margin to prevent content touching header
+  const effectiveTopMargin = getContentSpacing(topMargin, 5);
+
   const renderPostContent = () => {
+    // Common style for vertical alignment with top margin
+    const getContentContainerStyle = (alignment: TextAlignment = titleAlignment) => ({
+      display: 'flex',
+      flexDirection: 'column' as const,
+      justifyContent: getJustifyContent(verticalAlignment),
+      alignItems: alignment === 'center' ? 'center' : alignment === 'right' ? 'flex-end' : 'flex-start',
+      height: '100%',
+      textAlign: alignment,
+      position: 'relative' as const,
+      gap: verticalAlignment === 'center' ? '0' : '32px',
+      paddingTop: verticalAlignment === 'top' ? `${effectiveTopMargin}%` : 0,
+    });
+
     switch (template) {
       case 'annonce':
         return (
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            justifyContent: getJustifyContent(verticalAlignment),
-            alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start',
-            height: '100%',
-            textAlign: titleAlignment,
-            position: 'relative',
-            gap: verticalAlignment === 'center' ? '0' : '32px',
-          }}>
+          <div style={getContentContainerStyle()}>
             {exportMode === 'logo-discret' ? renderLogoDiscret('top-right') : <HTMLLogo size="lg" theme={theme} />}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: titleAlignment === 'center' ? 'center' : titleAlignment === 'right' ? 'flex-end' : 'flex-start' }}>
               <span style={{
@@ -428,16 +435,7 @@ export default function PostEditor() {
 
       case 'chiffre':
         return (
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            justifyContent: getJustifyContent(verticalAlignment),
-            alignItems: 'center',
-            height: '100%',
-            textAlign: 'center',
-            position: 'relative',
-            gap: verticalAlignment === 'center' ? '0' : '40px',
-          }}>
+          <div style={getContentContainerStyle('center')}>
             {exportMode === 'logo-discret' ? renderLogoDiscret('top-right') : <HTMLLogo size="md" theme={theme} />}
             <div style={{
               fontFamily: IARCHE_FONTS.primary,
