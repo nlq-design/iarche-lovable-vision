@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
@@ -17,6 +18,8 @@ import ExportModeControls, { ExportMode } from '@/components/admin/medias/Export
 import ExportActions from '@/components/admin/medias/ExportActions';
 import PlatformPresets, { Platform } from '@/components/admin/medias/PlatformPresets';
 import { ImageLibrary } from '@/components/admin/medias/ImageLibrary';
+import BatchExport from '@/components/admin/medias/BatchExport';
+import ResponsivePreview, { PreviewDevice, getDeviceWidth } from '@/components/admin/medias/ResponsivePreview';
 import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
 import { BarSize } from '@/components/admin/medias/html/tokens';
 import {
@@ -37,12 +40,15 @@ const IARCHE_SERVICES = [
   { title: 'Accompagnement', description: 'Formation et conduite du changement' },
   { title: 'Conformité', description: 'RGPD et gouvernance des données' },
 ];
-type PresetTemplate = 'custom' | 'citation' | 'statistique' | 'evenement' | 'question' | 'temoignage-client' | 'recrutement' | 'milestone' | 'partenariat' | 'offre-promo' | 'lancement';
+type PresetTemplate = 'custom' | 'citation' | 'statistique' | 'evenement' | 'question' | 'temoignage-client' | 'recrutement' | 'milestone' | 'partenariat' | 'offre-promo' | 'lancement' 
+  // v4.2 - Templates verticaux
+  | 'story-actu' | 'story-conseil' | 'story-chiffre' | 'reels-hook' | 'tiktok-trend';
 
 // Default dimensions
 const DEFAULT_DIMENSIONS = {
   square: { width: 1200, height: 1200 },
   landscape: { width: 1200, height: 627 },
+  vertical: { width: 1080, height: 1920 },
 };
 const MAX_PREVIEW_WIDTH = 420;
 
@@ -133,6 +139,40 @@ const PRESET_TEMPLATES: Record<PresetTemplate, {
     description: 'Une innovation conçue pour simplifier votre quotidien et booster votre productivité.',
     cta: 'Découvrir →',
   },
+  // v4.2 - Templates verticaux (Stories, Reels, TikTok)
+  'story-actu': {
+    template: 'annonce',
+    badge: 'Actu',
+    title: 'L\'IA révolutionne les PME',
+    description: 'Swipe pour découvrir comment →',
+    cta: '',
+  },
+  'story-conseil': {
+    template: 'conseil',
+    conseilNumero: '💡',
+    conseilTitre: 'Le conseil du jour',
+    conseilContenu: 'Automatisez vos tâches répétitives avant de penser à l\'IA générative.',
+  },
+  'story-chiffre': {
+    template: 'chiffre',
+    chiffre: '3x',
+    contexte: 'plus de productivité avec l\'IA',
+    source: 'Swipe →',
+  },
+  'reels-hook': {
+    template: 'annonce',
+    badge: 'Stop scrolling',
+    title: 'Ce que personne ne vous dit sur l\'IA',
+    description: '3 secrets pour transformer votre business 👇',
+    cta: '',
+  },
+  'tiktok-trend': {
+    template: 'annonce',
+    badge: 'POV',
+    title: 'Quand ton boss découvre ChatGPT...',
+    description: 'Mais toi tu utilises déjà l\'IA depuis 2 ans 😎',
+    cta: '',
+  },
 };
 
 export default function PostEditor() {
@@ -148,13 +188,18 @@ export default function PostEditor() {
   const [barSize, setBarSize] = useState<BarSize>('lg');
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
   const [platformPreset, setPlatformPreset] = useState<Platform>('linkedin-post');
+  const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop');
+  const [showBatchExport, setShowBatchExport] = useState(false);
   
   // Dynamic dimensions from platform preset
   const [width, setWidth] = useState(DEFAULT_DIMENSIONS.square.width);
   const [height, setHeight] = useState(DEFAULT_DIMENSIONS.square.height);
   
-  // Computed scale for preview
-  const scale = Math.min(MAX_PREVIEW_WIDTH / width, 0.4);
+  // Computed scale for preview - adjust by device
+  const deviceWidth = getDeviceWidth(previewDevice);
+  const baseScale = Math.min(MAX_PREVIEW_WIDTH / width, 0.4);
+  const deviceScale = previewDevice === 'desktop' ? baseScale : Math.min(deviceWidth / width, baseScale);
+  const scale = deviceScale;
   
   const backgroundColor = theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse;
 
@@ -845,7 +890,7 @@ export default function PostEditor() {
                 </Select>
               </div>
 
-              {/* Preset Templates */}
+              {/* Preset Templates - v4.2 avec templates verticaux */}
               <div className="space-y-2">
                 <Label>Templates pré-remplis</Label>
                 <Select value={preset} onValueChange={(v) => applyPreset(v as PresetTemplate)}>
@@ -854,11 +899,25 @@ export default function PostEditor() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="custom">Personnalisé</SelectItem>
-                    <SelectItem value="citation">📝 Citation inspirante</SelectItem>
-                    <SelectItem value="statistique">📊 Chiffre clé / Statistique</SelectItem>
-                    <SelectItem value="evenement">📅 Annonce événement</SelectItem>
-                    <SelectItem value="question">❓ Question engageante</SelectItem>
-                    <SelectItem value="temoignage-client">💬 Témoignage client</SelectItem>
+                    {/* Templates classiques */}
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Classiques</div>
+                    <SelectItem value="citation">Citation inspirante</SelectItem>
+                    <SelectItem value="statistique">Chiffre clé / Statistique</SelectItem>
+                    <SelectItem value="evenement">Annonce événement</SelectItem>
+                    <SelectItem value="question">Question engageante</SelectItem>
+                    <SelectItem value="temoignage-client">Témoignage client</SelectItem>
+                    <SelectItem value="recrutement">Recrutement</SelectItem>
+                    <SelectItem value="milestone">Milestone</SelectItem>
+                    <SelectItem value="partenariat">Partenariat</SelectItem>
+                    <SelectItem value="offre-promo">Offre promo</SelectItem>
+                    <SelectItem value="lancement">Lancement</SelectItem>
+                    {/* Templates verticaux */}
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Stories / Reels / TikTok</div>
+                    <SelectItem value="story-actu">Story - Actualité</SelectItem>
+                    <SelectItem value="story-conseil">Story - Conseil</SelectItem>
+                    <SelectItem value="story-chiffre">Story - Chiffre clé</SelectItem>
+                    <SelectItem value="reels-hook">Reels - Hook accrocheur</SelectItem>
+                    <SelectItem value="tiktok-trend">TikTok - Trend POV</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -931,10 +990,14 @@ export default function PostEditor() {
 
           {/* Preview */}
           <Card className="lg:col-span-2">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle>Aperçu</CardTitle>
+              <ResponsivePreview 
+                value={previewDevice} 
+                onChange={setPreviewDevice}
+              />
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div 
                 className="overflow-auto rounded-lg border"
                 style={{ 
@@ -961,9 +1024,25 @@ export default function PostEditor() {
                   </HTMLBaseTemplate>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Aperçu à {Math.round(scale * 100)}% — Export en taille réelle ({width}×{height}px)
+              <p className="text-xs text-muted-foreground">
+                Aperçu à {Math.round(scale * 100)}% ({previewDevice}) — Export en taille réelle ({width}×{height}px)
               </p>
+              
+              {/* Batch Export Collapsible */}
+              <Collapsible open={showBatchExport} onOpenChange={setShowBatchExport}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" className="w-full">
+                    {showBatchExport ? 'Masquer' : 'Export multi-formats'}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-4">
+                  <BatchExport
+                    elementRef={postRef}
+                    baseFilename={`post-${template}`}
+                    quality={pngQuality}
+                  />
+                </CollapsibleContent>
+              </Collapsible>
             </CardContent>
           </Card>
         </div>

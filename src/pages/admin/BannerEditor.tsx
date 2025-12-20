@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import TypographyControls, { TextAlignment } from '@/components/admin/medias/TypographyControls';
@@ -16,6 +17,8 @@ import ExportModeControls, { ExportMode } from '@/components/admin/medias/Export
 import ExportActions from '@/components/admin/medias/ExportActions';
 import PlatformPresets, { Platform } from '@/components/admin/medias/PlatformPresets';
 import { ImageLibrary } from '@/components/admin/medias/ImageLibrary';
+import BatchExport from '@/components/admin/medias/BatchExport';
+import ResponsivePreview, { PreviewDevice, getDeviceWidth } from '@/components/admin/medias/ResponsivePreview';
 import { PngQuality, PNG_QUALITY_OPTIONS } from '@/lib/mediaExport';
 import {
   HTMLBaseTemplate,
@@ -90,13 +93,18 @@ export default function BannerEditor() {
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
   const [platformPreset, setPlatformPreset] = useState<Platform>('linkedin-banner');
+  const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop');
+  const [showBatchExport, setShowBatchExport] = useState(false);
   
   // Dynamic dimensions from platform preset
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const [height, setHeight] = useState(DEFAULT_HEIGHT);
   
-  // Computed scale for preview
-  const scale = Math.min(MAX_PREVIEW_WIDTH / width, 0.5);
+  // Computed scale for preview - adjust by device
+  const deviceWidth = getDeviceWidth(previewDevice);
+  const baseScale = Math.min(MAX_PREVIEW_WIDTH / width, 0.5);
+  const deviceScale = previewDevice === 'desktop' ? baseScale : Math.min(deviceWidth / width, baseScale);
+  const scale = deviceScale;
   
   // Typography states
   const [titleFontSize, setTitleFontSize] = useState(32);
@@ -564,10 +572,14 @@ export default function BannerEditor() {
 
           {/* Preview */}
           <Card className="lg:col-span-2">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <CardTitle>Aperçu</CardTitle>
+              <ResponsivePreview 
+                value={previewDevice} 
+                onChange={setPreviewDevice}
+              />
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div 
                 className="overflow-auto rounded-lg border"
                 style={{ 
@@ -589,9 +601,25 @@ export default function BannerEditor() {
                   </HTMLBaseTemplate>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Aperçu à {Math.round(scale * 100)}% — Export en taille réelle ({width}×{height}px)
+              <p className="text-xs text-muted-foreground">
+                Aperçu à {Math.round(scale * 100)}% ({previewDevice}) — Export en taille réelle ({width}×{height}px)
               </p>
+              
+              {/* Batch Export Collapsible */}
+              <Collapsible open={showBatchExport} onOpenChange={setShowBatchExport}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" className="w-full">
+                    {showBatchExport ? 'Masquer' : 'Export multi-formats'}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-4">
+                  <BatchExport
+                    elementRef={bannerRef}
+                    baseFilename={`banner-${template}`}
+                    quality={pngQuality}
+                  />
+                </CollapsibleContent>
+              </Collapsible>
             </CardContent>
           </Card>
         </div>
