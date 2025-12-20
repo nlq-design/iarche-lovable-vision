@@ -32,21 +32,30 @@ const LINKEDIN_FORMATS: ExportFormatOption[] = [
 const INSTAGRAM_FORMATS: ExportFormatOption[] = [
   { id: 'instagram-square', label: 'Instagram Carré', width: 1080, height: 1080, category: 'Instagram' },
   { id: 'instagram-story', label: 'Instagram Story', width: 1080, height: 1920, category: 'Instagram' },
+  { id: 'instagram-portrait', label: 'Instagram Portrait', width: 1080, height: 1350, category: 'Instagram' },
 ];
 
 const VIDEO_FORMATS: ExportFormatOption[] = [
   { id: 'youtube-thumbnail', label: 'YouTube Miniature', width: 1280, height: 720, category: 'YouTube' },
   { id: 'youtube-cover', label: 'YouTube Bannière', width: 2560, height: 1440, category: 'YouTube' },
-  { id: 'reels-tiktok', label: 'Reels / TikTok', width: 1080, height: 1920, category: 'Vidéo' },
+  { id: 'youtube-shorts', label: 'YouTube Shorts', width: 1080, height: 1920, category: 'YouTube' },
 ];
 
-const ALL_FORMATS = [...LINKEDIN_FORMATS, ...INSTAGRAM_FORMATS, ...VIDEO_FORMATS];
+// v4.2 - Formats verticaux séparés
+const VERTICAL_FORMATS: ExportFormatOption[] = [
+  { id: 'tiktok', label: 'TikTok', width: 1080, height: 1920, category: 'Vidéo verticale' },
+  { id: 'reels', label: 'Instagram Reels', width: 1080, height: 1920, category: 'Vidéo verticale' },
+  { id: 'pinterest', label: 'Pinterest', width: 1000, height: 1500, category: 'Pinterest' },
+];
 
-// Presets rapides
+const ALL_FORMATS = [...LINKEDIN_FORMATS, ...INSTAGRAM_FORMATS, ...VIDEO_FORMATS, ...VERTICAL_FORMATS];
+
+// Presets rapides - v4.2 amélioré
 const QUICK_PRESETS = {
   linkedin: ['linkedin-square', 'linkedin-landscape'],
   social: ['linkedin-square', 'instagram-square', 'instagram-story'],
-  video: ['youtube-thumbnail', 'reels-tiktok'],
+  video: ['youtube-thumbnail', 'youtube-shorts'],
+  vertical: ['instagram-story', 'tiktok', 'reels', 'pinterest'],
   all: ALL_FORMATS.map(f => f.id),
 };
 
@@ -161,28 +170,35 @@ export default function BatchExport({
         <Badge variant="secondary">{selectedFormats.length} sélectionnés</Badge>
       </div>
 
-      {/* Presets rapides */}
+      {/* Presets rapides - v4.2 */}
       <div className="flex flex-wrap gap-2">
         <Button
           size="sm"
           variant={JSON.stringify(selectedFormats.sort()) === JSON.stringify(QUICK_PRESETS.linkedin.sort()) ? 'default' : 'outline'}
           onClick={() => applyPreset('linkedin')}
         >
-          LinkedIn Pack
+          LinkedIn
         </Button>
         <Button
           size="sm"
           variant={JSON.stringify(selectedFormats.sort()) === JSON.stringify(QUICK_PRESETS.social.sort()) ? 'default' : 'outline'}
           onClick={() => applyPreset('social')}
         >
-          Social Pack
+          Social
         </Button>
         <Button
           size="sm"
           variant={JSON.stringify(selectedFormats.sort()) === JSON.stringify(QUICK_PRESETS.video.sort()) ? 'default' : 'outline'}
           onClick={() => applyPreset('video')}
         >
-          Video Pack
+          Vidéo
+        </Button>
+        <Button
+          size="sm"
+          variant={JSON.stringify(selectedFormats.sort()) === JSON.stringify(QUICK_PRESETS.vertical.sort()) ? 'default' : 'outline'}
+          onClick={() => applyPreset('vertical')}
+        >
+          Vertical
         </Button>
         <Button
           size="sm"
