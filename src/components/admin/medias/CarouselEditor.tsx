@@ -272,7 +272,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
   const handleExportPDF = async () => {
     setIsExporting(true);
     try {
-      const blob = await pdf(<CarouselPDF slides={slides} startTheme={startTheme} />).toBlob();
+      const blob = await pdf(<CarouselPDF slides={slides} startTheme={startTheme} showDecorativeArc={showDecorativeArc} />).toBlob();
       saveAs(blob, `carousel-iarche-${templateId}-${Date.now()}.pdf`);
       toast({ title: 'PDF exporté avec succès' });
     } catch (error) {

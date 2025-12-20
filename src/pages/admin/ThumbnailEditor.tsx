@@ -29,6 +29,7 @@ import {
 } from '@/components/admin/medias/html';
 import { HTMLLogoArc } from '@/components/admin/medias/html/HTMLLogoArc';
 import { ArcSize } from '@/components/admin/medias/html/tokens';
+import { DecorativeArcToggle } from '@/components/admin/medias/DecorativeArcToggle';
 
 type ThumbnailFormat = 'standard' | 'youtube';
 type EventType = 'webinaire' | 'atelier' | 'replay' | 'services';
@@ -132,6 +133,7 @@ export default function ThumbnailEditor() {
   const [speakerFonction, setSpeakerFonction] = useState('CEO & Fondateur, IArche');
   const [showSpeaker, setShowSpeaker] = useState(true);
   const [speakerPhoto, setSpeakerPhoto] = useState<string | null>(null);
+  const [showDecorativeArc, setShowDecorativeArc] = useState(true);
 
   const applyPreset = (presetId: string) => {
     const selectedPreset = PRESET_TEMPLATES.find(p => p.id === presetId);
@@ -393,6 +395,12 @@ export default function ThumbnailEditor() {
                 compact={true}
               />
 
+              {/* Decorative Arc Toggle */}
+              <DecorativeArcToggle
+                enabled={showDecorativeArc}
+                onChange={setShowDecorativeArc}
+              />
+
               {/* PNG Quality */}
               <div className="space-y-2">
                 <Label>Qualité PNG</Label>
@@ -450,6 +458,12 @@ export default function ThumbnailEditor() {
                     theme={theme}
                     padding={80}
                     showArches={false}
+                    decorativeArc={showDecorativeArc ? { 
+                      position: 'bottom-right', 
+                      size: Math.min(width, height) * 0.18, 
+                      opacity: 0.05, 
+                      strokeWidth: 1.5 
+                    } : undefined}
                   >
                     {eventType === 'services' ? (
                       /* Template 4 Services */
