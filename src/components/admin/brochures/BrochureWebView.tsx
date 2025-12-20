@@ -6,9 +6,10 @@ import LogoArc from '@/components/ui/LogoArc';
 
 interface BrochureWebViewProps {
   brochure: Brochure;
+  showDecorativeArc?: boolean;
 }
 
-const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
+const BrochureWebView = ({ brochure, showDecorativeArc = true }: BrochureWebViewProps) => {
   const { sections, custom_colors, export_settings } = brochure;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -105,16 +106,20 @@ const BrochureWebView = ({ brochure }: BrochureWebViewProps) => {
             }}
           >
             {/* v4.2 - Arcs décoratifs en zones mortes extrêmes (jamais proche du logo/titre) */}
-            <div className="absolute -top-48 -right-48 w-96 h-96 pointer-events-none opacity-[0.03]">
-              <svg viewBox="0 0 400 400" className="w-full h-full">
-                <path d="M400 0 Q400 400 0 400" fill="none" stroke={COLORS.terracotta} strokeWidth="2" />
-              </svg>
-            </div>
-            <div className="absolute -bottom-48 -left-48 w-96 h-96 pointer-events-none opacity-[0.03]">
-              <svg viewBox="0 0 400 400" className="w-full h-full">
-                <path d="M0 0 Q0 400 400 400" fill="none" stroke={COLORS.bleuNuit} strokeWidth="2" />
-              </svg>
-            </div>
+            {showDecorativeArc && (
+              <>
+                <div className="absolute -top-48 -right-48 w-96 h-96 pointer-events-none opacity-[0.03]">
+                  <svg viewBox="0 0 400 400" className="w-full h-full">
+                    <path d="M400 0 Q400 400 0 400" fill="none" stroke={COLORS.terracotta} strokeWidth="2" />
+                  </svg>
+                </div>
+                <div className="absolute -bottom-48 -left-48 w-96 h-96 pointer-events-none opacity-[0.03]">
+                  <svg viewBox="0 0 400 400" className="w-full h-full">
+                    <path d="M0 0 Q0 400 400 400" fill="none" stroke={COLORS.bleuNuit} strokeWidth="2" />
+                  </svg>
+                </div>
+              </>
+            )}
             
             <div className="relative z-10 flex flex-col items-center">
               {/* Logo SVG officiel v4.0 en haut */}

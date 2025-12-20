@@ -25,6 +25,7 @@ import { BarSize } from '@/components/admin/medias/html/tokens';
 import { VerticalAlignmentControls, VerticalAlignment, getJustifyContent } from '@/components/admin/medias/VerticalAlignmentControls';
 import { CompositionPresets, CompositionPreset } from '@/components/admin/medias/CompositionPresets';
 import { TopMarginSlider, getContentSpacing } from '@/components/admin/medias/TopMarginSlider';
+import { DecorativeArcToggle } from '@/components/admin/medias/DecorativeArcToggle';
 import {
   HTMLBaseTemplate,
   HTMLLogo,
@@ -200,6 +201,7 @@ export default function PostEditor() {
   const [verticalAlignment, setVerticalAlignment] = useState<VerticalAlignment>('center');
   const [selectedCompositionPreset, setSelectedCompositionPreset] = useState<string>('centered');
   const [topMargin, setTopMargin] = useState<number>(0);
+  const [showDecorativeArc, setShowDecorativeArc] = useState<boolean>(true);
   
   // Dynamic dimensions from platform preset
   const [width, setWidth] = useState(DEFAULT_DIMENSIONS.square.width);
@@ -986,7 +988,12 @@ export default function PostEditor() {
                 onChange={setTopMargin}
               />
 
-              {/* Typography Controls - All templates */}
+              {/* Arcs décoratifs toggle */}
+              <DecorativeArcToggle
+                enabled={showDecorativeArc}
+                onChange={setShowDecorativeArc}
+                compact
+              />
               <TypographyControls
                 label={template === 'chiffre' ? 'Typographie Chiffre' : template === 'temoignage' ? 'Typographie Citation' : 'Typographie Titre'}
                 fontSize={titleFontSize}
@@ -1080,12 +1087,12 @@ export default function PostEditor() {
                     theme={theme}
                     padding={height > width ? 80 : 60}
                     showArches={false}
-                    decorativeArc={{ 
+                    decorativeArc={showDecorativeArc ? { 
                       position: 'bottom-right', 
                       size: Math.min(width, height) * 0.15, 
                       opacity: 0.05, 
                       strokeWidth: 1.5 
-                    }}
+                    } : undefined}
                   >
                     {renderPostContent()}
                   </HTMLBaseTemplate>
