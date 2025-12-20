@@ -32,10 +32,10 @@ type EventType = 'webinaire' | 'atelier' | 'replay' | 'services';
 
 // Les 4 services IArche
 const IARCHE_SERVICES = [
-  { icon: '🔍', title: 'Audit & Conseil', description: 'Diagnostic et stratégie IA' },
-  { icon: '⚙️', title: 'Développement', description: 'Solutions IA sur mesure' },
-  { icon: '🤝', title: 'Accompagnement', description: 'Formation et conduite du changement' },
-  { icon: '✓', title: 'Conformité', description: 'RGPD et gouvernance des données' },
+  { title: 'Audit & Conseil', description: 'Diagnostic et stratégie IA' },
+  { title: 'Développement', description: 'Solutions IA sur mesure' },
+  { title: 'Accompagnement', description: 'Formation et conduite du changement' },
+  { title: 'Conformité', description: 'RGPD et gouvernance des données' },
 ];
 
 type PresetTemplate = {
@@ -51,7 +51,7 @@ type PresetTemplate = {
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
   // ========== 4 SERVICES ==========
-  { id: 'services-iarche', label: '🎯 4 Services IArche', category: 'services', titre: 'L\'IA au service de votre entreprise', sousTitre: 'Nos 4 expertises pour vous accompagner', date: '', heure: '', eventType: 'services' },
+  { id: 'services-iarche', label: '4 Services IArche', category: 'services', titre: 'L\'IA au service de votre entreprise', sousTitre: 'Nos 4 expertises pour vous accompagner', date: '', heure: '', eventType: 'services' },
   // ========== ANNONCE / ÉVÉNEMENT ==========
   { id: 'webinaire-ia', label: 'Webinaire IA PME', category: 'annonce', titre: 'Intégrer l\'IA dans votre PME', sousTitre: 'Les étapes clés pour réussir votre transformation', date: '15 Janvier 2025', heure: '14h00', eventType: 'webinaire' },
   { id: 'lancement', label: 'Lancement produit', category: 'annonce', titre: 'Nouvelle solution IArche', sousTitre: 'Découvrez notre dernière innovation', date: 'Disponible', heure: '', eventType: 'webinaire' },
@@ -495,9 +495,6 @@ export default function ThumbnailEditor() {
                                 border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(26,43,74,0.1)'}`,
                               }}
                             >
-                              <span style={{ fontSize: '48px', marginBottom: '16px' }}>
-                                {service.icon}
-                              </span>
                               <span style={{
                                 fontFamily: IARCHE_FONTS.primary,
                                 fontSize: '24px',

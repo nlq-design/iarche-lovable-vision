@@ -42,12 +42,12 @@ type PresetTemplate = {
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
   // ========== 4 SERVICES ==========
-  { id: 'services-iarche', label: '🎯 4 Services IArche', category: 'services', slides: [
+  { id: 'services-iarche', label: '4 Services IArche', category: 'services', slides: [
     { type: 'title', title: 'Nos Services', subtitle: 'L\'IA au service de votre entreprise' },
-    { type: 'content', title: '🔍 Audit & Conseil', content: 'Diagnostic complet de votre maturité IA et stratégie personnalisée' },
-    { type: 'content', title: '⚙️ Développement', content: 'Solutions IA sur mesure : chatbots, automatisation, RAG' },
-    { type: 'content', title: '🤝 Accompagnement', content: 'Formation, conduite du changement et autonomisation de vos équipes' },
-    { type: 'content', title: '✓ Conformité', content: 'RGPD, gouvernance des données et IA responsable' },
+    { type: 'content', title: 'Audit & Conseil', content: 'Diagnostic complet de votre maturité IA et stratégie personnalisée' },
+    { type: 'content', title: 'Développement', content: 'Solutions IA sur mesure : chatbots, automatisation, RAG' },
+    { type: 'content', title: 'Accompagnement', content: 'Formation, conduite du changement et autonomisation de vos équipes' },
+    { type: 'content', title: 'Conformité', content: 'RGPD, gouvernance des données et IA responsable' },
     { type: 'cta', title: 'Passez à l\'action', content: 'iarche.fr/contact' },
   ]},
   // ========== ANNONCE ==========

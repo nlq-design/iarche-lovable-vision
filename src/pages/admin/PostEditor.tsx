@@ -32,10 +32,10 @@ type PostTemplate = 'annonce' | 'chiffre' | 'temoignage' | 'conseil' | 'services
 
 // Les 4 services IArche
 const IARCHE_SERVICES = [
-  { icon: '🔍', title: 'Audit & Conseil', description: 'Diagnostic et stratégie IA' },
-  { icon: '⚙️', title: 'Développement', description: 'Solutions IA sur mesure' },
-  { icon: '🤝', title: 'Accompagnement', description: 'Formation et conduite du changement' },
-  { icon: '✓', title: 'Conformité', description: 'RGPD et gouvernance des données' },
+  { title: 'Audit & Conseil', description: 'Diagnostic et stratégie IA' },
+  { title: 'Développement', description: 'Solutions IA sur mesure' },
+  { title: 'Accompagnement', description: 'Formation et conduite du changement' },
+  { title: 'Conformité', description: 'RGPD et gouvernance des données' },
 ];
 type PresetTemplate = 'custom' | 'citation' | 'statistique' | 'evenement' | 'question' | 'temoignage-client' | 'recrutement' | 'milestone' | 'partenariat' | 'offre-promo' | 'lancement';
 
@@ -617,9 +617,6 @@ export default function PostEditor() {
                     border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(26,43,74,0.1)'}`,
                   }}
                 >
-                  <span style={{ fontSize: format === 'square' ? '32px' : '24px', marginBottom: '8px' }}>
-                    {service.icon}
-                  </span>
                   <span style={{
                     fontFamily: IARCHE_FONTS.primary,
                     fontSize: format === 'square' ? '18px' : '14px',
