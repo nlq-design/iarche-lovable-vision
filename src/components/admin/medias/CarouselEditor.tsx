@@ -452,11 +452,40 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                 const colors = PREVIEW_THEMES[currentTheme];
                 const isDark = currentTheme !== 'light';
                 
+                // v4.2 - Visual enhancements: badge category detection
+                const selectedPresetData = PRESET_TEMPLATES.find(p => p.id === selectedPreset);
+                const categoryBadge = selectedPresetData?.category;
+                const categoryLabels: Record<string, { label: string; icon: string }> = {
+                  annonce: { label: 'Annonce', icon: '📢' },
+                  chiffre: { label: 'Chiffres', icon: '📊' },
+                  temoignage: { label: 'Témoignage', icon: '💬' },
+                  conseil: { label: 'Conseil', icon: '💡' },
+                  question: { label: 'Question', icon: '❓' },
+                  services: { label: 'Services', icon: '⚙️' },
+                };
+                
                 return (
                   <div 
-                    className="aspect-[4/5] flex flex-col relative"
-                    style={{ background: colors.bg, padding: 32 }}  // v4.1: 64px safe zone scaled to preview
+                    className="aspect-[4/5] flex flex-col relative overflow-hidden"
+                    style={{ 
+                      background: isDark 
+                        ? `radial-gradient(ellipse at 50% 0%, rgba(176, 74, 50, 0.15) 0%, transparent 50%), ${colors.bg}`
+                        : `radial-gradient(ellipse at 50% 100%, rgba(26, 43, 74, 0.08) 0%, transparent 50%), ${colors.bg}`,
+                      padding: 32,
+                    }}
                   >
+                    {/* v4.2 - Decorative arc in negative space */}
+                    <div className="absolute -bottom-16 -right-16 w-48 h-48 pointer-events-none opacity-10">
+                      <svg viewBox="0 0 200 200" className="w-full h-full">
+                        <path 
+                          d="M200 0 Q200 200 0 200" 
+                          fill="none" 
+                          stroke={isDark ? '#ffffff' : '#B04A32'} 
+                          strokeWidth="2"
+                        />
+                      </svg>
+                    </div>
+                    
                     {/* Canalisations decoration preview - only if 'full' mode */}
                     {showCanalisationsInPreview && (
                       <>
@@ -484,40 +513,96 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
 
                     {/* Content - with vertical alignment and top margin */}
                     <div 
-                      className="flex-1 flex flex-col text-center space-y-4"
+                      className="flex-1 flex flex-col text-center"
                       style={{ 
                         justifyContent: getJustifyContent(current?.verticalAlignment || verticalAlignment),
                         paddingTop: (current?.verticalAlignment || verticalAlignment) === 'top' ? `${getContentSpacing(topMargin, 5)}%` : 0,
+                        gap: '16px', // v4.2 - Progressive spacing
                       }}
                     >
+                      {/* v4.2 - Styled badge with icon */}
                       {current?.subtitle && (
-                        <p className="text-sm uppercase tracking-wider" style={{ color: colors.subtext, opacity: 0.88 }}>{current.subtitle}</p>
+                        <div className="flex justify-center">
+                          <span 
+                            className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider font-medium px-3 py-1.5 rounded-full"
+                            style={{ 
+                              background: isDark ? 'rgba(176, 74, 50, 0.25)' : 'rgba(176, 74, 50, 0.15)',
+                              color: isDark ? '#E8B4A0' : '#8B3A2F',
+                              border: `1px solid ${isDark ? 'rgba(176, 74, 50, 0.4)' : 'rgba(176, 74, 50, 0.3)'}`,
+                            }}
+                          >
+                            {categoryBadge && categoryLabels[categoryBadge] && (
+                              <span>{categoryLabels[categoryBadge].icon}</span>
+                            )}
+                            {current.subtitle}
+                          </span>
+                        </div>
                       )}
+                      
+                      {/* v4.2 - Enhanced title hierarchy */}
                       {current?.title && (
                         <>
-                          <h2 className="text-2xl font-bold" style={{ color: colors.text }}>{current.title}</h2>
+                          <h2 
+                            className="font-bold leading-tight"
+                            style={{ 
+                              color: colors.text,
+                              fontSize: current?.highlight ? '1.5rem' : '1.75rem', // Larger when no highlight
+                              letterSpacing: '-0.02em',
+                            }}
+                          >
+                            {current.title}
+                          </h2>
                           {/* v4.1: Arc sous le titre H1 */}
                           {showBarInPreview && (
                             <HTMLLogoArc size="sm" className="mx-auto" />
                           )}
                         </>
                       )}
+                      
+                      {/* v4.2 - Content with better typography */}
                       {current?.content && (
-                        <p className="text-sm leading-relaxed" style={{ color: colors.text, opacity: 0.88 }}>{current.content}</p>
-                      )}
-                      {current?.highlight && (
                         <p 
-                          className="text-3xl font-bold mt-4"
-                          style={{ color: '#B04A32' }}
+                          className="leading-relaxed max-w-[85%] mx-auto"
+                          style={{ 
+                            color: colors.text, 
+                            opacity: 0.85,
+                            fontSize: '0.875rem',
+                            lineHeight: 1.7,
+                          }}
                         >
-                          {current.highlight}
+                          {current.content}
                         </p>
+                      )}
+                      
+                      {/* v4.2 - Enhanced highlight with gradient effect */}
+                      {current?.highlight && (
+                        <div className="mt-4">
+                          <p 
+                            className="font-bold"
+                            style={{ 
+                              fontSize: current.highlight.length > 10 ? '1.5rem' : '2.5rem',
+                              background: 'linear-gradient(135deg, #B04A32 0%, #D15A3E 50%, #B04A32 100%)',
+                              WebkitBackgroundClip: 'text',
+                              WebkitTextFillColor: 'transparent',
+                              backgroundClip: 'text',
+                              letterSpacing: '-0.02em',
+                              textShadow: isDark ? '0 2px 20px rgba(176, 74, 50, 0.3)' : 'none',
+                            }}
+                          >
+                            {current.highlight}
+                          </p>
+                        </div>
                       )}
                     </div>
 
-                    {/* Footer */}
-                    <div className="text-center">
-                      <p className="text-xs" style={{ color: colors.subtext, opacity: 0.6 }}>iarche.fr</p>
+                    {/* v4.2 - Enhanced footer */}
+                    <div className="text-center pt-4">
+                      <p 
+                        className="text-xs font-medium tracking-wide"
+                        style={{ color: colors.subtext, opacity: 0.5 }}
+                      >
+                        iarche.fr
+                      </p>
                     </div>
                   </div>
                 );

@@ -446,9 +446,26 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                 
                 return (
                   <div 
-                    className="aspect-video flex flex-col relative"
-                    style={{ background: colors.bg, padding: 40 }}  // v4.1: 80px safe zone scaled to preview
+                    className="aspect-video flex flex-col relative overflow-hidden"
+                    style={{ 
+                      background: isDark 
+                        ? `radial-gradient(ellipse at 80% 20%, rgba(176, 74, 50, 0.12) 0%, transparent 40%), ${colors.bg}`
+                        : `radial-gradient(ellipse at 20% 80%, rgba(26, 43, 74, 0.06) 0%, transparent 40%), ${colors.bg}`,
+                      padding: 40,
+                    }}
                   >
+                    {/* v4.2 - Decorative arc in corner */}
+                    <div className="absolute -top-12 -right-12 w-40 h-40 pointer-events-none opacity-10">
+                      <svg viewBox="0 0 160 160" className="w-full h-full">
+                        <path 
+                          d="M160 0 Q160 160 0 160" 
+                          fill="none" 
+                          stroke={isDark ? '#ffffff' : '#B04A32'} 
+                          strokeWidth="2"
+                        />
+                      </svg>
+                    </div>
+                    
                     {/* Canalisations decoration preview - only if 'full' mode */}
                     {showCanalisationsInPreview && (
                       <>
@@ -474,6 +491,17 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                           style={{ height: 24, display: 'inline-block' }}
                         />
                       </div>
+                      {/* v4.2 - Slide number indicator */}
+                      <span 
+                        className="text-xs font-medium px-2 py-0.5 rounded"
+                        style={{ 
+                          background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(26,43,74,0.08)',
+                          color: colors.subtext,
+                          opacity: 0.6,
+                        }}
+                      >
+                        {currentSlide + 1}/{slides.length}
+                      </span>
                     </div>
 
                     {/* Content - with vertical alignment and top margin */}
@@ -482,31 +510,87 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                       style={{ 
                         justifyContent: getJustifyContent(current?.verticalAlignment || verticalAlignment),
                         paddingTop: (current?.verticalAlignment || verticalAlignment) === 'top' ? `${getContentSpacing(topMargin, 5)}%` : 0,
+                        gap: '12px', // v4.2 - Progressive spacing
                       }}
                     >
+                      {/* v4.2 - Styled subtitle badge */}
                       {current?.subtitle && (
-                        <p className="text-xs uppercase tracking-wider mb-2" style={{ color: colors.subtext, opacity: 0.88 }}>
+                        <span 
+                          className="inline-flex items-center text-xs uppercase tracking-wider font-medium px-3 py-1 rounded-full self-start"
+                          style={{ 
+                            background: isDark ? 'rgba(176, 74, 50, 0.2)' : 'rgba(176, 74, 50, 0.12)',
+                            color: isDark ? '#E8B4A0' : '#8B3A2F',
+                            border: `1px solid ${isDark ? 'rgba(176, 74, 50, 0.35)' : 'rgba(176, 74, 50, 0.25)'}`,
+                            ...(current?.type === 'title' ? { alignSelf: 'center' } : {}),
+                          }}
+                        >
                           {current.subtitle}
-                        </p>
+                        </span>
                       )}
-                      <h2 className="text-xl font-bold mb-4" style={{ color: colors.text }}>
+                      
+                      {/* v4.2 - Enhanced title with better hierarchy */}
+                      <h2 
+                        className="font-bold leading-tight"
+                        style={{ 
+                          color: colors.text,
+                          fontSize: current?.type === 'title' ? '1.5rem' : '1.25rem',
+                          letterSpacing: '-0.02em',
+                        }}
+                      >
                         {current?.title}
                       </h2>
-                      {/* v4.1: Arc sous le titre */}
+                      
+                      {/* v4.1: Arc sous le titre with enhanced styling */}
                       {showBarInPreview && current?.title && (
-                        <HTMLLogoArc size="sm" className="mb-4" />
+                        <div className={current?.type === 'title' ? '' : 'self-start'}>
+                          <HTMLLogoArc size="sm" />
+                        </div>
                       )}
+                      
+                      {/* v4.2 - Content with improved typography */}
                       {current?.content && (
-                        <p className="text-sm leading-relaxed" style={{ color: colors.text, opacity: 0.88 }}>
+                        <p 
+                          className="leading-relaxed"
+                          style={{ 
+                            color: colors.text, 
+                            opacity: 0.85,
+                            fontSize: '0.875rem',
+                            lineHeight: 1.7,
+                            maxWidth: current?.type === 'title' ? '90%' : '100%',
+                          }}
+                        >
                           {current.content}
                         </p>
                       )}
+                      
+                      {/* v4.2 - Enhanced bullet list with numbered badges */}
                       {current?.bullets && current.bullets.length > 0 && (
-                        <ul className="space-y-2 mt-4">
+                        <ul className="space-y-3 mt-2">
                           {current.bullets.map((bullet, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm">
-                              <span style={{ color: '#B04A32' }}>—</span>
-                              <span style={{ color: colors.text, opacity: 0.88 }}>{bullet}</span>
+                            <li 
+                              key={idx} 
+                              className="flex items-start gap-3 text-sm"
+                            >
+                              <span 
+                                className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5"
+                                style={{ 
+                                  background: 'rgba(176, 74, 50, 0.15)',
+                                  color: '#B04A32',
+                                  fontSize: '0.7rem',
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {idx + 1}
+                              </span>
+                              <span 
+                                style={{ 
+                                  color: colors.text, 
+                                  opacity: 0.88,
+                                  lineHeight: 1.5,
+                                }}
+                              >
+                                {bullet}
+                              </span>
                             </li>
                           ))}
                         </ul>
