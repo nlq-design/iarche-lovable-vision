@@ -1,10 +1,10 @@
 # Brand Book IArche
 
-**Version :** 4.0  
-**Date : 15 Décembre 2025**  
+**Version :** 4.2  
+**Date :** 20 Décembre 2024  
 **Document de référence pour l'identité visuelle IArche**
 
-> ⚠️ **MISE À JOUR v4.0** : L'arc de cercle IArche remplace TOUTES les barres gradient horizontales.
+> ⚠️ **MISE À JOUR v4.2** : Arcs décoratifs subtils ajoutés à tous les éditeurs médias. Voir section 15.5.
 
 ---
 
@@ -772,6 +772,63 @@ Tous les éditeurs PNG offrent un sélecteur de qualité (pixelRatio) :
 - Ultra (8x) : 12672 × 3168 px
 
 La qualité sélectionnée est persistée dans les templates personnalisés.
+
+### 15.5 Arcs décoratifs SVG (v4.2)
+
+> **Nouveauté v4.2** : Tous les éditeurs médias incluent des arcs décoratifs subtils en zones mortes.
+
+**Documentation complète :** [docs/MEDIA_MODULES_V4.2.md](docs/MEDIA_MODULES_V4.2.md)
+
+#### Principe
+
+Les arcs décoratifs sont des courbes de Bézier SVG positionnées en **zones mortes extrêmes** (coins avec positions négatives) pour ajouter une touche d'identité visuelle sans interférer avec le contenu.
+
+#### Spécifications par module
+
+| Module | Position | Dimensions | Opacity | StrokeWidth |
+|--------|----------|------------|---------|-------------|
+| CarouselEditor | `-bottom-24 -right-24` | 48×48 | 0.05 | 1.5 |
+| PresentationEditor | `-top-20 -right-20` | 40×40 | 0.05 | 1.5 |
+| BrochureWebView | `-bottom-48 -right-48` | 64×64 | 0.03 | 2 |
+| BannerEditor | `-bottom-6 -right-12` | 24×24 | 0.05 | 1.5 |
+| PostEditor | `-bottom-24 -right-24` | 48×48 | 0.05 | 1.5 |
+| StoryEditor | `-top-20 -right-20` | 40×40 | 0.05 | 1.5 |
+
+#### Couleurs adaptatives
+
+```typescript
+const arcColor = theme === 'dark' || theme === 'terra' || theme === 'contrast' 
+  ? '#ffffff'  // Blanc pour thèmes sombres
+  : '#B04A32'; // Terracotta pour thème clair
+```
+
+#### Code de référence
+
+```tsx
+{/* v4.2 - Arc décoratif en zone morte extrême */}
+<div 
+  className="absolute -bottom-24 -right-24 w-48 h-48 pointer-events-none opacity-[0.05]" 
+  style={{ zIndex: 0 }}
+>
+  <svg viewBox="0 0 200 200" className="w-full h-full">
+    <path 
+      d="M200 0 Q200 200 0 200" 
+      fill="none" 
+      stroke={isDark ? '#ffffff' : '#B04A32'} 
+      strokeWidth="1.5"
+    />
+  </svg>
+</div>
+```
+
+#### Règles importantes
+
+| ✅ À faire | ❌ À éviter |
+|-----------|------------|
+| Positions négatives (hors cadre) | Placement près du logo |
+| Opacité ≤ 0.05 | Opacité > 0.10 |
+| `pointer-events-none` | Éléments interactifs |
+| `zIndex: 0` (arrière-plan) | Superposition au contenu |
 
 ---
 
