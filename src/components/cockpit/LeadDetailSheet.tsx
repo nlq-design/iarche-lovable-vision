@@ -30,7 +30,9 @@ import {
   User,
   Briefcase,
   Tag,
-  FolderPlus
+  FolderPlus,
+  FolderOpen,
+  ChevronRight
 } from "lucide-react";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -49,6 +51,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Lead {
   id: string;
@@ -118,6 +122,22 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
   const [formData, setFormData] = useState<Partial<Lead>>({});
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+
+  // Fetch projects linked to this lead
+  const { data: linkedProjects = [] } = useQuery({
+    queryKey: ['lead-projects', lead?.id],
+    queryFn: async () => {
+      if (!lead?.id) return [];
+      const { data, error } = await supabase
+        .from('projects')
+        .select('id, name, status, created_at')
+        .eq('lead_id', lead.id)
+        .order('created_at', { ascending: false });
+      if (error) return [];
+      return data;
+    },
+    enabled: !!lead?.id,
+  });
 
   const handleCreateProject = async () => {
     if (!lead) return;
@@ -329,6 +349,38 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
                 />
               </div>
             </div>
+
+            <Separator />
+
+            {/* Linked Projects Section */}
+            {linkedProjects.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                  <FolderOpen className="h-4 w-4" />
+                  Projets liés ({linkedProjects.length})
+                </h3>
+                <div className="space-y-2">
+                  {linkedProjects.map((project: any) => (
+                    <div
+                      key={project.id}
+                      className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors flex items-center justify-between"
+                      onClick={() => {
+                        onOpenChange(false);
+                        navigate(`/cockpit/projects/${project.id}`);
+                      }}
+                    >
+                      <div>
+                        <p className="font-medium text-sm">{project.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {project.created_at && format(new Date(project.created_at), 'dd MMM yyyy', { locale: fr })}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <Separator />
 
