@@ -288,53 +288,214 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
     }
   };
 
-  // PDF Haute-Fidélité - Capture chaque slide de l'aperçu HTML
+  // PDF Haute-Fidélité - Capture chaque slide avec dimensions fixes
   const handleExportPdfHd = async () => {
-    if (!previewRef.current) {
-      toast({ title: 'Erreur', description: 'Aperçu non disponible', variant: 'destructive' });
-      return;
-    }
-    
     setIsExporting(true);
     const originalSlide = currentSlide;
     
     try {
-      // Format carousel: portrait 4:5 ratio -> A4 portrait fonctionne bien
+      // Format carousel: portrait 4:5 -> A4 portrait
       const pageWidth = 210; // mm
       const pageHeight = 297; // mm
+      const captureWidth = 1080;
+      const captureHeight = 1350;
       
-      const pdf = new jsPDF({
+      const pdfDoc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
       });
 
+      // Créer un container de capture hors-écran avec dimensions fixes
+      const captureContainer = document.createElement('div');
+      captureContainer.style.cssText = `
+        position: fixed;
+        left: -9999px;
+        top: 0;
+        width: ${captureWidth}px;
+        height: ${captureHeight}px;
+        z-index: -1;
+        overflow: hidden;
+      `;
+      document.body.appendChild(captureContainer);
+
+      const PREVIEW_THEMES = {
+        dark: { bg: '#1A2B4A', text: '#FAF9F7', subtext: '#FAF9F7', logo: '/logos/iarche-white.svg' },
+        light: { bg: '#FAF9F7', text: '#1A2B4A', subtext: '#666666', logo: '/logos/iarche-main.svg' },
+        terra: { bg: '#B04A32', text: '#FAF9F7', subtext: '#FAF9F7', logo: '/logos/iarche-white.svg' },
+        contrast: { bg: '#0A0A0A', text: '#FAFAFA', subtext: '#FAFAFA', logo: '/logos/iarche-white.svg' },
+      };
+      const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light' };
+
       for (let i = 0; i < slides.length; i++) {
-        // Changer de slide et attendre le rendu
-        setCurrentSlide(i);
-        await new Promise(resolve => setTimeout(resolve, 300));
+        const slide = slides[i];
+        const slideTheme = i % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme);
+        const colors = PREVIEW_THEMES[slideTheme];
+        const isDark = slideTheme !== 'light';
+        const slideExportMode = slide.exportMode || 'full';
+        const showBar = slideExportMode === 'with-bar' || slideExportMode === 'full';
+        const showCanalisations = slideExportMode === 'full';
         
-        // Capturer l'aperçu HTML actuel
-        const dataUrl = await toPng(previewRef.current, {
-          pixelRatio: 4,
+        // Générer le HTML du slide avec dimensions fixes
+        captureContainer.innerHTML = `
+          <div style="
+            width: ${captureWidth}px;
+            height: ${captureHeight}px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            background: ${isDark 
+              ? `radial-gradient(ellipse at 50% 0%, rgba(176, 74, 50, 0.15) 0%, transparent 50%), ${colors.bg}`
+              : `radial-gradient(ellipse at 50% 100%, rgba(26, 43, 74, 0.08) 0%, transparent 50%), ${colors.bg}`};
+            padding: 64px;
+            box-sizing: border-box;
+            font-family: Inter, system-ui, -apple-system, sans-serif;
+          ">
+            ${showDecorativeArc ? `
+              <div style="position: absolute; bottom: -30%; right: -30%; width: 65%; height: 65%; opacity: 0.06; pointer-events: none;">
+                <svg viewBox="0 0 200 200" style="width: 100%; height: 100%;">
+                  <path d="M200 0 Q200 200 0 200" fill="none" stroke="${isDark ? '#ffffff' : '#B04A32'}" stroke-width="2"/>
+                </svg>
+              </div>
+            ` : ''}
+            
+            ${showCanalisations ? `
+              <div style="position: absolute; top: 0; right: 0; width: 80px; height: 80px; pointer-events: none;">
+                <svg viewBox="0 0 80 80" style="width: 100%; height: 100%;">
+                  <path d="M0 0 L80 0 L80 80" fill="none" stroke="${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(209,90,62,0.3)'}" stroke-width="2"/>
+                </svg>
+              </div>
+              <div style="position: absolute; bottom: 0; left: 0; width: 80px; height: 80px; pointer-events: none;">
+                <svg viewBox="0 0 80 80" style="width: 100%; height: 100%;">
+                  <path d="M0 0 L0 80 L80 80" fill="none" stroke="${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(209,90,62,0.3)'}" stroke-width="2"/>
+                </svg>
+              </div>
+            ` : ''}
+
+            <!-- Logo -->
+            <div style="text-align: center; margin-bottom: 40px;">
+              <img src="${colors.logo}" alt="IArche" style="height: 56px; display: inline-block;"/>
+            </div>
+
+            <!-- Content -->
+            <div style="
+              flex: 1;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              text-align: center;
+              justify-content: ${slide.verticalAlignment === 'top' ? 'flex-start' : slide.verticalAlignment === 'bottom' ? 'flex-end' : 'center'};
+              gap: 32px;
+            ">
+              ${slide.subtitle ? `
+                <span style="
+                  display: inline-flex;
+                  align-items: center;
+                  font-size: 20px;
+                  text-transform: uppercase;
+                  letter-spacing: 0.1em;
+                  font-weight: 500;
+                  padding: 10px 24px;
+                  border-radius: 999px;
+                  background: ${isDark ? 'rgba(176, 74, 50, 0.25)' : 'rgba(176, 74, 50, 0.15)'};
+                  color: ${isDark ? '#E8B4A0' : '#8B3A2F'};
+                  border: 1px solid ${isDark ? 'rgba(176, 74, 50, 0.4)' : 'rgba(176, 74, 50, 0.3)'};
+                ">${slide.subtitle}</span>
+              ` : ''}
+              
+              ${slide.title ? `
+                <h2 style="
+                  font-weight: 700;
+                  line-height: 1.2;
+                  color: ${colors.text};
+                  font-size: ${slide.highlight ? '56px' : '64px'};
+                  letter-spacing: -0.02em;
+                  margin: 0;
+                  max-width: 90%;
+                ">${slide.title}</h2>
+              ` : ''}
+              
+              ${showBar && slide.title ? `
+                <div style="
+                  width: 120px;
+                  height: 6px;
+                  border-radius: 3px;
+                  background: linear-gradient(90deg, #D15A3E 0%, #8B3A2F 100%);
+                "></div>
+              ` : ''}
+              
+              ${slide.highlight ? `
+                <div style="
+                  font-size: 96px;
+                  font-weight: 800;
+                  background: linear-gradient(135deg, #D15A3E 0%, #8B3A2F 100%);
+                  -webkit-background-clip: text;
+                  -webkit-text-fill-color: transparent;
+                  background-clip: text;
+                  line-height: 1;
+                ">${slide.highlight}</div>
+              ` : ''}
+              
+              ${slide.content ? `
+                <p style="
+                  color: ${colors.text};
+                  opacity: 0.85;
+                  font-size: 36px;
+                  line-height: 1.5;
+                  max-width: 85%;
+                  margin: 0;
+                ">${slide.content}</p>
+              ` : ''}
+            </div>
+
+            <!-- Footer -->
+            <div style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-top: 40px;
+              padding-top: 24px;
+              border-top: 1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(26,43,74,0.1)'};
+            ">
+              <span style="font-size: 18px; color: ${colors.subtext}; opacity: 0.6;">iarche.fr</span>
+              <span style="
+                font-size: 16px;
+                color: ${colors.subtext};
+                opacity: 0.5;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+              ">
+                Swiper →
+              </span>
+            </div>
+          </div>
+        `;
+
+        // Attendre le chargement des images
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        const slideElement = captureContainer.firstElementChild as HTMLElement;
+        if (!slideElement) continue;
+
+        // Capturer le slide
+        const dataUrl = await toPng(slideElement, {
+          width: captureWidth,
+          height: captureHeight,
+          pixelRatio: 2,
           cacheBust: true,
         });
 
         // Ajouter nouvelle page (sauf pour la première)
         if (i > 0) {
-          pdf.addPage();
+          pdfDoc.addPage();
         }
 
-        // Calculer dimensions pour remplir la page
-        const img = new Image();
-        await new Promise((resolve) => {
-          img.onload = resolve;
-          img.src = dataUrl;
-        });
-
-        const imgAspect = img.width / img.height;
+        // Calculer dimensions pour centrer sur la page A4
+        const imgAspect = captureWidth / captureHeight;
         const pageAspect = pageWidth / pageHeight;
-
+        
         let finalWidth = pageWidth;
         let finalHeight = pageHeight;
         let offsetX = 0;
@@ -348,11 +509,14 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
           offsetX = (pageWidth - finalWidth) / 2;
         }
 
-        pdf.addImage(dataUrl, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
+        pdfDoc.addImage(dataUrl, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
       }
 
-      pdf.save(`carousel-iarche-${templateId}-hd-${Date.now()}.pdf`);
-      toast({ title: 'PDF HD exporté', description: `${slides.length} slides avec rendu web haute-fidélité` });
+      // Nettoyer
+      document.body.removeChild(captureContainer);
+
+      pdfDoc.save(`carousel-iarche-${templateId}-hd-${Date.now()}.pdf`);
+      toast({ title: 'PDF HD exporté', description: `${slides.length} slides haute-fidélité` });
     } catch (error) {
       console.error('Export HD error:', error);
       toast({ title: 'Erreur lors de l\'export HD', variant: 'destructive' });
