@@ -336,7 +336,8 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
 
       for (let i = 0; i < slides.length; i++) {
         const slide = slides[i];
-        const slideTheme = i % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme);
+        // v4.3: Mode gradient = 100% gradient (pas d'alternance)
+        const slideTheme = startTheme === 'gradient' ? 'gradient' : (i % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme));
         const colors = PREVIEW_THEMES[slideTheme];
         const isDark = slideTheme !== 'light';
         // v4.2 Règle d'or: CTA en blanc cassé sur gradient
@@ -718,7 +719,8 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                 };
                 const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light', gradient: 'gradient' };
                 
-                const currentTheme = currentSlide % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme);
+                // v4.3: Mode gradient = 100% gradient (pas d'alternance)
+                const currentTheme = startTheme === 'gradient' ? 'gradient' : (currentSlide % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme));
                 const colors = PREVIEW_THEMES[currentTheme];
                 const isDark = currentTheme !== 'light';
                 // v4.2 Règle d'or: CTA en blanc cassé sur gradient, sinon terracotta

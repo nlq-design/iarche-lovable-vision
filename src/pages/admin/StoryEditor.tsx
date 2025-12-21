@@ -292,6 +292,7 @@ export default function StoryEditor() {
                 lineHeight: IARCHE_TYPOGRAPHY.display.lineHeight,
                 letterSpacing: IARCHE_TYPOGRAPHY.display.letterSpacing,
                 textShadow: theme === 'dark' ? IARCHE_EFFECTS.shadow.sm : 'none',
+                whiteSpace: 'pre-line',
               }}>
                 {titre}
               </h1>
@@ -356,6 +357,7 @@ export default function StoryEditor() {
                 margin: 0,
                 maxWidth: '85%',
                 lineHeight: IARCHE_TYPOGRAPHY.heading.lineHeight,
+                whiteSpace: 'pre-line',
               }}>
                 {contexte}
               </p>
@@ -442,12 +444,13 @@ export default function StoryEditor() {
                   fontSize: `${titleFontSize * 0.7}px`,
                   fontWeight: titleBold ? 600 : 400,
                   fontStyle: 'italic',
-                  color: textColor,
-                  margin: 0,
-                  lineHeight: 1.4,
-                }}>
-                  {citation.replace(/^"|"$/g, '')}
-                </p>
+                color: textColor,
+                margin: 0,
+                lineHeight: 1.4,
+                whiteSpace: 'pre-line',
+              }}>
+                {citation.replace(/^"|"$/g, '')}
+              </p>
               </div>
               
               {/* Auteur */}
@@ -558,6 +561,7 @@ export default function StoryEditor() {
                 margin: 0,
                 maxWidth: '90%',
                 lineHeight: 1.5,
+                whiteSpace: 'pre-line',
               }}>
                 {conseilContenu}
               </p>

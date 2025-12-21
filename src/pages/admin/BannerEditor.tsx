@@ -226,6 +226,7 @@ export default function BannerEditor() {
               margin: 0,
               letterSpacing: '0.03em',
               lineHeight: 1.3,
+              whiteSpace: 'pre-line',
             }}>
               {tagline}
             </p>

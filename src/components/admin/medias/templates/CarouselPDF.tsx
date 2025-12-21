@@ -163,7 +163,10 @@ const FORMATS = {
 };
 
 // Get theme for a specific slide index
+// v4.3: Mode gradient = 100% gradient sur toutes les slides (pas d'alternance)
 const getSlideTheme = (index: number, startTheme: ThemeType): ThemeType => {
+  // Si gradient, appliquer sur toutes les slides
+  if (startTheme === 'gradient') return 'gradient';
   if (index % 2 === 0) return startTheme;
   return THEME_ALTERNATES[startTheme];
 };
