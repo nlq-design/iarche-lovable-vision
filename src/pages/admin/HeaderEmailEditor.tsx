@@ -23,9 +23,10 @@ import {
   IARCHE_FONTS,
 } from '@/components/admin/medias/html';
 import { HTMLLogoArc } from '@/components/admin/medias/html/HTMLLogoArc';
+import { HTMLHeaderGradient } from '@/components/admin/medias/html/HTMLHeaderGradient';
 import { ArcSize } from '@/components/admin/medias/html/tokens';
 
-type HeaderTemplate = 'newsletter' | 'annonce' | 'minimal';
+type HeaderTemplate = 'newsletter' | 'annonce' | 'minimal' | 'gradient';
 
 type PresetTemplate = {
   id: string;
@@ -43,6 +44,8 @@ const PRESET_TEMPLATES: PresetTemplate[] = [
   { id: 'annonce-evenement', label: 'Annonce Événement', titre: 'Webinaire IA pour PME', sousTitre: '', numero: '', date: '', template: 'annonce' },
   { id: 'annonce-produit', label: 'Annonce Produit', titre: 'Nouvelle Solution IArche', sousTitre: '', numero: '', date: '', template: 'annonce' },
   { id: 'minimal-pro', label: 'Minimal Pro', titre: '', sousTitre: '', numero: '', date: '', template: 'minimal' },
+  { id: 'gradient-header', label: 'Gradient Header', titre: 'Titre Principal', sousTitre: 'Sous-titre optionnel', numero: '', date: '', template: 'gradient' },
+  { id: 'gradient-event', label: 'Gradient Événement', titre: 'Webinaire IA', sousTitre: '15 Janvier 2025 • 14h00', numero: '', date: '', template: 'gradient' },
 ];
 
 const HeaderEmailEditor: React.FC = () => {
@@ -242,6 +245,25 @@ const HeaderEmailEditor: React.FC = () => {
             </div>
           </HTMLBaseTemplate>
         );
+
+      case 'gradient':
+        return (
+          <div ref={previewRef}>
+            <HTMLHeaderGradient
+              title={formData.titre}
+              subtitle={formData.sousTitre}
+              showLogo={true}
+              width={600}
+              height={150}
+              borderRadius="0"
+              titleSize={titleFontSize}
+              subtitleSize={Math.round(titleFontSize * 0.65)}
+              logoHeight={36}
+              paddingY={20}
+              paddingX={32}
+            />
+          </div>
+        );
     }
   };
 
@@ -301,12 +323,13 @@ const HeaderEmailEditor: React.FC = () => {
                     <SelectItem value="newsletter">Newsletter (fond bleu)</SelectItem>
                     <SelectItem value="annonce">Annonce (fond clair)</SelectItem>
                     <SelectItem value="minimal">Minimal (logo centré)</SelectItem>
+                    <SelectItem value="gradient">Gradient (dégradé diagonal)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               {/* Typography controls */}
-              {template !== 'minimal' && (
+              {(template !== 'minimal') && (
                 <TypographyControls
                   label="Typographie titre"
                   fontSize={titleFontSize}
@@ -332,6 +355,17 @@ const HeaderEmailEditor: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, titre: e.target.value })}
                     />
                   </div>
+                  {template === 'gradient' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="sousTitre">Sous-titre</Label>
+                      <Input
+                        id="sousTitre"
+                        value={formData.sousTitre}
+                        onChange={(e) => setFormData({ ...formData, sousTitre: e.target.value })}
+                        placeholder="Sous-titre optionnel"
+                      />
+                    </div>
+                  )}
                   {template === 'newsletter' && (
                     <>
                       <div className="space-y-2">
