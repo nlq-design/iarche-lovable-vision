@@ -85,6 +85,7 @@ const getLogoVariants = (charterColors: typeof IARCHE_COLORS) => ({
     bgColor: charterColors.blancCasse,
     theme: 'light' as const,
     filename: 'logo-iarche-gradient',
+    isGradientBg: false,
   },
   terracotta: {
     label: 'Logo Terracotta',
@@ -92,10 +93,19 @@ const getLogoVariants = (charterColors: typeof IARCHE_COLORS) => ({
     bgColor: charterColors.bleuNuit,
     theme: 'dark' as const,
     filename: 'logo-iarche-terracotta',
+    isGradientBg: false,
+  },
+  gradientBg: {
+    label: 'Logo sur Gradient',
+    description: 'Logo blanc sur fond dégradé IArche',
+    bgColor: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)',
+    theme: 'dark' as const,
+    filename: 'logo-iarche-gradient-bg',
+    isGradientBg: true,
   },
 });
 
-type LogoVariant = 'gradient' | 'terracotta';
+type LogoVariant = 'gradient' | 'terracotta' | 'gradientBg';
 
 // PDF Logo Document Component - v4.0: Logo PNG officiel sans arc sous le logo
 const PDFLogoDocument: React.FC<{
@@ -236,7 +246,10 @@ const LogoPreviewCard: React.FC<LogoPreviewCardProps> = ({
           <div
             ref={exportRef}
             className={`${isProfile ? 'aspect-square' : 'aspect-[3/2]'} rounded-lg overflow-hidden relative`}
-            style={{ backgroundColor: variant.bgColor }}
+            style={{ 
+              background: variant.isGradientBg ? variant.bgColor : undefined,
+              backgroundColor: !variant.isGradientBg ? variant.bgColor : undefined,
+            }}
           >
             
             <div className="absolute inset-0 flex items-center justify-center p-6 z-10">
@@ -353,21 +366,25 @@ export default function LogoEditor() {
   const [exportModes, setExportModes] = useState<Record<LogoVariant, ExportMode>>({
     gradient: 'logo-bar',
     terracotta: 'logo-bar',
+    gradientBg: 'logo-bar',
   });
   
   const [barSizes, setBarSizes] = useState<Record<LogoVariant, BarSize>>({
     gradient: getDefaultBarSize('500'),
     terracotta: getDefaultBarSize('500'),
+    gradientBg: getDefaultBarSize('500'),
   });
 
   const [exportFormats, setExportFormats] = useState<Record<LogoVariant, ExportFormat>>({
     gradient: 'png',
     terracotta: 'png',
+    gradientBg: 'png',
   });
 
   const [pngQualities, setPngQualities] = useState<Record<LogoVariant, PngQuality>>({
     gradient: '8',
     terracotta: '8',
+    gradientBg: '8',
   });
   
   // Update bar sizes when size changes
@@ -379,15 +396,18 @@ export default function LogoEditor() {
     setBarSizes({
       gradient: newBarSize,
       terracotta: newBarSize,
+      gradientBg: newBarSize,
     });
   }, [standardSize, profileFormat, formatCategory]);
   
   const gradientRef = useRef<HTMLDivElement>(null);
   const terracottaRef = useRef<HTMLDivElement>(null);
+  const gradientBgRef = useRef<HTMLDivElement>(null);
   
   const refs: Record<LogoVariant, React.RefObject<HTMLDivElement>> = {
     gradient: gradientRef,
     terracotta: terracottaRef,
+    gradientBg: gradientBgRef,
   };
 
   const updateExportMode = (variant: LogoVariant, mode: ExportMode) => {
