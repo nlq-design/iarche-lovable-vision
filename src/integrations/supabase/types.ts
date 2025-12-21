@@ -1719,6 +1719,7 @@ export type Database = {
           id: string
           name: string
           project_id: string
+          tags: string[] | null
           updated_at: string | null
           uploaded_by: string | null
           workspace_id: string
@@ -1733,6 +1734,7 @@ export type Database = {
           id?: string
           name: string
           project_id: string
+          tags?: string[] | null
           updated_at?: string | null
           uploaded_by?: string | null
           workspace_id?: string
@@ -1747,6 +1749,7 @@ export type Database = {
           id?: string
           name?: string
           project_id?: string
+          tags?: string[] | null
           updated_at?: string | null
           uploaded_by?: string | null
           workspace_id?: string
@@ -1776,6 +1779,7 @@ export type Database = {
           id: string
           note_type: string | null
           project_id: string
+          tags: string[] | null
           title: string
           updated_at: string | null
           workspace_id: string
@@ -1787,6 +1791,7 @@ export type Database = {
           id?: string
           note_type?: string | null
           project_id: string
+          tags?: string[] | null
           title: string
           updated_at?: string | null
           workspace_id?: string
@@ -1798,6 +1803,7 @@ export type Database = {
           id?: string
           note_type?: string | null
           project_id?: string
+          tags?: string[] | null
           title?: string
           updated_at?: string | null
           workspace_id?: string
@@ -1833,6 +1839,7 @@ export type Database = {
           lead_id: string | null
           name: string
           opportunity_id: string | null
+          solution_id: string | null
           start_date: string | null
           status: string
           target_end_date: string | null
@@ -1852,6 +1859,7 @@ export type Database = {
           lead_id?: string | null
           name: string
           opportunity_id?: string | null
+          solution_id?: string | null
           start_date?: string | null
           status?: string
           target_end_date?: string | null
@@ -1871,6 +1879,7 @@ export type Database = {
           lead_id?: string | null
           name?: string
           opportunity_id?: string | null
+          solution_id?: string | null
           start_date?: string | null
           status?: string
           target_end_date?: string | null
@@ -1890,6 +1899,13 @@ export type Database = {
             columns: ["opportunity_id"]
             isOneToOne: false
             referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
             referencedColumns: ["id"]
           },
           {

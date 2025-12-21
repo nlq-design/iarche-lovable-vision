@@ -49,7 +49,17 @@ import {
   Phone,
   Globe,
   Target,
+  Tag,
+  X,
+  Lightbulb,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -86,7 +96,7 @@ const CockpitProjectDetail = () => {
   const { data: projectSpecs = [] } = useSpecificationsByProject(id || '');
 
   // State
-  const [formData, setFormData] = useState<Partial<Project> & { lead_id?: string | null }>({});
+  const [formData, setFormData] = useState<Partial<Project> & { lead_id?: string | null; solution_id?: string | null }>({});
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   
@@ -99,9 +109,13 @@ const CockpitProjectDetail = () => {
   const [newNoteTitle, setNewNoteTitle] = useState('');
   const [newNoteContent, setNewNoteContent] = useState('');
   const [newNoteFiles, setNewNoteFiles] = useState<File | File[] | null>(null);
+  const [newNoteTags, setNewNoteTags] = useState<string[]>([]);
+  const [newNoteTagInput, setNewNoteTagInput] = useState('');
   
   const [newDocTitle, setNewDocTitle] = useState('');
   const [newDocFiles, setNewDocFiles] = useState<File | File[] | null>(null);
+  const [newDocTags, setNewDocTags] = useState<string[]>([]);
+  const [newDocTagInput, setNewDocTagInput] = useState('');
   
 
   // Fetch project
@@ -137,12 +151,45 @@ const CockpitProjectDetail = () => {
     enabled: !!(project as any)?.lead_id,
   });
 
+  // Fetch solutions for linking
+  const { data: solutions = [] } = useQuery({
+    queryKey: ["solutions-for-project"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("articles")
+        .select("id, title")
+        .eq("resource_type", "solution")
+        .eq("published", true)
+        .order("title");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch linked solution
+  const { data: linkedSolution } = useQuery({
+    queryKey: ['project-solution', (project as any)?.solution_id],
+    queryFn: async () => {
+      const solutionId = (project as any)?.solution_id;
+      if (!solutionId) return null;
+      const { data, error } = await supabase
+        .from('articles')
+        .select('id, title, slug')
+        .eq('id', solutionId)
+        .single();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!(project as any)?.solution_id,
+  });
+
   useEffect(() => {
     if (project) {
       setFormData({
         name: project.name,
         description: project.description,
         lead_id: (project as any)?.lead_id || null,
+        solution_id: (project as any)?.solution_id || null,
       });
       setHasChanges(false);
     }
@@ -186,11 +233,14 @@ const CockpitProjectDetail = () => {
       content: newNoteContent || null,
       note_type: 'synthesis',
       created_by: null,
+      tags: newNoteTags.length > 0 ? newNoteTags : null,
     }, {
       onSuccess: () => {
         setNewNoteTitle('');
         setNewNoteContent('');
         setNewNoteFiles(null);
+        setNewNoteTags([]);
+        setNewNoteTagInput('');
         setShowAddNoteDialog(false);
       }
     });
@@ -209,13 +259,43 @@ const CockpitProjectDetail = () => {
       file_size_bytes: newDocFiles && !Array.isArray(newDocFiles) ? newDocFiles.size : null,
       category: 'document',
       uploaded_by: null,
+      tags: newDocTags.length > 0 ? newDocTags : null,
     }, {
       onSuccess: () => {
         setNewDocTitle('');
         setNewDocFiles(null);
+        setNewDocTags([]);
+        setNewDocTagInput('');
         setShowAddDocDialog(false);
       }
     });
+  };
+
+  // Tag handlers
+  const addTag = (type: 'note' | 'doc') => {
+    const input = type === 'note' ? newNoteTagInput : newDocTagInput;
+    const tags = type === 'note' ? newNoteTags : newDocTags;
+    const setTags = type === 'note' ? setNewNoteTags : setNewDocTags;
+    const setInput = type === 'note' ? setNewNoteTagInput : setNewDocTagInput;
+    
+    const tag = input.trim().toLowerCase();
+    if (tag && !tags.includes(tag)) {
+      setTags([...tags, tag]);
+    }
+    setInput('');
+  };
+
+  const removeTag = (tag: string, type: 'note' | 'doc') => {
+    const setTags = type === 'note' ? setNewNoteTags : setNewDocTags;
+    const tags = type === 'note' ? newNoteTags : newDocTags;
+    setTags(tags.filter(t => t !== tag));
+  };
+
+  const handleTagKeyPress = (e: React.KeyboardEvent, type: 'note' | 'doc') => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addTag(type);
+    }
   };
 
 
@@ -351,6 +431,32 @@ const CockpitProjectDetail = () => {
                       placeholder="Description..."
                       className="min-h-[80px] resize-y text-sm"
                     />
+                  </div>
+                  {/* Solution IArche */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs flex items-center gap-1.5">
+                      <Lightbulb className="h-3 w-3" />
+                      Solution IArche
+                    </Label>
+                    <Select 
+                      value={(formData as any).solution_id || "none"} 
+                      onValueChange={(v) => handleChange('solution_id', v === "none" ? null : v)}
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Aucune solution liée" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Aucune</SelectItem>
+                        {solutions.map(sol => (
+                          <SelectItem key={sol.id} value={sol.id}>
+                            {sol.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {linkedSolution && (
+                      <p className="text-xs text-primary mt-1">{linkedSolution.title}</p>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-3 pt-2">
                     <div>
@@ -638,6 +744,33 @@ const CockpitProjectDetail = () => {
                           placeholder="Collez ou saisissez votre synthèse ici..."
                         />
                       </div>
+                      {/* Tags */}
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Tag className="h-3.5 w-3.5" />
+                          Tags
+                        </Label>
+                        <div className="flex flex-wrap gap-1.5 p-2 border rounded-md min-h-[40px] bg-background">
+                          {newNoteTags.map(tag => (
+                            <Badge key={tag} variant="secondary" className="gap-1 text-xs">
+                              {tag}
+                              <X 
+                                className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                                onClick={() => removeTag(tag, 'note')}
+                              />
+                            </Badge>
+                          ))}
+                          <Input
+                            value={newNoteTagInput}
+                            onChange={(e) => setNewNoteTagInput(e.target.value)}
+                            onKeyDown={(e) => handleTagKeyPress(e, 'note')}
+                            onBlur={() => addTag('note')}
+                            placeholder={newNoteTags.length === 0 ? "Ajouter des tags..." : ""}
+                            className="border-0 p-0 h-6 text-sm flex-1 min-w-[100px] focus-visible:ring-0 shadow-none"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Appuyez sur Entrée pour ajouter</p>
+                      </div>
                       <div className="flex justify-end gap-2 pt-2">
                         <Button variant="outline" onClick={() => setShowAddNoteDialog(false)}>
                           Annuler
@@ -675,6 +808,13 @@ const CockpitProjectDetail = () => {
                             </Button>
                           </div>
                         </div>
+                        {note.tags && note.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {note.tags.map(tag => (
+                              <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                            ))}
+                          </div>
+                        )}
                         {note.content && (
                           <p className="text-sm text-muted-foreground line-clamp-3">{note.content}</p>
                         )}
@@ -722,6 +862,33 @@ const CockpitProjectDetail = () => {
                           multiple={false}
                         />
                       </div>
+                      {/* Tags */}
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Tag className="h-3.5 w-3.5" />
+                          Tags
+                        </Label>
+                        <div className="flex flex-wrap gap-1.5 p-2 border rounded-md min-h-[40px] bg-background">
+                          {newDocTags.map(tag => (
+                            <Badge key={tag} variant="secondary" className="gap-1 text-xs">
+                              {tag}
+                              <X 
+                                className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                                onClick={() => removeTag(tag, 'doc')}
+                              />
+                            </Badge>
+                          ))}
+                          <Input
+                            value={newDocTagInput}
+                            onChange={(e) => setNewDocTagInput(e.target.value)}
+                            onKeyDown={(e) => handleTagKeyPress(e, 'doc')}
+                            onBlur={() => addTag('doc')}
+                            placeholder={newDocTags.length === 0 ? "Ajouter des tags..." : ""}
+                            className="border-0 p-0 h-6 text-sm flex-1 min-w-[100px] focus-visible:ring-0 shadow-none"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">Appuyez sur Entrée pour ajouter</p>
+                      </div>
                       <div className="flex justify-end gap-2 pt-2">
                         <Button variant="outline" onClick={() => setShowAddDocDialog(false)}>
                           Annuler
@@ -751,6 +918,13 @@ const CockpitProjectDetail = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="font-medium truncate">{doc.name}</h4>
+                            {doc.tags && doc.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {doc.tags.map(tag => (
+                                  <Badge key={tag} variant="secondary" className="text-xs py-0">{tag}</Badge>
+                                ))}
+                              </div>
+                            )}
                             {doc.file_type && (
                               <p className="text-xs text-muted-foreground">{doc.file_type}</p>
                             )}

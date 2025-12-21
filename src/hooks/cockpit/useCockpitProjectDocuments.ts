@@ -15,6 +15,7 @@ export interface ProjectDocument {
   uploaded_by: string | null;
   created_at: string;
   updated_at: string;
+  tags: string[] | null;
 }
 
 type ProjectDocumentInsert = Omit<ProjectDocument, 'id' | 'created_at' | 'updated_at'>;

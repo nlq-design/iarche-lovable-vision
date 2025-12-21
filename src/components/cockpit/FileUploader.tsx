@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { Upload, X, File, FileText, Image } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Upload, X, File, FileText, Image, Clipboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -11,6 +11,7 @@ interface FileUploaderProps {
   maxSize?: number; // in MB
   className?: string;
   label?: string;
+  enablePaste?: boolean;
 }
 
 const getFileIcon = (file: File) => {
@@ -30,19 +31,21 @@ export const FileUploader = ({
   onChange, 
   multiple = false, 
   accept = '.pdf,.doc,.docx,.txt,.xls,.xlsx',
-  maxSize = 10,
+  maxSize = 50,
   className,
-  label
+  label,
+  enablePaste = true
 }: FileUploaderProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
   const files = value ? (Array.isArray(value) ? value : [value]) : [];
 
-  const handleFiles = (fileList: FileList | null) => {
+  const handleFiles = (fileList: FileList | File[] | null) => {
     if (!fileList) return;
     
-    const newFiles = Array.from(fileList);
+    const newFiles = Array.isArray(fileList) ? fileList : Array.from(fileList);
     const maxBytes = maxSize * 1024 * 1024;
     const validFiles = newFiles.filter(f => f.size <= maxBytes);
     
@@ -63,12 +66,46 @@ export const FileUploader = ({
     }
   };
 
+  // Handle paste events
+  useEffect(() => {
+    if (!enablePaste) return;
+
+    const handlePaste = (e: ClipboardEvent) => {
+      // Only handle if the container or document is focused
+      const clipboardItems = e.clipboardData?.items;
+      if (!clipboardItems) return;
+
+      const pastedFiles: File[] = [];
+      
+      for (let i = 0; i < clipboardItems.length; i++) {
+        const item = clipboardItems[i];
+        if (item.kind === 'file') {
+          const file = item.getAsFile();
+          if (file) {
+            pastedFiles.push(file);
+          }
+        }
+      }
+
+      if (pastedFiles.length > 0) {
+        e.preventDefault();
+        handleFiles(pastedFiles);
+      }
+    };
+
+    const container = containerRef.current;
+    if (container) {
+      container.addEventListener('paste', handlePaste as any);
+      return () => container.removeEventListener('paste', handlePaste as any);
+    }
+  }, [enablePaste, files, multiple, onChange, maxSize]);
+
   return (
-    <div className={className}>
+    <div className={className} ref={containerRef} tabIndex={0}>
       {label && <p className="text-sm font-medium mb-2">{label}</p>}
       <div
         className={cn(
-          "border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer",
+          "border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-primary/20",
           dragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
         )}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -95,9 +132,13 @@ export const FileUploader = ({
             <p className="text-sm text-muted-foreground">
               Glissez-déposez ou <span className="text-primary font-medium">parcourez</span>
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              PDF, Word, Excel • Max {maxSize} MB
-            </p>
+            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mt-1">
+              <span>PDF, Word, Excel... • Max {maxSize} MB</span>
+              <span className="text-primary/60 flex items-center gap-1">
+                <Clipboard className="h-3 w-3" />
+                Ctrl+V
+              </span>
+            </div>
           </div>
         ) : (
           <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
