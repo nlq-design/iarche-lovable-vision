@@ -83,15 +83,27 @@ const Services = () => {
         <link rel="alternate" hrefLang="fr" href="https://iarche.fr/services" />
         <title>Nos services · IArche · Agence IA Bayonne</title>
         <meta name="description" content="Audit IA, développement, accompagnement et conformité. Services adaptés aux PME. Agence basée à Bayonne." />
+        <meta name="robots" content="index, follow" />
+        <meta name="author" content="IArche" />
+        <meta name="keywords" content="services IA, audit IA, développement IA, accompagnement IA, conformité RGPD, PME, Bayonne" />
         <link rel="canonical" href="https://iarche.fr/services" />
+        
+        {/* Open Graph */}
         <meta property="og:title" content="Nos services · IArche · Agence IA Bayonne" />
         <meta property="og:description" content="Audit IA, développement, accompagnement et conformité. Services adaptés aux PME." />
         <meta property="og:url" content="https://iarche.fr/services" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://iarche.fr/og-services.png" />
-        <meta property="og:image:width" content="1512" />
-        <meta property="og:image:height" content="794" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta property="og:locale" content="fr_FR" />
+        <meta property="og:site_name" content="IArche" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Nos services · IArche" />
+        <meta name="twitter:description" content="Audit IA, développement, accompagnement et conformité pour PME." />
+        <meta name="twitter:image" content="https://iarche.fr/og-services.png" />
 
         {/* Schema.org BreadcrumbList */}
         <script type="application/ld+json">
