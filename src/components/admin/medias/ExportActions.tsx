@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Download, Upload, Loader2 } from 'lucide-react';
+import { Download, Upload, Loader2, Image, FileType } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { exportToPNG, exportToWebP, uploadToMediaLibrary, ExportFormat, PngQuality } from '@/lib/mediaExport';
+import { exportToPNG, exportToWebP, exportToSVG, uploadToMediaLibrary, ExportFormat, PngQuality } from '@/lib/mediaExport';
 
 interface ExportActionsProps {
   elementRef: React.RefObject<HTMLDivElement>;
@@ -13,6 +13,7 @@ interface ExportActionsProps {
   width?: number;
   height?: number;
   onUploadComplete?: (url: string) => void;
+  showSVG?: boolean; // Option pour afficher/masquer l'export SVG
 }
 
 export default function ExportActions({
@@ -23,6 +24,7 @@ export default function ExportActions({
   width,
   height,
   onUploadComplete,
+  showSVG = true,
 }: ExportActionsProps) {
   const [isExporting, setIsExporting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -36,7 +38,7 @@ export default function ExportActions({
       });
       toast.success(`PNG exporté (qualité ${quality}x)`);
     } catch (error) {
-      toast.error('Erreur lors de l\'export PNG');
+      toast.error("Erreur lors de l'export PNG");
       console.error(error);
     } finally {
       setIsExporting(false);
@@ -55,7 +57,24 @@ export default function ExportActions({
       });
       toast.success('WebP exporté (compression ~50%)');
     } catch (error) {
-      toast.error('Erreur lors de l\'export WebP');
+      toast.error("Erreur lors de l'export WebP");
+      console.error(error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportSVG = async () => {
+    setIsExporting(true);
+    try {
+      await exportToSVG(elementRef, filename, {
+        backgroundColor,
+        width,
+        height,
+      });
+      toast.success('SVG exporté (vectoriel)');
+    } catch (error) {
+      toast.error("Erreur lors de l'export SVG");
       console.error(error);
     } finally {
       setIsExporting(false);
@@ -78,7 +97,7 @@ export default function ExportActions({
       await navigator.clipboard.writeText(url);
       toast.success('URL copiée dans le presse-papier');
     } catch (error) {
-      toast.error('Erreur lors de l\'upload');
+      toast.error("Erreur lors de l'upload");
       console.error(error);
     } finally {
       setIsUploading(false);
@@ -94,23 +113,37 @@ export default function ExportActions({
             Exporter
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel className="text-xs text-muted-foreground">
+            Téléchargement direct
+          </DropdownMenuLabel>
           <DropdownMenuItem onClick={handleExportPNG}>
-            <Download className="h-4 w-4 mr-2" />
-            PNG (haute qualité)
+            <Image className="h-4 w-4 mr-2" />
+            PNG (haute qualité {quality}x)
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleExportWebP}>
-            <Download className="h-4 w-4 mr-2" />
+            <Image className="h-4 w-4 mr-2" />
             WebP (compressé ~50%)
           </DropdownMenuItem>
+          {showSVG && (
+            <DropdownMenuItem onClick={handleExportSVG}>
+              <FileType className="h-4 w-4 mr-2" />
+              SVG (vectoriel)
+            </DropdownMenuItem>
+          )}
+          
           <DropdownMenuSeparator />
+          
+          <DropdownMenuLabel className="text-xs text-muted-foreground">
+            Upload bibliothèque
+          </DropdownMenuLabel>
           <DropdownMenuItem onClick={() => handleUpload('png')} disabled={isUploading}>
             {isUploading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-            Upload PNG vers bibliothèque
+            Upload PNG
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleUpload('webp')} disabled={isUploading}>
             {isUploading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-            Upload WebP vers bibliothèque
+            Upload WebP
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

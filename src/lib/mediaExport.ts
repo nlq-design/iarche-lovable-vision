@@ -1,7 +1,7 @@
-import { toPng, toBlob } from 'html-to-image';
+import { toPng, toBlob, toSvg } from 'html-to-image';
 import { supabase } from '@/integrations/supabase/client';
 
-export type ExportFormat = 'png' | 'webp';
+export type ExportFormat = 'png' | 'webp' | 'svg';
 export type PngQuality = 1 | 2 | 3 | 4 | 6 | 8;
 
 export const PNG_QUALITY_OPTIONS: { value: PngQuality; label: string; description: string }[] = [
@@ -159,6 +159,52 @@ export async function exportToWebP(
 
     img.src = pngUrl;
   });
+}
+
+/**
+ * Export element to SVG and trigger download
+ * SVG est vectoriel et conserve la qualité à toutes les échelles
+ */
+export async function exportToSVG(
+  elementRef: React.RefObject<HTMLDivElement>,
+  filename: string,
+  options?: ExportOptions
+): Promise<void> {
+  if (!elementRef.current) {
+    throw new Error('Element ref is not defined');
+  }
+
+  const element = elementRef.current;
+  
+  // Sauvegarder le transform actuel
+  const originalTransform = element.style.transform;
+  const originalTransformOrigin = element.style.transformOrigin;
+  
+  // Retirer temporairement le transform pour capturer les vraies dimensions
+  element.style.transform = 'none';
+  element.style.transformOrigin = 'top left';
+
+  // Attendre que les fonts soient chargées
+  await document.fonts.ready;
+
+  try {
+    const svgDataUrl = await toSvg(element, {
+      backgroundColor: options?.backgroundColor,
+      cacheBust: true,
+      width: options?.width || element.scrollWidth,
+      height: options?.height || element.scrollHeight,
+      skipFonts: false,
+    });
+
+    const link = document.createElement('a');
+    link.download = `${filename}.svg`;
+    link.href = svgDataUrl;
+    link.click();
+  } finally {
+    // Restaurer le transform original
+    element.style.transform = originalTransform;
+    element.style.transformOrigin = originalTransformOrigin;
+  }
 }
 
 /**
