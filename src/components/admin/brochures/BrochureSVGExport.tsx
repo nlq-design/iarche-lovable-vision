@@ -37,7 +37,7 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
   const [previewScale, setPreviewScale] = useState(0.5);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Build slides array
+  // Build slides array - synchronisé avec BrochureWebView et BrochureEditor
   const slides: SlideData[] = [];
   slides.push({ type: 'cover', data: brochure, label: '01-couverture' });
   
@@ -50,14 +50,18 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
   if (brochure.sections.details.enabled && brochure.sections.details.content) {
     slides.push({ type: 'details', data: brochure.sections.details, label: '04-details' });
   }
+  // Section CTA (ajoutée pour synchronisation)
+  if (brochure.sections.cta?.enabled && brochure.sections.cta?.button_url) {
+    slides.push({ type: 'cta', data: brochure.sections.cta, label: '05-cta' });
+  }
   if (brochure.sections.pricing.enabled && brochure.sections.pricing.plans.length > 0) {
-    slides.push({ type: 'pricing', data: brochure.sections.pricing, label: '05-tarifs' });
+    slides.push({ type: 'pricing', data: brochure.sections.pricing, label: '06-tarifs' });
   }
   if (brochure.sections.testimonial.enabled && brochure.sections.testimonial.quote) {
-    slides.push({ type: 'testimonial', data: brochure.sections.testimonial, label: '06-temoignage' });
+    slides.push({ type: 'testimonial', data: brochure.sections.testimonial, label: '07-temoignage' });
   }
   if (brochure.sections.contact.enabled) {
-    slides.push({ type: 'contact', data: brochure.sections.contact, label: '07-contact' });
+    slides.push({ type: 'contact', data: brochure.sections.contact, label: '08-contact' });
   }
 
   useEffect(() => {
