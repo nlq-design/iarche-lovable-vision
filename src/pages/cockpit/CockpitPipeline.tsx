@@ -13,11 +13,11 @@ import { Link } from 'react-router-dom';
 
 const STAGE_CONFIG: Record<string, { label: string; color: string }> = {
   lead: { label: 'Lead', color: 'bg-slate-500' },
-  qualification: { label: 'Qualification', color: 'bg-blue-500' },
-  proposal: { label: 'Proposition', color: 'bg-yellow-500' },
-  negotiation: { label: 'Négociation', color: 'bg-orange-500' },
-  closed_won: { label: 'Gagné', color: 'bg-green-500' },
-  closed_lost: { label: 'Perdu', color: 'bg-red-500' },
+  r1: { label: 'R1', color: 'bg-blue-500' },
+  r2: { label: 'R2', color: 'bg-amber-500' },
+  pause: { label: 'Pause', color: 'bg-orange-500' },
+  closed_won: { label: 'Gagné', color: 'bg-emerald-500' },
+  closed_lost: { label: 'Non', color: 'bg-red-500' },
 };
 
 interface Lead {
@@ -95,19 +95,19 @@ const CockpitPipeline = () => {
 
   return (
     <CockpitLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Pipeline Commercial</h1>
-            <p className="text-muted-foreground">Gérez vos opportunités par étape</p>
+            <h1 className="text-xl font-semibold text-foreground">Pipeline</h1>
+            <p className="text-sm text-muted-foreground">Gestion des opportunités commerciales</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4 mr-2" />
+            <Button variant="outline" size="sm" className="h-8 text-sm">
+              <Filter className="h-3.5 w-3.5 mr-1.5" />
               Filtrer
             </Button>
-            <Button size="sm" onClick={() => setShowCreateDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button size="sm" className="h-8 text-sm" onClick={() => setShowCreateDialog(true)}>
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
               Nouvelle opportunité
             </Button>
           </div>
@@ -117,13 +117,13 @@ const CockpitPipeline = () => {
 
         {/* Pipeline Kanban */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             {[1, 2, 3, 4].map(i => (
               <Skeleton key={i} className="h-[400px]" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             {activeStages.map((stage) => {
               const stageOpps = opportunitiesByStage[stage] || [];
               const stageValue = stageOpps.reduce((sum, o) => sum + (Number(o.value_amount) || 0), 0);
@@ -132,30 +132,30 @@ const CockpitPipeline = () => {
               return (
                 <Card 
                   key={stage} 
-                  className="min-h-[400px]"
+                  className="min-h-[400px] bg-card border"
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, stage)}
                 >
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-2 px-3 pt-3">
                     <CardTitle className="text-sm font-medium flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${config.color}`} />
                         <span>{config.label}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-xs font-medium h-5 px-1.5">
                           {stageOpps.length}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground font-normal">
                           {formatCurrency(stageValue)}
                         </span>
                       </div>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="px-3 pb-3 space-y-2">
                     {stageOpps.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-32 text-muted-foreground border-2 border-dashed rounded-lg">
-                        <TrendingUp className="h-6 w-6 mb-2 opacity-50" />
+                      <div className="flex flex-col items-center justify-center h-28 text-muted-foreground border border-dashed rounded-md">
+                        <TrendingUp className="h-5 w-5 mb-1.5 opacity-40" />
                         <p className="text-xs">Glissez-déposez ici</p>
                       </div>
                     ) : (
@@ -168,35 +168,35 @@ const CockpitPipeline = () => {
                             draggable
                             onDragStart={(e) => handleDragStart(e, opp.id)}
                             onClick={() => handleCardClick(opp)}
-                            className="p-3 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer active:cursor-grabbing transition-all hover:shadow-md"
+                            className="p-2.5 rounded-md border bg-background hover:bg-muted/50 cursor-pointer active:cursor-grabbing transition-colors"
                           >
-                            <div className="flex items-start justify-between gap-2">
-                              <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5 cursor-grab" />
+                            <div className="flex items-start gap-2">
+                              <GripVertical className="h-4 w-4 text-muted-foreground/50 flex-shrink-0 mt-0.5 cursor-grab" />
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium text-sm truncate">{opp.title}</p>
                                 {linkedLead ? (
-                                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
                                     <Building2 className="h-3 w-3" />
                                     <span className="truncate">{linkedLead.company || linkedLead.name}</span>
                                   </div>
                                 ) : (opp as any).leads ? (
-                                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
                                     <Building2 className="h-3 w-3" />
                                     <span className="truncate">{(opp as any).leads?.company || (opp as any).leads?.name}</span>
                                   </div>
                                 ) : null}
-                                <div className="flex items-center justify-between mt-2">
+                                <div className="flex items-center justify-between mt-1.5">
                                   <span className="text-sm font-semibold">
                                     {formatCurrency(Number(opp.value_amount) || 0)}
                                   </span>
-                                  <Badge variant="outline" className="text-xs">
+                                  <Badge variant="outline" className="text-xs h-5 px-1.5">
                                     {opp.probability}%
                                   </Badge>
                                 </div>
                                 {linkedLead && (
-                                  <div className="flex items-center gap-1 mt-2 text-xs text-primary">
+                                  <div className="flex items-center gap-1 mt-1.5 text-xs text-primary">
                                     <User className="h-3 w-3" />
-                                    <span>Voir la fiche lead</span>
+                                    <span>Voir fiche</span>
                                   </div>
                                 )}
                               </div>
@@ -213,26 +213,28 @@ const CockpitPipeline = () => {
         )}
 
         {/* Summary */}
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="bg-muted/30 border">
+          <CardContent className="py-3 px-4">
             <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-5">
                 <div>
-                  <span className="text-muted-foreground">Total pipeline : </span>
-                  <span className="font-semibold">{formatCurrency(stats.totalValue)}</span>
+                  <span className="text-muted-foreground text-xs">Total</span>
+                  <p className="font-semibold">{formatCurrency(stats.totalValue)}</p>
                 </div>
+                <div className="h-8 w-px bg-border" />
                 <div>
-                  <span className="text-muted-foreground">Pondéré : </span>
-                  <span className="font-semibold">{formatCurrency(stats.weightedValue)}</span>
+                  <span className="text-muted-foreground text-xs">Pondéré</span>
+                  <p className="font-semibold">{formatCurrency(stats.weightedValue)}</p>
                 </div>
+                <div className="h-8 w-px bg-border" />
                 <div>
-                  <span className="text-muted-foreground">Opportunités : </span>
-                  <span className="font-semibold">{stats.total}</span>
+                  <span className="text-muted-foreground text-xs">Opportunités</span>
+                  <p className="font-semibold">{stats.total}</p>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" asChild>
+              <Button variant="ghost" size="sm" className="h-8 text-sm" asChild>
                 <Link to="/cockpit/analytics">
-                  Voir les analytics <ArrowRight className="h-4 w-4 ml-1" />
+                  Analytics <ArrowRight className="h-3.5 w-3.5 ml-1" />
                 </Link>
               </Button>
             </div>
