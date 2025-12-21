@@ -79,6 +79,14 @@ export const THEMES = {
     accent: COLORS.terracotta,
     border: COLORS.whiteAlpha40,
   },
+  // v4.2 - Thème gradient (style email)
+  gradient: {
+    background: `linear-gradient(135deg, ${COLORS.bleuNuit} 0%, ${COLORS.terracotta} 100%)`,
+    text: COLORS.white,
+    subtext: COLORS.whiteAlpha80,
+    accent: COLORS.white,
+    border: COLORS.whiteAlpha20,
+  },
 } as const;
 
 // =====================================================
@@ -430,7 +438,7 @@ export const EXPORT_FORMATS = {
 // =====================================================
 // TYPES
 // =====================================================
-export type ThemeType = 'dark' | 'light' | 'terra' | 'contrast';
+export type ThemeType = 'dark' | 'light' | 'terra' | 'contrast' | 'gradient';
 export type GradientDirection = 'standard' | 'reverse';
 export type ArcSize = keyof typeof ARC_SIZES;   // sm | md | lg | xl (v4.0)
 export type BarSize = keyof typeof BAR_SIZES;   // sm | md | lg | xl (legacy)
@@ -444,11 +452,16 @@ export type ExportFormat = keyof typeof EXPORT_FORMATS;
 // =====================================================
 export const getThemeColors = (theme: ThemeType) => THEMES[theme];
 
+/** 
+ * Retourne la couleur/gradient de fond pour un thème donné
+ * Note: Pour 'gradient', retourne un CSS linear-gradient
+ */
 export const getBackgroundColor = (theme: ThemeType): string => {
   switch (theme) {
     case 'terra': return COLORS.terracotta;
     case 'contrast': return COLORS.contrastDark;
     case 'light': return COLORS.blancCasse;
+    case 'gradient': return `linear-gradient(135deg, ${COLORS.bleuNuit} 0%, ${COLORS.terracotta} 100%)`;
     default: return COLORS.bleuNuit;
   }
 };
@@ -470,6 +483,7 @@ export const getSubtextColor = (theme: ThemeType): string => {
 export const getAccentColor = (theme: ThemeType): string => {
   switch (theme) {
     case 'terra': return COLORS.bleuNuit;
+    case 'gradient': return COLORS.white; // Blanc pour contraste sur gradient
     default: return COLORS.terracotta;
   }
 };

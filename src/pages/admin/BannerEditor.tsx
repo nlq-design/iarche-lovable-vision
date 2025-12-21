@@ -406,7 +406,7 @@ export default function BannerEditor() {
             elementRef={bannerRef}
             filename={`banner-${template}`}
             quality={pngQuality}
-            backgroundColor={theme === 'dark' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse}
+            backgroundColor={theme === 'light' ? IARCHE_COLORS.blancCasse : IARCHE_COLORS.bleuNuit}
             onUploadComplete={(url) => toast.success(`URL: ${url}`)}
           />
         </div>
@@ -458,6 +458,7 @@ export default function BannerEditor() {
                     <SelectItem value="light">Clair (Blanc Cassé)</SelectItem>
                     <SelectItem value="terra">Terra Nova (Terracotta)</SelectItem>
                     <SelectItem value="contrast">Contraste fort</SelectItem>
+                    <SelectItem value="gradient">Gradient (Style Email)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
