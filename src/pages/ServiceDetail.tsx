@@ -52,9 +52,9 @@ const ServiceDetail = () => {
         <meta property="og:description" content={service.description} />
         <meta property="og:url" content={getCanonicalUrl()} />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://iarche.fr/og-services.png" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
+        <meta property="og:image" content="https://iarche.fr/og-image-v4.png" />
+        <meta property="og:image:width" content="1512" />
+        <meta property="og:image:height" content="794" />
         <meta property="og:locale" content="fr_FR" />
         <meta property="og:site_name" content="IArche" />
         
@@ -62,7 +62,7 @@ const ServiceDetail = () => {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${service.title} · IArche`} />
         <meta name="twitter:description" content={service.description} />
-        <meta name="twitter:image" content="https://iarche.fr/og-services.png" />
+        <meta name="twitter:image" content="https://iarche.fr/og-image-v4.png" />
 
         {/* Schema.org BreadcrumbList */}
         <script type="application/ld+json">
