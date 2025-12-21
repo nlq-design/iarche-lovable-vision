@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCockpitTasks, useCockpitLeads, useCockpitOpportunities, useCockpitProjects } from "@/hooks/cockpit";
-import { Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useCockpitTasks, useCockpitLeads, useCockpitOpportunities, useCockpitProjects, useCockpitBookings } from "@/hooks/cockpit";
+import { Loader2, Calendar, Bell } from "lucide-react";
+import { toast } from "sonner";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -18,11 +20,28 @@ interface CreateTaskDialogProps {
 const TASK_TYPES = ["follow_up", "call", "meeting", "email", "proposal", "other"] as const;
 const TASK_PRIORITIES = ["low", "medium", "high", "urgent"] as const;
 
+const TASK_TYPE_LABELS: Record<string, string> = {
+  follow_up: "Suivi",
+  call: "Appel",
+  meeting: "Réunion",
+  email: "Email",
+  proposal: "Proposition",
+  other: "Autre",
+};
+
+const PRIORITY_LABELS: Record<string, string> = {
+  low: "Basse",
+  medium: "Moyenne",
+  high: "Haute",
+  urgent: "Urgente",
+};
+
 export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaultEntityId }: CreateTaskDialogProps) => {
   const { createTask } = useCockpitTasks();
   const { leads = [] } = useCockpitLeads();
   const { opportunities = [] } = useCockpitOpportunities();
   const { projects = [] } = useCockpitProjects();
+  const { createBooking } = useCockpitBookings();
   
   const [formData, setFormData] = useState({
     title: "",
@@ -34,6 +53,27 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
     entity_type: defaultEntityType || "",
     entity_id: defaultEntityId || "",
   });
+  
+  const [addToAgenda, setAddToAgenda] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Reset entity type/id when defaults change
+  useEffect(() => {
+    if (open) {
+      setFormData(prev => ({
+        ...prev,
+        entity_type: defaultEntityType || prev.entity_type,
+        entity_id: defaultEntityId || prev.entity_id,
+      }));
+    }
+  }, [open, defaultEntityType, defaultEntityId]);
+
+  // Auto-enable agenda for meetings with date+time
+  useEffect(() => {
+    if (formData.task_type === "meeting" && formData.due_date && formData.due_time) {
+      setAddToAgenda(true);
+    }
+  }, [formData.task_type, formData.due_date, formData.due_time]);
 
   const resetForm = () => {
     setFormData({
@@ -46,10 +86,12 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
       entity_type: defaultEntityType || "",
       entity_id: defaultEntityId || "",
     });
+    setAddToAgenda(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     try {
       const taskData: any = {
@@ -59,6 +101,7 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
         priority: formData.priority,
         due_date: formData.due_date || undefined,
         due_time: formData.due_time || undefined,
+        workspace_id: "00000000-0000-0000-0000-000000000001",
       };
 
       // Set the correct FK based on entity type
@@ -70,11 +113,54 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
         taskData.project_id = formData.entity_id;
       }
 
+      // Create the task
       await createTask.mutateAsync(taskData);
+
+      // If addToAgenda and we have date+time, create a booking entry
+      if (addToAgenda && formData.due_date && formData.due_time && createBooking) {
+        try {
+          const startTime = new Date(`${formData.due_date}T${formData.due_time}`);
+          const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // +1 hour by default
+          
+          // Get entity info for the booking
+          let bookingName = formData.title;
+          let bookingEmail = "tache@iarche.fr"; // Default email for tasks
+          let bookingCompany = "";
+          
+          if (formData.entity_type === "lead" && formData.entity_id) {
+            const lead = leads.find(l => l.id === formData.entity_id);
+            if (lead) {
+              bookingName = `${formData.title} - ${lead.name}`;
+              bookingEmail = lead.email;
+              bookingCompany = lead.company || "";
+            }
+          }
+
+          await createBooking.mutateAsync({
+            booking_type_id: "00000000-0000-0000-0000-000000000001", // Default type
+            name: bookingName,
+            email: bookingEmail,
+            company: bookingCompany,
+            start_time: startTime.toISOString(),
+            end_time: endTime.toISOString(),
+            message: formData.description || `Tâche: ${formData.title}`,
+            status: "confirmed",
+            lead_id: formData.entity_type === "lead" ? formData.entity_id : undefined,
+          });
+          
+          toast.success("Tâche créée et ajoutée à l'agenda");
+        } catch (agendaError) {
+          console.error("Erreur ajout agenda:", agendaError);
+          toast.info("Tâche créée (erreur lors de l'ajout à l'agenda)");
+        }
+      }
+
       resetForm();
       onOpenChange(false);
     } catch (error) {
-      // Error is handled by the mutation
+      // Error handled by mutation
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -88,7 +174,7 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
   const getEntityOptions = () => {
     switch (formData.entity_type) {
       case "lead":
-        return leads.map((l) => ({ id: l.id, label: `${l.name} - ${l.company || l.email}` }));
+        return leads.map((l) => ({ id: l.id, label: `${l.name}${l.company ? ` - ${l.company}` : ""}` }));
       case "opportunity":
         return opportunities.map((o) => ({ id: o.id, label: o.title }));
       case "project":
@@ -97,6 +183,8 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
         return [];
     }
   };
+
+  const canAddToAgenda = formData.due_date && formData.due_time;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -126,12 +214,7 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
                 <SelectContent>
                   {TASK_TYPES.map((type) => (
                     <SelectItem key={type} value={type}>
-                      {type === "follow_up" ? "Suivi" :
-                       type === "call" ? "Appel" :
-                       type === "meeting" ? "Réunion" :
-                       type === "email" ? "Email" :
-                       type === "proposal" ? "Proposition" :
-                       type === "other" ? "Autre" : type}
+                      {TASK_TYPE_LABELS[type]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -146,10 +229,7 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
                 <SelectContent>
                   {TASK_PRIORITIES.map((priority) => (
                     <SelectItem key={priority} value={priority}>
-                      {priority === "low" ? "Basse" :
-                       priority === "medium" ? "Moyenne" :
-                       priority === "high" ? "Haute" :
-                       priority === "urgent" ? "Urgente" : priority}
+                      {PRIORITY_LABELS[priority]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -177,6 +257,26 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
               />
             </div>
           </div>
+
+          {/* Add to Agenda option */}
+          {canAddToAgenda && (
+            <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
+              <Checkbox
+                id="addToAgenda"
+                checked={addToAgenda}
+                onCheckedChange={(checked) => setAddToAgenda(checked === true)}
+              />
+              <div className="flex-1">
+                <Label htmlFor="addToAgenda" className="flex items-center gap-2 cursor-pointer">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  Ajouter à l'agenda
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Crée également un rendez-vous dans l'agenda
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -229,8 +329,8 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Annuler
             </Button>
-            <Button type="submit" disabled={createTask.isPending}>
-              {createTask.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            <Button type="submit" disabled={isSubmitting || !formData.title.trim()}>
+              {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Créer
             </Button>
           </DialogFooter>
