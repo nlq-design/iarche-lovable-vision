@@ -496,4 +496,3 @@ export function ProjectDetailSheet({ project, open, onOpenChange }: ProjectDetai
     </>
   );
 }
-}
