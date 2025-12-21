@@ -236,21 +236,28 @@ const ArticleDetail = () => {
         <html lang="fr" />
         <link rel="alternate" hrefLang="fr" href={getCanonicalUrl()} />
         <title>{article.title} · IArche</title>
-        <meta
-          name="description"
-          content={article.excerpt || article.title}
-        />
+        <meta name="description" content={article.excerpt || article.title} />
+        <meta name="robots" content="index, follow" />
+        <meta name="author" content="IArche" />
+        <meta name="keywords" content={`${article.title}, IA, intelligence artificielle, PME, IArche, ${article.tags?.join(', ') || ''}`} />
         <link rel="canonical" href={getCanonicalUrl()} />
+        
+        {/* Open Graph */}
         <meta property="og:title" content={`${article.title} · IArche`} />
-        <meta
-          property="og:description"
-          content={article.excerpt || article.title}
-        />
+        <meta property="og:description" content={article.excerpt || article.title} />
         <meta property="og:url" content={getCanonicalUrl()} />
         <meta property="og:type" content="article" />
-        {article.cover_image_url && (
-          <meta property="og:image" content={article.cover_image_url} />
-        )}
+        <meta property="og:image" content={article.cover_image_url || "https://iarche.fr/og-image.png"} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:locale" content="fr_FR" />
+        <meta property="og:site_name" content="IArche" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${article.title} · IArche`} />
+        <meta name="twitter:description" content={article.excerpt || article.title} />
+        <meta name="twitter:image" content={article.cover_image_url || "https://iarche.fr/og-image.png"} />
         
         {/* Schema.org BreadcrumbList */}
         <script type="application/ld+json">

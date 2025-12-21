@@ -63,21 +63,31 @@ const LivresBlancs = () => {
   return (
     <BackgroundLayout>
       <Helmet>
+        <html lang="fr" />
+        <link rel="alternate" hrefLang="fr" href="https://iarche.fr/livres-blancs" />
         <title>Livres blancs IA · IArche · Guides & Documentation</title>
-        <meta
-          name="description"
-          content="Téléchargez nos livres blancs sur l'intelligence artificielle pour les PME. Guides complets, méthodologies et bonnes pratiques."
-        />
+        <meta name="description" content="Téléchargez nos livres blancs sur l'intelligence artificielle pour les PME. Guides complets, méthodologies et bonnes pratiques." />
+        <meta name="robots" content="index, follow" />
+        <meta name="author" content="IArche" />
+        <meta name="keywords" content="livres blancs IA, guides IA, documentation IA, méthodologies IA, bonnes pratiques IA" />
         <link rel="canonical" href="https://iarche.fr/livres-blancs" />
+        
+        {/* Open Graph */}
         <meta property="og:title" content="Livres blancs IA · IArche · Guides & Documentation" />
-        <meta
-          property="og:description"
-          content="Livres blancs et guides complets sur l'IA pour les PME."
-        />
+        <meta property="og:description" content="Livres blancs et guides complets sur l'IA pour les PME." />
         <meta property="og:url" content="https://iarche.fr/livres-blancs" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://iarche.fr/og-image-v4.png" />
-        <meta property="og:image:width" content="1512" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:locale" content="fr_FR" />
+        <meta property="og:site_name" content="IArche" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Livres blancs IA · IArche" />
+        <meta name="twitter:description" content="Guides et documentation sur l'IA pour PME." />
+        <meta name="twitter:image" content="https://iarche.fr/og-image-v4.png" />
         <meta property="og:image:height" content="794" />
         <meta property="og:locale" content="fr_FR" />
 

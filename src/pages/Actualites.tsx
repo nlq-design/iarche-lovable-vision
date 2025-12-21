@@ -105,17 +105,31 @@ const Actualites = () => {
   };
   return <BackgroundLayout>
       <Helmet>
+        <html lang="fr" />
+        <link rel="alternate" hrefLang="fr" href="https://iarche.fr/actualites" />
         <title>Actualités IA · IArche · Agence IA Bayonne</title>
         <meta name="description" content="Découvrez nos articles de fond sur l'intelligence artificielle : guides pratiques, analyses techniques et retours d'expérience pour les dirigeants de PME." />
+        <meta name="robots" content="index, follow" />
+        <meta name="author" content="IArche" />
+        <meta name="keywords" content="actualités IA, intelligence artificielle, PME, guides IA, analyses techniques" />
         <link rel="canonical" href="https://iarche.fr/actualites" />
+        
+        {/* Open Graph */}
         <meta property="og:title" content="Actualités IA · IArche · Agence IA Bayonne" />
         <meta property="og:description" content="Articles de fond sur l'IA : guides pratiques, analyses techniques et retours d'expérience pour PME." />
         <meta property="og:url" content="https://iarche.fr/actualites" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://iarche.fr/og-actualites.png" />
-        <meta property="og:image:width" content="1512" />
-        <meta property="og:image:height" content="794" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta property="og:locale" content="fr_FR" />
+        <meta property="og:site_name" content="IArche" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Actualités IA · IArche" />
+        <meta name="twitter:description" content="Guides pratiques et analyses techniques sur l'IA pour PME." />
+        <meta name="twitter:image" content="https://iarche.fr/og-actualites.png" />
 
         {/* Schema.org BreadcrumbList */}
         <script type="application/ld+json">

@@ -20,6 +20,9 @@ const Index = () => {
         {/* Primary Meta Tags */}
         <title>IArche · Agence IA Bayonne | Conseil & Intégration PME</title>
         <meta name="description" content="Agence IA à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME. Sud-Ouest et toute la France." />
+        <meta name="robots" content="index, follow" />
+        <meta name="author" content="IArche" />
+        <meta name="keywords" content="agence IA, intelligence artificielle, PME, Bayonne, Pays Basque, conseil IA, intégration IA" />
         <link rel="canonical" href="https://iarche.fr/" />
         
         {/* Geo Tags - Local SEO */}

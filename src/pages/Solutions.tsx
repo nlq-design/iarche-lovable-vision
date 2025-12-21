@@ -53,16 +53,28 @@ const Solutions = () => {
         <html lang="fr" />
         <link rel="alternate" hrefLang="fr" href="https://iarche.fr/solutions" />
         <title>Nos solutions · IArche · SaaS IA pour PME</title>
-        <meta name="description" content="Solutions IA développées par IArche : Team 5 Connect, Lexia, Dialogue Plus. Ce qu'on conseille, on le construit aussi." />
+        <meta name="description" content="Solutions IA développées par IArche : Collaboria, Datalia, Team 5 Connect. Ce qu'on conseille, on le construit aussi." />
+        <meta name="robots" content="index, follow" />
+        <meta name="author" content="IArche" />
+        <meta name="keywords" content="solutions IA, SaaS IA, PME, Collaboria, Datalia, IArche" />
         <link rel="canonical" href="https://iarche.fr/solutions" />
+        
+        {/* Open Graph */}
         <meta property="og:title" content="Nos solutions · IArche · SaaS IA pour PME" />
-        <meta property="og:description" content="Solutions IA développées par IArche : Team 5 Connect, Lexia, Dialogue Plus." />
+        <meta property="og:description" content="Solutions IA développées par IArche : Collaboria, Datalia, Team 5 Connect." />
         <meta property="og:url" content="https://iarche.fr/solutions" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://iarche.fr/og-solutions.png" />
-        <meta property="og:image:width" content="1512" />
-        <meta property="og:image:height" content="794" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta property="og:locale" content="fr_FR" />
+        <meta property="og:site_name" content="IArche" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Nos solutions · IArche" />
+        <meta name="twitter:description" content="Solutions IA développées par IArche pour les PME." />
+        <meta name="twitter:image" content="https://iarche.fr/og-solutions.png" />
 
         {/* Schema.org BreadcrumbList */}
         <script type="application/ld+json">

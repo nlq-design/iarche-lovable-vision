@@ -126,23 +126,31 @@ const Articles = () => {
   return (
     <BackgroundLayout>
       <Helmet>
+        <html lang="fr" />
+        <link rel="alternate" hrefLang="fr" href="https://iarche.fr/articles" />
         <title>Articles IA · IArche · Agence IA Bayonne</title>
-        <meta
-          name="description"
-          content="Suivez les dernières actualités en intelligence artificielle et découvrez les innovations d'IArche, agence IA à Bayonne. Analyses, tendances et cas d'usage concrets."
-        />
+        <meta name="description" content="Suivez les dernières actualités en intelligence artificielle et découvrez les innovations d'IArche, agence IA à Bayonne. Analyses, tendances et cas d'usage concrets." />
+        <meta name="robots" content="index, follow" />
+        <meta name="author" content="IArche" />
+        <meta name="keywords" content="articles IA, intelligence artificielle, innovations IA, tendances IA, cas d'usage IA" />
         <link rel="canonical" href="https://iarche.fr/articles" />
+        
+        {/* Open Graph */}
         <meta property="og:title" content="Articles IA · IArche · Agence IA Bayonne" />
-        <meta
-          property="og:description"
-          content="Actualités IA et innovations IArche : analyses, tendances et cas d'usage concrets pour PME."
-        />
+        <meta property="og:description" content="Actualités IA et innovations IArche : analyses, tendances et cas d'usage concrets pour PME." />
         <meta property="og:url" content="https://iarche.fr/articles" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://iarche.fr/og-articles.png" />
-        <meta property="og:image:width" content="1512" />
-        <meta property="og:image:height" content="794" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta property="og:locale" content="fr_FR" />
+        <meta property="og:site_name" content="IArche" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Articles IA · IArche" />
+        <meta name="twitter:description" content="Analyses, tendances et cas d'usage IA pour PME." />
+        <meta name="twitter:image" content="https://iarche.fr/og-articles.png" />
 
         {/* Schema.org BreadcrumbList */}
         <script type="application/ld+json">
