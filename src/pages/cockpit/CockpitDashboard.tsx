@@ -1,6 +1,7 @@
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Users, 
   Target, 
@@ -11,34 +12,39 @@ import {
   AlertCircle,
   CheckCircle2
 } from 'lucide-react';
-
-// Placeholder data - will be replaced with real data from hooks
-const stats = [
-  { label: 'Leads qualifiés', value: 12, change: '+3', icon: Users, trend: 'up' },
-  { label: 'Opportunités actives', value: 8, change: '+2', icon: Target, trend: 'up' },
-  { label: 'RDV cette semaine', value: 5, change: '0', icon: Calendar, trend: 'neutral' },
-  { label: 'Projets en cours', value: 4, change: '+1', icon: FolderKanban, trend: 'up' },
-];
-
-const todayTasks = [
-  { id: 1, title: 'Relancer Acme Corp', type: 'call', priority: 'high', due: '10:00' },
-  { id: 2, title: 'Préparer démo TechStart', type: 'meeting', priority: 'medium', due: '14:00' },
-  { id: 3, title: 'Envoyer proposition Globex', type: 'email', priority: 'high', due: '16:00' },
-];
-
-const upcomingMeetings = [
-  { id: 1, title: 'Call découverte - StartupXYZ', time: '14:00', contact: 'Marie Dupont' },
-  { id: 2, title: 'Démo produit - TechCorp', time: '16:30', contact: 'Jean Martin' },
-];
+import { useCockpitLeads, useCockpitOpportunities, useCockpitTasks } from '@/hooks/cockpit';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export default function CockpitDashboard() {
+  const { stats: leadStats, isLoading: leadsLoading } = useCockpitLeads();
+  const { stats: oppStats, isLoading: oppsLoading } = useCockpitOpportunities();
+  const { tasks, stats: taskStats, isLoading: tasksLoading } = useCockpitTasks();
+
+  const isLoading = leadsLoading || oppsLoading || tasksLoading;
+
+  // Get today's tasks
+  const today = new Date().toISOString().split('T')[0];
+  const todayTasks = tasks?.filter(t => 
+    t.due_date === today && t.status !== 'completed' && t.status !== 'cancelled'
+  ).slice(0, 5) || [];
+
+  const stats = [
+    { label: 'Leads qualifiés', value: leadStats.qualified, icon: Users },
+    { label: 'Opportunités actives', value: oppStats.total, icon: Target },
+    { label: 'Tâches du jour', value: taskStats.dueToday, icon: Calendar },
+    { label: 'Pipeline total', value: formatCurrency(oppStats.totalValue), icon: FolderKanban },
+  ];
+
   return (
     <CockpitLayout>
       <div className="p-6 space-y-6">
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold">Bonjour 👋</h1>
-          <p className="text-muted-foreground">Voici votre aperçu commercial du jour</p>
+          <p className="text-muted-foreground">
+            Voici votre aperçu commercial du {format(new Date(), 'EEEE d MMMM', { locale: fr })}
+          </p>
         </div>
 
         {/* KPIs */}
@@ -52,15 +58,11 @@ export default function CockpitDashboard() {
                 <stat.icon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="flex items-baseline gap-2">
+                {isLoading ? (
+                  <Skeleton className="h-8 w-20" />
+                ) : (
                   <div className="text-2xl font-bold">{stat.value}</div>
-                  <Badge 
-                    variant={stat.trend === 'up' ? 'default' : 'secondary'}
-                    className="text-xs"
-                  >
-                    {stat.change}
-                  </Badge>
-                </div>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -74,57 +76,74 @@ export default function CockpitDashboard() {
                 <Clock className="h-5 w-5" />
                 Actions du jour
               </CardTitle>
-              <CardDescription>Vos tâches prioritaires</CardDescription>
+              <CardDescription>
+                {taskStats.dueToday} tâches • {taskStats.overdue} en retard
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {todayTasks.map((task) => (
-                  <div 
-                    key={task.id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      {task.priority === 'high' ? (
-                        <AlertCircle className="h-4 w-4 text-destructive" />
-                      ) : (
-                        <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-                      )}
-                      <div>
-                        <p className="font-medium text-sm">{task.title}</p>
-                        <p className="text-xs text-muted-foreground capitalize">{task.type}</p>
+              {tasksLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : todayTasks.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+                  <CheckCircle2 className="h-8 w-8 mb-2 opacity-50" />
+                  <p className="text-sm">Aucune tâche pour aujourd'hui</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {todayTasks.map((task) => (
+                    <div 
+                      key={task.id}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        {task.priority === 'high' || task.priority === 'urgent' ? (
+                          <AlertCircle className="h-4 w-4 text-destructive" />
+                        ) : (
+                          <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                        )}
+                        <div>
+                          <p className="font-medium text-sm">{task.title}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{task.task_type}</p>
+                        </div>
                       </div>
+                      {task.due_time && (
+                        <Badge variant="outline">{task.due_time.slice(0, 5)}</Badge>
+                      )}
                     </div>
-                    <Badge variant="outline">{task.due}</Badge>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* RDV à venir */}
+          {/* Stats Leads */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                RDV à venir
+                <Users className="h-5 w-5" />
+                Répartition des leads
               </CardTitle>
-              <CardDescription>Vos prochains rendez-vous</CardDescription>
+              <CardDescription>{leadStats.total} leads au total</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {upcomingMeetings.map((meeting) => (
-                  <div 
-                    key={meeting.id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-                  >
-                    <div>
-                      <p className="font-medium text-sm">{meeting.title}</p>
-                      <p className="text-xs text-muted-foreground">{meeting.contact}</p>
-                    </div>
-                    <Badge variant="secondary">{meeting.time}</Badge>
-                  </div>
-                ))}
-              </div>
+              {leadsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <Skeleton key={i} className="h-10 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <LeadStatRow label="Nouveaux" value={leadStats.new} color="bg-blue-500" />
+                  <LeadStatRow label="Contactés" value={leadStats.contacted} color="bg-yellow-500" />
+                  <LeadStatRow label="Qualifiés" value={leadStats.qualified} color="bg-green-500" />
+                  <LeadStatRow label="Convertis" value={leadStats.converted} color="bg-purple-500" />
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -139,19 +158,44 @@ export default function CockpitDashboard() {
             <CardDescription>Valeur totale des opportunités en cours</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg">
-              <div>
-                <p className="text-3xl font-bold">125 000 €</p>
-                <p className="text-sm text-muted-foreground">8 opportunités actives</p>
+            {oppsLoading ? (
+              <Skeleton className="h-24 w-full" />
+            ) : (
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg">
+                <div>
+                  <p className="text-3xl font-bold">{formatCurrency(oppStats.totalValue)}</p>
+                  <p className="text-sm text-muted-foreground">{oppStats.total} opportunités actives</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-semibold text-muted-foreground">Pondéré</p>
+                  <p className="text-xl font-bold">{formatCurrency(oppStats.weightedValue)}</p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-lg font-semibold text-green-600">+15%</p>
-                <p className="text-xs text-muted-foreground">vs mois dernier</p>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
     </CockpitLayout>
   );
+}
+
+function LeadStatRow({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className="flex items-center justify-between p-2 rounded-lg border">
+      <div className="flex items-center gap-3">
+        <div className={`w-3 h-3 rounded-full ${color}`} />
+        <span className="text-sm font-medium">{label}</span>
+      </div>
+      <Badge variant="secondary">{value}</Badge>
+    </div>
+  );
+}
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
 }
