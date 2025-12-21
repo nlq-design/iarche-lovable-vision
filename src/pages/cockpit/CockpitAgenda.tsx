@@ -1,6 +1,6 @@
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, Video, MapPin, ChevronLeft, ChevronRight, User, Building } from "lucide-react";
+import { Calendar, Clock, Video, MapPin, ChevronLeft, ChevronRight, User, Building, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCockpitBookings } from "@/hooks/cockpit";
@@ -9,9 +9,12 @@ import { fr } from "date-fns/locale";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getBookingStatusConfig } from "@/lib/formatters";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const CockpitAgenda = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [isSyncing, setIsSyncing] = useState(false);
   const { 
     bookings, 
     isLoading, 
@@ -19,8 +22,38 @@ const CockpitAgenda = () => {
     todayBookings, 
     loadingToday, 
     upcomingBookings, 
-    loadingUpcoming 
+    loadingUpcoming,
+    refetch,
   } = useCockpitBookings();
+
+  const handleSyncCalendar = async () => {
+    setIsSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-google-calendar', {
+        body: { action: 'sync', daysAhead: 30, daysBefore: 7 }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        const { results } = data;
+        toast.success(`Synchronisation terminée`, {
+          description: `${results.synced} nouveau(x) RDV importé(s), ${results.skipped} ignoré(s)`,
+        });
+        // Rafraîchir les données
+        refetch();
+      } else {
+        throw new Error(data?.error || 'Erreur inconnue');
+      }
+    } catch (err) {
+      console.error('Sync error:', err);
+      toast.error('Erreur de synchronisation', {
+        description: err instanceof Error ? err.message : 'Impossible de synchroniser avec Google Calendar',
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const formattedDate = format(currentDate, "EEEE d MMMM yyyy", { locale: fr });
 
@@ -78,9 +111,14 @@ const CockpitAgenda = () => {
             <p className="text-muted-foreground capitalize">{formattedDate}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Video className="h-4 w-4 mr-2" />
-              Sync Calendrier
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleSyncCalendar}
+              disabled={isSyncing}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? 'Synchronisation...' : 'Sync Google Calendar'}
             </Button>
             <Button size="sm">
               + Nouveau RDV
