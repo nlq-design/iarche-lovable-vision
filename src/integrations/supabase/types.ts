@@ -1255,10 +1255,13 @@ export type Database = {
       }
       leads: {
         Row: {
+          address: string | null
           ai_metadata: Json | null
+          city: string | null
           company: string | null
           company_size: string | null
           consent_marketing: boolean | null
+          country: string | null
           created_at: string | null
           email: string
           id: string
@@ -1266,19 +1269,28 @@ export type Database = {
           last_contacted_at: string | null
           lead_score: number | null
           lead_score_details: Json | null
+          linkedin_url: string | null
           message: string | null
           name: string
           phone: string | null
+          position: string | null
+          postal_code: string | null
           qualification_status: string | null
+          revenue_range: string | null
+          siret: string | null
           source: string
           source_context: string | null
           source_id: string | null
+          website: string | null
         }
         Insert: {
+          address?: string | null
           ai_metadata?: Json | null
+          city?: string | null
           company?: string | null
           company_size?: string | null
           consent_marketing?: boolean | null
+          country?: string | null
           created_at?: string | null
           email: string
           id?: string
@@ -1286,19 +1298,28 @@ export type Database = {
           last_contacted_at?: string | null
           lead_score?: number | null
           lead_score_details?: Json | null
+          linkedin_url?: string | null
           message?: string | null
           name: string
           phone?: string | null
+          position?: string | null
+          postal_code?: string | null
           qualification_status?: string | null
+          revenue_range?: string | null
+          siret?: string | null
           source: string
           source_context?: string | null
           source_id?: string | null
+          website?: string | null
         }
         Update: {
+          address?: string | null
           ai_metadata?: Json | null
+          city?: string | null
           company?: string | null
           company_size?: string | null
           consent_marketing?: boolean | null
+          country?: string | null
           created_at?: string | null
           email?: string
           id?: string
@@ -1306,13 +1327,19 @@ export type Database = {
           last_contacted_at?: string | null
           lead_score?: number | null
           lead_score_details?: Json | null
+          linkedin_url?: string | null
           message?: string | null
           name?: string
           phone?: string | null
+          position?: string | null
+          postal_code?: string | null
           qualification_status?: string | null
+          revenue_range?: string | null
+          siret?: string | null
           source?: string
           source_context?: string | null
           source_id?: string | null
+          website?: string | null
         }
         Relationships: []
       }
