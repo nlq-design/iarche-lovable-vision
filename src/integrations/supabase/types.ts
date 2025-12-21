@@ -665,6 +665,66 @@ export type Database = {
         }
         Relationships: []
       }
+      cockpit_auth_sessions: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          ip_hash: string | null
+          mfa_method: string | null
+          stepup_reason: string | null
+          ua_hash: string | null
+          user_id: string
+          verified_at: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          ip_hash?: string | null
+          mfa_method?: string | null
+          stepup_reason?: string | null
+          ua_hash?: string | null
+          user_id: string
+          verified_at?: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          ip_hash?: string | null
+          mfa_method?: string | null
+          stepup_reason?: string | null
+          ua_hash?: string | null
+          user_id?: string
+          verified_at?: string
+        }
+        Relationships: []
+      }
+      cockpit_mfa_attempts: {
+        Row: {
+          attempted_at: string | null
+          failure_reason: string | null
+          id: string
+          ip_hash: string | null
+          success: boolean
+          user_id: string | null
+        }
+        Insert: {
+          attempted_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          ip_hash?: string | null
+          success: boolean
+          user_id?: string | null
+        }
+        Update: {
+          attempted_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          ip_hash?: string | null
+          success?: boolean
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           approved: boolean
@@ -1387,6 +1447,71 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_members: {
+        Row: {
+          invited_by: string | null
+          joined_at: string | null
+          role: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          invited_by?: string | null
+          joined_at?: string | null
+          role?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          invited_by?: string | null
+          joined_at?: string | null
+          role?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspaces: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          settings: Json | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          settings?: Json | null
+          type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          settings?: Json | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       comments_public: {
@@ -1438,6 +1563,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      can_access_workspace: {
+        Args: { p_user_id: string; p_workspace_id: string }
+        Returns: boolean
+      }
+      check_cockpit_mfa_rate_limit: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
+      cleanup_expired_cockpit_data: { Args: never; Returns: undefined }
       cleanup_login_attempts: { Args: never; Returns: undefined }
       cleanup_orphan_data: {
         Args: never
@@ -1452,6 +1586,7 @@ export type Database = {
         Args: { atelier_uuid: string }
         Returns: number
       }
+      has_cockpit_access: { Args: { user_uuid: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1459,11 +1594,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_workspace_role: {
+        Args: { p_min_role: string; p_user_id: string; p_workspace_id: string }
+        Returns: boolean
+      }
       increment_form_submissions: {
         Args: { form_slug: string }
         Returns: undefined
       }
       increment_form_views: { Args: { form_slug: string }; Returns: undefined }
+      is_workspace_member: {
+        Args: { p_user_id: string; p_workspace_id: string }
+        Returns: boolean
+      }
       unlock_expired_accounts: { Args: never; Returns: undefined }
       validate_resource_type: {
         Args: never
