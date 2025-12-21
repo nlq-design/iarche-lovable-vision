@@ -44,6 +44,118 @@ export type Database = {
         }
         Relationships: []
       }
+      activity_log: {
+        Row: {
+          activity_type: string
+          ai_metadata: Json | null
+          content: string | null
+          created_at: string | null
+          created_by: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          is_ai_generated: boolean | null
+          lead_id: string | null
+          meeting_note_id: string | null
+          metadata: Json | null
+          opportunity_id: string | null
+          project_id: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          task_id: string | null
+          title: string | null
+          visibility: string
+          workspace_id: string
+        }
+        Insert: {
+          activity_type: string
+          ai_metadata?: Json | null
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          is_ai_generated?: boolean | null
+          lead_id?: string | null
+          meeting_note_id?: string | null
+          metadata?: Json | null
+          opportunity_id?: string | null
+          project_id?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          task_id?: string | null
+          title?: string | null
+          visibility?: string
+          workspace_id?: string
+        }
+        Update: {
+          activity_type?: string
+          ai_metadata?: Json | null
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          is_ai_generated?: boolean | null
+          lead_id?: string | null
+          meeting_note_id?: string | null
+          metadata?: Json | null
+          opportunity_id?: string | null
+          project_id?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          task_id?: string | null
+          title?: string | null
+          visibility?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_log_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_log_meeting_note_id_fkey"
+            columns: ["meeting_note_id"]
+            isOneToOne: false
+            referencedRelation: "meeting_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_log_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_log_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_log_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_log_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_audit_logs: {
         Row: {
           action_type: string
@@ -1143,40 +1255,61 @@ export type Database = {
       }
       leads: {
         Row: {
+          ai_metadata: Json | null
           company: string | null
+          company_size: string | null
           consent_marketing: boolean | null
           created_at: string | null
           email: string
           id: string
+          industry: string | null
+          last_contacted_at: string | null
+          lead_score: number | null
+          lead_score_details: Json | null
           message: string | null
           name: string
           phone: string | null
+          qualification_status: string | null
           source: string
           source_context: string | null
           source_id: string | null
         }
         Insert: {
+          ai_metadata?: Json | null
           company?: string | null
+          company_size?: string | null
           consent_marketing?: boolean | null
           created_at?: string | null
           email: string
           id?: string
+          industry?: string | null
+          last_contacted_at?: string | null
+          lead_score?: number | null
+          lead_score_details?: Json | null
           message?: string | null
           name: string
           phone?: string | null
+          qualification_status?: string | null
           source: string
           source_context?: string | null
           source_id?: string | null
         }
         Update: {
+          ai_metadata?: Json | null
           company?: string | null
+          company_size?: string | null
           consent_marketing?: boolean | null
           created_at?: string | null
           email?: string
           id?: string
+          industry?: string | null
+          last_contacted_at?: string | null
+          lead_score?: number | null
+          lead_score_details?: Json | null
           message?: string | null
           name?: string
           phone?: string | null
+          qualification_status?: string | null
           source?: string
           source_context?: string | null
           source_id?: string | null
@@ -1246,6 +1379,89 @@ export type Database = {
         }
         Relationships: []
       }
+      meeting_notes: {
+        Row: {
+          action_items: Json | null
+          ai_metadata: Json | null
+          ai_summary: string | null
+          booking_id: string | null
+          created_at: string | null
+          created_by: string | null
+          duration_minutes: number | null
+          id: string
+          next_steps: string | null
+          notes: string | null
+          objectives: string | null
+          opportunity_id: string | null
+          project_id: string | null
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          action_items?: Json | null
+          ai_metadata?: Json | null
+          ai_summary?: string | null
+          booking_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          duration_minutes?: number | null
+          id?: string
+          next_steps?: string | null
+          notes?: string | null
+          objectives?: string | null
+          opportunity_id?: string | null
+          project_id?: string | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          action_items?: Json | null
+          ai_metadata?: Json | null
+          ai_summary?: string | null
+          booking_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          duration_minutes?: number | null
+          id?: string
+          next_steps?: string | null
+          notes?: string | null
+          objectives?: string | null
+          opportunity_id?: string | null
+          project_id?: string | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_notes_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_notes_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_notes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_notes_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       newsletter_subscribers: {
         Row: {
           email: string
@@ -1293,6 +1509,81 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      opportunities: {
+        Row: {
+          ai_metadata: Json | null
+          assigned_to: string | null
+          close_reason: string | null
+          closed_at: string | null
+          created_at: string | null
+          description: string | null
+          expected_close_date: string | null
+          id: string
+          lead_id: string | null
+          lost_to: string | null
+          probability: number | null
+          source: string | null
+          stage: string
+          title: string
+          updated_at: string | null
+          value_amount: number | null
+          workspace_id: string
+        }
+        Insert: {
+          ai_metadata?: Json | null
+          assigned_to?: string | null
+          close_reason?: string | null
+          closed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          expected_close_date?: string | null
+          id?: string
+          lead_id?: string | null
+          lost_to?: string | null
+          probability?: number | null
+          source?: string | null
+          stage?: string
+          title: string
+          updated_at?: string | null
+          value_amount?: number | null
+          workspace_id?: string
+        }
+        Update: {
+          ai_metadata?: Json | null
+          assigned_to?: string | null
+          close_reason?: string | null
+          closed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          expected_close_date?: string | null
+          id?: string
+          lead_id?: string | null
+          lost_to?: string | null
+          probability?: number | null
+          source?: string | null
+          stage?: string
+          title?: string
+          updated_at?: string | null
+          value_amount?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       performance_metrics: {
         Row: {
@@ -1357,6 +1648,111 @@ export type Database = {
         }
         Relationships: []
       }
+      project_contacts: {
+        Row: {
+          lead_id: string
+          project_id: string
+          role: string
+        }
+        Insert: {
+          lead_id: string
+          project_id: string
+          role?: string
+        }
+        Update: {
+          lead_id?: string
+          project_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_contacts_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_contacts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          actual_end_date: string | null
+          ai_metadata: Json | null
+          assigned_to: string | null
+          budget_amount: number | null
+          consumed_amount: number | null
+          created_at: string | null
+          description: string | null
+          health_status: string
+          id: string
+          name: string
+          opportunity_id: string | null
+          start_date: string | null
+          status: string
+          target_end_date: string | null
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          actual_end_date?: string | null
+          ai_metadata?: Json | null
+          assigned_to?: string | null
+          budget_amount?: number | null
+          consumed_amount?: number | null
+          created_at?: string | null
+          description?: string | null
+          health_status?: string
+          id?: string
+          name: string
+          opportunity_id?: string | null
+          start_date?: string | null
+          status?: string
+          target_end_date?: string | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          actual_end_date?: string | null
+          ai_metadata?: Json | null
+          assigned_to?: string | null
+          budget_amount?: number | null
+          consumed_amount?: number | null
+          created_at?: string | null
+          description?: string | null
+          health_status?: string
+          id?: string
+          name?: string
+          opportunity_id?: string | null
+          start_date?: string | null
+          status?: string
+          target_end_date?: string | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rate_limit_requests: {
         Row: {
           created_at: string
@@ -1405,6 +1801,111 @@ export type Database = {
         }
         Relationships: []
       }
+      specifications: {
+        Row: {
+          ai_generated: boolean | null
+          ai_metadata: Json | null
+          approved_at: string | null
+          approved_by: string | null
+          content: Json | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          project_id: string | null
+          status: string
+          title: string
+          updated_at: string | null
+          version: string | null
+          workspace_id: string
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          ai_metadata?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          content?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          project_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string | null
+          version?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          ai_generated?: boolean | null
+          ai_metadata?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          content?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          project_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string | null
+          version?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "specifications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specifications_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      statuses: {
+        Row: {
+          allowed_transitions: Json | null
+          code: string
+          created_at: string | null
+          display_order: number | null
+          entity_type: string
+          id: string
+          is_default: boolean | null
+          is_terminal: boolean | null
+          label: string
+          ui_variant: string | null
+        }
+        Insert: {
+          allowed_transitions?: Json | null
+          code: string
+          created_at?: string | null
+          display_order?: number | null
+          entity_type: string
+          id?: string
+          is_default?: boolean | null
+          is_terminal?: boolean | null
+          label: string
+          ui_variant?: string | null
+        }
+        Update: {
+          allowed_transitions?: Json | null
+          code?: string
+          created_at?: string | null
+          display_order?: number | null
+          entity_type?: string
+          id?: string
+          is_default?: boolean | null
+          is_terminal?: boolean | null
+          label?: string
+          ui_variant?: string | null
+        }
+        Relationships: []
+      }
       tags: {
         Row: {
           created_at: string | null
@@ -1425,6 +1926,123 @@ export type Database = {
           slug?: string
         }
         Relationships: []
+      }
+      tasks: {
+        Row: {
+          ai_generated: boolean | null
+          ai_metadata: Json | null
+          ai_suggested_action: string | null
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          due_time: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          lead_id: string | null
+          meeting_note_id: string | null
+          opportunity_id: string | null
+          priority: string
+          project_id: string | null
+          snoozed_until: string | null
+          status: string
+          task_type: string
+          title: string
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          ai_metadata?: Json | null
+          ai_suggested_action?: string | null
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          due_time?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          lead_id?: string | null
+          meeting_note_id?: string | null
+          opportunity_id?: string | null
+          priority?: string
+          project_id?: string | null
+          snoozed_until?: string | null
+          status?: string
+          task_type?: string
+          title: string
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          ai_generated?: boolean | null
+          ai_metadata?: Json | null
+          ai_suggested_action?: string | null
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          due_time?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          lead_id?: string | null
+          meeting_note_id?: string | null
+          opportunity_id?: string | null
+          priority?: string
+          project_id?: string | null
+          snoozed_until?: string | null
+          status?: string
+          task_type?: string
+          title?: string
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_meeting_note_id_fkey"
+            columns: ["meeting_note_id"]
+            isOneToOne: false
+            referencedRelation: "meeting_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -1562,6 +2180,10 @@ export type Database = {
           log_message: string
         }
         Returns: undefined
+      }
+      can_access_entity_workspace: {
+        Args: { p_user_id: string; p_workspace_id: string }
+        Returns: boolean
       }
       can_access_workspace: {
         Args: { p_user_id: string; p_workspace_id: string }
