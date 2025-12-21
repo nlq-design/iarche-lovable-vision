@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { pdf } from '@react-pdf/renderer';
 import { saveAs } from 'file-saver';
 import AdminLayout from '@/components/layouts/AdminLayout';
@@ -20,6 +20,7 @@ import { CompositionPresets, CompositionPreset, COMPOSITION_PRESETS } from './Co
 import { TopMarginSlider, getContentSpacing } from './TopMarginSlider';
 import { DecorativeArcToggle } from './DecorativeArcToggle';
 import SavedTemplatesPanel from './SavedTemplatesPanel';
+import ExportActions from './ExportActions';
 
 interface CarouselEditorProps {
   templateId: string;
@@ -164,6 +165,7 @@ const templateConfigs: Record<string, { name: string; defaultSlides: SlideData[]
 export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
   const { toast } = useToast();
   const config = templateConfigs[templateId] || templateConfigs.solution;
+  const previewRef = useRef<HTMLDivElement>(null);
   
   const [slides, setSlides] = useState<SlideData[]>(config.defaultSlides);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -324,10 +326,20 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
               <p className="text-sm text-muted-foreground">Format LinkedIn 1080×1350px</p>
             </div>
           </div>
-          <Button onClick={handleExportPDF} disabled={isExporting}>
-            {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-            Télécharger PDF
-          </Button>
+          <div className="flex items-center gap-2">
+            <ExportActions
+              elementRef={previewRef}
+              filename={`carousel-${templateId}-slide${currentSlide + 1}`}
+              quality={4}
+              showSVG={true}
+              width={1080}
+              height={1350}
+            />
+            <Button onClick={handleExportPDF} disabled={isExporting}>
+              {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+              PDF complet
+            </Button>
+          </div>
         </div>
 
         {/* Source selector and theme selector */}
@@ -488,6 +500,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                 
                 return (
                   <div 
+                    ref={previewRef}
                     className="aspect-[4/5] flex flex-col relative overflow-hidden"
                     style={{ 
                       background: isDark 

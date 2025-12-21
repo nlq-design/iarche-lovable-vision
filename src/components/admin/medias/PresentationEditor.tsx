@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { pdf } from '@react-pdf/renderer';
 import { saveAs } from 'file-saver';
 import AdminLayout from '@/components/layouts/AdminLayout';
@@ -19,6 +19,7 @@ import { VerticalAlignmentControls, VerticalAlignment, getJustifyContent } from 
 import { CompositionPresets, CompositionPreset, COMPOSITION_PRESETS } from './CompositionPresets';
 import { TopMarginSlider, getContentSpacing } from './TopMarginSlider';
 import { DecorativeArcToggle } from './DecorativeArcToggle';
+import ExportActions from './ExportActions';
 
 interface PresentationEditorProps {
   templateId: string;
@@ -171,6 +172,7 @@ const templateConfigs: Record<string, { name: string; defaultSlides: SlideData[]
 export const PresentationEditor = ({ templateId, onBack }: PresentationEditorProps) => {
   const { toast } = useToast();
   const config = templateConfigs[templateId] || templateConfigs.pitch;
+  const previewRef = useRef<HTMLDivElement>(null);
   
   const [slides, setSlides] = useState<SlideData[]>(config.defaultSlides);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -309,10 +311,20 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
               <p className="text-sm text-muted-foreground">Format 1920×1080px</p>
             </div>
           </div>
-          <Button onClick={handleExportPDF} disabled={isExporting}>
-            {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-            Télécharger PDF
-          </Button>
+          <div className="flex items-center gap-2">
+            <ExportActions
+              elementRef={previewRef}
+              filename={`presentation-${templateId}-slide${currentSlide + 1}`}
+              quality={4}
+              showSVG={true}
+              width={1920}
+              height={1080}
+            />
+            <Button onClick={handleExportPDF} disabled={isExporting}>
+              {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+              PDF complet
+            </Button>
+          </div>
         </div>
 
         {/* Source mode and theme selector */}
@@ -455,6 +467,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                 
                 return (
                   <div 
+                    ref={previewRef}
                     className="aspect-video flex flex-col relative overflow-hidden"
                     style={{ 
                       background: isDark 
