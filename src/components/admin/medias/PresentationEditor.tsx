@@ -876,8 +876,9 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                   light: { bg: '#FAF9F7' },
                   terra: { bg: '#8B3A2F' },
                   contrast: { bg: '#0A0A0A' },
+                  gradient: { bg: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)' },
                 };
-                const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light' };
+                const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light', gradient: 'light' };
                 const thumbTheme = idx % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme);
                 const isDarkThumb = thumbTheme !== 'light';
                 

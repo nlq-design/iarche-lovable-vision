@@ -326,8 +326,9 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
         light: { bg: '#FAF9F7', text: '#1A2B4A', subtext: '#666666', logo: '/logos/iarche-main.svg' },
         terra: { bg: '#B04A32', text: '#FAF9F7', subtext: '#FAF9F7', logo: '/logos/iarche-white.svg' },
         contrast: { bg: '#0A0A0A', text: '#FAFAFA', subtext: '#FAFAFA', logo: '/logos/iarche-white.svg' },
+        gradient: { bg: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)', text: '#FFFFFF', subtext: '#FFFFFF', logo: '/logos/iarche-white.svg' },
       };
-      const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light' };
+      const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light', gradient: 'light' };
 
       for (let i = 0; i < slides.length; i++) {
         const slide = slides[i];
@@ -912,8 +913,9 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                   light: { bg: '#FAF9F7' },
                   terra: { bg: '#8B3A2F' },
                   contrast: { bg: '#0A0A0A' },
+                  gradient: { bg: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)' },
                 };
-                const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light' };
+                const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light', gradient: 'light' };
                 const thumbTheme = idx % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme);
                 const isDarkThumb = thumbTheme !== 'light';
                 
