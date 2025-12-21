@@ -15,10 +15,13 @@ interface ArticlePlaceholderProps {
  */
 const ArticlePlaceholder = memo(({ className = '', size = 'default' }: ArticlePlaceholderProps) => {
   return (
-    <div className={`relative overflow-hidden bg-background flex flex-col items-center justify-center ${className}`}>
-      {/* Logo IArche officiel statique - SANS arc */}
+    <div 
+      className={`relative overflow-hidden flex flex-col items-center justify-center ${className}`}
+      style={{ background: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)' }}
+    >
+      {/* Logo IArche blanc sur fond gradient - SANS arc */}
       <Logo 
-        variant="main" 
+        variant="white" 
         size={size === 'large' ? 'lg' : 'md'} 
       />
     </div>
