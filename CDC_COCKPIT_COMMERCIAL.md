@@ -1,149 +1,120 @@
-# Cahier des Charges - Cockpit Commercial IArche
+# Cahier des Charges V2 — Cockpit Commercial IArche
 
-## 📋 Vue d'ensemble
+**Document de spécification pour Lovable**
 
-**Projet :** Module Cockpit Commercial intégré au back-office IArche  
-**Version :** 1.0  
-**Date :** Décembre 2025  
-**Statut :** Spécification  
-
----
-
-## 🎯 1. Objectifs
-
-### 1.1 Objectif principal
-
-Créer un **Cockpit Commercial** dédié à la gestion de l'activité commerciale et projets IA, accessible depuis le module admin existant, avec une **authentification renforcée (2FA obligatoire)** pour sécuriser l'accès aux données sensibles.
-
-### 1.2 Objectifs secondaires
-
-- Centraliser la gestion des leads qualifiés et opportunités
-- Gérer le pipeline commercial de bout en bout
-- Suivre les projets IA en cours et leur avancement
-- Lier chaque projet à des contacts et réunions
-- Automatiser la génération de rapports via IA
-- Fournir un tableau de bord analytique global
+- **Projet** : Module Cockpit Commercial intégré au back-office existant
+- **Version** : 2.0
+- **Date** : 21 décembre 2025
+- **Contexte** : Extension du site IArche (portail, solutions, services, ressources) et module Admin existant
 
 ---
 
-## 🏗️ 2. Architecture existante
+## 1. SYNTHÈSE EXÉCUTIVE
 
-### 2.1 Module Admin actuel
+### Objectif
 
-Le module admin IArche est organisé en **6 pôles** fonctionnels :
+Créer un Cockpit Commercial accessible depuis le module Admin via un bouton dédié, avec 2FA obligatoire, pour piloter l'activité commerciale et les projets IA sans dupliquer les fonctionnalités Admin existantes.
 
-| Pôle | Fonctionnalités |
-|------|-----------------|
-| **Vue d'ensemble** | Dashboard KPIs, Stats avancées, Performance, Analytics CTAs |
-| **Contenu** | Articles, Actualités, Cas clients, Livres blancs, Ateliers, Solutions, FAQs, Brochures, Redacia (IA) |
-| **Organisation** | Catégories, Tags |
-| **Engagement** | Leads, Rendez-vous, Contacts, Inscriptions, Commentaires, Formulaires |
-| **Communication** | Newsletter, RedacNews, Emails, Médias |
-| **Sécurité** | Dashboard sécurité, Logs d'audit, Backups, Paramètres |
+### Différences clés V1 → V2
 
-### 2.2 Tables de base de données existantes
+| Aspect | V1 | V2 (améliorations) |
+|--------|----|--------------------|
+| Statuts | Colonnes dispersées | Table de référentiels unifiée `statuses` |
+| Activité | Notes/emails répartis | Journal d'activité transversal `activity_log` |
+| IA | Assistée simple | Gouvernance IA traçable (confidence, validation) |
+| Documents | Non prévu | Stockage documentaire par projet |
+| Collaboration | Mono-utilisateur | Espaces partenaires/apporteurs d'affaires (v2+) |
+| Navigation | Standard | Command Palette (⌘K) + vue "Aujourd'hui" |
+
+---
+
+## 2. PRINCIPES DIRECTEURS
+
+### 2.1 Règles strictes
+
+- **Zéro duplication** — Réutiliser leads, bookings, contacts existants
+- **Séparation claire** — Admin = contenu/SEO/sécurité, Cockpit = business/projets
+- **Accès sécurisé** — Bouton Cockpit visible uniquement si rôle + 2FA activé
+- **IA assistée, jamais autonome** — Toute génération IA nécessite validation humaine
+
+### 2.2 Architecture cible
 
 ```
-├── leads                    # Prospects consolidés (newsletter, ateliers, livres blancs, contacts)
-├── bookings                 # Rendez-vous avec types et disponibilités
-├── booking_types            # Types de RDV (découverte, suivi, etc.)
-├── booking_availability     # Créneaux disponibles
-├── contacts                 # Messages formulaire contact
-├── articles                 # Contenus multi-types (resource_type)
-├── atelier_inscriptions     # Inscriptions aux ateliers
-├── newsletter_subscribers   # Abonnés newsletter
-├── admin_audit_logs         # Traçabilité des actions
-├── login_attempts           # Protection anti-brute force
-├── account_locks            # Comptes verrouillés
-├── user_roles               # Rôles utilisateurs (admin, user)
-└── email_logs               # Historique des emails envoyés
+┌─────────────────────────────────────────────────────────────┐
+│                     MODULE ADMIN (existant)                  │
+│  Contenu │ Organisation │ Engagement │ Communication │ Sécu │
+└────────────────────────────┬────────────────────────────────┘
+                             │ Bouton "Cockpit" (2FA requis)
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      COCKPIT COMMERCIAL                      │
+│  Dashboard │ Pipeline │ Leads │ Agenda │ Projets │ CDC │ Analytics │
+└─────────────────────────────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    SUPABASE (tables partagées)               │
+│  leads │ bookings │ opportunities │ projects │ activity_log │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### 2.3 Fonctionnalités de sécurité implémentées
-
-- ✅ Protection anti-brute force (5 tentatives → verrouillage 30 min)
-- ✅ 2FA/MFA via Supabase Auth (TOTP)
-- ✅ Gestion des sessions actives
-- ✅ Backups automatiques (pg_cron)
-- ✅ Logs d'audit complets
-- ✅ Détection d'anomalies IA
-
 ---
 
-## 🚀 3. Spécifications fonctionnelles du Cockpit
+## 3. MODÈLE DE DONNÉES
 
-### 3.1 Principes directeurs
+### 3.1 Extensions des tables existantes
 
-| Principe | Description |
-|----------|-------------|
-| **Pas de duplication** | Le Cockpit réutilise les tables existantes (`leads`, `bookings`) sans créer de doublons |
-| **Séparation claire** | Admin = gestion contenu/technique, Cockpit = activité commerciale/projets |
-| **Sécurité renforcée** | Accès uniquement avec 2FA activé et rôle spécifique |
-| **Intelligence IA** | Automatisation des rapports, analyses, suggestions |
+```sql
+-- Extension table leads
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS qualification_status TEXT DEFAULT 'new';
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS lead_score INTEGER DEFAULT 0;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS last_contacted_at TIMESTAMPTZ;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS company_size TEXT;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS industry TEXT;
+```
 
-### 3.2 Matrice de délimitation Admin vs Cockpit
+### 3.2 Nouvelles tables
 
-| Fonctionnalité | Admin | Cockpit |
-|----------------|-------|---------|
-| Voir les leads (liste) | ✅ | ✅ |
-| Qualifier un lead (statut) | ❌ | ✅ |
-| Créer une opportunité | ❌ | ✅ |
-| Pipeline commercial | ❌ | ✅ |
-| Voir les RDV (liste) | ✅ | ✅ |
-| Préparer un RDV (notes, docs) | ❌ | ✅ |
-| Compte-rendu de réunion | ❌ | ✅ |
-| Créer un projet IA | ❌ | ✅ |
-| Suivi multi-étapes projet | ❌ | ✅ |
-| Cahier des charges | ❌ | ✅ |
-| Rapports automatisés IA | ❌ | ✅ |
-| Analytics commerciales | ❌ | ✅ |
-| Gestion contenu (articles) | ✅ | ❌ |
-| SEO et performance | ✅ | ❌ |
-| Sécurité et backups | ✅ | ❌ |
+#### Table de référentiels unifiée (amélioration V2)
 
----
+```sql
+CREATE TABLE statuses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  entity_type TEXT NOT NULL, -- 'lead', 'opportunity', 'project', 'specification'
+  code TEXT NOT NULL,
+  label TEXT NOT NULL,
+  display_order INTEGER DEFAULT 0,
+  is_terminal BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(entity_type, code)
+);
 
-## 📊 4. Modules du Cockpit
+-- Données initiales
+INSERT INTO statuses (entity_type, code, label, display_order, is_terminal) VALUES
+  ('lead', 'new', 'Nouveau', 1, false),
+  ('lead', 'contacted', 'Contacté', 2, false),
+  ('lead', 'qualified', 'Qualifié', 3, false),
+  ('lead', 'disqualified', 'Disqualifié', 4, true),
+  ('opportunity', 'lead', 'Lead', 1, false),
+  ('opportunity', 'qualified', 'Qualifié', 2, false),
+  ('opportunity', 'proposal', 'Proposition', 3, false),
+  ('opportunity', 'negotiation', 'Négociation', 4, false),
+  ('opportunity', 'won', 'Gagné', 5, true),
+  ('opportunity', 'lost', 'Perdu', 6, true),
+  ('project', 'scoping', 'Cadrage', 1, false),
+  ('project', 'design', 'Conception', 2, false),
+  ('project', 'development', 'Développement', 3, false),
+  ('project', 'testing', 'Tests', 4, false),
+  ('project', 'deployment', 'Déploiement', 5, false),
+  ('project', 'maintenance', 'Suivi', 6, false),
+  ('project', 'completed', 'Terminé', 7, true),
+  ('specification', 'draft', 'Brouillon', 1, false),
+  ('specification', 'review', 'En revue', 2, false),
+  ('specification', 'approved', 'Validé', 3, true);
+```
 
-### 4.1 Module Dashboard Cockpit
+#### Opportunités
 
-**Route :** `/cockpit`
-
-**Fonctionnalités :**
-- Vue 360° de l'activité commerciale
-- KPIs temps réel :
-  - Leads qualifiés cette semaine
-  - Opportunités en cours
-  - RDV à venir (7 jours)
-  - Projets actifs
-  - Chiffre d'affaires prévisionnel
-- Graphiques :
-  - Pipeline par étape
-  - Conversion leads → opportunités
-  - Activité par source
-- Actions rapides :
-  - Ajouter une note
-  - Planifier un RDV
-  - Qualifier un lead
-
-### 4.2 Module Pipeline Commercial
-
-**Route :** `/cockpit/pipeline`
-
-**Fonctionnalités :**
-- Vue Kanban du pipeline :
-  - **Lead** (nouveau contact)
-  - **Qualifié** (besoin identifié)
-  - **Opportunité** (proposition en cours)
-  - **Négociation** (devis envoyé)
-  - **Gagné** / **Perdu**
-- Drag & drop entre étapes
-- Valeur par opportunité
-- Probabilité de conversion
-- Date de clôture estimée
-- Historique des interactions
-
-**Nouvelle table : `opportunities`**
 ```sql
 CREATE TABLE opportunities (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -151,8 +122,8 @@ CREATE TABLE opportunities (
   title TEXT NOT NULL,
   description TEXT,
   value_amount DECIMAL(12,2),
-  probability INTEGER DEFAULT 50, -- 0-100%
-  stage TEXT DEFAULT 'lead', -- lead, qualified, proposal, negotiation, won, lost
+  probability INTEGER DEFAULT 50,
+  stage TEXT DEFAULT 'lead',
   expected_close_date DATE,
   assigned_to UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ DEFAULT now(),
@@ -160,101 +131,21 @@ CREATE TABLE opportunities (
   closed_at TIMESTAMPTZ,
   close_reason TEXT
 );
+
+CREATE INDEX idx_opportunities_stage ON opportunities(stage);
+CREATE INDEX idx_opportunities_lead ON opportunities(lead_id);
+CREATE INDEX idx_opportunities_assigned ON opportunities(assigned_to);
 ```
 
-### 4.3 Module Gestion des Leads Qualifiés
+#### Projets
 
-**Route :** `/cockpit/leads`
-
-**Fonctionnalités :**
-- Vue enrichie des leads (réutilise table `leads`)
-- Scoring automatique IA basé sur :
-  - Source d'acquisition
-  - Taille entreprise
-  - Secteur d'activité
-  - Interactions précédentes
-- Statut de qualification :
-  - Nouveau
-  - Contacté
-  - Qualifié
-  - Disqualifié
-- Notes et historique des échanges
-- Actions :
-  - Créer opportunité
-  - Planifier RDV
-  - Envoyer email
-
-**Extension table `leads` (nouvelle colonne) :**
-```sql
-ALTER TABLE leads ADD COLUMN qualification_status TEXT DEFAULT 'new';
-ALTER TABLE leads ADD COLUMN lead_score INTEGER DEFAULT 0;
-ALTER TABLE leads ADD COLUMN last_contacted_at TIMESTAMPTZ;
-```
-
-### 4.4 Module Agenda Commercial
-
-**Route :** `/cockpit/agenda`
-
-**Fonctionnalités :**
-- Calendrier hebdomadaire/mensuel (réutilise `bookings`)
-- Vue par type de RDV
-- Préparation réunion :
-  - Fiche contact associée
-  - Historique des échanges
-  - Documents partagés
-  - Objectifs de la réunion
-- Post-réunion :
-  - Compte-rendu assisté IA
-  - Actions à suivre
-  - Prochaine étape pipeline
-- Rappels automatiques
-
-**Nouvelle table : `meeting_notes`**
-```sql
-CREATE TABLE meeting_notes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  booking_id UUID REFERENCES bookings(id),
-  opportunity_id UUID REFERENCES opportunities(id),
-  objectives TEXT,
-  notes TEXT,
-  ai_summary TEXT, -- Résumé généré par IA
-  action_items JSONB DEFAULT '[]'::jsonb,
-  next_steps TEXT,
-  created_by UUID REFERENCES auth.users(id),
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-```
-
-### 4.5 Module Projets IA
-
-**Route :** `/cockpit/projets`
-
-**Fonctionnalités :**
-- Création et suivi de projets IA
-- Étapes du projet :
-  - **Cadrage** (CDC, périmètre)
-  - **Conception** (architecture, spécifications)
-  - **Développement** (implémentation)
-  - **Tests** (validation, recettage)
-  - **Déploiement** (mise en production)
-  - **Suivi** (maintenance, évolutions)
-- Liaison avec :
-  - Opportunité d'origine
-  - Contacts impliqués
-  - Réunions associées
-  - Documents projet
-- Timeline et jalons
-- Budget et consommé
-
-**Nouvelle table : `projects`**
 ```sql
 CREATE TABLE projects (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   opportunity_id UUID REFERENCES opportunities(id),
   name TEXT NOT NULL,
   description TEXT,
-  status TEXT DEFAULT 'scoping', -- scoping, design, development, testing, deployment, maintenance
+  status TEXT DEFAULT 'scoping',
   start_date DATE,
   target_end_date DATE,
   actual_end_date DATE,
@@ -264,46 +155,54 @@ CREATE TABLE projects (
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
+
+CREATE INDEX idx_projects_status ON projects(status);
+CREATE INDEX idx_projects_opportunity ON projects(opportunity_id);
 ```
 
-**Table de liaison projets/contacts : `project_contacts`**
+#### Contacts projet
+
 ```sql
 CREATE TABLE project_contacts (
   project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
   lead_id UUID REFERENCES leads(id) ON DELETE CASCADE,
-  role TEXT DEFAULT 'stakeholder', -- stakeholder, decision_maker, technical, sponsor
+  role TEXT DEFAULT 'stakeholder',
   PRIMARY KEY (project_id, lead_id)
 );
 ```
 
-### 4.6 Module Cahiers des Charges
+#### Notes de réunion
 
-**Route :** `/cockpit/cahiers-des-charges`
+```sql
+CREATE TABLE meeting_notes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  booking_id UUID REFERENCES bookings(id) ON DELETE CASCADE,
+  opportunity_id UUID REFERENCES opportunities(id),
+  project_id UUID REFERENCES projects(id),
+  objectives TEXT,
+  notes TEXT,
+  ai_summary TEXT,
+  action_items JSONB DEFAULT '[]'::jsonb,
+  next_steps TEXT,
+  ai_metadata JSONB DEFAULT '{}'::jsonb,
+  created_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
 
-**Fonctionnalités :**
-- Création de CDC structurés
-- Templates par type de projet IA
-- Sections :
-  - Contexte et objectifs
-  - Périmètre fonctionnel
-  - Exigences techniques
-  - Planning prévisionnel
-  - Budget estimé
-  - Critères de validation
-- Génération assistée IA
-- Export PDF/Word
-- Historique des versions
+#### Cahiers des charges
 
-**Nouvelle table : `specifications`**
 ```sql
 CREATE TABLE specifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID REFERENCES projects(id),
+  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   version TEXT DEFAULT '1.0',
-  status TEXT DEFAULT 'draft', -- draft, review, approved, archived
-  content JSONB DEFAULT '{}'::jsonb, -- Structure du CDC
+  status TEXT DEFAULT 'draft',
+  content JSONB DEFAULT '{}'::jsonb,
   ai_generated BOOLEAN DEFAULT false,
+  ai_metadata JSONB DEFAULT '{}'::jsonb,
   created_by UUID REFERENCES auth.users(id),
   approved_by UUID REFERENCES auth.users(id),
   approved_at TIMESTAMPTZ,
@@ -312,29 +211,48 @@ CREATE TABLE specifications (
 );
 ```
 
-### 4.7 Module Rapports & Analytics
+#### Documents projet
 
-**Route :** `/cockpit/analytics`
+```sql
+CREATE TABLE project_documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+  file_name TEXT NOT NULL,
+  file_type TEXT NOT NULL, -- 'pdf', 'docx', 'xlsx', 'email', 'transcript'
+  file_url TEXT NOT NULL,
+  file_size INTEGER,
+  description TEXT,
+  uploaded_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 
-**Fonctionnalités :**
-- Tableau de bord analytique
-- Rapports automatisés IA :
-  - Rapport hebdomadaire commercial
-  - Analyse du pipeline
-  - Prévisions de CA
-  - Performance par source
-- Graphiques interactifs :
-  - Funnel de conversion
-  - Évolution du pipeline
-  - Activité par commercial
-  - Temps moyen par étape
-- Export PDF/Excel
+CREATE INDEX idx_project_documents_project ON project_documents(project_id);
+```
 
-**Nouvelle table : `cockpit_reports`**
+#### Journal d'activité transversal (amélioration V2)
+
+```sql
+CREATE TABLE activity_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  entity_type TEXT NOT NULL, -- 'lead', 'opportunity', 'project', 'meeting'
+  entity_id UUID NOT NULL,
+  activity_type TEXT NOT NULL, -- 'note', 'email', 'call', 'meeting', 'status_change', 'ai_action'
+  content TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_activity_log_entity ON activity_log(entity_type, entity_id);
+CREATE INDEX idx_activity_log_created ON activity_log(created_at DESC);
+```
+
+#### Rapports Cockpit
+
 ```sql
 CREATE TABLE cockpit_reports (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  report_type TEXT NOT NULL, -- weekly, monthly, pipeline, forecast
+  report_type TEXT NOT NULL, -- 'weekly', 'monthly', 'pipeline', 'forecast'
   period_start DATE NOT NULL,
   period_end DATE NOT NULL,
   data JSONB NOT NULL,
@@ -344,138 +262,278 @@ CREATE TABLE cockpit_reports (
 );
 ```
 
+#### Configuration 2FA
+
+```sql
+CREATE TABLE user_2fa_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
+  totp_secret TEXT, -- Encrypted TOTP secret
+  is_enabled BOOLEAN DEFAULT false,
+  backup_codes JSONB DEFAULT '[]'::jsonb,
+  last_verified_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+### 3.3 Schéma relationnel
+
+```
+leads ─────────────────────┐
+  │                        │
+  ├──► opportunities ──────┼──► projects ──► specifications
+  │         │              │       │
+  │         │              │       ├──► project_contacts
+  │         │              │       │
+  │         │              │       └──► project_documents
+  │         │              │
+  │         └──────────────┼──► meeting_notes
+  │                        │
+bookings ──────────────────┘
+  
+activity_log ◄───── (transversal, référence entity_type + entity_id)
+
+statuses ◄───── (référentiel unifié pour tous les statuts)
+```
+
 ---
 
-## 🔐 5. Sécurité et accès
+## 4. MODULES FONCTIONNELS
+
+### 4.1 Dashboard Cockpit
+
+**Route** : `/cockpit`
+
+**Fonctionnalités** :
+- Vue "Aujourd'hui" (par défaut) : RDV du jour, actions en retard, projets bloqués, alertes IA
+- KPIs temps réel : leads qualifiés, opportunités en cours, RDV 7j, projets actifs, CA prévisionnel
+- Graphiques : pipeline par étape (funnel), conversion, activité par source
+- Actions rapides : ajouter note, planifier RDV, qualifier lead, créer opportunité
+- Command Palette (⌘K) : recherche rapide + actions contextuelles
+
+### 4.2 Pipeline Commercial
+
+**Route** : `/cockpit/pipeline`
+
+**Fonctionnalités** :
+- Vue Kanban avec drag & drop entre étapes
+- Colonnes : Lead → Qualifié → Proposition → Négociation → Gagné/Perdu
+- Carte opportunité : titre, valeur, probabilité, date clôture estimée
+- Filtres : par source, par valeur, par date, par assigné
+- Historique des interactions sur chaque opportunité
+
+### 4.3 Leads Qualifiés
+
+**Route** : `/cockpit/leads`
+
+**Fonctionnalités** :
+- Vue enrichie des leads (réutilise table existante)
+- Scoring automatique IA (0-100) basé sur : source, taille entreprise, secteur, interactions
+- Statuts : Nouveau → Contacté → Qualifié / Disqualifié
+- Timeline d'activité par lead (via activity_log)
+- Actions : créer opportunité, planifier RDV, envoyer email, ajouter note
+
+### 4.4 Agenda Commercial
+
+**Route** : `/cockpit/agenda`
+
+**Fonctionnalités** :
+- Calendrier hebdo/mensuel (réutilise bookings)
+- Pré-réunion : fiche contact, historique échanges, documents, objectifs (checklist)
+- Post-réunion : compte-rendu assisté IA, extraction actions, prochaine étape
+- Rappels automatiques
+
+### 4.5 Projets IA
+
+**Route** : `/cockpit/projets`
+
+**Fonctionnalités** :
+- Liste projets avec vue Kanban par statut
+- Étapes : Cadrage → Conception → Développement → Tests → Déploiement → Suivi
+- Fiche projet :
+  - Liaison opportunité d'origine
+  - Contacts impliqués (avec rôles)
+  - Réunions associées
+  - Documents projet (upload/stockage)
+  - Timeline jalons
+  - Budget vs consommé
+- Génération automatisée : devis, propositions, CDC (via IA)
+
+### 4.6 Cahiers des Charges
+
+**Route** : `/cockpit/cahiers-des-charges`
+
+**Fonctionnalités** :
+- Création CDC structuré
+- Templates par type projet : Chatbot RAG, ERP, Intégration, Accompagnement
+- Sections standard : contexte, périmètre, exigences, planning, budget, critères validation
+- Génération assistée IA (pré-remplissage depuis documents projet)
+- Export PDF/Word
+- Versioning avec historique
+
+### 4.7 Analytics & Rapports
+
+**Route** : `/cockpit/analytics`
+
+**Fonctionnalités** :
+- Tableau de bord analytique
+- Rapports automatisés IA : hebdo, mensuel, pipeline, prévisions CA
+- Graphiques : funnel conversion, évolution pipeline, performance par source, temps moyen par étape
+- Export PDF/Excel
+
+### 4.8 Journal d'Activité (amélioration V2)
+
+**Fonctionnalité transversale** :
+- Timeline unifiée visible sur chaque fiche (lead, opportunité, projet)
+- Types : note, email, appel, réunion, changement statut, action IA
+- Base idéale pour résumé IA ("résume-moi ce projet/lead")
+
+---
+
+## 5. SÉCURITÉ ET ACCÈS
 
 ### 5.1 Authentification renforcée
 
-**Prérequis obligatoires pour accéder au Cockpit :**
-1. Être connecté avec un compte admin
-2. Avoir le 2FA activé et vérifié
-3. Avoir le rôle `cockpit_user` ou `cockpit_admin`
+**Prérequis accès Cockpit** :
+1. Être connecté avec compte admin
+2. Avoir 2FA activé et vérifié
+3. Avoir rôle `cockpit_user` ou `cockpit_admin`
 
-**Nouveau rôle utilisateur :**
+**Nouveaux rôles** :
 ```sql
--- Ajout des rôles Cockpit à l'enum existant
-ALTER TYPE app_role ADD VALUE 'cockpit_user';
-ALTER TYPE app_role ADD VALUE 'cockpit_admin';
+-- Ajout via migration séparée
+INSERT INTO user_roles (user_id, role) VALUES (..., 'cockpit_user');
+INSERT INTO user_roles (user_id, role) VALUES (..., 'cockpit_admin');
 ```
 
-### 5.2 Bouton d'accès dans l'Admin
+> **Note** : Les rôles `cockpit_user` et `cockpit_admin` seront ajoutés à l'enum `app_role` via une migration dédiée.
 
-- Bouton visible uniquement pour les utilisateurs avec rôle Cockpit
-- Vérification 2FA avant accès
-- Redirection vers `/cockpit` si autorisé
-- Message d'erreur explicite si 2FA non activé
+### 5.2 Bouton d'accès Admin
+
+- Visible uniquement si rôle Cockpit
+- Clic → vérification 2FA → redirection `/cockpit`
+- Message erreur explicite si 2FA non activé
 
 ### 5.3 Politiques RLS
 
 ```sql
 -- Exemple pour opportunities
-CREATE POLICY "Cockpit users can view opportunities"
-ON opportunities FOR SELECT
-USING (has_role(auth.uid(), 'cockpit_user') OR has_role(auth.uid(), 'cockpit_admin'));
+CREATE POLICY "cockpit_view_opportunities" ON opportunities
+  FOR SELECT USING (
+    has_role(auth.uid(), 'cockpit_user') OR 
+    has_role(auth.uid(), 'cockpit_admin')
+  );
 
-CREATE POLICY "Cockpit admins can manage opportunities"
-ON opportunities FOR ALL
-USING (has_role(auth.uid(), 'cockpit_admin'));
+CREATE POLICY "cockpit_manage_opportunities" ON opportunities
+  FOR ALL USING (has_role(auth.uid(), 'cockpit_admin'));
+
+-- Logs d'audit sur actions sensibles
+CREATE POLICY "log_cockpit_actions" ON activity_log
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 ```
 
 ---
 
-## 🤖 6. Fonctionnalités IA
+## 6. FONCTIONNALITÉS IA
 
-### 6.1 Scoring automatique des leads
+### 6.1 Gouvernance IA (amélioration V2)
 
-- Analyse des données du lead
-- Score basé sur critères pondérés
-- Mise à jour en temps réel
+Toute donnée générée par IA doit inclure :
 
-### 6.2 Résumé de réunions
+```json
+{
+  "ai_metadata": {
+    "source": "cockpit-lead-scoring",
+    "model": "google/gemini-2.5-flash",
+    "confidence": 0.87,
+    "generated_at": "2025-12-21T10:30:00Z",
+    "validated_by_human": false,
+    "validated_at": null
+  }
+}
+```
 
-- Transcription des notes
-- Extraction des points clés
-- Suggestions d'actions
+**Règle** : Aucune écriture automatique en base métier sans `validated_by_human: true`
 
-### 6.3 Génération de CDC
-
-- Templates intelligents
-- Suggestions contextuelles
-- Complétion automatique
-
-### 6.4 Rapports automatisés
-
-- Synthèse hebdomadaire
-- Analyse des tendances
-- Recommandations commerciales
-
-### 6.5 Edge Functions IA
+### 6.2 Edge Functions IA
 
 ```
-├── supabase/functions/
-│   ├── cockpit-lead-scoring/         # Calcul du score lead
-│   ├── cockpit-meeting-summary/      # Résumé réunion IA
-│   ├── cockpit-generate-spec/        # Génération CDC
-│   ├── cockpit-weekly-report/        # Rapport hebdomadaire
-│   └── cockpit-forecast/             # Prévisions commerciales
+supabase/functions/
+├── cockpit-lead-scoring/         # Calcul score lead (0-100)
+├── cockpit-meeting-summary/      # Résumé réunion depuis notes
+├── cockpit-generate-spec/        # Génération CDC depuis contexte projet
+├── cockpit-weekly-report/        # Rapport hebdomadaire automatique
+├── cockpit-forecast/             # Prévisions CA pipeline
+└── cockpit-activity-summary/     # Résumé activité par entité
 ```
+
+### 6.3 Cas d'usage IA
+
+| Fonction | Input | Output | Validation |
+|----------|-------|--------|------------|
+| Scoring lead | Données lead + historique | Score 0-100 + justification | Auto (informatif) |
+| Résumé réunion | Notes brutes | Synthèse + actions | Humaine requise |
+| Génération CDC | Docs projet + contexte | CDC structuré | Humaine requise |
+| Rapport hebdo | Données semaine | Synthèse + insights | Auto (informatif) |
+| Suggestions actions | Timeline lead/projet | Liste actions prioritaires | Humaine requise |
 
 ---
 
-## 📁 7. Structure technique
+## 7. STRUCTURE TECHNIQUE
 
-### 7.1 Organisation des fichiers
+### 7.1 Organisation fichiers
 
 ```
 src/
 ├── pages/
-│   ├── cockpit/
-│   │   ├── CockpitDashboard.tsx      # Dashboard principal
-│   │   ├── CockpitPipeline.tsx       # Pipeline Kanban
-│   │   ├── CockpitLeads.tsx          # Leads qualifiés
-│   │   ├── CockpitAgenda.tsx         # Agenda commercial
-│   │   ├── CockpitProjects.tsx       # Projets IA
-│   │   ├── CockpitProjectDetail.tsx  # Détail projet
-│   │   ├── CockpitSpecs.tsx          # Cahiers des charges
-│   │   ├── CockpitSpecEditor.tsx     # Éditeur CDC
-│   │   └── CockpitAnalytics.tsx      # Analytics & rapports
-│   └── CockpitAuth.tsx               # Vérification 2FA
+│   └── cockpit/
+│       ├── CockpitDashboard.tsx
+│       ├── CockpitPipeline.tsx
+│       ├── CockpitLeads.tsx
+│       ├── CockpitAgenda.tsx
+│       ├── CockpitProjects.tsx
+│       ├── CockpitProjectDetail.tsx
+│       ├── CockpitSpecs.tsx
+│       ├── CockpitSpecEditor.tsx
+│       └── CockpitAnalytics.tsx
 │
 ├── components/
 │   └── cockpit/
-│       ├── CockpitLayout.tsx         # Layout spécifique
-│       ├── CockpitSidebar.tsx        # Navigation Cockpit
-│       ├── CockpitHeader.tsx         # Header avec KPIs
-│       ├── PipelineKanban.tsx        # Board Kanban
-│       ├── OpportunityCard.tsx       # Carte opportunité
-│       ├── LeadScoreCard.tsx         # Score lead
-│       ├── MeetingPrep.tsx           # Préparation RDV
-│       ├── MeetingNotes.tsx          # Notes de réunion
-│       ├── ProjectTimeline.tsx       # Timeline projet
-│       ├── SpecEditor.tsx            # Éditeur CDC
-│       ├── AIInsightsCard.tsx        # Insights IA
-│       └── CockpitCharts.tsx         # Graphiques
+│       ├── CockpitLayout.tsx
+│       ├── CockpitSidebar.tsx
+│       ├── CockpitHeader.tsx
+│       ├── CommandPalette.tsx
+│       ├── PipelineKanban.tsx
+│       ├── OpportunityCard.tsx
+│       ├── LeadScoreCard.tsx
+│       ├── MeetingPrep.tsx
+│       ├── MeetingNotes.tsx
+│       ├── ProjectTimeline.tsx
+│       ├── ActivityTimeline.tsx
+│       ├── SpecEditor.tsx
+│       ├── AIInsightsCard.tsx
+│       └── TodayView.tsx
 │
 ├── hooks/
 │   └── cockpit/
 │       ├── useOpportunities.ts
 │       ├── useProjects.ts
 │       ├── useMeetingNotes.ts
+│       ├── useActivityLog.ts
 │       ├── useCockpitAnalytics.ts
-│       └── useCockpitAuth.ts         # Vérification 2FA
+│       └── useCockpitAuth.ts
 │
 └── types/
-    └── cockpit.ts                    # Types TypeScript
+    └── cockpit.ts
 ```
 
 ### 7.2 Routes
 
 ```typescript
-// Ajout au router
 {
   path: '/cockpit',
-  element: <ProtectedCockpitRoute />,
+  element: <ProtectedCockpitRoute />, // Vérifie 2FA + rôle
   children: [
     { index: true, element: <CockpitDashboard /> },
     { path: 'pipeline', element: <CockpitPipeline /> },
@@ -492,69 +550,56 @@ src/
 
 ---
 
-## 📐 8. Design & UX
+## 8. FLUX UTILISATEUR PRINCIPAL
 
-### 8.1 Principes
-
-- Design distinct du module Admin (différenciation couleur)
-- Interface épurée orientée action
-- Accès rapide aux informations clés
-- Mobile-responsive pour usage terrain
-
-### 8.2 Palette couleurs suggérée
-
-| Élément | Couleur |
-|---------|---------|
-| Accent Cockpit | `#0EA5E9` (Sky blue) |
-| Pipeline - Lead | `#94A3B8` (Slate) |
-| Pipeline - Qualifié | `#3B82F6` (Blue) |
-| Pipeline - Opportunité | `#8B5CF6` (Violet) |
-| Pipeline - Négociation | `#F59E0B` (Amber) |
-| Pipeline - Gagné | `#22C55E` (Green) |
-| Pipeline - Perdu | `#EF4444` (Red) |
-
----
-
-## 🔄 9. Intégrations
-
-### 9.1 Intégrations existantes utilisées
-
-- ✅ Google Calendar (via `bookings`)
-- ✅ Emails automatiques (via `email_logs`)
-- ✅ Lovable AI (via Edge Functions)
-
-### 9.2 Intégrations futures (v2)
-
-- 📋 CRM externe (HubSpot, Pipedrive)
-- 📧 Séquences email automatisées
-- 📊 BI tools (Metabase, Tableau)
-- 📞 VoIP (Aircall, Ringover)
+```
+1. Lead capturé (Admin - existant)
+      ↓
+2. Lead qualifié + scoré (Cockpit)
+      ↓
+3. Opportunité créée (Cockpit)
+      ↓
+4. RDV planifié (Admin/Cockpit)
+      ↓
+5. Préparation RDV (Cockpit)
+      ↓
+6. Compte-rendu RDV + actions (Cockpit + IA)
+      ↓
+7. Projet créé (Cockpit)
+      ↓
+8. Documents uploadés (Cockpit)
+      ↓
+9. CDC généré (Cockpit + IA)
+      ↓
+10. Projet suivi → livré (Cockpit)
+```
 
 ---
 
-## 📅 10. Roadmap de développement
+## 9. ROADMAP DÉVELOPPEMENT
 
 ### Phase 1 : Fondations (Semaines 1-2)
 
-- [ ] Création des nouvelles tables (opportunities, projects, etc.)
-- [ ] Mise en place des politiques RLS
-- [ ] Composant ProtectedCockpitRoute (vérification 2FA)
+- [ ] Création tables (statuses, opportunities, projects, activity_log)
+- [ ] Politiques RLS
+- [ ] Table user_2fa_settings + flow TOTP
+- [ ] ProtectedCockpitRoute (vérification 2FA + rôle)
 - [ ] Layout et navigation Cockpit
-- [ ] Bouton d'accès dans l'Admin
+- [ ] Bouton accès dans Admin
 
 ### Phase 2 : Core Features (Semaines 3-4)
 
-- [ ] Dashboard Cockpit avec KPIs
+- [ ] Dashboard Cockpit avec KPIs + vue "Aujourd'hui"
 - [ ] Pipeline Kanban (drag & drop)
-- [ ] Gestion des leads qualifiés
-- [ ] Extension de la vue bookings (notes)
+- [ ] Gestion leads qualifiés
+- [ ] Activity Timeline transversale
 
 ### Phase 3 : Projets & CDC (Semaines 5-6)
 
 - [ ] Module Projets IA
 - [ ] Liaison projets/contacts
-- [ ] Éditeur de cahiers des charges
-- [ ] Templates CDC
+- [ ] Stockage documentaire (bucket cockpit-documents)
+- [ ] Éditeur CDC + templates
 
 ### Phase 4 : IA & Analytics (Semaines 7-8)
 
@@ -564,92 +609,60 @@ src/
 - [ ] Tableau de bord analytics
 - [ ] Rapports automatisés
 
-### Phase 5 : Polish & Tests (Semaines 9-10)
+### Phase 5 : Polish (Semaines 9-10)
 
+- [ ] Command Palette (⌘K) avec cmdk
 - [ ] Tests utilisateurs
 - [ ] Optimisations performance
-- [ ] Documentation utilisateur
-- [ ] Formation équipe
+- [ ] Documentation
 
 ---
 
-## ✅ 11. Critères de validation
+## 10. CRITÈRES DE VALIDATION
 
-### 11.1 Fonctionnels
+### Fonctionnels
 
 - [ ] Accès sécurisé avec 2FA obligatoire
 - [ ] Pipeline commercial fonctionnel (CRUD + drag & drop)
-- [ ] Leads qualifiables avec scoring
+- [ ] Leads qualifiables avec scoring IA
 - [ ] Projets liés aux contacts et réunions
 - [ ] CDC générables et exportables
 - [ ] Rapports automatiques hebdomadaires
+- [ ] Activity log fonctionnel sur toutes les entités
 
-### 11.2 Techniques
+### Techniques
 
 - [ ] Temps de chargement < 2s
 - [ ] Responsive mobile
 - [ ] RLS correctement configurées
 - [ ] Logs d'audit sur toutes les actions
-- [ ] Zéro duplication de données avec l'Admin
+- [ ] Zéro duplication de données avec Admin
+- [ ] Gouvernance IA traçable (ai_metadata)
 
-### 11.3 Sécurité
+### Sécurité
 
-- [ ] 2FA vérifié à chaque accès
+- [ ] 2FA vérifié à chaque accès Cockpit
 - [ ] Rôles séparés (cockpit_user, cockpit_admin)
 - [ ] Actions sensibles loggées
-- [ ] Données chiffrées au repos
+- [ ] Données IA marquées et validables
 
 ---
 
-## 📚 12. Annexes
+## 11. POINTS D'ATTENTION LOVABLE
 
-### A. Schéma relationnel
-
-```
-leads ─────────────────┐
-  │                    │
-  ├──> opportunities ──┼──> projects ──> specifications
-  │         │          │       │
-  │         │          │       └──> project_contacts
-  │         │          │
-  │         └──────────┼──> meeting_notes
-  │                    │
-bookings ──────────────┘
-```
-
-### B. Flux utilisateur principal
-
-```
-1. Lead capturé (Admin)
-      ↓
-2. Lead qualifié (Cockpit)
-      ↓
-3. Opportunité créée (Cockpit)
-      ↓
-4. RDV planifié (Admin/Cockpit)
-      ↓
-5. Compte-rendu RDV (Cockpit)
-      ↓
-6. Projet créé (Cockpit)
-      ↓
-7. CDC rédigé (Cockpit)
-      ↓
-8. Projet livré (Cockpit)
-```
-
-### C. Glossaire
-
-| Terme | Définition |
-|-------|------------|
-| Lead | Contact entrant non qualifié |
-| Opportunité | Lead qualifié avec potentiel commercial identifié |
-| Pipeline | Ensemble des opportunités organisées par étape |
-| CDC | Cahier des Charges, document de spécification projet |
-| Scoring | Note automatique évaluant le potentiel d'un lead |
+1. **Réutiliser les tables existantes** — Ne pas recréer leads, bookings, contacts
+2. **Respecter la charte graphique existante** — Couleurs et typographie déjà définies dans le projet
+3. **Table statuses** — Utiliser comme référentiel unique pour éviter les enums dispersés
+4. **Activity_log** — Alimenter systématiquement à chaque action CRUD
+5. **AI_metadata** — Inclure sur tout champ généré par IA
+6. **ProtectedCockpitRoute** — Vérifier 2FA avant tout accès, pas juste le rôle
+7. **Command Palette** — Prévoir dès le début avec cmdk (déjà installé), pas en phase polish
+8. **Triggers de validation** — Utiliser des triggers au lieu de contraintes CHECK pour les validations
+9. **Bucket Storage** — Créer `cockpit-documents` pour les fichiers projet
 
 ---
 
-**Document rédigé le :** 21 décembre 2025  
-**Auteur :** IArche Team  
-**Version :** 1.0  
-**Statut :** En attente de validation
+**Document prêt pour Lovable**
+- **Version** : 2.0
+- **Statut** : Spécification finale
+- **Dernière mise à jour** : 21 décembre 2025
