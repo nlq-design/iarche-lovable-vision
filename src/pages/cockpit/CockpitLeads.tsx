@@ -34,10 +34,18 @@ const STATUS_LABELS: Record<string, { label: string; variant: 'default' | 'secon
   lost: { label: 'Perdu', variant: 'destructive' },
 };
 
+const SOURCE_LABELS: Record<string, string> = {
+  'contact': 'Contact',
+  'newsletter': 'Newsletter',
+  'atelier-webinaire': 'Atelier/Webinaire',
+  'livre-blanc': 'Livre blanc',
+};
+
 const CockpitLeads = () => {
   const { leads, stats, isLoading, updateQualificationStatus } = useCockpitLeads();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
 
   // Filter leads
   const filteredLeads = leads?.filter(lead => {
@@ -47,8 +55,9 @@ const CockpitLeads = () => {
       (lead.company?.toLowerCase().includes(searchQuery.toLowerCase()));
     
     const matchesStatus = statusFilter === 'all' || lead.qualification_status === statusFilter;
+    const matchesSource = sourceFilter === 'all' || lead.source === sourceFilter;
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesSource;
   }) || [];
 
   return (
@@ -93,6 +102,18 @@ const CockpitLeads = () => {
                   <SelectItem value="qualified">Qualifié</SelectItem>
                   <SelectItem value="converted">Converti</SelectItem>
                   <SelectItem value="lost">Perdu</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Source" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les sources</SelectItem>
+                  <SelectItem value="contact">Contact</SelectItem>
+                  <SelectItem value="newsletter">Newsletter</SelectItem>
+                  <SelectItem value="atelier-webinaire">Atelier/Webinaire</SelectItem>
+                  <SelectItem value="livre-blanc">Livre blanc</SelectItem>
                 </SelectContent>
               </Select>
             </div>
