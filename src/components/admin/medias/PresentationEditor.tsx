@@ -23,7 +23,7 @@ import { TopMarginSlider, getContentSpacing } from './TopMarginSlider';
 import { DecorativeArcToggle } from './DecorativeArcToggle';
 import ExportActions from './ExportActions';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
-import { getCTAColor } from './CTAText';
+import { getCTAColor, getCTAColorHex, getCTABadgeStyles, getCTABulletStyles } from './CTAText';
 
 interface PresentationEditorProps {
   templateId: string;
@@ -339,6 +339,10 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
         const slideTheme = i % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme);
         const colors = PREVIEW_THEMES[slideTheme];
         const isDark = slideTheme !== 'light';
+        // v4.2 Règle d'or: CTA en blanc cassé sur gradient
+        const ctaColor = getCTAColorHex(slideTheme);
+        const ctaBadge = getCTABadgeStyles(slideTheme, isDark);
+        const ctaBullet = getCTABulletStyles(slideTheme);
         const slideExportMode = slide.exportMode || 'full';
         const showBar = slideExportMode === 'with-bar' || slideExportMode === 'full';
         const showCanalisations = slideExportMode === 'full';
@@ -413,9 +417,9 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                   font-weight: 500;
                   padding: 8px 20px;
                   border-radius: 999px;
-                  background: ${isDark ? 'rgba(176, 74, 50, 0.2)' : 'rgba(176, 74, 50, 0.12)'};
-                  color: ${isDark ? '#E8B4A0' : '#8B3A2F'};
-                  border: 1px solid ${isDark ? 'rgba(176, 74, 50, 0.35)' : 'rgba(176, 74, 50, 0.25)'};
+                  background: ${ctaBadge.background};
+                  color: ${ctaBadge.color};
+                  border: ${ctaBadge.border};
                 ">${slide.subtitle}</span>
               ` : ''}
               
@@ -461,8 +465,8 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        background: rgba(176, 74, 50, 0.15);
-                        color: #B04A32;
+                        background: ${ctaBullet.background};
+                        color: ${ctaBullet.color};
                         font-size: 18px;
                         font-weight: 600;
                       ">${idx + 1}</span>
@@ -797,9 +801,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                         <span 
                           className="inline-flex items-center text-xs uppercase tracking-wider font-medium px-3 py-1 rounded-full self-start"
                           style={{ 
-                            background: isDark ? 'rgba(176, 74, 50, 0.2)' : 'rgba(176, 74, 50, 0.12)',
-                            color: isDark ? '#E8B4A0' : '#8B3A2F',
-                            border: `1px solid ${isDark ? 'rgba(176, 74, 50, 0.35)' : 'rgba(176, 74, 50, 0.25)'}`,
+                            ...getCTABadgeStyles(currentTheme, isDark),
                             ...(current?.type === 'title' ? { alignSelf: 'center' } : {}),
                           }}
                         >
@@ -853,8 +855,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                               <span 
                                 className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5"
                                 style={{ 
-                                  background: currentTheme === 'gradient' ? 'rgba(250,249,247,0.15)' : 'rgba(176, 74, 50, 0.15)',
-                                  color: ctaColor,
+                                  ...getCTABulletStyles(currentTheme),
                                   fontSize: '0.7rem',
                                   fontWeight: 600,
                                 }}

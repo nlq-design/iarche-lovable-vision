@@ -34,6 +34,7 @@ import {
 } from '@/components/admin/medias/html';
 import { HTMLLogoArc } from '@/components/admin/medias/html/HTMLLogoArc';
 import { ArcSize } from '@/components/admin/medias/html/tokens';
+import { getCTAColor } from '@/components/admin/medias/CTAText';
 
 type StoryTemplate = 'annonce' | 'chiffre' | 'temoignage' | 'conseil' | 'question';
 
@@ -229,7 +230,7 @@ export default function StoryEditor() {
     ? IARCHE_COLORS.blancCasse 
     : IARCHE_COLORS.grey;
   // v4.2 Règle d'or: CTA en blanc cassé sur gradient, sinon terracotta
-  const ctaColor = theme === 'gradient' ? IARCHE_COLORS.blancCasse : IARCHE_COLORS.terracotta;
+  const ctaColor = getCTAColor(theme);
   const showCanalisations = exportMode === 'full';
 
   // Minimum spacing from logo to prevent content touching header

@@ -37,6 +37,7 @@ import {
   IARCHE_BADGES,
   ThemeType,
 } from '@/components/admin/medias/html';
+import { getCTAColor } from '@/components/admin/medias/CTAText';
 
 type PostFormat = 'square' | 'landscape';
 type PostTemplate = 'annonce' | 'chiffre' | 'temoignage' | 'conseil' | 'services';
@@ -362,7 +363,7 @@ export default function PostEditor() {
     ? IARCHE_COLORS.blancCasse 
     : IARCHE_COLORS.grey;
   // v4.2 Règle d'or: CTA en blanc cassé sur gradient, sinon terracotta
-  const ctaColor = theme === 'gradient' ? IARCHE_COLORS.blancCasse : IARCHE_COLORS.terracotta;
+  const ctaColor = getCTAColor(theme);
 
   // Logo discret helper (petit logo sans arc, en coin)
   const renderLogoDiscret = (position: 'top-right' | 'bottom-right' = 'bottom-right') => (

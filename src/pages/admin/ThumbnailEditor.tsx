@@ -30,6 +30,7 @@ import {
 import { HTMLLogoArc } from '@/components/admin/medias/html/HTMLLogoArc';
 import { ArcSize } from '@/components/admin/medias/html/tokens';
 import { DecorativeArcToggle } from '@/components/admin/medias/DecorativeArcToggle';
+import { getCTAColor } from '@/components/admin/medias/CTAText';
 
 type ThumbnailFormat = 'standard' | 'youtube';
 type EventType = 'webinaire' | 'atelier' | 'replay' | 'services';
@@ -208,7 +209,7 @@ export default function ThumbnailEditor() {
     ? IARCHE_COLORS.blancCasse 
     : IARCHE_COLORS.grey;
   // v4.2 Règle d'or: CTA en blanc cassé sur gradient, sinon terracotta
-  const ctaColor = theme === 'gradient' ? IARCHE_COLORS.blancCasse : IARCHE_COLORS.terracotta;
+  const ctaColor = getCTAColor(theme);
 
   const badgeBg = eventType === 'replay' 
     ? (theme === 'dark' ? 'rgba(255,255,255,0.9)' : IARCHE_COLORS.bleuNuit)

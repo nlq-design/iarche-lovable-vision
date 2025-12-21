@@ -34,6 +34,7 @@ import {
   IARCHE_EFFECTS,
   ThemeType,
 } from '@/components/admin/medias/html';
+import { getCTAColor } from '@/components/admin/medias/CTAText';
 
 // Default dimensions (can be changed by platform preset)
 const DEFAULT_WIDTH = 1584;
@@ -194,7 +195,7 @@ export default function BannerEditor() {
   const textColor = theme === 'light' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse;
   const subtextColor = theme === 'light' ? IARCHE_COLORS.grey : IARCHE_COLORS.blancCasse;
   // v4.2 Règle d'or: CTA en blanc cassé sur gradient, sinon terracotta
-  const ctaColor = theme === 'gradient' ? IARCHE_COLORS.blancCasse : IARCHE_COLORS.terracotta;
+  const ctaColor = getCTAColor(theme);
   const showCanalisations = exportMode === 'full';
 
   // Computed spacing for content
