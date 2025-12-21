@@ -5,6 +5,7 @@ import { Calendar } from 'lucide-react';
 import { Card } from './card';
 import GradientTitle from './GradientTitle';
 import LogoArc from './LogoArc';
+import ArticlePlaceholder from './ArticlePlaceholder';
 
 interface RelatedArticle {
   id: string;
@@ -105,7 +106,7 @@ const RelatedArticles: React.FC<RelatedArticlesProps> = ({
               <Card className="h-full hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden invisible animate-fadeIn"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                {article.cover_image_url && (
+                {article.cover_image_url ? (
                   <div className="w-full h-40 overflow-hidden">
                     <img
                       src={article.cover_image_url}
@@ -113,6 +114,8 @@ const RelatedArticles: React.FC<RelatedArticlesProps> = ({
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     />
                   </div>
+                ) : (
+                  <ArticlePlaceholder className="h-40" />
                 )}
 
                 <div className="p-5">
