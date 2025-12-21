@@ -193,6 +193,8 @@ export default function BannerEditor() {
   // v4.2 Règle d'or: gradient utilise TOUJOURS blanc cassé
   const textColor = theme === 'light' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse;
   const subtextColor = theme === 'light' ? IARCHE_COLORS.grey : IARCHE_COLORS.blancCasse;
+  // v4.2 Règle d'or: CTA en blanc cassé sur gradient, sinon terracotta
+  const ctaColor = theme === 'gradient' ? IARCHE_COLORS.blancCasse : IARCHE_COLORS.terracotta;
   const showCanalisations = exportMode === 'full';
 
   // Computed spacing for content
@@ -280,7 +282,7 @@ export default function BannerEditor() {
               height: '180px',
               borderRadius: '50%',
               backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(26,43,74,0.1)',
-              border: `3px solid ${IARCHE_COLORS.terracotta}`,
+              border: `3px solid ${ctaColor}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -315,7 +317,7 @@ export default function BannerEditor() {
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${titleFontSize - 12}px`,
                 fontWeight: 400,
-                color: IARCHE_COLORS.terracotta,
+                color: ctaColor,
                 margin: 0,
               }}>
                 {ceoTitle}

@@ -207,6 +207,8 @@ export default function ThumbnailEditor() {
   const subtextColor = (theme === 'dark' || theme === 'terra' || theme === 'contrast' || theme === 'gradient') 
     ? IARCHE_COLORS.blancCasse 
     : IARCHE_COLORS.grey;
+  // v4.2 Règle d'or: CTA en blanc cassé sur gradient, sinon terracotta
+  const ctaColor = theme === 'gradient' ? IARCHE_COLORS.blancCasse : IARCHE_COLORS.terracotta;
 
   const badgeBg = eventType === 'replay' 
     ? (theme === 'dark' ? 'rgba(255,255,255,0.9)' : IARCHE_COLORS.bleuNuit)
@@ -486,7 +488,7 @@ export default function ThumbnailEditor() {
                             fontFamily: IARCHE_FONTS.primary,
                             fontSize: Math.round(width * 0.014) + 'px',
                             fontWeight: 600,
-                            color: IARCHE_COLORS.terracotta,
+                            color: ctaColor,
                             textTransform: 'uppercase',
                             letterSpacing: '0.15em',
                           }}>
@@ -564,7 +566,7 @@ export default function ThumbnailEditor() {
                           fontFamily: IARCHE_FONTS.primary,
                           fontSize: '20px',
                           fontWeight: 500,
-                          color: IARCHE_COLORS.terracotta,
+                          color: ctaColor,
                           textAlign: 'center',
                         }}>
                           iarche.fr
@@ -642,7 +644,7 @@ export default function ThumbnailEditor() {
                         {/* Footer */}
                         <div style={{ display: 'flex', gap: '32px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <Calendar size={24} color={IARCHE_COLORS.terracotta} />
+                            <Calendar size={24} color={ctaColor} />
                             <span style={{
                               fontFamily: IARCHE_FONTS.primary,
                               fontSize: '24px',
@@ -653,7 +655,7 @@ export default function ThumbnailEditor() {
                             </span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <Clock size={24} color={IARCHE_COLORS.terracotta} />
+                            <Clock size={24} color={ctaColor} />
                             <span style={{
                               fontFamily: IARCHE_FONTS.primary,
                               fontSize: '24px',
@@ -731,7 +733,7 @@ export default function ThumbnailEditor() {
                           {/* Date & Time */}
                           <div style={{ display: 'flex', gap: '32px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <Calendar size={24} color={IARCHE_COLORS.terracotta} />
+                              <Calendar size={24} color={ctaColor} />
                               <span style={{
                                 fontFamily: IARCHE_FONTS.primary,
                                 fontSize: '24px',
@@ -742,7 +744,7 @@ export default function ThumbnailEditor() {
                               </span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <Clock size={24} color={IARCHE_COLORS.terracotta} />
+                              <Clock size={24} color={ctaColor} />
                               <span style={{
                                 fontFamily: IARCHE_FONTS.primary,
                                 fontSize: '24px',
@@ -768,7 +770,7 @@ export default function ThumbnailEditor() {
                                 width: '56px',
                                 height: '56px',
                                 borderRadius: '50%',
-                                backgroundColor: IARCHE_COLORS.terracotta,
+                                backgroundColor: ctaColor,
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
