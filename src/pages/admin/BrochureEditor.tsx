@@ -9,7 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Save, Eye, Download, Plus, Trash2, GripVertical, Upload, X, Loader2, Image, Link } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ArrowLeft, Save, Eye, Download, Plus, Trash2, GripVertical, Upload, X, Loader2, FileImage, Link } from 'lucide-react';
 import { useBrochures, useBrochure } from '@/hooks/useBrochures';
 import { Brochure, BrochureSections, BrochureKeyPoint, BrochurePricingPlan, BrochureExportSettings as ExportSettingsType, defaultSections, defaultExportSettings } from '@/types/brochure';
 import BrochureWebView from '@/components/admin/brochures/BrochureWebView';
@@ -225,14 +226,34 @@ const BrochureEditor = () => {
             </Button>
             {!isNew && (
               <>
-                <Button variant="outline" onClick={() => setShowSVGExport(true)}>
-                  <Download className="h-4 w-4 mr-2" />
-                  PDF Haute-Fidélité
-                </Button>
-                <Button variant="outline" onClick={() => setShowPDFExport(true)}>
-                  <Download className="h-4 w-4 mr-2" />
-                  PDF Natif
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline">
+                      <Download className="h-4 w-4 mr-2" />
+                      PDF complet
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Mode d'export PDF</DropdownMenuLabel>
+                    
+                    <DropdownMenuSeparator />
+                    
+                    <DropdownMenuItem onClick={() => setShowSVGExport(true)} className="gap-2">
+                      <FileImage className="h-4 w-4 text-accent" />
+                      <div>
+                        <div className="font-medium">PDF Haute-Fidélité</div>
+                        <div className="text-xs text-muted-foreground">Capture web exacte</div>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowPDFExport(true)} className="gap-2">
+                      <Download className="h-4 w-4" />
+                      <div>
+                        <div className="font-medium">PDF Natif</div>
+                        <div className="text-xs text-muted-foreground">Rendu vectoriel basique</div>
+                      </div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             )}
             <Button onClick={handleSave} disabled={createBrochure.isPending || updateBrochure.isPending}>
