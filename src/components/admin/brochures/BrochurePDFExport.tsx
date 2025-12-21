@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet, pdf, Image, Svg, Path, Circle, PDFViewer } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, pdf, Image, Svg, Path, Circle, PDFViewer, Defs, LinearGradient, Stop, G } from '@react-pdf/renderer';
 import { Brochure, PDFOrientation } from '@/types/brochure';
 import { COLORS, FONTS, THEMES } from '@/components/admin/medias/shared/tokens';
 import { BASE64_ASSETS } from '@/components/admin/medias/pdf/base64Assets';
@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useState, useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
 // A4 dimensions in points (72 points = 1 inch)
 const A4_PORTRAIT = { width: 595.28, height: 841.89 };
@@ -62,6 +63,98 @@ const PDF_THEMES = {
   },
 };
 
+// ============================================
+// DECORATIVE ARC COMPONENT - MODE CONTINUITÉ
+// Arc déborde du cadre pour créer un effet de profondeur
+// ============================================
+interface PDFDecorativeArcProps {
+  pageWidth: number;
+  pageHeight: number;
+  position?: 'top-right' | 'bottom-left' | 'bottom-right';
+  opacity?: number;
+  strokeWidth?: number;
+  extended?: boolean; // Mode continuité
+}
+
+const PDFDecorativeArc = ({ 
+  pageWidth, 
+  pageHeight, 
+  position = 'bottom-right',
+  opacity = 0.06,
+  strokeWidth = 2,
+  extended = true, // Par défaut en mode continuité
+}: PDFDecorativeArcProps) => {
+  // Taille de l'arc (plus grand en mode continuité)
+  const baseSize = Math.min(pageWidth, pageHeight) * 0.25;
+  const arcSize = extended ? baseSize * 1.8 : baseSize;
+  
+  // Offset négatif pour déborder du cadre
+  const overflow = extended ? arcSize * 0.4 : 0;
+
+  const getPositionStyles = () => {
+    switch (position) {
+      case 'top-right':
+        return { 
+          top: -overflow, 
+          right: -overflow,
+        };
+      case 'bottom-left':
+        return { 
+          bottom: -overflow, 
+          left: -overflow,
+        };
+      case 'bottom-right':
+      default:
+        return { 
+          bottom: -overflow, 
+          right: -overflow,
+        };
+    }
+  };
+
+  const posStyles = getPositionStyles();
+
+  // Path de l'arc selon la position
+  const getArcPath = () => {
+    const s = arcSize;
+    switch (position) {
+      case 'top-right':
+        return `M ${s} 0 Q ${s} ${s} 0 ${s}`;
+      case 'bottom-left':
+        return `M 0 0 Q 0 ${s} ${s} ${s}`;
+      case 'bottom-right':
+      default:
+        return `M 0 0 Q ${s} 0 ${s} ${s}`;
+    }
+  };
+
+  return (
+    <View style={{
+      position: 'absolute',
+      width: arcSize,
+      height: arcSize,
+      ...posStyles,
+    }}>
+      <Svg width={arcSize} height={arcSize} viewBox={`0 0 ${arcSize} ${arcSize}`}>
+        <Defs>
+          <LinearGradient id={`arc-gradient-${position}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor={COLORS.bleuNuit} stopOpacity={0.8} />
+            <Stop offset="100%" stopColor={COLORS.terracotta} stopOpacity={0.8} />
+          </LinearGradient>
+        </Defs>
+        <Path
+          d={getArcPath()}
+          fill="none"
+          stroke={`url(#arc-gradient-${position})`}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          opacity={opacity}
+        />
+      </Svg>
+    </View>
+  );
+};
+
 // SVG Icons as components for PDF
 const CheckIcon = ({ color = COLORS.terracotta, size = 16 }: { color?: string; size?: number }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24">
@@ -88,6 +181,42 @@ const QuoteIcon = ({ color = COLORS.terracotta, size = 32 }: { color?: string; s
       fill={color}
     />
   </Svg>
+);
+
+// Badge component for PDF (styled like HTML version)
+const SectionBadge = ({ 
+  icon, 
+  text, 
+  accentColor 
+}: { 
+  icon: string; 
+  text: string; 
+  accentColor: string;
+}) => (
+  <View style={{
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: `${accentColor}15`,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: `${accentColor}40`,
+    alignSelf: 'center',
+    marginBottom: 8,
+  }}>
+    <Text style={{ fontSize: 10 }}>{icon}</Text>
+    <Text style={{ 
+      fontSize: 8, 
+      color: accentColor, 
+      fontFamily: FONTS.pdf.primary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    }}>
+      {text}
+    </Text>
+  </View>
 );
 
 // Logo Component - utilise PNG pour react-pdf
@@ -369,9 +498,10 @@ interface BrochurePDFProps {
   brochure: Brochure;
   orientation: PDFOrientation;
   pdfTheme: PDFTheme;
+  showDecorativeArc?: boolean; // Mode présentation avec arcs
 }
 
-const BrochurePDF = ({ brochure, orientation, pdfTheme }: BrochurePDFProps) => {
+const BrochurePDF = ({ brochure, orientation, pdfTheme, showDecorativeArc = true }: BrochurePDFProps) => {
   const { sections, custom_colors } = brochure;
   const theme = PDF_THEMES[pdfTheme];
   const styles = createStyles(orientation, theme, custom_colors);
@@ -387,6 +517,28 @@ const BrochurePDF = ({ brochure, orientation, pdfTheme }: BrochurePDFProps) => {
     <Document>
       {/* Cover Page */}
       <Page size={[pageSize.width, pageSize.height]} style={styles.coverPage}>
+        {/* Arc décoratif en mode continuité */}
+        {showDecorativeArc && (
+          <>
+            <PDFDecorativeArc 
+              pageWidth={pageSize.width} 
+              pageHeight={pageSize.height}
+              position="top-right"
+              opacity={0.04}
+              strokeWidth={2}
+              extended={true}
+            />
+            <PDFDecorativeArc 
+              pageWidth={pageSize.width} 
+              pageHeight={pageSize.height}
+              position="bottom-left"
+              opacity={0.03}
+              strokeWidth={1.5}
+              extended={true}
+            />
+          </>
+        )}
+        
         <View style={{ alignItems: 'center' }}>
           {/* Logo officiel - PNG pour react-pdf */}
           <Image 
@@ -426,6 +578,17 @@ const BrochurePDF = ({ brochure, orientation, pdfTheme }: BrochurePDFProps) => {
       {/* Introduction Page */}
       {sections.introduction.enabled && sections.introduction.content && (
         <Page size={[pageSize.width, pageSize.height]} style={styles.page}>
+          {/* Arc décoratif en mode continuité */}
+          {showDecorativeArc && (
+            <PDFDecorativeArc 
+              pageWidth={pageSize.width} 
+              pageHeight={pageSize.height}
+              position="bottom-right"
+              opacity={0.03}
+              strokeWidth={1.5}
+              extended={true}
+            />
+          )}
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <Text style={[styles.paragraph, { fontSize: isLandscape ? 14 : 13, textAlign: 'center', maxWidth: isLandscape ? 550 : 420 }]}>
               {sections.introduction.content}
@@ -442,17 +605,43 @@ const BrochurePDF = ({ brochure, orientation, pdfTheme }: BrochurePDFProps) => {
       {/* Key Points Page */}
       {sections.keyPoints.enabled && sections.keyPoints.points.length > 0 && (
         <Page size={[pageSize.width, pageSize.height]} style={[styles.page, { padding: 0 }]}>
+          {/* Arc décoratif en mode continuité */}
+          {showDecorativeArc && (
+            <PDFDecorativeArc 
+              pageWidth={pageSize.width} 
+              pageHeight={pageSize.height}
+              position="top-right"
+              opacity={0.04}
+              strokeWidth={2}
+              extended={true}
+            />
+          )}
           <View style={styles.keyPointsContainer}>
             <View style={{ alignItems: 'center', marginBottom: 16 }}>
+              <SectionBadge icon="📋" text="Essentiel" accentColor={accentColor} />
               <Text style={styles.sectionTitleCentered}>Points clés</Text>
               <Image src={BASE64_ASSETS.arcMd} style={{ width: arcSmall, height: arcSmall * 0.3, marginTop: 8 }} />
             </View>
             
             <View style={styles.keyPointsGrid}>
-              {sections.keyPoints.points.map((point) => (
+              {sections.keyPoints.points.map((point, idx) => (
                 <View key={point.id} style={styles.keyPointCard}>
                   <View style={styles.keyPointHeader}>
-                    <CheckIcon color={accentColor} size={20} />
+                    {/* Numéro stylisé comme dans l'aperçu HTML */}
+                    <View style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 12,
+                      backgroundColor: `${accentColor}20`,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <Text style={{ 
+                        fontSize: 10, 
+                        fontFamily: FONTS.pdf.primary, 
+                        color: accentColor,
+                      }}>{idx + 1}</Text>
+                    </View>
                     <Text style={styles.keyPointTitle}>{point.title}</Text>
                   </View>
                   <Text style={styles.keyPointDesc}>{point.description}</Text>
@@ -551,7 +740,19 @@ const BrochurePDF = ({ brochure, orientation, pdfTheme }: BrochurePDFProps) => {
       {/* Testimonial Page */}
       {sections.testimonial.enabled && sections.testimonial.quote && (
         <Page size={[pageSize.width, pageSize.height]} style={styles.page}>
+          {/* Arc décoratif en mode continuité */}
+          {showDecorativeArc && (
+            <PDFDecorativeArc 
+              pageWidth={pageSize.width} 
+              pageHeight={pageSize.height}
+              position="bottom-left"
+              opacity={0.03}
+              strokeWidth={1.5}
+              extended={true}
+            />
+          )}
           <View style={{ flex: 1, justifyContent: 'center' }}>
+            <SectionBadge icon="💬" text="Témoignage" accentColor={accentColor} />
             <View style={styles.testimonialBox}>
               <QuoteIcon color={accentColor} size={32} />
               <Text style={styles.testimonialQuote}>"{sections.testimonial.quote}"</Text>
@@ -572,6 +773,27 @@ const BrochurePDF = ({ brochure, orientation, pdfTheme }: BrochurePDFProps) => {
       {/* Contact Page */}
       {sections.contact.enabled && (
         <Page size={[pageSize.width, pageSize.height]} style={styles.page}>
+          {/* Arc décoratif en mode continuité */}
+          {showDecorativeArc && (
+            <>
+              <PDFDecorativeArc 
+                pageWidth={pageSize.width} 
+                pageHeight={pageSize.height}
+                position="top-right"
+                opacity={0.03}
+                strokeWidth={1.5}
+                extended={true}
+              />
+              <PDFDecorativeArc 
+                pageWidth={pageSize.width} 
+                pageHeight={pageSize.height}
+                position="bottom-left"
+                opacity={0.025}
+                strokeWidth={1.5}
+                extended={true}
+              />
+            </>
+          )}
           <View style={styles.contactSection}>
             <Text style={styles.sectionTitleCentered}>Intéressé ?</Text>
             <Image src={BASE64_ASSETS.arcMd} style={{ width: arcSmall, height: arcSmall * 0.3, marginTop: 8, marginBottom: 32 }} />
@@ -607,15 +829,16 @@ const BrochurePDFExport = ({ brochure, onClose }: BrochurePDFExportProps) => {
   );
   const [pdfTheme, setPdfTheme] = useState<PDFTheme>('blanc-casse');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showDecorativeArc, setShowDecorativeArc] = useState(true); // Mode présentation
 
   const handleDownload = async () => {
     setIsGenerating(true);
     try {
-      const blob = await pdf(<BrochurePDF brochure={brochure} orientation={orientation} pdfTheme={pdfTheme} />).toBlob();
+      const blob = await pdf(<BrochurePDF brochure={brochure} orientation={orientation} pdfTheme={pdfTheme} showDecorativeArc={showDecorativeArc} />).toBlob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${brochure.slug || 'brochure'}-${pdfTheme}-${orientation}.pdf`;
+      link.download = `${brochure.slug || 'brochure'}-${pdfTheme}-${orientation}${showDecorativeArc ? '-presentation' : ''}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
       toast({ title: 'PDF téléchargé', description: `Brochure "${PDF_THEMES[pdfTheme].name}" exportée` });
@@ -631,8 +854,8 @@ const BrochurePDFExport = ({ brochure, onClose }: BrochurePDFExportProps) => {
 
   // Memoize the PDF document to avoid unnecessary re-renders
   const pdfDocument = useMemo(() => (
-    <BrochurePDF brochure={brochure} orientation={orientation} pdfTheme={pdfTheme} />
-  ), [brochure, orientation, pdfTheme]);
+    <BrochurePDF brochure={brochure} orientation={orientation} pdfTheme={pdfTheme} showDecorativeArc={showDecorativeArc} />
+  ), [brochure, orientation, pdfTheme, showDecorativeArc]);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
@@ -761,6 +984,22 @@ const BrochurePDFExport = ({ brochure, onClose }: BrochurePDFExportProps) => {
             </RadioGroup>
           </div>
 
+          {/* Mode présentation */}
+          <div className="flex items-center justify-between py-2">
+            <div>
+              <Label className="text-sm font-medium" style={{ color: COLORS.foreground }}>
+                Mode Présentation
+              </Label>
+              <p className="text-xs" style={{ color: COLORS.muted }}>
+                Arcs décoratifs en continuité
+              </p>
+            </div>
+            <Switch
+              checked={showDecorativeArc}
+              onCheckedChange={setShowDecorativeArc}
+            />
+          </div>
+
           {/* Info box */}
           <div 
             className="rounded-lg p-3 text-sm"
@@ -772,6 +1011,7 @@ const BrochurePDFExport = ({ brochure, onClose }: BrochurePDFExportProps) => {
             <strong style={{ color: COLORS.foreground }}>Format A4</strong> · {orientation === 'portrait' ? '210 × 297 mm' : '297 × 210 mm'}
             <br />
             Thème : {PDF_THEMES[pdfTheme].name}
+            {showDecorativeArc && <><br />✓ Mode présentation</>}
           </div>
 
           <div className="flex gap-2">
