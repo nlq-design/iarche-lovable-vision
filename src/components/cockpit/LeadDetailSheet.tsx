@@ -26,14 +26,27 @@ import {
   MessageSquare,
   Trash2,
   Save,
-  ExternalLink,
   User,
   Briefcase,
   Tag,
   FolderPlus,
   FolderOpen,
-  ChevronRight
+  ChevronRight,
+  Link2
 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -116,15 +129,16 @@ const INDUSTRIES = [
 
 export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetProps) {
   const { updateLead } = useCockpitLeads();
-  const { createProject } = useCockpitProjects();
+  const { createProject, projects } = useCockpitProjects();
   const { deleteLead } = useLeads();
   const navigate = useNavigate();
   const [formData, setFormData] = useState<Partial<Lead>>({});
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [linkProjectOpen, setLinkProjectOpen] = useState(false);
 
   // Fetch projects linked to this lead
-  const { data: linkedProjects = [] } = useQuery({
+  const { data: linkedProjects = [], refetch: refetchLinkedProjects } = useQuery({
     queryKey: ['lead-projects', lead?.id],
     queryFn: async () => {
       if (!lead?.id) return [];
@@ -138,6 +152,24 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
     },
     enabled: !!lead?.id,
   });
+
+  // Filter projects that are NOT already linked to this lead
+  const availableProjects = (projects || []).filter(
+    (p: any) => !linkedProjects.some((lp: any) => lp.id === p.id)
+  );
+
+  const handleLinkToProject = async (projectId: string) => {
+    if (!lead) return;
+    const { error } = await supabase
+      .from('projects')
+      .update({ lead_id: lead.id })
+      .eq('id', projectId);
+    
+    if (!error) {
+      refetchLinkedProjects();
+      setLinkProjectOpen(false);
+    }
+  };
 
   const handleCreateProject = async () => {
     if (!lead) return;
@@ -414,32 +446,66 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 pt-4 border-t">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={handleCreateProject}
-                disabled={createProject.isPending}
-              >
-                <FolderPlus className="h-4 w-4 mr-2" />
-                {createProject.isPending ? 'Création...' : 'Créer un projet'}
-              </Button>
-              <Button
-                variant="default"
-                className="flex-1"
-                onClick={handleSave}
-                disabled={!hasChanges || updateLead.isPending}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {updateLead.isPending ? 'Enregistrement...' : 'Enregistrer'}
-              </Button>
-              <Button
-                variant="destructive"
-                size="icon"
-                onClick={() => setShowDeleteDialog(true)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+            <div className="space-y-3 pt-4 border-t">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleCreateProject}
+                  disabled={createProject.isPending}
+                >
+                  <FolderPlus className="h-4 w-4 mr-2" />
+                  {createProject.isPending ? 'Création...' : 'Nouveau projet'}
+                </Button>
+                
+                <Popover open={linkProjectOpen} onOpenChange={setLinkProjectOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="flex-1" disabled={availableProjects.length === 0}>
+                      <Link2 className="h-4 w-4 mr-2" />
+                      Lier à un projet
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-0 w-[300px]" align="start">
+                    <Command>
+                      <CommandInput placeholder="Rechercher un projet..." />
+                      <CommandList>
+                        <CommandEmpty>Aucun projet disponible</CommandEmpty>
+                        <CommandGroup>
+                          {availableProjects.map((project: any) => (
+                            <CommandItem
+                              key={project.id}
+                              value={project.name}
+                              onSelect={() => handleLinkToProject(project.id)}
+                            >
+                              <FolderOpen className="h-4 w-4 mr-2 text-muted-foreground" />
+                              {project.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  variant="default"
+                  className="flex-1"
+                  onClick={handleSave}
+                  disabled={!hasChanges || updateLead.isPending}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {updateLead.isPending ? 'Enregistrement...' : 'Enregistrer'}
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => setShowDeleteDialog(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </SheetContent>
