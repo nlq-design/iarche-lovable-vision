@@ -8,6 +8,7 @@ import SolutionsCTASection from "@/components/sections/SolutionsCTASection";
 import NewsletterSection from "@/components/sections/NewsletterSection";
 import Footer from "@/components/layout/Footer";
 import BackgroundLayout from "@/components/layouts/BackgroundLayout";
+import GradientDivider from "@/components/ui/GradientDivider";
 import { Helmet } from "react-helmet";
 
 const Index = () => {
@@ -107,6 +108,7 @@ const Index = () => {
         <HeroSection />
         <AccrocheSection />
         <ServicesSection />
+        <GradientDivider height="sm" showLogo={true} />
         <PresentationSection />
         <ExemplesSection />
         <SolutionsCTASection />

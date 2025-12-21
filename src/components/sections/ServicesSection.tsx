@@ -30,20 +30,33 @@ const ServicesSection = () => {
           {services.map((service, index) => (
             <Card 
               key={index}
-              className="grid grid-rows-[auto_1fr_auto] bg-card border border-border rounded-lg shadow-sm hover:border-accent hover:shadow-lg transition-all duration-300 invisible animate-fadeIn"
+              className="relative grid grid-rows-[auto_1fr_auto] bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 invisible animate-fadeIn overflow-hidden"
               style={{ animationDelay: `${0.2 + index * 0.1}s` }}
             >
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold leading-none tracking-tight md:text-xl hero-gradient-text">
-                  {service.title}
-                </CardTitle>
+              {/* Bordure gradient à gauche */}
+              <div 
+                className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
+                style={{ background: 'linear-gradient(180deg, #1A2B4A 0%, #B04A32 100%)' }}
+              />
+              
+              <CardHeader className="pl-5">
+                <div className="flex items-center gap-2">
+                  {/* Badge gradient */}
+                  <div 
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ background: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)' }}
+                  />
+                  <CardTitle className="text-lg font-semibold leading-none tracking-tight md:text-xl hero-gradient-text">
+                    {service.title}
+                  </CardTitle>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pl-5">
                 <p className="text-muted-foreground">
                   {service.description}
                 </p>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="pl-5">
                 <a
                   href="/services"
                   className="flex items-center text-sm text-accent hover:text-accent/80 focus:text-accent/80 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 rounded transition-colors group"
