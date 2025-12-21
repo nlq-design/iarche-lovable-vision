@@ -265,67 +265,69 @@ const CockpitProjectDetail = () => {
 
   return (
     <CockpitLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-5 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/cockpit/projects')}>
-              <ArrowLeft className="h-5 w-5" />
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/cockpit/projects')}>
+              <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">{project.name || 'Nouveau projet'}</h1>
-              <p className="text-sm text-muted-foreground">
-                Créé le {project.created_at && format(new Date(project.created_at), 'dd MMMM yyyy', { locale: fr })}
+              <h1 className="text-xl font-semibold text-foreground">{project.name || 'Nouveau projet'}</h1>
+              <p className="text-xs text-muted-foreground">
+                Créé le {project.created_at && format(new Date(project.created_at), 'dd MMM yyyy', { locale: fr })}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Button
+              size="sm"
+              className="h-8 text-sm"
               onClick={handleSave}
               disabled={!hasChanges || updateProject.isPending}
             >
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="h-3.5 w-3.5 mr-1.5" />
               Enregistrer
             </Button>
-            <Button variant="destructive" size="icon" onClick={() => setShowDeleteDialog(true)}>
-              <Trash2 className="h-4 w-4" />
+            <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => setShowDeleteDialog(true)}>
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 h-auto">
-            <TabsTrigger value="overview" className="flex items-center gap-2 py-2">
-              <LayoutDashboard className="h-4 w-4" />
-              <span className="hidden sm:inline">Vue d'ensemble</span>
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-5 h-9">
+            <TabsTrigger value="overview" className="flex items-center gap-1.5 text-sm h-7">
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Aperçu</span>
             </TabsTrigger>
-            <TabsTrigger value="notes" className="flex items-center gap-2 py-2">
-              <StickyNote className="h-4 w-4" />
-              <span className="hidden sm:inline">Synthèses</span>
+            <TabsTrigger value="notes" className="flex items-center gap-1.5 text-sm h-7">
+              <StickyNote className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Notes</span>
               {(projectNotes?.length || 0) > 0 && (
-                <Badge variant="secondary" className="text-xs py-0 px-1.5">{projectNotes?.length}</Badge>
+                <Badge variant="secondary" className="text-xs py-0 px-1 h-4">{projectNotes?.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-2 py-2">
-              <FileUp className="h-4 w-4" />
-              <span className="hidden sm:inline">Documents</span>
+            <TabsTrigger value="documents" className="flex items-center gap-1.5 text-sm h-7">
+              <FileUp className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Docs</span>
               {(documents?.length || 0) > 0 && (
-                <Badge variant="secondary" className="text-xs py-0 px-1.5">{documents?.length}</Badge>
+                <Badge variant="secondary" className="text-xs py-0 px-1 h-4">{documents?.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="specs" className="flex items-center gap-2 py-2">
-              <FileText className="h-4 w-4" />
+            <TabsTrigger value="specs" className="flex items-center gap-1.5 text-sm h-7">
+              <FileText className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">CDC</span>
               {projectSpecs.length > 0 && (
-                <Badge variant="secondary" className="text-xs py-0 px-1.5">{projectSpecs.length}</Badge>
+                <Badge variant="secondary" className="text-xs py-0 px-1 h-4">{projectSpecs.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="activity" className="flex items-center gap-2 py-2">
-              <ListTodo className="h-4 w-4" />
+            <TabsTrigger value="activity" className="flex items-center gap-1.5 text-sm h-7">
+              <ListTodo className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Activité</span>
               {(projectTasks.length + projectMeetingNotes.length) > 0 && (
-                <Badge variant="secondary" className="text-xs py-0 px-1.5">
+                <Badge variant="secondary" className="text-xs py-0 px-1 h-4">
                   {projectTasks.length + projectMeetingNotes.length}
                 </Badge>
               )}
@@ -333,50 +335,50 @@ const CockpitProjectDetail = () => {
           </TabsList>
 
           {/* Overview Tab - Simplified */}
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Informations principales */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Edit3 className="h-5 w-5" />
-                    Informations du projet
+              <Card className="border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Edit3 className="h-4 w-4" />
+                    Informations
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Nom du projet *</Label>
+                <CardContent className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Nom du projet</Label>
                     <Input
                       value={formData.name || ''}
                       onChange={(e) => handleChange('name', e.target.value)}
                       placeholder="Nom du projet"
-                      className="text-lg font-medium"
+                      className="h-9"
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label>Description</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Description</Label>
                     <Textarea
                       value={formData.description || ''}
                       onChange={(e) => handleChange('description', e.target.value || null)}
-                      placeholder="Décrivez le projet, ses objectifs, son contexte..."
-                      className="min-h-[120px] resize-y"
+                      placeholder="Description..."
+                      className="min-h-[100px] resize-y text-sm"
                     />
                   </div>
                 </CardContent>
               </Card>
 
               {/* Contact lié */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Building2 className="h-5 w-5" />
-                    Contact & Entreprise
+              <Card className="border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    Contact
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Contact attribué</Label>
+                <CardContent className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Contact attribué</Label>
                     <LeadSelector
                       value={formData.lead_id || null}
                       onChange={(leadId) => handleChange('lead_id', leadId)}
@@ -384,31 +386,25 @@ const CockpitProjectDetail = () => {
                   </div>
                   
                   {linkedLead && (
-                    <div className="pt-2 space-y-3">
+                    <div className="pt-2 space-y-2">
                       <Separator />
-                      <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="grid grid-cols-2 gap-3 text-sm">
                         {linkedLead.company && (
                           <div>
-                            <p className="text-muted-foreground">Entreprise</p>
-                            <p className="font-medium">{linkedLead.company}</p>
+                            <p className="text-muted-foreground text-xs">Entreprise</p>
+                            <p className="font-medium text-sm">{linkedLead.company}</p>
                           </div>
                         )}
                         {linkedLead.industry && (
                           <div>
-                            <p className="text-muted-foreground">Secteur</p>
-                            <p className="font-medium">{linkedLead.industry}</p>
-                          </div>
-                        )}
-                        {linkedLead.company_size && (
-                          <div>
-                            <p className="text-muted-foreground">Taille</p>
-                            <p className="font-medium">{linkedLead.company_size}</p>
+                            <p className="text-muted-foreground text-xs">Secteur</p>
+                            <p className="font-medium text-sm">{linkedLead.industry}</p>
                           </div>
                         )}
                         {linkedLead.phone && (
                           <div>
-                            <p className="text-muted-foreground">Téléphone</p>
-                            <p className="font-medium">{linkedLead.phone}</p>
+                            <p className="text-muted-foreground text-xs">Téléphone</p>
+                            <p className="font-medium text-sm">{linkedLead.phone}</p>
                           </div>
                         )}
                       </div>
@@ -419,31 +415,33 @@ const CockpitProjectDetail = () => {
             </div>
 
             {/* Quick Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Résumé</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="p-4 rounded-lg bg-muted/50 text-center">
-                    <StickyNote className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-2xl font-bold">{projectNotes?.length || 0}</p>
-                    <p className="text-xs text-muted-foreground">Synthèses</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-muted/50 text-center">
-                    <FileUp className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-2xl font-bold">{documents?.length || 0}</p>
-                    <p className="text-xs text-muted-foreground">Documents</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-muted/50 text-center">
-                    <FileText className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-2xl font-bold">{projectSpecs.length}</p>
-                    <p className="text-xs text-muted-foreground">Cahiers des charges</p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-muted/50 text-center">
-                    <ListTodo className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-2xl font-bold">{projectTasks.length}</p>
-                    <p className="text-xs text-muted-foreground">Tâches</p>
+            <Card className="bg-muted/30 border">
+              <CardContent className="py-3 px-4">
+                <div className="flex items-center justify-between text-sm flex-wrap gap-4">
+                  <div className="flex items-center gap-5">
+                    <div className="flex items-center gap-2">
+                      <StickyNote className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Notes</span>
+                      <span className="font-semibold">{projectNotes?.length || 0}</span>
+                    </div>
+                    <div className="h-6 w-px bg-border" />
+                    <div className="flex items-center gap-2">
+                      <FileUp className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Documents</span>
+                      <span className="font-semibold">{documents?.length || 0}</span>
+                    </div>
+                    <div className="h-6 w-px bg-border" />
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">CDC</span>
+                      <span className="font-semibold">{projectSpecs.length}</span>
+                    </div>
+                    <div className="h-6 w-px bg-border" />
+                    <div className="flex items-center gap-2">
+                      <ListTodo className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Tâches</span>
+                      <span className="font-semibold">{projectTasks.length}</span>
+                    </div>
                   </div>
                 </div>
               </CardContent>

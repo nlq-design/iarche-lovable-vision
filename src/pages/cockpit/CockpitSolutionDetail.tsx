@@ -150,70 +150,67 @@ export default function CockpitSolutionDetail() {
 
   return (
     <CockpitLayout>
-      <div className="space-y-6">
+      <div className="p-5 space-y-4">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/cockpit/solutions")}>
-            <ArrowLeft className="h-5 w-5" />
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/cockpit/solutions")}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold">{solution.title}</h1>
-              <Badge variant={solution.published ? "default" : "secondary"}>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-semibold truncate">{solution.title}</h1>
+              <Badge variant={solution.published ? "default" : "secondary"} className="text-xs h-5 px-1.5">
                 {solution.published ? "Publiée" : "Brouillon"}
               </Badge>
             </div>
             {solution.excerpt && (
-              <p className="text-muted-foreground mt-1">{solution.excerpt}</p>
+              <p className="text-sm text-muted-foreground truncate">{solution.excerpt}</p>
             )}
           </div>
-          <Button variant="outline" asChild>
+          <Button variant="outline" size="sm" className="h-8 text-sm" asChild>
             <a href={`/solutions/${solution.slug}`} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Voir la page
+              <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+              Voir
             </a>
           </Button>
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="leads" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="leads" className="gap-2">
-              <Users className="h-4 w-4" />
-              Leads intéressés ({solutionLeads.length})
+        <Tabs defaultValue="leads" className="space-y-4">
+          <TabsList className="h-9">
+            <TabsTrigger value="leads" className="gap-1.5 text-sm h-7">
+              <Users className="h-3.5 w-3.5" />
+              Leads ({solutionLeads.length})
             </TabsTrigger>
-            <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+            <TabsTrigger value="overview" className="text-sm h-7">Aperçu</TabsTrigger>
           </TabsList>
 
           {/* Leads Tab */}
-          <TabsContent value="leads" className="space-y-4">
+          <TabsContent value="leads" className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Leads intéressés par cette solution</h2>
+              <h2 className="text-sm font-medium text-muted-foreground">Leads intéressés</h2>
               <Popover open={addLeadOpen} onOpenChange={setAddLeadOpen}>
                 <PopoverTrigger asChild>
-                  <Button disabled={availableLeads.length === 0}>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Ajouter un lead
+                  <Button size="sm" className="h-8 text-sm" disabled={availableLeads.length === 0}>
+                    <UserPlus className="h-3.5 w-3.5 mr-1.5" />
+                    Ajouter
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="p-0 w-[350px]" align="end">
+                <PopoverContent className="p-0 w-[300px]" align="end">
                   <Command>
-                    <CommandInput placeholder="Rechercher un lead..." />
+                    <CommandInput placeholder="Rechercher..." className="h-9" />
                     <CommandList>
-                      <CommandEmpty>Aucun lead disponible</CommandEmpty>
+                      <CommandEmpty>Aucun lead</CommandEmpty>
                       <CommandGroup>
                         {availableLeads.map((lead: any) => (
                           <CommandItem
                             key={lead.id}
                             value={`${lead.name} ${lead.email} ${lead.company || ''}`}
                             onSelect={() => handleAddLead(lead.id)}
-                            className="flex flex-col items-start gap-1 py-3"
+                            className="text-sm"
                           >
                             <span className="font-medium">{lead.name}</span>
-                            <span className="text-xs text-muted-foreground">{lead.email}</span>
-                            {lead.company && (
-                              <span className="text-xs text-muted-foreground">{lead.company}</span>
-                            )}
+                            <span className="text-xs text-muted-foreground ml-2">{lead.company || lead.email}</span>
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -228,32 +225,31 @@ export default function CockpitSolutionDetail() {
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : solutionLeads.length === 0 ? (
-              <Card>
+              <Card className="border">
                 <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Users className="h-10 w-10 text-muted-foreground mb-3" />
-                  <p className="font-medium text-muted-foreground">Aucun lead lié</p>
-                  <p className="text-sm text-muted-foreground">Ajoutez des leads intéressés par cette solution</p>
+                  <Users className="h-8 w-8 text-muted-foreground mb-2 opacity-50" />
+                  <p className="text-sm text-muted-foreground">Aucun lead lié</p>
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {solutionLeads.map((sl: any) => (
-                  <Card key={sl.id} className="hover:bg-muted/30 transition-colors">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
+                  <Card key={sl.id} className="border hover:bg-muted/30 transition-colors">
+                    <CardContent className="p-3">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold">{sl.lead?.name || 'Lead inconnu'}</h3>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium text-sm">{sl.lead?.name || 'Lead inconnu'}</h3>
                             <Select
                               value={sl.interest_level || 'interested'}
                               onValueChange={(v) => handleUpdateInterest(sl.id, v)}
                             >
-                              <SelectTrigger className="w-[140px] h-7 text-xs">
+                              <SelectTrigger className="w-[120px] h-6 text-xs">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
                                 {INTEREST_LEVELS.map(level => (
-                                  <SelectItem key={level.value} value={level.value}>
+                                  <SelectItem key={level.value} value={level.value} className="text-xs">
                                     {level.label}
                                   </SelectItem>
                                 ))}
@@ -261,17 +257,11 @@ export default function CockpitSolutionDetail() {
                             </Select>
                           </div>
                           
-                          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                             {sl.lead?.email && (
                               <span className="flex items-center gap-1">
                                 <Mail className="h-3 w-3" />
                                 {sl.lead.email}
-                              </span>
-                            )}
-                            {sl.lead?.phone && (
-                              <span className="flex items-center gap-1">
-                                <Phone className="h-3 w-3" />
-                                {sl.lead.phone}
                               </span>
                             )}
                             {sl.lead?.company && (
@@ -281,21 +271,15 @@ export default function CockpitSolutionDetail() {
                               </span>
                             )}
                           </div>
-
-                          {sl.created_at && (
-                            <p className="text-xs text-muted-foreground mt-2">
-                              Ajouté le {format(new Date(sl.created_at), 'dd MMM yyyy', { locale: fr })}
-                            </p>
-                          )}
                         </div>
 
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="text-destructive hover:text-destructive"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
                           onClick={() => setDeleteLink(sl.id)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </CardContent>
@@ -306,37 +290,37 @@ export default function CockpitSolutionDetail() {
           </TabsContent>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Informations</CardTitle>
+          <TabsContent value="overview" className="space-y-3">
+            <Card className="border">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Informations</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {solution.cover_image_url && (
                   <img
                     src={solution.cover_image_url}
                     alt={solution.title}
-                    className="w-full h-48 object-cover rounded-lg"
+                    className="w-full h-40 object-cover rounded-lg"
                   />
                 )}
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-sm text-muted-foreground">Créée le</p>
+                    <p className="text-muted-foreground text-xs">Créée le</p>
                     <p className="font-medium">
-                      {solution.created_at && format(new Date(solution.created_at), 'dd MMMM yyyy', { locale: fr })}
+                      {solution.created_at && format(new Date(solution.created_at), 'dd MMM yyyy', { locale: fr })}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Leads intéressés</p>
+                    <p className="text-muted-foreground text-xs">Leads</p>
                     <p className="font-medium">{solutionLeads.length}</p>
                   </div>
                 </div>
 
                 {solution.excerpt && (
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Description</p>
-                    <p>{solution.excerpt}</p>
+                    <p className="text-muted-foreground text-xs mb-1">Description</p>
+                    <p className="text-sm">{solution.excerpt}</p>
                   </div>
                 )}
               </CardContent>
