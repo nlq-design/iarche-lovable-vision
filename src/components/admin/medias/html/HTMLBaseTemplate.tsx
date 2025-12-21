@@ -50,8 +50,10 @@ export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps
     },
     ref
   ) => {
-    // v4.1: Utiliser getBackgroundColor pour tous les thèmes
-    const backgroundColor = getBackgroundColor(theme);
+    // v4.2: Utiliser getBackgroundColor pour tous les thèmes (inclut gradient)
+    const backgroundValue = getBackgroundColor(theme);
+    // Pour le thème gradient, on utilise 'background' au lieu de 'backgroundColor'
+    const isGradientTheme = theme === 'gradient';
 
     // Auto-calculate arch size based on smallest dimension
     const calculatedArchSize = archSize ?? Math.min(width, height) * 0.15;
@@ -70,7 +72,7 @@ export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps
       : null;
 
     // Couleur de l'arc selon le thème
-    const isDark = theme === 'dark' || theme === 'terra' || theme === 'contrast';
+    const isDark = theme === 'dark' || theme === 'terra' || theme === 'contrast' || theme === 'gradient';
     const arcColor = isDark ? '#ffffff' : IARCHE_COLORS.terracotta;
 
     // v4.3 - Mode continuité: multiplicateur de taille et offset négatif
@@ -128,7 +130,10 @@ export const HTMLBaseTemplate = forwardRef<HTMLDivElement, HTMLBaseTemplateProps
         style={{
           width: `${width}px`,
           height: `${height}px`,
-          backgroundColor,
+          ...(isGradientTheme 
+            ? { background: backgroundValue } 
+            : { backgroundColor: backgroundValue }
+          ),
           position: 'relative',
           overflow: 'hidden',
           fontFamily: IARCHE_FONTS.primary,
