@@ -1,20 +1,57 @@
+# Robots.txt optimisé pour IArche
+# Dernière mise à jour : 21/12/2025
+
+# Autoriser tous les robots
+User-agent: *
+Allow: /
+
+# Bloquer l'accès aux sections admin et techniques
+Disallow: /admin/
+Disallow: /admin
+Disallow: /api/
+Disallow: /_next/
+Disallow: /static/
+
+# Autoriser les crawlers principaux explicitement
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 1
 
 User-agent: Bingbot
 Allow: /
+Crawl-delay: 2
 
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+# Réseaux sociaux
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: *
+User-agent: LinkedInBot
 Allow: /
 
-# Bloquer l'accès admin
-Disallow: /admin/
+# Bloquer les bots malveillants connus
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
 
 # Sitemap dynamique (généré automatiquement avec tous les articles publiés)
 Sitemap: https://mgjyhlyrwnnioctkbdkk.supabase.co/functions/v1/generate-sitemap
+
+# Host canonique
+Host: https://iarche.fr
