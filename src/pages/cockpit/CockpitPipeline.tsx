@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, ArrowRight, Filter, GripVertical, Building2 } from "lucide-react";
+import { TrendingUp, ArrowRight, Filter, GripVertical, Building2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCockpitOpportunities } from '@/hooks/cockpit';
+import { CreateOpportunityDialog } from '@/components/cockpit/dialogs';
 import { Link } from 'react-router-dom';
 
 const STAGE_CONFIG: Record<string, { label: string; color: string }> = {
@@ -20,6 +21,7 @@ const STAGE_CONFIG: Record<string, { label: string; color: string }> = {
 const CockpitPipeline = () => {
   const { opportunities, stats, isLoading, moveToStage, PIPELINE_STAGES } = useCockpitOpportunities();
   const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   // Group opportunities by stage
   const opportunitiesByStage = PIPELINE_STAGES.reduce((acc, stage) => {
@@ -70,8 +72,14 @@ const CockpitPipeline = () => {
               <Filter className="h-4 w-4 mr-2" />
               Filtrer
             </Button>
+            <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nouvelle opportunité
+            </Button>
           </div>
         </div>
+
+        <CreateOpportunityDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
 
         {/* Pipeline Kanban */}
         {isLoading ? (
