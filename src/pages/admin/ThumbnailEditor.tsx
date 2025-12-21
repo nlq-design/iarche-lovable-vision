@@ -281,6 +281,7 @@ export default function ThumbnailEditor() {
                     <SelectItem value="light">Clair (Blanc Cassé)</SelectItem>
                     <SelectItem value="terra">Terra Nova (Terracotta)</SelectItem>
                     <SelectItem value="contrast">Contraste fort</SelectItem>
+                    <SelectItem value="gradient">Gradient (Style Email)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
