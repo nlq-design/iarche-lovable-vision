@@ -1922,6 +1922,48 @@ export type Database = {
         }
         Relationships: []
       }
+      solution_leads: {
+        Row: {
+          created_at: string | null
+          id: string
+          interest_level: string | null
+          lead_id: string
+          notes: string | null
+          solution_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          interest_level?: string | null
+          lead_id: string
+          notes?: string | null
+          solution_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          interest_level?: string | null
+          lead_id?: string
+          notes?: string | null
+          solution_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solution_leads_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solution_leads_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       specifications: {
         Row: {
           ai_generated: boolean | null

@@ -23,6 +23,7 @@ export { useCockpitSpecifications, SPECIFICATION_STATUSES } from './useCockpitSp
 export { useCockpitActivityLog, ACTIVITY_TYPES } from './useCockpitActivityLog';
 export { useCockpitProjectDocuments } from './useCockpitProjectDocuments';
 export { useCockpitProjectNotes } from './useCockpitProjectNotes';
+export { useCockpitSolutionLeads } from './useCockpitSolutionLeads';
 
 // Ré-exporter les hooks partagés pour faciliter les imports
 export { useBookings, useBookingTypes, BOOKING_QUERY_KEY } from '@/hooks/shared/useBookings';
