@@ -2000,9 +2000,15 @@ export type Database = {
           content: Json | null
           created_at: string | null
           created_by: string | null
+          file_name: string | null
+          file_size_bytes: number | null
+          file_type: string | null
+          file_url: string | null
           id: string
           project_id: string | null
+          solution_id: string | null
           status: string
+          tags: string[] | null
           title: string
           updated_at: string | null
           version: string | null
@@ -2016,9 +2022,15 @@ export type Database = {
           content?: Json | null
           created_at?: string | null
           created_by?: string | null
+          file_name?: string | null
+          file_size_bytes?: number | null
+          file_type?: string | null
+          file_url?: string | null
           id?: string
           project_id?: string | null
+          solution_id?: string | null
           status?: string
+          tags?: string[] | null
           title: string
           updated_at?: string | null
           version?: string | null
@@ -2032,9 +2044,15 @@ export type Database = {
           content?: Json | null
           created_at?: string | null
           created_by?: string | null
+          file_name?: string | null
+          file_size_bytes?: number | null
+          file_type?: string | null
+          file_url?: string | null
           id?: string
           project_id?: string | null
+          solution_id?: string | null
           status?: string
+          tags?: string[] | null
           title?: string
           updated_at?: string | null
           version?: string | null
@@ -2046,6 +2064,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "specifications_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
             referencedColumns: ["id"]
           },
           {
