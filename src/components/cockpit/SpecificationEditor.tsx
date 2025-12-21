@@ -91,21 +91,6 @@ const getFileIcon = (fileType: string | null) => {
 
 export const SpecificationEditor = ({ projectId, specifications }: SpecificationEditorProps) => {
   const { createSpecification, updateSpecification, approveSpecification, deleteSpecification } = useCockpitSpecifications();
-  
-  // Fetch solutions for linking
-  const { data: solutions = [] } = useQuery({
-    queryKey: ["solutions-for-spec"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("articles")
-        .select("id, title")
-        .eq("resource_type", "solution")
-        .eq("published", true)
-        .order("title");
-      if (error) throw error;
-      return data;
-    },
-  });
 
   // Dialog states
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -124,7 +109,6 @@ export const SpecificationEditor = ({ projectId, specifications }: Specification
   const [newFile, setNewFile] = useState<File | null>(null);
   const [newTags, setNewTags] = useState<string[]>([]);
   const [newTagInput, setNewTagInput] = useState("");
-  const [newSolutionId, setNewSolutionId] = useState<string>("");
   
   // Form states - Edit
   const [editTitle, setEditTitle] = useState("");
@@ -134,7 +118,6 @@ export const SpecificationEditor = ({ projectId, specifications }: Specification
   const [editFile, setEditFile] = useState<File | null>(null);
   const [editTags, setEditTags] = useState<string[]>([]);
   const [editTagInput, setEditTagInput] = useState("");
-  const [editSolutionId, setEditSolutionId] = useState<string>("");
 
   const uploadFile = async (file: File, specId: string): Promise<{ url: string; name: string; size: number; type: string }> => {
     const fileExt = file.name.split('.').pop();

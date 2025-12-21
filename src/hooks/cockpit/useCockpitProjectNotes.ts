@@ -12,6 +12,7 @@ export interface ProjectNote {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  tags: string[] | null;
 }
 
 type ProjectNoteInsert = Omit<ProjectNote, 'id' | 'created_at' | 'updated_at'>;
