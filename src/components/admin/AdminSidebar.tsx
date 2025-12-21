@@ -24,7 +24,8 @@ import {
   Building2,
   Calendar,
   Rocket,
-  FileDown
+  FileDown,
+  Gauge
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
@@ -42,6 +43,12 @@ import {
 } from '@/components/ui/sidebar';
 
 const navigationItems = [
+  {
+    group: 'Commercial',
+    items: [
+      { title: 'Cockpit Commercial', url: '/cockpit', icon: Gauge, highlight: true },
+    ]
+  },
   {
     group: 'Vue d\'ensemble',
     items: [
@@ -140,8 +147,9 @@ export function AdminSidebar() {
               
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {section.items.map((item) => {
+                {section.items.map((item) => {
                     const active = isActive(item.url, item.exact);
+                    const isHighlight = 'highlight' in item && item.highlight;
                     
                     return (
                       <SidebarMenuItem key={item.title}>
@@ -149,11 +157,19 @@ export function AdminSidebar() {
                           <NavLink
                             to={item.url}
                             end={item.exact ? true : undefined}
-                            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/50 transition-colors"
+                            className={`flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors ${
+                              isHighlight 
+                                ? 'bg-gradient-to-r from-primary/20 to-primary/10 hover:from-primary/30 hover:to-primary/20 border border-primary/20' 
+                                : 'hover:bg-muted/50'
+                            }`}
                             activeClassName="bg-primary/10 text-primary font-medium"
                           >
-                            <item.icon className="h-4 w-4 flex-shrink-0" />
-                            {!isCollapsed && <span className="text-sm">{item.title}</span>}
+                            <item.icon className={`h-4 w-4 flex-shrink-0 ${isHighlight ? 'text-primary' : ''}`} />
+                            {!isCollapsed && (
+                              <span className={`text-sm ${isHighlight ? 'font-medium text-primary' : ''}`}>
+                                {item.title}
+                              </span>
+                            )}
                           </NavLink>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
