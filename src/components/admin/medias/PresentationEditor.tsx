@@ -298,16 +298,17 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
     const originalSlide = currentSlide;
     
     try {
-      // Format présentation: paysage 16:9 -> A4 paysage
-      const pageWidth = 297; // mm
-      const pageHeight = 210; // mm
+      // Format présentation: paysage 16:9 - page personnalisée pour éviter barres blanches
       const captureWidth = 1920;
       const captureHeight = 1080;
+      // Format 16:9 en mm (ex: 320x180mm)
+      const pageWidth = 320; // mm (ratio 16:9)
+      const pageHeight = 180; // mm
       
       const pdfDoc = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
-        format: 'a4',
+        format: [pageWidth, pageHeight],
       });
 
       // Créer un container de capture hors-écran avec dimensions fixes

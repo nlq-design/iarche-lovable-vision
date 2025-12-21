@@ -294,16 +294,18 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
     const originalSlide = currentSlide;
     
     try {
-      // Format carousel: portrait 4:5 -> A4 portrait
-      const pageWidth = 210; // mm
-      const pageHeight = 297; // mm
+      // Format carousel: portrait 4:5 ratio - page personnalisée pour éviter barres blanches
       const captureWidth = 1080;
       const captureHeight = 1350;
+      // Convertir pixels en mm (à 96 DPI) puis ajuster pour format imprimable
+      // On utilise une taille de page qui correspond au ratio 4:5
+      const pageWidth = 200; // mm (ratio 4:5 = 200:250)
+      const pageHeight = 250; // mm
       
       const pdfDoc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: 'a4',
+        format: [pageWidth, pageHeight],
       });
 
       // Créer un container de capture hors-écran avec dimensions fixes
@@ -492,24 +494,8 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
           pdfDoc.addPage();
         }
 
-        // Calculer dimensions pour centrer sur la page A4
-        const imgAspect = captureWidth / captureHeight;
-        const pageAspect = pageWidth / pageHeight;
-        
-        let finalWidth = pageWidth;
-        let finalHeight = pageHeight;
-        let offsetX = 0;
-        let offsetY = 0;
-
-        if (imgAspect > pageAspect) {
-          finalHeight = pageWidth / imgAspect;
-          offsetY = (pageHeight - finalHeight) / 2;
-        } else {
-          finalWidth = pageHeight * imgAspect;
-          offsetX = (pageWidth - finalWidth) / 2;
-        }
-
-        pdfDoc.addImage(dataUrl, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
+        // Image plein format (page = même ratio que l'image)
+        pdfDoc.addImage(dataUrl, 'PNG', 0, 0, pageWidth, pageHeight);
       }
 
       // Nettoyer
