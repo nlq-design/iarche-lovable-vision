@@ -29,11 +29,14 @@ import {
   ExternalLink,
   User,
   Briefcase,
-  Tag
+  Tag,
+  FolderPlus
 } from "lucide-react";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 import { useCockpitLeads } from '@/hooks/cockpit';
+import { useCockpitProjects } from '@/hooks/cockpit';
 import { useLeads } from '@/hooks/shared/useLeads';
 import {
   AlertDialog,
@@ -109,10 +112,26 @@ const INDUSTRIES = [
 
 export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetProps) {
   const { updateLead } = useCockpitLeads();
+  const { createProject } = useCockpitProjects();
   const { deleteLead } = useLeads();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<Partial<Lead>>({});
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+
+  const handleCreateProject = async () => {
+    if (!lead) return;
+    const newProject = await createProject.mutateAsync({
+      name: `Projet - ${lead.company || lead.name}`,
+      status: 'planning',
+      health_status: 'on_track',
+      lead_id: lead.id,
+    } as any);
+    if (newProject) {
+      onOpenChange(false);
+      navigate(`/cockpit/projects/${newProject.id}`);
+    }
+  };
 
   useEffect(() => {
     if (lead) {
@@ -344,6 +363,15 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
 
             {/* Actions */}
             <div className="flex gap-3 pt-4 border-t">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={handleCreateProject}
+                disabled={createProject.isPending}
+              >
+                <FolderPlus className="h-4 w-4 mr-2" />
+                {createProject.isPending ? 'Création...' : 'Créer un projet'}
+              </Button>
               <Button
                 variant="default"
                 className="flex-1"
