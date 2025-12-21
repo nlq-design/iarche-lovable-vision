@@ -43,8 +43,8 @@ const navigationItems = [
   {
     group: 'Projets',
     items: [
-      { title: 'Projets', url: '/cockpit/projets', icon: FolderKanban },
-      { title: 'Cahiers des charges', url: '/cockpit/cahiers-des-charges', icon: FileText },
+      { title: 'Projets', url: '/cockpit/projects', icon: FolderKanban },
+      { title: 'Cahiers des charges', url: '/cockpit/specifications', icon: FileText },
     ]
   },
   {
