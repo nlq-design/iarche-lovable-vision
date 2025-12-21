@@ -1,31 +1,19 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import type { Database } from "@/integrations/supabase/types";
+import { useBookings, BOOKING_QUERY_KEY } from "@/hooks/shared/useBookings";
+import { startOfWeek, endOfWeek, isAfter, isBefore } from "date-fns";
 
-type Booking = Database["public"]["Tables"]["bookings"]["Row"];
-type BookingInsert = Database["public"]["Tables"]["bookings"]["Insert"];
-type BookingUpdate = Database["public"]["Tables"]["bookings"]["Update"];
-
+/**
+ * Hook Cockpit pour les rendez-vous
+ * ÉTEND useBookings avec fonctionnalités cockpit-specific
+ * 
+ * @see docs/COCKPIT_DEV_CHARTER.md
+ */
 export const useCockpitBookings = () => {
-  const queryClient = useQueryClient();
+  // Réutilise le hook partagé
+  const baseHook = useBookings();
 
-  const { data: bookings = [], isLoading, error, refetch } = useQuery({
-    queryKey: ["cockpit-bookings"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("bookings")
-        .select(`
-          *,
-          booking_type:booking_types(*)
-        `)
-        .order("start_time", { ascending: true });
-      
-      if (error) throw error;
-      return data;
-    },
-  });
-
+  // Hook pour les RDV d'aujourd'hui
   const useTodayBookings = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -33,133 +21,74 @@ export const useCockpitBookings = () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     return useQuery({
-      queryKey: ["cockpit-bookings-today"],
+      queryKey: [BOOKING_QUERY_KEY, "today"],
       queryFn: async () => {
         const { data, error } = await supabase
           .from("bookings")
-          .select(`*, booking_type:booking_types(*)`)
+          .select(`*, booking_types (id, name, slug, duration_minutes, color)`)
           .gte("start_time", today.toISOString())
           .lt("start_time", tomorrow.toISOString())
           .neq("status", "cancelled")
           .order("start_time", { ascending: true });
-        
+
         if (error) throw error;
         return data;
       },
     });
   };
 
-  const useUpcomingBookings = (limit = 10) => {
+  // Hook pour les prochains RDV
+  const useUpcomingBookings = (limit: number = 10) => {
     return useQuery({
-      queryKey: ["cockpit-bookings-upcoming", limit],
+      queryKey: [BOOKING_QUERY_KEY, "upcoming", limit],
       queryFn: async () => {
         const { data, error } = await supabase
           .from("bookings")
-          .select(`*, booking_type:booking_types(*)`)
+          .select(`*, booking_types (id, name, slug, duration_minutes, color)`)
           .gte("start_time", new Date().toISOString())
           .neq("status", "cancelled")
           .order("start_time", { ascending: true })
           .limit(limit);
-        
+
         if (error) throw error;
         return data;
       },
     });
   };
 
-  const createBooking = useMutation({
-    mutationFn: async (booking: BookingInsert) => {
-      const { data, error } = await supabase
-        .from("bookings")
-        .insert(booking)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cockpit-bookings"] });
-      toast.success("Rendez-vous créé");
-    },
-    onError: (error) => {
-      toast.error("Erreur lors de la création du RDV");
-      console.error(error);
-    },
-  });
-
-  const updateBooking = useMutation({
-    mutationFn: async ({ id, ...updates }: BookingUpdate & { id: string }) => {
-      const { data, error } = await supabase
-        .from("bookings")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cockpit-bookings"] });
-      toast.success("Rendez-vous mis à jour");
-    },
-    onError: (error) => {
-      toast.error("Erreur lors de la mise à jour");
-      console.error(error);
-    },
-  });
-
-  const cancelBooking = useMutation({
-    mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
-      const { data, error } = await supabase
-        .from("bookings")
-        .update({ 
-          status: "cancelled", 
-          cancelled_at: new Date().toISOString(),
-          cancellation_reason: reason 
-        })
-        .eq("id", id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cockpit-bookings"] });
-      toast.success("Rendez-vous annulé");
-    },
-    onError: (error) => {
-      toast.error("Erreur lors de l'annulation");
-      console.error(error);
-    },
-  });
-
-  // Stats
+  // Stats enrichies pour le cockpit
   const now = new Date();
-  const stats = {
-    total: bookings.length,
-    upcoming: bookings.filter(b => new Date(b.start_time) > now && b.status !== "cancelled").length,
-    completed: bookings.filter(b => b.status === "completed").length,
-    cancelled: bookings.filter(b => b.status === "cancelled").length,
-    thisWeek: bookings.filter(b => {
+  const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+
+  const cockpitStats = {
+    ...baseHook.stats,
+    thisWeek: baseHook.bookings.filter((b) => {
       const bookingDate = new Date(b.start_time);
-      const weekFromNow = new Date(now);
-      weekFromNow.setDate(weekFromNow.getDate() + 7);
-      return bookingDate >= now && bookingDate <= weekFromNow && b.status !== "cancelled";
+      return (
+        isAfter(bookingDate, weekStart) &&
+        isBefore(bookingDate, weekEnd) &&
+        b.status !== "cancelled"
+      );
     }).length,
   };
 
   return {
-    bookings,
-    isLoading,
-    error,
-    refetch,
-    stats,
-    createBooking,
-    updateBooking,
-    cancelBooking,
+    // Données de base depuis le hook partagé
+    bookings: baseHook.bookings,
+    isLoading: baseHook.isLoading,
+    error: baseHook.error,
+    refetch: baseHook.refetch,
+    
+    // Stats enrichies
+    stats: cockpitStats,
+    
+    // Mutations du hook partagé
+    createBooking: baseHook.createBooking,
+    updateBooking: baseHook.updateBooking,
+    cancelBooking: baseHook.cancelBooking,
+    
+    // Hooks cockpit-specific
     useTodayBookings,
     useUpcomingBookings,
   };
