@@ -174,13 +174,25 @@ const Services = () => {
             {services.map((service, index) => (
               <Card 
                 key={service.id}
-                className="animate-fadeIn hover:shadow-lg transition-shadow duration-300"
+                className="relative animate-fadeIn hover:shadow-lg transition-shadow duration-300 overflow-hidden"
                 style={{ animationDelay: `${0.3 + index * 0.1}s` }}
               >
-                <CardHeader>
-                  <CardTitle className="text-2xl md:text-3xl text-primary">
-                    {service.title}
-                  </CardTitle>
+                {/* Bordure gradient à gauche */}
+                <div 
+                  className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
+                  style={{ background: 'linear-gradient(180deg, #1A2B4A 0%, #B04A32 100%)' }}
+                />
+                <CardHeader className="pl-5">
+                  <div className="flex items-center gap-2">
+                    {/* Badge gradient */}
+                    <div 
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ background: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)' }}
+                    />
+                    <CardTitle className="text-2xl md:text-3xl text-primary">
+                      {service.title}
+                    </CardTitle>
+                  </div>
                   <CardDescription className="text-base md:text-lg mt-2">
                     {service.description}
                   </CardDescription>
