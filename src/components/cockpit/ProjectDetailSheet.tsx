@@ -49,6 +49,7 @@ import { fr } from 'date-fns/locale';
 import { useCockpitProjects } from '@/hooks/cockpit';
 import { useCockpitTasks } from '@/hooks/cockpit/useCockpitTasks';
 import { useCockpitMeetingNotes } from '@/hooks/cockpit/useCockpitMeetingNotes';
+import { useCockpitSpecifications } from '@/hooks/cockpit/useCockpitSpecifications';
 import { ProjectTimeline } from './ProjectTimeline';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -78,6 +79,9 @@ export function ProjectDetailSheet({ project, open, onOpenChange }: ProjectDetai
   const { updateProject, updateStatus, updateHealthStatus, deleteProject } = useCockpitProjects();
   const { tasks } = useCockpitTasks();
   const { meetingNotes } = useCockpitMeetingNotes();
+  const { useSpecificationsByProject } = useCockpitSpecifications();
+  
+  const { data: projectSpecs = [] } = useSpecificationsByProject(project?.id || '');
   
   const [formData, setFormData] = useState<Partial<Project>>({});
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -171,8 +175,16 @@ export function ProjectDetailSheet({ project, open, onOpenChange }: ProjectDetai
           </SheetHeader>
 
           <Tabs defaultValue="details" className="mt-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="details">Détails</TabsTrigger>
+              <TabsTrigger value="specs">
+                CDC
+                {projectSpecs.length > 0 && (
+                  <Badge variant="secondary" className="ml-1.5 text-xs py-0 px-1.5">
+                    {projectSpecs.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
               <TabsTrigger value="tasks">
                 Tâches
                 {projectTasks.length > 0 && (
@@ -341,6 +353,49 @@ export function ProjectDetailSheet({ project, open, onOpenChange }: ProjectDetai
                   </p>
                 </div>
               </div>
+            </TabsContent>
+
+            {/* Specifications Tab */}
+            <TabsContent value="specs" className="mt-4">
+              {projectSpecs.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <FileText className="h-10 w-10 mb-3 opacity-50" />
+                  <p className="font-medium">Aucun cahier des charges</p>
+                  <p className="text-sm">Les CDC liés à ce projet apparaîtront ici</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {projectSpecs.map(spec => (
+                    <div 
+                      key={spec.id}
+                      className="p-3 border rounded-lg"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium">{spec.title}</h4>
+                        <Badge variant={
+                          spec.status === 'approved' ? 'default' :
+                          spec.status === 'in_review' ? 'secondary' : 'outline'
+                        }>
+                          {spec.status === 'approved' ? 'Approuvé' :
+                           spec.status === 'in_review' ? 'En révision' :
+                           spec.status === 'archived' ? 'Archivé' : 'Brouillon'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>v{spec.version}</span>
+                        {spec.updated_at && (
+                          <span>
+                            Modifié le {format(new Date(spec.updated_at), 'dd MMM yyyy', { locale: fr })}
+                          </span>
+                        )}
+                        {spec.ai_generated && (
+                          <Badge variant="outline" className="text-xs">IA</Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             {/* Tasks Tab */}
