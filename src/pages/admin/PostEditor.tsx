@@ -361,6 +361,8 @@ export default function PostEditor() {
   const subtextColor = (theme === 'dark' || theme === 'terra' || theme === 'contrast' || theme === 'gradient') 
     ? IARCHE_COLORS.blancCasse 
     : IARCHE_COLORS.grey;
+  // v4.2 Règle d'or: CTA en blanc cassé sur gradient, sinon terracotta
+  const ctaColor = theme === 'gradient' ? IARCHE_COLORS.blancCasse : IARCHE_COLORS.terracotta;
 
   // Logo discret helper (petit logo sans arc, en coin)
   const renderLogoDiscret = (position: 'top-right' | 'bottom-right' = 'bottom-right') => (
@@ -536,7 +538,7 @@ export default function PostEditor() {
                   height: '120px',
                   borderRadius: '50%',
                   overflow: 'hidden',
-                  border: `3px solid ${IARCHE_COLORS.terracotta}`,
+                  border: `3px solid ${ctaColor}`,
                   flexShrink: 0,
                 }}>
                   <img src={temoinPhoto} alt={temoinNom} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -570,7 +572,7 @@ export default function PostEditor() {
                   fontFamily: IARCHE_FONTS.primary,
                   fontSize: '18px',
                   fontWeight: 400,
-                  color: IARCHE_COLORS.terracotta,
+                  color: ctaColor,
                 }}>
                   {temoinFonction}
                 </span>
@@ -622,7 +624,7 @@ export default function PostEditor() {
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: format === 'square' ? '120px' : '80px',
                 fontWeight: 800,
-                color: IARCHE_COLORS.terracotta,
+                color: ctaColor,
                 lineHeight: 1,
                 opacity: 0.3,
               }}>
@@ -679,7 +681,7 @@ export default function PostEditor() {
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: Math.max(14, Math.round(width * 0.015)) + 'px',
                 fontWeight: 600,
-                color: IARCHE_COLORS.terracotta,
+                color: ctaColor,
                 textTransform: 'uppercase',
                 letterSpacing: '0.15em',
               }}>
@@ -755,7 +757,7 @@ export default function PostEditor() {
               fontFamily: IARCHE_FONTS.primary,
               fontSize: '16px',
               fontWeight: 500,
-              color: IARCHE_COLORS.terracotta,
+              color: ctaColor,
               textAlign: 'center',
             }}>
               iarche.fr
