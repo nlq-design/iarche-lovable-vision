@@ -44,6 +44,11 @@ import {
   Edit3,
   ExternalLink,
   Clock,
+  Users,
+  Mail,
+  Phone,
+  Globe,
+  Target,
 } from "lucide-react";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -334,15 +339,15 @@ const CockpitProjectDetail = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab - Simplified */}
+          {/* Overview Tab - Enrichi */}
           <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Informations principales */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Informations projet */}
               <Card className="border">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Edit3 className="h-4 w-4" />
-                    Informations
+                    Projet
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -355,24 +360,35 @@ const CockpitProjectDetail = () => {
                       className="h-9"
                     />
                   </div>
-                  
                   <div className="space-y-1.5">
                     <Label className="text-xs">Description</Label>
                     <Textarea
                       value={formData.description || ''}
                       onChange={(e) => handleChange('description', e.target.value || null)}
                       placeholder="Description..."
-                      className="min-h-[100px] resize-y text-sm"
+                      className="min-h-[80px] resize-y text-sm"
                     />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Statut</p>
+                      <Badge variant="outline" className="mt-1">{project.status}</Badge>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Santé</p>
+                      <Badge variant={project.health_status === 'on_track' ? 'default' : 'destructive'} className="mt-1">
+                        {project.health_status === 'on_track' ? 'En bonne voie' : project.health_status}
+                      </Badge>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Contact lié */}
+              {/* Contact principal */}
               <Card className="border">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
+                    <Users className="h-4 w-4" />
                     Contact
                   </CardTitle>
                 </CardHeader>
@@ -386,27 +402,183 @@ const CockpitProjectDetail = () => {
                   </div>
                   
                   {linkedLead && (
-                    <div className="pt-2 space-y-2">
-                      <Separator />
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        {linkedLead.company && (
-                          <div>
-                            <p className="text-muted-foreground text-xs">Entreprise</p>
-                            <p className="font-medium text-sm">{linkedLead.company}</p>
-                          </div>
+                    <div className="pt-2 space-y-2 border-t">
+                      <div className="pt-2">
+                        <p className="font-medium text-sm">{linkedLead.name}</p>
+                        {(linkedLead as any).position && (
+                          <p className="text-xs text-muted-foreground">{(linkedLead as any).position}</p>
                         )}
-                        {linkedLead.industry && (
-                          <div>
-                            <p className="text-muted-foreground text-xs">Secteur</p>
-                            <p className="font-medium text-sm">{linkedLead.industry}</p>
-                          </div>
+                      </div>
+                      <div className="grid grid-cols-1 gap-2 text-sm">
+                        {linkedLead.email && (
+                          <a href={`mailto:${linkedLead.email}`} className="flex items-center gap-2 text-primary hover:underline text-xs">
+                            <Mail className="h-3 w-3" />
+                            {linkedLead.email}
+                          </a>
                         )}
                         {linkedLead.phone && (
+                          <a href={`tel:${linkedLead.phone}`} className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-xs">
+                            <Phone className="h-3 w-3" />
+                            {linkedLead.phone}
+                          </a>
+                        )}
+                        {(linkedLead as any).linkedin_url && (
+                          <a href={(linkedLead as any).linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-600 hover:underline text-xs">
+                            <ExternalLink className="h-3 w-3" />
+                            LinkedIn
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Société */}
+              <Card className="border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    Société
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {linkedLead ? (
+                    <div className="space-y-3">
+                      <div>
+                        <p className="font-medium">{linkedLead.company || 'Non renseigné'}</p>
+                        {(linkedLead as any).siret && (
+                          <p className="text-xs text-muted-foreground">SIRET: {(linkedLead as any).siret}</p>
+                        )}
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        {linkedLead.industry && (
                           <div>
-                            <p className="text-muted-foreground text-xs">Téléphone</p>
-                            <p className="font-medium text-sm">{linkedLead.phone}</p>
+                            <p className="text-muted-foreground">Secteur</p>
+                            <p className="font-medium">{linkedLead.industry}</p>
                           </div>
                         )}
+                        {linkedLead.company_size && (
+                          <div>
+                            <p className="text-muted-foreground">Taille</p>
+                            <p className="font-medium">{linkedLead.company_size}</p>
+                          </div>
+                        )}
+                        {(linkedLead as any).revenue_range && (
+                          <div className="col-span-2">
+                            <p className="text-muted-foreground">CA estimé</p>
+                            <p className="font-medium">{(linkedLead as any).revenue_range}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {((linkedLead as any).address || (linkedLead as any).city) && (
+                        <div className="pt-2 border-t text-xs">
+                          <p className="text-muted-foreground mb-1">Adresse</p>
+                          <p>{(linkedLead as any).address}</p>
+                          <p>{(linkedLead as any).postal_code} {(linkedLead as any).city}</p>
+                          <p>{(linkedLead as any).country}</p>
+                        </div>
+                      )}
+
+                      {(linkedLead as any).website && (
+                        <a 
+                          href={(linkedLead as any).website.startsWith('http') ? (linkedLead as any).website : `https://${(linkedLead as any).website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-primary hover:underline text-xs pt-2 border-t"
+                        >
+                          <Globe className="h-3 w-3" />
+                          {(linkedLead as any).website}
+                        </a>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Sélectionnez un contact pour voir les infos société
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Budget & Timeline */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Card className="border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Planning
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Début</p>
+                      <p className="font-medium">
+                        {project.start_date 
+                          ? format(new Date(project.start_date), 'dd MMM yyyy', { locale: fr })
+                          : 'Non défini'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Échéance</p>
+                      <p className="font-medium">
+                        {project.target_end_date 
+                          ? format(new Date(project.target_end_date), 'dd MMM yyyy', { locale: fr })
+                          : 'Non définie'}
+                      </p>
+                    </div>
+                  </div>
+                  {project.actual_end_date && (
+                    <div className="pt-2 border-t">
+                      <p className="text-xs text-muted-foreground">Terminé le</p>
+                      <p className="font-medium text-sm">
+                        {format(new Date(project.actual_end_date), 'dd MMM yyyy', { locale: fr })}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Target className="h-4 w-4" />
+                    Budget
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Budget alloué</p>
+                      <p className="font-semibold text-lg">
+                        {project.budget_amount 
+                          ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(Number(project.budget_amount))
+                          : '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Consommé</p>
+                      <p className="font-semibold text-lg">
+                        {project.consumed_amount 
+                          ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(Number(project.consumed_amount))
+                          : '0 €'}
+                      </p>
+                    </div>
+                  </div>
+                  {project.budget_amount && Number(project.budget_amount) > 0 && (
+                    <div className="pt-2">
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-muted-foreground">Progression</span>
+                        <span>{Math.round((Number(project.consumed_amount || 0) / Number(project.budget_amount)) * 100)}%</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary rounded-full transition-all"
+                          style={{ width: `${Math.min(100, (Number(project.consumed_amount || 0) / Number(project.budget_amount)) * 100)}%` }}
+                        />
                       </div>
                     </div>
                   )}
