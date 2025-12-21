@@ -8,8 +8,13 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCockpitProjects } from '@/hooks/cockpit';
 import { CreateProjectDialog } from '@/components/cockpit/dialogs';
+import { ProjectDetailSheet } from '@/components/cockpit/ProjectDetailSheet';
+import { ProjectTimeline } from '@/components/cockpit/ProjectTimeline';
 import { format, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import type { Database } from '@/integrations/supabase/types';
+
+type Project = Database['public']['Tables']['projects']['Row'];
 
 const STATUS_CONFIG: Record<string, { label: string; icon: typeof Clock; color: string }> = {
   planning: { label: 'Planification', icon: Clock, color: 'text-slate-600' },
@@ -28,6 +33,7 @@ const HEALTH_CONFIG: Record<string, { label: string; color: string }> = {
 const CockpitProjects = () => {
   const { projects, stats, isLoading } = useCockpitProjects();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   const activeProjects = projects?.filter(p => 
     p.status === 'in_progress' || p.status === 'planning'
@@ -62,8 +68,11 @@ const CockpitProjects = () => {
         </div>
 
         <CreateProjectDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
-
-        {/* Stats */}
+        <ProjectDetailSheet 
+          project={selectedProject} 
+          open={!!selectedProject} 
+          onOpenChange={(open) => !open && setSelectedProject(null)} 
+        />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: 'En cours', value: stats.active, icon: Clock, color: 'text-blue-600' },
@@ -125,6 +134,7 @@ const CockpitProjects = () => {
                     <div 
                       key={project.id}
                       className="p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => setSelectedProject(project)}
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
@@ -140,6 +150,19 @@ const CockpitProjects = () => {
                           {statusConfig.label}
                         </Badge>
                       </div>
+
+                      {/* Timeline inline */}
+                      {project.start_date && project.target_end_date && (
+                        <div className="mb-4">
+                          <ProjectTimeline
+                            startDate={project.start_date}
+                            targetEndDate={project.target_end_date}
+                            actualEndDate={project.actual_end_date}
+                            status={project.status}
+                            healthStatus={project.health_status}
+                          />
+                        </div>
+                      )}
 
                       <div className="grid grid-cols-3 gap-4 text-sm">
                         <div>
