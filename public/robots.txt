@@ -51,6 +51,7 @@ User-agent: DotBot
 Disallow: /
 
 # Sitemap dynamique (généré automatiquement avec tous les articles publiés)
+# Note: URL directe vers l'edge function car pas de proxy configuré
 Sitemap: https://mgjyhlyrwnnioctkbdkk.supabase.co/functions/v1/generate-sitemap
 
 # Host canonique
