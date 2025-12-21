@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FolderKanban, Clock, CheckCircle2, AlertCircle, PauseCircle, Calendar, Users, Plus } from "lucide-react";
@@ -7,11 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCockpitProjects } from '@/hooks/cockpit';
-import { CreateProjectDialog } from '@/components/cockpit/dialogs';
-import { ProjectDetailSheet } from '@/components/cockpit/ProjectDetailSheet';
 import { ProjectTimeline } from '@/components/cockpit/ProjectTimeline';
 import { format, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 import type { Database } from '@/integrations/supabase/types';
 
 type Project = Database['public']['Tables']['projects']['Row'];
@@ -31,9 +29,8 @@ const HEALTH_CONFIG: Record<string, { label: string; color: string }> = {
 };
 
 const CockpitProjects = () => {
-  const { projects, stats, isLoading } = useCockpitProjects();
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const { projects, stats, isLoading, createProject } = useCockpitProjects();
+  const navigate = useNavigate();
 
   const activeProjects = projects?.filter(p => 
     p.status === 'in_progress' || p.status === 'planning'
@@ -61,18 +58,21 @@ const CockpitProjects = () => {
             <h1 className="text-2xl font-bold text-foreground">Projets</h1>
             <p className="text-muted-foreground">Suivi de vos projets clients</p>
           </div>
-          <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+          <Button size="sm" onClick={async () => {
+            const newProject = await createProject.mutateAsync({ 
+              name: 'Nouveau projet',
+              status: 'planning',
+              health_status: 'on_track',
+            });
+            if (newProject) {
+              navigate(`/cockpit/projects/${newProject.id}`);
+            }
+          }} disabled={createProject.isPending}>
             <Plus className="h-4 w-4 mr-2" />
-            Nouveau projet
+            {createProject.isPending ? 'Création...' : 'Nouveau projet'}
           </Button>
         </div>
 
-        <CreateProjectDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
-        <ProjectDetailSheet 
-          project={selectedProject} 
-          open={!!selectedProject} 
-          onOpenChange={(open) => !open && setSelectedProject(null)} 
-        />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: 'En cours', value: stats.active, icon: Clock, color: 'text-blue-600' },
@@ -134,7 +134,7 @@ const CockpitProjects = () => {
                     <div 
                       key={project.id}
                       className="p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
-                      onClick={() => setSelectedProject(project)}
+                      onClick={() => navigate(`/cockpit/projects/${project.id}`)}
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">

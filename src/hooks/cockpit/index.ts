@@ -21,6 +21,8 @@ export { useCockpitTasks } from './useCockpitTasks';
 export { useCockpitMeetingNotes } from './useCockpitMeetingNotes';
 export { useCockpitSpecifications, SPECIFICATION_STATUSES } from './useCockpitSpecifications';
 export { useCockpitActivityLog, ACTIVITY_TYPES } from './useCockpitActivityLog';
+export { useCockpitProjectDocuments } from './useCockpitProjectDocuments';
+export { useCockpitProjectNotes } from './useCockpitProjectNotes';
 
 // Ré-exporter les hooks partagés pour faciliter les imports
 export { useBookings, useBookingTypes, BOOKING_QUERY_KEY } from '@/hooks/shared/useBookings';

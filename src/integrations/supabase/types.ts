@@ -1681,6 +1681,117 @@ export type Database = {
           },
         ]
       }
+      project_documents: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          file_size_bytes: number | null
+          file_type: string | null
+          file_url: string | null
+          id: string
+          name: string
+          project_id: string
+          updated_at: string | null
+          uploaded_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          file_size_bytes?: number | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          name: string
+          project_id: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          file_size_bytes?: number | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_documents_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_notes: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          note_type: string | null
+          project_id: string
+          title: string
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          note_type?: string | null
+          project_id: string
+          title: string
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          note_type?: string | null
+          project_id?: string
+          title?: string
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_notes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_notes_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           actual_end_date: string | null
@@ -1692,6 +1803,7 @@ export type Database = {
           description: string | null
           health_status: string
           id: string
+          lead_id: string | null
           name: string
           opportunity_id: string | null
           start_date: string | null
@@ -1710,6 +1822,7 @@ export type Database = {
           description?: string | null
           health_status?: string
           id?: string
+          lead_id?: string | null
           name: string
           opportunity_id?: string | null
           start_date?: string | null
@@ -1728,6 +1841,7 @@ export type Database = {
           description?: string | null
           health_status?: string
           id?: string
+          lead_id?: string | null
           name?: string
           opportunity_id?: string | null
           start_date?: string | null
@@ -1737,6 +1851,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "projects_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "projects_opportunity_id_fkey"
             columns: ["opportunity_id"]

@@ -95,6 +95,7 @@ const CockpitPipeline = lazy(() => import("./pages/cockpit/CockpitPipeline"));
 const CockpitLeads = lazy(() => import("./pages/cockpit/CockpitLeads"));
 const CockpitAgenda = lazy(() => import("./pages/cockpit/CockpitAgenda"));
 const CockpitProjects = lazy(() => import("./pages/cockpit/CockpitProjects"));
+const CockpitProjectDetail = lazy(() => import("./pages/cockpit/CockpitProjectDetail"));
 const CockpitSolutions = lazy(() => import("./pages/cockpit/CockpitSolutions"));
 const CockpitAnalytics = lazy(() => import("./pages/cockpit/CockpitAnalytics"));
 
@@ -567,6 +568,11 @@ const App = () => (
           <Route path="/cockpit/projects" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedCockpitRoute><CockpitProjects /></ProtectedCockpitRoute>
+            </Suspense>
+          } />
+          <Route path="/cockpit/projects/:id" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedCockpitRoute><CockpitProjectDetail /></ProtectedCockpitRoute>
             </Suspense>
           } />
 <Route path="/cockpit/solutions" element={
