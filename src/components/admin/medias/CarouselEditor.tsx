@@ -177,7 +177,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
   const [articles, setArticles] = useState<{ id: string; title: string; slug: string }[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<string>('');
   const [selectedPreset, setSelectedPreset] = useState<string>('');
-  const [startTheme, setStartTheme] = useState<'dark' | 'light' | 'terra' | 'contrast' | 'gradient'>('dark');
+  const [startTheme, setStartTheme] = useState<'dark' | 'light' | 'terra' | 'contrast' | 'gradient'>('gradient');
   const [selectedCompositionPreset, setSelectedCompositionPreset] = useState<string>('centered');
   const [verticalAlignment, setVerticalAlignment] = useState<VerticalAlignment>('center');
   const [topMargin, setTopMargin] = useState<number>(0);
@@ -729,15 +729,16 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
             {/* Slide preview */}
             <Card className="overflow-hidden">
               {(() => {
-                // Theme configuration for preview - v4.1 DA compliant
-                // Règle 2: subtext = #FAF9F7 opaque (pas de rgba < 0.88)
+                // Theme configuration for preview - v4.2 Gradient Reference
+                // Règle d'or: sur gradient, texte TOUJOURS en blanc cassé #FAF9F7
                 const PREVIEW_THEMES = {
                   dark: { bg: '#1A2B4A', text: '#FAF9F7', subtext: '#FAF9F7', logo: '/logos/iarche-white.svg' },
                   light: { bg: '#FAF9F7', text: '#1A2B4A', subtext: '#666666', logo: '/logos/iarche-main.svg' },
                   terra: { bg: '#B04A32', text: '#FAF9F7', subtext: '#FAF9F7', logo: '/logos/iarche-white.svg' },
                   contrast: { bg: '#0A0A0A', text: '#FAFAFA', subtext: '#FAFAFA', logo: '/logos/iarche-white.svg' },
+                  gradient: { bg: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)', text: '#FAF9F7', subtext: '#FAF9F7', logo: '/logos/iarche-white.svg' },
                 };
-                const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light' };
+                const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light', gradient: 'gradient' };
                 
                 const currentTheme = currentSlide % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme);
                 const colors = PREVIEW_THEMES[currentTheme];

@@ -190,7 +190,7 @@ export default function PostEditor() {
   
   const [format, setFormat] = useState<PostFormat>('square');
   const [template, setTemplate] = useState<PostTemplate>('annonce');
-  const [theme, setTheme] = useState<ThemeType>('dark');
+  const [theme, setTheme] = useState<ThemeType>('gradient');
   const [preset, setPreset] = useState<PresetTemplate>('custom');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [barSize, setBarSize] = useState<BarSize>('lg');
@@ -354,8 +354,13 @@ export default function PostEditor() {
     }
   };
 
-  const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
-  const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : IARCHE_COLORS.grey;
+  // v4.2 Règle d'or: gradient utilise TOUJOURS blanc cassé
+  const textColor = (theme === 'dark' || theme === 'terra' || theme === 'contrast' || theme === 'gradient') 
+    ? IARCHE_COLORS.blancCasse 
+    : IARCHE_COLORS.bleuNuit;
+  const subtextColor = (theme === 'dark' || theme === 'terra' || theme === 'contrast' || theme === 'gradient') 
+    ? IARCHE_COLORS.blancCasse 
+    : IARCHE_COLORS.grey;
 
   // Logo discret helper (petit logo sans arc, en coin)
   const renderLogoDiscret = (position: 'top-right' | 'bottom-right' = 'bottom-right') => (

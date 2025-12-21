@@ -66,7 +66,7 @@ export default function OpenGraphEditor() {
   const ogRef = useRef<HTMLDivElement>(null);
   
   const [template, setTemplate] = useState<OGTemplate>('page');
-  const [theme, setTheme] = useState<ThemeType>('dark');
+  const [theme, setTheme] = useState<ThemeType>('gradient');
   const [preset, setPreset] = useState<string>('');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [barSize, setBarSize] = useState<BarSize>('lg');
@@ -154,8 +154,13 @@ export default function OpenGraphEditor() {
     }
   };
 
-  const textColor = theme === 'dark' ? charterColors.white : charterColors.bleuNuit;
-  const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : 'rgba(26,43,74,0.7)';
+  // v4.2 Règle d'or: gradient utilise TOUJOURS blanc cassé
+  const textColor = (theme === 'dark' || theme === 'terra' || theme === 'contrast' || theme === 'gradient') 
+    ? IARCHE_COLORS.blancCasse 
+    : charterColors.bleuNuit;
+  const subtextColor = (theme === 'dark' || theme === 'terra' || theme === 'contrast' || theme === 'gradient') 
+    ? IARCHE_COLORS.blancCasse 
+    : 'rgba(26,43,74,0.7)';
 
   const renderOGContent = () => {
     switch (template) {

@@ -54,7 +54,7 @@ const HeaderEmailEditor: React.FC = () => {
   const previewRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
 
-  const [template, setTemplate] = useState<HeaderTemplate>('newsletter');
+  const [template, setTemplate] = useState<HeaderTemplate>('gradient');
   const [preset, setPreset] = useState<string>('');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [barSize, setBarSize] = useState<BarSize>('md');
@@ -70,10 +70,10 @@ const HeaderEmailEditor: React.FC = () => {
   const [titleAlignment, setTitleAlignment] = useState<TextAlignment>('center');
   
   const [formData, setFormData] = useState({
-    titre: 'Newsletter IArche',
-    sousTitre: 'L\'IA au service de votre entreprise',
-    numero: '#12',
-    date: 'Décembre 2024',
+    titre: 'Titre Principal',
+    sousTitre: 'Sous-titre optionnel',
+    numero: '',
+    date: '',
   });
 
   const applyPreset = (presetId: string) => {
