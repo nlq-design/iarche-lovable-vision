@@ -228,6 +228,8 @@ export default function StoryEditor() {
   const subtextColor = (theme === 'dark' || theme === 'terra' || theme === 'contrast' || theme === 'gradient') 
     ? IARCHE_COLORS.blancCasse 
     : IARCHE_COLORS.grey;
+  // v4.2 Règle d'or: CTA en blanc cassé sur gradient, sinon terracotta
+  const ctaColor = theme === 'gradient' ? IARCHE_COLORS.blancCasse : IARCHE_COLORS.terracotta;
   const showCanalisations = exportMode === 'full';
 
   // Minimum spacing from logo to prevent content touching header
@@ -301,15 +303,15 @@ export default function StoryEditor() {
               alignItems: 'center',
               gap: `${IARCHE_SPACING.sm}px`,
             }}>
-              <ChevronUp size={48} color={IARCHE_COLORS.terracotta} />
+              <ChevronUp size={48} color={ctaColor} />
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: '22px',
                 fontWeight: 700,
-                color: IARCHE_COLORS.terracotta,
+                color: ctaColor,
                 textTransform: 'uppercase',
                 letterSpacing: '0.12em',
-                textShadow: IARCHE_EFFECTS.glow.terracotta,
+                textShadow: theme === 'gradient' ? 'none' : IARCHE_EFFECTS.glow.terracotta,
               }}>
                 {ctaText}
               </span>
@@ -379,7 +381,7 @@ export default function StoryEditor() {
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: '20px',
                 fontWeight: 600,
-                color: IARCHE_COLORS.terracotta,
+                color: ctaColor,
               }}>
                 iarche.fr
               </span>
@@ -480,12 +482,12 @@ export default function StoryEditor() {
               alignItems: 'center',
               gap: '12px',
             }}>
-              <ChevronUp size={40} color={IARCHE_COLORS.terracotta} />
+              <ChevronUp size={40} color={ctaColor} />
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: '24px',
                 fontWeight: 600,
-                color: IARCHE_COLORS.terracotta,
+                color: ctaColor,
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
               }}>
@@ -567,12 +569,12 @@ export default function StoryEditor() {
               alignItems: 'center',
               gap: '12px',
             }}>
-              <ChevronUp size={40} color={IARCHE_COLORS.terracotta} />
+              <ChevronUp size={40} color={ctaColor} />
               <span style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: '24px',
                 fontWeight: 600,
-                color: IARCHE_COLORS.terracotta,
+                color: ctaColor,
                 textTransform: 'uppercase',
                 letterSpacing: '0.1em',
               }}>
