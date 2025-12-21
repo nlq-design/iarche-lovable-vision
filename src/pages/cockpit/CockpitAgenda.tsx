@@ -1,6 +1,6 @@
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, Video, MapPin, ChevronLeft, ChevronRight, User, Building, RefreshCw } from "lucide-react";
+import { Calendar, Clock, Video, MapPin, ChevronLeft, ChevronRight, User, Building, RefreshCw, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCockpitBookings } from "@/hooks/cockpit";
@@ -11,10 +11,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getBookingStatusConfig } from "@/lib/formatters";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { MeetingNoteSheet } from "@/components/cockpit/MeetingNoteSheet";
+import type { Database } from "@/integrations/supabase/types";
+
+type Booking = Database['public']['Tables']['bookings']['Row'];
 
 const CockpitAgenda = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isSyncing, setIsSyncing] = useState(false);
+  const [noteSheetOpen, setNoteSheetOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const { 
     bookings, 
     isLoading, 
@@ -67,7 +73,12 @@ const CockpitAgenda = () => {
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
-  const BookingCard = ({ booking }: { booking: any }) => (
+  const handleCreateNote = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setNoteSheetOpen(true);
+  };
+
+  const BookingCard = ({ booking }: { booking: Booking }) => (
     <div className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
@@ -91,14 +102,25 @@ const CockpitAgenda = () => {
         </div>
         {getStatusBadge(booking.status)}
       </div>
-      {booking.google_meet_link && (
-        <Button variant="outline" size="sm" className="mt-2 w-full" asChild>
-          <a href={booking.google_meet_link} target="_blank" rel="noopener noreferrer">
-            <Video className="h-3 w-3 mr-2" />
-            Rejoindre
-          </a>
+      <div className="flex gap-2 mt-2">
+        {booking.google_meet_link && (
+          <Button variant="outline" size="sm" className="flex-1" asChild>
+            <a href={booking.google_meet_link} target="_blank" rel="noopener noreferrer">
+              <Video className="h-3 w-3 mr-2" />
+              Rejoindre
+            </a>
+          </Button>
+        )}
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          className="flex-1"
+          onClick={() => handleCreateNote(booking)}
+        >
+          <FileText className="h-3 w-3 mr-2" />
+          Créer CR
         </Button>
-      )}
+      </div>
     </div>
   );
 
@@ -324,6 +346,13 @@ const CockpitAgenda = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Meeting Note Sheet */}
+      <MeetingNoteSheet
+        open={noteSheetOpen}
+        onOpenChange={setNoteSheetOpen}
+        booking={selectedBooking}
+      />
     </CockpitLayout>
   );
 };

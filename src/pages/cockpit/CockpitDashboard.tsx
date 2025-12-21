@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Users, 
   Target, 
@@ -13,9 +14,20 @@ import {
   Clock,
   AlertCircle,
   CheckCircle2,
-  Plus
+  Plus,
+  FileText,
+  Mail,
+  Phone,
+  Activity
 } from 'lucide-react';
-import { useCockpitLeads, useCockpitOpportunities, useCockpitTasks } from '@/hooks/cockpit';
+import { 
+  useCockpitLeads, 
+  useCockpitOpportunities, 
+  useCockpitTasks,
+  useCockpitBookings,
+  useCockpitMeetingNotes,
+  useCockpitActivityLog
+} from '@/hooks/cockpit';
 import { CreateTaskDialog } from '@/components/cockpit/dialogs';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -25,8 +37,11 @@ export default function CockpitDashboard() {
   const { stats: leadStats, isLoading: leadsLoading } = useCockpitLeads();
   const { stats: oppStats, isLoading: oppsLoading } = useCockpitOpportunities();
   const { tasks, stats: taskStats, isLoading: tasksLoading } = useCockpitTasks();
+  const { stats: bookingStats, todayBookings, isLoading: bookingsLoading } = useCockpitBookings();
+  const { stats: noteStats, isLoading: notesLoading } = useCockpitMeetingNotes();
+  const { activities, isLoading: activitiesLoading } = useCockpitActivityLog();
 
-  const isLoading = leadsLoading || oppsLoading || tasksLoading;
+  const isLoading = leadsLoading || oppsLoading || tasksLoading || bookingsLoading;
 
   // Get today's tasks
   const today = new Date().toISOString().split('T')[0];
@@ -34,11 +49,16 @@ export default function CockpitDashboard() {
     t.due_date === today && t.status !== 'completed' && t.status !== 'cancelled'
   ).slice(0, 5) || [];
 
+  // Recent activities (last 10)
+  const recentActivities = activities.slice(0, 8);
+
   const stats = [
     { label: 'Leads qualifiés', value: leadStats.qualified, icon: Users },
     { label: 'Opportunités actives', value: oppStats.total, icon: Target },
-    { label: 'Tâches du jour', value: taskStats.dueToday, icon: Calendar },
+    { label: 'RDV aujourd\'hui', value: todayBookings?.length || 0, icon: Calendar },
     { label: 'Pipeline total', value: formatCurrency(oppStats.totalValue), icon: FolderKanban },
+    { label: 'Tâches du jour', value: taskStats.dueToday, icon: Clock },
+    { label: 'Notes de réunion', value: noteStats.thisWeek, icon: FileText },
   ];
 
   return (
@@ -53,7 +73,7 @@ export default function CockpitDashboard() {
         </div>
 
         {/* KPIs */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {stats.map((stat) => (
             <Card key={stat.label}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -185,6 +205,43 @@ export default function CockpitDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Activity Log */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Activité récente
+            </CardTitle>
+            <CardDescription>Dernières interactions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {activitiesLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+              </div>
+            ) : recentActivities.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Aucune activité récente</p>
+            ) : (
+              <ScrollArea className="h-[200px]">
+                <div className="space-y-2">
+                  {recentActivities.map((activity) => (
+                    <div key={activity.id} className="flex items-start gap-3 p-2 rounded border">
+                      <ActivityIcon type={activity.activity_type} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{activity.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(activity.created_at!), 'dd/MM HH:mm', { locale: fr })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </CardContent>
+        </Card>
+
         <CreateTaskDialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen} />
       </div>
     </CockpitLayout>
@@ -201,6 +258,18 @@ function LeadStatRow({ label, value, color }: { label: string; value: number; co
       <Badge variant="secondary">{value}</Badge>
     </div>
   );
+}
+
+function ActivityIcon({ type }: { type: string }) {
+  const icons: Record<string, React.ReactNode> = {
+    note_added: <FileText className="h-4 w-4 text-blue-500" />,
+    status_changed: <Activity className="h-4 w-4 text-orange-500" />,
+    task_created: <CheckCircle2 className="h-4 w-4 text-green-500" />,
+    email_sent: <Mail className="h-4 w-4 text-purple-500" />,
+    call_logged: <Phone className="h-4 w-4 text-teal-500" />,
+    meeting_scheduled: <Calendar className="h-4 w-4 text-primary" />,
+  };
+  return icons[type] || <Activity className="h-4 w-4 text-muted-foreground" />;
 }
 
 function formatCurrency(value: number): string {
