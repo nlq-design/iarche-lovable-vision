@@ -3,6 +3,7 @@ import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import { Brochure } from '@/types/brochure';
 import { useToast } from '@/hooks/use-toast';
+import { COLORS } from '@/components/admin/medias/shared/tokens';
 
 interface SlideData {
   type: string;
@@ -112,6 +113,39 @@ export function useBrochurePdfHdExport() {
         }
 
         pdf.addImage(dataUrl, 'PNG', 0, 0, pageWidth, pageHeight);
+        
+        // v4.2 - Footer avec logo et pagination
+        const footerHeight = 10;
+        const footerY = pageHeight - footerHeight;
+        
+        // Fond semi-transparent du footer
+        pdf.setFillColor(255, 253, 249); // COLORS.blancCasse
+        pdf.rect(0, footerY, pageWidth, footerHeight, 'F');
+        
+        // Ligne de séparation subtile
+        pdf.setDrawColor(224, 216, 206); // COLORS.border approximation
+        pdf.setLineWidth(0.2);
+        pdf.line(10, footerY + 1, pageWidth - 10, footerY + 1);
+        
+        // Logo IArche (texte stylisé à gauche)
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(26, 43, 74); // COLORS.bleuNuit
+        pdf.text('IArche', 10, footerY + 6);
+        
+        // Pagination centrée
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(112, 102, 90); // COLORS.muted approximation
+        const pageText = `${i + 1} / ${slides.length}`;
+        const textWidth = pdf.getTextWidth(pageText);
+        pdf.text(pageText, (pageWidth - textWidth) / 2, footerY + 6);
+        
+        // Titre de la brochure à droite
+        pdf.setFontSize(7);
+        const titleText = brochure.title.length > 30 ? brochure.title.substring(0, 30) + '...' : brochure.title;
+        const titleWidth = pdf.getTextWidth(titleText);
+        pdf.text(titleText, pageWidth - 10 - titleWidth, footerY + 6);
+        
         exportedPages++;
 
         setProgress(Math.round(((i + 1) / slides.length) * 85));
