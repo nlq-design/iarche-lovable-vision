@@ -152,16 +152,12 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
     setProgress(0);
 
     try {
-      // A4 dimensions in mm
-      const pageWidth = 210;
-      const pageHeight = 297;
+      // On va créer le PDF avec des pages qui correspondent exactement au ratio des sections
+      // Format brochure portrait - pages personnalisées pour éviter barres blanches
+      const pageWidth = 210; // mm (ratio proche A4 mais pages exactes)
+      const pageHeight = 297; // mm
       
-      // Create PDF in portrait A4
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
+      let pdf: jsPDF | null = null;
 
       for (let i = 0; i < slides.length; i++) {
         const ref = sectionRefs.current[i];
@@ -175,49 +171,50 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
           pixelRatio: 4, // Higher quality for PDF
         });
 
-        // Add new page (except for first)
-        if (i > 0) {
-          pdf.addPage();
-        }
-
-        // Calculate dimensions to fit A4 while preserving aspect ratio
+        // Charger l'image pour obtenir ses dimensions réelles
         const img = new Image();
         await new Promise((resolve) => {
           img.onload = resolve;
           img.src = dataUrl;
         });
 
+        // Calculer le ratio de l'image capturée
         const imgAspect = img.width / img.height;
-        const pageAspect = pageWidth / pageHeight;
-
-        let finalWidth = pageWidth;
-        let finalHeight = pageHeight;
-        let offsetX = 0;
-        let offsetY = 0;
-
-        if (imgAspect > pageAspect) {
-          // Image is wider - fit to width
-          finalHeight = pageWidth / imgAspect;
-          offsetY = (pageHeight - finalHeight) / 2;
-        } else {
-          // Image is taller - fit to height
-          finalWidth = pageHeight * imgAspect;
-          offsetX = (pageWidth - finalWidth) / 2;
+        
+        // Créer une page PDF qui correspond exactement au ratio de l'image
+        // On garde une largeur fixe et on ajuste la hauteur selon le ratio
+        const actualPageWidth = pageWidth;
+        const actualPageHeight = pageWidth / imgAspect;
+        
+        if (i === 0) {
+          // Première page: créer le PDF avec les dimensions de la première section
+          pdf = new jsPDF({
+            orientation: actualPageHeight > actualPageWidth ? 'portrait' : 'landscape',
+            unit: 'mm',
+            format: [actualPageWidth, actualPageHeight],
+          });
+        } else if (pdf) {
+          // Pages suivantes: ajouter avec les dimensions exactes de cette section
+          pdf.addPage([actualPageWidth, actualPageHeight], actualPageHeight > actualPageWidth ? 'portrait' : 'landscape');
         }
 
-        // Add image to PDF
-        pdf.addImage(dataUrl, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
+        if (pdf) {
+          // Image plein format sans bordures blanches
+          pdf.addImage(dataUrl, 'PNG', 0, 0, actualPageWidth, actualPageHeight);
+        }
       }
 
       setProgress(95);
 
       // Save PDF
-      pdf.save(`${brochure.slug || 'brochure'}-hd.pdf`);
+      if (pdf) {
+        pdf.save(`${brochure.slug || 'brochure'}-hd.pdf`);
+      }
 
       setProgress(100);
       toast({ 
-        title: 'PDF HD généré', 
-        description: `${slides.length} pages avec rendu web haute-fidélité` 
+        title: 'PDF Ultra HD généré', 
+        description: `${slides.length} pages haute-fidélité sans bordures` 
       });
       onClose();
     } catch (error) {
