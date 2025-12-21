@@ -13,7 +13,11 @@ const Footer = () => {
           
           {/* Colonne 1 : IArche */}
           <div>
-            <h3 className="text-base font-semibold mb-4 text-[hsl(45,30%,95%)]">IArche</h3>
+            <img 
+              src="/logos/iarche-white.svg" 
+              alt="IArche" 
+              className="h-8 w-auto mb-4"
+            />
             <p className="text-sm text-[hsl(45,20%,85%)] mb-1">Bayonne · France</p>
             <p className="text-sm text-[hsl(45,20%,85%)] mb-1">
               <a 
