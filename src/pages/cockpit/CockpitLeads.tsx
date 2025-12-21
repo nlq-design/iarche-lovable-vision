@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Search, Filter, Download, Mail, Phone, Building2 } from "lucide-react";
+import { Users, Search, Filter, Download, Mail, Phone, Building2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useCockpitLeads } from '@/hooks/cockpit';
+import { CreateLeadDialog } from '@/components/cockpit/dialogs';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -63,6 +64,7 @@ const CockpitLeads = () => {
               <Download className="h-4 w-4 mr-2" />
               Exporter
             </Button>
+            <CreateLeadDialog />
           </div>
         </div>
 
