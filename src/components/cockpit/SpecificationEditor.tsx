@@ -155,7 +155,6 @@ export const SpecificationEditor = ({ projectId, specifications }: Specification
         version: "1.0",
         workspace_id: "00000000-0000-0000-0000-000000000001",
         tags: newTags.length > 0 ? newTags : null,
-        solution_id: newSolutionId || null,
       };
 
       const { data: createdSpec, error: createError } = await supabase
@@ -201,7 +200,6 @@ export const SpecificationEditor = ({ projectId, specifications }: Specification
     setNewFile(null);
     setNewTags([]);
     setNewTagInput("");
-    setNewSolutionId("");
   };
 
   const handleEdit = (spec: Specification) => {
@@ -215,7 +213,6 @@ export const SpecificationEditor = ({ projectId, specifications }: Specification
     setEditFile(null);
     setEditTags((spec as any).tags || []);
     setEditTagInput("");
-    setEditSolutionId((spec as any).solution_id || "");
     setShowEditSheet(true);
   };
 
@@ -231,7 +228,6 @@ export const SpecificationEditor = ({ projectId, specifications }: Specification
         status: editStatus,
         version: editVersion,
         tags: editTags.length > 0 ? editTags : null,
-        solution_id: editSolutionId || null,
       };
 
       // Upload new file if provided
@@ -502,24 +498,6 @@ export const SpecificationEditor = ({ projectId, specifications }: Specification
                 isEdit={false}
               />
 
-              {/* Solution Link */}
-              <div className="space-y-2">
-                <Label>Solution IArche associée</Label>
-                <Select value={newSolutionId || "none"} onValueChange={(v) => setNewSolutionId(v === "none" ? "" : v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Aucune solution liée" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Aucune</SelectItem>
-                    {solutions.map(sol => (
-                      <SelectItem key={sol.id} value={sol.id}>
-                        {sol.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="space-y-2">
                 <Label>Description / Notes</Label>
                 <Textarea
@@ -743,24 +721,6 @@ export const SpecificationEditor = ({ projectId, specifications }: Specification
                 isEdit={true}
               />
 
-              {/* Solution Link in Edit */}
-              <div className="space-y-2">
-                <Label>Solution IArche associée</Label>
-                <Select value={editSolutionId || "none"} onValueChange={(v) => setEditSolutionId(v === "none" ? "" : v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Aucune solution liée" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Aucune</SelectItem>
-                    {solutions.map(sol => (
-                      <SelectItem key={sol.id} value={sol.id}>
-                        {sol.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
               <div className="space-y-2">
                 <Label>Description / Notes</Label>
                 <Textarea
