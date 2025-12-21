@@ -24,7 +24,7 @@ import { DecorativeArcToggle } from './DecorativeArcToggle';
 import SavedTemplatesPanel from './SavedTemplatesPanel';
 import ExportActions from './ExportActions';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
-import { getCTAColor } from './CTAText';
+import { getCTAColor, getCTAColorHex, getCTABadgeStyles, getCTABulletStyles } from './CTAText';
 
 interface CarouselEditorProps {
   templateId: string;
@@ -336,6 +336,9 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
         const slideTheme = i % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme);
         const colors = PREVIEW_THEMES[slideTheme];
         const isDark = slideTheme !== 'light';
+        // v4.2 Règle d'or: CTA en blanc cassé sur gradient
+        const ctaColor = getCTAColorHex(slideTheme);
+        const ctaBadge = getCTABadgeStyles(slideTheme, isDark);
         const slideExportMode = slide.exportMode || 'full';
         const showBar = slideExportMode === 'with-bar' || slideExportMode === 'full';
         const showCanalisations = slideExportMode === 'full';
@@ -402,9 +405,9 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                   font-weight: 500;
                   padding: 10px 24px;
                   border-radius: 999px;
-                  background: ${isDark ? 'rgba(176, 74, 50, 0.25)' : 'rgba(176, 74, 50, 0.15)'};
-                  color: ${isDark ? '#E8B4A0' : '#8B3A2F'};
-                  border: 1px solid ${isDark ? 'rgba(176, 74, 50, 0.4)' : 'rgba(176, 74, 50, 0.3)'};
+                  background: ${ctaBadge.background};
+                  color: ${ctaBadge.color};
+                  border: ${ctaBadge.border};
                 ">${slide.subtitle}</span>
               ` : ''}
               
@@ -433,10 +436,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                 <div style="
                   font-size: 96px;
                   font-weight: 800;
-                  background: linear-gradient(135deg, #D15A3E 0%, #8B3A2F 100%);
-                  -webkit-background-clip: text;
-                  -webkit-text-fill-color: transparent;
-                  background-clip: text;
+                  color: ${ctaColor};
                   line-height: 1;
                 ">${slide.highlight}</div>
               ` : ''}
@@ -832,11 +832,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                         <div className="flex justify-center">
                           <span 
                             className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider font-medium px-3 py-1.5 rounded-full"
-                            style={{ 
-                              background: isDark ? 'rgba(176, 74, 50, 0.25)' : 'rgba(176, 74, 50, 0.15)',
-                              color: isDark ? '#E8B4A0' : '#8B3A2F',
-                              border: `1px solid ${isDark ? 'rgba(176, 74, 50, 0.4)' : 'rgba(176, 74, 50, 0.3)'}`,
-                            }}
+                            style={getCTABadgeStyles(currentTheme, isDark)}
                           >
                             {categoryBadge && categoryLabels[categoryBadge] && (
                               <span>{categoryLabels[categoryBadge].icon}</span>
