@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBookings, BOOKING_QUERY_KEY } from "@/hooks/shared/useBookings";
-import { startOfWeek, endOfWeek, isAfter, isBefore } from "date-fns";
+import { startOfWeek, endOfWeek, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
 
 /**
  * Hook Cockpit pour les rendez-vous
@@ -13,48 +13,43 @@ export const useCockpitBookings = () => {
   // Réutilise le hook partagé
   const baseHook = useBookings();
 
-  // Hook pour les RDV d'aujourd'hui
-  const useTodayBookings = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+  // RDV d'aujourd'hui - requête directe
+  const today = new Date();
+  const todayStart = startOfDay(today);
+  const todayEnd = endOfDay(today);
 
-    return useQuery({
-      queryKey: [BOOKING_QUERY_KEY, "today"],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from("bookings")
-          .select(`*, booking_types (id, name, slug, duration_minutes, color)`)
-          .gte("start_time", today.toISOString())
-          .lt("start_time", tomorrow.toISOString())
-          .neq("status", "cancelled")
-          .order("start_time", { ascending: true });
+  const { data: todayBookings = [], isLoading: loadingToday } = useQuery({
+    queryKey: [BOOKING_QUERY_KEY, "today", todayStart.toISOString()],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select(`*, booking_types (id, name, slug, duration_minutes, color)`)
+        .gte("start_time", todayStart.toISOString())
+        .lt("start_time", todayEnd.toISOString())
+        .neq("status", "cancelled")
+        .order("start_time", { ascending: true });
 
-        if (error) throw error;
-        return data;
-      },
-    });
-  };
+      if (error) throw error;
+      return data;
+    },
+  });
 
-  // Hook pour les prochains RDV
-  const useUpcomingBookings = (limit: number = 10) => {
-    return useQuery({
-      queryKey: [BOOKING_QUERY_KEY, "upcoming", limit],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from("bookings")
-          .select(`*, booking_types (id, name, slug, duration_minutes, color)`)
-          .gte("start_time", new Date().toISOString())
-          .neq("status", "cancelled")
-          .order("start_time", { ascending: true })
-          .limit(limit);
+  // Prochains RDV - requête directe
+  const { data: upcomingBookings = [], isLoading: loadingUpcoming } = useQuery({
+    queryKey: [BOOKING_QUERY_KEY, "upcoming"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select(`*, booking_types (id, name, slug, duration_minutes, color)`)
+        .gte("start_time", new Date().toISOString())
+        .neq("status", "cancelled")
+        .order("start_time", { ascending: true })
+        .limit(10);
 
-        if (error) throw error;
-        return data;
-      },
-    });
-  };
+      if (error) throw error;
+      return data;
+    },
+  });
 
   // Stats enrichies pour le cockpit
   const now = new Date();
@@ -83,13 +78,15 @@ export const useCockpitBookings = () => {
     // Stats enrichies
     stats: cockpitStats,
     
+    // Données cockpit-specific (directement exposées)
+    todayBookings,
+    loadingToday,
+    upcomingBookings,
+    loadingUpcoming,
+    
     // Mutations du hook partagé
     createBooking: baseHook.createBooking,
     updateBooking: baseHook.updateBooking,
     cancelBooking: baseHook.cancelBooking,
-    
-    // Hooks cockpit-specific
-    useTodayBookings,
-    useUpcomingBookings,
   };
 };

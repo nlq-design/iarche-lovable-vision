@@ -12,11 +12,15 @@ import { getBookingStatusConfig } from "@/lib/formatters";
 
 const CockpitAgenda = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { bookings, isLoading, stats } = useCockpitBookings();
-  const { useTodayBookings, useUpcomingBookings } = useCockpitBookings();
-  
-  const { data: todayBookings = [], isLoading: loadingToday } = useTodayBookings();
-  const { data: upcomingBookings = [], isLoading: loadingUpcoming } = useUpcomingBookings(5);
+  const { 
+    bookings, 
+    isLoading, 
+    stats, 
+    todayBookings, 
+    loadingToday, 
+    upcomingBookings, 
+    loadingUpcoming 
+  } = useCockpitBookings();
 
   const formattedDate = format(currentDate, "EEEE d MMMM yyyy", { locale: fr });
 
