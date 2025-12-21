@@ -1,5 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { toPng } from 'html-to-image';
+import { jsPDF } from 'jspdf';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,12 +12,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Save, Eye, Download, Plus, Trash2, GripVertical, Upload, X, Loader2, FileImage, Link } from 'lucide-react';
 import { useBrochures, useBrochure } from '@/hooks/useBrochures';
 import { Brochure, BrochureSections, BrochureKeyPoint, BrochurePricingPlan, BrochureExportSettings as ExportSettingsType, defaultSections, defaultExportSettings } from '@/types/brochure';
 import BrochureWebView from '@/components/admin/brochures/BrochureWebView';
 import BrochurePDFExport from '@/components/admin/brochures/BrochurePDFExport';
 import BrochureSVGExport from '@/components/admin/brochures/BrochureSVGExport';
+import BrochureSectionRenderer from '@/components/admin/brochures/BrochureSectionRenderer';
 import BrochureExportSettingsComponent from '@/components/admin/brochures/BrochureExportSettings';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,7 +49,151 @@ const BrochureEditor = () => {
   const [showSVGExport, setShowSVGExport] = useState(false);
   const [showDecorativeArc, setShowDecorativeArc] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [isExportingPdfHd, setIsExportingPdfHd] = useState(false);
+  const [pdfHdProgress, setPdfHdProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pdfHdContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Build slides array for PDF HD export
+  const buildSlides = useCallback((brochure: Partial<Brochure>) => {
+    const slides: { type: string; data: any; label: string }[] = [];
+    slides.push({ type: 'cover', data: brochure, label: '01-couverture' });
+
+    if (brochure.sections?.introduction?.enabled && brochure.sections.introduction.content) {
+      slides.push({ type: 'introduction', data: brochure.sections.introduction, label: '02-introduction' });
+    }
+    if (brochure.sections?.keyPoints?.enabled && brochure.sections.keyPoints.points?.length > 0) {
+      slides.push({ type: 'keyPoints', data: brochure.sections.keyPoints, label: '03-points-cles' });
+    }
+    if (brochure.sections?.details?.enabled && brochure.sections.details.content) {
+      slides.push({ type: 'details', data: brochure.sections.details, label: '04-details' });
+    }
+    if (brochure.sections?.pricing?.enabled && brochure.sections.pricing.plans?.length > 0) {
+      slides.push({ type: 'pricing', data: brochure.sections.pricing, label: '05-tarifs' });
+    }
+    if (brochure.sections?.testimonial?.enabled && brochure.sections.testimonial.quote) {
+      slides.push({ type: 'testimonial', data: brochure.sections.testimonial, label: '06-temoignage' });
+    }
+    if (brochure.sections?.contact?.enabled) {
+      slides.push({ type: 'contact', data: brochure.sections.contact, label: '07-contact' });
+    }
+
+    return slides;
+  }, []);
+
+  // Direct PDF HD export (1-click)
+  const handleExportPdfHd = useCallback(async () => {
+    if (isExportingPdfHd) return;
+
+    setIsExportingPdfHd(true);
+    setPdfHdProgress(0);
+
+    try {
+      const slides = buildSlides(formData);
+      const basePageWidth = 210; // mm
+
+      // Create off-screen container
+      const container = document.createElement('div');
+      container.style.cssText = 'position:absolute;left:-9999px;top:0;width:1200px;opacity:1;pointer-events:none;';
+      document.body.appendChild(container);
+      pdfHdContainerRef.current = container;
+
+      let pdf: jsPDF | null = null;
+      let exportedPages = 0;
+
+      for (let i = 0; i < slides.length; i++) {
+        setPdfHdProgress(Math.round(((i + 0.3) / slides.length) * 85));
+
+        // Create section wrapper
+        const sectionWrapper = document.createElement('div');
+        sectionWrapper.style.cssText = 'width:1200px;min-height:1600px;background:#FFFDF9;';
+        container.innerHTML = '';
+        container.appendChild(sectionWrapper);
+
+        // Use ReactDOM to render the section
+        const { createRoot } = await import('react-dom/client');
+        const root = createRoot(sectionWrapper);
+
+        await new Promise<void>((resolve) => {
+          root.render(
+            <BrochureSectionRenderer 
+              slide={slides[i]} 
+              brochure={formData as Brochure}
+            />
+          );
+          // Wait for render + fonts
+          setTimeout(resolve, 400);
+        });
+
+        // Capture as high-res PNG
+        const dataUrl = await toPng(sectionWrapper, {
+          quality: 1,
+          backgroundColor: '#FFFDF9',
+          pixelRatio: 4,
+          cacheBust: true,
+        });
+
+        root.unmount();
+
+        // Load image to get dimensions
+        const img = new Image();
+        await new Promise((resolve) => {
+          img.onload = resolve;
+          img.src = dataUrl;
+        });
+
+        const imgAspect = img.width / img.height;
+        const pageWidth = basePageWidth;
+        const pageHeight = basePageWidth / imgAspect;
+        const orientation = pageHeight > pageWidth ? 'portrait' : 'landscape';
+
+        if (!pdf) {
+          pdf = new jsPDF({ orientation, unit: 'mm', format: [pageWidth, pageHeight] });
+        } else {
+          pdf.addPage([pageWidth, pageHeight], orientation);
+        }
+
+        pdf.addImage(dataUrl, 'PNG', 0, 0, pageWidth, pageHeight);
+        exportedPages++;
+
+        setPdfHdProgress(Math.round(((i + 1) / slides.length) * 85));
+      }
+
+      // Cleanup
+      document.body.removeChild(container);
+      pdfHdContainerRef.current = null;
+
+      setPdfHdProgress(95);
+
+      if (!pdf || exportedPages === 0) {
+        throw new Error("Aucune section n'a pu être exportée.");
+      }
+
+      pdf.save(`${formData.slug || 'brochure'}-hd.pdf`);
+      setPdfHdProgress(100);
+
+      toast({
+        title: 'PDF Haute-Fidélité généré',
+        description: `${exportedPages} page(s) exportée(s)`,
+      });
+    } catch (error) {
+      console.error('PDF HD export error:', error);
+      toast({
+        title: 'Erreur d\'export',
+        description: String(error),
+        variant: 'destructive',
+      });
+
+      // Cleanup on error
+      if (pdfHdContainerRef.current && pdfHdContainerRef.current.parentNode) {
+        document.body.removeChild(pdfHdContainerRef.current);
+        pdfHdContainerRef.current = null;
+      }
+    } finally {
+      setIsExportingPdfHd(false);
+      setPdfHdProgress(0);
+    }
+  }, [buildSlides, formData, isExportingPdfHd, toast]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -220,6 +368,13 @@ const BrochureEditor = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Progress bar for PDF HD export */}
+            {isExportingPdfHd && (
+              <div className="flex items-center gap-2 mr-2">
+                <Progress value={pdfHdProgress} className="w-24 h-2" />
+                <span className="text-xs text-muted-foreground">{pdfHdProgress}%</span>
+              </div>
+            )}
             <Button variant="outline" onClick={() => setShowPreview(true)}>
               <Eye className="h-4 w-4 mr-2" />
               Aperçu
@@ -228,8 +383,12 @@ const BrochureEditor = () => {
               <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline">
-                      <Download className="h-4 w-4 mr-2" />
+                    <Button variant="outline" disabled={isExportingPdfHd}>
+                      {isExportingPdfHd ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4 mr-2" />
+                      )}
                       PDF complet
                     </Button>
                   </DropdownMenuTrigger>
@@ -238,13 +397,21 @@ const BrochureEditor = () => {
                     
                     <DropdownMenuSeparator />
                     
-                    <DropdownMenuItem onClick={() => setShowSVGExport(true)} className="gap-2">
+                    <DropdownMenuItem onClick={handleExportPdfHd} className="gap-2">
                       <FileImage className="h-4 w-4 text-accent" />
                       <div>
                         <div className="font-medium">PDF Haute-Fidélité</div>
-                        <div className="text-xs text-muted-foreground">Capture web exacte</div>
+                        <div className="text-xs text-muted-foreground">Export direct 1 clic</div>
                       </div>
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowSVGExport(true)} className="gap-2">
+                      <FileImage className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <div className="font-medium">PDF HD (options)</div>
+                        <div className="text-xs text-muted-foreground">Avec aperçu et choix</div>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setShowPDFExport(true)} className="gap-2">
                       <Download className="h-4 w-4" />
                       <div>
