@@ -42,11 +42,27 @@ const ServiceDetail = () => {
         <link rel="alternate" hrefLang="fr" href={getCanonicalUrl()} />
         <title>{service.title} · IArche · Services IA</title>
         <meta name="description" content={service.description} />
+        <meta name="robots" content="index, follow" />
+        <meta name="author" content="IArche" />
+        <meta name="keywords" content={`${service.title}, IA, intelligence artificielle, PME, services IA, IArche`} />
         <link rel="canonical" href={getCanonicalUrl()} />
+        
+        {/* Open Graph */}
         <meta property="og:title" content={`${service.title} · IArche · Services IA`} />
         <meta property="og:description" content={service.description} />
         <meta property="og:url" content={getCanonicalUrl()} />
         <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://iarche.fr/og-services.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:locale" content="fr_FR" />
+        <meta property="og:site_name" content="IArche" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${service.title} · IArche`} />
+        <meta name="twitter:description" content={service.description} />
+        <meta name="twitter:image" content="https://iarche.fr/og-services.png" />
 
         {/* Schema.org BreadcrumbList */}
         <script type="application/ld+json">
