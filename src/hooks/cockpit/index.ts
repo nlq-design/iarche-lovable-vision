@@ -7,3 +7,4 @@ export { useCockpitTasks } from './useCockpitTasks';
 export { useCockpitMeetingNotes } from './useCockpitMeetingNotes';
 export { useCockpitBookings } from './useCockpitBookings';
 export { useCockpitSpecifications, SPECIFICATION_STATUSES } from './useCockpitSpecifications';
+export { useCockpitActivityLog, ACTIVITY_TYPES } from './useCockpitActivityLog';

@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FolderKanban, Clock, CheckCircle2, AlertCircle, PauseCircle, Calendar, Users } from "lucide-react";
+import { FolderKanban, Clock, CheckCircle2, AlertCircle, PauseCircle, Calendar, Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCockpitProjects } from '@/hooks/cockpit';
+import { CreateProjectDialog } from '@/components/cockpit/dialogs';
 import { format, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -25,6 +27,7 @@ const HEALTH_CONFIG: Record<string, { label: string; color: string }> = {
 
 const CockpitProjects = () => {
   const { projects, stats, isLoading } = useCockpitProjects();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const activeProjects = projects?.filter(p => 
     p.status === 'in_progress' || p.status === 'planning'
@@ -52,7 +55,13 @@ const CockpitProjects = () => {
             <h1 className="text-2xl font-bold text-foreground">Projets</h1>
             <p className="text-muted-foreground">Suivi de vos projets clients</p>
           </div>
+          <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouveau projet
+          </Button>
         </div>
+
+        <CreateProjectDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
