@@ -522,12 +522,12 @@ export const SpecificationEditor = ({ projectId, specifications }: Specification
               {/* Solution Link */}
               <div className="space-y-2">
                 <Label>Solution IArche associée</Label>
-                <Select value={newSolutionId} onValueChange={setNewSolutionId}>
+                <Select value={newSolutionId || "none"} onValueChange={(v) => setNewSolutionId(v === "none" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Aucune solution liée" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucune</SelectItem>
+                    <SelectItem value="none">Aucune</SelectItem>
                     {solutions.map(sol => (
                       <SelectItem key={sol.id} value={sol.id}>
                         {sol.title}
@@ -763,12 +763,12 @@ export const SpecificationEditor = ({ projectId, specifications }: Specification
               {/* Solution Link in Edit */}
               <div className="space-y-2">
                 <Label>Solution IArche associée</Label>
-                <Select value={editSolutionId} onValueChange={setEditSolutionId}>
+                <Select value={editSolutionId || "none"} onValueChange={(v) => setEditSolutionId(v === "none" ? "" : v)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Aucune solution liée" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Aucune</SelectItem>
+                    <SelectItem value="none">Aucune</SelectItem>
                     {solutions.map(sol => (
                       <SelectItem key={sol.id} value={sol.id}>
                         {sol.title}
