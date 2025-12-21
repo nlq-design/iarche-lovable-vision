@@ -24,6 +24,7 @@ import { DecorativeArcToggle } from './DecorativeArcToggle';
 import SavedTemplatesPanel from './SavedTemplatesPanel';
 import ExportActions from './ExportActions';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+import { getCTAColor } from './CTAText';
 
 interface CarouselEditorProps {
   templateId: string;
@@ -743,6 +744,8 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                 const currentTheme = currentSlide % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme);
                 const colors = PREVIEW_THEMES[currentTheme];
                 const isDark = currentTheme !== 'light';
+                // v4.2 Règle d'or: CTA en blanc cassé sur gradient, sinon terracotta
+                const ctaColor = getCTAColor(currentTheme);
                 
                 // v4.2 - Visual enhancements: badge category detection
                 const selectedPresetData = PRESET_TEMPLATES.find(p => p.id === selectedPreset);
@@ -885,12 +888,9 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                             className="font-bold"
                             style={{ 
                               fontSize: current.highlight.length > 10 ? '1.5rem' : '2.5rem',
-                              background: 'linear-gradient(135deg, #B04A32 0%, #D15A3E 50%, #B04A32 100%)',
-                              WebkitBackgroundClip: 'text',
-                              WebkitTextFillColor: 'transparent',
-                              backgroundClip: 'text',
+                              color: ctaColor,
                               letterSpacing: '-0.02em',
-                              textShadow: isDark ? '0 2px 20px rgba(176, 74, 50, 0.3)' : 'none',
+                              textShadow: isDark && currentTheme !== 'gradient' ? '0 2px 20px rgba(176, 74, 50, 0.3)' : 'none',
                             }}
                           >
                             {current.highlight}

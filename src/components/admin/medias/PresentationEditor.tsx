@@ -23,6 +23,7 @@ import { TopMarginSlider, getContentSpacing } from './TopMarginSlider';
 import { DecorativeArcToggle } from './DecorativeArcToggle';
 import ExportActions from './ExportActions';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+import { getCTAColor } from './CTAText';
 
 interface PresentationEditorProps {
   templateId: string;
@@ -716,6 +717,8 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                 const currentTheme = currentSlide % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme);
                 const colors = PREVIEW_THEMES[currentTheme];
                 const isDark = currentTheme !== 'light';
+                // v4.2 Règle d'or: CTA en blanc cassé sur gradient, sinon terracotta
+                const ctaColor = getCTAColor(currentTheme);
                 
                 return (
                   <div 
@@ -850,8 +853,8 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                               <span 
                                 className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5"
                                 style={{ 
-                                  background: 'rgba(176, 74, 50, 0.15)',
-                                  color: '#B04A32',
+                                  background: currentTheme === 'gradient' ? 'rgba(250,249,247,0.15)' : 'rgba(176, 74, 50, 0.15)',
+                                  color: ctaColor,
                                   fontSize: '0.7rem',
                                   fontWeight: 600,
                                 }}
