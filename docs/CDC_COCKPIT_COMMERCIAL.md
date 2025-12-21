@@ -1407,7 +1407,7 @@ CREATE TRIGGER sync_won_to_project_trigger
 | `auto_insert_workspace_owner()` | ✅ Active | Auto-ajout owner sur workspace |
 | `sync_form_response_to_lead()` | ✅ Active | Formulaires → Leads |
 | `sync_lead_to_pipeline()` | ✅ Active | Leads → Opportunities |
-| `sync_won_to_project()` | ❌ À créer | Opportunities won → Projects |
+| `sync_won_to_project()` | ✅ Active | Opportunities won → Projects |
 | `validate_status_transition()` | ❌ À créer | Validation transitions statuts |
 | `validate_task()` | ❌ À créer | Validation cohérence FK tasks |
 | `validate_activity_log()` | ❌ À créer | Validation cohérence FK activity |
@@ -1419,7 +1419,7 @@ CREATE TRIGGER sync_won_to_project_trigger
 | `trigger_sync_form_response_to_lead` | `form_responses` | ✅ Actif |
 | `trigger_sync_lead_to_pipeline` | `leads` | ✅ Actif |
 | `auto_insert_workspace_owner_trigger` | `workspaces` | ✅ Actif |
-| `trigger_sync_won_to_project` | `opportunities` | ❌ À créer |
+| `trigger_sync_won_to_project` | `opportunities` | ✅ Actif |
 | `validate_task_trigger` | `tasks` | ❌ À créer |
 | `validate_activity_log_trigger` | `activity_log` | ❌ À créer |
 | `set_updated_at_*` | Multiples | ⚠️ Partiel |
@@ -1455,7 +1455,7 @@ CREATE TRIGGER sync_won_to_project_trigger
 │  │  (stage: lead → qualified → proposal → negotiation → won/lost)│   │
 │  └──────────────────────────────┬───────────────────────────────┘   │
 │                                  │                                   │
-│                                  │ sync_won_to_project() ❌ TODO     │
+│                                  │ sync_won_to_project() ✅         │
 │                                  ▼                                   │
 │  ┌──────────────────────────────────────────────────────────────┐   │
 │  │                       projects                                │   │
@@ -1562,9 +1562,10 @@ DEFAULT '00000000-0000-0000-0000-000000000001'
 - [x] Dashboard enrichi avec KPIs
 - [x] Activity log affiché
 - [x] Triggers sync_form_response_to_lead + sync_lead_to_pipeline
+- [x] Trigger sync_won_to_project (Opportunity won → Project auto)
 
 ### Phase 2 (En cours)
-- [ ] Trigger `sync_won_to_project` — Création projet automatique
+- [x] Trigger `sync_won_to_project` — Création projet automatique ✅
 - [ ] Triggers de validation (`validate_task`, `validate_activity_log`)
 - [ ] Triggers `set_updated_at_*` sur toutes les tables
 - [ ] Page Projects enrichie avec timeline
