@@ -24,5 +24,8 @@ export { HTMLLogoDiscret } from './HTMLLogoDiscret'; // v4.1 - Logo discret
 export { HTMLHeaderGradient } from './HTMLHeaderGradient'; // v4.2 - Style email
 export { HTMLBaseTemplate } from './HTMLBaseTemplate';
 
+// CTA Text utilities (v4.2 - Règle CTA blanc cassé/terracotta)
+export { CTAText, getCTAColor, getCTAColorHex, getCTABadgeStyles, getCTABulletStyles } from '../CTAText';
+
 // Image Library (Supabase Storage)
 export { ImageLibrary } from '../ImageLibrary';
