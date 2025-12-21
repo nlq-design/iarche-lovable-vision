@@ -1364,7 +1364,153 @@ CREATE TRIGGER sync_won_to_project_trigger
 
 ---
 
-## 9. PAGES UI COCKPIT
+## 9. SUIVI D'IMPLÉMENTATION
+
+> **Dernière mise à jour :** 21 décembre 2025
+
+### 9.1 Tables — État d'implémentation
+
+| Table | Statut | Notes |
+|-------|--------|-------|
+| `workspaces` | ✅ Créée | Workspace par défaut `00000000-0000-0000-0000-000000000001` |
+| `workspace_members` | ✅ Créée | Trigger auto-owner actif |
+| `cockpit_auth_sessions` | ✅ Créée | Step-up MFA fonctionnel |
+| `cockpit_mfa_attempts` | ✅ Créée | Rate limit 3 tentatives / 5 min |
+| `statuses` | ✅ Créée | 21 statuts (lead, opportunity, project, specification) |
+| `leads` (extensions) | ✅ Extensions OK | `qualification_status`, `lead_score`, `ai_metadata` |
+| `opportunities` | ✅ Créée | Lié à leads + workspace |
+| `projects` | ✅ Créée | Lié à opportunities + workspace |
+| `meeting_notes` | ✅ Créée | Lié à bookings + workspace |
+| `tasks` | ✅ Créée | Polymorphe (lead/opp/project/meeting_note) |
+| `specifications` | ✅ Créée | Lié à projects |
+| `activity_log` | ✅ Créée | Append-only, polymorphe |
+| `project_contacts` | ✅ Créée | Liaison projects ↔ leads |
+| `project_documents` | ❌ À créer | Storage documents projet |
+| `generated_documents` | ❌ À créer | Devis/CDC générés IA |
+| `cockpit_settings` | ❌ À créer | Préférences utilisateur + IA |
+| `ai_prompts` | ❌ À créer | Templates prompts IA |
+| `ai_usage_log` | ❌ À créer | Tracking tokens IA |
+| `cockpit_reports` | ❌ À créer | Rapports périodiques |
+
+### 9.2 Fonctions SQL — État d'implémentation
+
+| Fonction | Statut | Usage |
+|----------|--------|-------|
+| `has_cockpit_access()` | ✅ Active | Vérification rôle cockpit |
+| `is_workspace_member()` | ✅ Active | Membership workspace |
+| `has_workspace_role()` | ✅ Active | Niveau rôle (owner/editor/viewer) |
+| `can_access_workspace()` | ✅ Active | Accès workspace complet |
+| `can_access_entity_workspace()` | ✅ Active | Accès entités métier |
+| `check_cockpit_mfa_rate_limit()` | ✅ Active | Rate limit MFA |
+| `cleanup_expired_cockpit_data()` | ✅ Active | Nettoyage sessions expirées |
+| `set_updated_at()` | ✅ Active | Trigger updated_at |
+| `auto_insert_workspace_owner()` | ✅ Active | Auto-ajout owner sur workspace |
+| `sync_form_response_to_lead()` | ✅ Active | Formulaires → Leads |
+| `sync_lead_to_pipeline()` | ✅ Active | Leads → Opportunities |
+| `sync_won_to_project()` | ❌ À créer | Opportunities won → Projects |
+| `validate_status_transition()` | ❌ À créer | Validation transitions statuts |
+| `validate_task()` | ❌ À créer | Validation cohérence FK tasks |
+| `validate_activity_log()` | ❌ À créer | Validation cohérence FK activity |
+
+### 9.3 Triggers SQL — État d'implémentation
+
+| Trigger | Table | Statut |
+|---------|-------|--------|
+| `trigger_sync_form_response_to_lead` | `form_responses` | ✅ Actif |
+| `trigger_sync_lead_to_pipeline` | `leads` | ✅ Actif |
+| `auto_insert_workspace_owner_trigger` | `workspaces` | ✅ Actif |
+| `trigger_sync_won_to_project` | `opportunities` | ❌ À créer |
+| `validate_task_trigger` | `tasks` | ❌ À créer |
+| `validate_activity_log_trigger` | `activity_log` | ❌ À créer |
+| `set_updated_at_*` | Multiples | ⚠️ Partiel |
+
+---
+
+## 10. FLUX DE DONNÉES ADMIN ↔ COCKPIT
+
+### 10.1 Diagramme des flux entrants
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                          MODULE ADMIN                                │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌──────────────┐   ┌──────────────┐   ┌──────────────────────┐    │
+│  │   contacts   │   │ form_responses│   │ atelier_inscriptions │    │
+│  └──────┬───────┘   └──────┬───────┘   └──────────┬───────────┘    │
+│         │                   │                       │                │
+│         │ sync_contact      │ sync_form_response    │ sync_atelier   │
+│         │ _to_lead()        │ _to_lead() ✅         │ _to_lead()     │
+│         │                   │                       │                │
+│         ▼                   ▼                       ▼                │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │                        leads                                  │   │
+│  │  (qualification_status, lead_score, ai_metadata)             │   │
+│  └──────────────────────────────┬───────────────────────────────┘   │
+│                                  │                                   │
+│                                  │ sync_lead_to_pipeline() ✅        │
+│                                  ▼                                   │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │                     opportunities                             │   │
+│  │  (stage: lead → qualified → proposal → negotiation → won/lost)│   │
+│  └──────────────────────────────┬───────────────────────────────┘   │
+│                                  │                                   │
+│                                  │ sync_won_to_project() ❌ TODO     │
+│                                  ▼                                   │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │                       projects                                │   │
+│  │  (status: scoping → design → development → testing → ...)    │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         MODULE COCKPIT                               │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌──────────────┐   ┌──────────────┐   ┌──────────────────────┐    │
+│  │    tasks     │←──│meeting_notes │←──│      bookings        │    │
+│  │  (polymorphe)│   │(pré-rempli)  │   │  (sync calendar)     │    │
+│  └──────────────┘   └──────────────┘   └──────────────────────┘    │
+│         │                   │                                       │
+│         ▼                   ▼                                       │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │                     activity_log                              │   │
+│  │  (timeline unifiée, append-only)                             │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 10.2 Sources de données par entité
+
+| Entité Cockpit | Sources Admin | Trigger/Méthode |
+|----------------|---------------|-----------------|
+| `leads` | `contacts`, `form_responses`, `newsletter_subscribers`, `atelier_inscriptions` | Triggers SQL |
+| `opportunities` | `leads` (auto-création) | `sync_lead_to_pipeline()` |
+| `projects` | `opportunities` (stage=won) | `sync_won_to_project()` ❌ |
+| `meeting_notes` | `bookings` (pré-remplissage) | UI uniquement |
+| `tasks` | Création manuelle ou IA | - |
+| `activity_log` | Toutes entités | Auto-logging |
+
+### 10.3 Règles de propagation workspace
+
+```sql
+-- Règle 1: Les entités héritent du workspace de leur parent
+opportunities.workspace_id ← leads.workspace_id (via trigger)
+projects.workspace_id     ← opportunities.workspace_id (via trigger)
+meeting_notes.workspace_id ← projects.workspace_id OR opportunities.workspace_id
+tasks.workspace_id        ← parent entity workspace (via trigger)
+activity_log.workspace_id ← entity workspace (via trigger)
+
+-- Règle 2: Défaut = workspace interne
+DEFAULT '00000000-0000-0000-0000-000000000001'
+```
+
+---
+
+## 11. PAGES UI COCKPIT
 
 | Route | Composant | Tables sources | État |
 |-------|-----------|----------------|------|
@@ -1378,7 +1524,7 @@ CREATE TRIGGER sync_won_to_project_trigger
 
 ---
 
-## 10. COMPOSANTS PARTAGÉS
+## 12. COMPOSANTS PARTAGÉS
 
 | Composant | Utilisé par | Description |
 |-----------|-------------|-------------|
@@ -1391,7 +1537,7 @@ CREATE TRIGGER sync_won_to_project_trigger
 
 ---
 
-## 11. HOOKS COCKPIT
+## 13. HOOKS COCKPIT
 
 | Hook | Tables | Fonctionnalités |
 |------|--------|-----------------|
@@ -1407,23 +1553,61 @@ CREATE TRIGGER sync_won_to_project_trigger
 
 ---
 
-## 12. PROCHAINES ÉTAPES
+## 14. PROCHAINES ÉTAPES
 
 ### Phase 1 (Actuelle) ✅
 - [x] Structure de base (pages, navigation)
 - [x] Leads + Pipeline fonctionnels
 - [x] Agenda avec création CR
-- [x] Dashboard enrichi
+- [x] Dashboard enrichi avec KPIs
 - [x] Activity log affiché
+- [x] Triggers sync_form_response_to_lead + sync_lead_to_pipeline
 
-### Phase 2 (Prochaine)
-- [ ] Trigger `sync_won_to_project`
-- [ ] Page Projects enrichie
+### Phase 2 (En cours)
+- [ ] Trigger `sync_won_to_project` — Création projet automatique
+- [ ] Triggers de validation (`validate_task`, `validate_activity_log`)
+- [ ] Triggers `set_updated_at_*` sur toutes les tables
+- [ ] Page Projects enrichie avec timeline
 - [ ] Page Specifications fonctionnelle
-- [ ] Dialogs création (Lead, Opportunity, Project, Task)
+- [ ] Dialogs création (Lead, Opportunity, Project, Task) ✅ Partiellement
 
 ### Phase 3 (Future)
+- [ ] Tables IA : `cockpit_settings`, `ai_prompts`, `ai_usage_log`
+- [ ] Tables documents : `project_documents`, `generated_documents`
 - [ ] IA N0 : Scoring leads automatique
 - [ ] IA N1 : Génération CDC draft
-- [ ] Analytics avancés
-- [ ] Rapports périodiques
+- [ ] Analytics avancés + rapports périodiques
+- [ ] Storage bucket `cockpit-documents`
+
+---
+
+## 15. CONVENTIONS DE DÉVELOPPEMENT
+
+### 15.1 Référence obligatoire
+
+> **Ce document est la source de vérité.** Toute modification du module Cockpit doit :
+> 1. Consulter ce CDC avant implémentation
+> 2. Respecter les patterns définis (hooks shared → cockpit)
+> 3. Mettre à jour la section 9 (Suivi d'implémentation) après changement
+
+### 15.2 Fichiers de référence associés
+
+| Document | Usage |
+|----------|-------|
+| `docs/CDC_COCKPIT_COMMERCIAL.md` | Spécifications techniques (CE DOCUMENT) |
+| `docs/COCKPIT_DEV_CHARTER.md` | Règles de développement et patterns |
+| `BrandBook_IArche_V1.md` | Charte graphique et design system |
+| `docs/CHARTE_GRAPHIQUE_V4.md` | Tokens couleurs et typographie |
+
+### 15.3 Commandes de vérification
+
+```bash
+# Vérifier les tables existantes
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
+
+# Vérifier les triggers actifs
+SELECT trigger_name, event_object_table FROM information_schema.triggers;
+
+# Vérifier les statuts configurés
+SELECT entity_type, code, label FROM statuses ORDER BY entity_type, display_order;
+```
