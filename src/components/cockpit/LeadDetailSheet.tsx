@@ -231,21 +231,21 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          <SheetHeader className="space-y-1">
+        <SheetContent className="w-full sm:max-w-lg flex flex-col h-full p-0">
+          <SheetHeader className="px-6 py-4 border-b bg-background sticky top-0 z-10 space-y-1">
             <div className="flex items-center justify-between">
-              <SheetTitle className="text-xl">{lead.name}</SheetTitle>
-              <Badge variant="outline">
+              <SheetTitle className="text-lg font-semibold">{lead.name}</SheetTitle>
+              <Badge variant="secondary" className="text-xs font-medium">
                 {SOURCE_LABELS[lead.source] || lead.source}
               </Badge>
             </div>
-            <SheetDescription className="flex items-center gap-2">
+            <SheetDescription className="flex items-center gap-1.5 text-xs">
               <Calendar className="h-3 w-3" />
               Créé le {lead.created_at && format(new Date(lead.created_at), 'dd MMMM yyyy à HH:mm', { locale: fr })}
             </SheetDescription>
           </SheetHeader>
 
-          <div className="mt-6 space-y-6">
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
             {/* Contact Info Section */}
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
@@ -445,67 +445,71 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="space-y-3 pt-4 border-t">
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={handleCreateProject}
-                  disabled={createProject.isPending}
-                >
-                  <FolderPlus className="h-4 w-4 mr-2" />
-                  {createProject.isPending ? 'Création...' : 'Nouveau projet'}
-                </Button>
-                
-                <Popover open={linkProjectOpen} onOpenChange={setLinkProjectOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="flex-1" disabled={availableProjects.length === 0}>
-                      <Link2 className="h-4 w-4 mr-2" />
-                      Lier à un projet
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="p-0 w-[300px]" align="start">
-                    <Command>
-                      <CommandInput placeholder="Rechercher un projet..." />
-                      <CommandList>
-                        <CommandEmpty>Aucun projet disponible</CommandEmpty>
-                        <CommandGroup>
-                          {availableProjects.map((project: any) => (
-                            <CommandItem
-                              key={project.id}
-                              value={project.name}
-                              onSelect={() => handleLinkToProject(project.id)}
-                            >
-                              <FolderOpen className="h-4 w-4 mr-2 text-muted-foreground" />
-                              {project.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
+          </div>
+          
+          {/* Sticky Actions Footer */}
+          <div className="px-6 py-4 border-t bg-background sticky bottom-0 space-y-2">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={handleCreateProject}
+                disabled={createProject.isPending}
+              >
+                <FolderPlus className="h-4 w-4 mr-1.5" />
+                {createProject.isPending ? 'Création...' : 'Nouveau projet'}
+              </Button>
               
-              <div className="flex gap-2">
-                <Button
-                  variant="default"
-                  className="flex-1"
-                  onClick={handleSave}
-                  disabled={!hasChanges || updateLead.isPending}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {updateLead.isPending ? 'Enregistrement...' : 'Enregistrer'}
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => setShowDeleteDialog(true)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+              <Popover open={linkProjectOpen} onOpenChange={setLinkProjectOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex-1" disabled={availableProjects.length === 0}>
+                    <Link2 className="h-4 w-4 mr-1.5" />
+                    Lier projet
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-[280px]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Rechercher..." className="h-9" />
+                    <CommandList>
+                      <CommandEmpty>Aucun projet</CommandEmpty>
+                      <CommandGroup>
+                        {availableProjects.map((project: any) => (
+                          <CommandItem
+                            key={project.id}
+                            value={project.name}
+                            onSelect={() => handleLinkToProject(project.id)}
+                            className="text-sm"
+                          >
+                            <FolderOpen className="h-4 w-4 mr-2 text-muted-foreground" />
+                            {project.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="flex-1"
+                onClick={handleSave}
+                disabled={!hasChanges || updateLead.isPending}
+              >
+                <Save className="h-4 w-4 mr-1.5" />
+                {updateLead.isPending ? 'Enregistrement...' : 'Enregistrer'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </SheetContent>

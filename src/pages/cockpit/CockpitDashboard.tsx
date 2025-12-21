@@ -66,9 +66,9 @@ export default function CockpitDashboard() {
       <div className="p-6 space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold">Bonjour 👋</h1>
+          <h1 className="text-2xl font-bold text-foreground">Tableau de bord</h1>
           <p className="text-muted-foreground">
-            Voici votre aperçu commercial du {format(new Date(), 'EEEE d MMMM', { locale: fr })}
+            Aperçu commercial du {format(new Date(), 'EEEE d MMMM', { locale: fr })}
           </p>
         </div>
 

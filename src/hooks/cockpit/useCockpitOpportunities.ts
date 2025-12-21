@@ -7,7 +7,7 @@ type Opportunity = Database['public']['Tables']['opportunities']['Row'];
 type OpportunityInsert = Database['public']['Tables']['opportunities']['Insert'];
 type OpportunityUpdate = Database['public']['Tables']['opportunities']['Update'];
 
-const PIPELINE_STAGES = ['lead', 'qualification', 'proposal', 'negotiation', 'closed_won', 'closed_lost'] as const;
+const PIPELINE_STAGES = ['lead', 'r1', 'r2', 'pause', 'closed_won', 'closed_lost'] as const;
 
 export function useCockpitOpportunities(workspaceId?: string) {
   const { toast } = useToast();
