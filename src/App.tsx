@@ -88,6 +88,10 @@ const AdminBrochures = lazy(() => import("./pages/admin/AdminBrochures"));
 const BrochureEditor = lazy(() => import("./pages/admin/BrochureEditor"));
 const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"));
 
+// Cockpit Commercial
+const ProtectedCockpitRoute = lazy(() => import("./components/cockpit/ProtectedCockpitRoute"));
+const CockpitDashboard = lazy(() => import("./pages/cockpit/CockpitDashboard"));
+
 // QueryClient avec cache optimisé
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -530,6 +534,13 @@ const App = () => (
           <Route path="/admin/brochures/:id" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><BrochureEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          
+          {/* Cockpit Commercial */}
+          <Route path="/cockpit" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedCockpitRoute><CockpitDashboard /></ProtectedCockpitRoute>
             </Suspense>
           } />
           
