@@ -8,6 +8,7 @@ import { format, isSameDay, addDays, subDays, startOfWeek, endOfWeek, eachDayOfI
 import { fr } from "date-fns/locale";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getBookingStatusConfig } from "@/lib/formatters";
 
 const CockpitAgenda = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -25,18 +26,8 @@ const CockpitAgenda = () => {
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "confirmed":
-        return <Badge className="bg-green-100 text-green-800">Confirmé</Badge>;
-      case "pending":
-        return <Badge className="bg-amber-100 text-amber-800">En attente</Badge>;
-      case "cancelled":
-        return <Badge className="bg-red-100 text-red-800">Annulé</Badge>;
-      case "completed":
-        return <Badge className="bg-blue-100 text-blue-800">Terminé</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
+    const config = getBookingStatusConfig(status);
+    return <Badge className={config.className}>{config.label}</Badge>;
   };
 
   const BookingCard = ({ booking }: { booking: any }) => (
