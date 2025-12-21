@@ -120,180 +120,166 @@ const CockpitLeads = () => {
 
   return (
     <CockpitLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-5 space-y-4">
+        {/* Header compact */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Leads</h1>
-            <p className="text-muted-foreground">Base de données contacts & prospects</p>
+            <h1 className="text-xl font-semibold text-foreground">Leads</h1>
+            <p className="text-sm text-muted-foreground">Base de données prospects</p>
           </div>
           <div className="flex gap-2">
             {selectedIds.length > 0 && (
               <Button 
                 variant="destructive" 
                 size="sm"
+                className="h-8 text-sm"
                 onClick={() => setShowBulkDeleteDialog(true)}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
                 Supprimer ({selectedIds.length})
               </Button>
             )}
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
+            <Button variant="outline" size="sm" className="h-8 text-sm">
+              <Download className="h-3.5 w-3.5 mr-1.5" />
               Exporter
             </Button>
             <CreateLeadDialog />
           </div>
         </div>
 
-        {/* Search and Filters */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Rechercher par nom, email, entreprise..." 
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Source" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toutes les sources</SelectItem>
-                  <SelectItem value="contact">Contact</SelectItem>
-                  <SelectItem value="newsletter">Newsletter</SelectItem>
-                  <SelectItem value="atelier-webinaire">Atelier/Webinaire</SelectItem>
-                  <SelectItem value="livre-blanc">Livre blanc</SelectItem>
-                  <SelectItem value="formulaire">Formulaire</SelectItem>
-                </SelectContent>
-              </Select>
+        {/* Stats inline + Search */}
+        <div className="flex items-center gap-4 p-3 bg-muted/40 rounded-lg border">
+          <div className="flex items-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Total</span>
+              <span className="font-semibold">{stats.total}</span>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Stats Cards - Simplified */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[
-            { label: "Total leads", value: stats.total, color: "text-primary" },
-            { label: "Contact", value: stats.bySource?.contact || 0, color: "text-blue-600" },
-            { label: "Newsletter", value: stats.bySource?.newsletter || 0, color: "text-green-600" },
-            { label: "Autres", value: (stats.bySource?.atelier || 0) + (stats.bySource?.livreBlanc || 0), color: "text-purple-600" },
-          ].map((stat) => (
-            <Card key={stat.label}>
-              <CardContent className="pt-6">
-                {isLoading ? (
-                  <Skeleton className="h-8 w-16" />
-                ) : (
-                  <>
-                    <p className="text-sm text-muted-foreground">{stat.label}</p>
-                    <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+            <div className="h-4 w-px bg-border" />
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Contact</span>
+              <span className="font-medium text-blue-600">{stats.bySource?.contact || 0}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Newsletter</span>
+              <span className="font-medium text-emerald-600">{stats.bySource?.newsletter || 0}</span>
+            </div>
+          </div>
+          
+          <div className="flex-1" />
+          
+          <div className="flex gap-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input 
+                placeholder="Rechercher..." 
+                className="pl-8 h-8 w-[200px] text-sm"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-[140px] h-8 text-sm">
+                <SelectValue placeholder="Source" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes</SelectItem>
+                <SelectItem value="contact">Contact</SelectItem>
+                <SelectItem value="newsletter">Newsletter</SelectItem>
+                <SelectItem value="atelier-webinaire">Atelier</SelectItem>
+                <SelectItem value="livre-blanc">Livre blanc</SelectItem>
+                <SelectItem value="formulaire">Formulaire</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Leads Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Liste des leads ({filteredLeads.length})</CardTitle>
+        <Card className="border shadow-sm">
+          <CardHeader className="py-3 px-4 border-b bg-muted/30">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {filteredLeads.length} lead{filteredLeads.length > 1 ? 's' : ''}
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {isLoading ? (
-              <div className="space-y-4">
+              <div className="p-4 space-y-3">
                 {[1, 2, 3, 4, 5].map(i => (
-                  <Skeleton key={i} className="h-16 w-full" />
+                  <Skeleton key={i} className="h-14 w-full" />
                 ))}
               </div>
             ) : filteredLeads.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-                <Users className="h-12 w-12 mb-4 opacity-50" />
-                <p className="text-lg font-medium">Aucun lead trouvé</p>
+              <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+                <Users className="h-10 w-10 mb-3 opacity-40" />
+                <p className="font-medium">Aucun lead trouvé</p>
                 <p className="text-sm">
                   {searchQuery || sourceFilter !== 'all' 
-                    ? "Modifiez vos filtres pour voir plus de résultats"
-                    : "Les leads apparaîtront ici une fois créés"
+                    ? "Modifiez vos filtres"
+                    : "Les leads apparaîtront ici"
                   }
                 </p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-10">
                       <Checkbox
                         checked={selectedIds.length === filteredLeads.length && filteredLeads.length > 0}
                         onCheckedChange={toggleSelectAll}
                       />
                     </TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Entreprise</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Score</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead className="text-xs">Contact</TableHead>
+                    <TableHead className="text-xs">Entreprise</TableHead>
+                    <TableHead className="text-xs">Source</TableHead>
+                    <TableHead className="text-xs w-16">Score</TableHead>
+                    <TableHead className="text-xs w-24">Date</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredLeads.map((lead) => (
                     <TableRow 
                       key={lead.id} 
-                      className="cursor-pointer hover:bg-muted/50"
+                      className="cursor-pointer hover:bg-muted/40"
                       onClick={() => handleRowClick(lead)}
                     >
-                      <TableCell onClick={(e) => e.stopPropagation()}>
+                      <TableCell onClick={(e) => e.stopPropagation()} className="py-2">
                         <Checkbox
                           checked={selectedIds.includes(lead.id)}
                           onCheckedChange={() => {}}
                           onClick={(e) => toggleSelect(lead.id, e)}
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <div>
-                          <p className="font-medium">{lead.name}</p>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <p className="font-medium text-sm">{lead.name}</p>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Mail className="h-3 w-3" />
                             {lead.email}
                           </div>
-                          {lead.phone && (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Phone className="h-3 w-3" />
-                              {lead.phone}
-                            </div>
-                          )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         {lead.company ? (
-                          <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
-                            <span>{lead.company}</span>
-                            {lead.industry && (
-                              <Badge variant="outline" className="text-xs">
-                                {lead.industry}
-                              </Badge>
-                            )}
+                          <div className="flex items-center gap-1.5">
+                            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="text-sm">{lead.company}</span>
                           </div>
                         ) : (
-                          <span className="text-muted-foreground">-</span>
+                          <span className="text-muted-foreground text-sm">-</span>
                         )}
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
+                      <TableCell className="py-2">
+                        <Badge variant="secondary" className="text-xs font-normal">
                           {SOURCE_LABELS[lead.source] || lead.source}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant={lead.lead_score && lead.lead_score >= 70 ? 'default' : 'secondary'}>
+                      <TableCell className="py-2">
+                        <span className={`text-sm font-medium ${lead.lead_score && lead.lead_score >= 70 ? 'text-emerald-600' : 'text-muted-foreground'}`}>
                           {lead.lead_score || 0}
-                        </Badge>
+                        </span>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {lead.created_at && format(new Date(lead.created_at), 'dd MMM yyyy', { locale: fr })}
+                      <TableCell className="text-xs text-muted-foreground py-2">
+                        {lead.created_at && format(new Date(lead.created_at), 'dd/MM/yy', { locale: fr })}
                       </TableCell>
                     </TableRow>
                   ))}

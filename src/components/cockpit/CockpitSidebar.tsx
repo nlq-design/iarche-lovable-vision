@@ -4,7 +4,6 @@ import {
   Users, 
   Calendar, 
   FolderKanban, 
-  FileText, 
   BarChart3,
   ArrowLeft,
   Package
@@ -15,9 +14,6 @@ import { Button } from '@/components/ui/button';
 import {
   Sidebar,
   SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -25,30 +21,16 @@ import {
   SidebarFooter,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const navigationItems = [
-  {
-    group: 'Vue d\'ensemble',
-    items: [
-      { title: 'Dashboard', url: '/cockpit', icon: LayoutDashboard, exact: true },
-    ]
-  },
-  {
-    group: 'Commercial',
-    items: [
-      { title: 'Pipeline', url: '/cockpit/pipeline', icon: GitBranch },
-      { title: 'Leads qualifiés', url: '/cockpit/leads', icon: Users },
-      { title: 'Projets', url: '/cockpit/projects', icon: FolderKanban },
-      { title: 'Solutions', url: '/cockpit/solutions', icon: Package },
-      { title: 'Agenda', url: '/cockpit/agenda', icon: Calendar },
-    ]
-  },
-  {
-    group: 'Analyse',
-    items: [
-      { title: 'Analytics', url: '/cockpit/analytics', icon: BarChart3 },
-    ]
-  }
+  { title: 'Dashboard', url: '/cockpit', icon: LayoutDashboard, exact: true },
+  { title: 'Pipeline', url: '/cockpit/pipeline', icon: GitBranch },
+  { title: 'Leads', url: '/cockpit/leads', icon: Users },
+  { title: 'Projets', url: '/cockpit/projects', icon: FolderKanban },
+  { title: 'Solutions', url: '/cockpit/solutions', icon: Package },
+  { title: 'Agenda', url: '/cockpit/agenda', icon: Calendar },
+  { title: 'Analytics', url: '/cockpit/analytics', icon: BarChart3 },
 ];
 
 export function CockpitSidebar() {
@@ -66,50 +48,57 @@ export function CockpitSidebar() {
   };
 
   return (
-    <Sidebar className={isCollapsed ? 'w-14' : 'w-64'} collapsible="icon">
+    <Sidebar className={isCollapsed ? 'w-14' : 'w-52'} collapsible="icon">
       <SidebarTrigger className="m-2 self-end" />
       
-      <SidebarContent className="pt-4">
-        {navigationItems.map((section) => (
-          <SidebarGroup key={section.group} className="mb-1">
-            {!isCollapsed && (
-              <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3 mb-1">
-                {section.group}
-              </SidebarGroupLabel>
-            )}
+      <SidebarContent className="pt-2 px-2">
+        <SidebarMenu className="space-y-0.5">
+          {navigationItems.map((item) => {
+            const active = isActive(item.url, item.exact);
             
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {section.items.map((item) => {
-                  const active = isActive(item.url, item.exact);
-                  
-                  return (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <NavLink
-                          to={item.url}
-                          end={item.exact ? true : undefined}
-                          className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/50 transition-colors"
-                          activeClassName="bg-primary/10 text-primary font-medium"
-                        >
-                          <item.icon className="h-4 w-4 flex-shrink-0" />
-                          {!isCollapsed && <span className="text-sm">{item.title}</span>}
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+            const linkContent = (
+              <NavLink
+                to={item.url}
+                end={item.exact ? true : undefined}
+                className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-colors text-sm ${
+                  active 
+                    ? 'bg-primary text-primary-foreground font-medium' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                }`}
+                activeClassName=""
+              >
+                <item.icon className="h-4 w-4 flex-shrink-0" />
+                {!isCollapsed && <span>{item.title}</span>}
+              </NavLink>
+            );
+            
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild className="p-0">
+                  {isCollapsed ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        {linkContent}
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="text-xs">
+                        {item.title}
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    linkContent
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
+        </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="p-3 border-t">
+      <SidebarFooter className="p-2 border-t">
         <Link to="/admin">
-          <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            {!isCollapsed && <span>Retour Admin</span>}
+          <Button variant="ghost" size="sm" className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-3.5 w-3.5" />
+            {!isCollapsed && <span>Admin</span>}
           </Button>
         </Link>
       </SidebarFooter>
