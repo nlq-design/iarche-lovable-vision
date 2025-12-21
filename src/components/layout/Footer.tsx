@@ -102,16 +102,32 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Colonne 3 : Navigation */}
+          {/* Colonne 3 : Solutions */}
           <div>
-            <h3 className="text-sm font-semibold mb-3">Navigation</h3>
+            <h3 className="text-sm font-semibold mb-3">Solutions</h3>
             <ul className="space-y-1.5">
               <li>
                 <NavLink 
                   to="/solutions" 
                   className="text-sm text-white/80 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
                 >
-                  Nos solutions
+                  Toutes nos solutions
+                </NavLink>
+              </li>
+              <li>
+                <NavLink 
+                  to="/solutions/collaboria" 
+                  className="text-sm text-white/80 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
+                >
+                  Collaboria
+                </NavLink>
+              </li>
+              <li>
+                <NavLink 
+                  to="/solutions/datalia" 
+                  className="text-sm text-white/80 hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-foreground rounded transition-colors duration-200"
+                >
+                  Datalia
                 </NavLink>
               </li>
               <li>
