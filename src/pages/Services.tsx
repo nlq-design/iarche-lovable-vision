@@ -182,6 +182,29 @@ const Services = () => {
                   className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
                   style={{ background: 'linear-gradient(180deg, #1A2B4A 0%, #B04A32 100%)' }}
                 />
+                
+                {/* Triangle gradient coin bas droit avec logo */}
+                <div 
+                  className="absolute bottom-0 right-0 w-24 h-24 overflow-hidden pointer-events-none"
+                >
+                  <div 
+                    className="absolute bottom-0 right-0 w-32 h-32 origin-bottom-right rotate-0"
+                    style={{ 
+                      background: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)',
+                      clipPath: 'polygon(100% 0%, 100% 100%, 0% 100%)'
+                    }}
+                  >
+                    {/* Logo en filigrane */}
+                    <div className="absolute bottom-2 right-2 opacity-20">
+                      <img 
+                        src="/logo-iarche-white.svg" 
+                        alt="" 
+                        className="w-8 h-8"
+                        aria-hidden="true"
+                      />
+                    </div>
+                  </div>
+                </div>
                 <CardHeader className="pl-5">
                   <div className="flex items-center gap-2">
                     {/* Badge gradient */}
