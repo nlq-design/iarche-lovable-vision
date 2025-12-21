@@ -91,6 +91,11 @@ const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"
 // Cockpit Commercial
 const ProtectedCockpitRoute = lazy(() => import("./components/cockpit/ProtectedCockpitRoute"));
 const CockpitDashboard = lazy(() => import("./pages/cockpit/CockpitDashboard"));
+const CockpitPipeline = lazy(() => import("./pages/cockpit/CockpitPipeline"));
+const CockpitLeads = lazy(() => import("./pages/cockpit/CockpitLeads"));
+const CockpitAgenda = lazy(() => import("./pages/cockpit/CockpitAgenda"));
+const CockpitProjects = lazy(() => import("./pages/cockpit/CockpitProjects"));
+const CockpitAnalytics = lazy(() => import("./pages/cockpit/CockpitAnalytics"));
 
 // QueryClient avec cache optimisé
 const queryClient = new QueryClient({
@@ -537,10 +542,35 @@ const App = () => (
             </Suspense>
           } />
           
-          {/* Cockpit Commercial */}
+{/* Cockpit Commercial */}
           <Route path="/cockpit" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedCockpitRoute><CockpitDashboard /></ProtectedCockpitRoute>
+            </Suspense>
+          } />
+          <Route path="/cockpit/pipeline" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedCockpitRoute><CockpitPipeline /></ProtectedCockpitRoute>
+            </Suspense>
+          } />
+          <Route path="/cockpit/leads" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedCockpitRoute><CockpitLeads /></ProtectedCockpitRoute>
+            </Suspense>
+          } />
+          <Route path="/cockpit/agenda" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedCockpitRoute><CockpitAgenda /></ProtectedCockpitRoute>
+            </Suspense>
+          } />
+          <Route path="/cockpit/projects" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedCockpitRoute><CockpitProjects /></ProtectedCockpitRoute>
+            </Suspense>
+          } />
+          <Route path="/cockpit/analytics" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedCockpitRoute><CockpitAnalytics /></ProtectedCockpitRoute>
             </Suspense>
           } />
           
