@@ -226,12 +226,12 @@ const BrochureEditor = () => {
             {!isNew && (
               <>
                 <Button variant="outline" onClick={() => setShowSVGExport(true)}>
-                  <Image className="h-4 w-4 mr-2" />
-                  Export SVG
+                  <Download className="h-4 w-4 mr-2" />
+                  PDF Haute-Fidélité
                 </Button>
                 <Button variant="outline" onClick={() => setShowPDFExport(true)}>
                   <Download className="h-4 w-4 mr-2" />
-                  Export PDF
+                  PDF Natif
                 </Button>
               </>
             )}
