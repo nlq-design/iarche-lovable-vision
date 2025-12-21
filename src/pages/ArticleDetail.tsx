@@ -247,9 +247,9 @@ const ArticleDetail = () => {
         <meta property="og:description" content={article.excerpt || article.title} />
         <meta property="og:url" content={getCanonicalUrl()} />
         <meta property="og:type" content="article" />
-        <meta property="og:image" content={article.cover_image_url || "https://iarche.fr/og-image.png"} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
+        <meta property="og:image" content={article.cover_image_url || "https://iarche.fr/og-image-v4.png"} />
+        <meta property="og:image:width" content="1512" />
+        <meta property="og:image:height" content="794" />
         <meta property="og:locale" content="fr_FR" />
         <meta property="og:site_name" content="IArche" />
         
@@ -257,7 +257,7 @@ const ArticleDetail = () => {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${article.title} · IArche`} />
         <meta name="twitter:description" content={article.excerpt || article.title} />
-        <meta name="twitter:image" content={article.cover_image_url || "https://iarche.fr/og-image.png"} />
+        <meta name="twitter:image" content={article.cover_image_url || "https://iarche.fr/og-image-v4.png"} />
         
         {/* Schema.org BreadcrumbList */}
         <script type="application/ld+json">
@@ -299,7 +299,7 @@ const ArticleDetail = () => {
             "@type": "Article",
             "headline": article.title,
             "description": article.excerpt || article.title,
-            "image": article.cover_image_url || "https://iarche.fr/og-image.png",
+            "image": article.cover_image_url || "https://iarche.fr/og-image-v4.png",
             "author": {
               "@type": "Organization",
               "name": "IArche"
@@ -347,7 +347,7 @@ const ArticleDetail = () => {
               "@type": "Event",
               "name": article.title,
               "description": article.excerpt || article.title,
-              "image": article.cover_image_url || "https://iarche.fr/og-image.png",
+              "image": article.cover_image_url || "https://iarche.fr/og-image-v4.png",
               "startDate": article.event_date || article.published_at || article.created_at,
               "eventStatus": "https://schema.org/EventScheduled",
               "eventAttendanceMode": article.event_location 
@@ -391,7 +391,7 @@ const ArticleDetail = () => {
                   "@id": `${getCanonicalUrl()}#video`,
                   "name": `Replay: ${article.title}`,
                   "description": article.excerpt || article.title,
-                  "thumbnailUrl": article.cover_image_url || "https://iarche.fr/og-image.png",
+                  "thumbnailUrl": article.cover_image_url || "https://iarche.fr/og-image-v4.png",
                   "contentUrl": article.replay_url,
                   "embedUrl": article.replay_url,
                   "uploadDate": article.published_at || article.created_at
@@ -409,7 +409,7 @@ const ArticleDetail = () => {
               "@type": "VideoObject",
               "name": `Replay: ${article.title}`,
               "description": article.excerpt || article.title,
-              "thumbnailUrl": article.cover_image_url || "https://iarche.fr/og-image.png",
+              "thumbnailUrl": article.cover_image_url || "https://iarche.fr/og-image-v4.png",
               "uploadDate": article.published_at || article.created_at,
               "contentUrl": article.replay_url,
               "embedUrl": article.replay_url,
@@ -437,7 +437,7 @@ const ArticleDetail = () => {
               "@type": "Book",
               "name": article.title,
               "description": article.excerpt || article.title,
-              "image": article.cover_image_url || "https://iarche.fr/og-image.png",
+              "image": article.cover_image_url || "https://iarche.fr/og-image-v4.png",
               "author": {
                 "@type": "Organization",
                 "name": "IArche",
@@ -484,7 +484,7 @@ const ArticleDetail = () => {
               "@type": "SoftwareApplication",
               "name": article.title,
               "description": article.excerpt || article.title,
-              "image": article.cover_image_url || "https://iarche.fr/og-image.png",
+              "image": article.cover_image_url || "https://iarche.fr/og-image-v4.png",
               "applicationCategory": "BusinessApplication",
               "operatingSystem": article.slug === 'team-5-connect' 
                 ? "Web, iOS, Android"
