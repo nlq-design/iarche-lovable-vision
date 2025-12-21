@@ -38,13 +38,15 @@ const Index = () => {
         <meta property="og:title" content="IArche · Agence IA Bayonne | Conseil & Intégration PME" />
         <meta property="og:description" content="Agence IA à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME. Sud-Ouest et toute la France." />
         <meta property="og:url" content="https://iarche.fr/" />
-        <meta property="og:image" content="https://iarche.fr/og-image.png" />
+        <meta property="og:image" content="https://iarche.fr/og-image-v4.png" />
+        <meta property="og:image:width" content="1512" />
+        <meta property="og:image:height" content="794" />
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="IArche · Agence IA Bayonne | Conseil & Intégration PME" />
         <meta name="twitter:description" content="Agence IA à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME." />
-        <meta name="twitter:image" content="https://iarche.fr/og-image.png" />
+        <meta name="twitter:image" content="https://iarche.fr/og-image-v4.png" />
         
         {/* Schema.org JSON-LD - Organization + LocalBusiness */}
         <script type="application/ld+json">

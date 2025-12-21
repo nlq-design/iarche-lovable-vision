@@ -193,7 +193,7 @@ const Contact = () => {
             "@context": "https://schema.org",
             "@type": "LocalBusiness",
             "name": "IArche",
-            "image": "https://iarche.fr/og-image.png",
+            "image": "https://iarche.fr/og-image-v4.png",
             "url": "https://iarche.fr",
             "email": "nlq@iarche.fr",
             "address": {
