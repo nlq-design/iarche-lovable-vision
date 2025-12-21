@@ -63,6 +63,8 @@ import { useCockpitProjectNotes } from '@/hooks/cockpit/useCockpitProjectNotes';
 import { LeadSelector } from '@/components/cockpit/LeadSelector';
 import { ContentEditor } from '@/components/cockpit/ContentEditor';
 import { FileUploader } from '@/components/cockpit/FileUploader';
+import { SpecificationEditor } from '@/components/cockpit/SpecificationEditor';
+import { CreateTaskDialog } from '@/components/cockpit/dialogs/CreateTaskDialog';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -77,7 +79,7 @@ const CockpitProjectDetail = () => {
   const { updateProject, deleteProject } = useCockpitProjects();
   const { tasks } = useCockpitTasks();
   const { meetingNotes } = useCockpitMeetingNotes();
-  const { useSpecificationsByProject, createSpecification } = useCockpitSpecifications();
+  const { useSpecificationsByProject } = useCockpitSpecifications();
   const { documents, createDocument, deleteDocument } = useCockpitProjectDocuments(id);
   const { notes: projectNotes, createNote, updateNote, deleteNote } = useCockpitProjectNotes(id);
   
@@ -91,7 +93,7 @@ const CockpitProjectDetail = () => {
   // Dialog states for adding items
   const [showAddNoteDialog, setShowAddNoteDialog] = useState(false);
   const [showAddDocDialog, setShowAddDocDialog] = useState(false);
-  const [showAddSpecDialog, setShowAddSpecDialog] = useState(false);
+  const [showAddTaskDialog, setShowAddTaskDialog] = useState(false);
   
   // New item form states
   const [newNoteTitle, setNewNoteTitle] = useState('');
@@ -101,9 +103,6 @@ const CockpitProjectDetail = () => {
   const [newDocTitle, setNewDocTitle] = useState('');
   const [newDocFiles, setNewDocFiles] = useState<File | File[] | null>(null);
   
-  const [newSpecTitle, setNewSpecTitle] = useState('');
-  const [newSpecContent, setNewSpecContent] = useState('');
-  const [newSpecFiles, setNewSpecFiles] = useState<File | File[] | null>(null);
 
   // Fetch project
   const { data: project, isLoading: projectLoading } = useQuery({
@@ -219,22 +218,6 @@ const CockpitProjectDetail = () => {
     });
   };
 
-  const handleAddSpec = () => {
-    if (!newSpecTitle.trim() || !id) return;
-    
-    createSpecification.mutate({
-      title: newSpecTitle,
-      project_id: id,
-      content: newSpecContent ? { text: newSpecContent } : {},
-    }, {
-      onSuccess: () => {
-        setNewSpecTitle('');
-        setNewSpecContent('');
-        setNewSpecFiles(null);
-        setShowAddSpecDialog(false);
-      }
-    });
-  };
 
   const projectTasks = tasks?.filter(t => t.project_id === id) || [];
   const projectMeetingNotes = meetingNotes?.filter(n => n.project_id === id) || [];
@@ -794,86 +777,7 @@ const CockpitProjectDetail = () => {
 
           {/* CDC Tab */}
           <TabsContent value="specs" className="space-y-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">Cahiers des charges</CardTitle>
-                <Dialog open={showAddSpecDialog} onOpenChange={setShowAddSpecDialog}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="h-4 w-4 mr-1" />
-                      Ajouter
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
-                      <DialogTitle>Nouveau cahier des charges</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 pt-4">
-                      <div className="space-y-2">
-                        <Label>Titre *</Label>
-                        <Input
-                          value={newSpecTitle}
-                          onChange={(e) => setNewSpecTitle(e.target.value)}
-                          placeholder="Titre du cahier des charges"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Contenu</Label>
-                        <ContentEditor
-                          textValue={newSpecContent}
-                          onTextChange={setNewSpecContent}
-                          fileValue={newSpecFiles}
-                          onFileChange={setNewSpecFiles}
-                          placeholder="Collez ou saisissez le contenu du CDC..."
-                          accept=".pdf,.doc,.docx"
-                        />
-                      </div>
-                      <div className="flex justify-end gap-2 pt-2">
-                        <Button variant="outline" onClick={() => setShowAddSpecDialog(false)}>
-                          Annuler
-                        </Button>
-                        <Button onClick={handleAddSpec} disabled={!newSpecTitle.trim()}>
-                          Ajouter
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </CardHeader>
-              <CardContent>
-                {projectSpecs.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                    <FileText className="h-10 w-10 mb-3 opacity-50" />
-                    <p className="font-medium">Aucun cahier des charges</p>
-                    <p className="text-sm">Ajoutez vos CDC au format PDF, Word ou texte</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {projectSpecs.map(spec => (
-                      <div key={spec.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium">{spec.title}</h4>
-                          <Badge variant={
-                            spec.status === 'approved' ? 'default' :
-                            spec.status === 'in_review' ? 'secondary' : 'outline'
-                          }>
-                            {spec.status === 'approved' ? 'Approuvé' :
-                             spec.status === 'in_review' ? 'En révision' :
-                             spec.status === 'archived' ? 'Archivé' : 'Brouillon'}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <span>v{spec.version}</span>
-                          {spec.updated_at && (
-                            <span>Modifié le {format(new Date(spec.updated_at), 'dd MMM yyyy', { locale: fr })}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <SpecificationEditor projectId={id || ''} specifications={projectSpecs} />
           </TabsContent>
 
           {/* Activity Tab - Tâches + Réunions */}
@@ -885,7 +789,7 @@ const CockpitProjectDetail = () => {
                   <ListTodo className="h-5 w-5" />
                   Tâches
                 </CardTitle>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" onClick={() => setShowAddTaskDialog(true)}>
                   <Plus className="h-4 w-4 mr-1" />
                   Nouvelle tâche
                 </Button>
@@ -993,6 +897,14 @@ const CockpitProjectDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Task Dialog */}
+      <CreateTaskDialog
+        open={showAddTaskDialog}
+        onOpenChange={setShowAddTaskDialog}
+        defaultEntityType="project"
+        defaultEntityId={id}
+      />
     </CockpitLayout>
   );
 };
