@@ -153,11 +153,11 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
 
     try {
       // On va créer le PDF avec des pages qui correspondent exactement au ratio des sections
-      // Format brochure portrait - pages personnalisées pour éviter barres blanches
-      const pageWidth = 210; // mm (ratio proche A4 mais pages exactes)
-      const pageHeight = 297; // mm
-      
+      // Format brochure - pages personnalisées pour éviter les bordures blanches
+      const basePageWidth = 210; // mm
+
       let pdf: jsPDF | null = null;
+      let exportedPages = 0;
 
       for (let i = 0; i < slides.length; i++) {
         const ref = sectionRefs.current[i];
@@ -178,43 +178,41 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
           img.src = dataUrl;
         });
 
-        // Calculer le ratio de l'image capturée
+        // Page PDF au ratio exact de l'image (zéro marge)
         const imgAspect = img.width / img.height;
-        
-        // Créer une page PDF qui correspond exactement au ratio de l'image
-        // On garde une largeur fixe et on ajuste la hauteur selon le ratio
-        const actualPageWidth = pageWidth;
-        const actualPageHeight = pageWidth / imgAspect;
-        
-        if (i === 0) {
-          // Première page: créer le PDF avec les dimensions de la première section
+        const pageWidth = basePageWidth;
+        const pageHeight = basePageWidth / imgAspect;
+        const orientation = pageHeight > pageWidth ? 'portrait' : 'landscape';
+
+        if (!pdf) {
+          // Première section réellement exportée
           pdf = new jsPDF({
-            orientation: actualPageHeight > actualPageWidth ? 'portrait' : 'landscape',
+            orientation,
             unit: 'mm',
-            format: [actualPageWidth, actualPageHeight],
+            format: [pageWidth, pageHeight],
           });
-        } else if (pdf) {
-          // Pages suivantes: ajouter avec les dimensions exactes de cette section
-          pdf.addPage([actualPageWidth, actualPageHeight], actualPageHeight > actualPageWidth ? 'portrait' : 'landscape');
+        } else {
+          // Nouvelle page avec dimensions exactes
+          pdf.addPage([pageWidth, pageHeight], orientation);
         }
 
-        if (pdf) {
-          // Image plein format sans bordures blanches
-          pdf.addImage(dataUrl, 'PNG', 0, 0, actualPageWidth, actualPageHeight);
-        }
+        pdf.addImage(dataUrl, 'PNG', 0, 0, pageWidth, pageHeight);
+        exportedPages++;
       }
 
       setProgress(95);
 
-      // Save PDF
-      if (pdf) {
-        pdf.save(`${brochure.slug || 'brochure'}-hd.pdf`);
+      if (!pdf || exportedPages === 0) {
+        throw new Error("Aucune section n'a pu être exportée (rien à capturer).");
       }
 
+      // Save PDF
+      pdf.save(`${brochure.slug || 'brochure'}-hd.pdf`);
+
       setProgress(100);
-      toast({ 
-        title: 'PDF Ultra HD généré', 
-        description: `${slides.length} pages haute-fidélité sans bordures` 
+      toast({
+        title: 'PDF Ultra HD généré',
+        description: `${exportedPages} page(s) haute-fidélité sans bordures`,
       });
       onClose();
     } catch (error) {
