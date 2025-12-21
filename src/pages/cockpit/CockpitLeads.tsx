@@ -114,6 +114,7 @@ const CockpitLeads = () => {
                   <SelectItem value="newsletter">Newsletter</SelectItem>
                   <SelectItem value="atelier-webinaire">Atelier/Webinaire</SelectItem>
                   <SelectItem value="livre-blanc">Livre blanc</SelectItem>
+                  <SelectItem value="formulaire">Formulaire</SelectItem>
                 </SelectContent>
               </Select>
             </div>
