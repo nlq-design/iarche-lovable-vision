@@ -50,6 +50,11 @@ export const useCockpitSpecifications = (workspaceId?: string) => {
     });
   };
 
+  const invalidateAllSpecQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ["cockpit-specifications"] });
+    queryClient.invalidateQueries({ queryKey: ["cockpit-specifications-project"] });
+  };
+
   const createSpecification = useMutation({
     mutationFn: async (spec: SpecificationInsert) => {
       const { data, error } = await supabase
@@ -62,7 +67,7 @@ export const useCockpitSpecifications = (workspaceId?: string) => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cockpit-specifications"] });
+      invalidateAllSpecQueries();
       toast.success("Cahier des charges créé");
     },
     onError: (error) => {
@@ -84,7 +89,7 @@ export const useCockpitSpecifications = (workspaceId?: string) => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cockpit-specifications"] });
+      invalidateAllSpecQueries();
       toast.success("Cahier des charges mis à jour");
     },
     onError: (error) => {
@@ -110,7 +115,7 @@ export const useCockpitSpecifications = (workspaceId?: string) => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cockpit-specifications"] });
+      invalidateAllSpecQueries();
       toast.success("Cahier des charges approuvé");
     },
     onError: (error) => {
@@ -129,7 +134,7 @@ export const useCockpitSpecifications = (workspaceId?: string) => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cockpit-specifications"] });
+      invalidateAllSpecQueries();
       toast.success("Cahier des charges supprimé");
     },
     onError: (error) => {
