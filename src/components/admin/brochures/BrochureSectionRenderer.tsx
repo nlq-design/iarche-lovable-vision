@@ -12,21 +12,45 @@ interface SlideData {
 interface BrochureSectionRendererProps {
   slide: SlideData;
   brochure: Brochure;
+  showDecorativeArc?: boolean;
 }
 
-const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererProps) => {
+/**
+ * BrochureSectionRenderer v4.2 - Synchronisé avec BrochureWebView
+ * 
+ * Ce composant reproduit EXACTEMENT le rendu de BrochureWebView pour l'export PDF HD.
+ * Toute modification dans BrochureWebView doit être reportée ici.
+ */
+const BrochureSectionRenderer = ({ slide, brochure, showDecorativeArc = true }: BrochureSectionRendererProps) => {
   const { custom_colors } = brochure;
   const primaryColor = custom_colors?.primary || COLORS.bleuNuit;
   const accentColor = custom_colors?.accent || COLORS.terracotta;
-
 
   switch (slide.type) {
     case 'cover':
       return (
         <section 
-          className="relative min-h-[800px] flex flex-col items-center justify-center px-12 py-20"
-          style={{ backgroundColor: COLORS.blancCasse }}
+          className="relative min-h-[800px] flex flex-col items-center justify-center px-12 py-20 overflow-hidden"
+          style={{ 
+            background: `radial-gradient(ellipse at 50% 0%, rgba(176, 74, 50, 0.08) 0%, transparent 50%), ${COLORS.blancCasse}`,
+          }}
         >
+          {/* v4.2 - Arcs décoratifs en zones mortes extrêmes */}
+          {showDecorativeArc && (
+            <>
+              <div className="absolute -top-48 -right-48 w-96 h-96 pointer-events-none opacity-[0.03]">
+                <svg viewBox="0 0 400 400" className="w-full h-full">
+                  <path d="M400 0 Q400 400 0 400" fill="none" stroke={COLORS.terracotta} strokeWidth="2" />
+                </svg>
+              </div>
+              <div className="absolute -bottom-48 -left-48 w-96 h-96 pointer-events-none opacity-[0.03]">
+                <svg viewBox="0 0 400 400" className="w-full h-full">
+                  <path d="M0 0 Q0 400 400 400" fill="none" stroke={COLORS.bleuNuit} strokeWidth="2" />
+                </svg>
+              </div>
+            </>
+          )}
+          
           <div className="relative z-10 flex flex-col items-center">
             {/* Logo SVG officiel v4.0 en haut */}
             <img 
@@ -35,34 +59,39 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
               className="h-12 mb-8"
               crossOrigin="anonymous"
             />
-            {/* Titre avec gradient (pour export PNG) */}
-            <h1 
-              className="text-7xl font-bold text-center mb-6"
+            {/* v4.2 - Titre avec gradient et typography renforcée */}
+            <h1
+              className="text-5xl md:text-7xl font-bold text-center mb-6"
               style={{ 
                 background: GRADIENTS.text.css,
                 backgroundSize: '600% 600%',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
+                letterSpacing: '-0.03em',
+                lineHeight: 1.1,
               }}
             >
               {brochure.cover_title || 'Titre'}
             </h1>
-            {/* Sous-titre */}
+            {/* Sous-titre avec meilleure opacité */}
             {brochure.cover_subtitle && (
               <p 
-                className="text-2xl text-center max-w-2xl"
-                style={{ color: COLORS.muted }}
+                className="text-xl md:text-2xl text-center max-w-2xl leading-relaxed"
+                style={{ color: COLORS.muted, opacity: 0.85 }}
               >
                 {brochure.cover_subtitle}
               </p>
             )}
-            {/* Image de couverture */}
+            {/* Image de couverture avec ombre profonde */}
             {brochure.cover_image_url && (
               <img 
                 src={brochure.cover_image_url} 
                 alt={brochure.cover_title}
-                className="mt-12 max-w-lg rounded-lg shadow-lg"
+                className="mt-12 max-w-md rounded-lg"
                 crossOrigin="anonymous"
+                style={{
+                  boxShadow: `0 25px 50px -12px rgba(26, 43, 74, 0.25), 0 0 0 1px rgba(176, 74, 50, 0.1)`,
+                }}
               />
             )}
           </div>
@@ -89,34 +118,58 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
     case 'keyPoints':
       return (
         <section 
-          className="relative min-h-[800px] px-12 py-20 flex items-center"
-          style={{ backgroundColor: COLORS.secondary }}
+          className="relative min-h-[800px] px-12 py-20 flex items-center overflow-hidden"
+          style={{ 
+            background: `radial-gradient(ellipse at 80% 20%, rgba(176, 74, 50, 0.06) 0%, transparent 40%), ${COLORS.secondary}`,
+          }}
         >
           <div className="max-w-6xl mx-auto w-full relative z-10">
+            {/* v4.2 - Badge stylisé */}
+            <div className="flex justify-center mb-4">
+              <span 
+                className="inline-flex items-center gap-2 text-xs uppercase tracking-wider font-medium px-4 py-2 rounded-full"
+                style={{ 
+                  background: 'rgba(176, 74, 50, 0.12)',
+                  color: accentColor,
+                  border: `1px solid rgba(176, 74, 50, 0.25)`,
+                }}
+              >
+                <span>📋</span>
+                Essentiel
+              </span>
+            </div>
             <h2 
               className="text-4xl font-bold text-center mb-4"
-              style={{ color: primaryColor }}
+              style={{ color: primaryColor, letterSpacing: '-0.02em' }}
             >
               Points clés
             </h2>
+            {/* Arc décoratif v4.0 under title */}
             <div className="flex justify-center mb-12">
               <LogoArc size="md" />
             </div>
             <div className="grid grid-cols-3 gap-8">
-              {slide.data.points.map((point: any) => (
+              {slide.data.points.map((point: any, pointIdx: number) => (
                 <div 
                   key={point.id} 
-                  className="p-8 rounded-xl shadow-sm"
+                  className="p-8 rounded-xl"
                   style={{ 
                     backgroundColor: COLORS.blancCasse,
                     border: `1px solid ${COLORS.border}`,
+                    boxShadow: '0 4px 20px -4px rgba(26, 43, 74, 0.12)',
                   }}
                 >
                   <div className="flex items-start gap-4">
-                    <CheckCircle 
-                      className="h-8 w-8 flex-shrink-0 mt-1" 
-                      style={{ color: accentColor }} 
-                    />
+                    {/* v4.2 - Numéro stylisé au lieu de CheckCircle */}
+                    <span 
+                      className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold"
+                      style={{ 
+                        background: 'rgba(176, 74, 50, 0.15)',
+                        color: accentColor,
+                      }}
+                    >
+                      {pointIdx + 1}
+                    </span>
                     <div>
                       <h3 
                         className="font-semibold text-lg mb-3"
@@ -125,7 +178,7 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
                         {point.title}
                       </h3>
                       <p 
-                        className="text-base"
+                        className="text-base leading-relaxed"
                         style={{ color: COLORS.muted }}
                       >
                         {point.description}
@@ -278,40 +331,75 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
     case 'testimonial':
       return (
         <section 
-          className="relative min-h-[800px] px-12 py-20 flex items-center"
-          style={{ backgroundColor: COLORS.blancCasse }}
+          className="relative min-h-[800px] px-12 py-20 flex items-center overflow-hidden"
+          style={{ 
+            background: `radial-gradient(ellipse at 20% 80%, rgba(26, 43, 74, 0.05) 0%, transparent 40%), ${COLORS.blancCasse}`,
+          }}
         >
           <div className="max-w-4xl mx-auto relative z-10">
+            {/* v4.2 - Badge témoignage */}
+            <div className="flex justify-center mb-6">
+              <span 
+                className="inline-flex items-center gap-2 text-xs uppercase tracking-wider font-medium px-4 py-2 rounded-full"
+                style={{ 
+                  background: 'rgba(176, 74, 50, 0.12)',
+                  color: accentColor,
+                  border: `1px solid rgba(176, 74, 50, 0.25)`,
+                }}
+              >
+                <span>💬</span>
+                Témoignage
+              </span>
+            </div>
+            
             <div 
-              className="p-12 rounded-xl"
+              className="p-12 rounded-xl relative"
               style={{ 
                 backgroundColor: COLORS.bleuNuitLight10,
                 borderLeft: `6px solid ${accentColor}`,
+                boxShadow: '0 10px 40px -10px rgba(26, 43, 74, 0.15)',
               }}
             >
-              <Quote 
-                className="h-12 w-12 mb-6" 
-                style={{ color: accentColor }} 
-              />
+              {/* v4.2 - Guillemets stylisés grands */}
+              <div 
+                className="absolute -top-6 left-6 text-9xl font-serif leading-none opacity-20"
+                style={{ color: accentColor }}
+              >
+                "
+              </div>
               <blockquote 
-                className="text-2xl italic mb-6 leading-relaxed"
+                className="text-2xl italic mb-6 relative z-10 leading-relaxed"
                 style={{ color: COLORS.foreground }}
               >
-                "{slide.data.quote}"
+                {slide.data.quote}
               </blockquote>
-              <div className="flex items-center gap-3">
-                <span 
-                  className="font-semibold text-xl"
-                  style={{ color: primaryColor }}
+              <div className="flex items-center gap-4">
+                {/* v4.2 - Avatar placeholder stylisé */}
+                <div 
+                  className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold"
+                  style={{ 
+                    background: `linear-gradient(135deg, ${accentColor}, ${COLORS.terracottaLight30})`,
+                    color: COLORS.blancCasse,
+                  }}
                 >
-                  {slide.data.author}
-                </span>
-                {slide.data.company && (
-                  <>
-                    <span className="text-xl" style={{ color: COLORS.muted }}>·</span>
-                    <span className="text-xl" style={{ color: COLORS.muted }}>{slide.data.company}</span>
-                  </>
-                )}
+                  {slide.data.author?.charAt(0) || 'A'}
+                </div>
+                <div>
+                  <span 
+                    className="font-semibold text-xl block"
+                    style={{ color: primaryColor }}
+                  >
+                    {slide.data.author}
+                  </span>
+                  {slide.data.company && (
+                    <span 
+                      className="text-lg"
+                      style={{ color: COLORS.muted }}
+                    >
+                      {slide.data.company}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -324,7 +412,6 @@ const BrochureSectionRenderer = ({ slide, brochure }: BrochureSectionRendererPro
           className="relative min-h-[800px] px-12 py-20 text-center flex items-center justify-center"
           style={{ backgroundColor: COLORS.blancCasse }}
         >
-          
           <div className="max-w-xl mx-auto relative z-10">
             <h2 
               className="text-4xl font-bold mb-4"
