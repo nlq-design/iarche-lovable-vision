@@ -440,7 +440,7 @@ export default function PostEditor() {
               }}>
                 {title}
               </h1>
-              {/* Description Body v4.2 (-10%) */}
+              {/* Description Body v4.2 (-10%) - Supporte les retours à la ligne */}
               <p style={{
                 fontFamily: IARCHE_FONTS.primary,
                 fontSize: `${bodyFontSize}px`,
@@ -452,6 +452,7 @@ export default function PostEditor() {
                 lineHeight: IARCHE_TYPOGRAPHY.body.lineHeight,
                 textAlign: descAlignment,
                 letterSpacing: IARCHE_TYPOGRAPHY.body.letterSpacing,
+                whiteSpace: 'pre-line',
               }}>
                 {description}
               </p>
@@ -492,7 +493,7 @@ export default function PostEditor() {
             }}>
               {chiffre}
             </div>
-            {/* Contexte v4.2 */}
+            {/* Contexte v4.2 - Supporte les retours à la ligne */}
             <p style={{
               fontFamily: IARCHE_FONTS.primary,
               fontSize: `${Math.round(descFontSize * IARCHE_TYPOGRAPHY.heading.multiplier)}px`,
@@ -503,6 +504,7 @@ export default function PostEditor() {
               maxWidth: '70%',
               lineHeight: IARCHE_TYPOGRAPHY.heading.lineHeight,
               textAlign: descAlignment,
+              whiteSpace: 'pre-line',
             }}>
               {contexte}
             </p>
@@ -556,6 +558,7 @@ export default function PostEditor() {
                 lineHeight: 1.5,
                 fontStyle: titleItalic ? 'italic' : 'normal',
                 textAlign: titleAlignment,
+                whiteSpace: 'pre-line',
               }}>
                 {citation}
               </p>
@@ -653,6 +656,7 @@ export default function PostEditor() {
                 lineHeight: 1.5,
                 maxWidth: '90%',
                 textAlign: descAlignment,
+                whiteSpace: 'pre-line',
               }}>
                 {conseilContenu}
               </p>
