@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, ArrowRight, Filter, GripVertical, Building2, Plus } from "lucide-react";
+import { TrendingUp, ArrowRight, Filter, GripVertical, Building2, Plus, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCockpitOpportunities } from '@/hooks/cockpit';
+import { useCockpitLeads } from '@/hooks/cockpit';
 import { CreateOpportunityDialog } from '@/components/cockpit/dialogs';
+import { LeadDetailSheet } from '@/components/cockpit/LeadDetailSheet';
 import { Link } from 'react-router-dom';
 
 const STAGE_CONFIG: Record<string, { label: string; color: string }> = {
@@ -18,10 +20,31 @@ const STAGE_CONFIG: Record<string, { label: string; color: string }> = {
   closed_lost: { label: 'Perdu', color: 'bg-red-500' },
 };
 
+interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  company?: string | null;
+  company_size?: string | null;
+  industry?: string | null;
+  source: string;
+  source_context?: string | null;
+  message?: string | null;
+  qualification_status?: string | null;
+  lead_score?: number | null;
+  consent_marketing?: boolean | null;
+  created_at?: string | null;
+  last_contacted_at?: string | null;
+}
+
 const CockpitPipeline = () => {
   const { opportunities, stats, isLoading, moveToStage, PIPELINE_STAGES } = useCockpitOpportunities();
+  const { leads } = useCockpitLeads();
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   // Group opportunities by stage
   const opportunitiesByStage = PIPELINE_STAGES.reduce((acc, stage) => {
@@ -44,6 +67,17 @@ const CockpitPipeline = () => {
     if (draggedId) {
       moveToStage.mutate({ id: draggedId, stage });
       setDraggedId(null);
+    }
+  };
+
+  const handleCardClick = (opp: any) => {
+    // Find the linked lead
+    if (opp.lead_id) {
+      const lead = leads?.find(l => l.id === opp.lead_id);
+      if (lead) {
+        setSelectedLead(lead);
+        setSheetOpen(true);
+      }
     }
   };
 
@@ -125,35 +159,51 @@ const CockpitPipeline = () => {
                         <p className="text-xs">Glissez-déposez ici</p>
                       </div>
                     ) : (
-                      stageOpps.map((opp) => (
-                        <div
-                          key={opp.id}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, opp.id)}
-                          className="p-3 rounded-lg border bg-card hover:bg-muted/50 cursor-grab active:cursor-grabbing transition-all hover:shadow-md"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">{opp.title}</p>
-                              {(opp as any).leads && (
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                                  <Building2 className="h-3 w-3" />
-                                  <span className="truncate">{(opp as any).leads?.company || (opp as any).leads?.name}</span>
+                      stageOpps.map((opp) => {
+                        const linkedLead = opp.lead_id ? leads?.find(l => l.id === opp.lead_id) : null;
+                        
+                        return (
+                          <div
+                            key={opp.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, opp.id)}
+                            onClick={() => handleCardClick(opp)}
+                            className="p-3 rounded-lg border bg-card hover:bg-muted/50 cursor-pointer active:cursor-grabbing transition-all hover:shadow-md"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5 cursor-grab" />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{opp.title}</p>
+                                {linkedLead ? (
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                                    <Building2 className="h-3 w-3" />
+                                    <span className="truncate">{linkedLead.company || linkedLead.name}</span>
+                                  </div>
+                                ) : (opp as any).leads ? (
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                                    <Building2 className="h-3 w-3" />
+                                    <span className="truncate">{(opp as any).leads?.company || (opp as any).leads?.name}</span>
+                                  </div>
+                                ) : null}
+                                <div className="flex items-center justify-between mt-2">
+                                  <span className="text-sm font-semibold">
+                                    {formatCurrency(Number(opp.value_amount) || 0)}
+                                  </span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {opp.probability}%
+                                  </Badge>
                                 </div>
-                              )}
-                              <div className="flex items-center justify-between mt-2">
-                                <span className="text-sm font-semibold">
-                                  {formatCurrency(Number(opp.value_amount) || 0)}
-                                </span>
-                                <Badge variant="outline" className="text-xs">
-                                  {opp.probability}%
-                                </Badge>
+                                {linkedLead && (
+                                  <div className="flex items-center gap-1 mt-2 text-xs text-primary">
+                                    <User className="h-3 w-3" />
+                                    <span>Voir la fiche lead</span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </CardContent>
                 </Card>
@@ -189,6 +239,13 @@ const CockpitPipeline = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Lead Detail Sheet */}
+      <LeadDetailSheet 
+        lead={selectedLead}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+      />
     </CockpitLayout>
   );
 };

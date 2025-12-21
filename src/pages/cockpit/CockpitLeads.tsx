@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Search, Filter, Download, Mail, Phone, Building2, Plus } from "lucide-react";
+import { Users, Search, Download, Mail, Phone, Building2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -21,31 +21,59 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useCockpitLeads } from '@/hooks/cockpit';
+import { useLeads } from '@/hooks/shared/useLeads';
 import { CreateLeadDialog } from '@/components/cockpit/dialogs';
+import { LeadDetailSheet } from '@/components/cockpit/LeadDetailSheet';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-
-const STATUS_LABELS: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
-  new: { label: 'Nouveau', variant: 'default' },
-  contacted: { label: 'Contacté', variant: 'secondary' },
-  qualified: { label: 'Qualifié', variant: 'default' },
-  converted: { label: 'Converti', variant: 'default' },
-  lost: { label: 'Perdu', variant: 'destructive' },
-};
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const SOURCE_LABELS: Record<string, string> = {
   'contact': 'Contact',
   'newsletter': 'Newsletter',
   'atelier-webinaire': 'Atelier/Webinaire',
   'livre-blanc': 'Livre blanc',
+  'formulaire': 'Formulaire',
 };
 
+interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  company?: string | null;
+  company_size?: string | null;
+  industry?: string | null;
+  source: string;
+  source_context?: string | null;
+  message?: string | null;
+  qualification_status?: string | null;
+  lead_score?: number | null;
+  consent_marketing?: boolean | null;
+  created_at?: string | null;
+  last_contacted_at?: string | null;
+}
+
 const CockpitLeads = () => {
-  const { leads, stats, isLoading, updateQualificationStatus } = useCockpitLeads();
+  const { leads, stats, isLoading } = useCockpitLeads();
+  const { bulkDeleteLeads } = useLeads();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
   // Filter leads
   const filteredLeads = leads?.filter(lead => {
@@ -54,11 +82,41 @@ const CockpitLeads = () => {
       lead.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (lead.company?.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    const matchesStatus = statusFilter === 'all' || lead.qualification_status === statusFilter;
     const matchesSource = sourceFilter === 'all' || lead.source === sourceFilter;
     
-    return matchesSearch && matchesStatus && matchesSource;
+    return matchesSearch && matchesSource;
   }) || [];
+
+  const handleRowClick = (lead: Lead) => {
+    setSelectedLead(lead);
+    setSheetOpen(true);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredLeads.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredLeads.map(l => l.id));
+    }
+  };
+
+  const toggleSelect = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds(prev => 
+      prev.includes(id) 
+        ? prev.filter(i => i !== id)
+        : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = () => {
+    bulkDeleteLeads.mutate(selectedIds, {
+      onSuccess: () => {
+        setSelectedIds([]);
+        setShowBulkDeleteDialog(false);
+      }
+    });
+  };
 
   return (
     <CockpitLayout>
@@ -66,9 +124,19 @@ const CockpitLeads = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Leads</h1>
-            <p className="text-muted-foreground">Tous vos contacts et prospects</p>
+            <p className="text-muted-foreground">Base de données contacts & prospects</p>
           </div>
           <div className="flex gap-2">
+            {selectedIds.length > 0 && (
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={() => setShowBulkDeleteDialog(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Supprimer ({selectedIds.length})
+              </Button>
+            )}
             <Button variant="outline" size="sm">
               <Download className="h-4 w-4 mr-2" />
               Exporter
@@ -90,22 +158,8 @@ const CockpitLeads = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les statuts</SelectItem>
-                  <SelectItem value="new">Nouveau</SelectItem>
-                  <SelectItem value="contacted">Contacté</SelectItem>
-                  <SelectItem value="qualified">Qualifié</SelectItem>
-                  <SelectItem value="converted">Converti</SelectItem>
-                  <SelectItem value="lost">Perdu</SelectItem>
-                </SelectContent>
-              </Select>
               <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Source" />
                 </SelectTrigger>
                 <SelectContent>
@@ -121,14 +175,13 @@ const CockpitLeads = () => {
           </CardContent>
         </Card>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        {/* Stats Cards - Simplified */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
-            { label: "Total", value: stats.total, color: "text-primary" },
-            { label: "Nouveaux", value: stats.new, color: "text-blue-600" },
-            { label: "Contactés", value: stats.contacted, color: "text-yellow-600" },
-            { label: "Qualifiés", value: stats.qualified, color: "text-green-600" },
-            { label: "Convertis", value: stats.converted, color: "text-purple-600" },
+            { label: "Total leads", value: stats.total, color: "text-primary" },
+            { label: "Contact", value: stats.bySource?.contact || 0, color: "text-blue-600" },
+            { label: "Newsletter", value: stats.bySource?.newsletter || 0, color: "text-green-600" },
+            { label: "Autres", value: (stats.bySource?.atelier || 0) + (stats.bySource?.livreBlanc || 0), color: "text-purple-600" },
           ].map((stat) => (
             <Card key={stat.label}>
               <CardContent className="pt-6">
@@ -162,7 +215,7 @@ const CockpitLeads = () => {
                 <Users className="h-12 w-12 mb-4 opacity-50" />
                 <p className="text-lg font-medium">Aucun lead trouvé</p>
                 <p className="text-sm">
-                  {searchQuery || statusFilter !== 'all' 
+                  {searchQuery || sourceFilter !== 'all' 
                     ? "Modifiez vos filtres pour voir plus de résultats"
                     : "Les leads apparaîtront ici une fois créés"
                   }
@@ -172,17 +225,33 @@ const CockpitLeads = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedIds.length === filteredLeads.length && filteredLeads.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Entreprise</TableHead>
                     <TableHead>Source</TableHead>
-                    <TableHead>Statut</TableHead>
                     <TableHead>Score</TableHead>
                     <TableHead>Date</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredLeads.map((lead) => (
-                    <TableRow key={lead.id} className="cursor-pointer hover:bg-muted/50">
+                    <TableRow 
+                      key={lead.id} 
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleRowClick(lead)}
+                    >
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedIds.includes(lead.id)}
+                          onCheckedChange={() => {}}
+                          onClick={(e) => toggleSelect(lead.id, e)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">{lead.name}</p>
@@ -202,31 +271,21 @@ const CockpitLeads = () => {
                         {lead.company ? (
                           <div className="flex items-center gap-2">
                             <Building2 className="h-4 w-4 text-muted-foreground" />
-                            {lead.company}
+                            <span>{lead.company}</span>
+                            {lead.industry && (
+                              <Badge variant="outline" className="text-xs">
+                                {lead.industry}
+                              </Badge>
+                            )}
                           </div>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{lead.source}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={lead.qualification_status || 'new'}
-                          onValueChange={(value) => updateQualificationStatus.mutate({ id: lead.id, status: value })}
-                        >
-                          <SelectTrigger className="w-[120px] h-8">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="new">Nouveau</SelectItem>
-                            <SelectItem value="contacted">Contacté</SelectItem>
-                            <SelectItem value="qualified">Qualifié</SelectItem>
-                            <SelectItem value="converted">Converti</SelectItem>
-                            <SelectItem value="lost">Perdu</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Badge variant="outline">
+                          {SOURCE_LABELS[lead.source] || lead.source}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant={lead.lead_score && lead.lead_score >= 70 ? 'default' : 'secondary'}>
@@ -244,6 +303,34 @@ const CockpitLeads = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Lead Detail Sheet */}
+      <LeadDetailSheet 
+        lead={selectedLead}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+      />
+
+      {/* Bulk Delete Dialog */}
+      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer {selectedIds.length} lead(s) ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Les leads sélectionnés seront définitivement supprimés.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </CockpitLayout>
   );
 };
