@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { pdf } from '@react-pdf/renderer';
 import { saveAs } from 'file-saver';
+import { toPng } from 'html-to-image';
+import { jsPDF } from 'jspdf';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, Download, Plus, Trash2, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, Plus, Trash2, ChevronLeft, ChevronRight, Loader2, FileImage } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { CarouselPDF, ExportMode, BarSize } from './templates/CarouselPDF';
@@ -21,6 +23,7 @@ import { TopMarginSlider, getContentSpacing } from './TopMarginSlider';
 import { DecorativeArcToggle } from './DecorativeArcToggle';
 import SavedTemplatesPanel from './SavedTemplatesPanel';
 import ExportActions from './ExportActions';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 
 interface CarouselEditorProps {
   templateId: string;
@@ -276,11 +279,85 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
     try {
       const blob = await pdf(<CarouselPDF slides={slides} startTheme={startTheme} showDecorativeArc={showDecorativeArc} />).toBlob();
       saveAs(blob, `carousel-iarche-${templateId}-${Date.now()}.pdf`);
-      toast({ title: 'PDF exporté avec succès' });
+      toast({ title: 'PDF basique exporté' });
     } catch (error) {
       console.error('Export error:', error);
       toast({ title: 'Erreur lors de l\'export', variant: 'destructive' });
     } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // PDF Haute-Fidélité - Capture chaque slide de l'aperçu HTML
+  const handleExportPdfHd = async () => {
+    if (!previewRef.current) {
+      toast({ title: 'Erreur', description: 'Aperçu non disponible', variant: 'destructive' });
+      return;
+    }
+    
+    setIsExporting(true);
+    const originalSlide = currentSlide;
+    
+    try {
+      // Format carousel: portrait 4:5 ratio -> A4 portrait fonctionne bien
+      const pageWidth = 210; // mm
+      const pageHeight = 297; // mm
+      
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      for (let i = 0; i < slides.length; i++) {
+        // Changer de slide et attendre le rendu
+        setCurrentSlide(i);
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Capturer l'aperçu HTML actuel
+        const dataUrl = await toPng(previewRef.current, {
+          pixelRatio: 4,
+          cacheBust: true,
+        });
+
+        // Ajouter nouvelle page (sauf pour la première)
+        if (i > 0) {
+          pdf.addPage();
+        }
+
+        // Calculer dimensions pour remplir la page
+        const img = new Image();
+        await new Promise((resolve) => {
+          img.onload = resolve;
+          img.src = dataUrl;
+        });
+
+        const imgAspect = img.width / img.height;
+        const pageAspect = pageWidth / pageHeight;
+
+        let finalWidth = pageWidth;
+        let finalHeight = pageHeight;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (imgAspect > pageAspect) {
+          finalHeight = pageWidth / imgAspect;
+          offsetY = (pageHeight - finalHeight) / 2;
+        } else {
+          finalWidth = pageHeight * imgAspect;
+          offsetX = (pageWidth - finalWidth) / 2;
+        }
+
+        pdf.addImage(dataUrl, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
+      }
+
+      pdf.save(`carousel-iarche-${templateId}-hd-${Date.now()}.pdf`);
+      toast({ title: 'PDF HD exporté', description: `${slides.length} slides avec rendu web haute-fidélité` });
+    } catch (error) {
+      console.error('Export HD error:', error);
+      toast({ title: 'Erreur lors de l\'export HD', variant: 'destructive' });
+    } finally {
+      setCurrentSlide(originalSlide);
       setIsExporting(false);
     }
   };
@@ -335,10 +412,32 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
               width={1080}
               height={1350}
             />
-            <Button onClick={handleExportPDF} disabled={isExporting}>
-              {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-              PDF complet
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button disabled={isExporting}>
+                  {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                  PDF complet
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Mode d'export PDF</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleExportPdfHd} className="gap-2">
+                  <FileImage className="h-4 w-4 text-accent" />
+                  <div>
+                    <div className="font-medium">PDF Haute-Fidélité</div>
+                    <div className="text-xs text-muted-foreground">Capture web exacte</div>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPDF} className="gap-2">
+                  <Download className="h-4 w-4" />
+                  <div>
+                    <div className="font-medium">PDF Natif</div>
+                    <div className="text-xs text-muted-foreground">Rendu vectoriel basique</div>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
