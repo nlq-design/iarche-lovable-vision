@@ -5,7 +5,7 @@ import { PDFLogoArc } from '../pdf/PDFLogoArc';
 
 export type ExportMode = 'simple' | 'with-bar' | 'full';
 export type BarSize = 'sm' | 'md' | 'lg' | 'xl';
-export type ThemeType = 'dark' | 'light' | 'terra' | 'contrast';
+export type ThemeType = 'dark' | 'light' | 'terra' | 'contrast' | 'gradient';
 
 interface SlideData {
   id: number;
@@ -63,6 +63,16 @@ const THEME_COLORS = {
     sectionNumberColor: '#FAFAFA',
     footerOpacity: 0.6,
   },
+  // v4.2 - Thème gradient (style email) - Blanc cassé pour police
+  gradient: {
+    background: IARCHE_COLORS.bleuNuit,       // Note: PDF ne supporte pas les gradients CSS
+    text: IARCHE_COLORS.blancCasse,           // #FAF9F7 - Blanc cassé
+    subtext: IARCHE_COLORS.blancCasse,
+    accent: IARCHE_COLORS.blancCasse,
+    logoVariant: 'white' as const,
+    sectionNumberColor: IARCHE_COLORS.blancCasse,
+    footerOpacity: 0.6,
+  },
 };
 
 // Theme alternation pairs
@@ -71,6 +81,7 @@ const THEME_ALTERNATES: Record<ThemeType, ThemeType> = {
   light: 'dark',
   terra: 'dark',
   contrast: 'light',
+  gradient: 'light',
 };
 
 const { width: PAGE_WIDTH, height: PAGE_HEIGHT } = PDF_FORMATS.presentation;

@@ -177,7 +177,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
   const [articles, setArticles] = useState<{ id: string; title: string; slug: string }[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<string>('');
   const [selectedPreset, setSelectedPreset] = useState<string>('');
-  const [startTheme, setStartTheme] = useState<'dark' | 'light' | 'terra' | 'contrast'>('dark');
+  const [startTheme, setStartTheme] = useState<'dark' | 'light' | 'terra' | 'contrast' | 'gradient'>('dark');
   const [selectedCompositionPreset, setSelectedCompositionPreset] = useState<string>('centered');
   const [verticalAlignment, setVerticalAlignment] = useState<VerticalAlignment>('center');
   const [topMargin, setTopMargin] = useState<number>(0);
@@ -201,7 +201,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
   // Load template data
   const loadTemplateData = useCallback((data: Record<string, unknown>) => {
     if (data.slides) setSlides(data.slides as SlideData[]);
-    if (data.startTheme) setStartTheme(data.startTheme as 'dark' | 'light' | 'terra' | 'contrast');
+    if (data.startTheme) setStartTheme(data.startTheme as 'dark' | 'light' | 'terra' | 'contrast' | 'gradient');
     if (data.sourceMode) setSourceMode(data.sourceMode as 'libre' | 'article' | 'preset');
     if (data.selectedPreset !== undefined) setSelectedPreset(data.selectedPreset as string);
     if (data.verticalAlignment !== undefined) setVerticalAlignment(data.verticalAlignment as VerticalAlignment);
@@ -326,7 +326,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
         light: { bg: '#FAF9F7', text: '#1A2B4A', subtext: '#666666', logo: '/logos/iarche-main.svg' },
         terra: { bg: '#B04A32', text: '#FAF9F7', subtext: '#FAF9F7', logo: '/logos/iarche-white.svg' },
         contrast: { bg: '#0A0A0A', text: '#FAFAFA', subtext: '#FAFAFA', logo: '/logos/iarche-white.svg' },
-        gradient: { bg: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)', text: '#FFFFFF', subtext: '#FFFFFF', logo: '/logos/iarche-white.svg' },
+        gradient: { bg: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)', text: '#FAF9F7', subtext: '#FAF9F7', logo: '/logos/iarche-white.svg' },
       };
       const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light', gradient: 'light' };
 
@@ -658,7 +658,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
             <Label>Thème de départ :</Label>
             <RadioGroup 
               value={startTheme} 
-              onValueChange={(v) => setStartTheme(v as 'dark' | 'light' | 'terra' | 'contrast')}
+              onValueChange={(v) => setStartTheme(v as 'dark' | 'light' | 'terra' | 'contrast' | 'gradient')}
               className="flex flex-wrap gap-4"
             >
               <div className="flex items-center space-x-2">
@@ -687,6 +687,13 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                 <Label htmlFor="contrast" className="flex items-center gap-2 cursor-pointer">
                   <div className="w-5 h-5 rounded border" style={{ backgroundColor: '#0A0A0A' }} />
                   <span className="text-sm">Contraste</span>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="gradient" id="gradient" />
+                <Label htmlFor="gradient" className="flex items-center gap-2 cursor-pointer">
+                  <div className="w-5 h-5 rounded border" style={{ background: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)' }} />
+                  <span className="text-sm">Gradient</span>
                 </Label>
               </div>
             </RadioGroup>
