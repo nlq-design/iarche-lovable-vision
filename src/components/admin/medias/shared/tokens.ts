@@ -79,12 +79,12 @@ export const THEMES = {
     accent: COLORS.terracotta,
     border: COLORS.whiteAlpha40,
   },
-  // v4.2 - Thème gradient (style email)
+  // v4.2 - Thème gradient (style email) - Blanc cassé pour la police
   gradient: {
     background: `linear-gradient(135deg, ${COLORS.bleuNuit} 0%, ${COLORS.terracotta} 100%)`,
-    text: COLORS.white,
-    subtext: COLORS.whiteAlpha80,
-    accent: COLORS.white,
+    text: COLORS.blancCasse,           // #FAF9F7 - Blanc cassé par défaut
+    subtext: COLORS.blancCasse,        // Cohérence avec text
+    accent: COLORS.blancCasse,
     border: COLORS.whiteAlpha20,
   },
 } as const;
@@ -469,6 +469,7 @@ export const getBackgroundColor = (theme: ThemeType): string => {
 export const getTextColor = (theme: ThemeType): string => {
   switch (theme) {
     case 'light': return COLORS.bleuNuit;
+    case 'gradient': return COLORS.blancCasse; // Blanc cassé pour gradient
     default: return COLORS.white;
   }
 };
@@ -476,6 +477,7 @@ export const getTextColor = (theme: ThemeType): string => {
 export const getSubtextColor = (theme: ThemeType): string => {
   switch (theme) {
     case 'light': return COLORS.subtle;
+    case 'gradient': return COLORS.blancCasse; // Blanc cassé pour gradient
     default: return COLORS.whiteAlpha80;
   }
 };
@@ -483,7 +485,7 @@ export const getSubtextColor = (theme: ThemeType): string => {
 export const getAccentColor = (theme: ThemeType): string => {
   switch (theme) {
     case 'terra': return COLORS.bleuNuit;
-    case 'gradient': return COLORS.white; // Blanc pour contraste sur gradient
+    case 'gradient': return COLORS.blancCasse; // Blanc cassé pour contraste sur gradient
     default: return COLORS.terracotta;
   }
 };

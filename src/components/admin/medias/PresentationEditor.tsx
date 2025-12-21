@@ -183,7 +183,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
   const [sourceMode, setSourceMode] = useState<'libre' | 'solution' | 'preset'>('libre');
   const [solutions, setSolutions] = useState<{ id: string; title: string }[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<string>('');
-  const [startTheme, setStartTheme] = useState<'dark' | 'light' | 'terra' | 'contrast'>('dark');
+  const [startTheme, setStartTheme] = useState<'dark' | 'light' | 'terra' | 'contrast' | 'gradient'>('dark');
   const [selectedCompositionPreset, setSelectedCompositionPreset] = useState<string>('centered');
   const [verticalAlignment, setVerticalAlignment] = useState<VerticalAlignment>('center');
   const [topMargin, setTopMargin] = useState<number>(0);
@@ -624,7 +624,7 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
             <Label>Thème de départ :</Label>
             <RadioGroup 
               value={startTheme} 
-              onValueChange={(v) => setStartTheme(v as 'dark' | 'light' | 'terra' | 'contrast')}
+              onValueChange={(v) => setStartTheme(v as 'dark' | 'light' | 'terra' | 'contrast' | 'gradient')}
               className="flex flex-wrap gap-4"
             >
               <div className="flex items-center space-x-2">
@@ -653,6 +653,13 @@ export const PresentationEditor = ({ templateId, onBack }: PresentationEditorPro
                 <Label htmlFor="pres-contrast" className="flex items-center gap-2 cursor-pointer">
                   <div className="w-5 h-5 rounded border" style={{ backgroundColor: '#0A0A0A' }} />
                   <span className="text-sm">Contraste</span>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="gradient" id="pres-gradient" />
+                <Label htmlFor="pres-gradient" className="flex items-center gap-2 cursor-pointer">
+                  <div className="w-5 h-5 rounded border" style={{ background: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)' }} />
+                  <span className="text-sm">Gradient</span>
                 </Label>
               </div>
             </RadioGroup>
