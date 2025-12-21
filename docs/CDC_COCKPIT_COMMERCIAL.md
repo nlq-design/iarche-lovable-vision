@@ -3,8 +3,15 @@
 ## Document de spécification
 
 **Projet :** Module Cockpit Commercial intégré au back-office existant  
-**Version :** 3.1.4  
+**Version :** 3.1.5  
 **Date :** 21 décembre 2025  
+
+**Changelog V3.1.4 → V3.1.5 :**
+- Add: Champs enrichis table `leads` (website, address, city, postal_code, country, siret, revenue_range, linkedin_url, position)
+- Add: Page CockpitProjectDetail enrichie avec section Société complète
+- Add: Section Contact améliorée (position, LinkedIn, etc.)
+- Add: Dashboard : remplacement "Répartition leads" par "Prochains RDV"
+- Update: Phase 2 → Page Projects enrichie ✅
 
 **Changelog V3.1.3 → V3.1.4 :**
 - Fix: Ordre migrations corrigé (meeting_notes AVANT tasks)
@@ -1524,7 +1531,7 @@ DEFAULT '00000000-0000-0000-0000-000000000001'
 | `/cockpit/leads` | `CockpitLeads` | `leads` | ✅ Implémenté |
 | `/cockpit/pipeline` | `CockpitPipeline` | `opportunities` + `leads` | ✅ Implémenté |
 | `/cockpit/agenda` | `CockpitAgenda` | `bookings` + `meeting_notes` | ✅ Implémenté |
-| `/cockpit/projects` | `CockpitProjects` | `projects` + `specifications` | 🔶 À enrichir |
+| `/cockpit/projects` | `CockpitProjects` | `projects` + `specifications` + `leads` | ✅ Implémenté |
 | `/cockpit/specs` | `CockpitSpecifications` | `specifications` | 🔶 À enrichir |
 | `/cockpit/analytics` | `CockpitAnalytics` | `cockpit_reports` + agrégations | 🔶 À enrichir |
 
@@ -1574,7 +1581,8 @@ DEFAULT '00000000-0000-0000-0000-000000000001'
 - [x] Trigger `sync_won_to_project` — Création projet automatique ✅
 - [x] Triggers de validation (`validate_task`, `validate_activity_log`) ✅
 - [x] Triggers `set_updated_at_*` sur toutes les tables cockpit ✅
-- [ ] Page Projects enrichie avec timeline
+- [x] Page Projects enrichie (section Société, Contact, Budget, Planning) ✅
+- [x] Champs leads enrichis (website, siret, linkedin, position, adresse) ✅
 - [ ] Page Specifications fonctionnelle
 - [ ] Dialogs création (Lead, Opportunity, Project, Task) ✅ Partiellement
 
