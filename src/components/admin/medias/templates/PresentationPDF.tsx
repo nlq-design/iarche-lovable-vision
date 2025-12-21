@@ -284,7 +284,10 @@ const styles = StyleSheet.create({
 });
 
 export const PresentationPDF = ({ slides, startTheme = 'dark', showDecorativeArc = true }: PresentationPDFProps) => {
+  // v4.3: Mode gradient = 100% gradient sur toutes les slides (pas d'alternance)
   const getSlideTheme = (slideIndex: number): ThemeType => {
+    // Si gradient, appliquer sur toutes les slides
+    if (startTheme === 'gradient') return 'gradient';
     if (slideIndex % 2 === 0) return startTheme;
     return THEME_ALTERNATES[startTheme];
   };

@@ -25,6 +25,7 @@ import SavedTemplatesPanel from './SavedTemplatesPanel';
 import ExportActions from './ExportActions';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { getCTAColor, getCTAColorHex, getCTABadgeStyles, getCTABulletStyles } from './CTAText';
+import { PDFComparisonView } from './PDFComparisonView';
 
 interface CarouselEditorProps {
   templateId: string;
@@ -329,11 +330,12 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
         contrast: { bg: '#0A0A0A', text: '#FAFAFA', subtext: '#FAFAFA', logo: '/logos/iarche-white.svg' },
         gradient: { bg: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)', text: '#FAF9F7', subtext: '#FAF9F7', logo: '/logos/iarche-white.svg' },
       };
-      const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light', gradient: 'light' };
+      const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light', gradient: 'gradient' };
 
       for (let i = 0; i < slides.length; i++) {
         const slide = slides[i];
-        const slideTheme = i % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme);
+        // v4.3: Mode gradient = 100% gradient (pas d'alternance)
+        const slideTheme = startTheme === 'gradient' ? 'gradient' : (i % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme));
         const colors = PREVIEW_THEMES[slideTheme];
         const isDark = slideTheme !== 'light';
         // v4.2 Règle d'or: CTA en blanc cassé sur gradient
@@ -590,6 +592,11 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <PDFComparisonView 
+              htmlPreviewRef={previewRef}
+              pdfDocument={<CarouselPDF slides={slides} startTheme={startTheme} showDecorativeArc={showDecorativeArc} />}
+              title="Carrousel - Comparaison HTML vs PDF"
+            />
           </div>
         </div>
 
@@ -741,7 +748,8 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                 };
                 const THEME_ALT: Record<string, string> = { dark: 'light', light: 'dark', terra: 'dark', contrast: 'light', gradient: 'gradient' };
                 
-                const currentTheme = currentSlide % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme);
+                // v4.3: Mode gradient = 100% gradient (pas d'alternance)
+                const currentTheme = startTheme === 'gradient' ? 'gradient' : (currentSlide % 2 === 0 ? startTheme : (THEME_ALT[startTheme] as typeof startTheme));
                 const colors = PREVIEW_THEMES[currentTheme];
                 const isDark = currentTheme !== 'light';
                 // v4.2 Règle d'or: CTA en blanc cassé sur gradient, sinon terracotta
