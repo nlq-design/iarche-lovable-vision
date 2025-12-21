@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { 
   Users, 
   Target, 
@@ -10,13 +12,16 @@ import {
   TrendingUp, 
   Clock,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  Plus
 } from 'lucide-react';
 import { useCockpitLeads, useCockpitOpportunities, useCockpitTasks } from '@/hooks/cockpit';
+import { CreateTaskDialog } from '@/components/cockpit/dialogs';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 export default function CockpitDashboard() {
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const { stats: leadStats, isLoading: leadsLoading } = useCockpitLeads();
   const { stats: oppStats, isLoading: oppsLoading } = useCockpitOpportunities();
   const { tasks, stats: taskStats, isLoading: tasksLoading } = useCockpitTasks();
@@ -71,14 +76,20 @@ export default function CockpitDashboard() {
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Actions du jour */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Actions du jour
-              </CardTitle>
-              <CardDescription>
-                {taskStats.dueToday} tâches • {taskStats.overdue} en retard
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Actions du jour
+                </CardTitle>
+                <CardDescription>
+                  {taskStats.dueToday} tâches • {taskStats.overdue} en retard
+                </CardDescription>
+              </div>
+              <Button size="sm" onClick={() => setTaskDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" />
+                Tâche
+              </Button>
             </CardHeader>
             <CardContent>
               {tasksLoading ? (
@@ -174,6 +185,7 @@ export default function CockpitDashboard() {
             )}
           </CardContent>
         </Card>
+        <CreateTaskDialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen} />
       </div>
     </CockpitLayout>
   );
