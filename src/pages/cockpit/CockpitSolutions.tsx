@@ -63,55 +63,37 @@ export default function CockpitSolutions() {
 
   return (
     <CockpitLayout>
-      <div className="space-y-6">
+      <div className="p-5 space-y-4">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Solutions commerciales</h1>
-            <p className="text-muted-foreground">
-              Gérez les leads intéressés par vos solutions
-            </p>
+            <h1 className="text-xl font-semibold text-foreground">Solutions</h1>
+            <p className="text-sm text-muted-foreground">Gérez les leads par solution</p>
           </div>
-          <Button variant="outline" asChild>
+          <Button variant="outline" size="sm" className="h-8 text-sm" asChild>
             <a href="/admin/solutions" target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4 mr-2" />
+              <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
               Gérer dans Admin
             </a>
           </Button>
         </div>
 
-        {/* Stats */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Solutions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{solutions.length}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Publiées
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-green-600">{publishedCount}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Leads intéressés
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-primary">{totalLeads}</p>
-            </CardContent>
-          </Card>
+        {/* Stats inline */}
+        <div className="flex items-center gap-6 p-3 bg-muted/40 rounded-lg border text-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Solutions</span>
+            <span className="font-semibold">{solutions.length}</span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Publiées</span>
+            <span className="font-semibold text-emerald-600">{publishedCount}</span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Leads</span>
+            <span className="font-semibold text-primary">{totalLeads}</span>
+          </div>
         </div>
 
         {/* Search */}
@@ -121,80 +103,69 @@ export default function CockpitSolutions() {
             placeholder="Rechercher une solution..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-9"
           />
         </div>
 
         {/* Solutions List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Solutions</CardTitle>
-            <CardDescription>
-              Cliquez sur une solution pour gérer les leads intéressés
-            </CardDescription>
+        <Card className="border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Liste des solutions</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : filteredSolutions.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                <FileText className="h-10 w-10 mb-3 opacity-50" />
-                <p className="font-medium">Aucune solution</p>
-                <p className="text-sm">Les solutions créées dans l'admin apparaîtront ici</p>
+                <FileText className="h-8 w-8 mb-2 opacity-50" />
+                <p className="text-sm font-medium">Aucune solution</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {filteredSolutions.map((solution) => {
                   const leadCount = solutionLeadCounts[solution.id] || 0;
                   
                   return (
                     <div
                       key={solution.id}
-                      className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                      className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => navigate(`/cockpit/solutions/${solution.id}`)}
                     >
                       {solution.cover_image_url ? (
                         <img
                           src={solution.cover_image_url}
                           alt={solution.title}
-                          className="w-16 h-16 object-cover rounded-lg"
+                          className="w-12 h-12 object-cover rounded-md"
                         />
                       ) : (
-                        <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                          <FileText className="h-6 w-6 text-muted-foreground" />
+                        <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center">
+                          <FileText className="h-5 w-5 text-muted-foreground" />
                         </div>
                       )}
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium truncate">{solution.title}</h3>
-                          <Badge variant={solution.published ? "default" : "secondary"}>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <h3 className="font-medium text-sm truncate">{solution.title}</h3>
+                          <Badge variant={solution.published ? "default" : "secondary"} className="text-xs h-5 px-1.5">
                             {solution.published ? "Publiée" : "Brouillon"}
                           </Badge>
                         </div>
-                        {solution.excerpt && (
-                          <p className="text-sm text-muted-foreground line-clamp-1">
-                            {solution.excerpt}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-4 mt-1">
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           {solution.created_at && (
-                            <p className="text-xs text-muted-foreground">
-                              {format(new Date(solution.created_at), "dd MMM yyyy", { locale: fr })}
-                            </p>
+                            <span>{format(new Date(solution.created_at), "dd MMM yyyy", { locale: fr })}</span>
                           )}
                           {leadCount > 0 && (
-                            <span className="flex items-center gap-1 text-xs text-primary">
+                            <span className="flex items-center gap-1 text-primary">
                               <Users className="h-3 w-3" />
-                              {leadCount} lead{leadCount > 1 ? 's' : ''}
+                              {leadCount}
                             </span>
                           )}
                         </div>
                       </div>
 
-                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
                     </div>
                   );
                 })}

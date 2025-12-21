@@ -71,15 +71,15 @@ const CockpitAnalytics = () => {
 
   return (
     <CockpitLayout>
-      <div className="space-y-6">
+      <div className="p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
-            <p className="text-muted-foreground">Tableaux de bord et KPIs commerciaux</p>
+            <h1 className="text-xl font-semibold text-foreground">Analytics</h1>
+            <p className="text-sm text-muted-foreground">Tableaux de bord et KPIs</p>
           </div>
           <div className="flex gap-2">
             <Select defaultValue="30d">
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-36 h-8 text-sm">
                 <SelectValue placeholder="Période" />
               </SelectTrigger>
               <SelectContent>
@@ -89,62 +89,48 @@ const CockpitAnalytics = () => {
                 <SelectItem value="12m">12 derniers mois</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="h-8 text-sm">
               Exporter
             </Button>
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {kpis.map((kpi) => (
-            <Card key={kpi.label}>
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{kpi.label}</p>
-                    {isLoading ? (
-                      <Skeleton className="h-8 w-20 mt-1" />
-                    ) : (
-                      <p className="text-2xl font-bold mt-1">{kpi.value}</p>
-                    )}
-                    <div className="flex items-center gap-1 mt-1">
-                      {kpi.trend === "up" ? (
-                        <TrendingUp className="h-3 w-3 text-green-600" />
-                      ) : kpi.trend === "down" ? (
-                        <TrendingDown className="h-3 w-3 text-red-600" />
-                      ) : null}
-                      <span className={`text-xs ${
-                        kpi.trend === "up" ? "text-green-600" : 
-                        kpi.trend === "down" ? "text-red-600" : 
-                        "text-muted-foreground"
-                      }`}>
-                        {kpi.change}
-                      </span>
-                    </div>
-                  </div>
-                  <kpi.icon className="h-5 w-5 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
+        {/* KPI inline stats */}
+        <div className="flex items-center gap-6 p-3 bg-muted/40 rounded-lg border text-sm flex-wrap">
+          {kpis.map((kpi, idx) => (
+            <div key={kpi.label} className="flex items-center gap-2">
+              {idx > 0 && <div className="h-4 w-px bg-border -ml-4 mr-2 hidden sm:block" />}
+              <kpi.icon className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">{kpi.label}</span>
+              {isLoading ? (
+                <Skeleton className="h-5 w-12" />
+              ) : (
+                <span className="font-semibold">{kpi.value}</span>
+              )}
+              {kpi.change && kpi.trend !== "neutral" && (
+                <span className={`text-xs ${kpi.trend === "up" ? "text-emerald-600" : "text-red-500"}`}>
+                  {kpi.change}
+                </span>
+              )}
+            </div>
           ))}
         </div>
 
         {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Pipeline par étape</CardTitle>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card className="border">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Pipeline par étape</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-56 w-full" />
               ) : pipelineData.some(d => d.count > 0) ? (
-                <ResponsiveContainer width="100%" height={264}>
+                <ResponsiveContainer width="100%" height={224}>
                   <BarChart data={pipelineData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip 
                       formatter={(value: number, name: string) => [
                         name === "count" ? `${value} opportunités` : `${value.toLocaleString("fr-FR")} €`,
@@ -155,35 +141,34 @@ const CockpitAnalytics = () => {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex flex-col items-center justify-center h-64 text-muted-foreground border-2 border-dashed rounded-lg">
-                  <BarChart3 className="h-12 w-12 mb-4 opacity-50" />
-                  <p className="text-sm font-medium">Aucune donnée</p>
-                  <p className="text-xs">Créez des opportunités pour voir le graphique</p>
+                <div className="flex flex-col items-center justify-center h-56 text-muted-foreground border border-dashed rounded-lg">
+                  <BarChart3 className="h-10 w-10 mb-3 opacity-50" />
+                  <p className="text-sm">Aucune donnée</p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Briefcase className="h-5 w-5" />
+          <Card className="border">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Briefcase className="h-4 w-4" />
                 Projets par statut
               </CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-56 w-full" />
               ) : projectData.length > 0 ? (
-                <div className="flex items-center gap-6">
-                  <ResponsiveContainer width="50%" height={200}>
+                <div className="flex items-center gap-4">
+                  <ResponsiveContainer width="50%" height={180}>
                     <PieChart>
                       <Pie
                         data={projectData}
                         cx="50%"
                         cy="50%"
-                        innerRadius={40}
-                        outerRadius={80}
+                        innerRadius={35}
+                        outerRadius={70}
                         dataKey="value"
                       >
                         {projectData.map((entry, index) => (
@@ -195,70 +180,47 @@ const CockpitAnalytics = () => {
                   </ResponsiveContainer>
                   <div className="space-y-2">
                     {projectData.map((item) => (
-                      <div key={item.name} className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: item.color }}
-                        />
-                        <span className="text-sm">{item.name}</span>
-                        <span className="text-sm font-bold">{item.value}</span>
+                      <div key={item.name} className="flex items-center gap-2 text-sm">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span>{item.name}</span>
+                        <span className="font-semibold">{item.value}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-64 text-muted-foreground border-2 border-dashed rounded-lg">
-                  <Briefcase className="h-12 w-12 mb-4 opacity-50" />
-                  <p className="text-sm font-medium">Aucun projet</p>
-                  <p className="text-xs">Créez des projets pour voir le graphique</p>
+                <div className="flex flex-col items-center justify-center h-56 text-muted-foreground border border-dashed rounded-lg">
+                  <Briefcase className="h-10 w-10 mb-3 opacity-50" />
+                  <p className="text-sm">Aucun projet</p>
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
+        {/* Summary */}
+        <Card className="bg-muted/30 border">
+          <CardContent className="py-3 px-4">
+            <div className="flex items-center justify-between text-sm flex-wrap gap-4">
+              <div className="flex items-center gap-5">
                 <div>
-                  <p className="text-sm text-muted-foreground">Pipeline pondéré</p>
-                  <p className="text-xl font-bold">
-                    {opportunityStats.weightedValue.toLocaleString("fr-FR")} €
-                  </p>
+                  <span className="text-muted-foreground text-xs">Pipeline pondéré</span>
+                  <p className="font-semibold">{opportunityStats.weightedValue.toLocaleString("fr-FR")} €</p>
                 </div>
-                <Target className="h-8 w-8 text-primary opacity-50" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
+                <div className="h-8 w-px bg-border" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Budget projets total</p>
-                  <p className="text-xl font-bold">
-                    {projectStats.totalBudget.toLocaleString("fr-FR")} €
-                  </p>
+                  <span className="text-muted-foreground text-xs">Budget projets</span>
+                  <p className="font-semibold">{projectStats.totalBudget.toLocaleString("fr-FR")} €</p>
                 </div>
-                <Euro className="h-8 w-8 text-green-600 opacity-50" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
+                <div className="h-8 w-px bg-border" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Budget consommé</p>
-                  <p className="text-xl font-bold">
-                    {projectStats.consumedBudget.toLocaleString("fr-FR")} €
-                  </p>
+                  <span className="text-muted-foreground text-xs">Consommé</span>
+                  <p className="font-semibold">{projectStats.consumedBudget.toLocaleString("fr-FR")} €</p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-amber-600 opacity-50" />
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </CockpitLayout>
   );
