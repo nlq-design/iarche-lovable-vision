@@ -1,7 +1,6 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useCTATracking } from '@/hooks/useCTATracking';
-import Logo from '@/components/ui/Logo';
 
 const SolutionsCTASection = () => {
   const { trackCTAClick } = useCTATracking();
@@ -15,10 +14,6 @@ const SolutionsCTASection = () => {
           className="block relative rounded-lg py-12 md:py-16 px-6 md:px-8 overflow-hidden transition-all duration-500 group focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2"
           style={{ background: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)' }}
         >
-          {/* Logo en filigrane */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-            <Logo variant="white" size="lg" />
-          </div>
           
           <div className="max-w-3xl mx-auto text-center invisible animate-fadeIn [animation-delay:0.2s] relative z-10">
             <div className="inline-flex items-center group-hover:opacity-90 transition-opacity text-xl md:text-2xl font-semibold text-white">
