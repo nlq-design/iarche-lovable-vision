@@ -126,62 +126,50 @@ const CockpitAgenda = () => {
 
   return (
     <CockpitLayout>
-      <div className="space-y-6">
+      <div className="p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Agenda</h1>
-            <p className="text-muted-foreground capitalize">{formattedDate}</p>
+            <h1 className="text-xl font-semibold text-foreground">Agenda</h1>
+            <p className="text-sm text-muted-foreground capitalize">{formattedDate}</p>
           </div>
           <div className="flex gap-2">
             <Button 
               variant="outline" 
-              size="sm" 
+              size="sm"
+              className="h-8 text-sm"
               onClick={handleSyncCalendar}
               disabled={isSyncing}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Synchronisation...' : 'Sync Google Calendar'}
+              <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? 'Sync...' : 'Sync Google'}
             </Button>
-            <Button size="sm">
-              + Nouveau RDV
+            <Button size="sm" className="h-8 text-sm">
+              Nouveau RDV
             </Button>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold">{stats.thisWeek}</p>
-                <p className="text-xs text-muted-foreground">Cette semaine</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold">{stats.upcoming}</p>
-                <p className="text-xs text-muted-foreground">À venir</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold">{stats.completed}</p>
-                <p className="text-xs text-muted-foreground">Terminés</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-red-600">{stats.cancelled}</p>
-                <p className="text-xs text-muted-foreground">Annulés</p>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Stats inline */}
+        <div className="flex items-center gap-6 p-3 bg-muted/40 rounded-lg border text-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Cette semaine</span>
+            <span className="font-semibold">{stats.thisWeek}</span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">À venir</span>
+            <span className="font-semibold">{stats.upcoming}</span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Terminés</span>
+            <span className="font-semibold text-emerald-600">{stats.completed}</span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Annulés</span>
+            <span className="font-semibold text-red-500">{stats.cancelled}</span>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

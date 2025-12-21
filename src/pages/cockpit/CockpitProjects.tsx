@@ -52,13 +52,13 @@ const CockpitProjects = () => {
 
   return (
     <CockpitLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Projets</h1>
-            <p className="text-muted-foreground">Suivi de vos projets clients</p>
+            <h1 className="text-xl font-semibold text-foreground">Projets</h1>
+            <p className="text-sm text-muted-foreground">Suivi des projets clients</p>
           </div>
-          <Button size="sm" onClick={async () => {
+          <Button size="sm" className="h-8 text-sm" onClick={async () => {
             const newProject = await createProject.mutateAsync({ 
               name: 'Nouveau projet',
               status: 'planning',
@@ -68,57 +68,59 @@ const CockpitProjects = () => {
               navigate(`/cockpit/projects/${newProject.id}`);
             }
           }} disabled={createProject.isPending}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
             {createProject.isPending ? 'Création...' : 'Nouveau projet'}
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'En cours', value: stats.active, icon: Clock, color: 'text-blue-600' },
-          { label: 'Terminés', value: stats.completed, icon: CheckCircle2, color: 'text-green-600' },
-          { label: 'En pause', value: stats.onHold, icon: PauseCircle, color: 'text-amber-600' },
-          { label: 'À risque', value: stats.atRisk, icon: AlertCircle, color: 'text-red-600' },
-        ].map((stat) => (
-            <Card key={stat.label}>
-              <CardContent className="pt-6">
-                {isLoading ? (
-                  <Skeleton className="h-12 w-full" />
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <stat.icon className={`h-8 w-8 ${stat.color}`} />
-                    <div>
-                      <p className="text-2xl font-bold">{stat.value}</p>
-                      <p className="text-sm text-muted-foreground">{stat.label}</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+        {/* Stats inline */}
+        <div className="flex items-center gap-6 p-3 bg-muted/40 rounded-lg border text-sm">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-blue-500" />
+            <span className="text-muted-foreground">En cours</span>
+            <span className="font-semibold">{stats.active}</span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+            <span className="text-muted-foreground">Terminés</span>
+            <span className="font-semibold">{stats.completed}</span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <PauseCircle className="h-4 w-4 text-amber-500" />
+            <span className="text-muted-foreground">Pause</span>
+            <span className="font-semibold">{stats.onHold}</span>
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-red-500" />
+            <span className="text-muted-foreground">À risque</span>
+            <span className="font-semibold">{stats.atRisk}</span>
+          </div>
         </div>
 
         {/* Active Projects */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Projets actifs</CardTitle>
-            <Badge variant="secondary">{activeProjects.length} projets</Badge>
+        <Card className="border shadow-sm">
+          <CardHeader className="py-3 px-4 border-b bg-muted/30 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Projets actifs</CardTitle>
+            <Badge variant="secondary" className="text-xs">{activeProjects.length}</Badge>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             {isLoading ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {[1, 2, 3].map(i => (
-                  <Skeleton key={i} className="h-24 w-full" />
+                  <Skeleton key={i} className="h-20 w-full" />
                 ))}
               </div>
             ) : activeProjects.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-                <FolderKanban className="h-12 w-12 mb-4 opacity-50" />
-                <p className="text-lg font-medium">Aucun projet en cours</p>
-                <p className="text-sm">Créez votre premier projet pour commencer</p>
+              <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+                <FolderKanban className="h-10 w-10 mb-3 opacity-40" />
+                <p className="font-medium">Aucun projet en cours</p>
+                <p className="text-sm">Créez votre premier projet</p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {activeProjects.map((project) => {
                   const statusConfig = STATUS_CONFIG[project.status] || STATUS_CONFIG.planning;
                   const healthConfig = HEALTH_CONFIG[project.health_status] || HEALTH_CONFIG.healthy;
@@ -133,20 +135,20 @@ const CockpitProjects = () => {
                   return (
                     <div 
                       key={project.id}
-                      className="p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+                      className="p-3 rounded-md border bg-background hover:bg-muted/40 transition-colors cursor-pointer"
                       onClick={() => navigate(`/cockpit/projects/${project.id}`)}
                     >
-                      <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium">{project.name}</h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium text-sm">{project.name}</h3>
                             <div className={`w-2 h-2 rounded-full ${healthConfig.color}`} title={healthConfig.label} />
                           </div>
                           {project.description && (
-                            <p className="text-sm text-muted-foreground line-clamp-1">{project.description}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{project.description}</p>
                           )}
                         </div>
-                        <Badge variant="outline" className={statusConfig.color}>
+                        <Badge variant="outline" className={`text-xs ${statusConfig.color}`}>
                           {statusConfig.label}
                         </Badge>
                       </div>

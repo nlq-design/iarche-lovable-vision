@@ -63,30 +63,30 @@ export default function CockpitDashboard() {
 
   return (
     <CockpitLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-5 space-y-5">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Tableau de bord</h1>
-          <p className="text-muted-foreground">
-            Aperçu commercial du {format(new Date(), 'EEEE d MMMM', { locale: fr })}
+          <h1 className="text-xl font-semibold text-foreground">Tableau de bord</h1>
+          <p className="text-sm text-muted-foreground">
+            {format(new Date(), 'EEEE d MMMM', { locale: fr })}
           </p>
         </div>
 
-        {/* KPIs */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {/* KPIs inline */}
+        <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
           {stats.map((stat) => (
-            <Card key={stat.label}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {stat.label}
-                </CardTitle>
-                <stat.icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
+            <Card key={stat.label} className="border shadow-sm">
+              <CardContent className="p-3">
                 {isLoading ? (
-                  <Skeleton className="h-8 w-20" />
+                  <Skeleton className="h-10 w-full" />
                 ) : (
-                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className="flex items-center gap-3">
+                    <stat.icon className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-lg font-semibold">{stat.value}</p>
+                      <p className="text-xs text-muted-foreground">{stat.label}</p>
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
