@@ -13,9 +13,12 @@ interface CreateProjectDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const PROJECT_STATUSES = ["planning", "active", "on_hold", "completed", "cancelled"] as const;
+const HEALTH_STATUSES = ["on_track", "at_risk", "off_track"] as const;
+
 export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogProps) => {
-  const { createProject, PROJECT_STATUSES, HEALTH_STATUSES } = useCockpitProjects();
-  const { opportunities } = useCockpitOpportunities();
+  const { createProject } = useCockpitProjects();
+  const { opportunities = [] } = useCockpitOpportunities();
   
   const [formData, setFormData] = useState({
     name: "",
@@ -28,20 +31,7 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
     budget_amount: "",
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    await createProject.mutateAsync({
-      name: formData.name,
-      description: formData.description || undefined,
-      opportunity_id: formData.opportunity_id || undefined,
-      status: formData.status,
-      health_status: formData.health_status,
-      start_date: formData.start_date || undefined,
-      target_end_date: formData.target_end_date || undefined,
-      budget_amount: formData.budget_amount ? parseFloat(formData.budget_amount) : undefined,
-    });
-
+  const resetForm = () => {
     setFormData({
       name: "",
       description: "",
@@ -52,11 +42,40 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
       target_end_date: "",
       budget_amount: "",
     });
-    onOpenChange(false);
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      await createProject.mutateAsync({
+        name: formData.name,
+        description: formData.description || undefined,
+        opportunity_id: formData.opportunity_id || undefined,
+        status: formData.status,
+        health_status: formData.health_status,
+        start_date: formData.start_date || undefined,
+        target_end_date: formData.target_end_date || undefined,
+        budget_amount: formData.budget_amount ? parseFloat(formData.budget_amount) : undefined,
+      });
+      resetForm();
+      onOpenChange(false);
+    } catch (error) {
+      // Error is handled by the mutation
+    }
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      resetForm();
+    }
+    onOpenChange(newOpen);
+  };
+
+  const wonOpportunities = opportunities.filter(o => o.stage === "closed_won");
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Nouveau projet</DialogTitle>
@@ -83,7 +102,11 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
                 <SelectContent>
                   {PROJECT_STATUSES.map((status) => (
                     <SelectItem key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1).replace("_", " ")}
+                      {status === "planning" ? "Planification" :
+                       status === "active" ? "Actif" :
+                       status === "on_hold" ? "En pause" :
+                       status === "completed" ? "Terminé" :
+                       status === "cancelled" ? "Annulé" : status}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -140,7 +163,7 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
             />
           </div>
 
-          {opportunities.length > 0 && (
+          {wonOpportunities.length > 0 && (
             <div className="space-y-2">
               <Label htmlFor="opportunity">Opportunité associée</Label>
               <Select value={formData.opportunity_id} onValueChange={(v) => setFormData({ ...formData, opportunity_id: v })}>
@@ -148,7 +171,7 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
                   <SelectValue placeholder="Sélectionner une opportunité" />
                 </SelectTrigger>
                 <SelectContent>
-                  {opportunities.filter(o => o.stage === "closed_won").map((opp) => (
+                  {wonOpportunities.map((opp) => (
                     <SelectItem key={opp.id} value={opp.id}>
                       {opp.title}
                     </SelectItem>
@@ -170,7 +193,7 @@ export const CreateProjectDialog = ({ open, onOpenChange }: CreateProjectDialogP
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Annuler
             </Button>
             <Button type="submit" disabled={createProject.isPending}>
