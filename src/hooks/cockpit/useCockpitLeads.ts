@@ -1,87 +1,35 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import type { Database } from '@/integrations/supabase/types';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useLeads, useLeadsByStatus as useLeadsByStatusBase, LEADS_QUERY_KEY } from "@/hooks/shared/useLeads";
 
-type Lead = Database['public']['Tables']['leads']['Row'];
-type LeadInsert = Database['public']['Tables']['leads']['Insert'];
-type LeadUpdate = Database['public']['Tables']['leads']['Update'];
-
+/**
+ * Hook Cockpit pour les leads
+ * ÉTEND useLeads avec fonctionnalités cockpit-specific (qualification, scoring)
+ * 
+ * @see docs/COCKPIT_DEV_CHARTER.md
+ */
 export function useCockpitLeads() {
+  // Réutilise le hook partagé
+  const baseHook = useLeads();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch all leads with cockpit-relevant fields
-  const { data: leads, isLoading, error, refetch } = useQuery({
-    queryKey: ['cockpit-leads'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('leads')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as Lead[];
-    },
-  });
-
-  // Fetch leads by qualification status
+  // Wrapper pour useLeadsByStatus (rétrocompatibilité)
   const useLeadsByStatus = (status: string) => {
-    return useQuery({
-      queryKey: ['cockpit-leads', 'status', status],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from('leads')
-          .select('*')
-          .eq('qualification_status', status)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        return data as Lead[];
-      },
-    });
+    return useLeadsByStatusBase(status);
   };
 
-  // Update lead
-  const updateLead = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: LeadUpdate }) => {
-      const { data, error } = await supabase
-        .from('leads')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cockpit-leads'] });
-      toast({
-        title: 'Lead mis à jour',
-        description: 'Les modifications ont été enregistrées',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de mettre à jour le lead',
-        variant: 'destructive',
-      });
-      console.error('Update lead error:', error);
-    },
-  });
-
-  // Update qualification status
+  // Mise à jour du statut de qualification (cockpit-only)
   const updateQualificationStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { data, error } = await supabase
-        .from('leads')
-        .update({ 
+        .from("leads")
+        .update({
           qualification_status: status,
-          last_contacted_at: new Date().toISOString()
+          last_contacted_at: new Date().toISOString(),
         })
-        .eq('id', id)
+        .eq("id", id)
         .select()
         .single();
 
@@ -89,40 +37,92 @@ export function useCockpitLeads() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cockpit-leads'] });
+      queryClient.invalidateQueries({ queryKey: [LEADS_QUERY_KEY] });
       toast({
-        title: 'Statut mis à jour',
-        description: 'Le lead a été qualifié',
+        title: "Statut mis à jour",
+        description: "Le lead a été qualifié",
       });
     },
     onError: (error) => {
       toast({
-        title: 'Erreur',
-        description: 'Impossible de mettre à jour le statut',
-        variant: 'destructive',
+        title: "Erreur",
+        description: "Impossible de mettre à jour le statut",
+        variant: "destructive",
       });
-      console.error('Update status error:', error);
+      console.error("Update status error:", error);
     },
   });
 
-  // Stats
-  const stats = {
-    total: leads?.length || 0,
-    new: leads?.filter(l => l.qualification_status === 'new').length || 0,
-    qualified: leads?.filter(l => l.qualification_status === 'qualified').length || 0,
-    contacted: leads?.filter(l => l.qualification_status === 'contacted').length || 0,
-    converted: leads?.filter(l => l.qualification_status === 'converted').length || 0,
-    lost: leads?.filter(l => l.qualification_status === 'lost').length || 0,
+  // Mise à jour du score lead (cockpit-only)
+  const updateLeadScore = useMutation({
+    mutationFn: async ({
+      id,
+      score,
+      details,
+    }: {
+      id: string;
+      score: number;
+      details?: object;
+    }) => {
+      const { data, error } = await supabase
+        .from("leads")
+        .update({
+          lead_score: score,
+          lead_score_details: details ? JSON.parse(JSON.stringify(details)) : {},
+        })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [LEADS_QUERY_KEY] });
+      toast({ title: "Score lead mis à jour" });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Stats enrichies pour le cockpit (scoring)
+  const leads = baseHook.leads || [];
+  const highScoringLeads = leads.filter((l) => (l.lead_score || 0) >= 70);
+
+  const cockpitStats = {
+    ...baseHook.stats,
+    highScoring: highScoringLeads.length,
+    averageScore:
+      leads.length > 0
+        ? Math.round(
+            leads.reduce((acc, l) => acc + (l.lead_score || 0), 0) / leads.length
+          )
+        : 0,
   };
 
   return {
+    // Données de base depuis le hook partagé
     leads,
-    isLoading,
-    error,
-    refetch,
-    stats,
-    updateLead,
+    isLoading: baseHook.isLoading,
+    error: baseHook.error,
+    refetch: baseHook.refetch,
+    
+    // Stats enrichies
+    stats: cockpitStats,
+    
+    // Mutations du hook partagé
+    updateLead: baseHook.updateLead,
+    
+    // Mutations cockpit-only
     updateQualificationStatus,
+    updateLeadScore,
+    
+    // Hooks de filtrage
     useLeadsByStatus,
   };
 }
