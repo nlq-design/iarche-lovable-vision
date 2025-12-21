@@ -15,11 +15,14 @@ interface CreateTaskDialogProps {
   defaultEntityId?: string;
 }
 
+const TASK_TYPES = ["follow_up", "call", "meeting", "email", "proposal", "other"] as const;
+const TASK_PRIORITIES = ["low", "medium", "high", "urgent"] as const;
+
 export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaultEntityId }: CreateTaskDialogProps) => {
-  const { createTask, TASK_TYPES, TASK_PRIORITIES } = useCockpitTasks();
-  const { leads } = useCockpitLeads();
-  const { opportunities } = useCockpitOpportunities();
-  const { projects } = useCockpitProjects();
+  const { createTask } = useCockpitTasks();
+  const { leads = [] } = useCockpitLeads();
+  const { opportunities = [] } = useCockpitOpportunities();
+  const { projects = [] } = useCockpitProjects();
   
   const [formData, setFormData] = useState({
     title: "",
@@ -32,29 +35,7 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
     entity_id: defaultEntityId || "",
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const taskData: any = {
-      title: formData.title,
-      description: formData.description || undefined,
-      task_type: formData.task_type,
-      priority: formData.priority,
-      due_date: formData.due_date || undefined,
-      due_time: formData.due_time || undefined,
-    };
-
-    // Set the correct FK based on entity type
-    if (formData.entity_type === "lead" && formData.entity_id) {
-      taskData.lead_id = formData.entity_id;
-    } else if (formData.entity_type === "opportunity" && formData.entity_id) {
-      taskData.opportunity_id = formData.entity_id;
-    } else if (formData.entity_type === "project" && formData.entity_id) {
-      taskData.project_id = formData.entity_id;
-    }
-
-    await createTask.mutateAsync(taskData);
-
+  const resetForm = () => {
     setFormData({
       title: "",
       description: "",
@@ -65,7 +46,43 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
       entity_type: defaultEntityType || "",
       entity_id: defaultEntityId || "",
     });
-    onOpenChange(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const taskData: any = {
+        title: formData.title,
+        description: formData.description || undefined,
+        task_type: formData.task_type,
+        priority: formData.priority,
+        due_date: formData.due_date || undefined,
+        due_time: formData.due_time || undefined,
+      };
+
+      // Set the correct FK based on entity type
+      if (formData.entity_type === "lead" && formData.entity_id) {
+        taskData.lead_id = formData.entity_id;
+      } else if (formData.entity_type === "opportunity" && formData.entity_id) {
+        taskData.opportunity_id = formData.entity_id;
+      } else if (formData.entity_type === "project" && formData.entity_id) {
+        taskData.project_id = formData.entity_id;
+      }
+
+      await createTask.mutateAsync(taskData);
+      resetForm();
+      onOpenChange(false);
+    } catch (error) {
+      // Error is handled by the mutation
+    }
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      resetForm();
+    }
+    onOpenChange(newOpen);
   };
 
   const getEntityOptions = () => {
@@ -82,7 +99,7 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Nouvelle tâche</DialogTitle>
@@ -209,7 +226,7 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Annuler
             </Button>
             <Button type="submit" disabled={createTask.isPending}>

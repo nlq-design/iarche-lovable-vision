@@ -13,9 +13,11 @@ interface CreateOpportunityDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const STAGES = ["lead", "qualification", "proposal", "negotiation", "closed_won", "closed_lost"] as const;
+
 export const CreateOpportunityDialog = ({ open, onOpenChange }: CreateOpportunityDialogProps) => {
-  const { createOpportunity, PIPELINE_STAGES } = useCockpitOpportunities();
-  const { leads } = useCockpitLeads();
+  const { createOpportunity } = useCockpitOpportunities();
+  const { leads = [] } = useCockpitLeads();
   
   const [formData, setFormData] = useState({
     title: "",
@@ -28,20 +30,7 @@ export const CreateOpportunityDialog = ({ open, onOpenChange }: CreateOpportunit
     source: "",
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    await createOpportunity.mutateAsync({
-      title: formData.title,
-      description: formData.description || undefined,
-      lead_id: formData.lead_id || undefined,
-      value_amount: formData.value_amount ? parseFloat(formData.value_amount) : undefined,
-      probability: parseInt(formData.probability),
-      stage: formData.stage,
-      expected_close_date: formData.expected_close_date || undefined,
-      source: formData.source || undefined,
-    });
-
+  const resetForm = () => {
     setFormData({
       title: "",
       description: "",
@@ -52,11 +41,38 @@ export const CreateOpportunityDialog = ({ open, onOpenChange }: CreateOpportunit
       expected_close_date: "",
       source: "",
     });
-    onOpenChange(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      await createOpportunity.mutateAsync({
+        title: formData.title,
+        description: formData.description || undefined,
+        lead_id: formData.lead_id || undefined,
+        value_amount: formData.value_amount ? parseFloat(formData.value_amount) : undefined,
+        probability: parseInt(formData.probability),
+        stage: formData.stage,
+        expected_close_date: formData.expected_close_date || undefined,
+        source: formData.source || undefined,
+      });
+      resetForm();
+      onOpenChange(false);
+    } catch (error) {
+      // Error is handled by the mutation
+    }
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      resetForm();
+    }
+    onOpenChange(newOpen);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Nouvelle opportunité</DialogTitle>
@@ -105,9 +121,14 @@ export const CreateOpportunityDialog = ({ open, onOpenChange }: CreateOpportunit
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PIPELINE_STAGES.map((stage) => (
+                  {STAGES.map((stage) => (
                     <SelectItem key={stage} value={stage}>
-                      {stage.charAt(0).toUpperCase() + stage.slice(1).replace("_", " ")}
+                      {stage === "lead" ? "Lead" :
+                       stage === "qualification" ? "Qualification" :
+                       stage === "proposal" ? "Proposition" :
+                       stage === "negotiation" ? "Négociation" :
+                       stage === "closed_won" ? "Gagné" :
+                       stage === "closed_lost" ? "Perdu" : stage}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -154,7 +175,7 @@ export const CreateOpportunityDialog = ({ open, onOpenChange }: CreateOpportunit
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Annuler
             </Button>
             <Button type="submit" disabled={createOpportunity.isPending}>
