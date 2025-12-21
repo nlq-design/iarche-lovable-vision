@@ -1409,8 +1409,9 @@ CREATE TRIGGER sync_won_to_project_trigger
 | `sync_lead_to_pipeline()` | ✅ Active | Leads → Opportunities |
 | `sync_won_to_project()` | ✅ Active | Opportunities won → Projects |
 | `validate_status_transition()` | ❌ À créer | Validation transitions statuts |
-| `validate_task()` | ❌ À créer | Validation cohérence FK tasks |
-| `validate_activity_log()` | ❌ À créer | Validation cohérence FK activity |
+| `validate_task()` | ✅ Active | Validation cohérence FK tasks |
+| `validate_activity_log()` | ✅ Active | Validation cohérence FK activity |
+| `set_updated_at()` | ✅ Active | Mise à jour automatique updated_at |
 
 ### 9.3 Triggers SQL — État d'implémentation
 
@@ -1420,9 +1421,14 @@ CREATE TRIGGER sync_won_to_project_trigger
 | `trigger_sync_lead_to_pipeline` | `leads` | ✅ Actif |
 | `auto_insert_workspace_owner_trigger` | `workspaces` | ✅ Actif |
 | `trigger_sync_won_to_project` | `opportunities` | ✅ Actif |
-| `validate_task_trigger` | `tasks` | ❌ À créer |
-| `validate_activity_log_trigger` | `activity_log` | ❌ À créer |
-| `set_updated_at_*` | Multiples | ⚠️ Partiel |
+| `validate_task_trigger` | `tasks` | ✅ Actif |
+| `validate_activity_log_trigger` | `activity_log` | ✅ Actif |
+| `set_updated_at_opportunities` | `opportunities` | ✅ Actif |
+| `set_updated_at_projects` | `projects` | ✅ Actif |
+| `set_updated_at_tasks` | `tasks` | ✅ Actif |
+| `set_updated_at_meeting_notes` | `meeting_notes` | ✅ Actif |
+| `set_updated_at_specifications` | `specifications` | ✅ Actif |
+| `set_updated_at_workspaces` | `workspaces` | ✅ Actif |
 
 ---
 
@@ -1566,8 +1572,8 @@ DEFAULT '00000000-0000-0000-0000-000000000001'
 
 ### Phase 2 (En cours)
 - [x] Trigger `sync_won_to_project` — Création projet automatique ✅
-- [ ] Triggers de validation (`validate_task`, `validate_activity_log`)
-- [ ] Triggers `set_updated_at_*` sur toutes les tables
+- [x] Triggers de validation (`validate_task`, `validate_activity_log`) ✅
+- [x] Triggers `set_updated_at_*` sur toutes les tables cockpit ✅
 - [ ] Page Projects enrichie avec timeline
 - [ ] Page Specifications fonctionnelle
 - [ ] Dialogs création (Lead, Opportunity, Project, Task) ✅ Partiellement
