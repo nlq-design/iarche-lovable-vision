@@ -87,7 +87,7 @@ export default function StoryEditor() {
   const storyRef = useRef<HTMLDivElement>(null);
   
   const [template, setTemplate] = useState<StoryTemplate>('annonce');
-  const [theme, setTheme] = useState<ThemeType>('dark');
+  const [theme, setTheme] = useState<ThemeType>('gradient');
   const [preset, setPreset] = useState<string>('');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [barSize, setBarSize] = useState<ArcSize>('xl');
@@ -221,8 +221,13 @@ export default function StoryEditor() {
     }
   };
 
-  const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
-  const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : IARCHE_COLORS.grey;
+  // v4.2 Règle d'or: gradient utilise TOUJOURS blanc cassé
+  const textColor = (theme === 'dark' || theme === 'terra' || theme === 'contrast' || theme === 'gradient') 
+    ? IARCHE_COLORS.blancCasse 
+    : IARCHE_COLORS.bleuNuit;
+  const subtextColor = (theme === 'dark' || theme === 'terra' || theme === 'contrast' || theme === 'gradient') 
+    ? IARCHE_COLORS.blancCasse 
+    : IARCHE_COLORS.grey;
   const showCanalisations = exportMode === 'full';
 
   // Minimum spacing from logo to prevent content touching header

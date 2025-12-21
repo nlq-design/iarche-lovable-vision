@@ -96,7 +96,7 @@ export default function ThumbnailEditor() {
   const thumbnailRef = useRef<HTMLDivElement>(null);
   
   const [format, setFormat] = useState<ThumbnailFormat>('standard');
-  const [theme, setTheme] = useState<ThemeType>('dark');
+  const [theme, setTheme] = useState<ThemeType>('gradient');
   const [eventType, setEventType] = useState<EventType>('webinaire');
   const [preset, setPreset] = useState<string>('');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
@@ -200,8 +200,13 @@ export default function ThumbnailEditor() {
     }
   };
 
-  const textColor = theme === 'dark' ? IARCHE_COLORS.white : IARCHE_COLORS.bleuNuit;
-  const subtextColor = theme === 'dark' ? 'rgba(255,255,255,0.7)' : IARCHE_COLORS.grey;
+  // v4.2 Règle d'or: gradient utilise TOUJOURS blanc cassé
+  const textColor = (theme === 'dark' || theme === 'terra' || theme === 'contrast' || theme === 'gradient') 
+    ? IARCHE_COLORS.blancCasse 
+    : IARCHE_COLORS.bleuNuit;
+  const subtextColor = (theme === 'dark' || theme === 'terra' || theme === 'contrast' || theme === 'gradient') 
+    ? IARCHE_COLORS.blancCasse 
+    : IARCHE_COLORS.grey;
 
   const badgeBg = eventType === 'replay' 
     ? (theme === 'dark' ? 'rgba(255,255,255,0.9)' : IARCHE_COLORS.bleuNuit)

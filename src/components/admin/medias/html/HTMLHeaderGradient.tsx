@@ -104,11 +104,11 @@ export const HTMLHeaderGradient: React.FC<HTMLHeaderGradientProps> = ({
             />
           )}
           
-          {/* Titre principal */}
+          {/* Titre principal - v4.2 Règle d'or: blanc cassé */}
           {title && (
             <h1
               style={{
-                color: IARCHE_COLORS.white,
+                color: IARCHE_COLORS.blancCasse,
                 margin: 0,
                 fontSize: `${titleSize}px`,
                 fontWeight: 600,
@@ -120,15 +120,16 @@ export const HTMLHeaderGradient: React.FC<HTMLHeaderGradientProps> = ({
             </h1>
           )}
           
-          {/* Sous-titre optionnel */}
+          {/* Sous-titre optionnel - v4.2 Règle d'or: blanc cassé */}
           {subtitle && (
             <p
               style={{
-                color: 'rgba(255, 255, 255, 0.85)',
+                color: IARCHE_COLORS.blancCasse,
                 margin: '8px 0 0 0',
                 fontSize: `${subtitleSize}px`,
                 fontWeight: 400,
                 lineHeight: 1.5,
+                opacity: 0.9,
               }}
             >
               {subtitle}

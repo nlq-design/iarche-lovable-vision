@@ -95,7 +95,7 @@ export default function BannerEditor() {
   const bannerRef = useRef<HTMLDivElement>(null);
   
   const [template, setTemplate] = useState<BannerTemplate>('entreprise');
-  const [theme, setTheme] = useState<ThemeType>('dark');
+  const [theme, setTheme] = useState<ThemeType>('gradient');
   const [preset, setPreset] = useState<string>('');
   const [exportMode, setExportMode] = useState<ExportMode>('full');
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
@@ -190,8 +190,8 @@ export default function BannerEditor() {
     : theme === 'terra' ? IARCHE_COLORS.terracotta 
     : IARCHE_COLORS.blancCasse;
 
-  const textColor = theme === 'light' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.white;
-  // v4.1: Pour terra, utiliser blanc cassé comme le logo (pas rgba)
+  // v4.2 Règle d'or: gradient utilise TOUJOURS blanc cassé
+  const textColor = theme === 'light' ? IARCHE_COLORS.bleuNuit : IARCHE_COLORS.blancCasse;
   const subtextColor = theme === 'light' ? IARCHE_COLORS.grey : IARCHE_COLORS.blancCasse;
   const showCanalisations = exportMode === 'full';
 
