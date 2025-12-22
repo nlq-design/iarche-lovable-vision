@@ -232,6 +232,7 @@ const ArticleDetail = () => {
       'prompt-engineering-poser-les-bonnes-questions-a-l-ia': ['collaboria'],
       'llm-gpt-claude-comprendre-les-ia-generatives': ['collaboria', 'dialogue-plus'],
       'ia-locale-vs-cloud-quel-choix-pour-vos-donnees-sensibles': ['collaboria'],
+      'les-5-erreurs-des-pme-qui-demarrent-avec-l-ia': ['collaboria'],
       
       // Cas clients → Solutions
       'un-cabinet-de-conseil-digitalise-l-usage-de-l-ia-pour-ses-12-consultants': ['collaboria'],
