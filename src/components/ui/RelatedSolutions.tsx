@@ -113,19 +113,36 @@ const RelatedSolutions: React.FC<RelatedSolutionsProps> = ({
     try {
       setLoading(true);
 
-      let query = supabase
+      // Si des slugs explicites sont fournis, on les utilise directement (score = 100%)
+      if (solutionSlugs.length > 0) {
+        const { data, error } = await supabase
+          .from('articles')
+          .select('id, title, slug, excerpt, cover_image_url, tags')
+          .eq('published', true)
+          .eq('resource_type', 'solution')
+          .in('slug', solutionSlugs);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          // Mapping explicite = score 100%, on affiche la solution
+          const scored = data.map(solution => ({
+            ...solution,
+            score: 100 // Mapping explicite = pertinence maximale
+          }));
+          setScoredSolutions(scored.slice(0, 1)); // Une seule solution
+          setShowServicesLink(false);
+          return;
+        }
+      }
+
+      // Sinon, recherche automatique basée sur le scoring
+      const { data, error } = await supabase
         .from('articles')
         .select('id, title, slug, excerpt, cover_image_url, tags')
         .eq('published', true)
-        .eq('resource_type', 'solution');
-
-      if (solutionSlugs.length > 0) {
-        query = query.in('slug', solutionSlugs);
-      } else {
-        query = query.limit(limit);
-      }
-
-      const { data, error } = await query;
+        .eq('resource_type', 'solution')
+        .limit(limit);
 
       if (error) throw error;
 
@@ -190,7 +207,7 @@ const RelatedSolutions: React.FC<RelatedSolutionsProps> = ({
               <div className="flex items-center justify-between">
                 <div>
                   <GradientTitle size="sm" as="h4" centered={false} className="!mb-2">
-                    Explorer nos solutions IA
+                    Explorer nos services
                   </GradientTitle>
                   <p className="text-sm text-muted-foreground">
                     Découvrez comment l'intelligence artificielle peut transformer votre entreprise
