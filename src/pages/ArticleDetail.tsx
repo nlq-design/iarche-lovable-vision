@@ -21,6 +21,7 @@ import LivreBlancsForm from '@/components/LivreBlancsForm';
 import AtelierInscriptionForm from '@/components/AtelierInscriptionForm';
 import AuthorCard from '@/components/ui/AuthorCard';
 import RelatedArticles from '@/components/ui/RelatedArticles';
+import RelatedSolutions from '@/components/ui/RelatedSolutions';
 import GradientTitle from '@/components/ui/GradientTitle';
 import { useCTATracking } from '@/hooks/useCTATracking';
 import { TableOfContents } from '@/components/ui/TableOfContents';
@@ -212,6 +213,34 @@ const ArticleDetail = () => {
 
   const getCanonicalUrl = () => {
     return `https://iarche.fr${location.pathname}`;
+  };
+
+  /**
+   * Mapping maillage interne : articles/actualités → solutions liées
+   * Permet d'afficher des solutions pertinentes en bas des articles
+   */
+  const getRelatedSolutionSlugs = (articleSlug: string, resourceType: string): string[] => {
+    // Mapping explicite par slug d'article
+    const explicitMapping: { [key: string]: string[] } = {
+      // Actualités → Solutions
+      'collaboria-desormais-disponible': ['collaboria'],
+      'datalia-lancement-de-notre-outil-de-prospection-locale': ['datalia'],
+      'team-5-connect-automatisez-la-gestion-de-votre-flotte-vehicule': ['team-5-connect'],
+      
+      // Articles → Solutions
+      'rag-comment-l-ia-peut-exploiter-vos-documents-internes': ['dialogue-plus'],
+      'prompt-engineering-poser-les-bonnes-questions-a-l-ia': ['collaboria'],
+      'llm-gpt-claude-comprendre-les-ia-generatives': ['collaboria', 'dialogue-plus'],
+      'ia-locale-vs-cloud-quel-choix-pour-vos-donnees-sensibles': ['collaboria'],
+      
+      // Cas clients → Solutions
+      'un-cabinet-de-conseil-digitalise-l-usage-de-l-ia-pour-ses-12-consultants': ['collaboria'],
+      'un-distributeur-industriel-automatise-60-des-demandes-clients-avec-un-chatbot': ['dialogue-plus'],
+      'garage-automobile-chatbot-vocal-ia-prise-de-rdv': ['dialogue-plus'],
+      'une-entreprise-de-btp-simplifie-la-gestion-rh-de-ses-45-collaborateurs-terrain': ['team-5-connect'],
+    };
+
+    return explicitMapping[articleSlug] || [];
   };
 
   if (loading) {
@@ -972,7 +1001,15 @@ const ArticleDetail = () => {
             <ArticleComments articleId={article.id} />
           </div>
 
-          {/* 7. Articles similaires (uniquement pour les ressources) */}
+          {/* 7. Solutions liées (maillage interne) */}
+          {!['service', 'solution'].includes(article.resource_type) && (
+            <RelatedSolutions 
+              solutionSlugs={getRelatedSolutionSlugs(article.slug, article.resource_type)}
+              sourceContext={`${article.resource_type}_${article.slug}`}
+            />
+          )}
+
+          {/* 8. Articles similaires (uniquement pour les ressources) */}
           {!['service', 'solution'].includes(article.resource_type) && (
             <RelatedArticles 
               currentArticleId={article.id}
