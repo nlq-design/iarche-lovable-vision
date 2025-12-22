@@ -1968,14 +1968,14 @@ const AdminArticleEditor = () => {
                     <p className="text-xs text-blue-600 dark:text-blue-400">
                       Choisissez vers quelle page rediriger le lecteur : une solution spécifique ou la page Services générale.
                     </p>
-                    <Select value={relatedSolutionSlug} onValueChange={setRelatedSolutionSlug} disabled={isLoading}>
+                    <Select value={relatedSolutionSlug || 'auto'} onValueChange={(val) => setRelatedSolutionSlug(val === 'auto' ? '' : val)} disabled={isLoading}>
                       <SelectTrigger className="bg-background">
                         <SelectValue placeholder="Automatique (vers /services)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Automatique → /services</SelectItem>
+                        <SelectItem value="auto">Automatique → /services</SelectItem>
                         <SelectItem value="services">Forcer → /services</SelectItem>
-                        {availableSolutions.map((solution) => (
+                        {availableSolutions.filter(s => s.slug).map((solution) => (
                           <SelectItem key={solution.slug} value={solution.slug}>
                             Solution → {solution.title.split('—')[0].trim()}
                           </SelectItem>
