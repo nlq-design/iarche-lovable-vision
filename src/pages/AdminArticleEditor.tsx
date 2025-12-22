@@ -138,6 +138,10 @@ const AdminArticleEditor = () => {
   const [ctaEvenementPersonnalise, setCtaEvenementPersonnalise] = useState<string>('');
   const [compteurInscrits, setCompteurInscrits] = useState<number>(0);
   const [showParticipantsCount, setShowParticipantsCount] = useState<boolean>(true);
+  
+  // Maillage interne - solution liée
+  const [relatedSolutionSlug, setRelatedSolutionSlug] = useState<string>('');
+  const [availableSolutions, setAvailableSolutions] = useState<Array<{ slug: string; title: string }>>([]);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -320,6 +324,15 @@ const AdminArticleEditor = () => {
       .select('id, name')
       .order('name');
     setAvailableTags(tags || []);
+    
+    // Charger les solutions disponibles pour le maillage interne
+    const { data: solutions } = await supabase
+      .from('articles')
+      .select('slug, title')
+      .eq('resource_type', 'solution')
+      .eq('published', true)
+      .order('title');
+    setAvailableSolutions(solutions || []);
   };
 
   const loadArticle = async () => {
@@ -402,6 +415,7 @@ const AdminArticleEditor = () => {
       );
       setRappelsAutomatiques(data.rappels_automatiques || false);
       setCtaEvenementPersonnalise(data.cta_evenement_personnalise || '');
+      setRelatedSolutionSlug(data.related_solution_slug || '');
       setCustomCreatedAt(data.created_at ? new Date(data.created_at) : undefined);
 
       // Charger les catégories de l'article
@@ -492,6 +506,7 @@ const AdminArticleEditor = () => {
       documents_telechargeables: documentsTelechargeables.length > 0 ? documentsTelechargeables : null,
       rappels_automatiques: rappelsAutomatiques,
       cta_evenement_personnalise: ctaEvenementPersonnalise || null,
+      related_solution_slug: relatedSolutionSlug || null,
     };
 
     try {
@@ -818,6 +833,7 @@ const AdminArticleEditor = () => {
       documents_telechargeables: documentsTelechargeables.length > 0 ? documentsTelechargeables : null,
       rappels_automatiques: rappelsAutomatiques,
       cta_evenement_personnalise: ctaEvenementPersonnalise || null,
+      related_solution_slug: relatedSolutionSlug || null,
     });
 
     console.log('📦 Données article finales:', articleData);
@@ -1941,6 +1957,43 @@ const AdminArticleEditor = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Maillage interne - Solution liée (pour tous sauf solutions) */}
+                {resourceType !== 'solution' && (
+                  <div className="space-y-3 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-blue-800 dark:text-blue-200 font-semibold">Maillage interne</Label>
+                      <span className="text-xs text-blue-600 dark:text-blue-400">(affiché en bas de page)</span>
+                    </div>
+                    <p className="text-xs text-blue-600 dark:text-blue-400">
+                      Choisissez vers quelle page rediriger le lecteur : une solution spécifique ou la page Services générale.
+                    </p>
+                    <Select value={relatedSolutionSlug} onValueChange={setRelatedSolutionSlug} disabled={isLoading}>
+                      <SelectTrigger className="bg-background">
+                        <SelectValue placeholder="Automatique (vers /services)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Automatique → /services</SelectItem>
+                        <SelectItem value="services">Forcer → /services</SelectItem>
+                        {availableSolutions.map((solution) => (
+                          <SelectItem key={solution.slug} value={solution.slug}>
+                            Solution → {solution.title.split('—')[0].trim()}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {relatedSolutionSlug && relatedSolutionSlug !== 'services' && (
+                      <p className="text-xs text-green-600 dark:text-green-400">
+                        ✓ Lien vers /solutions/{relatedSolutionSlug}
+                      </p>
+                    )}
+                    {relatedSolutionSlug === 'services' && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400">
+                        → Lien vers /services (page générale)
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Ressources complémentaires - uniquement pour les articles */}
                 {resourceType === 'article' && (

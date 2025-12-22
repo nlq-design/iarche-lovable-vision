@@ -372,6 +372,7 @@ export type Database = {
           published_at: string | null
           rappels_automatiques: boolean | null
           registration_open: boolean | null
+          related_solution_slug: string | null
           replay_url: string | null
           resource_type: string
           ressources_complementaires: Json | null
@@ -428,6 +429,7 @@ export type Database = {
           published_at?: string | null
           rappels_automatiques?: boolean | null
           registration_open?: boolean | null
+          related_solution_slug?: string | null
           replay_url?: string | null
           resource_type?: string
           ressources_complementaires?: Json | null
@@ -484,6 +486,7 @@ export type Database = {
           published_at?: string | null
           rappels_automatiques?: boolean | null
           registration_open?: boolean | null
+          related_solution_slug?: string | null
           replay_url?: string | null
           resource_type?: string
           ressources_complementaires?: Json | null

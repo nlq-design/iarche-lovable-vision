@@ -75,6 +75,7 @@ interface Article {
   cta_evenement_personnalise: string | null;
   max_participants: number | null;
   show_participants_count: boolean | null;
+  related_solution_slug: string | null;
 }
 
 const ArticleDetail = () => {
@@ -1002,10 +1003,18 @@ const ArticleDetail = () => {
             <ArticleComments articleId={article.id} />
           </div>
 
-          {/* 7. Solutions liées (maillage interne avec scoring) */}
+          {/* 7. Solutions liées (maillage interne) */}
           {!['service', 'solution'].includes(article.resource_type) && (
             <RelatedSolutions 
-              solutionSlugs={getRelatedSolutionSlugs(article.slug, article.resource_type)}
+              solutionSlugs={
+                // Priorité 1: champ BDD related_solution_slug
+                article.related_solution_slug && article.related_solution_slug !== 'services'
+                  ? [article.related_solution_slug]
+                  // Priorité 2: mapping hardcodé (fallback legacy)
+                  : article.related_solution_slug === 'services'
+                    ? [] // Forcer /services
+                    : getRelatedSolutionSlugs(article.slug, article.resource_type)
+              }
               sourceContext={`${article.resource_type}_${article.slug}`}
               articleTags={article.tags || []}
               articleKeywords={[
