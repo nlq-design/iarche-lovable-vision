@@ -20,11 +20,29 @@ const HeroSection = () => {
           <span className="sr-only">IArche · Agence IA Bayonne | Conseil & Intégration PME</span>
         </div>
         
-        <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-16 leading-relaxed invisible animate-fadeIn [animation-delay:0.2s]">
+        <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed invisible animate-fadeIn [animation-delay:0.2s]">
           L'IA se construit avec vous
         </p>
         
-        <div className="flex justify-center invisible animate-fadeIn [animation-delay:0.3s]">
+        {/* CTA Principal - Above the fold */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 invisible animate-fadeIn [animation-delay:0.3s]">
+          <GradientLink
+            to="/solutions"
+            onClick={() => trackCTAClick('decouvrir_solutions', 'hero_section')}
+            className="text-lg px-6 py-3 bg-primary/10 rounded-full border border-primary/20 hover:bg-primary/20 transition-all duration-300"
+          >
+            Découvrir nos solutions
+          </GradientLink>
+          <GradientLink
+            to="/contact"
+            onClick={() => trackCTAClick('demander_diagnostic', 'hero_section')}
+            className="text-base"
+          >
+            Demander un diagnostic IA
+          </GradientLink>
+        </div>
+        
+        <div className="flex justify-center invisible animate-fadeIn [animation-delay:0.4s]">
           <GradientLink
             onClick={() => {
               window.scrollTo({
@@ -32,9 +50,8 @@ const HeroSection = () => {
                 behavior: 'smooth'
               });
             }}
-            className="text-lg"
+            className="text-sm text-muted-foreground"
           >
-            <span>Découvrir</span>
             <ChevronDown className="w-5 h-5 transition-transform duration-300 group-hover:translate-y-1" />
           </GradientLink>
         </div>
