@@ -1001,11 +1001,18 @@ const ArticleDetail = () => {
             <ArticleComments articleId={article.id} />
           </div>
 
-          {/* 7. Solutions liées (maillage interne) */}
+          {/* 7. Solutions liées (maillage interne avec scoring) */}
           {!['service', 'solution'].includes(article.resource_type) && (
             <RelatedSolutions 
               solutionSlugs={getRelatedSolutionSlugs(article.slug, article.resource_type)}
               sourceContext={`${article.resource_type}_${article.slug}`}
+              articleTags={article.tags || []}
+              articleKeywords={[
+                ...(article.thematiques || []),
+                article.title.toLowerCase(),
+                ...(article.excerpt?.toLowerCase().split(' ').filter(w => w.length > 4) || [])
+              ]}
+              relevanceThreshold={80}
             />
           )}
 
