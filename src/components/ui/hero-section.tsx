@@ -34,11 +34,11 @@ const HeroSection = () => {
             Découvrir nos solutions
           </GradientLink>
           <GradientLink
-            to="/contact"
-            onClick={() => trackCTAClick('demander_diagnostic', 'hero_section')}
+            to="/rendez-vous/premier-echange"
+            onClick={() => trackCTAClick('premier_echange', 'hero_section')}
             className="text-base"
           >
-            Demander un diagnostic IA
+            Premier échange
           </GradientLink>
         </div>
         
