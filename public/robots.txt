@@ -50,9 +50,9 @@ Disallow: /
 User-agent: DotBot
 Disallow: /
 
-# Sitemap dynamique (généré automatiquement avec tous les articles publiés)
-# Google Search Console demande un sitemap sur le domaine : utiliser /sitemap.xml (proxy)
-Sitemap: https://iarche.fr/sitemap.xml
+# Sitemap dynamique (48 pages, généré automatiquement)
+# Note: Google découvrira ce sitemap via robots.txt même sans soumission manuelle dans GSC
+Sitemap: https://mgjyhlyrwnnioctkbdkk.supabase.co/functions/v1/generate-sitemap
 
 # Host canonique
 Host: https://iarche.fr

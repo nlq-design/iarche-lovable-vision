@@ -1,2 +1,0 @@
-# Redirection du sitemap vers l'edge function dynamique
-/sitemap.xml https://mgjyhlyrwnnioctkbdkk.supabase.co/functions/v1/generate-sitemap 200
