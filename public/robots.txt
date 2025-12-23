@@ -51,9 +51,8 @@ User-agent: DotBot
 Disallow: /
 
 # Sitemap dynamique (généré automatiquement avec tous les articles publiés)
-# IMPORTANT: Utiliser uniquement ce sitemap dynamique (48 pages)
-# L'ancien sitemap statique /sitemap.xml est obsolète
-Sitemap: https://mgjyhlyrwnnioctkbdkk.supabase.co/functions/v1/generate-sitemap
+# Google Search Console demande un sitemap sur le domaine : utiliser /sitemap.xml (proxy)
+Sitemap: https://iarche.fr/sitemap.xml
 
 # Host canonique
 Host: https://iarche.fr
