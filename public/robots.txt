@@ -50,9 +50,8 @@ Disallow: /
 User-agent: DotBot
 Disallow: /
 
-# Sitemap dynamique (48 pages, généré automatiquement)
-# Note: Google découvrira ce sitemap via robots.txt même sans soumission manuelle dans GSC
-Sitemap: https://mgjyhlyrwnnioctkbdkk.supabase.co/functions/v1/generate-sitemap
+# Sitemap dynamique (géré via Cloudflare → Edge Function)
+Sitemap: https://iarche.fr/sitemap.xml
 
 # Host canonique
 Host: https://iarche.fr
