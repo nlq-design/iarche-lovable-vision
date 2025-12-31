@@ -162,14 +162,61 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "get_bookings",
-      description: "Récupère les rendez-vous planifiés.",
+      description: "Récupère les rendez-vous planifiés avec filtres avancés.",
       parameters: {
         type: "object",
         properties: {
-          status: { type: "string", description: "Filtrer par statut (pending, confirmed, cancelled)" },
+          status: { type: "string", description: "Filtrer par statut (pending, confirmed, cancelled, completed)" },
+          meeting_type: { type: "string", description: "Filtrer par type (visio, telephone, presentiel)" },
           upcoming_only: { type: "boolean", description: "Ne retourner que les RDV futurs" },
+          start_date: { type: "string", description: "Date de début (YYYY-MM-DD)" },
+          end_date: { type: "string", description: "Date de fin (YYYY-MM-DD)" },
           limit: { type: "number", description: "Nombre max de résultats (défaut: 10)" },
         },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_booking_details",
+      description: "Récupère les détails complets d'un rendez-vous avec le lead associé et les notes de réunion.",
+      parameters: {
+        type: "object",
+        properties: {
+          booking_id: { type: "string", description: "ID du booking" },
+        },
+        required: ["booking_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_agenda_summary",
+      description: "Obtient un résumé de l'agenda : RDV aujourd'hui, cette semaine, statistiques, prochains RDV importants.",
+      parameters: {
+        type: "object",
+        properties: {
+          period: { type: "string", enum: ["today", "tomorrow", "this_week", "next_week", "this_month"], description: "Période du résumé (défaut: this_week)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "suggest_booking_action",
+      description: "[N1 - Suggestion] Suggère une action sur un rendez-vous (reporter, ajouter notes, envoyer rappel).",
+      parameters: {
+        type: "object",
+        properties: {
+          booking_id: { type: "string", description: "ID du booking" },
+          action: { type: "string", enum: ["reschedule", "add_notes", "send_reminder", "prepare_meeting"], description: "Action suggérée" },
+          reason: { type: "string", description: "Raison ou contexte de l'action" },
+          notes: { type: "string", description: "Notes à ajouter si action = add_notes" },
+        },
+        required: ["booking_id", "action"],
       },
     },
   },
@@ -486,18 +533,245 @@ async function executeTool(
         .from("bookings")
         .select(`
           id, name, email, company, phone, message, status, 
-          start_time, end_time, meeting_type, google_meet_link,
-          booking_type:booking_types(name, duration_minutes)
+          start_time, end_time, meeting_type, google_meet_link, zoom_join_url, notes,
+          booking_type:booking_types(name, duration_minutes, slug),
+          lead:leads(id, name, company, qualification_status)
         `)
         .order("start_time", { ascending: true })
         .limit(args.limit as number || 10);
 
       if (args.status) query = query.eq("status", args.status);
+      if (args.meeting_type) query = query.eq("meeting_type", args.meeting_type);
       if (args.upcoming_only) query = query.gte("start_time", new Date().toISOString());
+      if (args.start_date) query = query.gte("start_time", args.start_date);
+      if (args.end_date) query = query.lte("start_time", args.end_date + "T23:59:59");
 
       const { data, error } = await query;
       if (error) throw error;
       return { bookings: data, count: data?.length || 0 };
+    }
+
+    case "get_booking_details": {
+      const { data: booking, error } = await supabase
+        .from("bookings")
+        .select(`
+          id, name, email, company, phone, message, status, 
+          start_time, end_time, meeting_type, google_meet_link, zoom_join_url, notes,
+          google_event_id, created_at, updated_at,
+          booking_type:booking_types(id, name, duration_minutes, slug, description),
+          lead:leads(id, name, email, company, phone, qualification_status, lead_score, source)
+        `)
+        .eq("id", args.booking_id)
+        .single();
+
+      if (error) throw error;
+
+      // Get associated meeting notes if any
+      const { data: meetingNotes } = await supabase
+        .from("meeting_notes")
+        .select("id, notes, objectives, next_steps, action_items, ai_summary, created_at")
+        .eq("booking_id", args.booking_id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      return { 
+        booking, 
+        meeting_notes: meetingNotes?.[0] || null,
+        has_meeting_notes: (meetingNotes?.length || 0) > 0
+      };
+    }
+
+    case "get_agenda_summary": {
+      const now = new Date();
+      const period = args.period as string || "this_week";
+      
+      let startDate: Date;
+      let endDate: Date;
+      
+      switch (period) {
+        case "today":
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+          break;
+        case "tomorrow":
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+          endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 23, 59, 59);
+          break;
+        case "this_week": {
+          const dayOfWeek = now.getDay();
+          const monday = new Date(now);
+          monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+          monday.setHours(0, 0, 0, 0);
+          startDate = monday;
+          endDate = new Date(monday);
+          endDate.setDate(monday.getDate() + 6);
+          endDate.setHours(23, 59, 59);
+          break;
+        }
+        case "next_week": {
+          const dayOfWeek = now.getDay();
+          const nextMonday = new Date(now);
+          nextMonday.setDate(now.getDate() + (7 - (dayOfWeek === 0 ? 6 : dayOfWeek - 1)));
+          nextMonday.setHours(0, 0, 0, 0);
+          startDate = nextMonday;
+          endDate = new Date(nextMonday);
+          endDate.setDate(nextMonday.getDate() + 6);
+          endDate.setHours(23, 59, 59);
+          break;
+        }
+        case "this_month":
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+          break;
+        default:
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7, 23, 59, 59);
+      }
+
+      const { data: bookings, error } = await supabase
+        .from("bookings")
+        .select(`
+          id, name, email, company, status, start_time, end_time, meeting_type,
+          booking_type:booking_types(name, slug),
+          lead:leads(id, name, company)
+        `)
+        .gte("start_time", startDate.toISOString())
+        .lte("start_time", endDate.toISOString())
+        .order("start_time", { ascending: true });
+
+      if (error) throw error;
+
+      const bookingList = bookings || [];
+      const confirmed = bookingList.filter((b: any) => b.status === "confirmed");
+      const pending = bookingList.filter((b: any) => b.status === "pending");
+      const cancelled = bookingList.filter((b: any) => b.status === "cancelled");
+      
+      const byType = {
+        visio: bookingList.filter((b: any) => b.meeting_type === "visio").length,
+        telephone: bookingList.filter((b: any) => b.meeting_type === "telephone").length,
+        presentiel: bookingList.filter((b: any) => b.meeting_type === "presentiel").length,
+      };
+
+      // Get today's bookings specifically for "today" or "this_week"
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      const todayBookings = bookingList.filter((b: any) => {
+        const bDate = new Date(b.start_time);
+        return bDate >= todayStart && bDate <= todayEnd;
+      });
+
+      return {
+        period,
+        period_start: startDate.toISOString().split("T")[0],
+        period_end: endDate.toISOString().split("T")[0],
+        total_bookings: bookingList.length,
+        confirmed: confirmed.length,
+        pending: pending.length,
+        cancelled: cancelled.length,
+        by_meeting_type: byType,
+        today_count: todayBookings.length,
+        today_bookings: todayBookings.map((b: any) => ({
+          id: b.id,
+          time: new Date(b.start_time).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+          name: b.name,
+          company: b.company,
+          type: b.meeting_type,
+          booking_type: (b.booking_type as any)?.name,
+        })),
+        upcoming: bookingList.slice(0, 5).map((b: any) => ({
+          id: b.id,
+          date: new Date(b.start_time).toLocaleDateString("fr-FR"),
+          time: new Date(b.start_time).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+          name: b.name,
+          company: b.company,
+          type: b.meeting_type,
+          status: b.status,
+        })),
+      };
+    }
+
+    case "suggest_booking_action": {
+      const { data: booking, error } = await supabase
+        .from("bookings")
+        .select(`
+          id, name, email, company, status, start_time, meeting_type,
+          booking_type:booking_types(name),
+          lead:leads(id, name)
+        `)
+        .eq("id", args.booking_id)
+        .single();
+
+      if (error) throw error;
+
+      const action = args.action as string;
+      const bookingInfo = booking as any;
+      const bookingDate = new Date(bookingInfo.start_time).toLocaleDateString("fr-FR");
+      const bookingTime = new Date(bookingInfo.start_time).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
+      let suggestion: {
+        action: string;
+        booking_id: string;
+        booking_summary: string;
+        message: string;
+        action_required: string;
+        notes?: string;
+        reason?: string;
+      };
+
+      switch (action) {
+        case "reschedule":
+          suggestion = {
+            action: "reschedule",
+            booking_id: args.booking_id as string,
+            booking_summary: `${bookingInfo.name} - ${bookingDate} ${bookingTime}`,
+            reason: args.reason as string,
+            message: `Suggestion de reporter le RDV avec ${bookingInfo.name} (${bookingDate} ${bookingTime}). Raison: ${args.reason || "non spécifiée"}.`,
+            action_required: "Contactez le prospect pour proposer une nouvelle date via /rendez-vous.",
+          };
+          break;
+        case "add_notes":
+          suggestion = {
+            action: "add_notes",
+            booking_id: args.booking_id as string,
+            booking_summary: `${bookingInfo.name} - ${bookingDate} ${bookingTime}`,
+            notes: args.notes as string,
+            message: `Notes à ajouter pour le RDV avec ${bookingInfo.name}: "${args.notes}"`,
+            action_required: "Ouvrez la fiche RDV pour ajouter ces notes.",
+          };
+          break;
+        case "send_reminder":
+          suggestion = {
+            action: "send_reminder",
+            booking_id: args.booking_id as string,
+            booking_summary: `${bookingInfo.name} - ${bookingDate} ${bookingTime}`,
+            message: `Suggestion d'envoyer un rappel pour le RDV avec ${bookingInfo.name} prévu le ${bookingDate} à ${bookingTime}.`,
+            action_required: "Envoyez un email de rappel avec les détails du RDV.",
+          };
+          break;
+        case "prepare_meeting":
+          suggestion = {
+            action: "prepare_meeting",
+            booking_id: args.booking_id as string,
+            booking_summary: `${bookingInfo.name} - ${bookingDate} ${bookingTime}`,
+            message: `Préparation suggérée pour le RDV avec ${bookingInfo.name}: Consultez la fiche lead, les transcriptions précédentes, et préparez une présentation adaptée.`,
+            action_required: "Consultez les informations du lead et préparez votre pitch.",
+          };
+          break;
+        default:
+          suggestion = {
+            action: action,
+            booking_id: args.booking_id as string,
+            booking_summary: `${bookingInfo.name} - ${bookingDate} ${bookingTime}`,
+            message: `Action "${action}" suggérée pour le RDV.`,
+            action_required: "Validez cette action dans le module agenda.",
+          };
+      }
+
+      return {
+        success: true,
+        suggestion,
+        autonomy_level: "N1",
+      };
     }
 
     case "search_knowledge_base": {
