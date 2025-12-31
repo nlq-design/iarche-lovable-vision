@@ -587,6 +587,118 @@ function extractJsonFromText(content: string): Record<string, unknown> {
   }
 }
 
+/**
+ * Parse date from action item
+ * Supports formats: "2024-01-15", "15/01/2024", "15 janvier", "demain", "lundi prochain", etc.
+ */
+function parseDueDate(dateStr: string | null | undefined): string | null {
+  if (!dateStr) return null;
+  
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  const normalized = dateStr.toLowerCase().trim();
+  
+  // ISO format: 2024-01-15
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return dateStr;
+  }
+  
+  // French format: 15/01/2024 or 15-01-2024
+  const frMatch = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (frMatch) {
+    const [, day, month, year] = frMatch;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  
+  // Relative dates
+  if (normalized === "aujourd'hui" || normalized === "today") {
+    return today.toISOString().split('T')[0];
+  }
+  if (normalized === "demain" || normalized === "tomorrow") {
+    today.setDate(today.getDate() + 1);
+    return today.toISOString().split('T')[0];
+  }
+  if (normalized === "après-demain" || normalized === "après demain") {
+    today.setDate(today.getDate() + 2);
+    return today.toISOString().split('T')[0];
+  }
+  
+  // "dans X jours" or "in X days"
+  const daysMatch = normalized.match(/dans\s+(\d+)\s+jours?/);
+  if (daysMatch) {
+    today.setDate(today.getDate() + parseInt(daysMatch[1]));
+    return today.toISOString().split('T')[0];
+  }
+  
+  // "semaine prochaine" / "la semaine prochaine"
+  if (normalized.includes("semaine prochaine")) {
+    today.setDate(today.getDate() + 7);
+    return today.toISOString().split('T')[0];
+  }
+  
+  // Day names: "lundi", "mardi", "lundi prochain", etc.
+  const dayNames = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+  for (let i = 0; i < dayNames.length; i++) {
+    if (normalized.includes(dayNames[i])) {
+      const currentDay = today.getDay();
+      let daysToAdd = (i - currentDay + 7) % 7;
+      if (daysToAdd === 0 && normalized.includes("prochain")) daysToAdd = 7;
+      if (daysToAdd === 0) daysToAdd = 7; // Default to next occurrence
+      today.setDate(today.getDate() + daysToAdd);
+      return today.toISOString().split('T')[0];
+    }
+  }
+  
+  // French month names: "15 janvier", "3 mars 2024"
+  const monthNames: Record<string, number> = {
+    "janvier": 0, "février": 1, "mars": 2, "avril": 3, "mai": 4, "juin": 5,
+    "juillet": 6, "août": 7, "septembre": 8, "octobre": 9, "novembre": 10, "décembre": 11
+  };
+  const monthMatch = normalized.match(/(\d{1,2})\s+(janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)(?:\s+(\d{4}))?/);
+  if (monthMatch) {
+    const day = parseInt(monthMatch[1]);
+    const month = monthNames[monthMatch[2]];
+    const year = monthMatch[3] ? parseInt(monthMatch[3]) : now.getFullYear();
+    const date = new Date(year, month, day);
+    // If date is in the past without year specified, assume next year
+    if (!monthMatch[3] && date < now) {
+      date.setFullYear(date.getFullYear() + 1);
+    }
+    return date.toISOString().split('T')[0];
+  }
+  
+  return null;
+}
+
+/**
+ * Parse time from action item
+ * Supports: "14h", "14h30", "14:30", "9h", "à 15h", etc.
+ */
+function parseDueTime(timeStr: string | null | undefined): string | null {
+  if (!timeStr) return null;
+  
+  const normalized = timeStr.toLowerCase().trim();
+  
+  // Format: "14h30", "14h", "9h30"
+  const hMatch = normalized.match(/(\d{1,2})h(\d{2})?/);
+  if (hMatch) {
+    const hours = hMatch[1].padStart(2, '0');
+    const mins = hMatch[2] ?? '00';
+    return `${hours}:${mins}:00`;
+  }
+  
+  // Format: "14:30", "09:00"
+  const colonMatch = normalized.match(/(\d{1,2}):(\d{2})/);
+  if (colonMatch) {
+    const hours = colonMatch[1].padStart(2, '0');
+    const mins = colonMatch[2];
+    return `${hours}:${mins}:00`;
+  }
+  
+  return null;
+}
+
 async function createTasksFromActions(
   supabase: any, 
   job: VoiceJob, 
@@ -594,8 +706,6 @@ async function createTasksFromActions(
   leadId: string | null
 ): Promise<Array<{ id: string; title: string }>> {
   // FORCE auto-création des tâches pour toutes les transcriptions avec des actions
-  // Ancienne logique: if (!job.auto_create_tasks) return [];
-  // Nouvelle logique: toujours créer les tâches si des actions sont détectées
   console.log(`[createTasksFromActions] auto_create_tasks=${job.auto_create_tasks}, forcing task creation for all transcriptions`);
 
   const items = Array.isArray(summary?.action_items) ? summary.action_items : [];
@@ -612,11 +722,22 @@ async function createTasksFromActions(
     entity_type: string;
     entity_id: string;
     created_by: string;
+    due_date: string | null;
+    due_time: string | null;
+    ai_generated: boolean;
+    ai_metadata: Record<string, unknown>;
   }> = [];
 
   for (const it of items) {
     const title = (it?.task as string ?? "").trim();
     if (!title) continue;
+    
+    // Parse date and time from the action item
+    const dueDate = parseDueDate(it?.due_date as string) || parseDueDate(it?.deadline as string) || parseDueDate(it?.date as string);
+    const dueTime = parseDueTime(it?.due_time as string) || parseDueTime(it?.time as string) || parseDueTime(it?.heure as string);
+    
+    console.log(`[Task] "${title}" -> due_date: ${dueDate}, due_time: ${dueTime}`);
+    
     inserts.push({
       workspace_id: job.workspace_id,
       title: title.slice(0, 200),
@@ -628,13 +749,30 @@ async function createTasksFromActions(
       entity_type: "voice_transcription",
       entity_id: job.id,
       created_by: job.created_by,
+      due_date: dueDate,
+      due_time: dueTime,
+      ai_generated: true,
+      ai_metadata: {
+        source: "voice_transcription",
+        source_transcription_id: job.id,
+        raw_action: it,
+        generated_at: new Date().toISOString(),
+        autonomy_level: "N1",
+        validation_required: true,
+        validated_by_human: false,
+      },
     });
   }
 
   if (!inserts.length) return [];
 
-  const { data, error } = await supabase.from("tasks").insert(inserts).select("id,title");
+  const { data, error } = await supabase.from("tasks").insert(inserts).select("id,title,due_date,due_time");
   if (error) throw new Error(`tasks_insert_failed: ${error.message}`);
+  
+  console.log(`[createTasksFromActions] Created ${data?.length ?? 0} tasks:`, 
+    data?.map((t: any) => ({ title: t.title, due_date: t.due_date, due_time: t.due_time }))
+  );
+  
   return data ?? [];
 }
 
