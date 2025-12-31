@@ -66,12 +66,11 @@ async function getAccessToken(): Promise<string> {
   return tokenData.access_token;
 }
 
-// Get events from Google Calendar (including cancelled for full sync)
+// Get events from Google Calendar
 async function getCalendarEvents(
   accessToken: string, 
   timeMin: string, 
-  timeMax: string,
-  showDeleted: boolean = true
+  timeMax: string
 ): Promise<any[]> {
   const calendarId = Deno.env.get('GOOGLE_CALENDAR_ID');
   if (!calendarId) throw new Error('GOOGLE_CALENDAR_ID not configured');
@@ -81,7 +80,6 @@ async function getCalendarEvents(
     timeMax,
     singleEvents: 'true',
     orderBy: 'startTime',
-    showDeleted: showDeleted.toString(),
   });
 
   const response = await fetch(
@@ -102,57 +100,29 @@ async function getCalendarEvents(
   return data.items || [];
 }
 
-// Extract email and name from event
-function parseEventDetails(event: any): { name: string; email: string; company?: string; phone?: string } {
+// Extract email and name from event description or summary
+function parseEventDetails(event: any): { name: string; email: string; company?: string } | null {
+  // Try to extract from description
   const description = event.description || '';
   const summary = event.summary || '';
   
-  // Try to get email from attendees first
-  const attendees = event.attendees || [];
-  const externalAttendee = attendees.find((a: any) => !a.self && !a.organizer);
-  let email = externalAttendee?.email;
+  // Look for email pattern
+  const emailMatch = description.match(/[\w.-]+@[\w.-]+\.\w+/);
+  const email = emailMatch ? emailMatch[0] : null;
   
-  // Fallback: look for email in description
+  // Try to extract name from summary or description
+  let name = summary.split(' - ')[0] || summary;
+  
+  // Look for company in description
+  const companyMatch = description.match(/Entreprise:\s*(.+)/i) || description.match(/Société:\s*(.+)/i);
+  const company = companyMatch ? companyMatch[1].trim() : undefined;
+  
   if (!email) {
-    const emailMatch = description.match(/[\w.-]+@[\w.-]+\.\w+/);
-    email = emailMatch ? emailMatch[0] : null;
+    // If no email found, we can't create a proper booking
+    return null;
   }
   
-  // If still no email, use event creator or generate placeholder
-  if (!email) {
-    email = event.creator?.email || `event-${event.id}@calendar.sync`;
-  }
-  
-  // Extract name
-  let name = externalAttendee?.displayName || summary.split(' - ')[0] || summary.split(' avec ')[0] || summary;
-  
-  // Look for company/phone in description
-  const companyMatch = description.match(/(?:Entreprise|Société|Company):\s*(.+)/i);
-  const company = companyMatch ? companyMatch[1].trim().split('\n')[0] : undefined;
-  
-  const phoneMatch = description.match(/(?:Tél|Tel|Phone|Téléphone):\s*([\d\s.+-]+)/i);
-  const phone = phoneMatch ? phoneMatch[1].trim() : undefined;
-  
-  return { name: name.substring(0, 255), email, company, phone };
-}
-
-// Determine meeting type from event
-function determineMeetingType(event: any): 'visio' | 'telephone' | 'presentiel' {
-  const summaryLower = (event.summary || '').toLowerCase();
-  const descLower = (event.description || '').toLowerCase();
-  const hasVideoConference = event.conferenceData?.entryPoints?.some((e: any) => e.entryPointType === 'video');
-  const hasZoomLink = (event.description || '').includes('zoom.us/j/');
-  
-  if (summaryLower.includes('présentiel') || summaryLower.includes('bureau') || descLower.includes('présentiel') || summaryLower.includes('sur place')) {
-    return 'presentiel';
-  } else if (summaryLower.includes('téléphone') || summaryLower.includes('appel tel') || descLower.includes('appel téléphonique')) {
-    return 'telephone';
-  } else if (hasVideoConference || hasZoomLink || summaryLower.includes('visio') || summaryLower.includes('zoom') || summaryLower.includes('meet')) {
-    return 'visio';
-  }
-  
-  // Default to visio if has any conference link
-  return hasVideoConference || hasZoomLink ? 'visio' : 'presentiel';
+  return { name, email, company };
 }
 
 serve(async (req) => {
@@ -165,35 +135,33 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { action, daysAhead = 60, daysBefore = 30 } = await req.json();
+    const { action, daysAhead = 30, daysBefore = 7 } = await req.json();
     
-    console.log(`[sync-google-calendar] Starting FULL MIRROR sync. daysAhead: ${daysAhead}, daysBefore: ${daysBefore}`);
+    console.log(`[sync-google-calendar] Starting sync. Action: ${action}, daysAhead: ${daysAhead}, daysBefore: ${daysBefore}`);
 
     // Get access token
     const accessToken = await getAccessToken();
     console.log('[sync-google-calendar] Got Google access token');
 
-    // Define time range (larger window for complete sync)
+    // Define time range
     const now = new Date();
     const timeMin = new Date(now.getTime() - daysBefore * 24 * 60 * 60 * 1000).toISOString();
     const timeMax = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000).toISOString();
 
-    // Get ALL events from Google Calendar (including deleted/cancelled)
-    const events = await getCalendarEvents(accessToken, timeMin, timeMax, true);
+    // Get events from Google Calendar
+    const events = await getCalendarEvents(accessToken, timeMin, timeMax);
     console.log(`[sync-google-calendar] Found ${events.length} events in Google Calendar`);
 
-    // Get ALL existing bookings with google_event_id in the time range
+    // Get existing bookings with google_event_id
     const { data: existingBookings } = await supabase
       .from('bookings')
-      .select('id, google_event_id, start_time, end_time, name, email, company, status, notes')
-      .not('google_event_id', 'is', null)
-      .gte('start_time', timeMin)
-      .lte('start_time', timeMax);
+      .select('google_event_id')
+      .not('google_event_id', 'is', null);
     
-    const bookingsByEventId = new Map(existingBookings?.map(b => [b.google_event_id, b]) || []);
-    console.log(`[sync-google-calendar] Found ${bookingsByEventId.size} existing synced bookings in range`);
+    const existingEventIds = new Set(existingBookings?.map(b => b.google_event_id) || []);
+    console.log(`[sync-google-calendar] Found ${existingEventIds.size} existing synced bookings`);
 
-    // Get default booking type
+    // Get default booking type (Premier échange)
     const { data: defaultBookingType } = await supabase
       .from('booking_types')
       .select('id, duration_minutes')
@@ -205,147 +173,100 @@ serve(async (req) => {
     }
 
     const results = {
-      created: 0,
-      updated: 0,
-      cancelled: 0,
-      unchanged: 0,
+      synced: 0,
+      skipped: 0,
       errors: [] as string[],
     };
 
-    // Track which Google event IDs we've seen
-    const seenGoogleEventIds = new Set<string>();
-
-    // Process each Google Calendar event
+    // Process each event
     for (const event of events) {
       const eventId = event.id;
-      seenGoogleEventIds.add(eventId);
       
-      const existingBooking = bookingsByEventId.get(eventId);
-      
-      // Handle cancelled/deleted events
+      // Skip if already synced
+      if (existingEventIds.has(eventId)) {
+        results.skipped++;
+        continue;
+      }
+
+      // Skip cancelled events
       if (event.status === 'cancelled') {
-        if (existingBooking && existingBooking.status !== 'cancelled') {
-          const { error } = await supabase
-            .from('bookings')
-            .update({ 
-              status: 'cancelled',
-              cancellation_reason: 'Annulé depuis Google Calendar',
-              cancelled_at: new Date().toISOString()
-            })
-            .eq('id', existingBooking.id);
-          
-          if (!error) {
-            console.log(`[sync-google-calendar] Cancelled booking: ${existingBooking.name}`);
-            results.cancelled++;
-          } else {
-            results.errors.push(`Cancel ${existingBooking.name}: ${error.message}`);
-          }
-        }
+        results.skipped++;
         continue;
       }
 
       // Skip all-day events (no specific time)
       if (!event.start?.dateTime) {
+        results.skipped++;
         continue;
       }
 
       // Parse event details
       const details = parseEventDetails(event);
+      if (!details) {
+        console.log(`[sync-google-calendar] Skipping event "${event.summary}" - no email found`);
+        results.skipped++;
+        continue;
+      }
+
       const startTime = new Date(event.start.dateTime);
       const endTime = new Date(event.end?.dateTime || new Date(startTime.getTime() + defaultBookingType.duration_minutes * 60000));
-      const meetingType = determineMeetingType(event);
       
-      // Extract conference links
+      // Determine meeting type from event
+      let meetingType: 'visio' | 'telephone' | 'presentiel' = 'visio';
+      const summaryLower = (event.summary || '').toLowerCase();
+      const descLower = (event.description || '').toLowerCase();
+      
+      if (summaryLower.includes('présentiel') || summaryLower.includes('bureau') || descLower.includes('présentiel')) {
+        meetingType = 'presentiel';
+      } else if (summaryLower.includes('téléphone') || summaryLower.includes('appel') || descLower.includes('téléphone')) {
+        meetingType = 'telephone';
+      }
+
+      // Extract Meet/Zoom links
       const meetLink = event.conferenceData?.entryPoints?.find((e: any) => e.entryPointType === 'video')?.uri;
-      const zoomMatch = (event.description || '').match(/https:\/\/[\w.-]+\.zoom\.us\/j\/\d+[^\s]*/);
+      const zoomMatch = (event.description || '').match(/https:\/\/[\w.-]+\.zoom\.us\/j\/\d+/);
       
-      const bookingData = {
-        booking_type_id: defaultBookingType.id,
-        name: details.name,
-        email: details.email,
-        phone: details.phone || null,
-        company: details.company || null,
-        start_time: startTime.toISOString(),
-        end_time: endTime.toISOString(),
-        status: 'confirmed',
-        google_event_id: eventId,
-        google_meet_link: meetLink || null,
-        zoom_join_url: zoomMatch ? zoomMatch[0] : null,
-        meeting_type: meetingType,
-        message: `Synchronisé depuis Google Calendar: ${event.summary}`,
-        notes: event.description || null,
-      };
-
-      if (existingBooking) {
-        // Check if update is needed
-        const needsUpdate = 
-          existingBooking.start_time !== bookingData.start_time ||
-          existingBooking.end_time !== bookingData.end_time ||
-          existingBooking.name !== bookingData.name ||
-          existingBooking.status === 'cancelled';
-        
-        if (needsUpdate) {
-          const { error } = await supabase
-            .from('bookings')
-            .update({
-              ...bookingData,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existingBooking.id);
-          
-          if (!error) {
-            console.log(`[sync-google-calendar] Updated booking: ${details.name} at ${startTime.toISOString()}`);
-            results.updated++;
-          } else {
-            results.errors.push(`Update ${details.name}: ${error.message}`);
-          }
-        } else {
-          results.unchanged++;
-        }
-      } else {
-        // Create new booking
-        const { error } = await supabase
+      try {
+        // Create booking record
+        const { error: insertError } = await supabase
           .from('bookings')
-          .insert(bookingData);
-        
-        if (!error) {
-          console.log(`[sync-google-calendar] Created booking: ${details.name} at ${startTime.toISOString()}`);
-          results.created++;
+          .insert({
+            booking_type_id: defaultBookingType.id,
+            name: details.name,
+            email: details.email,
+            company: details.company,
+            start_time: startTime.toISOString(),
+            end_time: endTime.toISOString(),
+            status: 'confirmed',
+            google_event_id: eventId,
+            google_meet_link: meetLink || null,
+            zoom_join_url: zoomMatch ? zoomMatch[0] : null,
+            meeting_type: meetingType,
+            message: `Synchronisé depuis Google Calendar: ${event.summary}`,
+            notes: event.description || null,
+          });
+
+        if (insertError) {
+          console.error(`[sync-google-calendar] Error inserting booking for "${event.summary}":`, insertError);
+          results.errors.push(`${event.summary}: ${insertError.message}`);
         } else {
-          console.error(`[sync-google-calendar] Error creating booking:`, error);
-          results.errors.push(`Create ${details.name}: ${error.message}`);
+          console.log(`[sync-google-calendar] Synced event: ${event.summary} at ${startTime.toISOString()}`);
+          results.synced++;
         }
+      } catch (err) {
+        console.error(`[sync-google-calendar] Error processing event "${event.summary}":`, err);
+        results.errors.push(`${event.summary}: ${err instanceof Error ? err.message : 'Unknown error'}`);
       }
     }
 
-    // Mark bookings as cancelled if their Google event no longer exists
-    for (const [googleEventId, booking] of bookingsByEventId.entries()) {
-      if (!seenGoogleEventIds.has(googleEventId) && booking.status !== 'cancelled') {
-        const { error } = await supabase
-          .from('bookings')
-          .update({ 
-            status: 'cancelled',
-            cancellation_reason: 'Événement supprimé de Google Calendar',
-            cancelled_at: new Date().toISOString()
-          })
-          .eq('id', booking.id);
-        
-        if (!error) {
-          console.log(`[sync-google-calendar] Marked as cancelled (event deleted): ${booking.name}`);
-          results.cancelled++;
-        }
-      }
-    }
-
-    console.log(`[sync-google-calendar] FULL MIRROR sync complete:`, results);
+    console.log(`[sync-google-calendar] Sync complete. Synced: ${results.synced}, Skipped: ${results.skipped}, Errors: ${results.errors.length}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         results,
         timeRange: { from: timeMin, to: timeMax },
-        totalGoogleEvents: events.length,
-        totalExistingBookings: bookingsByEventId.size,
+        totalEventsFound: events.length,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
