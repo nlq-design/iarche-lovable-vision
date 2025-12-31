@@ -23,6 +23,85 @@ function escapeHtml(text: string): string {
     .replace(/'/g, '&#039;');
 }
 
+// Remplacer les variables dans le template
+const replaceTemplateVariables = (
+  template: string,
+  variables: Record<string, string>
+): string => {
+  let result = template;
+  for (const [key, value] of Object.entries(variables)) {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    result = result.replace(regex, value);
+  }
+  return result;
+};
+
+// Template par défaut admin
+const getDefaultAdminTemplate = (
+  safeFormTitle: string,
+  responseHtml: string,
+  formId: string,
+  finalRespondentEmail: string | null | undefined
+): string => {
+  return `
+    <p style="color: ${EMAIL_COLORS.mutedGray}; margin-bottom: 20px;">${safeFormTitle}</p>
+    
+    <div style="background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; margin-bottom: 20px; border-radius: 0 8px 8px 0;">
+      <p style="margin: 0; color: #92400E; font-size: 14px; font-weight: 500;">
+        ⏰ Reçu le ${new Date().toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })}
+      </p>
+    </div>
+    
+    <h3 style="color: ${EMAIL_COLORS.nightBlue}; font-size: 16px; margin-bottom: 12px; border-bottom: 2px solid ${EMAIL_COLORS.terracotta}; padding-bottom: 8px;">
+      📋 Détail complet des réponses
+    </h3>
+    
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; background: ${EMAIL_COLORS.offWhite}; border-radius: 8px;">
+      ${responseHtml}
+    </table>
+    
+    ${finalRespondentEmail ? `
+    <div style="background: #ECFDF5; border-left: 4px solid #10B981; padding: 12px 16px; margin-bottom: 20px; border-radius: 0 8px 8px 0;">
+      <p style="margin: 0; color: #065F46; font-size: 14px;">
+        ✅ Email de confirmation envoyé à <strong>${escapeHtml(finalRespondentEmail)}</strong>
+      </p>
+    </div>
+    ` : ''}
+    
+    <div style="text-align: center; margin-top: 24px;">
+      ${getCtaButton('Voir toutes les réponses →', `https://iarche.fr/admin/formulaires/${escapeHtml(formId)}/reponses`, 'secondary')}
+    </div>
+  `;
+};
+
+// Template par défaut prospect
+const getDefaultProspectTemplate = (
+  safeProspectName: string,
+  safeFormTitle: string
+): string => {
+  return `
+    <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; line-height: 1.7; margin-bottom: 20px;">
+      Nous avons bien reçu votre demande concernant <strong style="color: ${EMAIL_COLORS.nightBlue};">${safeFormTitle}</strong>.
+    </p>
+    
+    <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; line-height: 1.7; margin-bottom: 24px;">
+      Notre équipe va prendre connaissance de vos informations et reviendra vers vous dans les meilleurs délais.
+    </p>
+    
+    ${getInfoCard(`<p style="color: ${EMAIL_COLORS.nightBlue}; margin: 0; font-size: 15px; font-weight: 500;">
+      💡 En attendant, découvrez nos solutions IA sur notre site
+    </p>`)}
+    
+    <div style="text-align: center; margin: 24px 0;">
+      ${getCtaButton('Découvrir nos solutions →', 'https://iarche.fr/solutions')}
+    </div>
+    
+    <p style="color: ${EMAIL_COLORS.mutedGray}; font-size: 14px; line-height: 1.6; text-align: center;">
+      Une question ? Contactez-nous à <a href="mailto:nlq@iarche.fr" style="color: ${EMAIL_COLORS.terracotta}; text-decoration: none; font-weight: 500;">nlq@iarche.fr</a>
+    </p>
+  `;
+};
+
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -78,8 +157,30 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const safeFormTitle = escapeHtml(form_title);
 
     console.log('[send-form-notification] Processing notification for form:', safeFormTitle);
-    console.log('[send-form-notification] Form fields received:', JSON.stringify(form_fields));
-    console.log('[send-form-notification] Respondent email received:', respondent_email);
+
+    // Récupérer les templates depuis la BDD
+    const { data: emailConfig } = await supabase
+      .from('email_configurations')
+      .select('admin_email_template, admin_email_subject, user_email_template, user_email_subject')
+      .eq('source_type', 'form')
+      .eq('source_id', form_id)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    // Si pas de config spécifique au form, chercher la config générique
+    let finalEmailConfig = emailConfig;
+    if (!emailConfig) {
+      const { data: genericConfig } = await supabase
+        .from('email_configurations')
+        .select('admin_email_template, admin_email_subject, user_email_template, user_email_subject')
+        .eq('source_type', 'form')
+        .is('source_id', null)
+        .eq('is_active', true)
+        .maybeSingle();
+      finalEmailConfig = genericConfig;
+    }
+
+    console.log('[send-form-notification] Email config found:', !!finalEmailConfig);
 
     // Créer un mapping ID -> Label pour les champs
     const fieldLabelMap: Record<string, string> = {};
@@ -87,11 +188,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
       for (const field of form_fields) {
         if (field && field.id && field.label) {
           fieldLabelMap[field.id] = field.label;
-          console.log('[send-form-notification] Mapped field:', field.id, '->', field.label);
         }
       }
     }
-    console.log('[send-form-notification] Final field label map:', JSON.stringify(fieldLabelMap));
 
     // Trouver l'email du répondant dans les données si non fourni
     let finalRespondentEmail = respondent_email;
@@ -100,7 +199,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
       for (const [key, value] of Object.entries(response_data)) {
         if (typeof value === 'string' && emailRegex.test(value)) {
           finalRespondentEmail = value;
-          console.log('[send-form-notification] Found email in response_data:', finalRespondentEmail, 'field:', key);
           break;
         }
       }
@@ -108,17 +206,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     const adminEmailAddress = admin_email || 'nlq@iarche.fr';
     const results = { admin: false, respondent: false };
-    // Toujours envoyer au répondant si on a trouvé un email
     const shouldSendToRespondent = !!finalRespondentEmail;
-    
-    console.log('[send-form-notification] Final respondent email:', finalRespondentEmail);
-    console.log('[send-form-notification] Should send to respondent:', shouldSendToRespondent);
 
-    // Construire le résumé des réponses en HTML avec les vrais labels (pour admin)
+    // Construire le résumé des réponses en HTML
     const responseHtml = Object.entries(response_data)
       .filter(([_, value]) => value !== undefined && value !== null && value !== '')
       .map(([key, value]) => {
-        // Échapper le label du champ
         const fieldLabel = escapeHtml(fieldLabelMap[key] || key);
         
         let displayValue = '';
@@ -141,7 +234,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       })
       .join('');
 
-    // Extraire les infos clés pour le prospect (nom, prénom)
+    // Extraire les infos clés pour le prospect
     let prospectName = '';
     const nameLabels = ['nom', 'prénom', 'prenom', 'name', 'firstname', 'lastname', 'nom complet'];
     for (const [key, value] of Object.entries(response_data)) {
@@ -150,47 +243,41 @@ Deno.serve(async (req: Request): Promise<Response> => {
         prospectName = prospectName ? `${prospectName} ${value}` : value;
       }
     }
-    // Échapper le nom du prospect
     const safeProspectName = escapeHtml(prospectName) || 'vous';
+
+    // Variables pour les templates
+    const templateVariables = {
+      form_title: safeFormTitle,
+      form_id: form_id,
+      prospect_name: safeProspectName,
+      respondent_email: finalRespondentEmail || '',
+      response_details: responseHtml,
+      date: new Date().toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }),
+    };
 
     // Email admin (DÉTAILLÉ avec toutes les infos)
     try {
+      let adminContent: string;
+      let adminSubject = `📝 Nouvelle réponse: ${safeFormTitle}`;
+
+      if (finalEmailConfig?.admin_email_template) {
+        console.log('[send-form-notification] Using database template for admin');
+        adminContent = replaceTemplateVariables(finalEmailConfig.admin_email_template, templateVariables);
+        if (finalEmailConfig.admin_email_subject) {
+          adminSubject = replaceTemplateVariables(finalEmailConfig.admin_email_subject, templateVariables);
+        }
+      } else {
+        console.log('[send-form-notification] Using default template for admin');
+        adminContent = getDefaultAdminTemplate(safeFormTitle, responseHtml, form_id, finalRespondentEmail);
+      }
+
       const adminHeader = getEmailHeader('📝 Nouvelle soumission');
-      const adminContent = `
-        <p style="color: ${EMAIL_COLORS.mutedGray}; margin-bottom: 20px;">${safeFormTitle}</p>
-        
-        <div style="background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; margin-bottom: 20px; border-radius: 0 8px 8px 0;">
-          <p style="margin: 0; color: #92400E; font-size: 14px; font-weight: 500;">
-            ⏰ Reçu le ${new Date().toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })}
-          </p>
-        </div>
-        
-        <h3 style="color: ${EMAIL_COLORS.nightBlue}; font-size: 16px; margin-bottom: 12px; border-bottom: 2px solid ${EMAIL_COLORS.terracotta}; padding-bottom: 8px;">
-          📋 Détail complet des réponses
-        </h3>
-        
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; background: ${EMAIL_COLORS.offWhite}; border-radius: 8px;">
-          ${responseHtml}
-        </table>
-        
-        ${finalRespondentEmail ? `
-        <div style="background: #ECFDF5; border-left: 4px solid #10B981; padding: 12px 16px; margin-bottom: 20px; border-radius: 0 8px 8px 0;">
-          <p style="margin: 0; color: #065F46; font-size: 14px;">
-            ✅ Email de confirmation envoyé à <strong>${escapeHtml(finalRespondentEmail)}</strong>
-          </p>
-        </div>
-        ` : ''}
-        
-        <div style="text-align: center; margin-top: 24px;">
-          ${getCtaButton('Voir toutes les réponses →', `https://iarche.fr/admin/formulaires/${escapeHtml(form_id)}/reponses`, 'secondary')}
-        </div>
-      `;
       const adminFooter = getEmailFooter();
 
       const adminEmailResponse = await resend.emails.send({
         from: 'IArche Formulaires <notifications@iarche.fr>',
         to: [adminEmailAddress],
-        subject: `📝 Nouvelle réponse: ${safeFormTitle}`,
+        subject: adminSubject,
         html: wrapEmailContent(adminHeader, adminContent, adminFooter),
       });
 
@@ -202,7 +289,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         source_id: form_id,
         recipient_email: adminEmailAddress,
         email_type: 'admin_notification',
-        subject: `Nouvelle réponse: ${safeFormTitle}`,
+        subject: adminSubject,
         status: 'sent',
       });
     } catch (emailError: any) {
@@ -221,32 +308,21 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Email prospect (SUCCINCT - juste confirmation)
     if (shouldSendToRespondent && finalRespondentEmail) {
       try {
-        const respondentSubject = custom_subject || `Merci ${safeProspectName} ! Votre demande a bien été reçue`;
+        let respondentContent: string;
+        let respondentSubject = custom_subject || `Merci ${safeProspectName} ! Votre demande a bien été reçue`;
 
-        console.log('[send-form-notification] Sending confirmation to:', finalRespondentEmail);
+        if (finalEmailConfig?.user_email_template) {
+          console.log('[send-form-notification] Using database template for prospect');
+          respondentContent = replaceTemplateVariables(finalEmailConfig.user_email_template, templateVariables);
+          if (finalEmailConfig.user_email_subject) {
+            respondentSubject = replaceTemplateVariables(finalEmailConfig.user_email_subject, templateVariables);
+          }
+        } else {
+          console.log('[send-form-notification] Using default template for prospect');
+          respondentContent = getDefaultProspectTemplate(safeProspectName, safeFormTitle);
+        }
 
         const respondentHeader = getEmailHeader(`Merci ${safeProspectName} !`);
-        const respondentContent = `
-          <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; line-height: 1.7; margin-bottom: 20px;">
-            Nous avons bien reçu votre demande concernant <strong style="color: ${EMAIL_COLORS.nightBlue};">${safeFormTitle}</strong>.
-          </p>
-          
-          <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; line-height: 1.7; margin-bottom: 24px;">
-            Notre équipe va prendre connaissance de vos informations et reviendra vers vous dans les meilleurs délais.
-          </p>
-          
-          ${getInfoCard(`<p style="color: ${EMAIL_COLORS.nightBlue}; margin: 0; font-size: 15px; font-weight: 500;">
-            💡 En attendant, découvrez nos solutions IA sur notre site
-          </p>`)}
-          
-          <div style="text-align: center; margin: 24px 0;">
-            ${getCtaButton('Découvrir nos solutions →', 'https://iarche.fr/solutions')}
-          </div>
-          
-          <p style="color: ${EMAIL_COLORS.mutedGray}; font-size: 14px; line-height: 1.6; text-align: center;">
-            Une question ? Contactez-nous à <a href="mailto:nlq@iarche.fr" style="color: ${EMAIL_COLORS.terracotta}; text-decoration: none; font-weight: 500;">nlq@iarche.fr</a>
-          </p>
-        `;
         const respondentFooter = getEmailFooter();
 
         const respondentEmailResponse = await resend.emails.send({

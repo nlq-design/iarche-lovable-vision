@@ -4,6 +4,7 @@ import { Resend } from "https://esm.sh/resend@4.0.0";
 import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
 import { checkGeoBlocking, getGeoBlockingHeaders } from '../_shared/geoBlock.ts';
 import { logEmail } from '../_shared/emailLogger.ts';
+import { EMAIL_COLORS, getEmailHeader, getEmailFooter, wrapEmailContent, getCtaButton } from '../_shared/emailTemplate.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -31,6 +32,64 @@ const escapeHtml = (text: string): string => {
     "'": '&#039;'
   };
   return text.replace(/[&<>"']/g, (m) => map[m]);
+};
+
+// Remplacer les variables dans le template
+const replaceTemplateVariables = (
+  template: string,
+  variables: Record<string, string>
+): string => {
+  let result = template;
+  for (const [key, value] of Object.entries(variables)) {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    result = result.replace(regex, value);
+  }
+  return result;
+};
+
+// Template par défaut admin
+const getDefaultAdminTemplate = (
+  safeArticleTitle: string,
+  safeAuthorName: string,
+  safeAuthorEmail: string,
+  safeContent: string,
+  articleSlug: string
+): string => {
+  return `
+    <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 20px;">
+      Un nouveau commentaire a été posté et attend votre modération.
+    </p>
+    
+    <div style="background: ${EMAIL_COLORS.offWhite}; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+      <p style="margin: 0 0 8px 0; color: ${EMAIL_COLORS.mutedGray}; font-size: 14px;">
+        <strong>Article :</strong> ${safeArticleTitle}
+      </p>
+      <p style="margin: 0 0 8px 0; color: ${EMAIL_COLORS.mutedGray}; font-size: 14px;">
+        <strong>Auteur :</strong> ${safeAuthorName} (${safeAuthorEmail})
+      </p>
+    </div>
+    
+    <div style="background: #f9fafb; border-left: 4px solid ${EMAIL_COLORS.terracotta}; padding: 16px; margin-bottom: 24px; border-radius: 0 8px 8px 0;">
+      <p style="margin: 0 0 8px 0; color: ${EMAIL_COLORS.nightBlue}; font-size: 14px; font-weight: 600;">
+        Commentaire :
+      </p>
+      <p style="margin: 0; color: ${EMAIL_COLORS.textGray}; font-size: 15px; white-space: pre-wrap; line-height: 1.6;">
+        ${safeContent}
+      </p>
+    </div>
+    
+    <div style="text-align: center; margin-top: 24px;">
+      ${getCtaButton('Modérer le commentaire', 'https://iarche.fr/admin/comments')}
+    </div>
+    
+    <hr style="margin: 24px 0; border: none; border-top: 1px solid #eee;">
+    <p style="color: ${EMAIL_COLORS.mutedGray}; font-size: 12px; text-align: center;">
+      Ce commentaire a été publié sur : 
+      <a href="https://iarche.fr/actualites/${articleSlug}" style="color: ${EMAIL_COLORS.terracotta};">
+        https://iarche.fr/actualites/${articleSlug}
+      </a>
+    </p>
+  `;
 };
 
 const handler = async (req: Request): Promise<Response> => {
@@ -156,7 +215,43 @@ const handler = async (req: Request): Promise<Response> => {
     const safeContent = escapeHtml(content);
     const safeArticleTitle = escapeHtml(article.title);
 
-    const emailSubject = `Nouveau commentaire en attente - ${safeArticleTitle}`;
+    // Récupérer le template depuis la BDD
+    const { data: emailConfig } = await supabaseAdmin
+      .from('email_configurations')
+      .select('admin_email_template, admin_email_subject')
+      .eq('source_type', 'comment')
+      .eq('is_active', true)
+      .maybeSingle();
+
+    console.log('[notify-new-comment] Email config found:', !!emailConfig);
+
+    // Variables pour le template
+    const templateVariables = {
+      article_title: safeArticleTitle,
+      article_slug: article.slug,
+      author_name: safeAuthorName,
+      author_email: safeAuthorEmail,
+      comment_content: safeContent,
+      date: new Date().toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' }),
+    };
+
+    // Utiliser le template BDD ou le template par défaut
+    let emailContent: string;
+    let emailSubject = `Nouveau commentaire en attente - ${safeArticleTitle}`;
+
+    if (emailConfig?.admin_email_template) {
+      console.log('[notify-new-comment] Using database template for admin');
+      emailContent = replaceTemplateVariables(emailConfig.admin_email_template, templateVariables);
+      if (emailConfig.admin_email_subject) {
+        emailSubject = replaceTemplateVariables(emailConfig.admin_email_subject, templateVariables);
+      }
+    } else {
+      console.log('[notify-new-comment] Using default template for admin');
+      emailContent = getDefaultAdminTemplate(safeArticleTitle, safeAuthorName, safeAuthorEmail, safeContent, article.slug);
+    }
+
+    const header = getEmailHeader('💬 Nouveau commentaire');
+    const footer = getEmailFooter();
 
     // Envoyer l'email aux admins
     const { data: emailResponse, error: emailError } = await resend.emails.send({
@@ -164,25 +259,7 @@ const handler = async (req: Request): Promise<Response> => {
       to: adminEmails,
       replyTo: 'nlq@iarche.fr',
       subject: emailSubject,
-      html: `
-        <h1>Nouveau commentaire en attente de modération</h1>
-        <p><strong>Article :</strong> ${safeArticleTitle}</p>
-        <p><strong>Auteur :</strong> ${safeAuthorName} (${safeAuthorEmail})</p>
-        <p><strong>Commentaire :</strong></p>
-        <blockquote style="border-left: 4px solid #ccc; padding-left: 16px; margin: 16px 0; white-space: pre-wrap;">
-          ${safeContent}
-        </blockquote>
-        <p>
-          <a href="https://iarche.fr/admin/comments" style="display: inline-block; padding: 10px 20px; background-color: #2754C5; color: white; text-decoration: none; border-radius: 5px;">
-            Modérer le commentaire
-          </a>
-        </p>
-        <hr style="margin: 24px 0; border: none; border-top: 1px solid #eee;">
-        <p style="color: #666; font-size: 12px;">
-          Ce commentaire a été publié sur : 
-          <a href="https://iarche.fr/actualites/${article.slug}">https://iarche.fr/actualites/${article.slug}</a>
-        </p>
-      `,
+      html: wrapEmailContent(header, emailContent, footer),
     });
 
     if (emailError) {

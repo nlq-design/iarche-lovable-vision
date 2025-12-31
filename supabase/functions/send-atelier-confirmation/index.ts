@@ -24,6 +24,42 @@ const escapeHtml = (text: string): string => {
   return text.replace(/[&<>"']/g, (m) => map[m]);
 };
 
+// Template par défaut pour le prospect (inscription atelier)
+const getDefaultProspectTemplate = (
+  safeName: string,
+  safeAtelierTitle: string,
+  eventDetailsHtml: string
+): string => {
+  return `
+    <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Bonjour <strong>${safeName}</strong>,</p>
+    
+    <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 20px;">Nous avons bien reçu votre inscription à l'événement :</p>
+    
+    ${getInfoCard(`<h3 style="margin: 0; font-size: 18px; color: ${EMAIL_COLORS.nightBlue};">${safeAtelierTitle}</h3>`)}
+    
+    ${eventDetailsHtml}
+    
+    <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Vous recevrez un rappel quelques jours avant l'événement avec toutes les informations pratiques.</p>
+    
+    <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px;">En attendant, n'hésitez pas à nous contacter si vous avez des questions.</p>
+    
+    ${getSignature()}
+  `;
+};
+
+// Remplacer les variables dans le template
+const replaceTemplateVariables = (
+  template: string,
+  variables: Record<string, string>
+): string => {
+  let result = template;
+  for (const [key, value] of Object.entries(variables)) {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    result = result.replace(regex, value);
+  }
+  return result;
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -125,30 +161,51 @@ Deno.serve(async (req) => {
 
     const emailSubject = subject(safeAtelierTitle);
 
+    // Récupérer le template depuis la BDD
+    const { data: emailConfig } = await supabaseAdmin
+      .from('email_configurations')
+      .select('user_email_template, user_email_subject')
+      .eq('source_type', 'atelier-webinaire')
+      .eq('is_active', true)
+      .maybeSingle();
+
+    console.log('[send-atelier-confirmation] Email config found:', !!emailConfig);
+
+    // Variables pour le template
+    const templateVariables = {
+      name: safeName,
+      atelier_title: safeAtelierTitle,
+      event_date: formattedDate,
+      event_location: safeEventLocation || 'À confirmer',
+      heure_debut: safeHeureDebut || '',
+      type_evenement: safeTypeEvenement || '',
+      event_details: eventDetailsHtml,
+    };
+
+    // Utiliser le template BDD ou le template par défaut
+    let emailContent: string;
+    let finalSubject = emailSubject;
+
+    if (emailConfig?.user_email_template) {
+      console.log('[send-atelier-confirmation] Using database template for prospect');
+      emailContent = replaceTemplateVariables(emailConfig.user_email_template, templateVariables);
+      if (emailConfig.user_email_subject) {
+        finalSubject = replaceTemplateVariables(emailConfig.user_email_subject, templateVariables);
+      }
+    } else {
+      console.log('[send-atelier-confirmation] Using default template for prospect');
+      emailContent = getDefaultProspectTemplate(safeName, safeAtelierTitle, eventDetailsHtml);
+    }
+
     // Generate email with v4.0 template
     const header = getEmailHeader('Inscription confirmée !');
-    const content = `
-      <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Bonjour <strong>${safeName}</strong>,</p>
-      
-      <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 20px;">Nous avons bien reçu votre inscription à l'événement :</p>
-      
-      ${getInfoCard(`<h3 style="margin: 0; font-size: 18px; color: ${EMAIL_COLORS.nightBlue};">${safeAtelierTitle}</h3>`)}
-      
-      ${eventDetailsHtml}
-      
-      <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Vous recevrez un rappel quelques jours avant l'événement avec toutes les informations pratiques.</p>
-      
-      <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px;">En attendant, n'hésitez pas à nous contacter si vous avez des questions.</p>
-      
-      ${getSignature()}
-    `;
     const footer = getEmailFooter();
-    const emailHtml = wrapEmailContent(header, content, footer);
+    const emailHtml = wrapEmailContent(header, emailContent, footer);
 
     const { data, error } = await resend.emails.send({
       from: 'IArche <contact@iarche.fr>',
       to: [email],
-      subject: emailSubject,
+      subject: finalSubject,
       html: emailHtml,
     });
 
@@ -158,7 +215,7 @@ Deno.serve(async (req) => {
       // Log failed email
       await logEmail({
         recipient_email: email,
-        subject: emailSubject,
+        subject: finalSubject,
         source_type: 'atelier-webinaire',
         email_type: 'user_confirmation',
         source_id: atelier_id,
@@ -178,7 +235,7 @@ Deno.serve(async (req) => {
     // Log successful email
     await logEmail({
       recipient_email: email,
-      subject: emailSubject,
+      subject: finalSubject,
       source_type: 'atelier-webinaire',
       email_type: 'user_confirmation',
       source_id: atelier_id,
