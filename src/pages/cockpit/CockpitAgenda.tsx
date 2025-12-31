@@ -1,9 +1,9 @@
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, Video, MapPin, ChevronLeft, ChevronRight, User, Building, RefreshCw, FileText } from "lucide-react";
+import { Calendar, Clock, Video, MapPin, ChevronLeft, ChevronRight, User, Building, RefreshCw, FileText, CheckSquare, AlertCircle, Phone, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useCockpitBookings } from "@/hooks/cockpit";
+import { useCockpitBookings, useCockpitTasks } from "@/hooks/cockpit";
 import { format, isSameDay, addDays, subDays, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useState } from "react";
@@ -15,6 +15,7 @@ import { MeetingNoteSheet } from "@/components/cockpit/MeetingNoteSheet";
 import type { Database } from "@/integrations/supabase/types";
 
 type Booking = Database['public']['Tables']['bookings']['Row'];
+type Task = Database['public']['Tables']['tasks']['Row'];
 
 const CockpitAgenda = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -31,6 +32,19 @@ const CockpitAgenda = () => {
     loadingUpcoming,
     refetch,
   } = useCockpitBookings();
+  
+  const { tasks, isLoading: tasksLoading } = useCockpitTasks();
+  
+  // Get tasks for current day
+  const getTasksForDay = (day: Date) => {
+    const dateStr = format(day, 'yyyy-MM-dd');
+    return tasks?.filter(t => 
+      t.due_date === dateStr && t.status !== 'completed' && t.status !== 'cancelled'
+    ) || [];
+  };
+  
+  const currentDayTasks = getTasksForDay(currentDate);
+  const todayTasks = getTasksForDay(new Date());
 
   const handleSyncCalendar = async () => {
     setIsSyncing(true);
@@ -123,6 +137,48 @@ const CockpitAgenda = () => {
       </div>
     </div>
   );
+
+  const TaskCard = ({ task }: { task: Task }) => {
+    const getTaskIcon = (type: string | null) => {
+      switch (type) {
+        case 'call': return <Phone className="h-3 w-3" />;
+        case 'email': return <Mail className="h-3 w-3" />;
+        case 'meeting': return <Calendar className="h-3 w-3" />;
+        default: return <CheckSquare className="h-3 w-3" />;
+      }
+    };
+
+    return (
+      <div className="p-3 rounded-lg border bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition-colors">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              {task.priority === 'high' || task.priority === 'urgent' ? (
+                <AlertCircle className="h-3 w-3 text-destructive" />
+              ) : (
+                getTaskIcon(task.task_type)
+              )}
+              {task.due_time && (
+                <span className="text-sm font-medium">
+                  {task.due_time.slice(0, 5)}
+                </span>
+              )}
+            </div>
+            <p className="font-medium truncate">{task.title}</p>
+            {task.description && (
+              <p className="text-xs text-muted-foreground truncate mt-1">{task.description}</p>
+            )}
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            <Badge variant="outline" className="capitalize text-xs">{task.task_type}</Badge>
+            {task.ai_generated && (
+              <Badge variant="secondary" className="text-xs">IA</Badge>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <CockpitLayout>
@@ -229,22 +285,46 @@ const CockpitAgenda = () => {
                 <h4 className="text-sm font-medium mb-3">
                   {format(currentDate, "EEEE d MMMM", { locale: fr })}
                 </h4>
-                {isLoading ? (
+                {isLoading || tasksLoading ? (
                   <div className="space-y-2">
                     <Skeleton className="h-20 w-full" />
                     <Skeleton className="h-20 w-full" />
                   </div>
                 ) : (
                   <>
+                    {/* Tasks for the day */}
+                    {currentDayTasks.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                          <CheckSquare className="h-3 w-3" />
+                          Tâches ({currentDayTasks.length})
+                        </p>
+                        <div className="space-y-2">
+                          {currentDayTasks.map((task) => (
+                            <TaskCard key={task.id} task={task} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Bookings for the day */}
                     {bookings.filter(b => 
                       isSameDay(new Date(b.start_time), currentDate) && b.status !== "cancelled"
-                    ).length === 0 ? (
+                    ).length === 0 && currentDayTasks.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
                         <Calendar className="h-8 w-8 mb-2 opacity-50" />
-                        <p className="text-sm">Aucun RDV ce jour</p>
+                        <p className="text-sm">Aucun événement ce jour</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
+                        {bookings.filter(b => 
+                          isSameDay(new Date(b.start_time), currentDate) && b.status !== "cancelled"
+                        ).length > 0 && (
+                          <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            Rendez-vous
+                          </p>
+                        )}
                         {bookings
                           .filter(b => isSameDay(new Date(b.start_time), currentDate) && b.status !== "cancelled")
                           .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
@@ -268,22 +348,41 @@ const CockpitAgenda = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {loadingToday ? (
+              {loadingToday || tasksLoading ? (
                 <div className="space-y-2">
                   <Skeleton className="h-16 w-full" />
                   <Skeleton className="h-16 w-full" />
                 </div>
-              ) : todayBookings.length === 0 ? (
+              ) : todayBookings.length === 0 && todayTasks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
                   <Calendar className="h-8 w-8 mb-2 opacity-50" />
-                  <p className="text-sm font-medium">Aucun RDV prévu</p>
-                  <p className="text-xs text-center">Planifiez vos rendez-vous clients</p>
+                  <p className="text-sm font-medium">Aucun événement prévu</p>
+                  <p className="text-xs text-center">Planifiez vos rendez-vous et tâches</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {todayBookings.map((booking) => (
-                    <BookingCard key={booking.id} booking={booking} />
-                  ))}
+                <div className="space-y-3">
+                  {/* Today's tasks */}
+                  {todayTasks.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Tâches</p>
+                      <div className="space-y-2">
+                        {todayTasks.map((task) => (
+                          <TaskCard key={task.id} task={task} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* Today's bookings */}
+                  {todayBookings.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Rendez-vous</p>
+                      <div className="space-y-2">
+                        {todayBookings.map((booking) => (
+                          <BookingCard key={booking.id} booking={booking} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
