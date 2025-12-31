@@ -31,7 +31,7 @@ export function CockpitHeader() {
 
   return (
     <header className="bg-background border-b border-border sticky top-0 z-40 h-14">
-      <div className="h-full px-6 flex items-center justify-between">
+      <div className="h-full px-3 sm:px-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <SidebarTrigger className="lg:hidden" />
           <Link to="/cockpit" className="flex items-center gap-3 hover:opacity-80 transition-opacity">

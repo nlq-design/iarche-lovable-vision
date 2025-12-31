@@ -333,21 +333,21 @@ const CockpitProjectDetail = () => {
 
   return (
     <CockpitLayout>
-      <div className="p-5 space-y-4">
+      <div className="p-4 sm:p-5 space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/cockpit/projects')}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div>
-              <h1 className="text-xl font-semibold text-foreground">{project.name || 'Nouveau projet'}</h1>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg sm:text-xl font-semibold text-foreground truncate">{project.name || 'Nouveau projet'}</h1>
               <p className="text-xs text-muted-foreground">
                 Créé le {project.created_at && format(new Date(project.created_at), 'dd MMM yyyy', { locale: fr })}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button
               size="sm"
               className="h-8 text-sm"
@@ -355,7 +355,7 @@ const CockpitProjectDetail = () => {
               disabled={!hasChanges || updateProject.isPending}
             >
               <Save className="h-3.5 w-3.5 mr-1.5" />
-              Enregistrer
+              <span className="hidden sm:inline">Enregistrer</span>
             </Button>
             <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => setShowDeleteDialog(true)}>
               <Trash2 className="h-3.5 w-3.5" />
@@ -365,37 +365,37 @@ const CockpitProjectDetail = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5 h-9">
-            <TabsTrigger value="overview" className="flex items-center gap-1.5 text-sm h-7">
+          <TabsList className="grid w-full grid-cols-5 h-9 overflow-x-auto">
+            <TabsTrigger value="overview" className="flex items-center gap-1 text-xs sm:text-sm h-7 px-2">
               <LayoutDashboard className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Aperçu</span>
             </TabsTrigger>
-            <TabsTrigger value="notes" className="flex items-center gap-1.5 text-sm h-7">
+            <TabsTrigger value="notes" className="flex items-center gap-1 text-xs sm:text-sm h-7 px-2">
               <StickyNote className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Notes</span>
               {(projectNotes?.length || 0) > 0 && (
-                <Badge variant="secondary" className="text-xs py-0 px-1 h-4">{projectNotes?.length}</Badge>
+                <Badge variant="secondary" className="text-xs py-0 px-1 h-4 hidden sm:inline-flex">{projectNotes?.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-1.5 text-sm h-7">
+            <TabsTrigger value="documents" className="flex items-center gap-1 text-xs sm:text-sm h-7 px-2">
               <FileUp className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Docs</span>
               {(documents?.length || 0) > 0 && (
-                <Badge variant="secondary" className="text-xs py-0 px-1 h-4">{documents?.length}</Badge>
+                <Badge variant="secondary" className="text-xs py-0 px-1 h-4 hidden sm:inline-flex">{documents?.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="specs" className="flex items-center gap-1.5 text-sm h-7">
+            <TabsTrigger value="specs" className="flex items-center gap-1 text-xs sm:text-sm h-7 px-2">
               <FileText className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">CDC</span>
               {projectSpecs.length > 0 && (
-                <Badge variant="secondary" className="text-xs py-0 px-1 h-4">{projectSpecs.length}</Badge>
+                <Badge variant="secondary" className="text-xs py-0 px-1 h-4 hidden sm:inline-flex">{projectSpecs.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="activity" className="flex items-center gap-1.5 text-sm h-7">
+            <TabsTrigger value="activity" className="flex items-center gap-1 text-xs sm:text-sm h-7 px-2">
               <ListTodo className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Activité</span>
               {(projectTasks.length + projectMeetingNotes.length) > 0 && (
-                <Badge variant="secondary" className="text-xs py-0 px-1 h-4">
+                <Badge variant="secondary" className="text-xs py-0 px-1 h-4 hidden sm:inline-flex">
                   {projectTasks.length + projectMeetingNotes.length}
                 </Badge>
               )}
@@ -404,7 +404,7 @@ const CockpitProjectDetail = () => {
 
           {/* Overview Tab - Enrichi */}
           <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Informations projet */}
               <Card className="border">
                 <CardHeader className="pb-3">

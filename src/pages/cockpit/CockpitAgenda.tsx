@@ -127,7 +127,7 @@ const CockpitAgenda = () => {
   return (
     <CockpitLayout>
       <div className="p-5 space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold text-foreground">Agenda</h1>
             <p className="text-sm text-muted-foreground capitalize">{formattedDate}</p>
@@ -141,7 +141,7 @@ const CockpitAgenda = () => {
               disabled={isSyncing}
             >
               <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Sync...' : 'Sync Google'}
+              <span className="hidden sm:inline">{isSyncing ? 'Sync...' : 'Sync Google'}</span>
             </Button>
             <Button size="sm" className="h-8 text-sm">
               Nouveau RDV
@@ -150,22 +150,22 @@ const CockpitAgenda = () => {
         </div>
 
         {/* Stats inline */}
-        <div className="flex items-center gap-6 p-3 bg-muted/40 rounded-lg border text-sm">
+        <div className="flex flex-wrap items-center gap-4 p-3 bg-muted/40 rounded-lg border text-sm">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Cette semaine</span>
+            <span className="text-muted-foreground">Semaine</span>
             <span className="font-semibold">{stats.thisWeek}</span>
           </div>
-          <div className="h-4 w-px bg-border" />
+          <div className="h-4 w-px bg-border hidden sm:block" />
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">À venir</span>
             <span className="font-semibold">{stats.upcoming}</span>
           </div>
-          <div className="h-4 w-px bg-border" />
+          <div className="h-4 w-px bg-border hidden sm:block" />
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Terminés</span>
             <span className="font-semibold text-emerald-600">{stats.completed}</span>
           </div>
-          <div className="h-4 w-px bg-border" />
+          <div className="h-4 w-px bg-border hidden sm:block" />
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Annulés</span>
             <span className="font-semibold text-red-500">{stats.cancelled}</span>

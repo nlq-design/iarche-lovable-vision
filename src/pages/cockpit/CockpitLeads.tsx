@@ -122,12 +122,12 @@ const CockpitLeads = () => {
     <CockpitLayout>
       <div className="p-5 space-y-4">
         {/* Header compact */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold text-foreground">Leads</h1>
             <p className="text-sm text-muted-foreground">Base de données prospects</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {selectedIds.length > 0 && (
               <Button 
                 variant="destructive" 
@@ -141,20 +141,20 @@ const CockpitLeads = () => {
             )}
             <Button variant="outline" size="sm" className="h-8 text-sm">
               <Download className="h-3.5 w-3.5 mr-1.5" />
-              Exporter
+              <span className="hidden sm:inline">Exporter</span>
             </Button>
             <CreateLeadDialog />
           </div>
         </div>
 
         {/* Stats inline + Search */}
-        <div className="flex items-center gap-4 p-3 bg-muted/40 rounded-lg border">
-          <div className="flex items-center gap-6 text-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4 p-3 bg-muted/40 rounded-lg border">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Total</span>
               <span className="font-semibold">{stats.total}</span>
             </div>
-            <div className="h-4 w-px bg-border" />
+            <div className="h-4 w-px bg-border hidden sm:block" />
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">Contact</span>
               <span className="font-medium text-blue-600">{stats.bySource?.contact || 0}</span>
@@ -167,18 +167,18 @@ const CockpitLeads = () => {
           
           <div className="flex-1" />
           
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input 
                 placeholder="Rechercher..." 
-                className="pl-8 h-8 w-[200px] text-sm"
+                className="pl-8 h-8 w-full sm:w-[200px] text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="w-[140px] h-8 text-sm">
+              <SelectTrigger className="w-full sm:w-[140px] h-8 text-sm">
                 <SelectValue placeholder="Source" />
               </SelectTrigger>
               <SelectContent>

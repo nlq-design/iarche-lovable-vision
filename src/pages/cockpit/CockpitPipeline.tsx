@@ -95,8 +95,8 @@ const CockpitPipeline = () => {
 
   return (
     <CockpitLayout>
-      <div className="p-6 space-y-5">
-        <div className="flex items-center justify-between">
+      <div className="p-5 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold text-foreground">Pipeline</h1>
             <p className="text-sm text-muted-foreground">Gestion des opportunités commerciales</p>
@@ -104,11 +104,12 @@ const CockpitPipeline = () => {
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="h-8 text-sm">
               <Filter className="h-3.5 w-3.5 mr-1.5" />
-              Filtrer
+              <span className="hidden sm:inline">Filtrer</span>
             </Button>
             <Button size="sm" className="h-8 text-sm" onClick={() => setShowCreateDialog(true)}>
               <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Nouvelle opportunité
+              <span className="hidden sm:inline">Nouvelle opportunité</span>
+              <span className="sm:hidden">Nouveau</span>
             </Button>
           </div>
         </div>
@@ -117,13 +118,13 @@ const CockpitPipeline = () => {
 
         {/* Pipeline Kanban */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[1, 2, 3, 4].map(i => (
               <Skeleton key={i} className="h-[400px]" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 overflow-x-auto">
             {activeStages.map((stage) => {
               const stageOpps = opportunitiesByStage[stage] || [];
               const stageValue = stageOpps.reduce((sum, o) => sum + (Number(o.value_amount) || 0), 0);

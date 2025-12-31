@@ -73,18 +73,18 @@ export default function CockpitDashboard() {
         </div>
 
         {/* KPIs inline */}
-        <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
           {stats.map((stat) => (
             <Card key={stat.label} className="border shadow-sm">
               <CardContent className="p-3">
                 {isLoading ? (
                   <Skeleton className="h-10 w-full" />
                 ) : (
-                  <div className="flex items-center gap-3">
-                    <stat.icon className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-lg font-semibold">{stat.value}</p>
-                      <p className="text-xs text-muted-foreground">{stat.label}</p>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <stat.icon className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-base sm:text-lg font-semibold truncate">{stat.value}</p>
+                      <p className="text-xs text-muted-foreground truncate">{stat.label}</p>
                     </div>
                   </div>
                 )}

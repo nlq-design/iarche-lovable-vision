@@ -74,25 +74,25 @@ const CockpitProjects = () => {
         </div>
 
         {/* Stats inline */}
-        <div className="flex items-center gap-6 p-3 bg-muted/40 rounded-lg border text-sm">
+        <div className="flex flex-wrap items-center gap-4 p-3 bg-muted/40 rounded-lg border text-sm">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-blue-500" />
             <span className="text-muted-foreground">En cours</span>
             <span className="font-semibold">{stats.active}</span>
           </div>
-          <div className="h-4 w-px bg-border" />
+          <div className="h-4 w-px bg-border hidden sm:block" />
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
             <span className="text-muted-foreground">Terminés</span>
             <span className="font-semibold">{stats.completed}</span>
           </div>
-          <div className="h-4 w-px bg-border" />
+          <div className="h-4 w-px bg-border hidden sm:block" />
           <div className="flex items-center gap-2">
             <PauseCircle className="h-4 w-4 text-amber-500" />
             <span className="text-muted-foreground">Pause</span>
             <span className="font-semibold">{stats.onHold}</span>
           </div>
-          <div className="h-4 w-px bg-border" />
+          <div className="h-4 w-px bg-border hidden sm:block" />
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-red-500" />
             <span className="text-muted-foreground">À risque</span>
