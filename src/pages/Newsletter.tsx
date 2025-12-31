@@ -61,7 +61,7 @@ const Newsletter = () => {
         throw dbError;
       }
 
-      // Envoyer email de bienvenue
+      // Envoyer email de bienvenue à l'utilisateur
       try {
         await supabase.functions.invoke('send-user-confirmation', {
           body: {
@@ -72,6 +72,21 @@ const Newsletter = () => {
         });
       } catch (confirmError) {
         console.warn('Failed to send welcome email:', confirmError);
+      }
+
+      // Notifier l'admin
+      try {
+        await supabase.functions.invoke('send-lead-notification', {
+          body: {
+            lead_id: 'newsletter-' + Date.now(),
+            name: validatedData.email.split('@')[0],
+            email: validatedData.email,
+            source: 'newsletter',
+            source_context: 'Inscription newsletter page dédiée',
+          },
+        });
+      } catch (notifError) {
+        console.warn('Failed to send admin notification:', notifError);
       }
 
       toast({

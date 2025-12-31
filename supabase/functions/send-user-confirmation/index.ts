@@ -102,18 +102,34 @@ const getEmailContent = (data: UserConfirmationRequest) => {
 
     case 'newsletter':
       return {
-        subject: '✅ Bienvenue dans la newsletter IArche !',
+        subject: '🎉 Bienvenue dans la communauté IArche !',
         html: wrapEmailContent(
-          header('Bienvenue !'),
+          header('Bienvenue dans la communauté IArche !'),
           `
             <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Bonjour <strong>${safeName}</strong>,</p>
-            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 20px;">Merci de vous être inscrit à notre newsletter !</p>
-            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 8px;">Vous recevrez régulièrement :</p>
-            <ul style="color: ${EMAIL_COLORS.mutedGray}; margin-bottom: 24px;">
-              <li>Veille technologique et actualités IA</li>
-              <li>Conseils pratiques pour dirigeants</li>
-              <li>Retours d'expérience et cas d'usage</li>
-            </ul>
+            
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 20px;">
+              Merci de rejoindre notre newsletter ! Vous faites désormais partie d'une communauté de dirigeants qui souhaitent intégrer l'IA de manière pragmatique dans leur entreprise.
+            </p>
+            
+            ${getInfoCard(`
+              <h3 style="margin: 0 0 12px 0; font-size: 16px; color: ${EMAIL_COLORS.nightBlue};">📬 Ce que vous allez recevoir</h3>
+              <ul style="color: ${EMAIL_COLORS.textGray}; margin: 0; padding-left: 20px; line-height: 1.8;">
+                <li><strong>Veille technologique</strong> · L'essentiel des actualités IA</li>
+                <li><strong>Conseils pratiques</strong> · Des applications concrètes pour votre PME</li>
+                <li><strong>Retours d'expérience</strong> · Cas d'usage réels et résultats mesurables</li>
+                <li><strong>Invitations exclusives</strong> · Ateliers, webinaires et événements</li>
+              </ul>
+            `, EMAIL_COLORS.terracotta)}
+            
+            <div style="text-align: center; margin: 28px 0;">
+              ${getCtaButton('Découvrir nos ressources', 'https://iarche.fr/ressources')}
+            </div>
+            
+            <p style="color: ${EMAIL_COLORS.mutedGray}; font-size: 14px; margin-top: 24px; text-align: center;">
+              Envoi mensuel · Désinscription en un clic · Pas de spam
+            </p>
+            
             ${getSignature()}
           `,
           footer
