@@ -71,3 +71,9 @@ verify_jwt = false
 
 [functions.sync-google-calendar]
 verify_jwt = true
+
+[functions.create-voice-transcription]
+verify_jwt = true
+
+[functions.process-voice-transcription]
+verify_jwt = true

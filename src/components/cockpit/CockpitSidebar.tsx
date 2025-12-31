@@ -6,7 +6,8 @@ import {
   FolderKanban, 
   BarChart3,
   ArrowLeft,
-  Package
+  Package,
+  Mic
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Link, useLocation } from 'react-router-dom';
@@ -29,6 +30,7 @@ const navigationItems = [
   { title: 'Leads', url: '/cockpit/leads', icon: Users },
   { title: 'Projets', url: '/cockpit/projects', icon: FolderKanban },
   { title: 'Solutions', url: '/cockpit/solutions', icon: Package },
+  { title: 'Transcriptions', url: '/cockpit/transcriptions', icon: Mic },
   { title: 'Agenda', url: '/cockpit/agenda', icon: Calendar },
   { title: 'Analytics', url: '/cockpit/analytics', icon: BarChart3 },
 ];
