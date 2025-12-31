@@ -128,10 +128,59 @@ async function loadPromptProfile(supabase: any, prompt_profile_id: string | null
   return legacyPrompt ?? null;
 }
 
-async function fetchEntityContext(supabase: any, job: VoiceJob) {
+// Semantic search for auto-detecting solutions from transcript
+interface SemanticSearchResult {
+  resource_id: string;
+  resource_type: string;
+  resource_title: string;
+  resource_slug: string;
+  similarity: number;
+  metadata: Record<string, unknown>;
+}
+
+async function searchSimilarResources(
+  transcript: string,
+  filterTypes: string[] = ["solution", "service"]
+): Promise<SemanticSearchResult[]> {
+  try {
+    console.log("Performing semantic search on transcript...");
+    
+    // Use first 2000 chars of transcript as search query (embeddings have limits)
+    const searchQuery = transcript.slice(0, 2000);
+    
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/search-embeddings`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: searchQuery,
+        filter_types: filterTypes,
+        match_threshold: 0.65, // Lower threshold for broader matching
+        match_count: 10,
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn("Semantic search failed:", await response.text());
+      return [];
+    }
+
+    const data = await response.json();
+    console.log(`Semantic search found ${data.results?.length ?? 0} potential matches`);
+    return data.results ?? [];
+  } catch (error) {
+    console.warn("Semantic search error:", error);
+    return [];
+  }
+}
+
+async function fetchEntityContext(supabase: any, job: VoiceJob, transcript?: string) {
   let lead: any = null;
   let project: any = null;
   let solution: any = null;
+  let detectedSolutions: SemanticSearchResult[] = [];
 
   if (job.project_id) {
     const { data } = await supabase.from("projects").select("*").eq("id", job.project_id).single();
@@ -146,6 +195,22 @@ async function fetchEntityContext(supabase: any, job: VoiceJob) {
       .eq("resource_type", "solution")
       .single();
     solution = data ?? null;
+  }
+
+  // If no project/solution linked and transcript provided, do semantic search
+  const shouldAutoDetect = !job.project_id && !job.solution_id && transcript;
+  if (shouldAutoDetect) {
+    console.log("No project/solution linked, performing RAG detection...");
+    detectedSolutions = await searchSimilarResources(transcript);
+    
+    // Log detected solutions for debugging
+    if (detectedSolutions.length > 0) {
+      console.log("Auto-detected solutions:", detectedSolutions.map(s => ({
+        title: s.resource_title,
+        type: s.resource_type,
+        similarity: s.similarity.toFixed(3)
+      })));
+    }
   }
 
   // Cascade lead
@@ -186,7 +251,16 @@ async function fetchEntityContext(supabase: any, job: VoiceJob) {
         .limit(50)).data
     : [];
 
-  return { lead, project, solution, leadId, activity: activity ?? [], tasks: tasks ?? [] };
+  return { 
+    lead, 
+    project, 
+    solution, 
+    leadId, 
+    activity: activity ?? [], 
+    tasks: tasks ?? [],
+    detectedSolutions,
+    autoDetectionUsed: shouldAutoDetect,
+  };
 }
 
 function buildLLM(
@@ -196,6 +270,17 @@ function buildLLM(
   ctx: ReturnType<typeof fetchEntityContext> extends Promise<infer T> ? T : never, 
   schema: Record<string, unknown> | null
 ) {
+  // Build detected solutions context for RAG
+  const detectedSolutionsContext = ctx.detectedSolutions?.length 
+    ? ctx.detectedSolutions.map(s => ({
+        title: s.resource_title,
+        type: s.resource_type,
+        slug: s.resource_slug,
+        similarity_score: s.similarity,
+        metadata: s.metadata,
+      }))
+    : [];
+
   const payload = {
     transcript: transcriptText,
     crm_context: {
@@ -205,6 +290,14 @@ function buildLLM(
       recent_activity: ctx.activity,
       open_tasks: ctx.tasks,
     },
+    // Add RAG context
+    rag_context: {
+      auto_detection_used: ctx.autoDetectionUsed ?? false,
+      detected_solutions: detectedSolutionsContext,
+      detection_note: ctx.autoDetectionUsed
+        ? "Les solutions suivantes ont été détectées automatiquement par recherche sémantique. Confirme ou affine dans ta synthèse."
+        : null,
+    },
     output_schema: schema ?? null,
     rules: {
       json_only: true,
@@ -212,6 +305,7 @@ function buildLLM(
       actions_only_if_explicit: true,
       unknown_to_null: true,
       max_executive_summary_words: 200,
+      include_detected_solutions: ctx.autoDetectionUsed,
     },
   };
 
@@ -628,9 +722,9 @@ serve(async (req) => {
       })
       .eq("id", job_id);
 
-    // Context + cascade lead
-    const ctx = await fetchEntityContext(supabase, vjob);
-    console.log(`Context fetched: lead=${ctx.leadId}, project=${ctx.project?.id ?? null}`);
+    // Context + cascade lead + RAG detection
+    const ctx = await fetchEntityContext(supabase, vjob, rawText);
+    console.log(`Context fetched: lead=${ctx.leadId}, project=${ctx.project?.id ?? null}, autoDetected=${ctx.autoDetectionUsed}, detectedSolutions=${ctx.detectedSolutions?.length ?? 0}`);
 
     // Prompt profile & LLM model selection
     const profile = await loadPromptProfile(supabase, vjob.prompt_profile_id);
@@ -703,7 +797,20 @@ serve(async (req) => {
       },
     });
 
-    // Done
+    // Done - include RAG metadata
+    const ragMetadata = ctx.autoDetectionUsed
+      ? {
+          rag_used: true,
+          detected_solutions: ctx.detectedSolutions?.map(s => ({
+            resource_id: s.resource_id,
+            resource_type: s.resource_type,
+            resource_title: s.resource_title,
+            resource_slug: s.resource_slug,
+            similarity: s.similarity,
+          })) ?? [],
+        }
+      : { rag_used: false };
+
     await supabase
       .from("voice_transcriptions")
       .update({
@@ -714,10 +821,11 @@ serve(async (req) => {
           ...(vjob.ai_metadata ?? {}),
           llm_model: llmModelFullName,
           llm_provider: provider,
-          autonomy_level: "N0",
+          autonomy_level: ctx.autoDetectionUsed ? "N1" : "N0", // N1 if RAG was used
           confidence: summaryAny?.extraction_quality?.confidence ?? null,
           validated_by_human: false,
-          validation_required: false,
+          validation_required: ctx.autoDetectionUsed, // Requires validation if auto-detected
+          ...ragMetadata,
         },
       })
       .eq("id", job_id);
