@@ -15,9 +15,9 @@ interface GmailTokenResponse {
 }
 
 async function getAccessToken(): Promise<string> {
-  const clientId = Deno.env.get('GMAIL_CLIENT_ID');
-  const clientSecret = Deno.env.get('GMAIL_CLIENT_SECRET');
-  const refreshToken = Deno.env.get('GMAIL_REFRESH_TOKEN');
+  const clientId = Deno.env.get('GMAIL_CLIENT_ID')?.trim();
+  const clientSecret = Deno.env.get('GMAIL_CLIENT_SECRET')?.trim();
+  const refreshToken = Deno.env.get('GMAIL_REFRESH_TOKEN')?.trim();
 
   if (!clientId || !clientSecret || !refreshToken) {
     throw new Error('Gmail OAuth credentials not configured');
@@ -81,7 +81,7 @@ function createRawEmail(to: string, subject: string, html: string, from: string,
 
 export async function sendGmail(options: GmailSendOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
   const { to, subject, html, replyTo } = options;
-  const senderEmail = Deno.env.get('GMAIL_SENDER_EMAIL') || 'nlq@nlq.fr';
+  const senderEmail = (Deno.env.get('GMAIL_SENDER_EMAIL') || 'nlq@nlq.fr').trim();
 
   try {
     const accessToken = await getAccessToken();
