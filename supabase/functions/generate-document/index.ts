@@ -16,8 +16,12 @@ type DocumentType = "quote" | "spec" | "proposal";
 interface GenerateDocumentRequest {
   project_id?: string;
   opportunity_id?: string;
+  lead_id?: string;
   document_type: DocumentType;
   custom_instructions?: string;
+  context?: Record<string, any>;
+  existing_sections?: Array<{ title: string; content: string }>;
+  metadata?: Record<string, any>;
 }
 
 serve(async (req) => {
@@ -36,7 +40,7 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body: GenerateDocumentRequest = await req.json();
-    const { project_id, opportunity_id, document_type, custom_instructions } = body;
+    const { project_id, opportunity_id, lead_id, document_type, custom_instructions, context: inputContext, existing_sections, metadata: inputMetadata } = body;
 
     if (!document_type) {
       return new Response(JSON.stringify({ error: "document_type required" }), {
@@ -45,8 +49,10 @@ serve(async (req) => {
       });
     }
 
-    if (!project_id && !opportunity_id) {
-      return new Response(JSON.stringify({ error: "project_id or opportunity_id required" }), {
+    // Accept project_id, opportunity_id, lead_id, OR context (for direct AI generation)
+    const hasEntityLink = project_id || opportunity_id || lead_id || (inputContext && Object.keys(inputContext).length > 0);
+    if (!hasEntityLink) {
+      return new Response(JSON.stringify({ error: "project_id, opportunity_id, lead_id, or context required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -125,35 +131,47 @@ serve(async (req) => {
       }
     }
 
-    // Build context for LLM
-    const context = {
+    // Fetch lead directly if lead_id provided and no lead yet
+    if (lead_id && !lead) {
+      const { data: leadData } = await supabase
+        .from("leads")
+        .select("*")
+        .eq("id", lead_id)
+        .single();
+      lead = leadData;
+    }
+
+    // Build context for LLM - merge with input context from client
+    const llmContext = {
+      ...(inputContext || {}),
       project: project ? {
         name: project.name,
         description: project.description,
         budget_amount: project.budget_amount,
         status: project.status,
-      } : null,
+      } : inputContext?.project || null,
       client: lead ? {
         name: lead.name,
         company: lead.company,
         industry: lead.industry,
         company_size: lead.company_size,
         email: lead.email,
-      } : null,
+      } : inputContext?.lead || null,
       opportunity: opportunity ? {
         title: opportunity.title,
         value_amount: opportunity.value_amount,
         stage: opportunity.stage,
         description: opportunity.description,
-      } : null,
+      } : inputContext?.opportunity || null,
       solution: solution ? {
         title: solution.title,
         excerpt: solution.excerpt,
-      } : null,
-      specifications: specifications.map(s => ({
+      } : inputContext?.solution || null,
+      specifications: specifications.length > 0 ? specifications.map(s => ({
         title: s.title,
         content: typeof s.content === 'object' ? s.content.text || JSON.stringify(s.content) : s.content,
-      })),
+      })) : [],
+      existing_sections: existing_sections || [],
       custom_instructions,
     };
 
@@ -270,7 +288,7 @@ FORMAT DE SORTIE (JSON strict) :
 
     const userPrompt = `Génère un document de type "${document_type}" basé sur ce contexte :
 
-${JSON.stringify(context, null, 2)}
+${JSON.stringify(llmContext, null, 2)}
 
 Réponds UNIQUEMENT avec le JSON structuré, sans markdown ni commentaires.`;
 
