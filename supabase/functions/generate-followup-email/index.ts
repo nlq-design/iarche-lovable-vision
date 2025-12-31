@@ -13,9 +13,18 @@ const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 type EmailType = "first_contact" | "post_meeting" | "followup" | "proposal";
 
+interface TranscriptionContext {
+  transcript_summary?: string;
+  key_points?: string[];
+  action_items?: string[];
+  next_steps?: string;
+}
+
 interface GenerateEmailRequest {
-  lead_id: string;
+  transcription_id?: string;
+  lead_id?: string | null;
   email_type: EmailType;
+  context?: TranscriptionContext;
   custom_context?: string;
 }
 
@@ -37,60 +46,67 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
     const body: GenerateEmailRequest = await req.json();
-    const { lead_id, email_type, custom_context } = body;
+    const { transcription_id, lead_id, email_type, context: transcriptionContext, custom_context } = body;
 
-    if (!lead_id || !email_type) {
-      return new Response(JSON.stringify({ error: "lead_id and email_type required" }), {
+    if (!email_type) {
+      return new Response(JSON.stringify({ error: "email_type required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`Generating ${email_type} email for lead: ${lead_id}`);
+    console.log(`Generating ${email_type} email${lead_id ? ` for lead: ${lead_id}` : ' from transcription'}`);
 
-    // Fetch lead data
-    const { data: lead, error: leadError } = await supabase
-      .from("leads")
-      .select("*")
-      .eq("id", lead_id)
-      .single();
+    let lead = null;
+    let recentActivity: any[] = [];
+    let linkedSolutions: any[] = [];
+    let latestMeeting = null;
 
-    if (leadError || !lead) {
-      return new Response(JSON.stringify({ error: "lead_not_found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Fetch lead data if lead_id provided
+    if (lead_id) {
+      const { data: leadData, error: leadError } = await supabase
+        .from("leads")
+        .select("*")
+        .eq("id", lead_id)
+        .single();
+
+      if (!leadError && leadData) {
+        lead = leadData;
+
+        // Fetch recent activity
+        const { data: activityData } = await supabase
+          .from("activity_log")
+          .select("activity_type, title, content, created_at")
+          .eq("lead_id", lead_id)
+          .order("created_at", { ascending: false })
+          .limit(5);
+        recentActivity = activityData || [];
+
+        // Fetch linked solutions
+        const { data: solutionsData } = await supabase
+          .from("solution_leads")
+          .select(`
+            interest_level,
+            solution:articles(title, slug, excerpt)
+          `)
+          .eq("lead_id", lead_id);
+        linkedSolutions = solutionsData || [];
+
+        // Fetch latest meeting note
+        const { data: meetingData } = await supabase
+          .from("meeting_notes")
+          .select("objectives, notes, ai_summary, action_items")
+          .or(`lead_id.eq.${lead_id}`)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        latestMeeting = meetingData;
+      }
     }
 
-    // Fetch recent activity
-    const { data: recentActivity } = await supabase
-      .from("activity_log")
-      .select("activity_type, title, content, created_at")
-      .eq("lead_id", lead_id)
-      .order("created_at", { ascending: false })
-      .limit(5);
-
-    // Fetch linked solutions
-    const { data: linkedSolutions } = await supabase
-      .from("solution_leads")
-      .select(`
-        interest_level,
-        solution:articles(title, slug, excerpt)
-      `)
-      .eq("lead_id", lead_id);
-
-    // Fetch latest meeting note/transcription
-    const { data: latestMeeting } = await supabase
-      .from("meeting_notes")
-      .select("objectives, notes, ai_summary, action_items")
-      .or(`lead_id.eq.${lead_id}`)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    // Build context for LLM
+    // Build context for LLM - prioritize transcription context if provided
     const context = {
-      lead: {
+      lead: lead ? {
         name: lead.name,
         email: lead.email,
         company: lead.company,
@@ -100,8 +116,14 @@ serve(async (req) => {
         message: lead.message,
         qualification_status: lead.qualification_status,
         last_contacted_at: lead.last_contacted_at,
-      },
-      recent_activity: recentActivity || [],
+      } : null,
+      transcription: transcriptionContext ? {
+        summary: transcriptionContext.transcript_summary,
+        key_points: transcriptionContext.key_points,
+        action_items: transcriptionContext.action_items,
+        next_steps: transcriptionContext.next_steps,
+      } : null,
+      recent_activity: recentActivity,
       linked_solutions: linkedSolutions?.map((s: any) => ({
         title: s.solution?.title,
         interest: s.interest_level,
@@ -216,35 +238,38 @@ Réponds UNIQUEMENT avec le JSON, sans markdown.`;
       });
     }
 
-    // Log activity
-    await supabase.from("activity_log").insert({
-      entity_type: "lead",
-      entity_id: lead_id,
-      lead_id: lead_id,
-      activity_type: "email_draft_generated",
-      title: `Brouillon email "${email_type}" généré`,
-      content: emailData.subject,
-      is_ai_generated: true,
-      ai_metadata: {
-        autonomy_level: "N1",
-        confidence: 0.85,
-        validated_by_human: false,
-        validation_required: true,
-        email_type,
-        model: "google/gemini-2.5-flash",
-        generated_at: new Date().toISOString(),
-      },
-      visibility: "internal",
-      workspace_id: "00000000-0000-0000-0000-000000000001",
-    });
+    // Log activity only if we have a lead
+    if (lead_id) {
+      await supabase.from("activity_log").insert({
+        entity_type: "lead",
+        entity_id: lead_id,
+        lead_id: lead_id,
+        activity_type: "email_draft_generated",
+        title: `Brouillon email "${email_type}" généré`,
+        content: emailData.subject,
+        is_ai_generated: true,
+        ai_metadata: {
+          autonomy_level: "N1",
+          confidence: 0.85,
+          validated_by_human: false,
+          validation_required: true,
+          email_type,
+          transcription_id: transcription_id || null,
+          model: "google/gemini-2.5-flash",
+          generated_at: new Date().toISOString(),
+        },
+        visibility: "internal",
+        workspace_id: "00000000-0000-0000-0000-000000000001",
+      });
+    }
 
-    console.log(`Email draft generated successfully for lead ${lead_id}`);
+    console.log(`Email draft generated successfully${lead_id ? ` for lead ${lead_id}` : ''}`);
 
     return new Response(JSON.stringify({
       ok: true,
       email: emailData,
-      lead_name: lead.name,
-      lead_email: lead.email,
+      lead_name: lead?.name || null,
+      lead_email: lead?.email || null,
       ai_metadata: {
         autonomy_level: "N1",
         model: "google/gemini-2.5-flash",
