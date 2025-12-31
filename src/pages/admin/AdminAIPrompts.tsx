@@ -17,6 +17,7 @@ import {
   Search, BookOpen, FileSignature, FileCheck, Briefcase,
   History, Trash2, Clock, MessageSquare, Wrench
 } from "lucide-react";
+import { KeywordDictionary } from "@/components/admin/KeywordDictionary";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useLLMModelsGrouped } from "@/hooks/cockpit/useCockpitVoiceTranscriptions";
 import { 
@@ -955,6 +956,7 @@ export default function AdminAIPrompts() {
             <TabsTrigger value="config">Configuration</TabsTrigger>
             <TabsTrigger value="documents">Génération Docs</TabsTrigger>
             <TabsTrigger value="rag">Base RAG</TabsTrigger>
+            <TabsTrigger value="dictionary">Dictionnaire</TabsTrigger>
             <TabsTrigger value="memory">Mémoire IA</TabsTrigger>
             <TabsTrigger value="modules">Modules</TabsTrigger>
           </TabsList>
@@ -1046,6 +1048,10 @@ export default function AdminAIPrompts() {
 
             {/* Indexed Resources List */}
             <IndexedResourcesList />
+          </TabsContent>
+
+          <TabsContent value="dictionary" className="space-y-4">
+            <KeywordDictionary />
           </TabsContent>
 
           <TabsContent value="memory" className="space-y-4">

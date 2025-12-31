@@ -24,6 +24,7 @@ export interface VoiceTranscription {
   created_by: string;
   created_at: string;
   updated_at: string;
+  transcription_date: string | null;
   // Joined relations
   lead?: { id: string; name: string; company: string | null; email?: string } | null;
   project?: { id: string; name: string } | null;
@@ -73,6 +74,7 @@ export interface CreateTranscriptionInput {
   auto_create_tasks?: boolean;
   prompt_profile_id?: string | null;
   llm_model_id?: string | null;
+  transcription_date?: string | null;
 }
 
 export interface LLMModel {

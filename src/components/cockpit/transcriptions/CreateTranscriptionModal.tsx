@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -30,13 +31,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Upload, Mic, MicOff, Loader2, User, FolderOpen, Package, Check, ChevronsUpDown, FileText } from 'lucide-react';
+import { Upload, Mic, MicOff, Loader2, User, FolderOpen, Package, Check, ChevronsUpDown, FileText, CalendarIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCockpitVoiceTranscriptions, useAIPromptProfiles } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { useCockpitLeads, useCockpitProjects, useCockpitMeetingNotes } from '@/hooks/cockpit';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 interface CreateTranscriptionModalProps {
   open: boolean;
@@ -72,8 +74,9 @@ export function CreateTranscriptionModal({
     defaultLeadId || defaultProjectId || defaultSolutionId || defaultMeetingNoteId || ''
   );
   const [promptProfileId, setPromptProfileId] = useState<string>('');
-  const [autoCreateTasks, setAutoCreateTasks] = useState(false);
+  const [autoCreateTasks, setAutoCreateTasks] = useState(true); // Force true by default
   const [entitySearchOpen, setEntitySearchOpen] = useState(false);
+  const [transcriptionDate, setTranscriptionDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -104,7 +107,8 @@ export function CreateTranscriptionModal({
     setEntityType('none');
     setSelectedEntityId('');
     setPromptProfileId('');
-    setAutoCreateTasks(false);
+    setAutoCreateTasks(true);
+    setTranscriptionDate(format(new Date(), 'yyyy-MM-dd'));
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,8 +187,9 @@ export function CreateTranscriptionModal({
         project_id: entityType === 'project' ? selectedEntityId : null,
         solution_id: entityType === 'solution' ? selectedEntityId : null,
         meeting_note_id: entityType === 'meeting_note' ? selectedEntityId : null,
-        auto_create_tasks: autoCreateTasks,
+        auto_create_tasks: true, // Always force true
         prompt_profile_id: promptProfileId || null,
+        transcription_date: transcriptionDate || null,
       });
 
       // Start processing
@@ -317,8 +322,25 @@ export function CreateTranscriptionModal({
           </TabsContent>
         </Tabs>
 
-        {/* Entity linking */}
+        {/* Transcription date + Entity linking */}
         <div className="space-y-4 pt-2">
+          {/* Date de la transcription */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4" />
+              Date de la réunion/transcription
+            </Label>
+            <Input
+              type="date"
+              value={transcriptionDate}
+              onChange={(e) => setTranscriptionDate(e.target.value)}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground">
+              Par défaut aujourd'hui. Modifiez si l'enregistrement date d'un autre jour.
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label>Lier à une entité (optionnel)</Label>
             <Select value={entityType} onValueChange={(v) => { setEntityType(v as any); setSelectedEntityId(''); }}>
@@ -406,15 +428,18 @@ export function CreateTranscriptionModal({
               </SelectContent>
             </Select>
           </div>
-          {/* Auto create tasks */}
-          <div className="flex items-center justify-between rounded-lg border p-3">
+          {/* Auto create tasks - now always on */}
+          <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
             <div className="space-y-0.5">
-              <Label>Créer les tâches automatiquement</Label>
+              <Label className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-600" />
+                Création auto des tâches
+              </Label>
               <p className="text-xs text-muted-foreground">
-                Les actions identifiées seront converties en tâches
+                Toutes les actions détectées génèrent des tâches automatiquement
               </p>
             </div>
-            <Switch checked={autoCreateTasks} onCheckedChange={setAutoCreateTasks} />
+            <Switch checked={true} disabled className="opacity-50" />
           </div>
         </div>
 

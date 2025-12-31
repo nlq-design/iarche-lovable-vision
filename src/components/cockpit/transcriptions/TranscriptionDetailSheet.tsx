@@ -224,8 +224,10 @@ export function TranscriptionDetailSheet({
                 </SheetTitle>
                 <SheetDescription className="flex items-center gap-2 mt-1">
                   <Calendar className="h-3 w-3" />
-                  {transcription?.created_at && 
-                    format(new Date(transcription.created_at), 'dd MMMM yyyy à HH:mm', { locale: fr })}
+                  {transcription?.transcription_date 
+                    ? format(new Date(transcription.transcription_date), 'dd MMMM yyyy', { locale: fr })
+                    : transcription?.created_at && 
+                      format(new Date(transcription.created_at), 'dd MMMM yyyy à HH:mm', { locale: fr })}
                 </SheetDescription>
               </div>
               {statusConfig && (
