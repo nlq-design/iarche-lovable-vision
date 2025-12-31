@@ -57,22 +57,32 @@ const NewsletterSection = () => {
         throw dbError;
       }
 
+      // Envoyer email de bienvenue à l'utilisateur
+      try {
+        await supabase.functions.invoke('send-user-confirmation', {
+          body: {
+            email: validatedData.email,
+            name: validatedData.email.split('@')[0],
+            source_type: 'newsletter',
+          },
+        });
+      } catch (confirmError) {
+        console.warn('Failed to send welcome email:', confirmError);
+      }
+
       // Envoyer notification email admin
-      if (leadData) {
-        try {
-          await supabase.functions.invoke('send-lead-notification', {
-            body: {
-              lead_id: leadData.id,
-              name: validatedData.email.split('@')[0],
-              email: validatedData.email,
-              source: 'newsletter',
-              source_context: email,
-            },
-          });
-        } catch (notifError) {
-          console.warn('Failed to send lead notification:', notifError);
-          // Ne pas bloquer si la notification échoue
-        }
+      try {
+        await supabase.functions.invoke('send-lead-notification', {
+          body: {
+            lead_id: leadData?.id || 'newsletter-' + Date.now(),
+            name: validatedData.email.split('@')[0],
+            email: validatedData.email,
+            source: 'newsletter',
+            source_context: 'Inscription newsletter section homepage',
+          },
+        });
+      } catch (notifError) {
+        console.warn('Failed to send lead notification:', notifError);
       }
 
       toast({
