@@ -75,6 +75,7 @@ import { ContentEditor } from '@/components/cockpit/ContentEditor';
 import { FileUploader } from '@/components/cockpit/FileUploader';
 import { SpecificationEditor } from '@/components/cockpit/SpecificationEditor';
 import { CreateTaskDialog } from '@/components/cockpit/dialogs/CreateTaskDialog';
+import { DocumentGenerator } from '@/components/cockpit/DocumentGenerator';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -674,6 +675,9 @@ const CockpitProjectDetail = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Documents IA Generator */}
+            <DocumentGenerator projectId={id} />
 
             {/* Quick Summary */}
             <Card className="bg-muted/30 border">
