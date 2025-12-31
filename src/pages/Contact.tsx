@@ -42,10 +42,10 @@ const Contact = () => {
       const sourceParam = searchParams.get('source') || 'contact';
       const contextParam = searchParams.get('context');
       
-      // Créer le lead (sans .select() car pas de politique SELECT pour anon)
+      // Créer ou mettre à jour le lead (upsert sur email)
       const { error: leadError } = await supabase
         .from('leads')
-        .insert([{
+        .upsert({
           name: validatedData.name,
           email: validatedData.email,
           company: validatedData.company || null,
@@ -53,10 +53,13 @@ const Contact = () => {
           source_context: contextParam || null,
           message: validatedData.message,
           consent_marketing: false
-        }]);
+        }, { 
+          onConflict: 'email',
+          ignoreDuplicates: false 
+        });
 
-      if (leadError && leadError.code !== '23505') {
-        console.warn('Failed to create lead:', leadError);
+      if (leadError) {
+        console.warn('Failed to create/update lead:', leadError);
       }
 
       // Créer le contact (sans .select() car pas de politique SELECT pour anon)

@@ -25,21 +25,24 @@ const NewsletterSection = () => {
       // Track CTA click
       await trackCTAClick('newsletter_inscription', 'newsletter_section_homepage', email);
       
-      // Créer le lead
+      // Créer ou mettre à jour le lead (upsert sur email)
       const { data: leadData, error: leadError } = await supabase
         .from('leads')
-        .insert([{
-          name: validatedData.email.split('@')[0], // Nom basique depuis l'email
+        .upsert({
+          name: validatedData.email.split('@')[0],
           email: validatedData.email,
           source: 'newsletter',
           source_context: email,
           consent_marketing: true
-        }])
+        }, { 
+          onConflict: 'email',
+          ignoreDuplicates: false 
+        })
         .select()
         .single();
 
-      if (leadError && leadError.code !== '23505') {
-        console.warn('Failed to create lead:', leadError);
+      if (leadError) {
+        console.warn('Failed to create/update lead:', leadError);
       }
 
       // Créer l'abonné newsletter

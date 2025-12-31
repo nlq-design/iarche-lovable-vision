@@ -65,10 +65,10 @@ const LivreBlancsForm = ({ articleId, articleTitle }: LivreBlancsFormProps) => {
       // Track CTA click
       await trackCTAClick('livre_blanc_download', 'livre_blanc_detail', articleTitle);
       
-      // Créer le lead
+      // Créer ou mettre à jour le lead (upsert sur email)
       const { data: leadData, error: leadError } = await supabase
         .from('leads')
-        .insert([{
+        .upsert({
           name: validatedData.name,
           email: validatedData.email,
           company: validatedData.company || null,
@@ -77,12 +77,15 @@ const LivreBlancsForm = ({ articleId, articleTitle }: LivreBlancsFormProps) => {
           source_id: articleId,
           source_context: articleTitle,
           consent_marketing: validatedData.consent_marketing,
-        }])
+        }, { 
+          onConflict: 'email',
+          ignoreDuplicates: false 
+        })
         .select()
         .single();
 
-      if (leadError && leadError.code !== '23505') {
-        console.error('Failed to create lead:', leadError);
+      if (leadError) {
+        console.error('Failed to create/update lead:', leadError);
         throw new Error('Erreur lors de l\'enregistrement');
       }
 

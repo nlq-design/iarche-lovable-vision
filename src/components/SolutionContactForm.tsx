@@ -42,10 +42,10 @@ const SolutionContactForm = ({ solutionName }: SolutionContactFormProps) => {
     try {
       const validatedData = contactSchema.parse(formData);
       
-      // Créer le lead
+      // Créer ou mettre à jour le lead (upsert sur email)
       const { error: leadError } = await supabase
         .from('leads')
-        .insert([{
+        .upsert({
           name: validatedData.name,
           email: validatedData.email,
           company: validatedData.company || null,
@@ -53,10 +53,13 @@ const SolutionContactForm = ({ solutionName }: SolutionContactFormProps) => {
           source_context: solutionName,
           message: validatedData.message,
           consent_marketing: false
-        }]);
+        }, { 
+          onConflict: 'email',
+          ignoreDuplicates: false 
+        });
 
-      if (leadError && leadError.code !== '23505') {
-        console.warn('Failed to create lead:', leadError);
+      if (leadError) {
+        console.warn('Failed to create/update lead:', leadError);
       }
 
       // Créer le contact

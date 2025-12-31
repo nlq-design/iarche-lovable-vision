@@ -91,10 +91,10 @@ const AtelierInscriptionForm = ({
       // Track CTA click
       await trackCTAClick('atelier_inscription', 'atelier_detail', articleTitle);
       
-      // Créer le lead (sans .select() car pas de politique SELECT pour anon)
+      // Créer ou mettre à jour le lead (upsert sur email)
       const { error: leadError } = await supabase
         .from('leads')
-        .insert([{
+        .upsert({
           name: validatedData.name,
           email: validatedData.email,
           company: validatedData.company || null,
@@ -103,10 +103,13 @@ const AtelierInscriptionForm = ({
           source_id: articleId,
           source_context: articleTitle,
           consent_marketing: validatedData.consent_marketing,
-        }]);
+        }, { 
+          onConflict: 'email',
+          ignoreDuplicates: false 
+        });
 
-      if (leadError && leadError.code !== '23505') {
-        console.error('Failed to create lead:', leadError);
+      if (leadError) {
+        console.error('Failed to create/update lead:', leadError);
         throw new Error('Erreur lors de l\'enregistrement');
       }
 
