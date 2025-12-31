@@ -196,6 +196,23 @@ export function useCockpitVoiceTranscriptions(
   // Delete transcription
   const deleteTranscription = useMutation({
     mutationFn: async (id: string) => {
+      // First get the transcription to get storage_path
+      const { data: transcription, error: fetchError } = await supabase
+        .from('voice_transcriptions')
+        .select('storage_path')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      // Delete from storage if path exists
+      if (transcription?.storage_path) {
+        await supabase.storage
+          .from('voice-transcriptions')
+          .remove([transcription.storage_path]);
+      }
+      
+      // Delete the record
       const { error } = await supabase.from('voice_transcriptions').delete().eq('id', id);
       if (error) throw error;
     },
