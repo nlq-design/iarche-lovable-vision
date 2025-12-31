@@ -86,6 +86,7 @@ const RendezVous = lazy(() => import("./pages/RendezVous"));
 const BrochurePublic = lazy(() => import("./pages/BrochurePublic"));
 const AdminBrochures = lazy(() => import("./pages/admin/AdminBrochures"));
 const BrochureEditor = lazy(() => import("./pages/admin/BrochureEditor"));
+const AdminAIPrompts = lazy(() => import("./pages/admin/AdminAIPrompts"));
 const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"));
 
 // Cockpit Commercial
@@ -543,6 +544,13 @@ const App = () => (
           <Route path="/admin/brochures/:id" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><BrochureEditor /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          
+          {/* Prompts IA */}
+          <Route path="/admin/ai-prompts" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminAIPrompts /></ProtectedAdminRoute>
             </Suspense>
           } />
           
