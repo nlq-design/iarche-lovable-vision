@@ -1,14 +1,16 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { sendGmail } from '../_shared/gmailClient.ts';
+import { Resend } from 'https://esm.sh/resend@2.0.0';
 import { logEmail } from '../_shared/emailLogger.ts';
 import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
-import { EMAIL_COLORS, getEmailHeader, getEmailFooter, wrapEmailContent, getInfoCard } from '../_shared/emailTemplate.ts';
+import { EMAIL_COLORS, LOGO_URL, getEmailHeader, getEmailFooter, wrapEmailContent, getInfoCard } from '../_shared/emailTemplate.ts';
 import { leadNotificationSchema, validateRequest } from '../_shared/validation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
 // HTML escape function to prevent XSS
 function escapeHtml(text: string | null | undefined): string {
@@ -61,7 +63,7 @@ Deno.serve(async (req) => {
     }
     
     const { lead_id, name, email, company, phone, source, source_context, message, event_details } = validation.data;
-    console.log('[Gmail] Sending lead notification for:', lead_id);
+    console.log('Sending lead notification for:', lead_id);
 
     // Escape all user-provided data
     const safeName = escapeHtml(name);
@@ -135,17 +137,18 @@ Deno.serve(async (req) => {
     const emailSubject = `🎯 Nouveau Lead: ${safeName} (${sourceLabel})`;
     const adminEmail = 'nlq@iarche.fr';
 
-    // Send via Gmail API
-    const result = await sendGmail({
-      to: adminEmail,
+    const { data, error } = await resend.emails.send({
+      from: 'IArche Notifications <notifications@iarche.fr>',
+      to: [adminEmail],
+      reply_to: 'nlq@iarche.fr',
       subject: emailSubject,
       html: emailHtml,
-      replyTo: 'nlq@iarche.fr',
     });
 
-    if (!result.success) {
-      console.error('[Gmail] Error sending lead notification:', result.error);
+    if (error) {
+      console.error('Error sending lead notification email:', error);
       
+      // Log failed email
       await logEmail({
         recipient_email: adminEmail,
         subject: emailSubject,
@@ -153,18 +156,19 @@ Deno.serve(async (req) => {
         email_type: 'admin_notification',
         source_id: lead_id,
         status: 'failed',
-        error_message: result.error,
+        error_message: error.message,
         metadata: { name, email, company, phone, source_context }
       });
 
       return new Response(
-        JSON.stringify({ error: result.error }),
+        JSON.stringify({ error: error.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('[Gmail] Lead notification sent successfully:', result.messageId);
+    console.log('Lead notification email sent successfully:', data);
 
+    // Log successful email
     await logEmail({
       recipient_email: adminEmail,
       subject: emailSubject,
@@ -172,16 +176,16 @@ Deno.serve(async (req) => {
       email_type: 'admin_notification',
       source_id: lead_id,
       status: 'sent',
-      metadata: { name, email, company, phone, source_context, gmail_id: result.messageId }
+      metadata: { name, email, company, phone, source_context, resend_id: data?.id }
     });
 
     return new Response(
-      JSON.stringify({ success: true, email_id: result.messageId }),
+      JSON.stringify({ success: true, email_id: data?.id }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('[Gmail] Error in send-lead-notification:', error);
+    console.error('Error in send-lead-notification function:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({ error: errorMessage }),

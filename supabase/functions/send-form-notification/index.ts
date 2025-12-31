@@ -1,14 +1,16 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { sendGmail } from '../_shared/gmailClient.ts';
+import { Resend } from 'https://esm.sh/resend@2.0.0';
 import { logEmail } from '../_shared/emailLogger.ts';
 import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
-import { EMAIL_COLORS, getEmailHeader, getEmailFooter, wrapEmailContent, getCtaButton, getInfoCard } from '../_shared/emailTemplate.ts';
+import { EMAIL_COLORS, LOGO_URL, getEmailHeader, getEmailFooter, wrapEmailContent, getCtaButton, getInfoCard, getSignature } from '../_shared/emailTemplate.ts';
 import { formNotificationSchema, validateRequest, type FormNotificationRequest } from '../_shared/validation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
 // Fonction d'échappement HTML pour prévenir les injections XSS
 function escapeHtml(text: string): string {
@@ -75,8 +77,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Échapper le titre du formulaire
     const safeFormTitle = escapeHtml(form_title);
 
-    console.log('[Gmail] Processing form notification for:', safeFormTitle);
-    console.log('[Gmail] Form fields received:', JSON.stringify(form_fields));
+    console.log('[send-form-notification] Processing notification for form:', safeFormTitle);
+    console.log('[send-form-notification] Form fields received:', JSON.stringify(form_fields));
+    console.log('[send-form-notification] Respondent email received:', respondent_email);
 
     // Créer un mapping ID -> Label pour les champs
     const fieldLabelMap: Record<string, string> = {};
@@ -84,9 +87,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
       for (const field of form_fields) {
         if (field && field.id && field.label) {
           fieldLabelMap[field.id] = field.label;
+          console.log('[send-form-notification] Mapped field:', field.id, '->', field.label);
         }
       }
     }
+    console.log('[send-form-notification] Final field label map:', JSON.stringify(fieldLabelMap));
 
     // Trouver l'email du répondant dans les données si non fourni
     let finalRespondentEmail = respondent_email;
@@ -95,7 +100,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       for (const [key, value] of Object.entries(response_data)) {
         if (typeof value === 'string' && emailRegex.test(value)) {
           finalRespondentEmail = value;
-          console.log('[Gmail] Found email in response_data:', finalRespondentEmail);
+          console.log('[send-form-notification] Found email in response_data:', finalRespondentEmail, 'field:', key);
           break;
         }
       }
@@ -103,12 +108,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     const adminEmailAddress = admin_email || 'nlq@iarche.fr';
     const results = { admin: false, respondent: false };
+    // Toujours envoyer au répondant si on a trouvé un email
     const shouldSendToRespondent = !!finalRespondentEmail;
+    
+    console.log('[send-form-notification] Final respondent email:', finalRespondentEmail);
+    console.log('[send-form-notification] Should send to respondent:', shouldSendToRespondent);
 
-    // Construire le résumé des réponses en HTML avec les vrais labels
+    // Construire le résumé des réponses en HTML avec les vrais labels (pour admin)
     const responseHtml = Object.entries(response_data)
       .filter(([_, value]) => value !== undefined && value !== null && value !== '')
       .map(([key, value]) => {
+        // Échapper le label du champ
         const fieldLabel = escapeHtml(fieldLabelMap[key] || key);
         
         let displayValue = '';
@@ -131,7 +141,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       })
       .join('');
 
-    // Extraire les infos clés pour le prospect
+    // Extraire les infos clés pour le prospect (nom, prénom)
     let prospectName = '';
     const nameLabels = ['nom', 'prénom', 'prenom', 'name', 'firstname', 'lastname', 'nom complet'];
     for (const [key, value] of Object.entries(response_data)) {
@@ -140,9 +150,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
         prospectName = prospectName ? `${prospectName} ${value}` : value;
       }
     }
+    // Échapper le nom du prospect
     const safeProspectName = escapeHtml(prospectName) || 'vous';
 
-    // Email admin (DÉTAILLÉ)
+    // Email admin (DÉTAILLÉ avec toutes les infos)
     try {
       const adminHeader = getEmailHeader('📝 Nouvelle soumission');
       const adminContent = `
@@ -176,37 +187,26 @@ Deno.serve(async (req: Request): Promise<Response> => {
       `;
       const adminFooter = getEmailFooter();
 
-      const adminResult = await sendGmail({
-        to: adminEmailAddress,
+      const adminEmailResponse = await resend.emails.send({
+        from: 'IArche Formulaires <notifications@iarche.fr>',
+        to: [adminEmailAddress],
         subject: `📝 Nouvelle réponse: ${safeFormTitle}`,
         html: wrapEmailContent(adminHeader, adminContent, adminFooter),
       });
 
-      if (adminResult.success) {
-        console.log('[Gmail] Admin email sent:', adminResult.messageId);
-        results.admin = true;
-        await logEmail({
-          source_type: 'form',
-          source_id: form_id,
-          recipient_email: adminEmailAddress,
-          email_type: 'admin_notification',
-          subject: `Nouvelle réponse: ${safeFormTitle}`,
-          status: 'sent',
-        });
-      } else {
-        console.error('[Gmail] Admin email error:', adminResult.error);
-        await logEmail({
-          source_type: 'form',
-          source_id: form_id,
-          recipient_email: adminEmailAddress,
-          email_type: 'admin_notification',
-          subject: `Nouvelle réponse: ${safeFormTitle}`,
-          status: 'failed',
-          error_message: adminResult.error,
-        });
-      }
+      console.log('[send-form-notification] Admin email sent:', adminEmailResponse);
+      results.admin = true;
+
+      await logEmail({
+        source_type: 'form',
+        source_id: form_id,
+        recipient_email: adminEmailAddress,
+        email_type: 'admin_notification',
+        subject: `Nouvelle réponse: ${safeFormTitle}`,
+        status: 'sent',
+      });
     } catch (emailError: any) {
-      console.error('[Gmail] Admin email error:', emailError);
+      console.error('[send-form-notification] Admin email error:', emailError);
       await logEmail({
         source_type: 'form',
         source_id: form_id,
@@ -218,12 +218,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Email prospect (SUCCINCT)
+    // Email prospect (SUCCINCT - juste confirmation)
     if (shouldSendToRespondent && finalRespondentEmail) {
       try {
         const respondentSubject = custom_subject || `Merci ${safeProspectName} ! Votre demande a bien été reçue`;
 
-        console.log('[Gmail] Sending confirmation to:', finalRespondentEmail);
+        console.log('[send-form-notification] Sending confirmation to:', finalRespondentEmail);
 
         const respondentHeader = getEmailHeader(`Merci ${safeProspectName} !`);
         const respondentContent = `
@@ -249,37 +249,26 @@ Deno.serve(async (req: Request): Promise<Response> => {
         `;
         const respondentFooter = getEmailFooter();
 
-        const respondentResult = await sendGmail({
-          to: finalRespondentEmail,
+        const respondentEmailResponse = await resend.emails.send({
+          from: 'IArche <contact@iarche.fr>',
+          to: [finalRespondentEmail],
           subject: respondentSubject,
           html: wrapEmailContent(respondentHeader, respondentContent, respondentFooter),
         });
 
-        if (respondentResult.success) {
-          console.log('[Gmail] Respondent email sent:', respondentResult.messageId);
-          results.respondent = true;
-          await logEmail({
-            source_type: 'form',
-            source_id: form_id,
-            recipient_email: finalRespondentEmail,
-            email_type: 'user_confirmation',
-            subject: respondentSubject,
-            status: 'sent',
-          });
-        } else {
-          console.error('[Gmail] Respondent email error:', respondentResult.error);
-          await logEmail({
-            source_type: 'form',
-            source_id: form_id,
-            recipient_email: finalRespondentEmail,
-            email_type: 'user_confirmation',
-            subject: respondentSubject,
-            status: 'failed',
-            error_message: respondentResult.error,
-          });
-        }
+        console.log('[send-form-notification] Respondent email sent:', respondentEmailResponse);
+        results.respondent = true;
+
+        await logEmail({
+          source_type: 'form',
+          source_id: form_id,
+          recipient_email: finalRespondentEmail,
+          email_type: 'user_confirmation',
+          subject: respondentSubject,
+          status: 'sent',
+        });
       } catch (emailError: any) {
-        console.error('[Gmail] Respondent email error:', emailError);
+        console.error('[send-form-notification] Respondent email error:', emailError);
         await logEmail({
           source_type: 'form',
           source_id: form_id,
@@ -297,7 +286,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   } catch (error: any) {
-    console.error('[Gmail] Error in send-form-notification:', error);
+    console.error('[send-form-notification] Error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
