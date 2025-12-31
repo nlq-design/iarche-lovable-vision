@@ -38,7 +38,9 @@ import {
   Send,
   Copy,
   Check,
-  Loader2
+  Loader2,
+  FileText,
+  Mic,
 } from "lucide-react";
 import {
   Popover,
@@ -198,6 +200,38 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
           created_at,
           solution:articles(id, title, slug)
         `)
+        .eq('lead_id', lead.id)
+        .order('created_at', { ascending: false });
+      if (error) return [];
+      return data;
+    },
+    enabled: !!lead?.id,
+  });
+
+  // Fetch transcriptions linked to this lead
+  const { data: linkedTranscriptions = [] } = useQuery({
+    queryKey: ['lead-transcriptions-sheet', lead?.id],
+    queryFn: async () => {
+      if (!lead?.id) return [];
+      const { data, error } = await supabase
+        .from('voice_transcriptions')
+        .select('id, source, status, created_at, summary')
+        .eq('lead_id', lead.id)
+        .order('created_at', { ascending: false });
+      if (error) return [];
+      return data;
+    },
+    enabled: !!lead?.id,
+  });
+
+  // Fetch generated documents linked to this lead
+  const { data: linkedDocuments = [] } = useQuery({
+    queryKey: ['lead-documents-sheet', lead?.id],
+    queryFn: async () => {
+      if (!lead?.id) return [];
+      const { data, error } = await supabase
+        .from('generated_documents')
+        .select('id, title, document_type, status, created_at')
         .eq('lead_id', lead.id)
         .order('created_at', { ascending: false });
       if (error) return [];
@@ -565,6 +599,66 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
                         </p>
                       </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Transcriptions Section */}
+            {linkedTranscriptions.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                  <Mic className="h-4 w-4" />
+                  Transcriptions ({linkedTranscriptions.length})
+                </h3>
+                <div className="space-y-2">
+                  {linkedTranscriptions.map((transcription: any) => (
+                    <div
+                      key={transcription.id}
+                      className="p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-sm">{transcription.summary?.title || 'Transcription'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {transcription.created_at && format(new Date(transcription.created_at), 'dd MMM yyyy', { locale: fr })}
+                          </p>
+                        </div>
+                        <Badge variant={transcription.status === 'done' ? 'default' : 'secondary'} className="text-xs">
+                          {transcription.status === 'done' ? 'Terminée' : transcription.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Generated Documents Section */}
+            {linkedDocuments.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Documents générés ({linkedDocuments.length})
+                </h3>
+                <div className="space-y-2">
+                  {linkedDocuments.map((doc: any) => (
+                    <div
+                      key={doc.id}
+                      className="p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-sm">{doc.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {doc.document_type} • {doc.created_at && format(new Date(doc.created_at), 'dd MMM yyyy', { locale: fr })}
+                          </p>
+                        </div>
+                        <Badge variant={doc.status === 'final' ? 'default' : 'outline'} className="text-xs">
+                          {doc.status === 'draft' ? 'Brouillon' : doc.status === 'final' ? 'Final' : doc.status}
+                        </Badge>
+                      </div>
                     </div>
                   ))}
                 </div>
