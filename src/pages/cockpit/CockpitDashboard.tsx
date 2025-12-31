@@ -45,15 +45,26 @@ export default function CockpitDashboard() {
 
   const isLoading = leadsLoading || oppsLoading || tasksLoading || bookingsLoading;
 
-  // Get today's and upcoming tasks
+  // Get today's tasks, upcoming tasks (next 7 days), and backlog (no date)
   const today = new Date().toISOString().split('T')[0];
+  const sevenDaysFromNow = new Date();
+  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+  const sevenDaysLimit = sevenDaysFromNow.toISOString().split('T')[0];
+
+  // Tâches du jour
   const todayTasks = tasks?.filter(t => 
     t.due_date === today && t.status !== 'completed' && t.status !== 'cancelled'
   ).slice(0, 5) || [];
   
-  // Upcoming tasks (next 7 days, excluding today)
+  // Tâches à venir (7 prochains jours, hors aujourd'hui)
   const upcomingTasks = tasks?.filter(t => 
-    t.due_date && t.due_date > today && t.status !== 'completed' && t.status !== 'cancelled'
+    t.due_date && t.due_date > today && t.due_date <= sevenDaysLimit && 
+    t.status !== 'completed' && t.status !== 'cancelled'
+  ).slice(0, 5) || [];
+
+  // Tâches sans date (backlog / Actions à faire)
+  const backlogTasks = tasks?.filter(t => 
+    !t.due_date && t.status !== 'completed' && t.status !== 'cancelled'
   ).slice(0, 5) || [];
 
   // Recent activities (last 10)
@@ -141,12 +152,45 @@ export default function CockpitDashboard() {
               {/* Upcoming tasks section */}
               {upcomingTasks.length > 0 && (
                 <div className="mt-4 pt-4 border-t">
-                  <p className="text-sm font-medium text-muted-foreground mb-3">À venir</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-3">À venir (7 jours)</p>
                   <div className="space-y-2">
                     {upcomingTasks.map((task) => (
                       <TaskCard key={task.id} task={task} showDate />
                     ))}
                   </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Actions à faire (backlog sans date) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                Actions à faire
+              </CardTitle>
+              <CardDescription>
+                {backlogTasks.length} tâches sans échéance
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {tasksLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : backlogTasks.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+                  <CheckCircle2 className="h-8 w-8 mb-2 opacity-50" />
+                  <p className="text-sm">Aucune action en attente</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {backlogTasks.map((task) => (
+                    <TaskCard key={task.id} task={task} />
+                  ))}
                 </div>
               )}
             </CardContent>
