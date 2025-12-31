@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeft, 
   Save, 
@@ -16,10 +15,7 @@ import {
   Building2,
   User,
   FileText,
-  Clipboard,
-  Mic,
   Lightbulb,
-  RefreshCw,
   Eye,
   Code,
   ChevronDown
@@ -35,17 +31,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCockpitGeneratedDocuments, DOCUMENT_TYPE_LABELS, type GeneratedDocument } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
 import { useCockpitProjects } from '@/hooks/cockpit/useCockpitProjects';
 import { useCockpitLeads } from '@/hooks/cockpit/useCockpitLeads';
-import { useCockpitVoiceTranscriptions } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { COLORS, GRADIENTS } from '@/components/admin/medias/shared/tokens';
+import { COLORS } from '@/components/admin/medias/shared/tokens';
 import { toPng } from 'html-to-image';
 import { DevisCDCPreview } from './DevisCDCPreview';
 
@@ -100,7 +94,7 @@ const DEFAULT_SPEC_SECTIONS: DocumentSection[] = [
   { id: '8', title: 'Critères de réception', content: '', order: 7 },
 ];
 
-type AISource = 'transcription' | 'project' | 'solution' | 'lead' | 'all' | 'paste';
+
 
 export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: DevisCDCEditorProps) {
   const [title, setTitle] = useState('');
@@ -116,15 +110,12 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
   const [linkedSolutionId, setLinkedSolutionId] = useState<string>('none');
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [pasteContent, setPasteContent] = useState('');
-  const [showPasteDialog, setShowPasteDialog] = useState(false);
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
   const previewRef = useRef<HTMLDivElement>(null);
 
-  const { documents, updateDocument, generateDocument } = useCockpitGeneratedDocuments();
+  const { documents, updateDocument } = useCockpitGeneratedDocuments();
   const { projects } = useCockpitProjects();
   const { leads } = useCockpitLeads();
-  const { transcriptions } = useCockpitVoiceTranscriptions();
   
   // Fetch solutions from articles with resource_type = 'solution'
   const [solutions, setSolutions] = useState<Array<{ id: string; title: string; slug: string }>>([]);
@@ -239,117 +230,6 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
       toast.error('Erreur lors de l\'enregistrement');
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  // GENERATE: Full document generation from sources (used by "Générer avec IA" button)
-  const handleGenerateWithAI = async (source: AISource) => {
-    setIsGenerating(true);
-    try {
-      // Build context from selected sources
-      let contextData: Record<string, any> = {};
-      
-      if (source === 'paste' || source === 'all') {
-        if (pasteContent.trim()) {
-          contextData.pastedContent = pasteContent;
-        }
-      }
-      
-      if ((source === 'project' || source === 'all') && linkedProjectId !== 'none') {
-        const project = projects?.find(p => p.id === linkedProjectId);
-        if (project) {
-          contextData.project = {
-            name: project.name,
-            description: project.description,
-            status: project.status,
-            budget: project.budget_amount,
-          };
-        }
-      }
-      
-      if ((source === 'lead' || source === 'all') && linkedLeadId !== 'none') {
-        const lead = leads?.find(l => l.id === linkedLeadId);
-        if (lead) {
-          contextData.lead = {
-            name: lead.name,
-            company: lead.company,
-            message: lead.message,
-            industry: lead.industry,
-          };
-        }
-      }
-      
-      if ((source === 'solution' || source === 'all') && linkedSolutionId !== 'none') {
-        const solution = solutions?.find(s => s.id === linkedSolutionId);
-        if (solution) {
-          // Fetch full solution content
-          const { data: solutionData } = await supabase
-            .from('articles')
-            .select('title, content, excerpt')
-            .eq('id', linkedSolutionId)
-            .single();
-          if (solutionData) {
-            contextData.solution = solutionData;
-          }
-        }
-      }
-      
-      if ((source === 'transcription' || source === 'all') && transcriptions.length > 0) {
-        // Get most recent done transcription linked to project/lead
-        const relevantTranscription = transcriptions.find(t => 
-          t.status === 'done' && 
-          (t.project_id === linkedProjectId || t.lead_id === linkedLeadId)
-        ) || transcriptions.find(t => t.status === 'done');
-        
-        if (relevantTranscription?.summary) {
-          contextData.transcription = {
-            summary: relevantTranscription.summary.executive_summary,
-            keyPoints: relevantTranscription.summary.key_points,
-            decisions: relevantTranscription.summary.decisions,
-            nextSteps: relevantTranscription.summary.next_steps,
-          };
-        }
-      }
-
-      // Call AI generation with context - generate full document
-      const { data, error } = await supabase.functions.invoke('generate-document', {
-        body: {
-          document_type: documentType,
-          context: contextData,
-          existing_sections: sections.map(s => ({ title: s.title, content: s.content })),
-          metadata,
-        },
-      });
-
-      if (error) throw error;
-      
-      if (data?.sections) {
-        // Replace sections with AI-generated content
-        setSections(prev => prev.map((section, idx) => {
-          const aiSection = data.sections.find((s: any) => 
-            s.title.toLowerCase().includes(section.title.toLowerCase()) ||
-            section.title.toLowerCase().includes(s.title?.toLowerCase())
-          ) || data.sections[idx];
-          
-          if (aiSection && aiSection.content) {
-            return {
-              ...section,
-              content: aiSection.content,
-            };
-          }
-          return section;
-        }));
-        
-        toast.success('Document généré avec succès');
-      }
-      
-      setShowPasteDialog(false);
-      setPasteContent('');
-    } catch (error) {
-      console.error('Error generating with AI:', error);
-      toast.error('Erreur lors de la génération IA');
-    } finally {
-      setIsGenerating(false);
     }
   };
 
@@ -521,65 +401,6 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
           </h1>
         </div>
         <div className="flex gap-2">
-          {/* AI Generation Dropdown - Full document generation from sources */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="default" 
-                size="sm"
-                disabled={isGenerating}
-                className="gap-1.5"
-              >
-                <Sparkles className="h-4 w-4" />
-                {isGenerating ? 'Génération...' : 'Générer avec IA'}
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={() => setShowPasteDialog(true)}>
-                <Clipboard className="h-4 w-4 mr-2" />
-                Coller du contenu textuel
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={() => handleGenerateWithAI('transcription')}
-                disabled={transcriptions.filter(t => t.status === 'done').length === 0}
-              >
-                <Mic className="h-4 w-4 mr-2" />
-                Depuis une transcription
-                <Badge variant="secondary" className="ml-auto text-xs">
-                  {transcriptions.filter(t => t.status === 'done').length}
-                </Badge>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => handleGenerateWithAI('project')}
-                disabled={linkedProjectId === 'none'}
-              >
-                <Building2 className="h-4 w-4 mr-2" />
-                Depuis le projet lié
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => handleGenerateWithAI('lead')}
-                disabled={linkedLeadId === 'none'}
-              >
-                <User className="h-4 w-4 mr-2" />
-                Depuis le lead lié
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => handleGenerateWithAI('solution')}
-                disabled={linkedSolutionId === 'none'}
-              >
-                <Lightbulb className="h-4 w-4 mr-2" />
-                Depuis la solution liée
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleGenerateWithAI('all')}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Combiner toutes les sources
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           {/* AI Refinement Button - Simple text improvement */}
           <Button 
             variant="outline" 
@@ -588,8 +409,8 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
             onClick={() => handleRefineWithAI()}
             className="gap-1.5"
           >
-            <RefreshCw className="h-4 w-4" />
-            Compléter avec IA
+            <Sparkles className="h-4 w-4" />
+            {isGenerating ? 'Amélioration...' : 'Compléter avec IA'}
           </Button>
           
           {/* Export Dropdown */}
@@ -623,45 +444,6 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
           </Button>
         </div>
       </div>
-
-      {/* Paste Dialog */}
-      {showPasteDialog && (
-        <Card className="border-dashed border-2 border-primary/30 bg-primary/5">
-          <CardContent className="pt-4 space-y-3">
-            <Label className="flex items-center gap-2">
-              <Clipboard className="h-4 w-4" />
-              Collez votre contenu textuel (notes, emails, transcriptions...)
-            </Label>
-            <Textarea
-              value={pasteContent}
-              onChange={(e) => setPasteContent(e.target.value)}
-              rows={6}
-              placeholder="Collez ici le contenu à analyser par l'IA..."
-              className="font-mono text-sm"
-            />
-            <div className="flex gap-2 justify-end">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => {
-                  setShowPasteDialog(false);
-                  setPasteContent('');
-                }}
-              >
-                Annuler
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={() => handleGenerateWithAI('paste')}
-                disabled={!pasteContent.trim() || isGenerating}
-              >
-                <Sparkles className="h-4 w-4 mr-1.5" />
-                Analyser et compléter
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Main Content with Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'editor' | 'preview')}>
@@ -892,7 +674,7 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
                   {theme.useGradient && (
                     <div 
                       className="h-6 rounded"
-                      style={{ background: GRADIENTS.arc.css }}
+                      style={{ background: `linear-gradient(135deg, ${COLORS.bleuNuit} 0%, ${COLORS.terracotta} 100%)` }}
                     />
                   )}
                 </CardContent>

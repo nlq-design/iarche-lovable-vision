@@ -27,6 +27,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { DevisCDCEditor } from '@/components/cockpit/DevisCDCEditor';
 import { DevisCDCPreview } from '@/components/cockpit/DevisCDCPreview';
+import { AIGenerationModal } from '@/components/cockpit/AIGenerationModal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,8 +58,9 @@ const CockpitDocuments = () => {
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
   const [filterProject, setFilterProject] = useState<string>('all');
   const [filterLead, setFilterLead] = useState<string>('all');
+  const [aiGenerationModalOpen, setAiGenerationModalOpen] = useState(false);
 
-  const { documents, isLoading, deleteDocument, generateDocument, refetch } = useCockpitGeneratedDocuments();
+  const { documents, isLoading, deleteDocument, refetch } = useCockpitGeneratedDocuments();
   const { projects } = useCockpitProjects();
   const { leads } = useCockpitLeads();
 
@@ -93,12 +95,6 @@ const CockpitDocuments = () => {
   const handleEditDocument = (docId: string) => {
     setSelectedDocumentId(docId);
     setViewMode('editor');
-  };
-
-  const handleGenerateWithAI = async () => {
-    await generateDocument.mutateAsync({
-      document_type: activeTab,
-    });
   };
 
   const getLinkedEntityName = (doc: typeof documents[0]) => {
@@ -161,11 +157,10 @@ const CockpitDocuments = () => {
               variant="outline" 
               size="sm" 
               className="h-8 text-sm"
-              onClick={handleGenerateWithAI}
-              disabled={generateDocument.isPending}
+              onClick={() => setAiGenerationModalOpen(true)}
             >
               <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-              {generateDocument.isPending ? 'Génération...' : 'Générer avec IA'}
+              Générer avec IA
             </Button>
             <Button size="sm" className="h-8 text-sm" onClick={handleCreateNew}>
               <Plus className="h-3.5 w-3.5 mr-1.5" />
@@ -369,6 +364,14 @@ const CockpitDocuments = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* AI Generation Modal */}
+      <AIGenerationModal
+        open={aiGenerationModalOpen}
+        onOpenChange={setAiGenerationModalOpen}
+        documentType={activeTab}
+        onGenerated={() => refetch()}
+      />
     </CockpitLayout>
   );
 };
