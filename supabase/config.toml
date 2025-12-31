@@ -104,3 +104,6 @@ verify_jwt = true
 
 [functions.send-brevo-campaign]
 verify_jwt = true
+
+[functions.ai-agent-orchestrator]
+verify_jwt = true
