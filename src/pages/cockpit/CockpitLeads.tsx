@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Search, Download, Mail, Phone, Building2, Trash2 } from "lucide-react";
+import { Users, Search, Download, Mail, Building2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +26,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useCockpitLeads } from '@/hooks/cockpit';
 import { useLeads } from '@/hooks/shared/useLeads';
 import { CreateLeadDialog } from '@/components/cockpit/dialogs';
-import { LeadDetailSheet } from '@/components/cockpit/LeadDetailSheet';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
@@ -66,12 +66,11 @@ interface Lead {
 }
 
 const CockpitLeads = () => {
+  const navigate = useNavigate();
   const { leads, stats, isLoading } = useCockpitLeads();
   const { bulkDeleteLeads } = useLeads();
   const [searchQuery, setSearchQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
@@ -88,8 +87,7 @@ const CockpitLeads = () => {
   }) || [];
 
   const handleRowClick = (lead: Lead) => {
-    setSelectedLead(lead);
-    setSheetOpen(true);
+    navigate(`/cockpit/leads/${lead.id}`);
   };
 
   const toggleSelectAll = () => {
@@ -288,14 +286,7 @@ const CockpitLeads = () => {
             )}
           </CardContent>
         </Card>
-      </div>
-
-      {/* Lead Detail Sheet */}
-      <LeadDetailSheet 
-        lead={selectedLead}
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-      />
+    </div>
 
       {/* Bulk Delete Dialog */}
       <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
