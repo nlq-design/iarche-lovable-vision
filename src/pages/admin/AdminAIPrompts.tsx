@@ -35,31 +35,35 @@ const PROVIDER_GROUPS = {
   openrouter: { label: "OpenRouter", icon: <Zap className="h-4 w-4" /> },
 };
 
-const DEFAULT_SYSTEM_PROMPT = `Tu es l'assistant IA d'IArche, un conseiller expert en gestion commerciale et projet.
+// IMPORTANT: Ce slug doit correspondre à celui de l'edge function ai-agent-orchestrator
+const MASTER_PROMPT_SLUG = "master-agent";
 
-Ton rôle est d'accompagner l'équipe dans :
-- L'analyse et la qualification des leads
-- Le suivi des opportunités commerciales
-- La gestion des projets clients
-- La rédaction de comptes-rendus de réunion
-- La synthèse de transcriptions audio
-- Les recommandations stratégiques
+const DEFAULT_SYSTEM_PROMPT = `Tu es l'Agent IA IArche, un assistant commercial et opérationnel expert.
 
-Règles de comportement :
-- Sois concis et actionnable
-- Privilégie les listes et structures claires
-- Identifie les points d'attention et risques
-- Propose des actions concrètes avec priorités
-- Adapte ton niveau de détail au contexte
+CONTEXTE :
+- IArche est une agence IA basée à Bayonne spécialisée dans les solutions d'intelligence artificielle pour entreprises.
+- Tu as accès complet aux données du CRM Cockpit (leads, opportunités, projets, tâches) et du module Admin (articles, solutions, contacts).
+- Tu utilises la base de connaissances RAG pour trouver des informations pertinentes sur les offres IArche.
 
-Format de sortie pour les transcriptions :
-- Résumé exécutif (3-5 lignes)
-- Points clés discutés
-- Décisions prises
-- Actions à mener (avec responsable si identifiable)
-- Prochaines étapes`;
+RÔLE :
+- Répondre aux questions sur l'activité commerciale et le contenu
+- Analyser les données et fournir des insights actionnables
+- Suggérer des actions (tâches, emails, qualifications) en mode N1 (validation humaine requise)
+- Aider à la prise de décision commerciale
+- Rechercher dans la base de connaissances pour enrichir tes réponses
 
-const MASTER_PROMPT_SLUG = "cockpit-master-assistant";
+RÈGLES :
+- Sois concis et orienté action
+- Utilise les outils disponibles pour répondre avec des données réelles
+- Utilise search_knowledge_base pour chercher des informations sur les solutions, articles, cas clients IArche
+- Pour toute modification (N1), indique clairement que l'utilisateur doit valider
+- Ne jamais inventer de données - si tu ne sais pas, dis-le
+- Réponds en français
+
+NIVEAUX D'AUTONOMIE :
+- N0 : Lecture seule, informatif (statistiques, recherche, consultation)
+- N1 : Suggestions/brouillons à valider (tâches, emails, qualifications)
+- N2 : Actions irréversibles (réservé, non implémenté ici)`;
 
 const categoryIcons: Record<string, React.ReactNode> = {
   fast: <Zap className="h-4 w-4" />,
@@ -555,11 +559,17 @@ export default function AdminAIPrompts() {
     if (masterPrompt) {
       setSystemPrompt(masterPrompt.system_prompt);
       const config = masterPrompt.model_config as { model?: string; llm_model_id?: string } | null;
+      // Priorité au llm_model_id (UUID), sinon chercher par model_id string
       if (config?.llm_model_id) {
         setSelectedModelId(config.llm_model_id);
+      } else if (config?.model && llmModels.length > 0) {
+        const modelByModelId = llmModels.find(m => m.model_id === config.model);
+        if (modelByModelId) {
+          setSelectedModelId(modelByModelId.id);
+        }
       }
     }
-  }, [masterPrompt]);
+  }, [masterPrompt, llmModels]);
 
   useEffect(() => {
     if (llmModels.length > 0 && !selectedModelId) {
@@ -577,8 +587,17 @@ export default function AdminAIPrompts() {
 
   const saveMutation = useMutation({
     mutationFn: async ({ prompt, modelId }: { prompt: string; modelId: string }) => {
+      // Récupérer le model_id (format "provider/model") depuis llm_models
+      const selectedModel = llmModels.find(m => m.id === modelId);
+      const modelIdForConfig = selectedModel?.model_id || 'google/gemini-2.5-flash';
+      const provider = selectedModel?.provider || 'lovable';
+      
       const modelConfig = { 
+        model: modelIdForConfig,
+        provider: provider,
         temperature: 0.7,
+        max_tokens: 4096,
+        // Garder llm_model_id pour référence
         llm_model_id: modelId
       };
       
@@ -596,9 +615,9 @@ export default function AdminAIPrompts() {
         const { error } = await supabase
           .from('ai_prompts')
           .insert({
-            name: "Assistant Cockpit",
+            name: "Agent IA IArche - Prompt Principal",
             slug: MASTER_PROMPT_SLUG,
-            category: "assistant",
+            category: "agent",
             system_prompt: prompt,
             model_config: modelConfig
           });
@@ -608,7 +627,7 @@ export default function AdminAIPrompts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['master-ai-prompt'] });
       setHasChanges(false);
-      toast.success("Configuration IA sauvegardée");
+      toast.success("Configuration IA sauvegardée - Active immédiatement sur l'agent");
     },
     onError: (error) => {
       console.error("Save error:", error);
@@ -781,26 +800,95 @@ export default function AdminAIPrompts() {
             <IndexedResourcesList />
           </TabsContent>
 
-          <TabsContent value="modules">
-            {/* Modules Card */}
+          <TabsContent value="modules" className="space-y-4">
+            {/* Edge Functions Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Modules utilisant cet assistant</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Zap className="h-4 w-4" />
+                  Edge Functions IA
+                </CardTitle>
                 <CardDescription>
-                  Tous ces modules utilisent le prompt système et le modèle LLM configurés ci-dessus.
+                  Fonctions backend déployées automatiquement, utilisant ce prompt système et le modèle LLM configuré.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[
+                    { 
+                      name: "ai-agent-orchestrator", 
+                      desc: "Agent principal avec outils (CRM, RAG, Admin)", 
+                      uses: "Prompt système + Modèle LLM + RAG",
+                      status: "active"
+                    },
+                    { 
+                      name: "search-embeddings", 
+                      desc: "Recherche sémantique dans la base RAG", 
+                      uses: "OpenAI text-embedding-3-small",
+                      status: "active"
+                    },
+                    { 
+                      name: "generate-embeddings", 
+                      desc: "Indexation vectorielle des ressources", 
+                      uses: "OpenAI text-embedding-3-small",
+                      status: "active"
+                    },
+                    { 
+                      name: "generate-document", 
+                      desc: "Génération Devis/CDC/Proposition", 
+                      uses: "Prompts spécifiques (onglet Docs)",
+                      status: "active"
+                    },
+                    { 
+                      name: "process-voice-transcription", 
+                      desc: "Traitement transcription vocale", 
+                      uses: "Prompt transcription + RAG",
+                      status: "active"
+                    },
+                  ].map((fn) => (
+                    <div 
+                      key={fn.name}
+                      className="flex items-start justify-between p-3 rounded-lg bg-muted/50 border"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <code className="text-sm font-mono bg-background px-2 py-0.5 rounded">
+                            {fn.name}
+                          </code>
+                          <Badge variant="outline" className="text-xs">
+                            {fn.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{fn.desc}</p>
+                        <p className="text-xs text-muted-foreground/80">
+                          <span className="font-medium">Utilise :</span> {fn.uses}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Modules Cockpit */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Modules Cockpit</CardTitle>
+                <CardDescription>
+                  Tous ces modules invoquent l'agent via <code className="text-xs bg-muted px-1 rounded">ai-agent-orchestrator</code>.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
-                    { name: "Transcriptions", desc: "Synthèse audio + détection solutions" },
-                    { name: "Leads", desc: "Qualification & scoring" },
-                    { name: "Projets", desc: "Suivi & recommandations" },
-                    { name: "Solutions", desc: "Analyse commerciale" },
-                    { name: "Comptes-rendus", desc: "Résumés de réunion" },
-                    { name: "Pipeline", desc: "Insights opportunités" },
-                    { name: "Agenda", desc: "Préparation RDV" },
-                    { name: "Documents", desc: "Analyse CDC" }
+                    { name: "Transcriptions", desc: "Synthèse audio + détection solutions", path: "/cockpit/transcriptions" },
+                    { name: "Leads", desc: "Qualification & scoring", path: "/cockpit/leads" },
+                    { name: "Projets", desc: "Suivi & recommandations", path: "/cockpit/projects" },
+                    { name: "Solutions", desc: "Analyse commerciale", path: "/cockpit/solutions" },
+                    { name: "Pipeline", desc: "Insights opportunités", path: "/cockpit/pipeline" },
+                    { name: "Agenda", desc: "Préparation RDV", path: "/cockpit/agenda" },
+                    { name: "Documents", desc: "Génération CDC/Devis", path: "/cockpit/documents" },
+                    { name: "Agent Chat", desc: "Agent flottant universel", path: "composant global" }
                   ].map((module) => (
                     <div 
                       key={module.name}
@@ -819,25 +907,38 @@ export default function AdminAIPrompts() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Database className="h-4 w-4" />
-                  Intégration RAG
+                  Architecture RAG
                 </CardTitle>
               </CardHeader>
-              <CardContent className="text-sm text-muted-foreground space-y-2">
-                <p>
-                  Lorsqu'une transcription vocale n'est pas liée manuellement à un projet ou une solution, 
-                  l'IA utilise la recherche sémantique sur la base de connaissances pour :
-                </p>
-                <ul className="list-disc list-inside space-y-1 pl-2">
-                  <li>Détecter automatiquement les solutions/services mentionnés</li>
-                  <li>Enrichir le contexte avec les informations pertinentes</li>
-                  <li>Proposer des correspondances avec les ressources existantes</li>
-                </ul>
-                <p className="pt-2">
-                  <strong>Ressources indexées :</strong> Articles, Actualités, Livres blancs, Ateliers/Webinaires, Solutions, Services
-                </p>
-                <p>
-                  <strong>Exclus :</strong> Cas clients (confidentialité)
-                </p>
+              <CardContent className="text-sm text-muted-foreground space-y-3">
+                <div className="p-3 rounded-lg bg-muted/30 border space-y-2">
+                  <p className="font-medium text-foreground">Flux de données :</p>
+                  <ol className="list-decimal list-inside space-y-1 pl-2">
+                    <li><strong>generate-embeddings</strong> : Indexe articles/solutions → table <code>resource_embeddings</code></li>
+                    <li><strong>search-embeddings</strong> : Reçoit requête → génère embedding → recherche vectorielle</li>
+                    <li><strong>ai-agent-orchestrator</strong> : Appelle <code>search_knowledge_base</code> → enrichit contexte</li>
+                  </ol>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-medium text-foreground mb-1">Ressources indexées :</p>
+                    <ul className="list-disc list-inside space-y-0.5 pl-2 text-xs">
+                      <li>Articles</li>
+                      <li>Actualités</li>
+                      <li>Livres blancs</li>
+                      <li>Ateliers/Webinaires</li>
+                      <li>Solutions</li>
+                      <li>Services</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground mb-1">Exclus (confidentialité) :</p>
+                    <ul className="list-disc list-inside space-y-0.5 pl-2 text-xs">
+                      <li>Cas clients</li>
+                      <li>Données CRM (leads, projets)</li>
+                    </ul>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
