@@ -2352,6 +2352,7 @@ export type Database = {
           created_by: string
           id: string
           lead_id: string | null
+          meeting_note_id: string | null
           project_id: string | null
           prompt_profile_id: string | null
           raw_transcript: string | null
@@ -2371,6 +2372,7 @@ export type Database = {
           created_by: string
           id?: string
           lead_id?: string | null
+          meeting_note_id?: string | null
           project_id?: string | null
           prompt_profile_id?: string | null
           raw_transcript?: string | null
@@ -2390,6 +2392,7 @@ export type Database = {
           created_by?: string
           id?: string
           lead_id?: string | null
+          meeting_note_id?: string | null
           project_id?: string | null
           prompt_profile_id?: string | null
           raw_transcript?: string | null
@@ -2429,6 +2432,13 @@ export type Database = {
             columns: ["solution_id"]
             isOneToOne: false
             referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_transcriptions_meeting_note_id_fkey"
+            columns: ["meeting_note_id"]
+            isOneToOne: false
+            referencedRelation: "meeting_notes"
             referencedColumns: ["id"]
           },
         ]

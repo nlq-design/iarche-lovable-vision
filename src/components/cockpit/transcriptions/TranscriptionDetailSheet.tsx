@@ -186,7 +186,7 @@ export function TranscriptionDetailSheet({
                 </Card>
 
                 {/* Entity Links */}
-                {(transcription?.lead || transcription?.project || transcription?.solution) && (
+                {(transcription?.lead || transcription?.project || transcription?.solution || transcription?.meeting_note) && (
                   <div className="flex flex-wrap gap-2">
                     {transcription.lead && (
                       <Badge variant="secondary" className="cursor-pointer" onClick={() => {
@@ -213,6 +213,18 @@ export function TranscriptionDetailSheet({
                       }}>
                         <Package className="h-3 w-3 mr-1" />
                         {transcription.solution.title}
+                      </Badge>
+                    )}
+                    {transcription.meeting_note && (
+                      <Badge variant="secondary" className="cursor-pointer" onClick={() => {
+                        onOpenChange(false);
+                        navigate(`/cockpit/agenda`);
+                      }}>
+                        <FileText className="h-3 w-3 mr-1" />
+                        {transcription.meeting_note.objectives 
+                          ? transcription.meeting_note.objectives.substring(0, 30) + '...'
+                          : 'Compte-rendu'
+                        }
                       </Badge>
                     )}
                   </div>

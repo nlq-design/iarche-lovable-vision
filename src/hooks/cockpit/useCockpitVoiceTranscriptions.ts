@@ -13,6 +13,7 @@ export interface VoiceTranscription {
   lead_id: string | null;
   project_id: string | null;
   solution_id: string | null;
+  meeting_note_id: string | null;
   raw_transcript: string | null;
   segments: Record<string, unknown> | null;
   summary: TranscriptionSummary | null;
@@ -27,6 +28,7 @@ export interface VoiceTranscription {
   lead?: { id: string; name: string; company: string | null } | null;
   project?: { id: string; name: string } | null;
   solution?: { id: string; title: string } | null;
+  meeting_note?: { id: string; objectives: string | null; booking_id: string | null } | null;
   prompt_profile?: { id: string; name: string } | null;
 }
 
@@ -67,6 +69,7 @@ export interface CreateTranscriptionInput {
   lead_id?: string | null;
   project_id?: string | null;
   solution_id?: string | null;
+  meeting_note_id?: string | null;
   auto_create_tasks?: boolean;
   prompt_profile_id?: string | null;
 }
@@ -97,6 +100,7 @@ export function useCockpitVoiceTranscriptions(
           lead:leads(id, name, company),
           project:projects(id, name),
           solution:articles(id, title),
+          meeting_note:meeting_notes(id, objectives, booking_id),
           prompt_profile:ai_prompts(id, name)
         `)
         .eq('workspace_id', workspaceId)
@@ -128,6 +132,7 @@ export function useCockpitVoiceTranscriptions(
             lead:leads(id, name, company, email),
             project:projects(id, name, status),
             solution:articles(id, title, slug),
+            meeting_note:meeting_notes(id, objectives, booking_id, notes),
             prompt_profile:ai_prompts(id, name, slug)
           `)
           .eq('id', id)
