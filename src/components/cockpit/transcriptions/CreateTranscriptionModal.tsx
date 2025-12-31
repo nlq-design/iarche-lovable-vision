@@ -377,12 +377,12 @@ export function CreateTranscriptionModal({
           {/* Prompt profile */}
           <div className="space-y-2">
             <Label>Profil de synthèse</Label>
-            <Select value={promptProfileId} onValueChange={setPromptProfileId}>
+            <Select value={promptProfileId || 'default'} onValueChange={(v) => setPromptProfileId(v === 'default' ? '' : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Par défaut (RDV commercial)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Par défaut (RDV commercial)</SelectItem>
+                <SelectItem value="default">Par défaut (RDV commercial)</SelectItem>
                 {promptProfiles.map(profile => (
                   <SelectItem key={profile.id} value={profile.id}>
                     {profile.name}
