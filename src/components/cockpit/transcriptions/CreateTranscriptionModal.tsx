@@ -262,7 +262,7 @@ export function CreateTranscriptionModal({
                     Cliquez ou glissez un fichier audio
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    MP3, M4A, WAV, WebM (max 50 MB)
+                    MP3, M4A, WAV, WebM (max 100 MB)
                   </p>
                 </div>
               )}
