@@ -14,7 +14,8 @@ import {
   Header,
   Footer,
   PageNumber,
-  NumberFormat,
+  ImageRun,
+  convertInchesToTwip,
 } from "https://esm.sh/docx@8.5.0";
 import { encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
@@ -23,13 +24,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// IArche Design System Colors
+// IArche Design System Colors - v4.0
 const COLORS = {
   bleuNuit: '1A2B4A',
   terracotta: 'B04A32',
   blancCasse: 'FAF9F7',
   white: 'FFFFFF',
   muted: '6B7280',
+  grisTexte: '4A5568',
+};
+
+// Typography settings matching charte graphique
+const TYPOGRAPHY = {
+  display: { size: 56, bold: true, letterSpacing: -20 }, // 28pt
+  heading1: { size: 44, bold: true }, // 22pt
+  heading2: { size: 32, bold: true }, // 16pt
+  body: { size: 22 }, // 11pt
+  small: { size: 18 }, // 9pt
+  caption: { size: 16 }, // 8pt
 };
 
 interface DocumentSection {
@@ -80,24 +92,9 @@ serve(async (req) => {
     // Build document sections
     const documentSections: Paragraph[] = [];
 
-    // Title
-    documentSections.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: title,
-            bold: true,
-            size: 56, // 28pt
-            color: primaryColor,
-            font: 'Calibri',
-          }),
-        ],
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 400 },
-      })
-    );
-
-    // Subtitle with document type
+    // ============ COVER PAGE ============
+    
+    // Document type badge
     const typeLabels: Record<string, string> = {
       quote: 'DEVIS COMMERCIAL',
       spec: 'CAHIER DES CHARGES',
@@ -110,9 +107,41 @@ serve(async (req) => {
           new TextRun({
             text: typeLabels[documentType] || 'DOCUMENT',
             bold: true,
-            size: 24, // 12pt
+            size: TYPOGRAPHY.small.size,
             color: accentColor,
             allCaps: true,
+          }),
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 1200, after: 400 },
+      })
+    );
+
+    // Main title - Display typography
+    documentSections.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: title,
+            bold: true,
+            size: TYPOGRAPHY.display.size,
+            color: primaryColor,
+            font: 'Calibri',
+          }),
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 200 },
+      })
+    );
+
+    // Gradient bar separator (visual representation)
+    documentSections.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: '━━━━━━━━━━━━━━━━━━━━',
+            color: accentColor,
+            size: 16,
           }),
         ],
         alignment: AlignmentType.CENTER,
@@ -120,21 +149,38 @@ serve(async (req) => {
       })
     );
 
-    // Client info
+    // Client info block
     if (metadata?.clientCompany || metadata?.clientName) {
       documentSections.push(
         new Paragraph({
           children: [
             new TextRun({
-              text: metadata.clientCompany || '',
-              bold: true,
-              size: 28, // 14pt
+              text: 'Préparé pour',
+              size: TYPOGRAPHY.small.size,
               color: COLORS.muted,
+              italics: true,
             }),
           ],
           alignment: AlignmentType.CENTER,
+          spacing: { before: 400 },
         })
       );
+
+      if (metadata.clientCompany) {
+        documentSections.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: metadata.clientCompany,
+                bold: true,
+                size: TYPOGRAPHY.heading1.size,
+                color: COLORS.grisTexte,
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+          })
+        );
+      }
       
       if (metadata.clientName) {
         documentSections.push(
@@ -142,7 +188,7 @@ serve(async (req) => {
             children: [
               new TextRun({
                 text: `À l'attention de ${metadata.clientName}`,
-                size: 22, // 11pt
+                size: TYPOGRAPHY.body.size,
                 color: COLORS.muted,
                 italics: true,
               }),
@@ -154,22 +200,34 @@ serve(async (req) => {
       }
     }
 
-    // Gradient bar (visual separator)
+    // Date
     documentSections.push(
       new Paragraph({
-        border: {
-          bottom: {
-            color: accentColor,
-            space: 1,
-            style: BorderStyle.SINGLE,
-            size: 24, // 3pt
-          },
-        },
-        spacing: { after: 600 },
+        children: [
+          new TextRun({
+            text: new Date().toLocaleDateString('fr-FR', { 
+              day: 'numeric', 
+              month: 'long', 
+              year: 'numeric' 
+            }),
+            size: TYPOGRAPHY.body.size,
+            color: COLORS.muted,
+          }),
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 1200 },
       })
     );
 
-    // Table of contents for longer documents
+    // Page break after cover
+    documentSections.push(
+      new Paragraph({
+        children: [],
+        pageBreakBefore: true,
+      })
+    );
+
+    // ============ TABLE OF CONTENTS ============
     if (sections.length > 3) {
       documentSections.push(
         new Paragraph({
@@ -177,11 +235,25 @@ serve(async (req) => {
             new TextRun({
               text: 'SOMMAIRE',
               bold: true,
-              size: 28,
+              size: TYPOGRAPHY.heading1.size,
               color: primaryColor,
             }),
           ],
-          spacing: { after: 200 },
+          spacing: { after: 400 },
+        })
+      );
+
+      // Gradient bar under title
+      documentSections.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: '━━━━━━━━',
+              color: accentColor,
+              size: 12,
+            }),
+          ],
+          spacing: { after: 400 },
         })
       );
 
@@ -190,12 +262,18 @@ serve(async (req) => {
           new Paragraph({
             children: [
               new TextRun({
-                text: `${index + 1}. ${section.title}`,
-                size: 22,
-                color: COLORS.muted,
+                text: `${(index + 1).toString().padStart(2, '0')}`,
+                bold: true,
+                size: TYPOGRAPHY.body.size,
+                color: accentColor,
+              }),
+              new TextRun({
+                text: `   ${section.title}`,
+                size: TYPOGRAPHY.body.size,
+                color: COLORS.grisTexte,
               }),
             ],
-            spacing: { after: 100 },
+            spacing: { after: 150 },
           })
         );
       });
@@ -209,30 +287,42 @@ serve(async (req) => {
       );
     }
 
-    // Content sections
+    // ============ CONTENT SECTIONS ============
     sections.forEach((section, index) => {
-      // Section number badge
+      // Section header with number badge
       documentSections.push(
         new Paragraph({
           children: [
             new TextRun({
-              text: `${index + 1}`,
+              text: ` ${(index + 1).toString().padStart(2, '0')} `,
               bold: true,
-              size: 24,
+              size: TYPOGRAPHY.body.size,
               color: COLORS.white,
-              shading: {
-                fill: accentColor,
-              },
+              shading: { fill: accentColor },
             }),
             new TextRun({
-              text: `  ${section.title}`,
+              text: `   ${section.title}`,
               bold: true,
-              size: 32, // 16pt
+              size: TYPOGRAPHY.heading2.size,
               color: primaryColor,
             }),
           ],
-          spacing: { before: 400, after: 200 },
+          spacing: { before: 600, after: 200 },
           heading: HeadingLevel.HEADING_2,
+        })
+      );
+
+      // Gradient bar under section title
+      documentSections.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: '━━━━',
+              color: accentColor,
+              size: 10,
+            }),
+          ],
+          spacing: { after: 300 },
         })
       );
 
@@ -240,7 +330,7 @@ serve(async (req) => {
       const contentLines = section.content.split('\n');
       contentLines.forEach(line => {
         if (line.trim() === '') {
-          documentSections.push(new Paragraph({ children: [] }));
+          documentSections.push(new Paragraph({ children: [], spacing: { after: 100 } }));
           return;
         }
 
@@ -251,21 +341,40 @@ serve(async (req) => {
               children: [
                 new TextRun({
                   text: line.substring(2),
-                  size: 22,
+                  size: TYPOGRAPHY.body.size,
+                  color: COLORS.grisTexte,
                 }),
               ],
               bullet: { level: 0 },
-              spacing: { after: 100 },
+              spacing: { after: 80 },
             })
           );
           return;
         }
 
-        // Regular paragraph
+        // Handle sub-bullets
+        if (line.startsWith('  - ') || line.startsWith('  • ')) {
+          documentSections.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: line.substring(4),
+                  size: TYPOGRAPHY.body.size,
+                  color: COLORS.grisTexte,
+                }),
+              ],
+              bullet: { level: 1 },
+              spacing: { after: 60 },
+            })
+          );
+          return;
+        }
+
+        // Regular paragraph with bold handling
         const textRuns: TextRun[] = [];
         let currentText = line;
         
-        // Simple bold handling (**text**)
+        // Bold handling (**text**)
         const boldRegex = /\*\*(.*?)\*\*/g;
         let lastIndex = 0;
         let match;
@@ -274,13 +383,15 @@ serve(async (req) => {
           if (match.index > lastIndex) {
             textRuns.push(new TextRun({
               text: currentText.substring(lastIndex, match.index),
-              size: 22,
+              size: TYPOGRAPHY.body.size,
+              color: COLORS.grisTexte,
             }));
           }
           textRuns.push(new TextRun({
             text: match[1],
             bold: true,
-            size: 22,
+            size: TYPOGRAPHY.body.size,
+            color: primaryColor,
           }));
           lastIndex = match.index + match[0].length;
         }
@@ -288,26 +399,28 @@ serve(async (req) => {
         if (lastIndex < currentText.length) {
           textRuns.push(new TextRun({
             text: currentText.substring(lastIndex),
-            size: 22,
+            size: TYPOGRAPHY.body.size,
+            color: COLORS.grisTexte,
           }));
         }
         
         if (textRuns.length === 0) {
           textRuns.push(new TextRun({
             text: line,
-            size: 22,
+            size: TYPOGRAPHY.body.size,
+            color: COLORS.grisTexte,
           }));
         }
 
         documentSections.push(
           new Paragraph({
             children: textRuns,
-            spacing: { after: 120 },
+            spacing: { after: 120, line: 276 }, // 1.15 line spacing
           })
         );
       });
 
-      // Section separator
+      // Section separator (except last)
       if (index < sections.length - 1) {
         documentSections.push(
           new Paragraph({
@@ -319,18 +432,32 @@ serve(async (req) => {
                 size: 6,
               },
             },
-            spacing: { before: 300, after: 300 },
+            spacing: { before: 400, after: 400 },
           })
         );
       }
     });
 
-    // Amount for quotes
+    // ============ AMOUNT FOR QUOTES ============
     if (documentType === 'quote' && metadata?.totalAmount) {
       documentSections.push(
         new Paragraph({
           children: [],
-          spacing: { before: 600 },
+          spacing: { before: 800 },
+        })
+      );
+
+      documentSections.push(
+        new Paragraph({
+          border: {
+            top: {
+              color: accentColor,
+              space: 1,
+              style: BorderStyle.SINGLE,
+              size: 18,
+            },
+          },
+          spacing: { after: 200 },
         })
       );
 
@@ -338,9 +465,9 @@ serve(async (req) => {
         new Paragraph({
           children: [
             new TextRun({
-              text: 'MONTANT TOTAL : ',
+              text: 'MONTANT TOTAL HT : ',
               bold: true,
-              size: 28,
+              size: TYPOGRAPHY.heading2.size,
               color: primaryColor,
             }),
             new TextRun({
@@ -349,20 +476,12 @@ serve(async (req) => {
                 currency: metadata.currency || 'EUR',
               }).format(metadata.totalAmount),
               bold: true,
-              size: 36,
+              size: TYPOGRAPHY.heading1.size,
               color: accentColor,
             }),
           ],
           alignment: AlignmentType.RIGHT,
-          spacing: { before: 400 },
-          border: {
-            top: {
-              color: accentColor,
-              space: 1,
-              style: BorderStyle.SINGLE,
-              size: 12,
-            },
-          },
+          spacing: { before: 200 },
         })
       );
 
@@ -371,8 +490,8 @@ serve(async (req) => {
           new Paragraph({
             children: [
               new TextRun({
-                text: `Validité : ${metadata.validityDate}`,
-                size: 20,
+                text: `Devis valable jusqu'au ${new Date(metadata.validityDate).toLocaleDateString('fr-FR')}`,
+                size: TYPOGRAPHY.small.size,
                 color: COLORS.muted,
                 italics: true,
               }),
@@ -383,7 +502,7 @@ serve(async (req) => {
       }
     }
 
-    // Create the document
+    // ============ CREATE DOCUMENT ============
     const doc = new Document({
       creator: 'IArche Cockpit',
       title: title,
@@ -393,19 +512,33 @@ serve(async (req) => {
           document: {
             run: {
               font: 'Calibri',
-              size: 22,
+              size: TYPOGRAPHY.body.size,
             },
           },
         },
+        paragraphStyles: [
+          {
+            id: "Normal",
+            name: "Normal",
+            run: {
+              font: "Calibri",
+              size: TYPOGRAPHY.body.size,
+              color: COLORS.grisTexte,
+            },
+            paragraph: {
+              spacing: { line: 276 },
+            },
+          },
+        ],
       },
       sections: [{
         properties: {
           page: {
             margin: {
-              top: 1440, // 1 inch
-              right: 1440,
-              bottom: 1440,
-              left: 1440,
+              top: convertInchesToTwip(1),
+              right: convertInchesToTwip(1),
+              bottom: convertInchesToTwip(1),
+              left: convertInchesToTwip(1),
             },
           },
         },
@@ -417,16 +550,25 @@ serve(async (req) => {
                   new TextRun({
                     text: 'IArche',
                     bold: true,
-                    size: 20,
+                    size: TYPOGRAPHY.small.size,
                     color: primaryColor,
                   }),
                   new TextRun({
-                    text: '  |  ' + title,
-                    size: 18,
+                    text: '  •  Architecture de Solutions IA',
+                    size: TYPOGRAPHY.caption.size,
                     color: COLORS.muted,
                   }),
                 ],
-                alignment: AlignmentType.RIGHT,
+                alignment: AlignmentType.LEFT,
+                border: {
+                  bottom: {
+                    color: 'E8E4DD',
+                    space: 4,
+                    style: BorderStyle.SINGLE,
+                    size: 4,
+                  },
+                },
+                spacing: { after: 200 },
               }),
             ],
           }),
@@ -437,8 +579,29 @@ serve(async (req) => {
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: 'IArche - Architecture de Solutions IA',
-                    size: 16,
+                    text: '━━━━',
+                    color: accentColor,
+                    size: 8,
+                  }),
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 200 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: 'IArche - Conseil en Architecture IA & Transformation Digitale',
+                    size: TYPOGRAPHY.caption.size,
+                    color: COLORS.muted,
+                  }),
+                ],
+                alignment: AlignmentType.CENTER,
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: 'contact@iarche.fr  •  www.iarche.fr',
+                    size: TYPOGRAPHY.caption.size,
                     color: COLORS.muted,
                   }),
                 ],
@@ -448,16 +611,27 @@ serve(async (req) => {
                 children: [
                   new TextRun({
                     text: 'Page ',
-                    size: 16,
+                    size: TYPOGRAPHY.caption.size,
                     color: COLORS.muted,
                   }),
                   new TextRun({
                     children: [PageNumber.CURRENT],
-                    size: 16,
+                    size: TYPOGRAPHY.caption.size,
+                    color: COLORS.muted,
+                  }),
+                  new TextRun({
+                    text: ' / ',
+                    size: TYPOGRAPHY.caption.size,
+                    color: COLORS.muted,
+                  }),
+                  new TextRun({
+                    children: [PageNumber.TOTAL_PAGES],
+                    size: TYPOGRAPHY.caption.size,
                     color: COLORS.muted,
                   }),
                 ],
                 alignment: AlignmentType.CENTER,
+                spacing: { before: 100 },
               }),
             ],
           }),
