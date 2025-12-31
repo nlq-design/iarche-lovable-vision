@@ -205,34 +205,45 @@ async function lovableSummarize(model: string, sys: string, usr: string) {
 }
 
 async function createTasksFromActions(
-  supabase: ReturnType<typeof createClient>, 
+  supabase: any, 
   job: VoiceJob, 
   summary: Record<string, unknown>, 
   leadId: string | null
-) {
+): Promise<Array<{ id: string; title: string }>> {
   if (!job.auto_create_tasks) return [];
 
   const items = Array.isArray(summary?.action_items) ? summary.action_items : [];
   if (!items.length) return [];
 
-  const inserts = items
-    .map((it: Record<string, unknown>) => {
-      const title = (it?.task as string ?? "").trim();
-      if (!title) return null;
-      return {
-        workspace_id: job.workspace_id,
-        title: title.slice(0, 200),
-        task_type: "follow_up",
-        priority: (it?.priority as string) ?? "medium",
-        status: "pending",
-        lead_id: leadId,
-        project_id: job.project_id,
-        entity_type: "voice_transcription",
-        entity_id: job.id,
-        created_by: job.created_by,
-      };
-    })
-    .filter(Boolean);
+  const inserts: Array<{
+    workspace_id: string;
+    title: string;
+    task_type: string;
+    priority: string;
+    status: string;
+    lead_id: string | null;
+    project_id: string | null;
+    entity_type: string;
+    entity_id: string;
+    created_by: string;
+  }> = [];
+
+  for (const it of items) {
+    const title = (it?.task as string ?? "").trim();
+    if (!title) continue;
+    inserts.push({
+      workspace_id: job.workspace_id,
+      title: title.slice(0, 200),
+      task_type: "follow_up",
+      priority: (it?.priority as string) ?? "medium",
+      status: "pending",
+      lead_id: leadId,
+      project_id: job.project_id,
+      entity_type: "voice_transcription",
+      entity_id: job.id,
+      created_by: job.created_by,
+    });
+  }
 
   if (!inserts.length) return [];
 
