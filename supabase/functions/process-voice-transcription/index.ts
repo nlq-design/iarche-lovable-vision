@@ -230,23 +230,40 @@ function buildLLM(
   return { sys, usr };
 }
 
-async function lovableSummarize(model: string, sys: string, usr: string) {
+async function lovableSummarize(model: string, sys: string, usr: string, outputSchema: Record<string, unknown> | null) {
+  // Use tool calling for structured output when schema is available
+  const requestBody: Record<string, unknown> = {
+    model,
+    messages: [
+      { role: "system", content: sys + "\n\nRéponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans ```json, sans texte avant ou après." },
+      { role: "user", content: usr },
+    ],
+  };
+
+  // Add tool calling for structured output
+  if (outputSchema) {
+    requestBody.tools = [{
+      type: "function",
+      function: {
+        name: "submit_transcription_summary",
+        description: "Submit the structured summary of the transcription",
+        parameters: outputSchema
+      }
+    }];
+    requestBody.tool_choice = { type: "function", function: { name: "submit_transcription_summary" } };
+  }
+
   const response = await fetch(LOVABLE_AI_GATEWAY, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${LOVABLE_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: sys },
-        { role: "user", content: usr },
-      ],
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   const txt = await response.text();
+  console.log("LLM response length:", txt.length);
   
   // Handle rate limiting
   if (response.status === 429) {
@@ -261,15 +278,63 @@ async function lovableSummarize(model: string, sys: string, usr: string) {
   if (!response.ok) throw new Error(`lovable_llm_failed: ${txt}`);
 
   const json = JSON.parse(txt);
+  
+  // Check for tool call response first
+  const toolCall = json?.choices?.[0]?.message?.tool_calls?.[0];
+  if (toolCall?.function?.arguments) {
+    console.log("Using tool call response");
+    try {
+      return JSON.parse(toolCall.function.arguments);
+    } catch (e) {
+      console.error("Tool call JSON parse error:", e);
+      // Fall through to content parsing
+    }
+  }
+  
   const content = json?.choices?.[0]?.message?.content;
   if (!content) throw new Error("lovable_llm_empty_content");
 
+  console.log("Parsing content response, first 500 chars:", content.substring(0, 500));
+  
+  // Try direct parse first
   try {
     return JSON.parse(content);
-  } catch {
-    const m = content.match(/\{[\s\S]*\}/);
-    if (!m) throw new Error("lovable_llm_invalid_json");
-    return JSON.parse(m[0]);
+  } catch (e1) {
+    console.log("Direct parse failed, trying regex extraction");
+    
+    // Try to extract JSON from markdown code blocks
+    const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (codeBlockMatch) {
+      try {
+        return JSON.parse(codeBlockMatch[1].trim());
+      } catch (e2) {
+        console.log("Code block parse failed");
+      }
+    }
+    
+    // Try to find JSON object
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        return JSON.parse(jsonMatch[0]);
+      } catch (e3) {
+        console.error("JSON regex parse failed:", e3);
+        // Try to fix common issues
+        let fixed = jsonMatch[0]
+          .replace(/,\s*}/g, '}')  // Remove trailing commas before }
+          .replace(/,\s*]/g, ']')  // Remove trailing commas before ]
+          .replace(/\n/g, ' ')     // Replace newlines with spaces
+          .replace(/\t/g, ' ');    // Replace tabs with spaces
+        
+        try {
+          return JSON.parse(fixed);
+        } catch (e4) {
+          console.error("Fixed JSON parse failed:", e4);
+        }
+      }
+    }
+    
+    throw new Error(`lovable_llm_invalid_json: Could not parse LLM response`);
   }
 }
 
@@ -423,7 +488,7 @@ serve(async (req) => {
 
     // LLM summarize
     console.log(`Calling LLM with model: ${model}`);
-    const summary = await lovableSummarize(model, sys, usr);
+    const summary = await lovableSummarize(model, sys, usr, outputSchema as Record<string, unknown> | null);
     console.log(`Summary generated with confidence: ${summary?.extraction_quality?.confidence ?? 'unknown'}`);
 
     // Tasks (optional)
