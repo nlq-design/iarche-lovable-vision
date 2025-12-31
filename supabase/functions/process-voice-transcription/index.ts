@@ -638,31 +638,36 @@ serve(async (req) => {
     const userPrompt = profile?.user_prompt ?? null;
     const outputSchema = profile?.output_schema ?? null;
     
-    // Determine which LLM to use: from vjob.llm_model_id or profile model_config or default
+    // Determine which LLM to use: from profile model_config.llm_model_id or default
     let provider: LLMProvider = "lovable";
     let modelId = "google/gemini-2.5-flash";
     let supportsTools = true;
+    let resolvedLLMModelId: string | null = null;
     
-    // Check if job has specific LLM model
-    const llmModel = await fetchLLMModel(supabase, (vjob as any).llm_model_id);
-    if (llmModel) {
-      provider = llmModel.provider as LLMProvider;
-      modelId = llmModel.model_id;
-      supportsTools = llmModel.supports_tools;
-      console.log(`Using job-specific LLM: ${provider}/${modelId}`);
-    } else if (profile?.model_config) {
-      // Fallback to profile's model config
-      const profileModel = (profile.model_config as Record<string, string>)?.model;
-      if (profileModel) {
-        modelId = profileModel;
-        // Infer provider from model format
-        if (profileModel.startsWith("gpt-")) {
-          provider = "openai";
-        } else if (profileModel.startsWith("claude-")) {
-          provider = "anthropic";
-        }
-        console.log(`Using profile model: ${provider}/${modelId}`);
+    // Check if profile has configured LLM model ID
+    const profileModelConfig = profile?.model_config as Record<string, unknown> | null;
+    const configuredLLMModelId = profileModelConfig?.llm_model_id as string | undefined;
+    
+    if (configuredLLMModelId) {
+      const llmModel = await fetchLLMModel(supabase, configuredLLMModelId);
+      if (llmModel) {
+        provider = llmModel.provider as LLMProvider;
+        modelId = llmModel.model_id;
+        supportsTools = llmModel.supports_tools;
+        resolvedLLMModelId = llmModel.id;
+        console.log(`Using admin-configured LLM: ${provider}/${modelId}`);
       }
+    } else if (profileModelConfig?.model) {
+      // Fallback to legacy model string format
+      const profileModel = profileModelConfig.model as string;
+      modelId = profileModel;
+      // Infer provider from model format
+      if (profileModel.startsWith("gpt-")) {
+        provider = "openai";
+      } else if (profileModel.startsWith("claude-")) {
+        provider = "anthropic";
+      }
+      console.log(`Using legacy profile model: ${provider}/${modelId}`);
     }
 
     const { sys, usr } = buildLLM(systemPrompt, userPrompt, rawText, ctx, outputSchema);
@@ -704,7 +709,7 @@ serve(async (req) => {
       .update({
         summary,
         status: "done",
-        llm_model_id: llmModel?.id ?? null,
+        llm_model_id: resolvedLLMModelId,
         ai_metadata: {
           ...(vjob.ai_metadata ?? {}),
           llm_model: llmModelFullName,
