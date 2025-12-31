@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { 
   ArrowLeft, 
   Save, 
@@ -13,7 +14,15 @@ import {
   Trash2,
   GripVertical,
   Building2,
-  User
+  User,
+  FileText,
+  Clipboard,
+  Mic,
+  Lightbulb,
+  RefreshCw,
+  Eye,
+  Code,
+  ChevronDown
 } from "lucide-react";
 import {
   Select,
@@ -22,12 +31,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCockpitGeneratedDocuments, DOCUMENT_TYPE_LABELS, type GeneratedDocument } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
 import { useCockpitProjects } from '@/hooks/cockpit/useCockpitProjects';
 import { useCockpitLeads } from '@/hooks/cockpit/useCockpitLeads';
+import { useCockpitVoiceTranscriptions } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { COLORS, GRADIENTS } from '@/components/admin/medias/shared/tokens';
+import { toPng } from 'html-to-image';
+import { DevisCDCPreview } from './DevisCDCPreview';
 
 interface DevisCDCEditorProps {
   documentId: string | null;
@@ -36,14 +56,14 @@ interface DevisCDCEditorProps {
   onSave: () => void;
 }
 
-interface DocumentSection {
+export interface DocumentSection {
   id: string;
   title: string;
   content: string;
   order: number;
 }
 
-interface DocumentContent {
+export interface DocumentContent {
   sections: DocumentSection[];
   metadata: {
     clientName?: string;
@@ -80,6 +100,8 @@ const DEFAULT_SPEC_SECTIONS: DocumentSection[] = [
   { id: '8', title: 'Critères de réception', content: '', order: 7 },
 ];
 
+type AISource = 'transcription' | 'project' | 'solution' | 'lead' | 'all' | 'paste';
+
 export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: DevisCDCEditorProps) {
   const [title, setTitle] = useState('');
   const [sections, setSections] = useState<DocumentSection[]>([]);
@@ -91,12 +113,34 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
   });
   const [linkedProjectId, setLinkedProjectId] = useState<string>('none');
   const [linkedLeadId, setLinkedLeadId] = useState<string>('none');
+  const [linkedSolutionId, setLinkedSolutionId] = useState<string>('none');
   const [isSaving, setIsSaving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [pasteContent, setPasteContent] = useState('');
+  const [showPasteDialog, setShowPasteDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor');
+  const previewRef = useRef<HTMLDivElement>(null);
 
   const { documents, updateDocument, generateDocument } = useCockpitGeneratedDocuments();
   const { projects } = useCockpitProjects();
   const { leads } = useCockpitLeads();
+  const { transcriptions } = useCockpitVoiceTranscriptions();
+  
+  // Fetch solutions from articles with resource_type = 'solution'
+  const [solutions, setSolutions] = useState<Array<{ id: string; title: string; slug: string }>>([]);
+  
+  useEffect(() => {
+    const fetchSolutions = async () => {
+      const { data } = await supabase
+        .from('articles')
+        .select('id, title, slug')
+        .eq('resource_type', 'solution')
+        .eq('published', true)
+        .order('title');
+      if (data) setSolutions(data);
+    };
+    fetchSolutions();
+  }, []);
 
   // Load existing document or set defaults
   useEffect(() => {
@@ -121,6 +165,29 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
       setSections(documentType === 'spec' ? DEFAULT_SPEC_SECTIONS : DEFAULT_QUOTE_SECTIONS);
     }
   }, [documentId, documents, documentType]);
+
+  // Auto-fill metadata from linked entities
+  useEffect(() => {
+    if (linkedLeadId && linkedLeadId !== 'none') {
+      const lead = leads?.find(l => l.id === linkedLeadId);
+      if (lead) {
+        setMetadata(prev => ({
+          ...prev,
+          clientName: lead.name,
+          clientCompany: lead.company || prev.clientCompany,
+        }));
+      }
+    }
+    if (linkedProjectId && linkedProjectId !== 'none') {
+      const project = projects?.find(p => p.id === linkedProjectId);
+      if (project) {
+        setMetadata(prev => ({
+          ...prev,
+          projectName: project.name,
+        }));
+      }
+    }
+  }, [linkedLeadId, linkedProjectId, leads, projects]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -175,19 +242,113 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
     }
   };
 
-  const handleGenerateWithAI = async () => {
+  const handleGenerateWithAI = async (source: AISource) => {
     setIsGenerating(true);
     try {
-      await generateDocument.mutateAsync({
-        document_type: documentType,
-        project_id: linkedProjectId === 'none' ? undefined : linkedProjectId,
-        leadId: linkedLeadId === 'none' ? undefined : linkedLeadId,
+      // Build context from selected sources
+      let contextData: Record<string, any> = {};
+      
+      if (source === 'paste' || source === 'all') {
+        if (pasteContent.trim()) {
+          contextData.pastedContent = pasteContent;
+        }
+      }
+      
+      if ((source === 'project' || source === 'all') && linkedProjectId !== 'none') {
+        const project = projects?.find(p => p.id === linkedProjectId);
+        if (project) {
+          contextData.project = {
+            name: project.name,
+            description: project.description,
+            status: project.status,
+            budget: project.budget_amount,
+          };
+        }
+      }
+      
+      if ((source === 'lead' || source === 'all') && linkedLeadId !== 'none') {
+        const lead = leads?.find(l => l.id === linkedLeadId);
+        if (lead) {
+          contextData.lead = {
+            name: lead.name,
+            company: lead.company,
+            message: lead.message,
+            industry: lead.industry,
+          };
+        }
+      }
+      
+      if ((source === 'solution' || source === 'all') && linkedSolutionId !== 'none') {
+        const solution = solutions?.find(s => s.id === linkedSolutionId);
+        if (solution) {
+          // Fetch full solution content
+          const { data: solutionData } = await supabase
+            .from('articles')
+            .select('title, content, excerpt')
+            .eq('id', linkedSolutionId)
+            .single();
+          if (solutionData) {
+            contextData.solution = solutionData;
+          }
+        }
+      }
+      
+      if ((source === 'transcription' || source === 'all') && transcriptions.length > 0) {
+        // Get most recent done transcription linked to project/lead
+        const relevantTranscription = transcriptions.find(t => 
+          t.status === 'done' && 
+          (t.project_id === linkedProjectId || t.lead_id === linkedLeadId)
+        ) || transcriptions.find(t => t.status === 'done');
+        
+        if (relevantTranscription?.summary) {
+          contextData.transcription = {
+            summary: relevantTranscription.summary.executive_summary,
+            keyPoints: relevantTranscription.summary.key_points,
+            decisions: relevantTranscription.summary.decisions,
+            nextSteps: relevantTranscription.summary.next_steps,
+          };
+        }
+      }
+
+      // Call AI generation with context
+      const { data, error } = await supabase.functions.invoke('generate-document', {
+        body: {
+          document_type: documentType,
+          context: contextData,
+          existing_sections: sections.map(s => ({ title: s.title, content: s.content })),
+          metadata,
+        },
       });
-      toast.success('Document généré par IA');
-      onBack();
+
+      if (error) throw error;
+      
+      if (data?.sections) {
+        // Merge AI-generated content with existing sections
+        setSections(prev => prev.map((section, idx) => {
+          const aiSection = data.sections.find((s: any) => 
+            s.title.toLowerCase().includes(section.title.toLowerCase()) ||
+            section.title.toLowerCase().includes(s.title?.toLowerCase())
+          ) || data.sections[idx];
+          
+          if (aiSection && aiSection.content) {
+            return {
+              ...section,
+              content: section.content 
+                ? `${section.content}\n\n---\n\n**Suggestion IA:**\n${aiSection.content}`
+                : aiSection.content,
+            };
+          }
+          return section;
+        }));
+        
+        toast.success('Contenu enrichi par IA');
+      }
+      
+      setShowPasteDialog(false);
+      setPasteContent('');
     } catch (error) {
-      console.error('Error generating document:', error);
-      toast.error('Erreur lors de la génération');
+      console.error('Error generating with AI:', error);
+      toast.error('Erreur lors de la génération IA');
     } finally {
       setIsGenerating(false);
     }
@@ -225,6 +386,28 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
     }
   };
 
+  const handleExportHTML = async () => {
+    try {
+      if (previewRef.current) {
+        const dataUrl = await toPng(previewRef.current, { 
+          pixelRatio: 2,
+          backgroundColor: '#FAF9F7',
+        });
+        
+        // Create download link
+        const link = document.createElement('a');
+        link.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+        link.href = dataUrl;
+        link.click();
+        
+        toast.success('Image exportée');
+      }
+    } catch (error) {
+      console.error('Error exporting HTML:', error);
+      toast.error('Erreur lors de l\'export');
+    }
+  };
+
   const addSection = () => {
     const newSection: DocumentSection = {
       id: Date.now().toString(),
@@ -245,6 +428,33 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
     ));
   };
 
+  // Build preview document for DevisCDCPreview
+  const previewDocument: GeneratedDocument = {
+    id: documentId || 'preview',
+    title,
+    document_type: documentType,
+    content_json: { sections, metadata, theme } as any,
+    status: 'draft',
+    project_id: linkedProjectId === 'none' ? null : linkedProjectId,
+    lead_id: linkedLeadId === 'none' ? null : linkedLeadId,
+    ai_generated: false,
+    created_at: new Date().toISOString(),
+    workspace_id: '',
+    ai_metadata: null,
+    approved_at: null,
+    approved_by: null,
+    created_by: null,
+    opportunity_id: null,
+    output_format: null,
+    output_storage_path: null,
+    sent_at: null,
+    sent_to: null,
+    specification_id: null,
+    supersedes_document_id: null,
+    updated_at: null,
+    version: null,
+  };
+
   return (
     <div className="p-5 space-y-4">
       {/* Header */}
@@ -259,23 +469,86 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
           </h1>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleGenerateWithAI}
-            disabled={isGenerating}
-          >
-            <Sparkles className="h-4 w-4 mr-1.5" />
-            {isGenerating ? 'Génération...' : 'Compléter avec IA'}
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleExportDOCX}
-          >
-            <Download className="h-4 w-4 mr-1.5" />
-            Exporter DOCX
-          </Button>
+          {/* AI Generation Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                disabled={isGenerating}
+                className="gap-1.5"
+              >
+                <Sparkles className="h-4 w-4" />
+                {isGenerating ? 'Génération...' : 'Compléter avec IA'}
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => setShowPasteDialog(true)}>
+                <Clipboard className="h-4 w-4 mr-2" />
+                Coller du contenu textuel
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => handleGenerateWithAI('transcription')}
+                disabled={transcriptions.filter(t => t.status === 'done').length === 0}
+              >
+                <Mic className="h-4 w-4 mr-2" />
+                Depuis une transcription
+                <Badge variant="secondary" className="ml-auto text-xs">
+                  {transcriptions.filter(t => t.status === 'done').length}
+                </Badge>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleGenerateWithAI('project')}
+                disabled={linkedProjectId === 'none'}
+              >
+                <Building2 className="h-4 w-4 mr-2" />
+                Depuis le projet lié
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleGenerateWithAI('lead')}
+                disabled={linkedLeadId === 'none'}
+              >
+                <User className="h-4 w-4 mr-2" />
+                Depuis le lead lié
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleGenerateWithAI('solution')}
+                disabled={linkedSolutionId === 'none'}
+              >
+                <Lightbulb className="h-4 w-4 mr-2" />
+                Depuis la solution liée
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleGenerateWithAI('all')}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Combiner toutes les sources
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* Export Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <Download className="h-4 w-4" />
+                Exporter
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportDOCX}>
+                <FileText className="h-4 w-4 mr-2" />
+                Export DOCX
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportHTML}>
+                <Code className="h-4 w-4 mr-2" />
+                Export HTML/Image
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
           <Button 
             size="sm"
             onClick={handleSave}
@@ -287,203 +560,294 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Title */}
-          <Card>
-            <CardContent className="pt-4">
-              <Label htmlFor="title">Titre du document</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="mt-1.5"
-                placeholder="Titre du document..."
-              />
-            </CardContent>
-          </Card>
-
-          {/* Sections */}
-          <Card>
-            <CardHeader className="py-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-medium">Sections</CardTitle>
-              <Button variant="outline" size="sm" onClick={addSection}>
-                <Plus className="h-4 w-4 mr-1" />
-                Ajouter
+      {/* Paste Dialog */}
+      {showPasteDialog && (
+        <Card className="border-dashed border-2 border-primary/30 bg-primary/5">
+          <CardContent className="pt-4 space-y-3">
+            <Label className="flex items-center gap-2">
+              <Clipboard className="h-4 w-4" />
+              Collez votre contenu textuel (notes, emails, transcriptions...)
+            </Label>
+            <Textarea
+              value={pasteContent}
+              onChange={(e) => setPasteContent(e.target.value)}
+              rows={6}
+              placeholder="Collez ici le contenu à analyser par l'IA..."
+              className="font-mono text-sm"
+            />
+            <div className="flex gap-2 justify-end">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  setShowPasteDialog(false);
+                  setPasteContent('');
+                }}
+              >
+                Annuler
               </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {sections.map((section, index) => (
-                <div 
-                  key={section.id} 
-                  className="p-4 border rounded-lg bg-muted/20 space-y-3"
-                >
-                  <div className="flex items-center gap-2">
-                    <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                    <Input
-                      value={section.title}
-                      onChange={(e) => updateSection(section.id, 'title', e.target.value)}
-                      className="flex-1 font-medium"
-                      placeholder="Titre de la section..."
-                    />
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => removeSection(section.id)}
-                      className="text-destructive hover:text-destructive"
+              <Button 
+                size="sm" 
+                onClick={() => handleGenerateWithAI('paste')}
+                disabled={!pasteContent.trim() || isGenerating}
+              >
+                <Sparkles className="h-4 w-4 mr-1.5" />
+                Analyser et compléter
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Main Content with Tabs */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'editor' | 'preview')}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="editor" className="gap-1.5">
+            <FileText className="h-4 w-4" />
+            Éditeur
+          </TabsTrigger>
+          <TabsTrigger value="preview" className="gap-1.5">
+            <Eye className="h-4 w-4" />
+            Aperçu
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="editor">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-4">
+              {/* Title */}
+              <Card>
+                <CardContent className="pt-4">
+                  <Label htmlFor="title">Titre du document</Label>
+                  <Input
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="mt-1.5"
+                    placeholder="Titre du document..."
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Sections */}
+              <Card>
+                <CardHeader className="py-3 flex flex-row items-center justify-between">
+                  <CardTitle className="text-sm font-medium">Sections</CardTitle>
+                  <Button variant="outline" size="sm" onClick={addSection}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Ajouter
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {sections.map((section, index) => (
+                    <div 
+                      key={section.id} 
+                      className="p-4 border rounded-lg bg-muted/20 space-y-3"
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <Textarea
-                    value={section.content}
-                    onChange={(e) => updateSection(section.id, 'content', e.target.value)}
-                    rows={4}
-                    placeholder="Contenu de la section..."
-                  />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
+                      <div className="flex items-center gap-2">
+                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+                        <span 
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white"
+                          style={{ backgroundColor: theme.accentColor }}
+                        >
+                          {index + 1}
+                        </span>
+                        <Input
+                          value={section.title}
+                          onChange={(e) => updateSection(section.id, 'title', e.target.value)}
+                          className="flex-1 font-medium"
+                          placeholder="Titre de la section..."
+                        />
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => removeSection(section.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <Textarea
+                        value={section.content}
+                        onChange={(e) => updateSection(section.id, 'content', e.target.value)}
+                        rows={4}
+                        placeholder="Contenu de la section..."
+                        className="text-sm"
+                      />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
 
-        {/* Sidebar */}
-        <div className="space-y-4">
-          {/* Linking */}
-          <Card>
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm font-medium">Liaison</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label className="flex items-center gap-1.5 mb-1.5">
-                  <Building2 className="h-4 w-4" />
-                  Projet
-                </Label>
-                <Select value={linkedProjectId} onValueChange={setLinkedProjectId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un projet" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Aucun</SelectItem>
-                    {projects?.map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="flex items-center gap-1.5 mb-1.5">
-                  <User className="h-4 w-4" />
-                  Lead
-                </Label>
-                <Select value={linkedLeadId} onValueChange={setLinkedLeadId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un lead" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Aucun</SelectItem>
-                    {leads?.map(l => (
-                      <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Metadata */}
-          <Card>
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm font-medium">Informations</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <Label htmlFor="clientName">Nom du client</Label>
-                <Input
-                  id="clientName"
-                  value={metadata.clientName || ''}
-                  onChange={(e) => setMetadata({ ...metadata, clientName: e.target.value })}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="clientCompany">Société</Label>
-                <Input
-                  id="clientCompany"
-                  value={metadata.clientCompany || ''}
-                  onChange={(e) => setMetadata({ ...metadata, clientCompany: e.target.value })}
-                  className="mt-1"
-                />
-              </div>
-              {documentType === 'quote' && (
-                <>
+            {/* Sidebar */}
+            <div className="space-y-4">
+              {/* Linking */}
+              <Card>
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm font-medium">Liaison</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="totalAmount">Montant total (€)</Label>
+                    <Label className="flex items-center gap-1.5 mb-1.5">
+                      <Building2 className="h-4 w-4" />
+                      Projet
+                    </Label>
+                    <Select value={linkedProjectId} onValueChange={setLinkedProjectId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un projet" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Aucun</SelectItem>
+                        {projects?.map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="flex items-center gap-1.5 mb-1.5">
+                      <User className="h-4 w-4" />
+                      Lead
+                    </Label>
+                    <Select value={linkedLeadId} onValueChange={setLinkedLeadId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un lead" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Aucun</SelectItem>
+                        {leads?.map(l => (
+                          <SelectItem key={l.id} value={l.id}>{l.name} {l.company && `(${l.company})`}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="flex items-center gap-1.5 mb-1.5">
+                      <Lightbulb className="h-4 w-4" />
+                      Solution
+                    </Label>
+                    <Select value={linkedSolutionId} onValueChange={setLinkedSolutionId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner une solution" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Aucune</SelectItem>
+                        {solutions?.map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Metadata */}
+              <Card>
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm font-medium">Informations</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <Label htmlFor="clientName">Nom du client</Label>
                     <Input
-                      id="totalAmount"
-                      type="number"
-                      value={metadata.totalAmount || ''}
-                      onChange={(e) => setMetadata({ ...metadata, totalAmount: parseFloat(e.target.value) })}
+                      id="clientName"
+                      value={metadata.clientName || ''}
+                      onChange={(e) => setMetadata({ ...metadata, clientName: e.target.value })}
                       className="mt-1"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="validityDate">Date de validité</Label>
+                    <Label htmlFor="clientCompany">Société</Label>
                     <Input
-                      id="validityDate"
-                      type="date"
-                      value={metadata.validityDate || ''}
-                      onChange={(e) => setMetadata({ ...metadata, validityDate: e.target.value })}
+                      id="clientCompany"
+                      value={metadata.clientCompany || ''}
+                      onChange={(e) => setMetadata({ ...metadata, clientCompany: e.target.value })}
                       className="mt-1"
                     />
                   </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+                  {documentType === 'quote' && (
+                    <>
+                      <div>
+                        <Label htmlFor="totalAmount">Montant total (€)</Label>
+                        <Input
+                          id="totalAmount"
+                          type="number"
+                          value={metadata.totalAmount || ''}
+                          onChange={(e) => setMetadata({ ...metadata, totalAmount: parseFloat(e.target.value) })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="validityDate">Date de validité</Label>
+                        <Input
+                          id="validityDate"
+                          type="date"
+                          value={metadata.validityDate || ''}
+                          onChange={(e) => setMetadata({ ...metadata, validityDate: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
 
-          {/* Theme */}
-          <Card>
-            <CardHeader className="py-3">
-              <CardTitle className="text-sm font-medium">Thème graphique</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <Label>Couleur primaire</Label>
-                <div className="flex gap-2 mt-1">
-                  <div 
-                    className="w-8 h-8 rounded border cursor-pointer"
-                    style={{ backgroundColor: COLORS.bleuNuit }}
-                    onClick={() => setTheme({ ...theme, primaryColor: COLORS.bleuNuit })}
-                  />
-                  <div 
-                    className="w-8 h-8 rounded border cursor-pointer"
-                    style={{ backgroundColor: COLORS.terracotta }}
-                    onClick={() => setTheme({ ...theme, primaryColor: COLORS.terracotta })}
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="useGradient"
-                  checked={theme.useGradient}
-                  onChange={(e) => setTheme({ ...theme, useGradient: e.target.checked })}
-                />
-                <Label htmlFor="useGradient">Utiliser le dégradé IArche</Label>
-              </div>
-              {theme.useGradient && (
-                <div 
-                  className="h-6 rounded"
-                  style={{ background: GRADIENTS.arc.css }}
-                />
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+              {/* Theme */}
+              <Card>
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm font-medium">Thème graphique</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <Label>Couleur primaire</Label>
+                    <div className="flex gap-2 mt-1">
+                      <div 
+                        className={`w-8 h-8 rounded border-2 cursor-pointer transition-all ${theme.primaryColor === COLORS.bleuNuit ? 'ring-2 ring-offset-2 ring-primary' : ''}`}
+                        style={{ backgroundColor: COLORS.bleuNuit }}
+                        onClick={() => setTheme({ ...theme, primaryColor: COLORS.bleuNuit })}
+                      />
+                      <div 
+                        className={`w-8 h-8 rounded border-2 cursor-pointer transition-all ${theme.primaryColor === COLORS.terracotta ? 'ring-2 ring-offset-2 ring-primary' : ''}`}
+                        style={{ backgroundColor: COLORS.terracotta }}
+                        onClick={() => setTheme({ ...theme, primaryColor: COLORS.terracotta })}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="useGradient"
+                      checked={theme.useGradient}
+                      onChange={(e) => setTheme({ ...theme, useGradient: e.target.checked })}
+                      className="rounded"
+                    />
+                    <Label htmlFor="useGradient">Utiliser le dégradé IArche</Label>
+                  </div>
+                  {theme.useGradient && (
+                    <div 
+                      className="h-6 rounded"
+                      style={{ background: GRADIENTS.arc.css }}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="preview">
+          <div ref={previewRef}>
+            <DevisCDCPreview
+              document={previewDocument}
+              onBack={() => setActiveTab('editor')}
+              onEdit={() => setActiveTab('editor')}
+              isEmbedded
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
