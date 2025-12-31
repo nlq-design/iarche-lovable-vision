@@ -148,6 +148,10 @@ const CockpitAgenda = () => {
       }
     };
 
+    // Check if task is AI-generated with transcription source
+    const aiMeta = task.ai_metadata as any;
+    const hasTranscriptionSource = aiMeta?.source_transcription_id;
+
     return (
       <div className="p-3 rounded-lg border bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition-colors">
         <div className="flex items-start justify-between gap-2">
@@ -172,7 +176,13 @@ const CockpitAgenda = () => {
           <div className="flex flex-col items-end gap-1">
             <Badge variant="outline" className="capitalize text-xs">{task.task_type}</Badge>
             {task.ai_generated && (
-              <Badge variant="secondary" className="text-xs">IA</Badge>
+              <Badge 
+                variant="secondary" 
+                className="text-xs"
+                title={hasTranscriptionSource ? "Créée depuis transcription" : "Générée par IA"}
+              >
+                {hasTranscriptionSource ? '🎙️ IA' : 'IA'}
+              </Badge>
             )}
           </div>
         </div>

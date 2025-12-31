@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -56,12 +57,17 @@ import {
   ChevronRight,
   Link2,
   Package,
+  History,
+  CheckSquare,
+  FileText,
+  Bot,
+  Mic,
 } from "lucide-react";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useCockpitLeads, useCockpitProjects } from '@/hooks/cockpit';
+import { useCockpitLeads, useCockpitProjects, useCockpitTasks, useCockpitBookings } from '@/hooks/cockpit';
 import { useLeads } from '@/hooks/shared/useLeads';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -97,12 +103,52 @@ const CockpitLeadDetail = () => {
   const { updateLead } = useCockpitLeads();
   const { createProject, projects } = useCockpitProjects();
   const { deleteLead } = useLeads();
+  const { tasks } = useCockpitTasks();
+  const { bookings } = useCockpitBookings();
 
   const [formData, setFormData] = useState<Partial<Lead>>({});
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [linkProjectOpen, setLinkProjectOpen] = useState(false);
   const [linkSolutionOpen, setLinkSolutionOpen] = useState(false);
+
+  // Filter tasks linked to this lead
+  const leadTasks = tasks?.filter(t => t.lead_id === id) || [];
+  
+  // Filter bookings linked to this lead
+  const leadBookings = bookings?.filter(b => b.lead_id === id) || [];
+
+  // Fetch transcriptions linked to this lead
+  const { data: leadTranscriptions = [] } = useQuery({
+    queryKey: ['lead-transcriptions', id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase
+        .from('voice_transcriptions')
+        .select('id, source, status, created_at, summary')
+        .eq('lead_id', id)
+        .order('created_at', { ascending: false });
+      if (error) return [];
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  // Fetch generated documents linked to this lead
+  const { data: leadDocuments = [] } = useQuery({
+    queryKey: ['lead-documents', id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase
+        .from('generated_documents')
+        .select('id, title, document_type, status, created_at')
+        .eq('lead_id', id)
+        .order('created_at', { ascending: false });
+      if (error) return [];
+      return data;
+    },
+    enabled: !!id,
+  });
 
   // Fetch lead
   const { data: lead, isLoading } = useQuery({
@@ -634,6 +680,110 @@ const CockpitLeadDetail = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Complete History */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <History className="h-4 w-4" />
+                  Historique complet
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[300px]">
+                  <div className="space-y-3">
+                    {/* Tasks */}
+                    {leadTasks.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                          <CheckSquare className="h-3 w-3" />
+                          Tâches ({leadTasks.length})
+                        </p>
+                        {leadTasks.slice(0, 5).map((task: any) => (
+                          <div key={task.id} className="p-2 border rounded mb-1 text-sm">
+                            <div className="flex items-center justify-between">
+                              <span className="truncate">{task.title}</span>
+                              {task.ai_generated && (
+                                <Badge variant="secondary" className="text-xs ml-1">
+                                  <Bot className="h-2.5 w-2.5 mr-1" />
+                                  IA
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {task.due_date && format(new Date(task.due_date), 'dd MMM', { locale: fr })}
+                              {task.due_time && ` à ${task.due_time.slice(0, 5)}`}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Bookings */}
+                    {leadBookings.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          Rendez-vous ({leadBookings.length})
+                        </p>
+                        {leadBookings.slice(0, 5).map((booking: any) => (
+                          <div key={booking.id} className="p-2 border rounded mb-1 text-sm">
+                            <span className="truncate">{booking.name}</span>
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(booking.start_time), 'dd MMM à HH:mm', { locale: fr })}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Transcriptions */}
+                    {leadTranscriptions.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                          <Mic className="h-3 w-3" />
+                          Transcriptions ({leadTranscriptions.length})
+                        </p>
+                        {leadTranscriptions.slice(0, 3).map((trans: any) => (
+                          <div key={trans.id} className="p-2 border rounded mb-1 text-sm">
+                            <span className="truncate capitalize">{trans.source}</span>
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(trans.created_at), 'dd MMM', { locale: fr })}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Documents */}
+                    {leadDocuments.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                          <FileText className="h-3 w-3" />
+                          Documents ({leadDocuments.length})
+                        </p>
+                        {leadDocuments.slice(0, 3).map((doc: any) => (
+                          <div key={doc.id} className="p-2 border rounded mb-1 text-sm">
+                            <span className="truncate">{doc.title}</span>
+                            <p className="text-xs text-muted-foreground capitalize">
+                              {doc.document_type} • {doc.status}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Empty state */}
+                    {leadTasks.length === 0 && leadBookings.length === 0 && leadTranscriptions.length === 0 && leadDocuments.length === 0 && (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <History className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Aucune activité liée</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
