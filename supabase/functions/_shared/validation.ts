@@ -54,14 +54,14 @@ export const atelierConfirmationSchema = z.object({
 
 // Lead notification schema
 export const leadNotificationSchema = z.object({
-  lead_id: z.string().min(1).max(100),
+  lead_id: z.string().max(100).optional(),
   name: nameValidator,
   email: emailValidator,
-  company: companyValidator,
-  phone: phoneValidator,
+  company: companyValidator.nullable(),
+  phone: phoneValidator.nullable(),
   source: z.string().min(1).max(50),
-  source_context: z.string().max(500).optional(),
-  message: messageValidator,
+  source_context: z.string().max(500).nullable().optional(),
+  message: messageValidator.nullable(),
   event_details: z.object({
     date: z.string().nullable(),
     location: z.string().max(500).nullable(),
