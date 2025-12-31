@@ -51,6 +51,7 @@ serve(async (req) => {
       meeting_note_id = null,
       auto_create_tasks = false,
       prompt_profile_id = null,
+      llm_model_id = null,
     } = body;
 
     console.log(`Creating voice transcription job for workspace: ${workspace_id}`);
@@ -67,6 +68,7 @@ serve(async (req) => {
         meeting_note_id,
         auto_create_tasks,
         prompt_profile_id,
+        llm_model_id,
         created_by: u.user.id,
         status: "queued",
         ai_metadata: {

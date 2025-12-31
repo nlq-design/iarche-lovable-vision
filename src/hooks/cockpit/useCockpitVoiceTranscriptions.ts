@@ -72,6 +72,19 @@ export interface CreateTranscriptionInput {
   meeting_note_id?: string | null;
   auto_create_tasks?: boolean;
   prompt_profile_id?: string | null;
+  llm_model_id?: string | null;
+}
+
+export interface LLMModel {
+  id: string;
+  provider: 'lovable' | 'openai' | 'anthropic' | 'openrouter';
+  model_id: string;
+  display_name: string;
+  description: string | null;
+  category: string;
+  cost_tier: string;
+  supports_vision: boolean;
+  supports_tools: boolean;
 }
 
 export const TRANSCRIPTION_STATUSES = [
@@ -261,4 +274,34 @@ export function useAIPromptProfiles(category = 'transcription') {
       return data ?? [];
     },
   });
+}
+
+// Hook for fetching available LLM models
+export function useLLMModels() {
+  return useQuery({
+    queryKey: ['llm-models'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('llm_models')
+        .select('id, provider, model_id, display_name, description, category, cost_tier, supports_vision, supports_tools')
+        .eq('is_active', true)
+        .order('sort_order');
+      if (error) throw error;
+      return (data ?? []) as LLMModel[];
+    },
+  });
+}
+
+// Get LLM models grouped by category
+export function useLLMModelsGrouped() {
+  const { data: models = [], ...rest } = useLLMModels();
+  
+  const grouped = {
+    fast: models.filter(m => m.category === 'fast'),
+    balanced: models.filter(m => m.category === 'balanced'),
+    premium: models.filter(m => m.category === 'premium'),
+    reasoning: models.filter(m => m.category === 'reasoning'),
+  };
+  
+  return { models, grouped, ...rest };
 }

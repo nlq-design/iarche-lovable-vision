@@ -1391,6 +1391,57 @@ export type Database = {
         }
         Relationships: []
       }
+      llm_models: {
+        Row: {
+          category: string
+          cost_tier: string
+          created_at: string | null
+          description: string | null
+          display_name: string
+          id: string
+          is_active: boolean
+          max_tokens: number | null
+          model_id: string
+          provider: string
+          sort_order: number | null
+          supports_tools: boolean | null
+          supports_vision: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string
+          cost_tier?: string
+          created_at?: string | null
+          description?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean
+          max_tokens?: number | null
+          model_id: string
+          provider: string
+          sort_order?: number | null
+          supports_tools?: boolean | null
+          supports_vision?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          cost_tier?: string
+          created_at?: string | null
+          description?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          max_tokens?: number | null
+          model_id?: string
+          provider?: string
+          sort_order?: number | null
+          supports_tools?: boolean | null
+          supports_vision?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       login_attempts: {
         Row: {
           attempted_at: string
@@ -2352,6 +2403,7 @@ export type Database = {
           created_by: string
           id: string
           lead_id: string | null
+          llm_model_id: string | null
           meeting_note_id: string | null
           project_id: string | null
           prompt_profile_id: string | null
@@ -2372,6 +2424,7 @@ export type Database = {
           created_by: string
           id?: string
           lead_id?: string | null
+          llm_model_id?: string | null
           meeting_note_id?: string | null
           project_id?: string | null
           prompt_profile_id?: string | null
@@ -2392,6 +2445,7 @@ export type Database = {
           created_by?: string
           id?: string
           lead_id?: string | null
+          llm_model_id?: string | null
           meeting_note_id?: string | null
           project_id?: string | null
           prompt_profile_id?: string | null
@@ -2432,6 +2486,13 @@ export type Database = {
             columns: ["solution_id"]
             isOneToOne: false
             referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_transcriptions_llm_model_id_fkey"
+            columns: ["llm_model_id"]
+            isOneToOne: false
+            referencedRelation: "llm_models"
             referencedColumns: ["id"]
           },
           {
