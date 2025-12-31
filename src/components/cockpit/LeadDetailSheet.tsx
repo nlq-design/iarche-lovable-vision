@@ -33,7 +33,12 @@ import {
   FolderOpen,
   ChevronRight,
   Link2,
-  Package
+  Package,
+  Sparkles,
+  Send,
+  Copy,
+  Check,
+  Loader2
 } from "lucide-react";
 import {
   Popover,
@@ -48,6 +53,14 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -67,6 +80,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Lead {
   id: string;
@@ -138,6 +152,20 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
   const [hasChanges, setHasChanges] = useState(false);
   const [linkProjectOpen, setLinkProjectOpen] = useState(false);
   const [linkSolutionOpen, setLinkSolutionOpen] = useState(false);
+  
+  // Email generation state
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [emailType, setEmailType] = useState<'first_contact' | 'post_meeting' | 'followup' | 'proposal'>('first_contact');
+  const [isGeneratingEmail, setIsGeneratingEmail] = useState(false);
+  const [generatedEmail, setGeneratedEmail] = useState<{
+    subject: string;
+    greeting: string;
+    body: string;
+    cta: string;
+    cta_url: string;
+    signature: string;
+  } | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
 
   // Fetch projects linked to this lead
   const { data: linkedProjects = [], refetch: refetchLinkedProjects } = useQuery({
@@ -284,6 +312,45 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
         }
       });
     }
+  };
+
+  const handleGenerateEmail = async () => {
+    if (!lead) return;
+    setIsGeneratingEmail(true);
+    setGeneratedEmail(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-followup-email', {
+        body: {
+          lead_id: lead.id,
+          email_type: emailType,
+        },
+      });
+      
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.error || 'Erreur de génération');
+      
+      setGeneratedEmail(data.email);
+      toast.success('Email généré avec succès');
+    } catch (err) {
+      console.error('Email generation error:', err);
+      toast.error(err instanceof Error ? err.message : 'Erreur lors de la génération');
+    } finally {
+      setIsGeneratingEmail(false);
+    }
+  };
+  
+  const handleCopyToClipboard = async (text: string, field: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    toast.success('Copié dans le presse-papier');
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+  
+  const handleOpenMailClient = () => {
+    if (!generatedEmail || !lead) return;
+    const mailtoUrl = `mailto:${lead.email}?subject=${encodeURIComponent(generatedEmail.subject)}&body=${encodeURIComponent(`${generatedEmail.greeting}\n\n${generatedEmail.body.replace(/<[^>]*>/g, '')}\n\n${generatedEmail.signature}`)}`;
+    window.open(mailtoUrl, '_blank');
   };
 
   if (!lead) return null;
@@ -539,6 +606,17 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
           
           {/* Sticky Actions Footer */}
           <div className="px-6 py-4 border-t bg-background sticky bottom-0 space-y-2">
+            {/* Email Generation Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full bg-primary/5 border-primary/20 hover:bg-primary/10"
+              onClick={() => setShowEmailDialog(true)}
+            >
+              <Sparkles className="h-4 w-4 mr-1.5 text-primary" />
+              Générer email de suivi
+            </Button>
+            
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -655,6 +733,141 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Email Generation Dialog */}
+      <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Générer un email de suivi
+            </DialogTitle>
+            <DialogDescription>
+              Sélectionnez le type d'email et l'IA générera un brouillon personnalisé pour {lead.name}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Email Type Selector */}
+            <div className="space-y-2">
+              <Label>Type d'email</Label>
+              <Select value={emailType} onValueChange={(v: any) => setEmailType(v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="first_contact">
+                    Premier contact - Suite à une demande entrante
+                  </SelectItem>
+                  <SelectItem value="post_meeting">
+                    Post-RDV - Suivi après un rendez-vous
+                  </SelectItem>
+                  <SelectItem value="followup">
+                    Relance - Lead sans nouvelle depuis un moment
+                  </SelectItem>
+                  <SelectItem value="proposal">
+                    Proposition - Accompagnement d'un devis
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Generate Button */}
+            {!generatedEmail && (
+              <Button 
+                onClick={handleGenerateEmail} 
+                disabled={isGeneratingEmail}
+                className="w-full"
+              >
+                {isGeneratingEmail ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Génération en cours...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Générer l'email
+                  </>
+                )}
+              </Button>
+            )}
+
+            {/* Generated Email Preview */}
+            {generatedEmail && (
+              <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+                {/* Subject */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">Objet</Label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                      onClick={() => handleCopyToClipboard(generatedEmail.subject, 'subject')}
+                    >
+                      {copiedField === 'subject' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    </Button>
+                  </div>
+                  <p className="font-medium text-sm">{generatedEmail.subject}</p>
+                </div>
+
+                <Separator />
+
+                {/* Body */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">Corps de l'email</Label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                      onClick={() => handleCopyToClipboard(
+                        `${generatedEmail.greeting}\n\n${generatedEmail.body.replace(/<[^>]*>/g, '')}\n\n${generatedEmail.signature}`,
+                        'body'
+                      )}
+                    >
+                      {copiedField === 'body' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    </Button>
+                  </div>
+                  <div className="bg-background rounded p-3 text-sm space-y-3">
+                    <p>{generatedEmail.greeting}</p>
+                    <div dangerouslySetInnerHTML={{ __html: generatedEmail.body }} />
+                    <p className="text-muted-foreground whitespace-pre-line">{generatedEmail.signature}</p>
+                  </div>
+                </div>
+
+                {/* CTA Info */}
+                {generatedEmail.cta && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className="font-medium">CTA suggéré :</span>
+                    <Badge variant="secondary">{generatedEmail.cta}</Badge>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            {generatedEmail && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setGeneratedEmail(null);
+                  }}
+                >
+                  Régénérer
+                </Button>
+                <Button onClick={handleOpenMailClient}>
+                  <Send className="h-4 w-4 mr-2" />
+                  Ouvrir dans email
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -83,3 +83,6 @@ verify_jwt = true
 
 [functions.search-embeddings]
 verify_jwt = true
+
+[functions.generate-followup-email]
+verify_jwt = true
