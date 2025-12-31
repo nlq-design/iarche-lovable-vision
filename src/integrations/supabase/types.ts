@@ -2043,6 +2043,48 @@ export type Database = {
         }
         Relationships: []
       }
+      resource_embeddings: {
+        Row: {
+          chunk_index: number
+          content_chunk: string
+          created_at: string | null
+          embedding: string | null
+          id: string
+          metadata: Json | null
+          resource_id: string
+          resource_slug: string
+          resource_title: string
+          resource_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          chunk_index?: number
+          content_chunk: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          resource_id: string
+          resource_slug: string
+          resource_title: string
+          resource_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          chunk_index?: number
+          content_chunk?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          resource_id?: string
+          resource_slug?: string
+          resource_title?: string
+          resource_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       search_queries: {
         Row: {
           created_at: string | null
@@ -2395,6 +2437,39 @@ export type Database = {
         }
         Relationships: []
       }
+      vectorization_status: {
+        Row: {
+          created_at: string | null
+          id: string
+          indexed_resources: number
+          last_error: string | null
+          last_indexed_at: string | null
+          resource_type: string
+          total_resources: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          indexed_resources?: number
+          last_error?: string | null
+          last_indexed_at?: string | null
+          resource_type: string
+          total_resources?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          indexed_resources?: number
+          last_error?: string | null
+          last_indexed_at?: string | null
+          resource_type?: string
+          total_resources?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       voice_transcriptions: {
         Row: {
           ai_metadata: Json
@@ -2667,6 +2742,23 @@ export type Database = {
       is_workspace_member: {
         Args: { p_user_id: string; p_workspace_id: string }
         Returns: boolean
+      }
+      search_similar_resources: {
+        Args: {
+          filter_types?: string[]
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          content_chunk: string
+          metadata: Json
+          resource_id: string
+          resource_slug: string
+          resource_title: string
+          resource_type: string
+          similarity: number
+        }[]
       }
       unlock_expired_accounts: { Args: never; Returns: undefined }
       validate_resource_type: {

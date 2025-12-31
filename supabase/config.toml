@@ -77,3 +77,9 @@ verify_jwt = true
 
 [functions.process-voice-transcription]
 verify_jwt = true
+
+[functions.generate-embeddings]
+verify_jwt = true
+
+[functions.search-embeddings]
+verify_jwt = true
