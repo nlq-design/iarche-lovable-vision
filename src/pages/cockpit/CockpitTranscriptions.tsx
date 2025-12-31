@@ -63,82 +63,61 @@ export default function CockpitTranscriptions() {
 
   return (
     <CockpitLayout>
-      <div className="space-y-6">
+      <div className="p-5 space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Transcriptions</h1>
-            <p className="text-muted-foreground">
-              Transformez vos enregistrements audio en comptes-rendus structurés
+            <h1 className="text-xl font-semibold text-foreground">Transcriptions</h1>
+            <p className="text-sm text-muted-foreground">
+              Enregistrements audio en comptes-rendus
             </p>
           </div>
-          <Button onClick={() => setCreateModalOpen(true)}>
-            <Mic className="h-4 w-4 mr-2" />
+          <Button size="sm" className="h-8 text-sm w-fit" onClick={() => setCreateModalOpen(true)}>
+            <Mic className="h-3.5 w-3.5 mr-1.5" />
             Nouvelle transcription
           </Button>
         </div>
 
-        {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                </div>
-                <FileAudio className="h-8 w-8 text-muted-foreground" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Terminées</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.done}</p>
-                </div>
-                <CheckCircle2 className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">En cours</p>
-                  <p className="text-2xl font-bold text-blue-600">{stats.pending}</p>
-                </div>
-                <Loader2 className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Erreurs</p>
-                  <p className="text-2xl font-bold text-destructive">{stats.errors}</p>
-                </div>
-                <AlertCircle className="h-8 w-8 text-destructive" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* Stats inline */}
+        <div className="flex flex-wrap items-center gap-4 p-3 bg-muted/40 rounded-lg border text-sm">
+          <div className="flex items-center gap-2">
+            <FileAudio className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Total</span>
+            <span className="font-semibold">{stats.total}</span>
+          </div>
+          <div className="h-4 w-px bg-border hidden sm:block" />
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <span className="text-muted-foreground">Terminées</span>
+            <span className="font-semibold text-green-600">{stats.done}</span>
+          </div>
+          <div className="h-4 w-px bg-border hidden sm:block" />
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 text-blue-600" />
+            <span className="text-muted-foreground">En cours</span>
+            <span className="font-semibold text-blue-600">{stats.pending}</span>
+          </div>
+          <div className="h-4 w-px bg-border hidden sm:block" />
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            <span className="text-muted-foreground">Erreurs</span>
+            <span className="font-semibold text-destructive">{stats.errors}</span>
+          </div>
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               placeholder="Rechercher..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-8 h-8 text-sm"
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[160px] h-8 text-sm">
               <SelectValue placeholder="Tous les statuts" />
             </SelectTrigger>
             <SelectContent>

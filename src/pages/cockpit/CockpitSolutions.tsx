@@ -65,31 +65,31 @@ export default function CockpitSolutions() {
     <CockpitLayout>
       <div className="p-5 space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-xl font-semibold text-foreground">Solutions</h1>
             <p className="text-sm text-muted-foreground">Gérez les leads par solution</p>
           </div>
-          <Button variant="outline" size="sm" className="h-8 text-sm" asChild>
+          <Button variant="outline" size="sm" className="h-8 text-sm w-fit" asChild>
             <a href="/admin/solutions" target="_blank" rel="noopener noreferrer">
               <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-              Gérer dans Admin
+              <span className="hidden sm:inline">Gérer dans</span> Admin
             </a>
           </Button>
         </div>
 
         {/* Stats inline */}
-        <div className="flex items-center gap-6 p-3 bg-muted/40 rounded-lg border text-sm">
+        <div className="flex flex-wrap items-center gap-4 p-3 bg-muted/40 rounded-lg border text-sm">
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Solutions</span>
             <span className="font-semibold">{solutions.length}</span>
           </div>
-          <div className="h-4 w-px bg-border" />
+          <div className="h-4 w-px bg-border hidden sm:block" />
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Publiées</span>
             <span className="font-semibold text-emerald-600">{publishedCount}</span>
           </div>
-          <div className="h-4 w-px bg-border" />
+          <div className="h-4 w-px bg-border hidden sm:block" />
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Leads</span>
             <span className="font-semibold text-primary">{totalLeads}</span>
@@ -98,12 +98,12 @@ export default function CockpitSolutions() {
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             placeholder="Rechercher une solution..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-9"
+            className="pl-8 h-8 text-sm"
           />
         </div>
 
