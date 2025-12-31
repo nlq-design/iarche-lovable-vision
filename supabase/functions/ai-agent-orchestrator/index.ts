@@ -533,7 +533,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "create_task",
-      description: "[N1 - Brouillon] Crée une tâche de suivi. L'utilisateur doit valider avant exécution.",
+      description: "[N1 - Brouillon] Crée une tâche de suivi. L'utilisateur doit valider avant exécution. Si une heure est mentionnée (ex: 'à 14h', 'pour 10h30'), elle sera automatiquement extraite et ajoutée.",
       parameters: {
         type: "object",
         properties: {
@@ -542,9 +542,11 @@ const AGENT_TOOLS = [
           task_type: { type: "string", description: "Type (follow_up, call, email, meeting, document, other)" },
           priority: { type: "string", description: "Priorité (low, medium, high, urgent)" },
           due_date: { type: "string", description: "Date d'échéance (YYYY-MM-DD)" },
+          due_time: { type: "string", description: "Heure d'échéance (HH:mm). Auto-extrait si mentionnée dans le titre." },
           lead_id: { type: "string", description: "ID du lead associé" },
           project_id: { type: "string", description: "ID du projet associé" },
           opportunity_id: { type: "string", description: "ID de l'opportunité associée" },
+          transcription_id: { type: "string", description: "ID de transcription source si tâche générée depuis une transcription" },
         },
         required: ["title", "task_type"],
       },
@@ -1530,14 +1532,40 @@ async function executeTool(
 
     // ============ COCKPIT WRITES (N1) ============
     case "create_task": {
+      // Auto-extract time from title if not provided
+      let dueTime = args.due_time as string | null;
+      const title = args.title as string;
+      
+      if (!dueTime && title) {
+        // Regex patterns for French time formats
+        const timePatterns = [
+          /à\s*(\d{1,2})[h:](\d{2})?/i,  // "à 14h" or "à 14h30" or "à 14:30"
+          /pour\s*(\d{1,2})[h:](\d{2})?/i,  // "pour 10h" or "pour 10h30"
+          /(\d{1,2})[h:](\d{2})\b/,  // "14h30" or "14:30"
+          /RDV\s*(\d{1,2})[h:](\d{2})?/i,  // "RDV 14h"
+        ];
+        
+        for (const pattern of timePatterns) {
+          const match = title.match(pattern);
+          if (match) {
+            const hours = match[1].padStart(2, '0');
+            const minutes = (match[2] || '00').padStart(2, '0');
+            dueTime = `${hours}:${minutes}`;
+            break;
+          }
+        }
+      }
+      
       const taskData = {
-        title: args.title as string,
+        title: title,
         description: args.description as string || null,
         task_type: args.task_type as string || "follow_up",
         priority: args.priority as string || "medium",
         due_date: args.due_date as string || null,
+        due_time: dueTime,
         lead_id: args.lead_id as string || null,
         project_id: args.project_id as string || null,
+        opportunity_id: args.opportunity_id as string || null,
         status: "pending",
         ai_generated: true,
         ai_metadata: {
@@ -1545,6 +1573,7 @@ async function executeTool(
           generated_at: new Date().toISOString(),
           validation_required: true,
           validated_by_human: false,
+          source_transcription_id: args.transcription_id || null,
         },
         workspace_id: "00000000-0000-0000-0000-000000000001",
       };
@@ -1560,8 +1589,9 @@ async function executeTool(
       return {
         success: true,
         task: data,
-        message: `Tâche "${args.title}" créée avec succès (à valider).`,
+        message: `Tâche "${title}" créée${dueTime ? ` (à ${dueTime})` : ''} avec succès (à valider).`,
         autonomy_level: "N1",
+        extracted_time: dueTime,
       };
     }
 

@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Search, Download, Mail, Building2, Trash2 } from "lucide-react";
+import { Users, Search, Download, Mail, Building2, Trash2, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Table,
   TableBody,
@@ -47,6 +48,32 @@ const SOURCE_LABELS: Record<string, string> = {
   'formulaire': 'Formulaire',
 };
 
+// Score visual helpers
+const getScoreColor = (score: number) => {
+  if (score >= 70) return 'text-emerald-600';
+  if (score >= 40) return 'text-amber-600';
+  return 'text-muted-foreground';
+};
+
+const getScoreProgressColor = (score: number) => {
+  if (score >= 70) return 'bg-emerald-500';
+  if (score >= 40) return 'bg-amber-500';
+  return 'bg-slate-400';
+};
+
+const getScoreIcon = (score: number) => {
+  if (score >= 70) return <TrendingUp className="h-3 w-3 text-emerald-600" />;
+  if (score >= 40) return <Minus className="h-3 w-3 text-amber-600" />;
+  return <TrendingDown className="h-3 w-3 text-muted-foreground" />;
+};
+
+const SCORE_FILTERS = [
+  { value: 'all', label: 'Tous scores' },
+  { value: 'high', label: 'Élevé (70+)' },
+  { value: 'medium', label: 'Moyen (40-69)' },
+  { value: 'low', label: 'Faible (<40)' },
+];
+
 interface Lead {
   id: string;
   name: string;
@@ -71,6 +98,7 @@ const CockpitLeads = () => {
   const { bulkDeleteLeads } = useLeads();
   const [searchQuery, setSearchQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [scoreFilter, setScoreFilter] = useState<string>('all');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
@@ -83,7 +111,14 @@ const CockpitLeads = () => {
     
     const matchesSource = sourceFilter === 'all' || lead.source === sourceFilter;
     
-    return matchesSearch && matchesSource;
+    const score = lead.lead_score || 0;
+    const matchesScore = 
+      scoreFilter === 'all' ||
+      (scoreFilter === 'high' && score >= 70) ||
+      (scoreFilter === 'medium' && score >= 40 && score < 70) ||
+      (scoreFilter === 'low' && score < 40);
+    
+    return matchesSearch && matchesSource && matchesScore;
   }) || [];
 
   const handleRowClick = (lead: Lead) => {
@@ -176,7 +211,7 @@ const CockpitLeads = () => {
               />
             </div>
             <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="w-full sm:w-[140px] h-8 text-sm">
+              <SelectTrigger className="w-full sm:w-[130px] h-8 text-sm">
                 <SelectValue placeholder="Source" />
               </SelectTrigger>
               <SelectContent>
@@ -186,6 +221,16 @@ const CockpitLeads = () => {
                 <SelectItem value="atelier-webinaire">Atelier</SelectItem>
                 <SelectItem value="livre-blanc">Livre blanc</SelectItem>
                 <SelectItem value="formulaire">Formulaire</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={scoreFilter} onValueChange={setScoreFilter}>
+              <SelectTrigger className="w-full sm:w-[120px] h-8 text-sm">
+                <SelectValue placeholder="Score" />
+              </SelectTrigger>
+              <SelectContent>
+                {SCORE_FILTERS.map(f => (
+                  <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -272,9 +317,36 @@ const CockpitLeads = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="py-2">
-                        <span className={`text-sm font-medium ${lead.lead_score && lead.lead_score >= 70 ? 'text-emerald-600' : 'text-muted-foreground'}`}>
-                          {lead.lead_score || 0}
-                        </span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-1.5 min-w-[60px]">
+                                {getScoreIcon(lead.lead_score || 0)}
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between mb-0.5">
+                                    <span className={`text-xs font-semibold ${getScoreColor(lead.lead_score || 0)}`}>
+                                      {lead.lead_score || 0}
+                                    </span>
+                                  </div>
+                                  <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
+                                    <div 
+                                      className={`h-full transition-all ${getScoreProgressColor(lead.lead_score || 0)}`}
+                                      style={{ width: `${lead.lead_score || 0}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">
+                                Score: {lead.lead_score || 0}/100
+                                {(lead.lead_score || 0) >= 70 && ' (Chaud)'}
+                                {(lead.lead_score || 0) >= 40 && (lead.lead_score || 0) < 70 && ' (Tiède)'}
+                                {(lead.lead_score || 0) < 40 && ' (Froid)'}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground py-2">
                         {lead.created_at && format(new Date(lead.created_at), 'dd/MM/yy', { locale: fr })}
