@@ -31,6 +31,8 @@ import {
 import { CreateTaskDialog } from '@/components/cockpit/dialogs';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function CockpitDashboard() {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
@@ -256,6 +258,9 @@ export default function CockpitDashboard() {
           </CardContent>
         </Card>
 
+        {/* Stagnant entities alert */}
+        <StagnantEntitiesWidget />
+
         <CreateTaskDialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen} />
       </div>
     </CockpitLayout>
@@ -307,13 +312,67 @@ function TaskCard({ task, showDate }: { task: any; showDate?: boolean }) {
           </p>
         </div>
       </div>
-      {task.due_time && (
-        <Badge variant="outline">{task.due_time.slice(0, 5)}</Badge>
-      )}
-      {task.ai_generated && (
-        <Badge variant="secondary" className="ml-2 text-xs">IA</Badge>
-      )}
+      <div className="flex items-center gap-2">
+        {task.due_time && (
+          <Badge variant="outline">{task.due_time.slice(0, 5)}</Badge>
+        )}
+        {task.ai_generated && (
+          <Badge variant="secondary" className="text-xs">IA</Badge>
+        )}
+      </div>
     </div>
+  );
+}
+
+function StagnantEntitiesWidget() {
+  const { data: stagnantOpportunities = [], isLoading } = useQuery({
+    queryKey: ['stagnant-opportunities'],
+    queryFn: async () => {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const { data, error } = await supabase
+        .from('opportunities')
+        .select('id, title, stage, updated_at')
+        .lt('updated_at', sevenDaysAgo.toISOString())
+        .not('stage', 'in', '(won,lost)')
+        .order('updated_at', { ascending: true })
+        .limit(5);
+      
+      if (error) return [];
+      return data;
+    },
+  });
+
+  if (isLoading || stagnantOpportunities.length === 0) return null;
+
+  return (
+    <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/20">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2 text-amber-700 dark:text-amber-400">
+          <AlertCircle className="h-4 w-4" />
+          Opportunités sans activité récente
+        </CardTitle>
+        <CardDescription className="text-amber-600/80 dark:text-amber-500/80">
+          Ces opportunités n'ont pas eu d'activité depuis plus de 7 jours
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          {stagnantOpportunities.map((opp: any) => (
+            <div key={opp.id} className="flex items-center justify-between p-2 rounded border bg-background">
+              <div>
+                <p className="text-sm font-medium">{opp.title}</p>
+                <p className="text-xs text-muted-foreground capitalize">
+                  {opp.stage} • Màj {format(new Date(opp.updated_at), 'dd MMM', { locale: fr })}
+                </p>
+              </div>
+              <Badge variant="outline" className="text-amber-600">Inactif</Badge>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
