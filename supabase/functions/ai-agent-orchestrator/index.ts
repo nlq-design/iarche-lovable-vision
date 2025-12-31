@@ -144,7 +144,7 @@ const AGENT_TOOLS = [
         type: "object",
         properties: {
           status: { type: "string", description: "Filtrer par statut (new, contacted, qualified, converted, lost)" },
-          source: { type: "string", description: "Filtrer par source (contact, newsletter, livre-blanc, atelier-webinaire)" },
+          source: { type: "string", description: "Filtrer par source (contact, newsletter, livre-blanc, atelier-webinaire, formulaire, booking)" },
           limit: { type: "number", description: "Nombre max de résultats (défaut: 10)" },
         },
       },
@@ -214,13 +214,78 @@ const AGENT_TOOLS = [
   {
     type: "function",
     function: {
-      name: "get_activity_log",
-      description: "Récupère l'historique des activités (emails, appels, RDV, changements de statut).",
+      name: "get_meeting_notes",
+      description: "Récupère les comptes-rendus de réunion. Données : notes, objectifs, prochaines étapes, actions, résumé IA.",
       parameters: {
         type: "object",
         properties: {
-          entity_type: { type: "string", description: "Filtrer par type (lead, opportunity, project)" },
+          booking_id: { type: "string", description: "Filtrer par RDV" },
+          project_id: { type: "string", description: "Filtrer par projet" },
+          opportunity_id: { type: "string", description: "Filtrer par opportunité" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 10)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_specifications",
+      description: "Récupère les cahiers des charges (CDC/Spécifications). Données : titre, contenu, statut, version, projet lié.",
+      parameters: {
+        type: "object",
+        properties: {
+          project_id: { type: "string", description: "Filtrer par projet" },
+          status: { type: "string", description: "Filtrer par statut (draft, review, approved, archived)" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 10)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_generated_documents",
+      description: "Récupère les documents générés (devis, CDC, propositions). Données : type, statut, contenu, projet/lead lié.",
+      parameters: {
+        type: "object",
+        properties: {
+          document_type: { type: "string", description: "Filtrer par type (quote, cdc, proposal, email)" },
+          status: { type: "string", description: "Filtrer par statut (draft, pending_review, approved, sent)" },
+          lead_id: { type: "string", description: "Filtrer par lead" },
+          project_id: { type: "string", description: "Filtrer par projet" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 10)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_solution_leads",
+      description: "Récupère les leads intéressés par des solutions spécifiques avec niveau d'intérêt et notes.",
+      parameters: {
+        type: "object",
+        properties: {
+          solution_id: { type: "string", description: "Filtrer par solution" },
+          lead_id: { type: "string", description: "Filtrer par lead" },
+          interest_level: { type: "string", description: "Filtrer par niveau d'intérêt (low, medium, high, very_high)" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 20)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_activity_log",
+      description: "Récupère l'historique des activités (emails, appels, RDV, changements de statut, actions IA).",
+      parameters: {
+        type: "object",
+        properties: {
+          entity_type: { type: "string", description: "Filtrer par type (lead, opportunity, project, task, meeting_note, booking)" },
           entity_id: { type: "string", description: "Filtrer par ID d'entité spécifique" },
+          activity_type: { type: "string", description: "Filtrer par type d'activité (note, email, call, meeting, status_change, ai_action)" },
           limit: { type: "number", description: "Nombre max de résultats (défaut: 20)" },
         },
       },
@@ -239,11 +304,11 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "get_articles",
-      description: "Récupère les articles publiés (actualités, articles, cas-clients, livres-blancs, ateliers).",
+      description: "Récupère les articles/contenus publiés (actualités, articles, cas-clients, livres-blancs, ateliers, solutions).",
       parameters: {
         type: "object",
         properties: {
-          resource_type: { type: "string", description: "Filtrer par type (actualite, article, cas-client, livre-blanc, atelier-webinaire)" },
+          resource_type: { type: "string", description: "Filtrer par type (actualite, article, cas-client, livre-blanc, atelier-webinaire, solution)" },
           published_only: { type: "boolean", description: "Ne retourner que les articles publiés (défaut: true)" },
           limit: { type: "number", description: "Nombre max de résultats (défaut: 10)" },
         },
@@ -253,8 +318,22 @@ const AGENT_TOOLS = [
   {
     type: "function",
     function: {
+      name: "get_article_details",
+      description: "Récupère le contenu complet d'un article avec catégories, tags, FAQ et statistiques.",
+      parameters: {
+        type: "object",
+        properties: {
+          article_id: { type: "string", description: "ID de l'article" },
+          slug: { type: "string", description: "Slug de l'article (alternatif à l'ID)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "get_solutions",
-      description: "Récupère les solutions IArche (offres SaaS et services).",
+      description: "Récupère les solutions IArche (offres SaaS et services) avec détails.",
       parameters: {
         type: "object",
         properties: {
@@ -266,12 +345,92 @@ const AGENT_TOOLS = [
   {
     type: "function",
     function: {
+      name: "get_categories_tags",
+      description: "Récupère les catégories et tags disponibles pour les articles.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "get_contacts",
       description: "Récupère les messages de contact reçus via le formulaire.",
       parameters: {
         type: "object",
         properties: {
+          source: { type: "string", description: "Filtrer par source" },
           limit: { type: "number", description: "Nombre max de résultats (défaut: 10)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_newsletters",
+      description: "Récupère les newsletters (brouillons et envoyées) et les statistiques d'abonnés.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", description: "Filtrer par statut (draft, sent)" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 10)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_forms",
+      description: "Récupère les formulaires et leurs statistiques (vues, soumissions).",
+      parameters: {
+        type: "object",
+        properties: {
+          active_only: { type: "boolean", description: "Ne retourner que les formulaires actifs (défaut: true)" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 10)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_form_responses",
+      description: "Récupère les réponses à un formulaire spécifique.",
+      parameters: {
+        type: "object",
+        properties: {
+          form_id: { type: "string", description: "ID du formulaire" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 20)" },
+        },
+        required: ["form_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_brochures",
+      description: "Récupère les brochures marketing avec leurs sections et statistiques de vues.",
+      parameters: {
+        type: "object",
+        properties: {
+          published_only: { type: "boolean", description: "Ne retourner que les brochures publiées (défaut: true)" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 10)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_atelier_inscriptions",
+      description: "Récupère les inscriptions aux ateliers/webinaires avec les leads associés.",
+      parameters: {
+        type: "object",
+        properties: {
+          atelier_id: { type: "string", description: "Filtrer par atelier" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 20)" },
         },
       },
     },
@@ -324,17 +483,29 @@ const AGENT_TOOLS = [
   {
     type: "function",
     function: {
-      name: "suggest_booking_action",
-      description: "[N1 - Suggestion] Suggère une action sur un rendez-vous (reporter, ajouter notes, envoyer rappel).",
+      name: "get_comments",
+      description: "Récupère les commentaires sur les articles (approuvés et en attente).",
       parameters: {
         type: "object",
         properties: {
-          booking_id: { type: "string", description: "ID du booking" },
-          action: { type: "string", enum: ["reschedule", "add_notes", "send_reminder", "prepare_meeting"], description: "Action suggérée" },
-          reason: { type: "string", description: "Raison ou contexte de l'action" },
-          notes: { type: "string", description: "Notes à ajouter si action = add_notes" },
+          article_id: { type: "string", description: "Filtrer par article" },
+          approved_only: { type: "boolean", description: "Ne retourner que les commentaires approuvés" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 20)" },
         },
-        required: ["booking_id", "action"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_cta_analytics",
+      description: "Récupère les statistiques des clics CTA avec conversion et sources.",
+      parameters: {
+        type: "object",
+        properties: {
+          cta_name: { type: "string", description: "Filtrer par nom de CTA" },
+          days: { type: "number", description: "Nombre de jours à analyser (défaut: 30)" },
+        },
       },
     },
   },
@@ -368,13 +539,34 @@ const AGENT_TOOLS = [
         properties: {
           title: { type: "string", description: "Titre de la tâche" },
           description: { type: "string", description: "Description détaillée" },
-          task_type: { type: "string", description: "Type (follow_up, call, email, meeting, other)" },
+          task_type: { type: "string", description: "Type (follow_up, call, email, meeting, document, other)" },
           priority: { type: "string", description: "Priorité (low, medium, high, urgent)" },
           due_date: { type: "string", description: "Date d'échéance (YYYY-MM-DD)" },
           lead_id: { type: "string", description: "ID du lead associé" },
           project_id: { type: "string", description: "ID du projet associé" },
+          opportunity_id: { type: "string", description: "ID de l'opportunité associée" },
         },
         required: ["title", "task_type"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_meeting_note",
+      description: "[N1 - Brouillon] Crée un compte-rendu de réunion. L'utilisateur doit valider.",
+      parameters: {
+        type: "object",
+        properties: {
+          booking_id: { type: "string", description: "ID du RDV associé" },
+          project_id: { type: "string", description: "ID du projet associé" },
+          opportunity_id: { type: "string", description: "ID de l'opportunité associée" },
+          notes: { type: "string", description: "Notes de la réunion" },
+          objectives: { type: "string", description: "Objectifs de la réunion" },
+          next_steps: { type: "string", description: "Prochaines étapes" },
+          action_items: { type: "array", items: { type: "string" }, description: "Liste des actions à mener" },
+        },
+        required: ["notes"],
       },
     },
   },
@@ -397,14 +589,32 @@ const AGENT_TOOLS = [
   {
     type: "function",
     function: {
+      name: "update_opportunity_stage",
+      description: "[N1 - Suggestion] Suggère un changement de stage pour une opportunité.",
+      parameters: {
+        type: "object",
+        properties: {
+          opportunity_id: { type: "string", description: "ID de l'opportunité" },
+          new_stage: { type: "string", description: "Nouveau stage (lead, qualified, proposal, negotiation, won, lost)" },
+          reason: { type: "string", description: "Justification du changement" },
+          value_amount: { type: "number", description: "Nouvelle valeur estimée (optionnel)" },
+        },
+        required: ["opportunity_id", "new_stage", "reason"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "draft_followup_email",
-      description: "[N1 - Brouillon] Génère un brouillon d'email de suivi pour un lead.",
+      description: "[N1 - Brouillon] Génère un brouillon d'email de suivi pour un lead ou projet.",
       parameters: {
         type: "object",
         properties: {
           lead_id: { type: "string", description: "ID du lead" },
-          email_type: { type: "string", description: "Type (first_contact, post_meeting, followup, proposal)" },
+          email_type: { type: "string", description: "Type (first_contact, post_meeting, followup, proposal, reminder)" },
           custom_context: { type: "string", description: "Contexte additionnel pour personnaliser l'email" },
+          transcription_id: { type: "string", description: "ID de transcription pour contexte (optionnel)" },
         },
         required: ["lead_id", "email_type"],
       },
@@ -421,6 +631,91 @@ const AGENT_TOOLS = [
           lead_id: { type: "string", description: "ID du lead" },
         },
         required: ["lead_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "suggest_booking_action",
+      description: "[N1 - Suggestion] Suggère une action sur un rendez-vous (reporter, ajouter notes, envoyer rappel).",
+      parameters: {
+        type: "object",
+        properties: {
+          booking_id: { type: "string", description: "ID du booking" },
+          action: { type: "string", enum: ["reschedule", "add_notes", "send_reminder", "prepare_meeting", "create_followup"], description: "Action suggérée" },
+          reason: { type: "string", description: "Raison ou contexte de l'action" },
+          notes: { type: "string", description: "Notes à ajouter si action = add_notes" },
+        },
+        required: ["booking_id", "action"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "log_activity",
+      description: "[N1 - Action] Enregistre une activité dans le journal (appel, email, note, etc.).",
+      parameters: {
+        type: "object",
+        properties: {
+          entity_type: { type: "string", description: "Type d'entité (lead, opportunity, project, task)" },
+          entity_id: { type: "string", description: "ID de l'entité" },
+          activity_type: { type: "string", description: "Type d'activité (note, email, call, meeting, status_change)" },
+          title: { type: "string", description: "Titre de l'activité" },
+          content: { type: "string", description: "Contenu/description de l'activité" },
+        },
+        required: ["entity_type", "entity_id", "activity_type", "title"],
+      },
+    },
+  },
+  // ============ ADMIN - Écriture (N1) ============
+  {
+    type: "function",
+    function: {
+      name: "draft_article_content",
+      description: "[N1 - Brouillon] Génère un brouillon de contenu pour un article/actualité.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Titre de l'article" },
+          resource_type: { type: "string", description: "Type (actualite, article, cas-client)" },
+          topic: { type: "string", description: "Sujet principal" },
+          keywords: { type: "array", items: { type: "string" }, description: "Mots-clés à inclure" },
+          tone: { type: "string", description: "Ton souhaité (professionnel, accessible, technique)" },
+        },
+        required: ["title", "resource_type", "topic"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "suggest_article_improvements",
+      description: "[N1 - Suggestion] Analyse un article et suggère des améliorations (SEO, structure, contenu).",
+      parameters: {
+        type: "object",
+        properties: {
+          article_id: { type: "string", description: "ID de l'article à analyser" },
+        },
+        required: ["article_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "draft_newsletter",
+      description: "[N1 - Brouillon] Génère un brouillon de newsletter basé sur les actualités récentes.",
+      parameters: {
+        type: "object",
+        properties: {
+          subject: { type: "string", description: "Sujet de la newsletter" },
+          include_articles: { type: "boolean", description: "Inclure les derniers articles" },
+          include_events: { type: "boolean", description: "Inclure les prochains événements" },
+          custom_intro: { type: "string", description: "Introduction personnalisée" },
+        },
+        required: ["subject"],
       },
     },
   },
@@ -558,15 +853,102 @@ async function executeTool(
       return { transcriptions: data, count: data?.length || 0 };
     }
 
+    case "get_meeting_notes": {
+      let query = supabase
+        .from("meeting_notes")
+        .select(`
+          id, notes, objectives, next_steps, action_items, ai_summary, 
+          duration_minutes, created_at, updated_at,
+          booking:bookings(id, name, email, company, start_time),
+          project:projects(id, name),
+          opportunity:opportunities(id, title)
+        `)
+        .order("created_at", { ascending: false })
+        .limit(args.limit as number || 10);
+
+      if (args.booking_id) query = query.eq("booking_id", args.booking_id);
+      if (args.project_id) query = query.eq("project_id", args.project_id);
+      if (args.opportunity_id) query = query.eq("opportunity_id", args.opportunity_id);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return { meeting_notes: data, count: data?.length || 0 };
+    }
+
+    case "get_specifications": {
+      let query = supabase
+        .from("specifications")
+        .select(`
+          id, title, description, content, status, version, 
+          functional_requirements, technical_requirements, constraints,
+          created_at, updated_at,
+          project:projects(id, name),
+          lead:leads(id, name, company)
+        `)
+        .order("updated_at", { ascending: false })
+        .limit(args.limit as number || 10);
+
+      if (args.project_id) query = query.eq("project_id", args.project_id);
+      if (args.status) query = query.eq("status", args.status);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return { specifications: data, count: data?.length || 0 };
+    }
+
+    case "get_generated_documents": {
+      let query = supabase
+        .from("generated_documents")
+        .select(`
+          id, title, document_type, status, version, ai_generated, 
+          content_json, created_at, updated_at, sent_at, sent_to,
+          lead:leads(id, name, company, email),
+          project:projects(id, name),
+          opportunity:opportunities(id, title)
+        `)
+        .order("created_at", { ascending: false })
+        .limit(args.limit as number || 10);
+
+      if (args.document_type) query = query.eq("document_type", args.document_type);
+      if (args.status) query = query.eq("status", args.status);
+      if (args.lead_id) query = query.eq("lead_id", args.lead_id);
+      if (args.project_id) query = query.eq("project_id", args.project_id);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return { documents: data, count: data?.length || 0 };
+    }
+
+    case "get_solution_leads": {
+      let query = supabase
+        .from("solution_leads")
+        .select(`
+          id, interest_level, commercial_notes, detected_at, created_at,
+          lead:leads(id, name, email, company, qualification_status, lead_score),
+          solution:articles!solution_leads_solution_id_fkey(id, title, slug)
+        `)
+        .order("created_at", { ascending: false })
+        .limit(args.limit as number || 20);
+
+      if (args.solution_id) query = query.eq("solution_id", args.solution_id);
+      if (args.lead_id) query = query.eq("lead_id", args.lead_id);
+      if (args.interest_level) query = query.eq("interest_level", args.interest_level);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return { solution_leads: data, count: data?.length || 0 };
+    }
+
     case "get_activity_log": {
       let query = supabase
         .from("activity_log")
-        .select("id, entity_type, entity_id, activity_type, title, content, created_at, is_ai_generated")
+        .select("id, entity_type, entity_id, activity_type, title, content, created_at, is_ai_generated, visibility, ai_metadata")
         .order("created_at", { ascending: false })
         .limit(args.limit as number || 20);
 
       if (args.entity_type) query = query.eq("entity_type", args.entity_type);
       if (args.entity_id) query = query.eq("entity_id", args.entity_id);
+      if (args.activity_type) query = query.eq("activity_type", args.activity_type);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -635,15 +1017,236 @@ async function executeTool(
       return { solutions: data, count: data?.length || 0 };
     }
 
+    case "get_article_details": {
+      const { data: article, error } = await supabase
+        .from("articles")
+        .select(`
+          id, title, slug, content, excerpt, resource_type, published, published_at,
+          cover_image_url, author, meta_title, meta_description, faq, created_at, updated_at
+        `)
+        .or(`id.eq.${args.article_id || ""},slug.eq.${args.slug || ""}`)
+        .single();
+
+      if (error) throw error;
+
+      // Get categories
+      const { data: categories } = await supabase
+        .from("article_categories")
+        .select("category:categories(id, name, slug)")
+        .eq("article_id", article.id);
+
+      // Get tags
+      const { data: tags } = await supabase
+        .from("article_tags")
+        .select("tag:tags(id, name)")
+        .eq("article_id", article.id);
+
+      // Get views count
+      const { count: viewsCount } = await supabase
+        .from("article_views")
+        .select("*", { count: "exact", head: true })
+        .eq("article_id", article.id);
+
+      // Get comments count
+      const { count: commentsCount } = await supabase
+        .from("comments")
+        .select("*", { count: "exact", head: true })
+        .eq("article_id", article.id)
+        .eq("approved", true);
+
+      return {
+        article,
+        categories: categories?.map((c: any) => c.category) || [],
+        tags: tags?.map((t: any) => t.tag) || [],
+        stats: {
+          views: viewsCount || 0,
+          comments: commentsCount || 0,
+        },
+      };
+    }
+
+    case "get_categories_tags": {
+      const { data: categories } = await supabase
+        .from("categories")
+        .select("id, name, slug")
+        .order("name");
+
+      const { data: tags } = await supabase
+        .from("tags")
+        .select("id, name")
+        .order("name");
+
+      return {
+        categories: categories || [],
+        tags: tags || [],
+      };
+    }
+
     case "get_contacts": {
-      const { data, error } = await supabase
+      let query = supabase
         .from("contacts")
-        .select("id, name, email, company, subject, message, source, created_at")
+        .select("id, name, email, company, subject, message, source, source_context, created_at")
+        .order("created_at", { ascending: false })
+        .limit(args.limit as number || 10);
+
+      if (args.source) query = query.eq("source", args.source);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return { contacts: data, count: data?.length || 0 };
+    }
+
+    case "get_newsletters": {
+      const { data: newsletters, error } = await supabase
+        .from("newsletters")
+        .select("id, subject, content, status, created_at, updated_at")
         .order("created_at", { ascending: false })
         .limit(args.limit as number || 10);
 
       if (error) throw error;
-      return { contacts: data, count: data?.length || 0 };
+
+      // Get subscriber count
+      const { count: subscriberCount } = await supabase
+        .from("newsletter_subscribers")
+        .select("*", { count: "exact", head: true });
+
+      if (args.status) {
+        const filtered = newsletters?.filter((n: any) => n.status === args.status);
+        return { newsletters: filtered, subscriber_count: subscriberCount || 0 };
+      }
+
+      return { newsletters: newsletters || [], subscriber_count: subscriberCount || 0 };
+    }
+
+    case "get_forms": {
+      let query = supabase
+        .from("forms")
+        .select("id, title, slug, description, is_active, views_count, submissions_count, created_at, updated_at")
+        .order("created_at", { ascending: false })
+        .limit(args.limit as number || 10);
+
+      if (args.active_only !== false) query = query.eq("is_active", true);
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Calculate conversion rates
+      const formsWithStats = data?.map((f: any) => ({
+        ...f,
+        conversion_rate: f.views_count > 0 ? ((f.submissions_count / f.views_count) * 100).toFixed(1) + "%" : "0%",
+      }));
+
+      return { forms: formsWithStats, count: data?.length || 0 };
+    }
+
+    case "get_form_responses": {
+      const { data, error } = await supabase
+        .from("form_responses")
+        .select("id, data, metadata, submitted_at, is_complete")
+        .eq("form_id", args.form_id)
+        .order("submitted_at", { ascending: false })
+        .limit(args.limit as number || 20);
+
+      if (error) throw error;
+
+      // Get form info
+      const { data: form } = await supabase
+        .from("forms")
+        .select("title, slug")
+        .eq("id", args.form_id)
+        .single();
+
+      return { 
+        form_title: form?.title,
+        responses: data, 
+        count: data?.length || 0 
+      };
+    }
+
+    case "get_brochures": {
+      let query = supabase
+        .from("brochures")
+        .select("id, title, slug, cover_title, cover_subtitle, published, views_count, created_at, updated_at")
+        .order("created_at", { ascending: false })
+        .limit(args.limit as number || 10);
+
+      if (args.published_only !== false) query = query.eq("published", true);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return { brochures: data, count: data?.length || 0 };
+    }
+
+    case "get_atelier_inscriptions": {
+      let query = supabase
+        .from("atelier_inscriptions")
+        .select(`
+          id, created_at,
+          atelier:articles!atelier_inscriptions_atelier_id_fkey(id, title, slug, event_date),
+          lead:leads(id, name, email, company)
+        `)
+        .order("created_at", { ascending: false })
+        .limit(args.limit as number || 20);
+
+      if (args.atelier_id) query = query.eq("atelier_id", args.atelier_id);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return { inscriptions: data, count: data?.length || 0 };
+    }
+
+    case "get_comments": {
+      let query = supabase
+        .from("comments")
+        .select(`
+          id, author_name, author_email, content, approved, created_at,
+          article:articles(id, title, slug)
+        `)
+        .order("created_at", { ascending: false })
+        .limit(args.limit as number || 20);
+
+      if (args.article_id) query = query.eq("article_id", args.article_id);
+      if (args.approved_only) query = query.eq("approved", true);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return { comments: data, count: data?.length || 0 };
+    }
+
+    case "get_cta_analytics": {
+      const days = args.days as number || 30;
+      const sinceDate = new Date();
+      sinceDate.setDate(sinceDate.getDate() - days);
+
+      let query = supabase
+        .from("cta_clicks")
+        .select("id, cta_name, source_page, source_context, clicked_at")
+        .gte("clicked_at", sinceDate.toISOString())
+        .order("clicked_at", { ascending: false });
+
+      if (args.cta_name) query = query.eq("cta_name", args.cta_name);
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Group by CTA name
+      const clickData = data || [];
+      const byCta = clickData.reduce((acc: Record<string, number>, click: any) => {
+        acc[click.cta_name] = (acc[click.cta_name] || 0) + 1;
+        return acc;
+      }, {});
+
+      const bySource = clickData.reduce((acc: Record<string, number>, click: any) => {
+        acc[click.source_page] = (acc[click.source_page] || 0) + 1;
+        return acc;
+      }, {});
+
+      return {
+        total_clicks: clickData.length,
+        by_cta: byCta,
+        by_source: bySource,
+        period_days: days,
+      };
     }
 
     case "get_bookings": {
@@ -1080,6 +1683,272 @@ async function executeTool(
         detected_needs: transcriptData.flatMap((t: TranscriptionRow) => t.detected_needs || []),
         message: `${searchResult.results?.length || 0} solution(s) suggérée(s) pour ${leadData.name}.`,
         autonomy_level: "N1",
+      };
+    }
+
+    // ============ NEW COCKPIT WRITES ============
+    case "create_meeting_note": {
+      const meetingNoteData = {
+        booking_id: args.booking_id as string || null,
+        project_id: args.project_id as string || null,
+        opportunity_id: args.opportunity_id as string || null,
+        notes: args.notes as string,
+        objectives: args.objectives as string || null,
+        next_steps: args.next_steps as string || null,
+        action_items: args.action_items || [],
+        ai_metadata: {
+          autonomy_level: "N1",
+          generated_at: new Date().toISOString(),
+          validation_required: true,
+          validated_by_human: false,
+        },
+        workspace_id: "00000000-0000-0000-0000-000000000001",
+      };
+
+      const { data, error } = await supabase
+        .from("meeting_notes")
+        .insert(meetingNoteData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        meeting_note: data,
+        message: "Compte-rendu de réunion créé (à valider).",
+        autonomy_level: "N1",
+      };
+    }
+
+    case "update_opportunity_stage": {
+      // N1: Suggest only, don't actually update
+      const { data: opportunity, error } = await supabase
+        .from("opportunities")
+        .select("id, title, stage, value_amount")
+        .eq("id", args.opportunity_id)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        suggestion: {
+          opportunity_id: args.opportunity_id,
+          opportunity_title: opportunity.title,
+          current_stage: opportunity.stage,
+          suggested_stage: args.new_stage,
+          current_value: opportunity.value_amount,
+          suggested_value: args.value_amount,
+          reason: args.reason,
+        },
+        message: `Suggestion de changement de stage pour ${opportunity.title}: ${opportunity.stage} → ${args.new_stage}. Raison: ${args.reason}`,
+        autonomy_level: "N1",
+        action_required: "Validez ce changement dans le pipeline.",
+      };
+    }
+
+    case "log_activity": {
+      const activityData = {
+        entity_type: args.entity_type as string,
+        entity_id: args.entity_id as string,
+        activity_type: args.activity_type as string,
+        title: args.title as string,
+        content: args.content as string || null,
+        is_ai_generated: true,
+        ai_metadata: {
+          autonomy_level: "N1",
+          generated_at: new Date().toISOString(),
+        },
+        visibility: "internal",
+        workspace_id: "00000000-0000-0000-0000-000000000001",
+      };
+
+      const { data, error } = await supabase
+        .from("activity_log")
+        .insert(activityData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        activity: data,
+        message: `Activité "${args.title}" enregistrée.`,
+        autonomy_level: "N1",
+      };
+    }
+
+    // ============ ADMIN WRITES (N1) ============
+    case "draft_article_content": {
+      // Use AI to generate article draft
+      const articlePrompt = `Génère un brouillon d'article pour IArche:
+Titre: ${args.title}
+Type: ${args.resource_type}
+Sujet: ${args.topic}
+${args.keywords ? `Mots-clés: ${(args.keywords as string[]).join(", ")}` : ""}
+${args.tone ? `Ton: ${args.tone}` : ""}
+
+L'article doit être structuré avec des sous-titres H2/H3, engageant et informatif.
+Retourne le contenu au format HTML avec les balises appropriées.`;
+
+      const response = await fetch(LOVABLE_AI_GATEWAY, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: "Tu es un expert en rédaction de contenu B2B pour une agence d'IA. Génère des articles professionnels et engageants." },
+            { role: "user", content: articlePrompt },
+          ],
+        }),
+      });
+
+      if (!response.ok) throw new Error("Content generation failed");
+
+      const result = await response.json();
+      const content = result.choices?.[0]?.message?.content || "";
+
+      return {
+        success: true,
+        draft: {
+          title: args.title,
+          resource_type: args.resource_type,
+          content: content,
+          topic: args.topic,
+        },
+        message: `Brouillon d'article "${args.title}" généré.`,
+        autonomy_level: "N1",
+        action_required: "Relisez et créez l'article dans l'éditeur Admin.",
+      };
+    }
+
+    case "suggest_article_improvements": {
+      const { data: article, error } = await supabase
+        .from("articles")
+        .select("id, title, content, excerpt, meta_title, meta_description, faq")
+        .eq("id", args.article_id)
+        .single();
+
+      if (error) throw error;
+
+      const analysisPrompt = `Analyse cet article et suggère des améliorations:
+Titre: ${article.title}
+Contenu (extrait): ${article.content?.substring(0, 2000)}...
+Meta title: ${article.meta_title || "Non défini"}
+Meta description: ${article.meta_description || "Non défini"}
+FAQ: ${article.faq ? "Présente" : "Absente"}
+
+Suggestions demandées:
+1. Améliorations SEO (titre, méta, structure)
+2. Amélioration du contenu (clarté, engagement)
+3. FAQ suggérées si absentes
+4. Mots-clés manquants`;
+
+      const response = await fetch(LOVABLE_AI_GATEWAY, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: "Tu es un expert SEO et content marketing. Analyse les articles et suggère des améliorations concrètes." },
+            { role: "user", content: analysisPrompt },
+          ],
+        }),
+      });
+
+      if (!response.ok) throw new Error("Analysis failed");
+
+      const result = await response.json();
+      const suggestions = result.choices?.[0]?.message?.content || "";
+
+      return {
+        success: true,
+        article_title: article.title,
+        suggestions: suggestions,
+        message: `Analyse de "${article.title}" terminée.`,
+        autonomy_level: "N1",
+        action_required: "Appliquez les suggestions dans l'éditeur Admin.",
+      };
+    }
+
+    case "draft_newsletter": {
+      // Get recent articles for newsletter content
+      const { data: recentArticles } = await supabase
+        .from("articles")
+        .select("id, title, slug, excerpt, resource_type, published_at")
+        .eq("published", true)
+        .order("published_at", { ascending: false })
+        .limit(5);
+
+      // Get upcoming events if requested
+      let upcomingEvents: any[] = [];
+      if (args.include_events) {
+        const { data: events } = await supabase
+          .from("articles")
+          .select("id, title, slug, event_date, heure_debut")
+          .eq("resource_type", "atelier-webinaire")
+          .eq("published", true)
+          .gte("event_date", new Date().toISOString().split("T")[0])
+          .order("event_date")
+          .limit(3);
+        upcomingEvents = events || [];
+      }
+
+      const newsletterPrompt = `Génère une newsletter IArche:
+Sujet: ${args.subject}
+${args.custom_intro ? `Introduction souhaitée: ${args.custom_intro}` : ""}
+
+Articles récents à mentionner:
+${(recentArticles || []).map((a: any) => `- ${a.title} (${a.resource_type}): ${a.excerpt?.substring(0, 100)}...`).join("\n")}
+
+${upcomingEvents.length > 0 ? `Événements à venir:\n${upcomingEvents.map((e: any) => `- ${e.title} le ${e.event_date}`).join("\n")}` : ""}
+
+Génère un contenu HTML pour email avec:
+1. Introduction engageante
+2. Section actualités avec liens
+3. Section événements (si applicable)
+4. Call-to-action
+5. Footer IArche`;
+
+      const response = await fetch(LOVABLE_AI_GATEWAY, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: "Tu es expert en email marketing B2B. Génère des newsletters engageantes au format HTML." },
+            { role: "user", content: newsletterPrompt },
+          ],
+        }),
+      });
+
+      if (!response.ok) throw new Error("Newsletter generation failed");
+
+      const result = await response.json();
+      const content = result.choices?.[0]?.message?.content || "";
+
+      return {
+        success: true,
+        draft: {
+          subject: args.subject,
+          content: content,
+          articles_included: recentArticles?.length || 0,
+          events_included: upcomingEvents.length,
+        },
+        message: `Brouillon de newsletter "${args.subject}" généré.`,
+        autonomy_level: "N1",
+        action_required: "Relisez et envoyez via le module Newsletters Admin.",
       };
     }
 
