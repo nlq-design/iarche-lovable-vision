@@ -13,6 +13,9 @@ const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
 const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
+// Whisper API limit is 25MB per request
+const WHISPER_MAX_SIZE = 25 * 1024 * 1024;
+
 type VoiceJob = {
   id: string;
   workspace_id: string;
@@ -28,11 +31,69 @@ type VoiceJob = {
   ai_metadata: Record<string, unknown>;
 };
 
-async function openaiTranscribe(blob: Blob, language = "fr") {
+/**
+ * Transcribe audio with OpenAI Whisper.
+ * For files > 25MB, we chunk and concatenate transcripts.
+ */
+async function openaiTranscribe(audioBlob: Blob, language = "fr"): Promise<{ text: string; segments: unknown[] | null }> {
+  const fileSize = audioBlob.size;
+  console.log(`Audio file size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
+
+  // If file is small enough, transcribe directly
+  if (fileSize <= WHISPER_MAX_SIZE) {
+    console.log("File is within Whisper limit, transcribing directly...");
+    return await transcribeSingleFile(audioBlob, language);
+  }
+
+  // For larger files, we need to chunk
+  console.log(`File exceeds Whisper limit (${WHISPER_MAX_SIZE / 1024 / 1024}MB), chunking...`);
+  
+  // Calculate number of chunks needed
+  const numChunks = Math.ceil(fileSize / WHISPER_MAX_SIZE);
+  const chunkSize = Math.ceil(fileSize / numChunks);
+  
+  console.log(`Splitting into ${numChunks} chunks of ~${(chunkSize / 1024 / 1024).toFixed(2)} MB each`);
+  
+  const arrayBuffer = await audioBlob.arrayBuffer();
+  const allTranscripts: string[] = [];
+  const allSegments: unknown[] = [];
+  
+  for (let i = 0; i < numChunks; i++) {
+    const start = i * chunkSize;
+    const end = Math.min(start + chunkSize, fileSize);
+    const chunkBuffer = arrayBuffer.slice(start, end);
+    const chunkBlob = new Blob([chunkBuffer], { type: audioBlob.type });
+    
+    console.log(`Transcribing chunk ${i + 1}/${numChunks} (${(chunkBlob.size / 1024 / 1024).toFixed(2)} MB)...`);
+    
+    try {
+      const result = await transcribeSingleFile(chunkBlob, language);
+      allTranscripts.push(result.text);
+      if (result.segments) {
+        allSegments.push(...(result.segments as unknown[]));
+      }
+      console.log(`Chunk ${i + 1} transcribed: ${result.text.length} chars`);
+    } catch (err) {
+      console.error(`Error transcribing chunk ${i + 1}:`, err);
+      // Continue with other chunks, mark error in transcript
+      allTranscripts.push(`[Erreur de transcription pour le segment ${i + 1}]`);
+    }
+  }
+  
+  const fullText = allTranscripts.join(" ").trim();
+  console.log(`Full transcription completed: ${fullText.length} chars from ${numChunks} chunks`);
+  
+  return { 
+    text: fullText, 
+    segments: allSegments.length > 0 ? allSegments : null 
+  };
+}
+
+async function transcribeSingleFile(blob: Blob, language: string): Promise<{ text: string; segments: unknown[] | null }> {
   const form = new FormData();
   form.append("model", "whisper-1");
   form.append("language", language);
-  form.append("response_format", "json");
+  form.append("response_format", "verbose_json"); // Get segments with timestamps
   form.append("file", blob, "audio.m4a");
 
   const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
@@ -42,8 +103,16 @@ async function openaiTranscribe(blob: Blob, language = "fr") {
   });
 
   const txt = await res.text();
-  if (!res.ok) throw new Error(`openai_stt_failed: ${txt}`);
-  return JSON.parse(txt);
+  if (!res.ok) {
+    console.error("OpenAI Whisper error:", txt);
+    throw new Error(`openai_stt_failed: ${txt}`);
+  }
+  
+  const result = JSON.parse(txt);
+  return {
+    text: result.text ?? "",
+    segments: result.segments ?? null
+  };
 }
 
 async function loadPromptProfile(supabase: any, prompt_profile_id: string | null) {
@@ -303,7 +372,7 @@ serve(async (req) => {
     const bucket = "voice-transcriptions";
     const { data: signed, error: signErr } = await supabase.storage
       .from(bucket)
-      .createSignedUrl(vjob.storage_path, 120);
+      .createSignedUrl(vjob.storage_path, 300); // 5 minutes for large files
     
     if (signErr || !signed?.signedUrl) {
       throw new Error(`signed_url_failed: ${signErr?.message ?? "no_url"}`);
@@ -313,9 +382,9 @@ serve(async (req) => {
     if (!audioRes.ok) throw new Error(`audio_fetch_failed: ${await audioRes.text()}`);
 
     const audioBlob = await audioRes.blob();
-    console.log(`Audio fetched: ${audioBlob.size} bytes`);
+    console.log(`Audio fetched: ${(audioBlob.size / 1024 / 1024).toFixed(2)} MB, type: ${audioBlob.type}`);
 
-    // STT with Whisper
+    // STT with Whisper (handles chunking for large files)
     const stt = await openaiTranscribe(audioBlob, "fr");
     const rawText = stt.text ?? "";
     const segments = stt.segments ?? null;
@@ -332,6 +401,8 @@ serve(async (req) => {
           ...(vjob.ai_metadata ?? {}),
           source: "openai-whisper",
           stt_model: "whisper-1",
+          file_size_mb: (audioBlob.size / 1024 / 1024).toFixed(2),
+          transcript_length: rawText.length,
           generated_at: new Date().toISOString(),
         },
       })
