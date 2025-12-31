@@ -974,7 +974,7 @@ async function executeTool(
 // MAIN HANDLER
 // =============================================================================
 
-const SYSTEM_PROMPT = `Tu es l'Agent IA IArche, un assistant commercial et opérationnel expert.
+const DEFAULT_SYSTEM_PROMPT = `Tu es l'Agent IA IArche, un assistant commercial et opérationnel expert.
 
 CONTEXTE :
 - IArche est une agence IA basée à Bayonne spécialisée dans les solutions d'intelligence artificielle pour entreprises.
@@ -998,6 +998,37 @@ NIVEAUX D'AUTONOMIE :
 - N0 : Lecture seule, informatif (statistiques, recherche, consultation)
 - N1 : Suggestions/brouillons à valider (tâches, emails, qualifications)
 - N2 : Actions irréversibles (réservé, non implémenté ici)`;
+
+const MASTER_PROMPT_SLUG = "master-agent";
+
+// deno-lint-ignore no-explicit-any
+async function getSystemPrompt(supabase: any): Promise<{ prompt: string; model: string }> {
+  try {
+    const { data, error } = await supabase
+      .from("ai_prompts")
+      .select("system_prompt, model_config")
+      .eq("slug", MASTER_PROMPT_SLUG)
+      .maybeSingle();
+    
+    if (error) {
+      console.error("Error fetching master prompt:", error);
+      return { prompt: DEFAULT_SYSTEM_PROMPT, model: "google/gemini-2.5-flash" };
+    }
+    
+    if (data?.system_prompt) {
+      const modelConfig = data.model_config as { model?: string } | null;
+      const model = modelConfig?.model || "google/gemini-2.5-flash";
+      console.log("Using master prompt from ai_prompts, model:", model);
+      return { prompt: data.system_prompt, model };
+    }
+    
+    console.log("No master prompt found, using default");
+    return { prompt: DEFAULT_SYSTEM_PROMPT, model: "google/gemini-2.5-flash" };
+  } catch (err) {
+    console.error("Failed to fetch system prompt:", err);
+    return { prompt: DEFAULT_SYSTEM_PROMPT, model: "google/gemini-2.5-flash" };
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -1027,9 +1058,12 @@ serve(async (req) => {
 
     console.log("Agent orchestrator called with", messages.length, "messages");
 
+    // Fetch system prompt from ai_prompts table
+    const { prompt: systemPrompt, model: selectedModel } = await getSystemPrompt(supabase);
+
     // Build messages with system prompt
     const fullMessages = [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: systemPrompt },
       ...messages,
     ];
 
@@ -1041,7 +1075,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: selectedModel,
         messages: fullMessages,
         tools: AGENT_TOOLS,
         tool_choice: "auto",
@@ -1105,7 +1139,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: selectedModel,
           messages: continuedMessages,
           tools: AGENT_TOOLS,
           tool_choice: "auto",
