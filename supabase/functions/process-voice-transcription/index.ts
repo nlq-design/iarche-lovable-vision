@@ -79,23 +79,38 @@ async function transcribeSingleFile(blob: Blob, language: string): Promise<{ tex
 }
 
 async function loadPromptProfile(supabase: any, prompt_profile_id: string | null) {
-  if (!prompt_profile_id) {
-    const { data } = await supabase
+  // If specific profile requested, use it
+  if (prompt_profile_id) {
+    const { data, error } = await supabase
       .from("ai_prompts")
       .select("id, system_prompt, user_prompt, output_schema, model_config")
-      .eq("slug", "transcription_rdv_commercial")
-      .limit(1);
-    return data?.[0] ?? null;
+      .eq("id", prompt_profile_id)
+      .single();
+
+    if (error) throw new Error(`prompt_profile_not_found: ${error.message}`);
+    return data;
   }
 
-  const { data, error } = await supabase
+  // Otherwise, try to load the master cockpit assistant prompt
+  const { data: masterPrompt } = await supabase
     .from("ai_prompts")
     .select("id, system_prompt, user_prompt, output_schema, model_config")
-    .eq("id", prompt_profile_id)
-    .single();
+    .eq("slug", "cockpit-master-assistant")
+    .maybeSingle();
 
-  if (error) throw new Error(`prompt_profile_not_found: ${error.message}`);
-  return data;
+  if (masterPrompt) {
+    console.log("Using master cockpit assistant prompt");
+    return masterPrompt;
+  }
+
+  // Fallback to legacy transcription prompt if exists
+  const { data: legacyPrompt } = await supabase
+    .from("ai_prompts")
+    .select("id, system_prompt, user_prompt, output_schema, model_config")
+    .eq("slug", "transcription_rdv_commercial")
+    .maybeSingle();
+
+  return legacyPrompt ?? null;
 }
 
 async function fetchEntityContext(supabase: any, job: VoiceJob) {
