@@ -1312,6 +1312,7 @@ export type Database = {
           created_by: string | null
           document_type: string
           id: string
+          lead_id: string | null
           opportunity_id: string | null
           output_format: string | null
           output_storage_path: string | null
@@ -1336,6 +1337,7 @@ export type Database = {
           created_by?: string | null
           document_type: string
           id?: string
+          lead_id?: string | null
           opportunity_id?: string | null
           output_format?: string | null
           output_storage_path?: string | null
@@ -1360,6 +1362,7 @@ export type Database = {
           created_by?: string | null
           document_type?: string
           id?: string
+          lead_id?: string | null
           opportunity_id?: string | null
           output_format?: string | null
           output_storage_path?: string | null
@@ -1375,6 +1378,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "generated_documents_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "generated_documents_opportunity_id_fkey"
             columns: ["opportunity_id"]
