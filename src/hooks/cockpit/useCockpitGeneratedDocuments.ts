@@ -14,6 +14,7 @@ export interface GeneratedDocument {
   title: string;
   project_id: string | null;
   opportunity_id: string | null;
+  lead_id: string | null;
   specification_id: string | null;
   content_json: Record<string, unknown>;
   version: string;
@@ -73,7 +74,6 @@ export function useCockpitGeneratedDocuments(projectId?: string, opportunityId?:
       if (error) throw error;
       return (data ?? []) as GeneratedDocument[];
     },
-    enabled: !!(projectId || opportunityId),
   });
 
   // Generate document
@@ -81,6 +81,7 @@ export function useCockpitGeneratedDocuments(projectId?: string, opportunityId?:
     mutationFn: async (input: {
       project_id?: string;
       opportunity_id?: string;
+      leadId?: string;
       document_type: 'quote' | 'spec' | 'proposal';
       custom_instructions?: string;
     }) => {
