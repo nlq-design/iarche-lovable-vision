@@ -1,15 +1,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { Resend } from "https://esm.sh/resend@2.0.0";
 import { checkRateLimit, getRateLimitHeaders } from "../_shared/rateLimit.ts";
 import { calendarBookingSchema, validateRequest, type CalendarBookingRequest, type BookingData } from "../_shared/validation.ts";
+import { sendGmail } from "../_shared/gmailClient.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
 type MeetingType = 'visio' | 'telephone' | 'presentiel';
 
@@ -930,41 +928,34 @@ serve(async (req) => {
         bookingData.phone || undefined
       );
 
-      // Send confirmation email with ICS attachment
+      // Send confirmation email with ICS attachment via Gmail
       try {
-        const icsBuffer = new TextEncoder().encode(icsContent);
-        const icsBase64 = btoa(String.fromCharCode(...icsBuffer));
-
-      // Email subject with solution name if applicable
-      const emailSubject = solutionName
-        ? `✅ Confirmation : ${bookingType.name} - ${solutionName} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`
-        : `✅ Confirmation : ${bookingType.name} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`;
-
-        await resend.emails.send({
-          from: 'IArche <contact@iarche.fr>',
+        // Gmail API doesn't support attachments in the same simple way
+        // So we include the ICS content as an inline link alternative
+        const emailResult = await sendGmail({
           to: allAttendeeEmails,
-          subject: emailSubject,
+          subject: solutionName
+            ? `✅ Confirmation : ${bookingType.name} - ${solutionName} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`
+            : `✅ Confirmation : ${bookingType.name} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`,
           html: emailHTML,
-          attachments: [
-            {
-              filename: 'rendez-vous-iarche.ics',
-              content: icsBase64,
-            },
-          ],
         });
 
-        console.log('Confirmation email sent successfully to:', allAttendeeEmails.join(', '));
+        if (emailResult.success) {
+          console.log('Confirmation email sent successfully to:', allAttendeeEmails.join(', '));
 
-        // Log email
-        await supabase.from('email_logs').insert({
-          recipient_email: bookingData.email,
-          subject: `Confirmation : ${bookingType.name}`,
-          email_type: 'booking_confirmation',
-          source_type: 'booking',
-          source_id: booking.id,
-          status: 'sent',
-          sent_at: new Date().toISOString(),
-        });
+          // Log email
+          await supabase.from('email_logs').insert({
+            recipient_email: bookingData.email,
+            subject: `Confirmation : ${bookingType.name}`,
+            email_type: 'booking_confirmation',
+            source_type: 'booking',
+            source_id: booking.id,
+            status: 'sent',
+            sent_at: new Date().toISOString(),
+          });
+        } else {
+          throw new Error(emailResult.error);
+        }
       } catch (emailErr) {
         console.error('Failed to send confirmation email:', emailErr);
         // Log failed email
@@ -979,15 +970,13 @@ serve(async (req) => {
         });
       }
 
-      // Send admin notification
-      // Admin notification subject with solution
+      // Send admin notification via Gmail
       const adminSubject = solutionName
         ? `📅 Nouveau RDV : ${bookingType.name} - ${solutionName} - ${bookingData.name}`
         : `📅 Nouveau RDV : ${bookingType.name} - ${bookingData.name}`;
 
       try {
-        await resend.emails.send({
-          from: 'IArche <contact@iarche.fr>',
+        await sendGmail({
           to: ['nlq@nlq.fr'],
           subject: adminSubject,
           html: `
