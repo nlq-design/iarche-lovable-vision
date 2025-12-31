@@ -138,15 +138,80 @@ interface SemanticSearchResult {
   metadata: Record<string, unknown>;
 }
 
+/**
+ * Fetch keyword aliases for text normalization and improved matching.
+ * Uses phonetic matching for better detection of spoken variations.
+ */
+async function fetchKeywordAliases(supabase: any): Promise<Map<string, string>> {
+  const aliasMap = new Map<string, string>();
+  
+  try {
+    const { data, error } = await supabase
+      .from("keyword_aliases")
+      .select("canonical_name, alias, phonetic_key")
+      .eq("is_active", true);
+    
+    if (error) {
+      console.warn("Failed to fetch keyword aliases:", error);
+      return aliasMap;
+    }
+    
+    // Build lookup map: alias (lowercase) -> canonical_name
+    for (const row of data || []) {
+      aliasMap.set(row.alias.toLowerCase(), row.canonical_name);
+      // Also add phonetic variations if available
+      if (row.phonetic_key) {
+        aliasMap.set(row.phonetic_key.toLowerCase(), row.canonical_name);
+      }
+    }
+    
+    console.log(`Loaded ${aliasMap.size} keyword aliases for normalization`);
+    return aliasMap;
+  } catch (err) {
+    console.warn("Error fetching keyword aliases:", err);
+    return aliasMap;
+  }
+}
+
+/**
+ * Normalize transcript text using keyword aliases.
+ * Replaces known variations with canonical names for better matching.
+ */
+function normalizeTranscriptWithAliases(transcript: string, aliasMap: Map<string, string>): string {
+  if (aliasMap.size === 0) return transcript;
+  
+  let normalized = transcript;
+  
+  // Sort aliases by length (longest first) to avoid partial replacements
+  const sortedAliases = Array.from(aliasMap.entries())
+    .sort((a, b) => b[0].length - a[0].length);
+  
+  for (const [alias, canonical] of sortedAliases) {
+    // Case-insensitive replacement with word boundaries
+    const regex = new RegExp(`\\b${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+    normalized = normalized.replace(regex, canonical);
+  }
+  
+  return normalized;
+}
+
 async function searchSimilarResources(
   transcript: string,
-  filterTypes: string[] = ["solution", "service"]
+  filterTypes: string[] = ["solution", "service"],
+  aliasMap?: Map<string, string>
 ): Promise<SemanticSearchResult[]> {
   try {
     console.log("Performing semantic search on transcript...");
     
+    // Normalize transcript using aliases if available
+    let searchText = transcript;
+    if (aliasMap && aliasMap.size > 0) {
+      searchText = normalizeTranscriptWithAliases(transcript, aliasMap);
+      console.log("Transcript normalized with keyword aliases");
+    }
+    
     // Use first 2000 chars of transcript as search query (embeddings have limits)
-    const searchQuery = transcript.slice(0, 2000);
+    const searchQuery = searchText.slice(0, 2000);
     
     const response = await fetch(`${SUPABASE_URL}/functions/v1/search-embeddings`, {
       method: "POST",
@@ -200,8 +265,10 @@ async function fetchEntityContext(supabase: any, job: VoiceJob, transcript?: str
   // If no project/solution linked and transcript provided, do semantic search
   const shouldAutoDetect = !job.project_id && !job.solution_id && transcript;
   if (shouldAutoDetect) {
-    console.log("No project/solution linked, performing RAG detection...");
-    detectedSolutions = await searchSimilarResources(transcript);
+    console.log("No project/solution linked, performing RAG detection with keyword aliases...");
+    // Load keyword aliases for better matching
+    const aliasMap = await fetchKeywordAliases(supabase);
+    detectedSolutions = await searchSimilarResources(transcript, ["solution", "service"], aliasMap);
     
     // Log detected solutions for debugging
     if (detectedSolutions.length > 0) {

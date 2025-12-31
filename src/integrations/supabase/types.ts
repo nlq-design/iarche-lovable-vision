@@ -1477,6 +1477,42 @@ export type Database = {
           },
         ]
       }
+      keyword_aliases: {
+        Row: {
+          alias: string
+          canonical_name: string
+          context_type: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          phonetic_key: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          alias: string
+          canonical_name: string
+          context_type?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          phonetic_key?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          alias?: string
+          canonical_name?: string
+          context_type?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          phonetic_key?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           address: string | null
@@ -2671,6 +2707,7 @@ export type Database = {
           status: string
           storage_path: string
           summary: Json | null
+          transcription_date: string | null
           updated_at: string
           workspace_id: string
         }
@@ -2692,6 +2729,7 @@ export type Database = {
           status?: string
           storage_path: string
           summary?: Json | null
+          transcription_date?: string | null
           updated_at?: string
           workspace_id: string
         }
@@ -2713,6 +2751,7 @@ export type Database = {
           status?: string
           storage_path?: string
           summary?: Json | null
+          transcription_date?: string | null
           updated_at?: string
           workspace_id?: string
         }
@@ -2905,6 +2944,7 @@ export type Database = {
         Args: { atelier_uuid: string }
         Returns: number
       }
+      generate_phonetic_key: { Args: { input_text: string }; Returns: string }
       get_recent_ai_memory: {
         Args: {
           p_limit?: number
