@@ -14,7 +14,8 @@ import { toast } from "sonner";
 import { 
   Save, Bot, Loader2, RotateCcw, Cpu, Zap, Sparkles, Brain, 
   Database, RefreshCw, CheckCircle2, AlertCircle, FileText,
-  Search, BookOpen, FileSignature, FileCheck, Briefcase
+  Search, BookOpen, FileSignature, FileCheck, Briefcase,
+  History, Trash2, Clock, MessageSquare, Wrench
 } from "lucide-react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useLLMModelsGrouped } from "@/hooks/cockpit/useCockpitVoiceTranscriptions";
@@ -324,6 +325,252 @@ function IndexedResourcesList() {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// Memory Management Component
+function AIMemoryManager() {
+  const queryClient = useQueryClient();
+  const [selectedType, setSelectedType] = useState<string>("all");
+  
+  const { data: memories, isLoading, refetch } = useQuery({
+    queryKey: ['ai-memory', selectedType],
+    queryFn: async () => {
+      let query = supabase
+        .from('ai_agent_memory')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (selectedType !== "all") {
+        query = query.eq('memory_type', selectedType);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: memoryStats } = useQuery({
+    queryKey: ['ai-memory-stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ai_agent_memory')
+        .select('memory_type')
+      
+      if (error) throw error;
+      
+      const counts: Record<string, number> = {};
+      data?.forEach((m) => {
+        counts[m.memory_type] = (counts[m.memory_type] || 0) + 1;
+      });
+      return counts;
+    }
+  });
+
+  const deleteMemoryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('ai_agent_memory')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-memory'] });
+      queryClient.invalidateQueries({ queryKey: ['ai-memory-stats'] });
+      toast.success("Mémoire supprimée");
+    }
+  });
+
+  const clearExpiredMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.rpc('cleanup_expired_ai_memory');
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-memory'] });
+      queryClient.invalidateQueries({ queryKey: ['ai-memory-stats'] });
+      toast.success("Mémoires expirées nettoyées");
+      refetch();
+    }
+  });
+
+  const memoryTypeConfig: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+    conversation: { label: "Conversation", icon: <MessageSquare className="h-3 w-3" />, color: "bg-blue-500/10 text-blue-500" },
+    action: { label: "Action", icon: <Zap className="h-3 w-3" />, color: "bg-green-500/10 text-green-500" },
+    rag_query: { label: "Requête RAG", icon: <Search className="h-3 w-3" />, color: "bg-purple-500/10 text-purple-500" },
+    tool_call: { label: "Tool Call", icon: <Wrench className="h-3 w-3" />, color: "bg-orange-500/10 text-orange-500" },
+    insight: { label: "Insight", icon: <Sparkles className="h-3 w-3" />, color: "bg-yellow-500/10 text-yellow-500" },
+    preference: { label: "Préférence", icon: <CheckCircle2 className="h-3 w-3" />, color: "bg-pink-500/10 text-pink-500" },
+    context: { label: "Contexte", icon: <Brain className="h-3 w-3" />, color: "bg-cyan-500/10 text-cyan-500" },
+  };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', { 
+      day: '2-digit', 
+      month: 'short', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  const totalMemories = Object.values(memoryStats || {}).reduce((a, b) => a + b, 0);
+
+  return (
+    <div className="space-y-4">
+      {/* Stats Overview */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              <CardTitle>Mémoire Agent IA</CardTitle>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => refetch()}>
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Rafraîchir
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => clearExpiredMutation.mutate()}
+                disabled={clearExpiredMutation.isPending}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Nettoyer expirées
+              </Button>
+            </div>
+          </div>
+          <CardDescription>
+            L'agent IA mémorise les conversations, actions et insights pour améliorer ses réponses.
+            Les embeddings vectoriels permettent une recherche sémantique dans la mémoire.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div className="p-3 rounded-lg bg-muted/50 border text-center">
+              <p className="text-2xl font-bold">{totalMemories}</p>
+              <p className="text-xs text-muted-foreground">Total entrées</p>
+            </div>
+            {Object.entries(memoryStats || {}).slice(0, 3).map(([type, count]) => {
+              const config = memoryTypeConfig[type];
+              return (
+                <div key={type} className="p-3 rounded-lg bg-muted/50 border text-center">
+                  <p className="text-2xl font-bold">{count}</p>
+                  <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                    {config?.icon}
+                    {config?.label || type}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* Filter */}
+          <div className="flex gap-2 mb-4 flex-wrap">
+            <Button 
+              variant={selectedType === "all" ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setSelectedType("all")}
+            >
+              Tout
+            </Button>
+            {Object.entries(memoryTypeConfig).map(([type, config]) => (
+              <Button 
+                key={type}
+                variant={selectedType === type ? "default" : "outline"} 
+                size="sm"
+                onClick={() => setSelectedType(type)}
+                className="gap-1"
+              >
+                {config.icon}
+                {config.label}
+                {memoryStats?.[type] && (
+                  <Badge variant="secondary" className="ml-1 text-xs">
+                    {memoryStats[type]}
+                  </Badge>
+                )}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Memory List */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Entrées récentes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center p-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : !memories?.length ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <History className="h-12 w-12 mx-auto mb-2 opacity-30" />
+              <p>Aucune mémoire enregistrée</p>
+              <p className="text-xs">L'agent commencera à mémoriser après les premières interactions</p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-[500px] overflow-y-auto">
+              {memories.map((memory) => {
+                const config = memoryTypeConfig[memory.memory_type];
+                return (
+                  <div 
+                    key={memory.id}
+                    className="p-3 rounded-lg border bg-muted/30 space-y-2"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge className={`text-xs ${config?.color || "bg-muted"}`}>
+                          {config?.icon}
+                          <span className="ml-1">{config?.label || memory.memory_type}</span>
+                        </Badge>
+                        {memory.category && (
+                          <Badge variant="outline" className="text-xs">
+                            {memory.category}
+                          </Badge>
+                        )}
+                        {memory.importance_score && memory.importance_score > 0.7 && (
+                          <Badge variant="secondary" className="text-xs">
+                            ⭐ Important
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formatDate(memory.created_at)}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => deleteMemoryMutation.mutate(memory.id)}
+                        >
+                          <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-sm line-clamp-3">{memory.content}</p>
+                    {memory.entity_type && (
+                      <p className="text-xs text-muted-foreground">
+                        Lié à : {memory.entity_type} {memory.entity_id?.slice(0, 8)}...
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -708,6 +955,7 @@ export default function AdminAIPrompts() {
             <TabsTrigger value="config">Configuration</TabsTrigger>
             <TabsTrigger value="documents">Génération Docs</TabsTrigger>
             <TabsTrigger value="rag">Base RAG</TabsTrigger>
+            <TabsTrigger value="memory">Mémoire IA</TabsTrigger>
             <TabsTrigger value="modules">Modules</TabsTrigger>
           </TabsList>
 
@@ -798,6 +1046,10 @@ export default function AdminAIPrompts() {
 
             {/* Indexed Resources List */}
             <IndexedResourcesList />
+          </TabsContent>
+
+          <TabsContent value="memory" className="space-y-4">
+            <AIMemoryManager />
           </TabsContent>
 
           <TabsContent value="modules" className="space-y-4">

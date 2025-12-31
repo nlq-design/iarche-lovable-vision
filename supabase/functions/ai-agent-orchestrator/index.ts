@@ -9,7 +9,125 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const OPENAI_EMBEDDINGS_URL = "https://api.openai.com/v1/embeddings";
+
+// =============================================================================
+// MEMORY HELPERS
+// =============================================================================
+
+interface MemoryEntry {
+  memory_type: 'conversation' | 'action' | 'rag_query' | 'tool_call' | 'insight' | 'preference' | 'context';
+  category?: string;
+  entity_type?: string;
+  entity_id?: string;
+  content: string;
+  metadata?: Record<string, unknown>;
+  importance_score?: number;
+  expires_at?: string;
+}
+
+// deno-lint-ignore no-explicit-any
+async function generateEmbedding(text: string): Promise<number[] | null> {
+  if (!OPENAI_API_KEY) return null;
+  
+  try {
+    const response = await fetch(OPENAI_EMBEDDINGS_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "text-embedding-3-small",
+        input: text.slice(0, 8000), // Limit text length
+      }),
+    });
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.data[0].embedding;
+  } catch {
+    return null;
+  }
+}
+
+// deno-lint-ignore no-explicit-any
+async function saveMemory(supabase: any, entry: MemoryEntry, workspaceId?: string, userId?: string, sessionId?: string): Promise<void> {
+  try {
+    // Generate embedding for semantic search in memory
+    const embedding = await generateEmbedding(entry.content);
+    
+    const { error } = await supabase.from("ai_agent_memory").insert({
+      workspace_id: workspaceId,
+      user_id: userId,
+      session_id: sessionId,
+      memory_type: entry.memory_type,
+      category: entry.category,
+      entity_type: entry.entity_type,
+      entity_id: entry.entity_id,
+      content: entry.content,
+      metadata: entry.metadata || {},
+      embedding: embedding ? `[${embedding.join(",")}]` : null,
+      importance_score: entry.importance_score ?? 0.5,
+      expires_at: entry.expires_at,
+    });
+    
+    if (error) {
+      console.error("Failed to save memory:", error);
+    }
+  } catch (err) {
+    console.error("Memory save error:", err);
+  }
+}
+
+// deno-lint-ignore no-explicit-any
+async function getRecentMemory(supabase: any, workspaceId?: string, userId?: string, sessionId?: string, limit = 10): Promise<string[]> {
+  try {
+    const { data, error } = await supabase.rpc("get_recent_ai_memory", {
+      p_workspace_id: workspaceId,
+      p_user_id: userId,
+      p_session_id: sessionId,
+      p_memory_types: null,
+      p_limit: limit,
+    });
+    
+    if (error || !data) return [];
+    
+    return data.map((m: { memory_type: string; content: string; created_at: string }) => 
+      `[${m.memory_type}] ${m.content}`
+    );
+  } catch {
+    return [];
+  }
+}
+
+// deno-lint-ignore no-explicit-any
+async function searchMemory(supabase: any, query: string, workspaceId?: string, userId?: string, limit = 5): Promise<string[]> {
+  try {
+    const embedding = await generateEmbedding(query);
+    if (!embedding) return [];
+    
+    const { data, error } = await supabase.rpc("search_ai_memory", {
+      p_query_embedding: `[${embedding.join(",")}]`,
+      p_workspace_id: workspaceId,
+      p_user_id: userId,
+      p_session_id: null,
+      p_memory_types: null,
+      p_match_threshold: 0.65,
+      p_match_count: limit,
+    });
+    
+    if (error || !data) return [];
+    
+    return data.map((m: { memory_type: string; content: string; similarity: number }) => 
+      `[${m.memory_type}|${(m.similarity * 100).toFixed(0)}%] ${m.content}`
+    );
+  } catch {
+    return [];
+  }
+}
 
 // =============================================================================
 // TOOL DEFINITIONS - Organized by Module and Autonomy Level
@@ -1047,7 +1165,7 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body = await req.json();
-    const { messages, stream = false } = body;
+    const { messages, stream = false, workspace_id, user_id, session_id } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "messages array required" }), {
@@ -1061,9 +1179,46 @@ serve(async (req) => {
     // Fetch system prompt from ai_prompts table
     const { prompt: systemPrompt, model: selectedModel } = await getSystemPrompt(supabase);
 
-    // Build messages with system prompt
+    // Get the user's last message
+    const lastUserMessage = messages.filter((m: { role: string }) => m.role === "user").pop();
+    const userQuery = lastUserMessage?.content || "";
+
+    // =============================================================================
+    // MEMORY INTEGRATION
+    // =============================================================================
+    
+    // 1. Fetch recent memory for context
+    const recentMemory = await getRecentMemory(supabase, workspace_id, user_id, session_id, 5);
+    
+    // 2. Search relevant memory semantically
+    const relevantMemory = userQuery ? await searchMemory(supabase, userQuery, workspace_id, user_id, 3) : [];
+    
+    // 3. Build memory context string
+    let memoryContext = "";
+    if (recentMemory.length > 0 || relevantMemory.length > 0) {
+      memoryContext = "\n\nMÉMOIRE AGENT (contexte précédent) :";
+      if (relevantMemory.length > 0) {
+        memoryContext += "\n--- Mémoire pertinente ---\n" + relevantMemory.join("\n");
+      }
+      if (recentMemory.length > 0) {
+        memoryContext += "\n--- Actions récentes ---\n" + recentMemory.slice(0, 3).join("\n");
+      }
+    }
+
+    // 4. Save the user query to memory
+    if (userQuery) {
+      await saveMemory(supabase, {
+        memory_type: "conversation",
+        category: "user_query",
+        content: userQuery.slice(0, 500),
+        importance_score: 0.3,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+      }, workspace_id, user_id, session_id);
+    }
+
+    // Build messages with system prompt + memory context
     const fullMessages = [
-      { role: "system", content: systemPrompt },
+      { role: "system", content: systemPrompt + memoryContext },
       ...messages,
     ];
 
@@ -1115,6 +1270,17 @@ serve(async (req) => {
             tool_call_id: toolCall.id,
             content: JSON.stringify(toolResult),
           });
+          
+          // Save tool call to memory
+          await saveMemory(supabase, {
+            memory_type: "tool_call",
+            category: toolName,
+            content: `Tool ${toolName} appelé avec ${JSON.stringify(toolArgs).slice(0, 200)}`,
+            metadata: { tool: toolName, args: toolArgs, success: true },
+            importance_score: 0.6,
+            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+          }, workspace_id, user_id, session_id);
+          
         } catch (toolError) {
           console.error(`Tool ${toolName} error:`, toolError);
           toolResults.push({
@@ -1156,6 +1322,21 @@ serve(async (req) => {
 
     const finalContent = assistantMessage?.content || "Je n'ai pas pu traiter votre demande.";
 
+    // Save assistant response to memory (important insights only)
+    if (finalContent && finalContent.length > 50) {
+      const isInsight = allToolCalls.length > 0 || finalContent.includes("recommand") || finalContent.includes("suggèr") || finalContent.includes("action");
+      await saveMemory(supabase, {
+        memory_type: isInsight ? "insight" : "conversation",
+        category: allToolCalls.length > 0 ? allToolCalls.map(t => t.name).join(",") : "response",
+        content: finalContent.slice(0, 1000),
+        metadata: { tools_used: allToolCalls.map(t => t.name) },
+        importance_score: isInsight ? 0.8 : 0.4,
+        expires_at: isInsight 
+          ? new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days for insights
+          : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days for conversation
+      }, workspace_id, user_id, session_id);
+    }
+
     console.log("Agent response generated, tools called:", allToolCalls.map(t => t.name));
 
     return new Response(JSON.stringify({
@@ -1163,6 +1344,7 @@ serve(async (req) => {
       message: finalContent,
       tool_calls: allToolCalls,
       usage: result.usage,
+      memory_used: recentMemory.length + relevantMemory.length > 0,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -201,6 +201,68 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_agent_memory: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string
+          embedding: string | null
+          entity_id: string | null
+          entity_type: string | null
+          expires_at: string | null
+          id: string
+          importance_score: number | null
+          memory_type: string
+          metadata: Json | null
+          session_id: string | null
+          updated_at: string
+          user_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string
+          embedding?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          expires_at?: string | null
+          id?: string
+          importance_score?: number | null
+          memory_type: string
+          metadata?: Json | null
+          session_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string
+          embedding?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          expires_at?: string | null
+          id?: string
+          importance_score?: number | null
+          memory_type?: string
+          metadata?: Json | null
+          session_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_agent_memory_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_prompts: {
         Row: {
           category: string
@@ -2824,6 +2886,7 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: boolean
       }
+      cleanup_expired_ai_memory: { Args: never; Returns: number }
       cleanup_expired_cockpit_data: { Args: never; Returns: undefined }
       cleanup_login_attempts: { Args: never; Returns: undefined }
       cleanup_orphan_data: {
@@ -2838,6 +2901,26 @@ export type Database = {
       count_atelier_inscriptions: {
         Args: { atelier_uuid: string }
         Returns: number
+      }
+      get_recent_ai_memory: {
+        Args: {
+          p_limit?: number
+          p_memory_types?: string[]
+          p_session_id?: string
+          p_user_id?: string
+          p_workspace_id?: string
+        }
+        Returns: {
+          category: string
+          content: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          importance_score: number
+          memory_type: string
+          metadata: Json
+        }[]
       }
       has_cockpit_access: { Args: { user_uuid: string }; Returns: boolean }
       has_role: {
@@ -2859,6 +2942,27 @@ export type Database = {
       is_workspace_member: {
         Args: { p_user_id: string; p_workspace_id: string }
         Returns: boolean
+      }
+      search_ai_memory: {
+        Args: {
+          p_match_count?: number
+          p_match_threshold?: number
+          p_memory_types?: string[]
+          p_query_embedding: string
+          p_session_id?: string
+          p_user_id?: string
+          p_workspace_id?: string
+        }
+        Returns: {
+          category: string
+          content: string
+          created_at: string
+          id: string
+          importance_score: number
+          memory_type: string
+          metadata: Json
+          similarity: number
+        }[]
       }
       search_similar_resources: {
         Args: {
