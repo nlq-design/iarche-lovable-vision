@@ -52,18 +52,23 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
   const [expandedTools, setExpandedTools] = useState<string | null>(null);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
 
-  // Scroll to bottom when new messages arrive
+  // Scroll to bottom when new messages arrive - more reliable approach
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    const scrollToBottom = () => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }
-    }
-  }, [messages]);
+    };
+    // Use requestAnimationFrame for reliable timing after DOM update
+    const rafId = requestAnimationFrame(() => {
+      requestAnimationFrame(scrollToBottom);
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [messages, isLoading]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -372,6 +377,8 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
                   </div>
                 </div>
               )}
+              {/* Invisible anchor for auto-scroll */}
+              <div ref={messagesEndRef} className="h-px" />
             </div>
           )}
         </ScrollArea>
