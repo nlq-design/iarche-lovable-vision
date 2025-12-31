@@ -9,9 +9,24 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
+const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
 const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
+const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+type LLMProvider = "lovable" | "openai" | "anthropic" | "openrouter";
+
+interface LLMModel {
+  id: string;
+  provider: LLMProvider;
+  model_id: string;
+  display_name: string;
+  supports_tools: boolean;
+}
 
 // Whisper API limit is 25MB per request
 const WHISPER_MAX_SIZE = 25 * 1024 * 1024;
@@ -208,38 +223,172 @@ function buildLLM(
   return { sys, usr };
 }
 
-async function lovableSummarize(model: string, sys: string, usr: string, outputSchema: Record<string, unknown> | null) {
-  // Use tool calling for structured output when schema is available
-  const requestBody: Record<string, unknown> = {
-    model,
-    messages: [
-      { role: "system", content: sys + "\n\nRéponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans ```json, sans texte avant ou après." },
-      { role: "user", content: usr },
-    ],
-  };
+async function fetchLLMModel(supabase: any, modelId: string | null): Promise<LLMModel | null> {
+  if (!modelId) return null;
+  
+  const { data } = await supabase
+    .from("llm_models")
+    .select("id, provider, model_id, display_name, supports_tools")
+    .eq("id", modelId)
+    .eq("is_active", true)
+    .single();
+  
+  return data as LLMModel | null;
+}
 
-  // Add tool calling for structured output
-  if (outputSchema) {
-    requestBody.tools = [{
-      type: "function",
-      function: {
-        name: "submit_transcription_summary",
-        description: "Submit the structured summary of the transcription",
-        parameters: outputSchema
+async function callLLM(
+  provider: LLMProvider,
+  modelId: string,
+  sys: string,
+  usr: string,
+  outputSchema: Record<string, unknown> | null,
+  supportsTools: boolean
+): Promise<Record<string, unknown>> {
+  console.log(`Calling ${provider} with model: ${modelId}`);
+  
+  const systemContent = sys + "\n\nRéponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans ```json, sans texte avant ou après.";
+  
+  let response: Response;
+  
+  switch (provider) {
+    case "lovable": {
+      const requestBody: Record<string, unknown> = {
+        model: modelId,
+        messages: [
+          { role: "system", content: systemContent },
+          { role: "user", content: usr },
+        ],
+      };
+      
+      if (outputSchema && supportsTools) {
+        requestBody.tools = [{
+          type: "function",
+          function: {
+            name: "submit_transcription_summary",
+            description: "Submit the structured summary of the transcription",
+            parameters: outputSchema
+          }
+        }];
+        requestBody.tool_choice = { type: "function", function: { name: "submit_transcription_summary" } };
       }
-    }];
-    requestBody.tool_choice = { type: "function", function: { name: "submit_transcription_summary" } };
+      
+      response = await fetch(LOVABLE_AI_GATEWAY, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+      break;
+    }
+    
+    case "openai": {
+      if (!OPENAI_API_KEY) throw new Error("openai_api_key_not_configured");
+      
+      const requestBody: Record<string, unknown> = {
+        model: modelId,
+        messages: [
+          { role: "system", content: systemContent },
+          { role: "user", content: usr },
+        ],
+        max_tokens: 4096,
+      };
+      
+      if (outputSchema && supportsTools) {
+        requestBody.tools = [{
+          type: "function",
+          function: {
+            name: "submit_transcription_summary",
+            description: "Submit the structured summary of the transcription",
+            parameters: outputSchema
+          }
+        }];
+        requestBody.tool_choice = { type: "function", function: { name: "submit_transcription_summary" } };
+      }
+      
+      response = await fetch(OPENAI_API_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+      break;
+    }
+    
+    case "anthropic": {
+      if (!ANTHROPIC_API_KEY) throw new Error("anthropic_api_key_not_configured");
+      
+      const requestBody: Record<string, unknown> = {
+        model: modelId,
+        max_tokens: 4096,
+        system: systemContent,
+        messages: [{ role: "user", content: usr }],
+      };
+      
+      if (outputSchema && supportsTools) {
+        requestBody.tools = [{
+          name: "submit_transcription_summary",
+          description: "Submit the structured summary of the transcription",
+          input_schema: outputSchema
+        }];
+        requestBody.tool_choice = { type: "tool", name: "submit_transcription_summary" };
+      }
+      
+      response = await fetch(ANTHROPIC_API_URL, {
+        method: "POST",
+        headers: {
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+      break;
+    }
+    
+    case "openrouter": {
+      if (!OPENROUTER_API_KEY) throw new Error("openrouter_api_key_not_configured");
+      
+      const requestBody: Record<string, unknown> = {
+        model: modelId,
+        messages: [
+          { role: "system", content: systemContent },
+          { role: "user", content: usr },
+        ],
+      };
+      
+      if (outputSchema && supportsTools) {
+        requestBody.tools = [{
+          type: "function",
+          function: {
+            name: "submit_transcription_summary",
+            description: "Submit the structured summary of the transcription",
+            parameters: outputSchema
+          }
+        }];
+        requestBody.tool_choice = { type: "function", function: { name: "submit_transcription_summary" } };
+      }
+      
+      response = await fetch(OPENROUTER_API_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://iarche.fr",
+          "X-Title": "IArche Cockpit",
+        },
+        body: JSON.stringify(requestBody),
+      });
+      break;
+    }
+    
+    default:
+      throw new Error(`unknown_provider: ${provider}`);
   }
-
-  const response = await fetch(LOVABLE_AI_GATEWAY, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestBody),
-  });
-
+  
   const txt = await response.text();
   console.log("LLM response length:", txt.length);
   
@@ -253,11 +402,36 @@ async function lovableSummarize(model: string, sys: string, usr: string, outputS
     throw new Error("credits_exhausted: Please add funds to your Lovable AI workspace");
   }
   
-  if (!response.ok) throw new Error(`lovable_llm_failed: ${txt}`);
-
-  const json = JSON.parse(txt);
+  if (!response.ok) throw new Error(`llm_failed: ${txt}`);
   
-  // Check for tool call response first
+  return parseProviderResponse(provider, txt, outputSchema);
+}
+
+function parseProviderResponse(
+  provider: LLMProvider,
+  responseText: string,
+  outputSchema: Record<string, unknown> | null
+): Record<string, unknown> {
+  const json = JSON.parse(responseText);
+  
+  // Anthropic has different response format
+  if (provider === "anthropic") {
+    // Check for tool use first
+    const toolUse = json?.content?.find((c: any) => c.type === "tool_use");
+    if (toolUse?.input) {
+      console.log("Using Anthropic tool call response");
+      return toolUse.input;
+    }
+    
+    // Otherwise, get text content
+    const textContent = json?.content?.find((c: any) => c.type === "text");
+    if (textContent?.text) {
+      return extractJsonFromText(textContent.text);
+    }
+    throw new Error("anthropic_empty_content");
+  }
+  
+  // OpenAI-compatible format (Lovable, OpenAI, OpenRouter)
   const toolCall = json?.choices?.[0]?.message?.tool_calls?.[0];
   if (toolCall?.function?.arguments) {
     console.log("Using tool call response");
@@ -265,13 +439,16 @@ async function lovableSummarize(model: string, sys: string, usr: string, outputS
       return JSON.parse(toolCall.function.arguments);
     } catch (e) {
       console.error("Tool call JSON parse error:", e);
-      // Fall through to content parsing
     }
   }
   
   const content = json?.choices?.[0]?.message?.content;
-  if (!content) throw new Error("lovable_llm_empty_content");
+  if (!content) throw new Error("llm_empty_content");
+  
+  return extractJsonFromText(content);
+}
 
+function extractJsonFromText(content: string): Record<string, unknown> {
   console.log("Parsing content response, first 500 chars:", content.substring(0, 500));
   
   // Try direct parse first
@@ -299,10 +476,10 @@ async function lovableSummarize(model: string, sys: string, usr: string, outputS
         console.error("JSON regex parse failed:", e3);
         // Try to fix common issues
         let fixed = jsonMatch[0]
-          .replace(/,\s*}/g, '}')  // Remove trailing commas before }
-          .replace(/,\s*]/g, ']')  // Remove trailing commas before ]
-          .replace(/\n/g, ' ')     // Replace newlines with spaces
-          .replace(/\t/g, ' ');    // Replace tabs with spaces
+          .replace(/,\s*}/g, '}')
+          .replace(/,\s*]/g, ']')
+          .replace(/\n/g, ' ')
+          .replace(/\t/g, ' ');
         
         try {
           return JSON.parse(fixed);
@@ -312,7 +489,7 @@ async function lovableSummarize(model: string, sys: string, usr: string, outputS
       }
     }
     
-    throw new Error(`lovable_llm_invalid_json: Could not parse LLM response`);
+    throw new Error(`llm_invalid_json: Could not parse LLM response`);
   }
 }
 
@@ -455,25 +632,53 @@ serve(async (req) => {
     const ctx = await fetchEntityContext(supabase, vjob);
     console.log(`Context fetched: lead=${ctx.leadId}, project=${ctx.project?.id ?? null}`);
 
-    // Prompt profile
+    // Prompt profile & LLM model selection
     const profile = await loadPromptProfile(supabase, vjob.prompt_profile_id);
     const systemPrompt = profile?.system_prompt ?? "Return JSON only.";
     const userPrompt = profile?.user_prompt ?? null;
     const outputSchema = profile?.output_schema ?? null;
-    const model = (profile?.model_config as Record<string, string>)?.model ?? "google/gemini-2.5-flash";
+    
+    // Determine which LLM to use: from vjob.llm_model_id or profile model_config or default
+    let provider: LLMProvider = "lovable";
+    let modelId = "google/gemini-2.5-flash";
+    let supportsTools = true;
+    
+    // Check if job has specific LLM model
+    const llmModel = await fetchLLMModel(supabase, (vjob as any).llm_model_id);
+    if (llmModel) {
+      provider = llmModel.provider as LLMProvider;
+      modelId = llmModel.model_id;
+      supportsTools = llmModel.supports_tools;
+      console.log(`Using job-specific LLM: ${provider}/${modelId}`);
+    } else if (profile?.model_config) {
+      // Fallback to profile's model config
+      const profileModel = (profile.model_config as Record<string, string>)?.model;
+      if (profileModel) {
+        modelId = profileModel;
+        // Infer provider from model format
+        if (profileModel.startsWith("gpt-")) {
+          provider = "openai";
+        } else if (profileModel.startsWith("claude-")) {
+          provider = "anthropic";
+        }
+        console.log(`Using profile model: ${provider}/${modelId}`);
+      }
+    }
 
     const { sys, usr } = buildLLM(systemPrompt, userPrompt, rawText, ctx, outputSchema);
 
-    // LLM summarize
-    console.log(`Calling LLM with model: ${model}`);
-    const summary = await lovableSummarize(model, sys, usr, outputSchema as Record<string, unknown> | null);
-    console.log(`Summary generated with confidence: ${summary?.extraction_quality?.confidence ?? 'unknown'}`);
+    // LLM summarize using multi-provider routing
+    console.log(`Calling LLM: ${provider}/${modelId}`);
+    const summary = await callLLM(provider, modelId, sys, usr, outputSchema as Record<string, unknown> | null, supportsTools);
+    console.log(`Summary generated with confidence: ${(summary as any)?.extraction_quality?.confidence ?? 'unknown'}`);
 
     // Tasks (optional)
     const createdTasks = await createTasksFromActions(supabase, vjob, summary, ctx.leadId);
     console.log(`Created ${createdTasks.length} tasks`);
 
     // Activity log
+    const llmModelFullName = `${provider}/${modelId}`;
+    const summaryAny = summary as any;
     await supabase.from("activity_log").insert({
       workspace_id: vjob.workspace_id,
       entity_type: "voice_transcription",
@@ -486,9 +691,10 @@ serve(async (req) => {
       ai_metadata: {
         ...(vjob.ai_metadata ?? {}),
         stt_model: "whisper-1",
-        llm_model: model,
+        llm_model: llmModelFullName,
+        llm_provider: provider,
         autonomy_level: "N0",
-        confidence: summary?.extraction_quality?.confidence ?? null,
+        confidence: summaryAny?.extraction_quality?.confidence ?? null,
       },
     });
 
@@ -498,11 +704,13 @@ serve(async (req) => {
       .update({
         summary,
         status: "done",
+        llm_model_id: llmModel?.id ?? null,
         ai_metadata: {
           ...(vjob.ai_metadata ?? {}),
-          llm_model: model,
+          llm_model: llmModelFullName,
+          llm_provider: provider,
           autonomy_level: "N0",
-          confidence: summary?.extraction_quality?.confidence ?? null,
+          confidence: summaryAny?.extraction_quality?.confidence ?? null,
           validated_by_human: false,
           validation_required: false,
         },
