@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, ArrowRight, Filter, GripVertical, Building2, Plus, User } from "lucide-react";
+import { TrendingUp, ArrowRight, Filter, GripVertical, Building2, Plus, User, AlertTriangle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCockpitOpportunities } from '@/hooks/cockpit';
 import { useCockpitLeads } from '@/hooks/cockpit';
+import { useCockpitActivityLog } from '@/hooks/cockpit';
 import { CreateOpportunityDialog } from '@/components/cockpit/dialogs';
 import { LeadDetailSheet } from '@/components/cockpit/LeadDetailSheet';
 import { Link } from 'react-router-dom';
+import { differenceInDays } from 'date-fns';
 
 const STAGE_CONFIG: Record<string, { label: string; color: string }> = {
   lead: { label: 'Lead', color: 'bg-slate-500' },
@@ -41,10 +44,27 @@ interface Lead {
 const CockpitPipeline = () => {
   const { opportunities, stats, isLoading, moveToStage, PIPELINE_STAGES } = useCockpitOpportunities();
   const { leads } = useCockpitLeads();
+  const { activities } = useCockpitActivityLog();
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  // Check stagnation: opportunity without activity for >7 days
+  const getStagnationDays = (oppId: string, oppUpdatedAt: string | null): number => {
+    const oppActivities = activities?.filter(a => 
+      a.entity_type === 'opportunity' && a.entity_id === oppId
+    ) || [];
+    
+    const lastActivityDate = oppActivities.length > 0 
+      ? new Date(oppActivities[0].created_at || '')
+      : oppUpdatedAt 
+        ? new Date(oppUpdatedAt) 
+        : null;
+    
+    if (!lastActivityDate) return 0;
+    return differenceInDays(new Date(), lastActivityDate);
+  };
 
   // Group opportunities by stage
   const opportunitiesByStage = PIPELINE_STAGES.reduce((acc, stage) => {
@@ -162,6 +182,8 @@ const CockpitPipeline = () => {
                     ) : (
                       stageOpps.map((opp) => {
                         const linkedLead = opp.lead_id ? leads?.find(l => l.id === opp.lead_id) : null;
+                        const stagnationDays = getStagnationDays(opp.id, opp.updated_at);
+                        const isStagnant = stagnationDays >= 7;
                         
                         return (
                           <div
@@ -169,12 +191,28 @@ const CockpitPipeline = () => {
                             draggable
                             onDragStart={(e) => handleDragStart(e, opp.id)}
                             onClick={() => handleCardClick(opp)}
-                            className="p-2.5 rounded-md border bg-background hover:bg-muted/50 cursor-pointer active:cursor-grabbing transition-colors"
+                            className={`p-2.5 rounded-md border bg-background hover:bg-muted/50 cursor-pointer active:cursor-grabbing transition-colors ${
+                              isStagnant ? 'border-amber-400 bg-amber-50/30 dark:bg-amber-950/20' : ''
+                            }`}
                           >
                             <div className="flex items-start gap-2">
                               <GripVertical className="h-4 w-4 text-muted-foreground/50 flex-shrink-0 mt-0.5 cursor-grab" />
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{opp.title}</p>
+                                <div className="flex items-center gap-1.5">
+                                  <p className="font-medium text-sm truncate flex-1">{opp.title}</p>
+                                  {isStagnant && (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p className="text-xs">Sans activité depuis {stagnationDays} jours</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  )}
+                                </div>
                                 {linkedLead ? (
                                   <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
                                     <Building2 className="h-3 w-3" />
@@ -194,7 +232,13 @@ const CockpitPipeline = () => {
                                     {opp.probability}%
                                   </Badge>
                                 </div>
-                                {linkedLead && (
+                                {isStagnant && (
+                                  <div className="flex items-center gap-1 mt-1.5 text-xs text-amber-600">
+                                    <Clock className="h-3 w-3" />
+                                    <span>{stagnationDays}j sans activité</span>
+                                  </div>
+                                )}
+                                {linkedLead && !isStagnant && (
                                   <div className="flex items-center gap-1 mt-1.5 text-xs text-primary">
                                     <User className="h-3 w-3" />
                                     <span>Voir fiche</span>

@@ -280,7 +280,7 @@ const CockpitAgenda = () => {
                 })}
               </div>
 
-              {/* Day view */}
+              {/* Day view - Unified Timeline */}
               <div className="border-t pt-4">
                 <h4 className="text-sm font-medium mb-3">
                   {format(currentDate, "EEEE d MMMM", { locale: fr })}
@@ -290,51 +290,58 @@ const CockpitAgenda = () => {
                     <Skeleton className="h-20 w-full" />
                     <Skeleton className="h-20 w-full" />
                   </div>
-                ) : (
-                  <>
-                    {/* Tasks for the day */}
-                    {currentDayTasks.length > 0 && (
-                      <div className="mb-4">
-                        <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                          <CheckSquare className="h-3 w-3" />
-                          Tâches ({currentDayTasks.length})
-                        </p>
-                        <div className="space-y-2">
-                          {currentDayTasks.map((task) => (
-                            <TaskCard key={task.id} task={task} />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Bookings for the day */}
-                    {bookings.filter(b => 
-                      isSameDay(new Date(b.start_time), currentDate) && b.status !== "cancelled"
-                    ).length === 0 && currentDayTasks.length === 0 ? (
+                ) : (() => {
+                  // Merge and sort tasks + bookings by time
+                  const dayBookings = bookings.filter(b => 
+                    isSameDay(new Date(b.start_time), currentDate) && b.status !== "cancelled"
+                  );
+                  
+                  type TimelineItem = 
+                    | { type: 'booking'; data: Booking; time: string }
+                    | { type: 'task'; data: Task; time: string };
+                  
+                  const timeline: TimelineItem[] = [
+                    ...dayBookings.map(b => ({ 
+                      type: 'booking' as const, 
+                      data: b, 
+                      time: format(new Date(b.start_time), 'HH:mm') 
+                    })),
+                    ...currentDayTasks.map(t => ({ 
+                      type: 'task' as const, 
+                      data: t, 
+                      time: t.due_time?.slice(0, 5) || '23:59' 
+                    })),
+                  ].sort((a, b) => a.time.localeCompare(b.time));
+                  
+                  if (timeline.length === 0) {
+                    return (
                       <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
                         <Calendar className="h-8 w-8 mb-2 opacity-50" />
                         <p className="text-sm">Aucun événement ce jour</p>
                       </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {bookings.filter(b => 
-                          isSameDay(new Date(b.start_time), currentDate) && b.status !== "cancelled"
-                        ).length > 0 && (
-                          <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            Rendez-vous
-                          </p>
-                        )}
-                        {bookings
-                          .filter(b => isSameDay(new Date(b.start_time), currentDate) && b.status !== "cancelled")
-                          .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
-                          .map((booking) => (
-                            <BookingCard key={booking.id} booking={booking} />
-                          ))}
-                      </div>
-                    )}
-                  </>
-                )}
+                    );
+                  }
+                  
+                  return (
+                    <div className="space-y-2">
+                      {timeline.map((item, idx) => (
+                        <div key={`${item.type}-${item.type === 'booking' ? item.data.id : item.data.id}-${idx}`} className="relative">
+                          {/* Time indicator */}
+                          <div className="absolute -left-1 top-3 text-xs text-muted-foreground font-mono w-10">
+                            {item.time !== '23:59' ? item.time : ''}
+                          </div>
+                          <div className="ml-12">
+                            {item.type === 'booking' ? (
+                              <BookingCard booking={item.data} />
+                            ) : (
+                              <TaskCard task={item.data} />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             </CardContent>
           </Card>
