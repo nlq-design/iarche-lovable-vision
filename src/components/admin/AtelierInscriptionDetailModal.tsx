@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar, Mail, Phone, Building2, User, Users } from 'lucide-react';
 
 interface AtelierInscription {
@@ -29,12 +30,13 @@ export function AtelierInscriptionDetailModal({ inscription, open, onOpenChange 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-2xl">Détails de l'inscription</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <div className="space-y-6 pr-2">
           {/* Atelier */}
           <div>
             <h3 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-2">
@@ -126,7 +128,8 @@ export function AtelierInscriptionDetailModal({ inscription, open, onOpenChange 
             <p className="text-xs text-muted-foreground">Atelier ID: {inscription.atelier_id}</p>
             <p className="text-xs text-muted-foreground">Lead ID: {inscription.lead_id}</p>
           </div>
-        </div>
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

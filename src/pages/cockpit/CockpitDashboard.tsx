@@ -283,10 +283,10 @@ export default function CockpitDashboard() {
             ) : recentActivities.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">Aucune activité récente</p>
             ) : (
-              <ScrollArea className="h-[200px]">
-                <div className="space-y-2">
+              <ScrollArea className="h-[240px] -mx-2 px-2">
+                <div className="space-y-2 pr-2">
                   {recentActivities.map((activity) => (
-                    <div key={activity.id} className="flex items-start gap-3 p-2 rounded border">
+                    <div key={activity.id} className="flex items-start gap-3 p-2 rounded border bg-background">
                       <ActivityIcon type={activity.activity_type} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{activity.title}</p>

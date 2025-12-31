@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Mail, Phone, Building2, FileText, CheckCircle, XCircle } from 'lucide-react';
 
@@ -57,12 +58,13 @@ export function LeadDetailModal({ lead, open, onOpenChange }: LeadDetailModalPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-2xl">Détails du lead</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <div className="space-y-6 pr-2">
           {/* Informations principales */}
           <div className="space-y-4">
             <div>
@@ -174,7 +176,8 @@ export function LeadDetailModal({ lead, open, onOpenChange }: LeadDetailModalPro
           <div className="pt-4 border-t border-border">
             <p className="text-xs text-muted-foreground">ID: {lead.id}</p>
           </div>
-        </div>
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

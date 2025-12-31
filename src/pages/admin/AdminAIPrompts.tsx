@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { 
   Save, Bot, Loader2, RotateCcw, Cpu, Zap, Sparkles, Brain, 
@@ -297,32 +298,34 @@ function IndexedResourcesList() {
             Aucune ressource indexée. Cliquez sur "Indexer tout" pour démarrer.
           </p>
         ) : (
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {filteredResources?.slice(0, 20).map((resource) => (
-              <div 
-                key={resource.resource_id}
-                className="flex items-center justify-between p-2 rounded-md bg-muted/30 text-sm"
-              >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {resourceTypeIcons[resource.resource_type]}
-                  <span className="truncate">{resource.resource_title}</span>
+          <ScrollArea className="h-64 -mx-2 px-2">
+            <div className="space-y-2 pr-2">
+              {filteredResources?.slice(0, 20).map((resource) => (
+                <div 
+                  key={resource.resource_id}
+                  className="flex items-center justify-between p-2 rounded-md bg-muted/30 text-sm"
+                >
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {resourceTypeIcons[resource.resource_type]}
+                    <span className="truncate">{resource.resource_title}</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Badge variant="secondary" className="text-xs">
+                      {resource.chunk_count} chunks
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {resourceTypeLabels[resource.resource_type] || resource.resource_type}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <Badge variant="secondary" className="text-xs">
-                    {resource.chunk_count} chunks
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {resourceTypeLabels[resource.resource_type] || resource.resource_type}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-            {(filteredResources?.length || 0) > 20 && (
-              <p className="text-xs text-muted-foreground text-center pt-2">
-                +{(filteredResources?.length || 0) - 20} autres ressources
-              </p>
-            )}
-          </div>
+              ))}
+              {(filteredResources?.length || 0) > 20 && (
+                <p className="text-xs text-muted-foreground text-center pt-2">
+                  +{(filteredResources?.length || 0) - 20} autres ressources
+                </p>
+              )}
+            </div>
+          </ScrollArea>
         )}
       </CardContent>
     </Card>
@@ -518,56 +521,58 @@ function AIMemoryManager() {
               <p className="text-xs">L'agent commencera à mémoriser après les premières interactions</p>
             </div>
           ) : (
-            <div className="space-y-2 max-h-[500px] overflow-y-auto">
-              {memories.map((memory) => {
-                const config = memoryTypeConfig[memory.memory_type];
-                return (
-                  <div 
-                    key={memory.id}
-                    className="p-3 rounded-lg border bg-muted/30 space-y-2"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge className={`text-xs ${config?.color || "bg-muted"}`}>
-                          {config?.icon}
-                          <span className="ml-1">{config?.label || memory.memory_type}</span>
-                        </Badge>
-                        {memory.category && (
-                          <Badge variant="outline" className="text-xs">
-                            {memory.category}
+            <ScrollArea className="h-[400px] -mx-2 px-2">
+              <div className="space-y-2 pr-2">
+                {memories.map((memory) => {
+                  const config = memoryTypeConfig[memory.memory_type];
+                  return (
+                    <div 
+                      key={memory.id}
+                      className="p-3 rounded-lg border bg-muted/30 space-y-2"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge className={`text-xs ${config?.color || "bg-muted"}`}>
+                            {config?.icon}
+                            <span className="ml-1">{config?.label || memory.memory_type}</span>
                           </Badge>
-                        )}
-                        {memory.importance_score && memory.importance_score > 0.7 && (
-                          <Badge variant="secondary" className="text-xs">
-                            ⭐ Important
-                          </Badge>
-                        )}
+                          {memory.category && (
+                            <Badge variant="outline" className="text-xs">
+                              {memory.category}
+                            </Badge>
+                          )}
+                          {memory.importance_score && memory.importance_score > 0.7 && (
+                            <Badge variant="secondary" className="text-xs">
+                              ⭐ Important
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {formatDate(memory.created_at)}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => deleteMemoryMutation.mutate(memory.id)}
+                          >
+                            <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {formatDate(memory.created_at)}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => deleteMemoryMutation.mutate(memory.id)}
-                        >
-                          <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                        </Button>
-                      </div>
+                      <p className="text-sm line-clamp-3">{memory.content}</p>
+                      {memory.entity_type && (
+                        <p className="text-xs text-muted-foreground">
+                          Lié à : {memory.entity_type} {memory.entity_id?.slice(0, 8)}...
+                        </p>
+                      )}
                     </div>
-                    <p className="text-sm line-clamp-3">{memory.content}</p>
-                    {memory.entity_type && (
-                      <p className="text-xs text-muted-foreground">
-                        Lié à : {memory.entity_type} {memory.entity_id?.slice(0, 8)}...
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
           )}
         </CardContent>
       </Card>
