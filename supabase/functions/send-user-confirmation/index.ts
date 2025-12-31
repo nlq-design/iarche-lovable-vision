@@ -40,8 +40,37 @@ const validateFileUrl = (url: string | null | undefined): string => {
   }
 };
 
-const getEmailContent = (data: UserConfirmationRequest) => {
-  // Échapper toutes les données utilisateur
+// Fonction pour remplacer les variables dans un template
+function replaceTemplateVariables(
+  template: string, 
+  data: {
+    name: string;
+    email: string;
+    title: string;
+    message: string;
+    cta_url: string;
+    cta_text: string;
+    date: string;
+    company: string;
+    source_context: string;
+    file_url: string;
+  }
+): string {
+  return template
+    .replace(/\{\{name\}\}/g, data.name)
+    .replace(/\{\{email\}\}/g, data.email)
+    .replace(/\{\{title\}\}/g, data.title)
+    .replace(/\{\{message\}\}/g, data.message)
+    .replace(/\{\{cta_url\}\}/g, data.cta_url)
+    .replace(/\{\{cta_text\}\}/g, data.cta_text)
+    .replace(/\{\{date\}\}/g, data.date)
+    .replace(/\{\{company\}\}/g, data.company)
+    .replace(/\{\{source_context\}\}/g, data.source_context)
+    .replace(/\{\{file_url\}\}/g, data.file_url);
+}
+
+// Génère le contenu par défaut pour chaque type de source
+const getDefaultEmailContent = (data: UserConfirmationRequest) => {
   const safeName = escapeHtml(data.name);
   const safeSourceContext = escapeHtml(data.source_context);
   const safeLivreBlanctitle = escapeHtml(data.livre_blanc_title);
@@ -136,6 +165,21 @@ const getEmailContent = (data: UserConfirmationRequest) => {
         ),
       };
 
+    case 'atelier-webinaire':
+      return {
+        subject: `🎓 Inscription confirmée : ${safeSourceContext || 'Atelier IArche'}`,
+        html: wrapEmailContent(
+          header('Inscription confirmée !'),
+          `
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Bonjour <strong>${safeName}</strong>,</p>
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 16px;">Votre inscription à <strong>${safeSourceContext || 'notre atelier'}</strong> est confirmée !</p>
+            <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin-bottom: 24px;">Vous recevrez un rappel avec le lien de connexion avant l'événement.</p>
+            ${getSignature()}
+          `,
+          footer
+        ),
+      };
+
     case 'booking':
       return {
         subject: `✅ Rendez-vous confirmé : ${safeSourceContext || 'IArche'}`,
@@ -174,12 +218,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Rate limiting
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
     
+    // Rate limiting
     const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     const { allowed, remaining } = await checkRateLimit(supabase, clientIP, 'user-confirmation', {
       maxRequests: 10,
@@ -211,7 +255,50 @@ Deno.serve(async (req) => {
     const data = validation.data;
     console.log(`Sending user confirmation to ${data.email} for source: ${data.source_type}`);
 
-    const emailContent = getEmailContent(data);
+    // Récupérer le template personnalisé depuis la base de données
+    const { data: emailConfig } = await supabase
+      .from('email_configurations')
+      .select('user_email_template, user_email_subject')
+      .eq('source_type', data.source_type)
+      .eq('is_active', true)
+      .single();
+
+    console.log('Email config found:', !!emailConfig?.user_email_template);
+
+    let emailContent: { subject: string; html: string };
+
+    if (emailConfig?.user_email_template) {
+      // Template personnalisé depuis la DB
+      const safeName = escapeHtml(data.name);
+      const safeSourceContext = escapeHtml(data.source_context);
+      const safeLivreBlanctitle = escapeHtml(data.livre_blanc_title);
+      const safeFileUrl = validateFileUrl(data.file_url);
+      
+      const templateData = {
+        name: safeName,
+        email: escapeHtml(data.email),
+        title: safeLivreBlanctitle || safeSourceContext || 'Confirmation',
+        message: 'Nous avons bien reçu votre demande.',
+        cta_url: 'https://iarche.fr',
+        cta_text: 'Visiter notre site',
+        date: new Date().toLocaleDateString('fr-FR'),
+        company: '',
+        source_context: safeSourceContext,
+        file_url: safeFileUrl,
+      };
+
+      emailContent = {
+        html: replaceTemplateVariables(emailConfig.user_email_template, templateData),
+        subject: emailConfig.user_email_subject 
+          ? replaceTemplateVariables(emailConfig.user_email_subject, templateData)
+          : getDefaultEmailContent(data).subject,
+      };
+      console.log('Using custom template from DB');
+    } else {
+      // Template par défaut
+      emailContent = getDefaultEmailContent(data);
+      console.log('Using default template');
+    }
 
     const { data: emailData, error } = await resend.emails.send({
       from: 'IArche <contact@iarche.fr>',

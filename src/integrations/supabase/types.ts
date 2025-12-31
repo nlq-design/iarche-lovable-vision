@@ -1120,6 +1120,7 @@ export type Database = {
       email_configurations: {
         Row: {
           admin_email_subject: string | null
+          admin_email_template: string | null
           admin_emails: string[] | null
           created_at: string
           id: string
@@ -1134,6 +1135,7 @@ export type Database = {
         }
         Insert: {
           admin_email_subject?: string | null
+          admin_email_template?: string | null
           admin_emails?: string[] | null
           created_at?: string
           id?: string
@@ -1148,6 +1150,7 @@ export type Database = {
         }
         Update: {
           admin_email_subject?: string | null
+          admin_email_template?: string | null
           admin_emails?: string[] | null
           created_at?: string
           id?: string
