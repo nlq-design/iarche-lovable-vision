@@ -206,6 +206,23 @@ const FormPublic = () => {
     if (success) {
       trackEvent(form.id, 'submit');
       // Note: increment_form_submissions est déjà appelé dans submitResponse
+      
+      // Envoyer notification email (admin + prospect)
+      try {
+        await supabase.functions.invoke('send-form-notification', {
+          body: {
+            form_id: form.id,
+            form_title: form.title,
+            form_fields: form.fields,
+            response_data: values,
+            admin_email: 'nlq@nlq.fr',
+            send_to_respondent: true,
+          },
+        });
+      } catch (notifError) {
+        console.warn('[FormPublic] Failed to send form notification:', notifError);
+      }
+      
       setSubmitted(true);
       
       // Redirect if configured
