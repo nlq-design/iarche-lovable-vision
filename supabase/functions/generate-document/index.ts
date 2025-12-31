@@ -49,14 +49,9 @@ serve(async (req) => {
       });
     }
 
-    // Accept project_id, opportunity_id, lead_id, OR context (for direct AI generation)
-    const hasEntityLink = project_id || opportunity_id || lead_id || (inputContext && Object.keys(inputContext).length > 0);
-    if (!hasEntityLink) {
-      return new Response(JSON.stringify({ error: "project_id, opportunity_id, lead_id, or context required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Allow generation with or without entity links - AI can generate from scratch
+    // Entities provide context but are not required
+    console.log(`Generating ${document_type} document - project: ${project_id || 'N/A'}, opportunity: ${opportunity_id || 'N/A'}, lead: ${lead_id || 'N/A'}, hasContext: ${!!(inputContext && Object.keys(inputContext).length > 0)}`);
 
     console.log(`Generating ${document_type} document for project: ${project_id || 'N/A'}, opportunity: ${opportunity_id || 'N/A'}`);
 
