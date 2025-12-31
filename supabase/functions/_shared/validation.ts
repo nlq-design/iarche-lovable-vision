@@ -33,7 +33,7 @@ export const formNotificationSchema = z.object({
 export const userConfirmationSchema = z.object({
   email: emailValidator,
   name: nameValidator,
-  source_type: z.enum(['contact', 'newsletter', 'livre-blanc', 'solution-contact', 'booking']),
+  source_type: z.enum(['contact', 'newsletter', 'livre-blanc', 'atelier-webinaire', 'solution-contact', 'booking']),
   source_context: z.string().max(500).optional(),
   source_id: z.string().max(100).optional(),
   livre_blanc_title: z.string().max(300).optional(),

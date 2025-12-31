@@ -29,6 +29,7 @@ interface EmailConfiguration {
   user_email_template: string | null;
   send_admin_notification: boolean;
   admin_email_subject: string | null;
+  admin_email_template: string | null;
   admin_emails: string[] | null;
   is_active: boolean;
   created_at: string;
@@ -603,23 +604,45 @@ const AdminEmails = () => {
             ))}
           </TabsContent>
 
-          <TabsContent value="templates" className="space-y-4 mt-4">
+          <TabsContent value="templates" className="space-y-6 mt-4">
             {configurations
               .filter(c => TEMPLATE_SOURCES.includes(c.source_type))
               .map(config => (
-                <EmailTemplateEditor
-                  key={config.id}
-                  sourceType={config.source_type}
-                  sourceLabel={SOURCE_LABELS[config.source_type] || config.source_type}
-                  initialTemplate={config.user_email_template}
-                  initialSubject={config.user_email_subject}
-                  onSave={async (template, subject) => {
-                    await updateConfiguration(config.id, { 
-                      user_email_template: template,
-                      user_email_subject: subject 
-                    });
-                  }}
-                />
+                <div key={config.id} className="space-y-4">
+                  <h3 className="text-lg font-semibold text-primary border-b pb-2">
+                    {SOURCE_LABELS[config.source_type] || config.source_type}
+                  </h3>
+                  
+                  {/* Template Admin → nlq@iarche.fr */}
+                  <EmailTemplateEditor
+                    sourceType={config.source_type}
+                    sourceLabel={SOURCE_LABELS[config.source_type] || config.source_type}
+                    templateType="admin"
+                    initialTemplate={config.admin_email_template}
+                    initialSubject={config.admin_email_subject}
+                    onSave={async (template, subject) => {
+                      await updateConfiguration(config.id, { 
+                        admin_email_template: template,
+                        admin_email_subject: subject 
+                      });
+                    }}
+                  />
+                  
+                  {/* Template Prospect → confirmation utilisateur */}
+                  <EmailTemplateEditor
+                    sourceType={config.source_type}
+                    sourceLabel={SOURCE_LABELS[config.source_type] || config.source_type}
+                    templateType="user"
+                    initialTemplate={config.user_email_template}
+                    initialSubject={config.user_email_subject}
+                    onSave={async (template, subject) => {
+                      await updateConfiguration(config.id, { 
+                        user_email_template: template,
+                        user_email_subject: subject 
+                      });
+                    }}
+                  />
+                </div>
               ))}
           </TabsContent>
 
