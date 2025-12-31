@@ -2445,6 +2445,7 @@ export type Database = {
           last_error: string | null
           last_indexed_at: string | null
           resource_type: string
+          total_chunks: number | null
           total_resources: number
           updated_at: string | null
         }
@@ -2455,6 +2456,7 @@ export type Database = {
           last_error?: string | null
           last_indexed_at?: string | null
           resource_type: string
+          total_chunks?: number | null
           total_resources?: number
           updated_at?: string | null
         }
@@ -2465,6 +2467,7 @@ export type Database = {
           last_error?: string | null
           last_indexed_at?: string | null
           resource_type?: string
+          total_chunks?: number | null
           total_resources?: number
           updated_at?: string | null
         }
