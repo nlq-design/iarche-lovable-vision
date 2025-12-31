@@ -43,10 +43,15 @@ export default function CockpitDashboard() {
 
   const isLoading = leadsLoading || oppsLoading || tasksLoading || bookingsLoading;
 
-  // Get today's tasks
+  // Get today's and upcoming tasks
   const today = new Date().toISOString().split('T')[0];
   const todayTasks = tasks?.filter(t => 
     t.due_date === today && t.status !== 'completed' && t.status !== 'cancelled'
+  ).slice(0, 5) || [];
+  
+  // Upcoming tasks (next 7 days, excluding today)
+  const upcomingTasks = tasks?.filter(t => 
+    t.due_date && t.due_date > today && t.status !== 'completed' && t.status !== 'cancelled'
   ).slice(0, 5) || [];
 
   // Recent activities (last 10)
@@ -126,26 +131,20 @@ export default function CockpitDashboard() {
               ) : (
                 <div className="space-y-3">
                   {todayTasks.map((task) => (
-                    <div 
-                      key={task.id}
-                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        {task.priority === 'high' || task.priority === 'urgent' ? (
-                          <AlertCircle className="h-4 w-4 text-destructive" />
-                        ) : (
-                          <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-                        )}
-                        <div>
-                          <p className="font-medium text-sm">{task.title}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{task.task_type}</p>
-                        </div>
-                      </div>
-                      {task.due_time && (
-                        <Badge variant="outline">{task.due_time.slice(0, 5)}</Badge>
-                      )}
-                    </div>
+                    <TaskCard key={task.id} task={task} />
                   ))}
+                </div>
+              )}
+
+              {/* Upcoming tasks section */}
+              {upcomingTasks.length > 0 && (
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-sm font-medium text-muted-foreground mb-3">À venir</p>
+                  <div className="space-y-2">
+                    {upcomingTasks.map((task) => (
+                      <TaskCard key={task.id} task={task} showDate />
+                    ))}
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -285,6 +284,37 @@ function ActivityIcon({ type }: { type: string }) {
     meeting_scheduled: <Calendar className="h-4 w-4 text-primary" />,
   };
   return icons[type] || <Activity className="h-4 w-4 text-muted-foreground" />;
+}
+
+function TaskCard({ task, showDate }: { task: any; showDate?: boolean }) {
+  return (
+    <div className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+      <div className="flex items-center gap-3">
+        {task.priority === 'high' || task.priority === 'urgent' ? (
+          <AlertCircle className="h-4 w-4 text-destructive" />
+        ) : (
+          <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+        )}
+        <div>
+          <p className="font-medium text-sm">{task.title}</p>
+          <p className="text-xs text-muted-foreground capitalize">
+            {task.task_type}
+            {showDate && task.due_date && (
+              <span className="ml-2">
+                • {format(new Date(task.due_date), 'd MMM', { locale: fr })}
+              </span>
+            )}
+          </p>
+        </div>
+      </div>
+      {task.due_time && (
+        <Badge variant="outline">{task.due_time.slice(0, 5)}</Badge>
+      )}
+      {task.ai_generated && (
+        <Badge variant="secondary" className="ml-2 text-xs">IA</Badge>
+      )}
+    </div>
+  );
 }
 
 function formatCurrency(value: number): string {
