@@ -103,6 +103,15 @@ async function getRecentMemory(supabase: any, workspaceId?: string, userId?: str
   }
 }
 
+// Helper function to get week number
+function getWeekNumber(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
 // deno-lint-ignore no-explicit-any
 async function searchMemory(supabase: any, query: string, workspaceId?: string, userId?: string, limit = 5): Promise<string[]> {
   try {
@@ -2104,7 +2113,15 @@ serve(async (req) => {
       }
     }
 
-    // 4. Save the user query to memory
+    // 4. Inject current date/time context - CRITICAL for agent temporal awareness
+    const now = new Date();
+    const dateContext = `\n\nCONTEXTE TEMPOREL :
+- Date du jour : ${now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+- Heure actuelle : ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+- Fuseau horaire : Europe/Paris
+- Semaine : ${getWeekNumber(now)}`;
+
+    // 5. Save the user query to memory
     if (userQuery) {
       await saveMemory(supabase, {
         memory_type: "conversation",
@@ -2115,9 +2132,9 @@ serve(async (req) => {
       }, workspace_id, user_id, session_id);
     }
 
-    // Build messages with system prompt + memory context
+    // Build messages with system prompt + memory context + date context
     const fullMessages = [
-      { role: "system", content: systemPrompt + memoryContext },
+      { role: "system", content: systemPrompt + memoryContext + dateContext },
       ...messages,
     ];
 

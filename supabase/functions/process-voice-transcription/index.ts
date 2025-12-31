@@ -593,7 +593,10 @@ async function createTasksFromActions(
   summary: Record<string, unknown>, 
   leadId: string | null
 ): Promise<Array<{ id: string; title: string }>> {
-  if (!job.auto_create_tasks) return [];
+  // FORCE auto-création des tâches pour toutes les transcriptions avec des actions
+  // Ancienne logique: if (!job.auto_create_tasks) return [];
+  // Nouvelle logique: toujours créer les tâches si des actions sont détectées
+  console.log(`[createTasksFromActions] auto_create_tasks=${job.auto_create_tasks}, forcing task creation for all transcriptions`);
 
   const items = Array.isArray(summary?.action_items) ? summary.action_items : [];
   if (!items.length) return [];
