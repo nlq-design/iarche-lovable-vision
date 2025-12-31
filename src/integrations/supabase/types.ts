@@ -201,6 +201,51 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_prompts: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          model_config: Json
+          name: string
+          output_schema: Json | null
+          slug: string
+          system_prompt: string
+          updated_at: string
+          user_prompt: string | null
+          version: number
+          workspace_id: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          model_config?: Json
+          name: string
+          output_schema?: Json | null
+          slug: string
+          system_prompt: string
+          updated_at?: string
+          user_prompt?: string | null
+          version?: number
+          workspace_id?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          model_config?: Json
+          name?: string
+          output_schema?: Json | null
+          slug?: string
+          system_prompt?: string
+          updated_at?: string
+          user_prompt?: string | null
+          version?: number
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       article_categories: {
         Row: {
           article_id: string
@@ -2298,6 +2343,95 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      voice_transcriptions: {
+        Row: {
+          ai_metadata: Json
+          auto_create_tasks: boolean
+          created_at: string
+          created_by: string
+          id: string
+          lead_id: string | null
+          project_id: string | null
+          prompt_profile_id: string | null
+          raw_transcript: string | null
+          segments: Json | null
+          solution_id: string | null
+          source: string
+          status: string
+          storage_path: string
+          summary: Json | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          ai_metadata?: Json
+          auto_create_tasks?: boolean
+          created_at?: string
+          created_by: string
+          id?: string
+          lead_id?: string | null
+          project_id?: string | null
+          prompt_profile_id?: string | null
+          raw_transcript?: string | null
+          segments?: Json | null
+          solution_id?: string | null
+          source: string
+          status?: string
+          storage_path: string
+          summary?: Json | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          ai_metadata?: Json
+          auto_create_tasks?: boolean
+          created_at?: string
+          created_by?: string
+          id?: string
+          lead_id?: string | null
+          project_id?: string | null
+          prompt_profile_id?: string | null
+          raw_transcript?: string | null
+          segments?: Json | null
+          solution_id?: string | null
+          source?: string
+          status?: string
+          storage_path?: string
+          summary?: Json | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_voice_lead"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_voice_project"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_voice_prompt"
+            columns: ["prompt_profile_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_voice_solution"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workspace_members: {
         Row: {
