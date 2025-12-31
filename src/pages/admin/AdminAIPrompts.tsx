@@ -8,11 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { 
   Save, Bot, Loader2, RotateCcw, Cpu, Zap, Sparkles, Brain, 
   Database, RefreshCw, CheckCircle2, AlertCircle, FileText,
-  Search, BookOpen
+  Search, BookOpen, FileSignature, FileCheck, Briefcase
 } from "lucide-react";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useLLMModelsGrouped } from "@/hooks/cockpit/useCockpitVoiceTranscriptions";
@@ -24,6 +26,14 @@ import {
   useSemanticSearch,
   VectorizationStatus
 } from "@/hooks/useVectorization";
+
+// Provider groups for LLM selection
+const PROVIDER_GROUPS = {
+  lovable: { label: "Lovable AI", icon: <Sparkles className="h-4 w-4" /> },
+  openai: { label: "OpenAI Direct", icon: <Cpu className="h-4 w-4" /> },
+  anthropic: { label: "Anthropic Direct", icon: <Brain className="h-4 w-4" /> },
+  openrouter: { label: "OpenRouter", icon: <Zap className="h-4 w-4" /> },
+};
 
 const DEFAULT_SYSTEM_PROMPT = `Tu es l'assistant IA d'IArche, un conseiller expert en gestion commerciale et projet.
 
@@ -313,6 +323,206 @@ function IndexedResourcesList() {
   );
 }
 
+// Document Generation Configuration Component
+function DocumentGenerationConfig() {
+  const queryClient = useQueryClient();
+  const { models: llmModels, grouped } = useLLMModelsGrouped();
+  
+  const DOCUMENT_TYPES = [
+    { slug: 'document_generation_quote', name: 'Devis', icon: <FileSignature className="h-4 w-4" />, type: 'quote' },
+    { slug: 'document_generation_spec', name: 'Cahier des charges', icon: <FileCheck className="h-4 w-4" />, type: 'spec' },
+    { slug: 'document_generation_proposal', name: 'Proposition commerciale', icon: <Briefcase className="h-4 w-4" />, type: 'proposal' },
+  ];
+
+  // Fetch all document prompts
+  const { data: docPrompts, isLoading } = useQuery({
+    queryKey: ['document-prompts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ai_prompts')
+        .select('*')
+        .eq('category', 'document_generation');
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const updatePromptMutation = useMutation({
+    mutationFn: async ({ slug, updates }: { slug: string; updates: any }) => {
+      const existingPrompt = docPrompts?.find(p => p.slug === slug);
+      
+      if (existingPrompt) {
+        const { error } = await supabase
+          .from('ai_prompts')
+          .update({ ...updates, updated_at: new Date().toISOString() })
+          .eq('id', existingPrompt.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['document-prompts'] });
+      toast.success("Configuration document mise à jour");
+    },
+    onError: () => {
+      toast.error("Erreur lors de la mise à jour");
+    }
+  });
+
+  const getPromptConfig = (slug: string) => {
+    const prompt = docPrompts?.find(p => p.slug === slug);
+    const config = prompt?.model_config as { model?: string; provider?: string } || {};
+    return {
+      prompt,
+      model: config.model || 'google/gemini-2.5-flash',
+      provider: config.provider || 'lovable',
+    };
+  };
+
+  const handleModelChange = (slug: string, modelId: string, provider: string) => {
+    const model = llmModels.find(m => m.id === modelId);
+    if (!model) return;
+    
+    updatePromptMutation.mutate({
+      slug,
+      updates: {
+        model_config: {
+          model: model.model_id,
+          provider: model.provider,
+        }
+      }
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center h-32">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Configuration Génération Documents
+          </CardTitle>
+          <CardDescription>
+            Configurez le modèle LLM utilisé pour chaque type de document généré dans le Cockpit.
+            Les prompts système sont pré-configurés et optimisés pour chaque type.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {DOCUMENT_TYPES.map((docType) => {
+            const config = getPromptConfig(docType.slug);
+            const selectedModel = llmModels.find(m => m.model_id === config.model);
+            
+            return (
+              <div key={docType.slug} className="p-4 border rounded-lg space-y-3">
+                <div className="flex items-center gap-2">
+                  {docType.icon}
+                  <h3 className="font-medium">{docType.name}</h3>
+                  {config.prompt && (
+                    <Badge variant="outline" className="text-xs">
+                      {config.provider}
+                    </Badge>
+                  )}
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Modèle LLM</Label>
+                    <Select 
+                      value={selectedModel?.id || ""} 
+                      onValueChange={(modelId) => {
+                        const model = llmModels.find(m => m.id === modelId);
+                        if (model) {
+                          handleModelChange(docType.slug, modelId, model.provider);
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner un modèle">
+                          {selectedModel?.display_name || "Sélectionner..."}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(grouped).map(([category, models]) => (
+                          <div key={category}>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-2 bg-muted/50">
+                              {categoryIcons[category]}
+                              {categoryLabels[category] || category}
+                            </div>
+                            {models.map((model) => (
+                              <SelectItem key={model.id} value={model.id}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{model.display_name}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {model.provider} • {model.description}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </div>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Statut</Label>
+                    <div className="flex items-center gap-2 h-10">
+                      {config.prompt ? (
+                        <Badge variant="default" className="gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Configuré
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          Prompt par défaut
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      {/* Provider Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Providers disponibles</CardTitle>
+          <CardDescription>
+            Les modèles sont répartis par provider. Chaque provider nécessite sa propre clé API configurée.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {Object.entries(PROVIDER_GROUPS).map(([key, info]) => (
+              <div key={key} className="p-3 rounded-lg bg-muted/50 border flex items-center gap-2">
+                {info.icon}
+                <span className="text-sm font-medium">{info.label}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            <strong>Lovable AI</strong> est inclus par défaut. Pour les autres providers, configurez les clés API 
+            (OPENAI_API_KEY, ANTHROPIC_API_KEY, OPENROUTER_API_KEY) dans les secrets Supabase.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function AdminAIPrompts() {
   const queryClient = useQueryClient();
   const [systemPrompt, setSystemPrompt] = useState(DEFAULT_SYSTEM_PROMPT);
@@ -473,6 +683,7 @@ export default function AdminAIPrompts() {
         <Tabs defaultValue="config" className="space-y-4">
           <TabsList>
             <TabsTrigger value="config">Configuration</TabsTrigger>
+            <TabsTrigger value="documents">Génération Docs</TabsTrigger>
             <TabsTrigger value="rag">Base RAG</TabsTrigger>
             <TabsTrigger value="modules">Modules</TabsTrigger>
           </TabsList>
@@ -544,6 +755,10 @@ export default function AdminAIPrompts() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="documents" className="space-y-4">
+            <DocumentGenerationConfig />
           </TabsContent>
 
           <TabsContent value="rag" className="space-y-4">
