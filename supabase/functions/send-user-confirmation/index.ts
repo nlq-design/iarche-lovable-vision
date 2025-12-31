@@ -1,16 +1,14 @@
-import { Resend } from 'https://esm.sh/resend@2.0.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { sendGmail } from '../_shared/gmailClient.ts';
 import { logEmail } from '../_shared/emailLogger.ts';
 import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
-import { EMAIL_COLORS, LOGO_URL, getEmailHeader, getEmailFooter, wrapEmailContent, getCtaButton, getInfoCard, getSignature } from '../_shared/emailTemplate.ts';
+import { EMAIL_COLORS, getEmailHeader, getEmailFooter, wrapEmailContent, getCtaButton, getInfoCard, getSignature } from '../_shared/emailTemplate.ts';
 import { userConfirmationSchema, validateRequest, type UserConfirmationRequest } from '../_shared/validation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
 
 // Fonction d'échappement HTML pour prévenir les injections XSS
 const escapeHtml = (text: string | null | undefined): string => {
@@ -193,19 +191,19 @@ Deno.serve(async (req) => {
     }
     
     const data = validation.data;
-    console.log(`Sending user confirmation to ${data.email} for source: ${data.source_type}`);
+    console.log(`[Gmail] Sending user confirmation to ${data.email} for source: ${data.source_type}`);
 
     const emailContent = getEmailContent(data);
 
-    const { data: emailData, error } = await resend.emails.send({
-      from: 'IArche <contact@iarche.fr>',
-      to: [data.email],
+    // Send via Gmail API
+    const result = await sendGmail({
+      to: data.email,
       subject: emailContent.subject,
       html: emailContent.html,
     });
 
-    if (error) {
-      console.error('Error sending user confirmation:', error);
+    if (!result.success) {
+      console.error('[Gmail] Error sending user confirmation:', result.error);
       
       await logEmail({
         recipient_email: data.email,
@@ -214,17 +212,17 @@ Deno.serve(async (req) => {
         email_type: 'user_confirmation',
         source_id: data.source_id,
         status: 'failed',
-        error_message: error.message,
+        error_message: result.error,
         metadata: { name: data.name, source_context: data.source_context }
       });
 
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ error: result.error }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('User confirmation sent successfully:', emailData);
+    console.log('[Gmail] User confirmation sent successfully:', result.messageId);
 
     await logEmail({
       recipient_email: data.email,
@@ -233,11 +231,11 @@ Deno.serve(async (req) => {
       email_type: 'user_confirmation',
       source_id: data.source_id,
       status: 'sent',
-      metadata: { name: data.name, source_context: data.source_context, resend_id: emailData?.id }
+      metadata: { name: data.name, source_context: data.source_context, gmail_id: result.messageId }
     });
 
     return new Response(
-      JSON.stringify({ success: true, email_id: emailData?.id }),
+      JSON.stringify({ success: true, email_id: result.messageId }),
       { 
         headers: { 
           ...corsHeaders, 
@@ -247,7 +245,7 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error in send-user-confirmation:', error);
+    console.error('[Gmail] Error in send-user-confirmation:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({ error: errorMessage }),
