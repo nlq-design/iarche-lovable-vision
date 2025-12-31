@@ -25,7 +25,7 @@ export interface VoiceTranscription {
   created_at: string;
   updated_at: string;
   // Joined relations
-  lead?: { id: string; name: string; company: string | null } | null;
+  lead?: { id: string; name: string; company: string | null; email?: string } | null;
   project?: { id: string; name: string } | null;
   solution?: { id: string; title: string } | null;
   meeting_note?: { id: string; objectives: string | null; booking_id: string | null } | null;
