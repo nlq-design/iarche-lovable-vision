@@ -2489,6 +2489,7 @@ export type Database = {
           due_time: string | null
           entity_id: string | null
           entity_type: string | null
+          google_event_id: string | null
           id: string
           lead_id: string | null
           meeting_note_id: string | null
@@ -2515,6 +2516,7 @@ export type Database = {
           due_time?: string | null
           entity_id?: string | null
           entity_type?: string | null
+          google_event_id?: string | null
           id?: string
           lead_id?: string | null
           meeting_note_id?: string | null
@@ -2541,6 +2543,7 @@ export type Database = {
           due_time?: string | null
           entity_id?: string | null
           entity_type?: string | null
+          google_event_id?: string | null
           id?: string
           lead_id?: string | null
           meeting_note_id?: string | null
