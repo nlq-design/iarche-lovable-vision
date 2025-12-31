@@ -326,7 +326,7 @@ function IndexedResourcesList() {
 // Document Generation Configuration Component
 function DocumentGenerationConfig() {
   const queryClient = useQueryClient();
-  const { models: llmModels, grouped } = useLLMModelsGrouped();
+  const { models: llmModels, byProvider } = useLLMModelsGrouped();
   
   const DOCUMENT_TYPES = [
     { slug: 'document_generation_quote', name: 'Devis', icon: <FileSignature className="h-4 w-4" />, type: 'quote' },
@@ -451,24 +451,28 @@ function DocumentGenerationConfig() {
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(grouped).map(([category, models]) => (
-                          <div key={category}>
-                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-2 bg-muted/50">
-                              {categoryIcons[category]}
-                              {categoryLabels[category] || category}
+                        {Object.entries(byProvider).map(([provider, models]) => {
+                          if (models.length === 0) return null;
+                          const providerInfo = PROVIDER_GROUPS[provider as keyof typeof PROVIDER_GROUPS];
+                          return (
+                            <div key={provider}>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-2 bg-muted/50">
+                                {providerInfo?.icon}
+                                {providerInfo?.label || provider}
+                              </div>
+                              {models.map((model) => (
+                                <SelectItem key={model.id} value={model.id}>
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{model.display_name}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {model.category} • {model.description || model.cost_tier}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))}
                             </div>
-                            {models.map((model) => (
-                              <SelectItem key={model.id} value={model.id}>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{model.display_name}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {model.provider} • {model.description}
-                                  </span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>

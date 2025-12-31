@@ -323,5 +323,13 @@ export function useLLMModelsGrouped() {
     reasoning: models.filter(m => m.category === 'reasoning'),
   };
   
-  return { models, grouped, ...rest };
+  // Also group by provider for document generation selection
+  const byProvider = {
+    lovable: models.filter(m => m.provider === 'lovable'),
+    openai: models.filter(m => m.provider === 'openai'),
+    anthropic: models.filter(m => m.provider === 'anthropic'),
+    openrouter: models.filter(m => m.provider === 'openrouter'),
+  };
+  
+  return { models, grouped, byProvider, ...rest };
 }
