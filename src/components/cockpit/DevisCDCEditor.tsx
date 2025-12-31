@@ -242,6 +242,7 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
     }
   };
 
+  // GENERATE: Full document generation from sources (used by "Générer avec IA" button)
   const handleGenerateWithAI = async (source: AISource) => {
     setIsGenerating(true);
     try {
@@ -310,7 +311,7 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
         }
       }
 
-      // Call AI generation with context
+      // Call AI generation with context - generate full document
       const { data, error } = await supabase.functions.invoke('generate-document', {
         body: {
           document_type: documentType,
@@ -323,7 +324,7 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
       if (error) throw error;
       
       if (data?.sections) {
-        // Merge AI-generated content with existing sections
+        // Replace sections with AI-generated content
         setSections(prev => prev.map((section, idx) => {
           const aiSection = data.sections.find((s: any) => 
             s.title.toLowerCase().includes(section.title.toLowerCase()) ||
@@ -333,15 +334,13 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
           if (aiSection && aiSection.content) {
             return {
               ...section,
-              content: section.content 
-                ? `${section.content}\n\n---\n\n**Suggestion IA:**\n${aiSection.content}`
-                : aiSection.content,
+              content: aiSection.content,
             };
           }
           return section;
         }));
         
-        toast.success('Contenu enrichi par IA');
+        toast.success('Document généré avec succès');
       }
       
       setShowPasteDialog(false);
@@ -349,6 +348,59 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
     } catch (error) {
       console.error('Error generating with AI:', error);
       toast.error('Erreur lors de la génération IA');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // COMPLETE: Simple refinement/improvement of existing text (used by "Compléter avec IA" button)
+  const handleRefineWithAI = async (sectionId?: string) => {
+    setIsGenerating(true);
+    try {
+      const sectionsToRefine = sectionId 
+        ? sections.filter(s => s.id === sectionId)
+        : sections.filter(s => s.content.trim());
+
+      if (sectionsToRefine.length === 0) {
+        toast.error('Aucun contenu à améliorer');
+        setIsGenerating(false);
+        return;
+      }
+
+      // Simple refinement prompt - no full generation
+      const { data, error } = await supabase.functions.invoke('generate-document', {
+        body: {
+          document_type: documentType,
+          context: { 
+            mode: 'refine',
+            instruction: 'Améliore le style, la clarté et la structure du texte existant. Ne génère pas de nouveau contenu, améliore uniquement ce qui existe.'
+          },
+          existing_sections: sectionsToRefine.map(s => ({ title: s.title, content: s.content })),
+          metadata,
+        },
+      });
+
+      if (error) throw error;
+      
+      if (data?.sections) {
+        setSections(prev => prev.map(section => {
+          const refined = data.sections.find((s: any) => 
+            s.title.toLowerCase().includes(section.title.toLowerCase())
+          );
+          if (refined && refined.content && sectionsToRefine.some(sr => sr.id === section.id)) {
+            return {
+              ...section,
+              content: refined.content,
+            };
+          }
+          return section;
+        }));
+        
+        toast.success('Contenu amélioré');
+      }
+    } catch (error) {
+      console.error('Error refining with AI:', error);
+      toast.error('Erreur lors de l\'amélioration');
     } finally {
       setIsGenerating(false);
     }
@@ -469,17 +521,17 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
           </h1>
         </div>
         <div className="flex gap-2">
-          {/* AI Generation Dropdown */}
+          {/* AI Generation Dropdown - Full document generation from sources */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 
-                variant="outline" 
+                variant="default" 
                 size="sm"
                 disabled={isGenerating}
                 className="gap-1.5"
               >
                 <Sparkles className="h-4 w-4" />
-                {isGenerating ? 'Génération...' : 'Compléter avec IA'}
+                {isGenerating ? 'Génération...' : 'Générer avec IA'}
                 <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
@@ -527,6 +579,18 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* AI Refinement Button - Simple text improvement */}
+          <Button 
+            variant="outline" 
+            size="sm"
+            disabled={isGenerating || sections.every(s => !s.content.trim())}
+            onClick={() => handleRefineWithAI()}
+            className="gap-1.5"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Compléter avec IA
+          </Button>
           
           {/* Export Dropdown */}
           <DropdownMenu>
