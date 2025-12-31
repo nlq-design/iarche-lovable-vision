@@ -52,6 +52,7 @@ import {
   Tag,
   X,
   Lightbulb,
+  Mic,
 } from "lucide-react";
 import {
   Select,
@@ -67,6 +68,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCockpitProjects } from '@/hooks/cockpit';
 import { useCockpitTasks } from '@/hooks/cockpit/useCockpitTasks';
 import { useCockpitMeetingNotes } from '@/hooks/cockpit/useCockpitMeetingNotes';
+import { useCockpitVoiceTranscriptions } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { useCockpitSpecifications } from '@/hooks/cockpit/useCockpitSpecifications';
 import { useCockpitProjectDocuments } from '@/hooks/cockpit/useCockpitProjectDocuments';
 import { useCockpitProjectNotes } from '@/hooks/cockpit/useCockpitProjectNotes';
@@ -90,6 +92,7 @@ const CockpitProjectDetail = () => {
   const { updateProject, deleteProject } = useCockpitProjects();
   const { tasks } = useCockpitTasks();
   const { meetingNotes } = useCockpitMeetingNotes();
+  const { transcriptions } = useCockpitVoiceTranscriptions();
   const { useSpecificationsByProject } = useCockpitSpecifications();
   const { documents, createDocument, deleteDocument } = useCockpitProjectDocuments(id);
   const { notes: projectNotes, createNote, updateNote, deleteNote } = useCockpitProjectNotes(id);
@@ -302,6 +305,7 @@ const CockpitProjectDetail = () => {
 
   const projectTasks = tasks?.filter(t => t.project_id === id) || [];
   const projectMeetingNotes = meetingNotes?.filter(n => n.project_id === id) || [];
+  const projectTranscriptions = transcriptions?.filter(t => t.project_id === id) || [];
 
   if (projectLoading) {
     return (
@@ -1045,6 +1049,49 @@ const CockpitProjectDetail = () => {
                         )}
                         {note.notes && (
                           <p className="text-sm line-clamp-3">{note.notes}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Transcriptions vocales */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Mic className="h-5 w-5" />
+                  Transcriptions vocales
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {projectTranscriptions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                    <Mic className="h-8 w-8 mb-2 opacity-50" />
+                    <p className="text-sm">Aucune transcription liée</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {projectTranscriptions.map(transcription => (
+                      <div key={transcription.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">
+                              {(transcription.summary as any)?.title || 'Transcription'}
+                            </span>
+                            <Badge variant={transcription.status === 'done' ? 'default' : 'secondary'} className="text-xs">
+                              {transcription.status === 'done' ? 'Terminée' : transcription.status}
+                            </Badge>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(transcription.created_at), 'dd MMM yyyy', { locale: fr })}
+                          </span>
+                        </div>
+                        {(transcription.summary as any)?.executive_summary && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {(transcription.summary as any).executive_summary}
+                          </p>
                         )}
                       </div>
                     ))}

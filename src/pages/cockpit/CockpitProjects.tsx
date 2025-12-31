@@ -1,11 +1,13 @@
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FolderKanban, Clock, CheckCircle2, AlertCircle, PauseCircle, Calendar, Users, Plus } from "lucide-react";
+import { FolderKanban, Clock, CheckCircle2, AlertCircle, PauseCircle, Calendar, Users, Plus, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCockpitProjects } from '@/hooks/cockpit';
+import { useCockpitVoiceTranscriptions } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { ProjectTimeline } from '@/components/cockpit/ProjectTimeline';
 import { format, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -30,7 +32,13 @@ const HEALTH_CONFIG: Record<string, { label: string; color: string }> = {
 
 const CockpitProjects = () => {
   const { projects, stats, isLoading, createProject } = useCockpitProjects();
+  const { transcriptions } = useCockpitVoiceTranscriptions();
   const navigate = useNavigate();
+
+  // Get project IDs that have transcriptions
+  const projectsWithTranscriptions = new Set(
+    transcriptions?.filter(t => t.project_id).map(t => t.project_id) || []
+  );
 
   const activeProjects = projects?.filter(p => 
     p.status === 'in_progress' || p.status === 'planning'
@@ -143,6 +151,20 @@ const CockpitProjects = () => {
                           <div className="flex items-center gap-2">
                             <h3 className="font-medium text-sm">{project.name}</h3>
                             <div className={`w-2 h-2 rounded-full ${healthConfig.color}`} title={healthConfig.label} />
+                            {projectsWithTranscriptions.has(project.id) && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Badge variant="outline" className="text-xs px-1 py-0 h-5 bg-primary/10 border-primary/30">
+                                      <Mic className="h-3 w-3 text-primary" />
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">Transcription disponible</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
                           </div>
                           {project.description && (
                             <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{project.description}</p>

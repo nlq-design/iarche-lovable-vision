@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Search, Download, Mail, Building2, Trash2, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Users, Search, Download, Mail, Building2, Trash2, TrendingUp, TrendingDown, Minus, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useCockpitLeads } from '@/hooks/cockpit';
 import { useLeads } from '@/hooks/shared/useLeads';
+import { useCockpitVoiceTranscriptions } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { CreateLeadDialog } from '@/components/cockpit/dialogs';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -96,11 +97,17 @@ const CockpitLeads = () => {
   const navigate = useNavigate();
   const { leads, stats, isLoading } = useCockpitLeads();
   const { bulkDeleteLeads } = useLeads();
+  const { transcriptions } = useCockpitVoiceTranscriptions();
   const [searchQuery, setSearchQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [scoreFilter, setScoreFilter] = useState<string>('all');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+
+  // Get lead IDs that have transcriptions
+  const leadsWithTranscriptions = new Set(
+    transcriptions?.filter(t => t.lead_id).map(t => t.lead_id) || []
+  );
 
   // Filter leads
   const filteredLeads = leads?.filter(lead => {
@@ -312,9 +319,25 @@ const CockpitLeads = () => {
                         )}
                       </TableCell>
                       <TableCell className="py-2">
-                        <Badge variant="secondary" className="text-xs font-normal">
-                          {SOURCE_LABELS[lead.source] || lead.source}
-                        </Badge>
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="secondary" className="text-xs font-normal">
+                            {SOURCE_LABELS[lead.source] || lead.source}
+                          </Badge>
+                          {leadsWithTranscriptions.has(lead.id) && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Badge variant="outline" className="text-xs px-1 py-0 h-5 bg-primary/10 border-primary/30">
+                                    <Mic className="h-3 w-3 text-primary" />
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs">Transcription disponible</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="py-2">
                         <TooltipProvider>
