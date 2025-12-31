@@ -206,6 +206,25 @@ export function useCockpitVoiceTranscriptions(
     },
   });
 
+  // Update transcription (lead_id, project_id, etc.)
+  const updateTranscription = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Pick<VoiceTranscription, 'lead_id' | 'project_id' | 'solution_id' | 'meeting_note_id'>> }) => {
+      const { error } = await supabase
+        .from('voice_transcriptions')
+        .update(updates)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, 'detail', variables.id] });
+      toast.success('Transcription mise à jour');
+    },
+    onError: (error: Error) => {
+      toast.error(`Erreur: ${error.message}`);
+    },
+  });
+
   // Delete transcription
   const deleteTranscription = useMutation({
     mutationFn: async (id: string) => {
@@ -254,6 +273,7 @@ export function useCockpitVoiceTranscriptions(
     stats,
     createTranscription,
     processTranscription,
+    updateTranscription,
     deleteTranscription,
     useTranscription,
     TRANSCRIPTION_STATUSES,

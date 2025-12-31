@@ -58,11 +58,14 @@ import {
   Send,
   Copy,
   Check,
+  UserPlus,
+  X,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useCockpitVoiceTranscriptions, TRANSCRIPTION_STATUSES } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
+import { useCockpitLeads } from '@/hooks/cockpit/useCockpitLeads';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -83,10 +86,12 @@ export function TranscriptionDetailSheet({
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const { useTranscription, deleteTranscription, processTranscription } = useCockpitVoiceTranscriptions();
+  const { useTranscription, deleteTranscription, processTranscription, updateTranscription } = useCockpitVoiceTranscriptions();
   const { data: transcription, isLoading, refetch } = useTranscription(transcriptionId || '');
+  const { leads } = useCockpitLeads();
 
-  // Email generation state
+  // Lead selector state
+  const [showLeadSelector, setShowLeadSelector] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [emailType, setEmailType] = useState<'post_meeting' | 'followup'>('post_meeting');
   const [isGeneratingEmail, setIsGeneratingEmail] = useState(false);
@@ -267,49 +272,101 @@ export function TranscriptionDetailSheet({
                 </Card>
 
                 {/* Entity Links */}
-                {(transcription?.lead || transcription?.project || transcription?.solution || transcription?.meeting_note) && (
-                  <div className="flex flex-wrap gap-2">
-                    {transcription.lead && (
-                      <Badge variant="secondary" className="cursor-pointer" onClick={() => {
-                        onOpenChange(false);
-                        navigate(`/cockpit/leads`);
-                      }}>
-                        <User className="h-3 w-3 mr-1" />
-                        {transcription.lead.name}
+                <div className="flex flex-wrap gap-2">
+                  {transcription?.lead ? (
+                    <Badge variant="secondary" className="cursor-pointer group" onClick={() => {
+                      onOpenChange(false);
+                      navigate(`/cockpit/leads/${transcription.lead!.id}`);
+                    }}>
+                      <User className="h-3 w-3 mr-1" />
+                      {transcription.lead.name}
+                      <button 
+                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (transcriptionId) {
+                            updateTranscription.mutate({ id: transcriptionId, updates: { lead_id: null } });
+                          }
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ) : (
+                    showLeadSelector ? (
+                      <div className="flex items-center gap-2">
+                        <Select
+                          onValueChange={(leadId) => {
+                            if (transcriptionId) {
+                              updateTranscription.mutate(
+                                { id: transcriptionId, updates: { lead_id: leadId } },
+                                { onSuccess: () => setShowLeadSelector(false) }
+                              );
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-7 w-48 text-xs">
+                            <SelectValue placeholder="Sélectionner un lead..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {leads.map((lead) => (
+                              <SelectItem key={lead.id} value={lead.id}>
+                                {lead.name} {lead.company && `(${lead.company})`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => setShowLeadSelector(false)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Badge 
+                        variant="outline" 
+                        className="cursor-pointer hover:bg-muted"
+                        onClick={() => setShowLeadSelector(true)}
+                      >
+                        <UserPlus className="h-3 w-3 mr-1" />
+                        Lier à un lead
                       </Badge>
-                    )}
-                    {transcription.project && (
-                      <Badge variant="secondary" className="cursor-pointer" onClick={() => {
-                        onOpenChange(false);
-                        navigate(`/cockpit/projects/${transcription.project!.id}`);
-                      }}>
-                        <FolderOpen className="h-3 w-3 mr-1" />
-                        {transcription.project.name}
-                      </Badge>
-                    )}
-                    {transcription.solution && (
-                      <Badge variant="secondary" className="cursor-pointer" onClick={() => {
-                        onOpenChange(false);
-                        navigate(`/cockpit/solutions/${transcription.solution!.id}`);
-                      }}>
-                        <Package className="h-3 w-3 mr-1" />
-                        {transcription.solution.title}
-                      </Badge>
-                    )}
-                    {transcription.meeting_note && (
-                      <Badge variant="secondary" className="cursor-pointer" onClick={() => {
-                        onOpenChange(false);
-                        navigate(`/cockpit/agenda`);
-                      }}>
-                        <FileText className="h-3 w-3 mr-1" />
-                        {transcription.meeting_note.objectives 
-                          ? transcription.meeting_note.objectives.substring(0, 30) + '...'
-                          : 'Compte-rendu'
-                        }
-                      </Badge>
-                    )}
-                  </div>
-                )}
+                    )
+                  )}
+                  {transcription?.project && (
+                    <Badge variant="secondary" className="cursor-pointer" onClick={() => {
+                      onOpenChange(false);
+                      navigate(`/cockpit/projects/${transcription.project!.id}`);
+                    }}>
+                      <FolderOpen className="h-3 w-3 mr-1" />
+                      {transcription.project.name}
+                    </Badge>
+                  )}
+                  {transcription?.solution && (
+                    <Badge variant="secondary" className="cursor-pointer" onClick={() => {
+                      onOpenChange(false);
+                      navigate(`/cockpit/solutions/${transcription.solution!.id}`);
+                    }}>
+                      <Package className="h-3 w-3 mr-1" />
+                      {transcription.solution.title}
+                    </Badge>
+                  )}
+                  {transcription?.meeting_note && (
+                    <Badge variant="secondary" className="cursor-pointer" onClick={() => {
+                      onOpenChange(false);
+                      navigate(`/cockpit/agenda`);
+                    }}>
+                      <FileText className="h-3 w-3 mr-1" />
+                      {transcription.meeting_note.objectives 
+                        ? transcription.meeting_note.objectives.substring(0, 30) + '...'
+                        : 'Compte-rendu'
+                      }
+                    </Badge>
+                  )}
+                </div>
 
                 {/* Content Tabs */}
                 {transcription?.status === 'done' && summary ? (
