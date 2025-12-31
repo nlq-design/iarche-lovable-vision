@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { NotificationBell } from '@/components/admin/NotificationBell';
+import { AgentChat } from '@/components/cockpit/AgentChat';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -69,6 +70,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             {children}
           </main>
         </div>
+        
+        {/* Agent IA flottant */}
+        <AgentChat />
       </div>
     </SidebarProvider>
   );
