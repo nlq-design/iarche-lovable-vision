@@ -601,10 +601,10 @@ serve(async (req) => {
     
     const { action, bookingTypeSlug, date, bookingData, bookingId } = validation.data;
 
-    // Apply stricter rate limiting for create-booking action
+    // Apply rate limiting for create-booking action (less restrictive for legitimate use)
     const rateLimitConfig = action === 'create-booking' 
-      ? { maxRequests: 5, windowMinutes: 60 }  // 5 bookings per hour
-      : { maxRequests: 30, windowMinutes: 60 }; // 30 slot checks per hour
+      ? { maxRequests: 10, windowMinutes: 15 }  // 10 bookings per 15 minutes
+      : { maxRequests: 100, windowMinutes: 60 }; // 100 slot checks per hour
     
     const { allowed, remaining } = await checkRateLimit(
       supabase, 
