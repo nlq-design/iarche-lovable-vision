@@ -332,7 +332,7 @@ async function syncStatus(supabase: any): Promise<Record<string, any>> {
   const status: Record<string, any> = {};
 
   // Count articles by resource_type (excluding cas-client)
-  const resourceTypes = ['article', 'actualite', 'livre-blanc', 'atelier-webinaire', 'solution'];
+  const resourceTypes = ['article', 'actualite', 'livre-blanc', 'atelier-webinaire', 'solution', 'cas-client'];
   
   for (const type of resourceTypes) {
     const { count: totalCount } = await supabase
@@ -439,7 +439,7 @@ async function generateAll(supabase: any): Promise<{
   details.services = { indexed: SERVICES_DATA.length - errors, errors, chunks: serviceChunks };
 
   // Index articles by type (excluding cas-client)
-  const resourceTypes = ['article', 'actualite', 'livre-blanc', 'atelier-webinaire', 'solution'];
+  const resourceTypes = ['article', 'actualite', 'livre-blanc', 'atelier-webinaire', 'solution', 'cas-client'];
   
   for (const type of resourceTypes) {
     console.log(`Indexing ${type}...`);
