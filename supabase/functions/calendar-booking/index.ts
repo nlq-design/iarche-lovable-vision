@@ -761,7 +761,7 @@ serve(async (req) => {
         
         const { data: newLead } = await supabase
           .from('leads')
-          .insert({
+          .upsert({
             name: bookingData.name,
             email: bookingData.email,
             phone: bookingData.phone,
@@ -769,6 +769,9 @@ serve(async (req) => {
             source: 'booking',
             source_context: sourceContext,
             message: bookingData.message,
+          }, { 
+            onConflict: 'email',
+            ignoreDuplicates: false 
           })
           .select()
           .single();
