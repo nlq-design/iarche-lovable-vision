@@ -50,15 +50,18 @@ const CockpitAgenda = () => {
     setIsSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke('sync-google-calendar', {
-        body: { action: 'sync', daysAhead: 30, daysBefore: 7 }
+        body: { action: 'sync', daysAhead: 60, daysBefore: 30 }
       });
 
       if (error) throw error;
 
       if (data?.success) {
         const { results } = data;
-        toast.success(`Synchronisation terminée`, {
-          description: `${results.synced} nouveau(x) RDV importé(s), ${results.skipped} ignoré(s)`,
+        const changes = results.created + results.updated + results.cancelled;
+        toast.success(`Synchronisation miroir terminée`, {
+          description: changes > 0 
+            ? `${results.created} créé(s), ${results.updated} modifié(s), ${results.cancelled} annulé(s)`
+            : `${results.unchanged} événement(s) déjà à jour`,
         });
         // Rafraîchir les données
         refetch();
