@@ -48,6 +48,7 @@ serve(async (req) => {
       lead_id = null,
       project_id = null,
       solution_id = null,
+      meeting_note_id = null,
       auto_create_tasks = false,
       prompt_profile_id = null,
     } = body;
@@ -63,6 +64,7 @@ serve(async (req) => {
         lead_id,
         project_id,
         solution_id,
+        meeting_note_id,
         auto_create_tasks,
         prompt_profile_id,
         created_by: u.user.id,

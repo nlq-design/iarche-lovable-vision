@@ -30,10 +30,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Upload, Mic, MicOff, Loader2, User, FolderOpen, Package, Check, ChevronsUpDown } from 'lucide-react';
+import { Upload, Mic, MicOff, Loader2, User, FolderOpen, Package, Check, ChevronsUpDown, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCockpitVoiceTranscriptions, useAIPromptProfiles } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
-import { useCockpitLeads, useCockpitProjects } from '@/hooks/cockpit';
+import { useCockpitLeads, useCockpitProjects, useCockpitMeetingNotes } from '@/hooks/cockpit';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -45,6 +45,7 @@ interface CreateTranscriptionModalProps {
   defaultLeadId?: string;
   defaultProjectId?: string;
   defaultSolutionId?: string;
+  defaultMeetingNoteId?: string;
 }
 
 const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
@@ -56,6 +57,7 @@ export function CreateTranscriptionModal({
   defaultLeadId,
   defaultProjectId,
   defaultSolutionId,
+  defaultMeetingNoteId,
 }: CreateTranscriptionModalProps) {
   const [activeTab, setActiveTab] = useState<'upload' | 'record'>('upload');
   const [isUploading, setIsUploading] = useState(false);
@@ -63,11 +65,11 @@ export function CreateTranscriptionModal({
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
-  const [entityType, setEntityType] = useState<'lead' | 'project' | 'solution' | 'none'>(
-    defaultLeadId ? 'lead' : defaultProjectId ? 'project' : defaultSolutionId ? 'solution' : 'none'
+  const [entityType, setEntityType] = useState<'lead' | 'project' | 'solution' | 'meeting_note' | 'none'>(
+    defaultLeadId ? 'lead' : defaultProjectId ? 'project' : defaultSolutionId ? 'solution' : defaultMeetingNoteId ? 'meeting_note' : 'none'
   );
   const [selectedEntityId, setSelectedEntityId] = useState<string>(
-    defaultLeadId || defaultProjectId || defaultSolutionId || ''
+    defaultLeadId || defaultProjectId || defaultSolutionId || defaultMeetingNoteId || ''
   );
   const [promptProfileId, setPromptProfileId] = useState<string>('');
   const [autoCreateTasks, setAutoCreateTasks] = useState(false);
@@ -81,6 +83,7 @@ export function CreateTranscriptionModal({
   const { data: promptProfiles = [] } = useAIPromptProfiles('transcription');
   const { leads = [] } = useCockpitLeads();
   const { projects = [] } = useCockpitProjects();
+  const { meetingNotes = [] } = useCockpitMeetingNotes();
   
   const { data: solutions = [] } = useQuery({
     queryKey: ['solutions-for-transcription'],
@@ -179,6 +182,7 @@ export function CreateTranscriptionModal({
         lead_id: entityType === 'lead' ? selectedEntityId : null,
         project_id: entityType === 'project' ? selectedEntityId : null,
         solution_id: entityType === 'solution' ? selectedEntityId : null,
+        meeting_note_id: entityType === 'meeting_note' ? selectedEntityId : null,
         auto_create_tasks: autoCreateTasks,
         prompt_profile_id: promptProfileId || null,
       });
@@ -204,6 +208,11 @@ export function CreateTranscriptionModal({
         return projects.map(p => ({ id: p.id, label: p.name }));
       case 'solution':
         return solutions.map(s => ({ id: s.id, label: s.title }));
+      case 'meeting_note':
+        return (meetingNotes || []).map(m => ({ 
+          id: m.id, 
+          label: m.objectives ? m.objectives.substring(0, 50) + (m.objectives.length > 50 ? '...' : '') : `CR du ${new Date(m.created_at!).toLocaleDateString('fr-FR')}`
+        }));
       default:
         return [];
     }
@@ -336,6 +345,12 @@ export function CreateTranscriptionModal({
                     Solution
                   </div>
                 </SelectItem>
+                <SelectItem value="meeting_note">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Compte-rendu (CR)
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -344,7 +359,7 @@ export function CreateTranscriptionModal({
             <Popover open={entitySearchOpen} onOpenChange={setEntitySearchOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-between">
-                  {selectedEntityLabel || `Sélectionner un ${entityType === 'lead' ? 'lead' : entityType === 'project' ? 'projet' : 'solution'}...`}
+                  {selectedEntityLabel || `Sélectionner ${entityType === 'lead' ? 'un lead' : entityType === 'project' ? 'un projet' : entityType === 'solution' ? 'une solution' : 'un CR'}...`}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>

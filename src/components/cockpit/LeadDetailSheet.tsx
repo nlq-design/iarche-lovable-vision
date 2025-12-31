@@ -32,7 +32,8 @@ import {
   FolderPlus,
   FolderOpen,
   ChevronRight,
-  Link2
+  Link2,
+  Package
 } from "lucide-react";
 import {
   Popover,
@@ -136,6 +137,7 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [linkProjectOpen, setLinkProjectOpen] = useState(false);
+  const [linkSolutionOpen, setLinkSolutionOpen] = useState(false);
 
   // Fetch projects linked to this lead
   const { data: linkedProjects = [], refetch: refetchLinkedProjects } = useQuery({
@@ -153,10 +155,68 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
     enabled: !!lead?.id,
   });
 
+  // Fetch solutions linked to this lead via solution_leads junction table
+  const { data: linkedSolutions = [], refetch: refetchLinkedSolutions } = useQuery({
+    queryKey: ['lead-solutions', lead?.id],
+    queryFn: async () => {
+      if (!lead?.id) return [];
+      const { data, error } = await supabase
+        .from('solution_leads')
+        .select(`
+          id,
+          solution_id,
+          interest_level,
+          notes,
+          created_at,
+          solution:articles(id, title, slug)
+        `)
+        .eq('lead_id', lead.id)
+        .order('created_at', { ascending: false });
+      if (error) return [];
+      return data;
+    },
+    enabled: !!lead?.id,
+  });
+  
+  // Fetch available solutions
+  const { data: allSolutions = [] } = useQuery({
+    queryKey: ['solutions-for-lead-linking'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('articles')
+        .select('id, title, slug')
+        .eq('resource_type', 'solution')
+        .eq('published', true)
+        .order('title');
+      return data ?? [];
+    },
+  });
+
+  // Filter solutions that are NOT already linked to this lead
+  const availableSolutions = allSolutions.filter(
+    (s: any) => !linkedSolutions.some((ls: any) => ls.solution_id === s.id)
+  );
+
   // Filter projects that are NOT already linked to this lead
   const availableProjects = (projects || []).filter(
     (p: any) => !linkedProjects.some((lp: any) => lp.id === p.id)
   );
+
+  const handleLinkToSolution = async (solutionId: string) => {
+    if (!lead) return;
+    const { error } = await supabase
+      .from('solution_leads')
+      .insert({
+        solution_id: solutionId,
+        lead_id: lead.id,
+        interest_level: 'interested',
+      });
+    
+    if (!error) {
+      refetchLinkedSolutions();
+      setLinkSolutionOpen(false);
+    }
+  };
 
   const handleLinkToProject = async (projectId: string) => {
     if (!lead) return;
@@ -414,6 +474,36 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
               </div>
             )}
 
+            {/* Linked Solutions Section */}
+            {linkedSolutions.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Solutions liées ({linkedSolutions.length})
+                </h3>
+                <div className="space-y-2">
+                  {linkedSolutions.map((sl: any) => (
+                    <div
+                      key={sl.id}
+                      className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors flex items-center justify-between"
+                      onClick={() => {
+                        onOpenChange(false);
+                        navigate(`/cockpit/solutions/${sl.solution_id}`);
+                      }}
+                    >
+                      <div>
+                        <p className="font-medium text-sm">{sl.solution?.title || 'Solution'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Intérêt: {sl.interest_level === 'hot' ? '🔥 Chaud' : sl.interest_level === 'warm' ? '🌡️ Tiède' : '❄️ Froid'}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <Separator />
 
             {/* Metadata Section */}
@@ -483,6 +573,36 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
                           >
                             <FolderOpen className="h-4 w-4 mr-2 text-muted-foreground" />
                             {project.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              <Popover open={linkSolutionOpen} onOpenChange={setLinkSolutionOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex-1" disabled={availableSolutions.length === 0}>
+                    <Package className="h-4 w-4 mr-1.5" />
+                    Lier solution
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-[280px]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Rechercher..." className="h-9" />
+                    <CommandList>
+                      <CommandEmpty>Aucune solution</CommandEmpty>
+                      <CommandGroup>
+                        {availableSolutions.map((solution: any) => (
+                          <CommandItem
+                            key={solution.id}
+                            value={solution.title}
+                            onSelect={() => handleLinkToSolution(solution.id)}
+                            className="text-sm"
+                          >
+                            <Package className="h-4 w-4 mr-2 text-muted-foreground" />
+                            {solution.title}
                           </CommandItem>
                         ))}
                       </CommandGroup>
