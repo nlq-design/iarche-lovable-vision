@@ -337,7 +337,7 @@ export const DevisCDCPreview = forwardRef<HTMLDivElement, DevisCDCPreviewProps>(
                     lineHeight: 1.75,
                   }}
                   dangerouslySetInnerHTML={{ 
-                    __html: section.content
+                    __html: (section.content || (section as any).contenu || '')
                       .replace(/\n/g, '<br>')
                       .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1A2B4A">$1</strong>')
                       .replace(/\*(.*?)\*/g, '<em>$1</em>')
