@@ -25,6 +25,7 @@ export { useCockpitProjectDocuments } from './useCockpitProjectDocuments';
 export { useCockpitProjectNotes } from './useCockpitProjectNotes';
 export { useCockpitSolutionLeads } from './useCockpitSolutionLeads';
 export { useCockpitVoiceTranscriptions, useAIPromptProfiles } from './useCockpitVoiceTranscriptions';
+export { useCockpitGeneratedDocuments, DOCUMENT_TYPE_LABELS, DOCUMENT_STATUS_CONFIG } from './useCockpitGeneratedDocuments';
 
 // Ré-exporter les hooks partagés pour faciliter les imports
 export { useBookings, useBookingTypes, BOOKING_QUERY_KEY } from '@/hooks/shared/useBookings';

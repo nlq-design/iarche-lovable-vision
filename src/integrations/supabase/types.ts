@@ -1301,6 +1301,110 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_documents: {
+        Row: {
+          ai_generated: boolean | null
+          ai_metadata: Json | null
+          approved_at: string | null
+          approved_by: string | null
+          content_json: Json
+          created_at: string | null
+          created_by: string | null
+          document_type: string
+          id: string
+          opportunity_id: string | null
+          output_format: string | null
+          output_storage_path: string | null
+          project_id: string | null
+          sent_at: string | null
+          sent_to: string | null
+          specification_id: string | null
+          status: string
+          supersedes_document_id: string | null
+          title: string
+          updated_at: string | null
+          version: string | null
+          workspace_id: string
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          ai_metadata?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          content_json?: Json
+          created_at?: string | null
+          created_by?: string | null
+          document_type: string
+          id?: string
+          opportunity_id?: string | null
+          output_format?: string | null
+          output_storage_path?: string | null
+          project_id?: string | null
+          sent_at?: string | null
+          sent_to?: string | null
+          specification_id?: string | null
+          status?: string
+          supersedes_document_id?: string | null
+          title: string
+          updated_at?: string | null
+          version?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          ai_generated?: boolean | null
+          ai_metadata?: Json | null
+          approved_at?: string | null
+          approved_by?: string | null
+          content_json?: Json
+          created_at?: string | null
+          created_by?: string | null
+          document_type?: string
+          id?: string
+          opportunity_id?: string | null
+          output_format?: string | null
+          output_storage_path?: string | null
+          project_id?: string | null
+          sent_at?: string | null
+          sent_to?: string | null
+          specification_id?: string | null
+          status?: string
+          supersedes_document_id?: string | null
+          title?: string
+          updated_at?: string | null
+          version?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_documents_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_documents_specification_id_fkey"
+            columns: ["specification_id"]
+            isOneToOne: false
+            referencedRelation: "specifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_documents_supersedes_document_id_fkey"
+            columns: ["supersedes_document_id"]
+            isOneToOne: false
+            referencedRelation: "generated_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           address: string | null
