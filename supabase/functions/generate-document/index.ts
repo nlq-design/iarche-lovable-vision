@@ -53,7 +53,27 @@ serve(async (req) => {
     // Entities provide context but are not required
     console.log(`Generating ${document_type} document - project: ${project_id || 'N/A'}, opportunity: ${opportunity_id || 'N/A'}, lead: ${lead_id || 'N/A'}, hasContext: ${!!(inputContext && Object.keys(inputContext).length > 0)}`);
 
-    console.log(`Generating ${document_type} document for project: ${project_id || 'N/A'}, opportunity: ${opportunity_id || 'N/A'}`);
+    // Fetch AI prompt from ai_prompts table
+    const promptSlug = `document_generation_${document_type}`;
+    const { data: aiPromptData, error: promptError } = await supabase
+      .from("ai_prompts")
+      .select("system_prompt, user_prompt, model_config, output_schema")
+      .eq("slug", promptSlug)
+      .single();
+
+    // If no specific prompt found, try the general document_generation prompt
+    let aiPrompt = aiPromptData;
+    if (promptError || !aiPrompt) {
+      console.log(`No prompt found for slug ${promptSlug}, trying fallback 'document_generation'`);
+      const { data: fallbackPrompt } = await supabase
+        .from("ai_prompts")
+        .select("system_prompt, user_prompt, model_config, output_schema")
+        .eq("slug", "document_generation")
+        .single();
+      aiPrompt = fallbackPrompt;
+    }
+
+    console.log(`Using AI prompt: ${aiPrompt ? 'found' : 'using default hardcoded'}, model_config:`, aiPrompt?.model_config);
 
     // Fetch project data
     let project = null;
@@ -170,8 +190,8 @@ serve(async (req) => {
       custom_instructions,
     };
 
-    // System prompts by document type
-    const systemPrompts: Record<DocumentType, string> = {
+    // Default system prompts by document type (fallback if no ai_prompts entry)
+    const defaultSystemPrompts: Record<DocumentType, string> = {
       quote: `Tu es un expert commercial IArche (agence IA à Bayonne). Tu génères des devis commerciaux professionnels.
 
 RÈGLES STRICTES :
@@ -281,6 +301,11 @@ FORMAT DE SORTIE (JSON strict) :
 }`,
     };
 
+    // Use AI prompt from database or fallback to default
+    const systemPrompt = aiPrompt?.system_prompt || defaultSystemPrompts[document_type];
+    const modelConfig = aiPrompt?.model_config as { model?: string } || {};
+    const model = modelConfig.model || "google/gemini-2.5-flash";
+
     const userPrompt = `Génère un document de type "${document_type}" basé sur ce contexte :
 
 ${JSON.stringify(llmContext, null, 2)}
@@ -295,9 +320,9 @@ Réponds UNIQUEMENT avec le JSON structuré, sans markdown ni commentaires.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model,
         messages: [
-          { role: "system", content: systemPrompts[document_type] },
+          { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
       }),
