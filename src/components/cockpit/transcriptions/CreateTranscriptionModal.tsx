@@ -30,9 +30,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Upload, Mic, MicOff, Loader2, User, FolderOpen, Package, Check, ChevronsUpDown, FileText, Sparkles, Zap, Crown, Brain } from 'lucide-react';
+import { Upload, Mic, MicOff, Loader2, User, FolderOpen, Package, Check, ChevronsUpDown, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useCockpitVoiceTranscriptions, useAIPromptProfiles, useLLMModelsGrouped } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
+import { useCockpitVoiceTranscriptions, useAIPromptProfiles } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { useCockpitLeads, useCockpitProjects, useCockpitMeetingNotes } from '@/hooks/cockpit';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -72,10 +72,8 @@ export function CreateTranscriptionModal({
     defaultLeadId || defaultProjectId || defaultSolutionId || defaultMeetingNoteId || ''
   );
   const [promptProfileId, setPromptProfileId] = useState<string>('');
-  const [llmModelId, setLlmModelId] = useState<string>('');
   const [autoCreateTasks, setAutoCreateTasks] = useState(false);
   const [entitySearchOpen, setEntitySearchOpen] = useState(false);
-  const [showModelSelector, setShowModelSelector] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -83,7 +81,6 @@ export function CreateTranscriptionModal({
 
   const { createTranscription, processTranscription } = useCockpitVoiceTranscriptions();
   const { data: promptProfiles = [] } = useAIPromptProfiles('transcription');
-  const { models: llmModels = [], grouped: groupedModels } = useLLMModelsGrouped();
   const { leads = [] } = useCockpitLeads();
   const { projects = [] } = useCockpitProjects();
   const { meetingNotes = [] } = useCockpitMeetingNotes();
@@ -107,9 +104,7 @@ export function CreateTranscriptionModal({
     setEntityType('none');
     setSelectedEntityId('');
     setPromptProfileId('');
-    setLlmModelId('');
     setAutoCreateTasks(false);
-    setShowModelSelector(false);
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,7 +185,6 @@ export function CreateTranscriptionModal({
         meeting_note_id: entityType === 'meeting_note' ? selectedEntityId : null,
         auto_create_tasks: autoCreateTasks,
         prompt_profile_id: promptProfileId || null,
-        llm_model_id: llmModelId || null,
       });
 
       // Start processing
@@ -412,114 +406,6 @@ export function CreateTranscriptionModal({
               </SelectContent>
             </Select>
           </div>
-
-          {/* LLM Model selector */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />
-                Modèle IA
-              </Label>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 text-xs"
-                onClick={() => setShowModelSelector(!showModelSelector)}
-              >
-                {showModelSelector ? 'Masquer' : 'Personnaliser'}
-              </Button>
-            </div>
-            
-            {!showModelSelector ? (
-              <div className="text-sm text-muted-foreground rounded-lg border p-3 bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-primary" />
-                  <span className="font-medium">Gemini 2.5 Flash</span>
-                  <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">Défaut</span>
-                </div>
-                <p className="text-xs mt-1">Rapide et équilibré • Via Lovable AI</p>
-              </div>
-            ) : (
-              <Select value={llmModelId || 'default'} onValueChange={(v) => setLlmModelId(v === 'default' ? '' : v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un modèle..." />
-                </SelectTrigger>
-                <SelectContent className="max-h-80">
-                  <SelectItem value="default">
-                    <div className="flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-primary" />
-                      Gemini 2.5 Flash (défaut)
-                    </div>
-                  </SelectItem>
-                  
-                  {groupedModels.fast.length > 0 && (
-                    <>
-                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mt-2">
-                        <Zap className="h-3 w-3" /> Rapides
-                      </div>
-                      {groupedModels.fast.map(model => (
-                        <SelectItem key={model.id} value={model.id}>
-                          <div className="flex flex-col">
-                            <span>{model.display_name}</span>
-                            <span className="text-xs text-muted-foreground">{model.description}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
-                  
-                  {groupedModels.balanced.length > 0 && (
-                    <>
-                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mt-2">
-                        <Sparkles className="h-3 w-3" /> Équilibrés
-                      </div>
-                      {groupedModels.balanced.map(model => (
-                        <SelectItem key={model.id} value={model.id}>
-                          <div className="flex flex-col">
-                            <span>{model.display_name}</span>
-                            <span className="text-xs text-muted-foreground">{model.description}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
-                  
-                  {groupedModels.premium.length > 0 && (
-                    <>
-                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mt-2">
-                        <Crown className="h-3 w-3" /> Premium
-                      </div>
-                      {groupedModels.premium.map(model => (
-                        <SelectItem key={model.id} value={model.id}>
-                          <div className="flex flex-col">
-                            <span>{model.display_name}</span>
-                            <span className="text-xs text-muted-foreground">{model.description}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
-                  
-                  {groupedModels.reasoning.length > 0 && (
-                    <>
-                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mt-2">
-                        <Brain className="h-3 w-3" /> Raisonnement
-                      </div>
-                      {groupedModels.reasoning.map(model => (
-                        <SelectItem key={model.id} value={model.id}>
-                          <div className="flex flex-col">
-                            <span>{model.display_name}</span>
-                            <span className="text-xs text-muted-foreground">{model.description}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-
           {/* Auto create tasks */}
           <div className="flex items-center justify-between rounded-lg border p-3">
             <div className="space-y-0.5">
