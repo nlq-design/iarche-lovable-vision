@@ -33,60 +33,23 @@ type VoiceJob = {
 
 /**
  * Transcribe audio with OpenAI Whisper.
- * For files > 25MB, we chunk and concatenate transcripts.
+ * Files > 25MB: We log a warning and try anyway - OpenAI may reject them.
+ * Note: Proper chunking requires FFmpeg which is not available in Deno.
+ * For production use with large files, consider pre-processing audio client-side
+ * or using a service with FFmpeg support.
  */
 async function openaiTranscribe(audioBlob: Blob, language = "fr"): Promise<{ text: string; segments: unknown[] | null }> {
   const fileSize = audioBlob.size;
   console.log(`Audio file size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
 
-  // If file is small enough, transcribe directly
-  if (fileSize <= WHISPER_MAX_SIZE) {
-    console.log("File is within Whisper limit, transcribing directly...");
-    return await transcribeSingleFile(audioBlob, language);
+  if (fileSize > WHISPER_MAX_SIZE) {
+    console.warn(`File exceeds Whisper limit of 25MB. Size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
+    console.warn(`Attempting transcription anyway - may fail or be truncated.`);
+    // For files over 25MB, try anyway but expect potential issues
+    // In production, consider using client-side compression/splitting
   }
 
-  // For larger files, we need to chunk
-  console.log(`File exceeds Whisper limit (${WHISPER_MAX_SIZE / 1024 / 1024}MB), chunking...`);
-  
-  // Calculate number of chunks needed
-  const numChunks = Math.ceil(fileSize / WHISPER_MAX_SIZE);
-  const chunkSize = Math.ceil(fileSize / numChunks);
-  
-  console.log(`Splitting into ${numChunks} chunks of ~${(chunkSize / 1024 / 1024).toFixed(2)} MB each`);
-  
-  const arrayBuffer = await audioBlob.arrayBuffer();
-  const allTranscripts: string[] = [];
-  const allSegments: unknown[] = [];
-  
-  for (let i = 0; i < numChunks; i++) {
-    const start = i * chunkSize;
-    const end = Math.min(start + chunkSize, fileSize);
-    const chunkBuffer = arrayBuffer.slice(start, end);
-    const chunkBlob = new Blob([chunkBuffer], { type: audioBlob.type });
-    
-    console.log(`Transcribing chunk ${i + 1}/${numChunks} (${(chunkBlob.size / 1024 / 1024).toFixed(2)} MB)...`);
-    
-    try {
-      const result = await transcribeSingleFile(chunkBlob, language);
-      allTranscripts.push(result.text);
-      if (result.segments) {
-        allSegments.push(...(result.segments as unknown[]));
-      }
-      console.log(`Chunk ${i + 1} transcribed: ${result.text.length} chars`);
-    } catch (err) {
-      console.error(`Error transcribing chunk ${i + 1}:`, err);
-      // Continue with other chunks, mark error in transcript
-      allTranscripts.push(`[Erreur de transcription pour le segment ${i + 1}]`);
-    }
-  }
-  
-  const fullText = allTranscripts.join(" ").trim();
-  console.log(`Full transcription completed: ${fullText.length} chars from ${numChunks} chunks`);
-  
-  return { 
-    text: fullText, 
-    segments: allSegments.length > 0 ? allSegments : null 
-  };
+  return await transcribeSingleFile(audioBlob, language);
 }
 
 async function transcribeSingleFile(blob: Blob, language: string): Promise<{ text: string; segments: unknown[] | null }> {
