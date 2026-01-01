@@ -62,6 +62,10 @@ import {
   FileText,
   Bot,
   Mic,
+  Globe,
+  Linkedin,
+  MapPin,
+  ExternalLink,
 } from "lucide-react";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -237,9 +241,16 @@ const CockpitLeadDetail = () => {
         name: lead.name,
         email: lead.email,
         phone: lead.phone,
+        position: lead.position,
         company: lead.company,
         company_size: lead.company_size,
         industry: lead.industry,
+        website: lead.website,
+        linkedin_url: lead.linkedin_url,
+        address: lead.address,
+        city: lead.city,
+        postal_code: lead.postal_code,
+        siret: lead.siret,
         message: lead.message,
       });
       setHasChanges(false);
@@ -382,25 +393,67 @@ const CockpitLeadDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Column - Contact Info */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Contact Info */}
+            {/* Contact Principal (1er interlocuteur = le lead) */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <User className="h-4 w-4" />
-                  Informations de contact
+                  Contact principal
+                  <Badge variant="secondary" className="text-xs ml-auto">1er interlocuteur</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Nom complet</Label>
+                {/* Actions rapides */}
+                {(formData.email || formData.phone) && (
+                  <div className="flex flex-wrap gap-2 pb-2 border-b">
+                    {formData.email && (
+                      <Button variant="outline" size="sm" asChild className="h-7 text-xs">
+                        <a href={`mailto:${formData.email}`}>
+                          <Mail className="h-3 w-3 mr-1.5" />
+                          Envoyer un email
+                        </a>
+                      </Button>
+                    )}
+                    {formData.phone && (
+                      <Button variant="outline" size="sm" asChild className="h-7 text-xs">
+                        <a href={`tel:${formData.phone}`}>
+                          <Phone className="h-3 w-3 mr-1.5" />
+                          Appeler
+                        </a>
+                      </Button>
+                    )}
+                    {formData.linkedin_url && (
+                      <Button variant="outline" size="sm" asChild className="h-7 text-xs">
+                        <a href={formData.linkedin_url} target="_blank" rel="noopener noreferrer">
+                          <Linkedin className="h-3 w-3 mr-1.5" />
+                          LinkedIn
+                          <ExternalLink className="h-2.5 w-2.5 ml-1" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Nom complet</Label>
                     <Input
                       value={formData.name || ''}
                       onChange={(e) => handleChange('name', e.target.value)}
+                      className="h-9"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Poste / Fonction</Label>
+                    <Input
+                      value={formData.position || ''}
+                      onChange={(e) => handleChange('position', e.target.value || null)}
+                      placeholder="Ex: Directeur Commercial"
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs flex items-center gap-1.5">
                       <Mail className="h-3 w-3" />
                       Email
                     </Label>
@@ -408,10 +461,11 @@ const CockpitLeadDetail = () => {
                       type="email"
                       value={formData.email || ''}
                       onChange={(e) => handleChange('email', e.target.value)}
+                      className="h-9"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs flex items-center gap-1.5">
                       <Phone className="h-3 w-3" />
                       Téléphone
                     </Label>
@@ -419,37 +473,72 @@ const CockpitLeadDetail = () => {
                       value={formData.phone || ''}
                       onChange={(e) => handleChange('phone', e.target.value || null)}
                       placeholder="Non renseigné"
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs flex items-center gap-1.5">
+                      <Linkedin className="h-3 w-3" />
+                      Profil LinkedIn
+                    </Label>
+                    <Input
+                      value={formData.linkedin_url || ''}
+                      onChange={(e) => handleChange('linkedin_url', e.target.value || null)}
+                      placeholder="https://linkedin.com/in/..."
+                      className="h-9"
                     />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Company Info */}
+            {/* Entreprise */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
                   Entreprise
+                  {formData.website && (
+                    <a 
+                      href={formData.website.startsWith('http') ? formData.website : `https://${formData.website}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="ml-auto text-xs text-primary hover:underline flex items-center gap-1"
+                    >
+                      <Globe className="h-3 w-3" />
+                      Site web
+                      <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Nom de l'entreprise</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Nom de l'entreprise</Label>
                     <Input
                       value={formData.company || ''}
                       onChange={(e) => handleChange('company', e.target.value || null)}
                       placeholder="Non renseigné"
+                      className="h-9"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Taille de l'entreprise</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">SIRET</Label>
+                    <Input
+                      value={formData.siret || ''}
+                      onChange={(e) => handleChange('siret', e.target.value || null)}
+                      placeholder="123 456 789 00012"
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Taille</Label>
                     <Select
                       value={formData.company_size || ''}
                       onValueChange={(value) => handleChange('company_size', value || null)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-9">
                         <SelectValue placeholder="Sélectionner..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -461,16 +550,16 @@ const CockpitLeadDetail = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label className="flex items-center gap-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs flex items-center gap-1.5">
                       <Briefcase className="h-3 w-3" />
-                      Secteur d'activité
+                      Secteur
                     </Label>
                     <Select
                       value={formData.industry || ''}
                       onValueChange={(value) => handleChange('industry', value || null)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-9">
                         <SelectValue placeholder="Sélectionner..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -481,6 +570,52 @@ const CockpitLeadDetail = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs flex items-center gap-1.5">
+                      <Globe className="h-3 w-3" />
+                      Site web
+                    </Label>
+                    <Input
+                      value={formData.website || ''}
+                      onChange={(e) => handleChange('website', e.target.value || null)}
+                      placeholder="https://..."
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+
+                {/* Adresse */}
+                <div className="pt-2 border-t">
+                  <Label className="text-xs flex items-center gap-1.5 mb-2">
+                    <MapPin className="h-3 w-3" />
+                    Adresse
+                  </Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-3 space-y-1.5">
+                      <Input
+                        value={formData.address || ''}
+                        onChange={(e) => handleChange('address', e.target.value || null)}
+                        placeholder="Rue, numéro..."
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Input
+                        value={formData.postal_code || ''}
+                        onChange={(e) => handleChange('postal_code', e.target.value || null)}
+                        placeholder="Code postal"
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="sm:col-span-2 space-y-1.5">
+                      <Input
+                        value={formData.city || ''}
+                        onChange={(e) => handleChange('city', e.target.value || null)}
+                        placeholder="Ville"
+                        className="h-9"
+                      />
+                    </div>
                   </div>
                 </div>
               </CardContent>
