@@ -60,14 +60,20 @@ import {
   Check,
   UserPlus,
   X,
+  Users,
+  FolderPlus,
+  PackagePlus,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useCockpitVoiceTranscriptions, TRANSCRIPTION_STATUSES } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { useCockpitLeads } from '@/hooks/cockpit/useCockpitLeads';
+import { useCockpitProjects } from '@/hooks/cockpit/useCockpitProjects';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
+import { useQuery } from '@tanstack/react-query';
 
 interface TranscriptionDetailSheetProps {
   transcriptionId: string | null;
@@ -89,9 +95,27 @@ export function TranscriptionDetailSheet({
   const { useTranscription, deleteTranscription, processTranscription, updateTranscription } = useCockpitVoiceTranscriptions();
   const { data: transcription, isLoading, refetch } = useTranscription(transcriptionId || '');
   const { leads } = useCockpitLeads();
+  const { projects } = useCockpitProjects();
+  
+  // Fetch solutions (articles with resource_type = 'solution')
+  const { data: solutions = [] } = useQuery({
+    queryKey: ['cockpit-solutions-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('articles')
+        .select('id, title, slug')
+        .eq('resource_type', 'solution')
+        .eq('published', true)
+        .order('title');
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
-  // Lead selector state
+  // Entity selector states
   const [showLeadSelector, setShowLeadSelector] = useState(false);
+  const [showProjectSelector, setShowProjectSelector] = useState(false);
+  const [showSolutionSelector, setShowSolutionSelector] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [emailType, setEmailType] = useState<'post_meeting' | 'followup'>('post_meeting');
   const [isGeneratingEmail, setIsGeneratingEmail] = useState(false);
@@ -275,6 +299,7 @@ export function TranscriptionDetailSheet({
 
                 {/* Entity Links */}
                 <div className="flex flex-wrap gap-2">
+                  {/* Lead Link */}
                   {transcription?.lead ? (
                     <Badge variant="secondary" className="cursor-pointer group" onClick={() => {
                       onOpenChange(false);
@@ -338,24 +363,138 @@ export function TranscriptionDetailSheet({
                       </Badge>
                     )
                   )}
-                  {transcription?.project && (
-                    <Badge variant="secondary" className="cursor-pointer" onClick={() => {
+                  
+                  {/* Project Link */}
+                  {transcription?.project ? (
+                    <Badge variant="secondary" className="cursor-pointer group" onClick={() => {
                       onOpenChange(false);
                       navigate(`/cockpit/projects/${transcription.project!.id}`);
                     }}>
                       <FolderOpen className="h-3 w-3 mr-1" />
                       {transcription.project.name}
+                      <button 
+                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (transcriptionId) {
+                            updateTranscription.mutate({ id: transcriptionId, updates: { project_id: null } });
+                          }
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     </Badge>
+                  ) : (
+                    showProjectSelector ? (
+                      <div className="flex items-center gap-2">
+                        <Select
+                          onValueChange={(projectId) => {
+                            if (transcriptionId) {
+                              updateTranscription.mutate(
+                                { id: transcriptionId, updates: { project_id: projectId } },
+                                { onSuccess: () => setShowProjectSelector(false) }
+                              );
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-7 w-48 text-xs">
+                            <SelectValue placeholder="Sélectionner un projet..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(projects ?? []).map((project) => (
+                              <SelectItem key={project.id} value={project.id}>
+                                {project.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => setShowProjectSelector(false)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Badge 
+                        variant="outline" 
+                        className="cursor-pointer hover:bg-muted"
+                        onClick={() => setShowProjectSelector(true)}
+                      >
+                        <FolderPlus className="h-3 w-3 mr-1" />
+                        Lier à un projet
+                      </Badge>
+                    )
                   )}
-                  {transcription?.solution && (
-                    <Badge variant="secondary" className="cursor-pointer" onClick={() => {
+                  
+                  {/* Solution Link */}
+                  {transcription?.solution ? (
+                    <Badge variant="secondary" className="cursor-pointer group" onClick={() => {
                       onOpenChange(false);
                       navigate(`/cockpit/solutions/${transcription.solution!.id}`);
                     }}>
                       <Package className="h-3 w-3 mr-1" />
                       {transcription.solution.title}
+                      <button 
+                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (transcriptionId) {
+                            updateTranscription.mutate({ id: transcriptionId, updates: { solution_id: null } });
+                          }
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     </Badge>
+                  ) : (
+                    showSolutionSelector ? (
+                      <div className="flex items-center gap-2">
+                        <Select
+                          onValueChange={(solutionId) => {
+                            if (transcriptionId) {
+                              updateTranscription.mutate(
+                                { id: transcriptionId, updates: { solution_id: solutionId } },
+                                { onSuccess: () => setShowSolutionSelector(false) }
+                              );
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-7 w-48 text-xs">
+                            <SelectValue placeholder="Sélectionner une solution..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {solutions.map((solution) => (
+                              <SelectItem key={solution.id} value={solution.id}>
+                                {solution.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => setShowSolutionSelector(false)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Badge 
+                        variant="outline" 
+                        className="cursor-pointer hover:bg-muted"
+                        onClick={() => setShowSolutionSelector(true)}
+                      >
+                        <PackagePlus className="h-3 w-3 mr-1" />
+                        Lier à une solution
+                      </Badge>
+                    )
                   )}
+                  
+                  {/* Meeting Note Link (read only) */}
                   {transcription?.meeting_note && (
                     <Badge variant="secondary" className="cursor-pointer" onClick={() => {
                       onOpenChange(false);
@@ -369,6 +508,15 @@ export function TranscriptionDetailSheet({
                     </Badge>
                   )}
                 </div>
+
+                {/* Partners Section */}
+                {transcriptionId && (
+                  <LinkedPartnersSection 
+                    entityType="transcription" 
+                    entityId={transcriptionId} 
+                    compact 
+                  />
+                )}
 
                 {/* Content Tabs */}
                 {transcription?.status === 'done' && summary ? (
