@@ -31,6 +31,9 @@ interface LLMModel {
 // Whisper API limit is 25MB per request
 const WHISPER_MAX_SIZE = 25 * 1024 * 1024;
 
+// Gemini supports files up to ~1GB for audio via Lovable AI
+const GEMINI_AUDIO_SUPPORTED = true;
+
 type VoiceJob = {
   id: string;
   workspace_id: string;
@@ -47,31 +50,31 @@ type VoiceJob = {
 };
 
 /**
- * Transcribe audio with OpenAI Whisper.
- * Files > 25MB: We log a warning and try anyway - OpenAI may reject them.
- * Note: Proper chunking requires FFmpeg which is not available in Deno.
- * For production use with large files, consider pre-processing audio client-side
- * or using a service with FFmpeg support.
+ * Transcribe audio using the best available method:
+ * - Files <= 25MB: Use OpenAI Whisper (faster, more accurate for short files)
+ * - Files > 25MB: Use Gemini 2.5 Flash via Lovable AI (supports large files)
  */
-async function openaiTranscribe(audioBlob: Blob, language = "fr"): Promise<{ text: string; segments: unknown[] | null }> {
+async function transcribeAudio(audioBlob: Blob, language = "fr"): Promise<{ text: string; segments: unknown[] | null }> {
   const fileSize = audioBlob.size;
   console.log(`Audio file size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
 
-  if (fileSize > WHISPER_MAX_SIZE) {
-    console.warn(`File exceeds Whisper limit of 25MB. Size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
-    console.warn(`Attempting transcription anyway - may fail or be truncated.`);
-    // For files over 25MB, try anyway but expect potential issues
-    // In production, consider using client-side compression/splitting
+  if (fileSize <= WHISPER_MAX_SIZE) {
+    console.log("Using OpenAI Whisper for transcription (file <= 25MB)");
+    return await transcribeWithWhisper(audioBlob, language);
   }
-
-  return await transcribeSingleFile(audioBlob, language);
+  
+  console.log("Using Gemini via Lovable AI for transcription (file > 25MB)");
+  return await transcribeWithGemini(audioBlob, language);
 }
 
-async function transcribeSingleFile(blob: Blob, language: string): Promise<{ text: string; segments: unknown[] | null }> {
+/**
+ * Transcribe with OpenAI Whisper (for files <= 25MB)
+ */
+async function transcribeWithWhisper(blob: Blob, language: string): Promise<{ text: string; segments: unknown[] | null }> {
   const form = new FormData();
   form.append("model", "whisper-1");
   form.append("language", language);
-  form.append("response_format", "verbose_json"); // Get segments with timestamps
+  form.append("response_format", "verbose_json");
   form.append("file", blob, "audio.m4a");
 
   const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
@@ -90,6 +93,84 @@ async function transcribeSingleFile(blob: Blob, language: string): Promise<{ tex
   return {
     text: result.text ?? "",
     segments: result.segments ?? null
+  };
+}
+
+/**
+ * Transcribe with Gemini via Lovable AI Gateway (for files > 25MB)
+ * Uses base64 encoding for audio data
+ */
+async function transcribeWithGemini(blob: Blob, language: string): Promise<{ text: string; segments: unknown[] | null }> {
+  // Convert blob to base64
+  const arrayBuffer = await blob.arrayBuffer();
+  const base64Audio = btoa(
+    Array.from(new Uint8Array(arrayBuffer))
+      .map(byte => String.fromCharCode(byte))
+      .join('')
+  );
+  
+  // Determine MIME type from blob or default to audio/mp4
+  const mimeType = blob.type || "audio/mp4";
+  console.log(`Sending ${(blob.size / 1024 / 1024).toFixed(2)} MB audio to Gemini, type: ${mimeType}`);
+  
+  const systemPrompt = `Tu es un assistant de transcription audio professionnel. 
+Transcris l'audio fourni en français avec précision. 
+Retourne UNIQUEMENT la transcription textuelle, sans commentaires ni formatage.
+Si l'audio contient plusieurs intervenants, indique les changements de locuteur avec [Locuteur 1], [Locuteur 2], etc.`;
+
+  const response = await fetch(LOVABLE_AI_GATEWAY, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { 
+          role: "user", 
+          content: [
+            {
+              type: "text",
+              text: `Transcris cet audio en ${language === "fr" ? "français" : language}. Retourne uniquement le texte transcrit.`
+            },
+            {
+              type: "input_audio",
+              input_audio: {
+                data: base64Audio,
+                format: mimeType.includes("wav") ? "wav" : mimeType.includes("webm") ? "webm" : "mp3"
+              }
+            }
+          ]
+        }
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Gemini transcription error:", errorText);
+    
+    // Check for rate limit or payment errors
+    if (response.status === 429) {
+      throw new Error("gemini_rate_limited: Rate limit exceeded, please try again later");
+    }
+    if (response.status === 402) {
+      throw new Error("gemini_payment_required: Please add credits to your Lovable AI workspace");
+    }
+    
+    throw new Error(`gemini_transcription_failed: ${errorText}`);
+  }
+
+  const data = await response.json();
+  const transcription = data.choices?.[0]?.message?.content ?? "";
+  
+  console.log(`Gemini transcription complete: ${transcription.length} characters`);
+  
+  return {
+    text: transcription,
+    segments: null // Gemini doesn't provide segments like Whisper
   };
 }
 
@@ -906,8 +987,8 @@ serve(async (req) => {
     const audioBlob = await audioRes.blob();
     console.log(`Audio fetched: ${(audioBlob.size / 1024 / 1024).toFixed(2)} MB, type: ${audioBlob.type}`);
 
-    // STT with Whisper (handles chunking for large files)
-    const stt = await openaiTranscribe(audioBlob, "fr");
+    // STT with best available method (Whisper for small files, Gemini for large)
+    const stt = await transcribeAudio(audioBlob, "fr");
     const rawText = stt.text ?? "";
     const segments = stt.segments ?? null;
 
