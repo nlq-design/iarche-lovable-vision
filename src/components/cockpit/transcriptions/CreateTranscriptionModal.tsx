@@ -51,7 +51,7 @@ interface CreateTranscriptionModalProps {
 }
 
 const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
-const MAX_TRANSCRIPTION_FILE_SIZE = 30 * 1024 * 1024; // 30MB - Edge function limit to prevent memory exhaustion
+const MAX_TRANSCRIPTION_FILE_SIZE = 100 * 1024 * 1024; // 100MB - FFmpeg compression + Whisper chunking
 
 export function CreateTranscriptionModal({
   open,

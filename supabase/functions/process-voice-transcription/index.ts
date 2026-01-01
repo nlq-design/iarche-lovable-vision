@@ -18,11 +18,11 @@ const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-// Whisper file size limit
-const WHISPER_MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25MB
-const TARGET_CHUNK_SIZE_BYTES = 20 * 1024 * 1024; // 20MB for safety margin
-// Hard limit to prevent memory exhaustion in edge function
-const EDGE_FUNCTION_MAX_FILE_SIZE = 30 * 1024 * 1024; // 30MB absolute max - reject larger files
+// Whisper file size limit (per chunk)
+const WHISPER_MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25MB - OpenAI Whisper limit per request
+const TARGET_CHUNK_SIZE_BYTES = 20 * 1024 * 1024; // 20MB target for FFmpeg chunks
+// Edge function can handle larger files with streaming + chunking
+const EDGE_FUNCTION_MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB - relies on compression + chunking
 
 type LLMProvider = "lovable" | "openai" | "anthropic" | "openrouter";
 
