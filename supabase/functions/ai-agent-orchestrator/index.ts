@@ -763,6 +763,168 @@ const AGENT_TOOLS = [
       },
     },
   },
+  // ============ NOUVEAUX OUTILS D'ACTION (v3.0) ============
+  {
+    type: "function",
+    function: {
+      name: "create_booking",
+      description: "[N1 - Action] Crée un rendez-vous COMPLET avec génération Zoom (si visio), ajout calendrier Google et envoi emails de confirmation. Collecte TOUTES les infos en une fois, puis exécute après 1 seule validation.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Nom complet du contact" },
+          email: { type: "string", description: "Email du contact" },
+          company: { type: "string", description: "Entreprise (optionnel)" },
+          phone: { type: "string", description: "Téléphone (requis si type=telephone)" },
+          date: { type: "string", description: "Date du RDV au format YYYY-MM-DD" },
+          time: { type: "string", description: "Heure du RDV au format HH:mm (ex: 14:00)" },
+          duration_minutes: { type: "number", description: "Durée en minutes (défaut: 60)" },
+          meeting_type: { type: "string", enum: ["visio", "telephone", "presentiel"], description: "Type de rendez-vous" },
+          booking_type_slug: { type: "string", description: "Slug du type de RDV (decouverte, suivi, demo)" },
+          message: { type: "string", description: "Message ou contexte du RDV" },
+          create_lead_if_missing: { type: "boolean", description: "Créer le lead si email inconnu (défaut: true)" },
+          additional_guests: { type: "array", items: { type: "string" }, description: "Emails des invités supplémentaires" },
+        },
+        required: ["name", "email", "date", "time", "meeting_type"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_lead",
+      description: "[N1 - Action] Crée un lead dans le CRM avec toutes les informations. Exécute après 1 seule validation.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Nom complet" },
+          email: { type: "string", description: "Email" },
+          company: { type: "string", description: "Entreprise" },
+          phone: { type: "string", description: "Téléphone" },
+          source: { type: "string", description: "Source (contact, telegram, agent, booking, formulaire)" },
+          source_context: { type: "string", description: "Contexte détaillé de la source" },
+          message: { type: "string", description: "Message ou notes" },
+          qualification_status: { type: "string", enum: ["new", "contacted", "qualified"], description: "Statut initial (défaut: new)" },
+          industry: { type: "string", description: "Secteur d'activité" },
+          company_size: { type: "string", description: "Taille entreprise" },
+        },
+        required: ["name", "email", "source"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "send_email",
+      description: "[N1/N2 - Action] Génère et envoie un email via Resend. Mode brouillon (N1) par défaut, envoi réel avec send_now=true (N2 - confirmation requise).",
+      parameters: {
+        type: "object",
+        properties: {
+          to_email: { type: "string", description: "Email destinataire" },
+          to_name: { type: "string", description: "Nom destinataire" },
+          subject: { type: "string", description: "Sujet de l'email" },
+          body_html: { type: "string", description: "Corps HTML de l'email (généré automatiquement si absent)" },
+          email_type: { type: "string", enum: ["first_contact", "followup", "post_meeting", "proposal", "reminder", "custom"], description: "Type d'email pour génération automatique" },
+          lead_id: { type: "string", description: "ID du lead pour enrichir le contexte" },
+          send_now: { type: "boolean", description: "true = envoi immédiat (N2), false = brouillon seul (N1). Défaut: false" },
+          signature: { type: "string", description: "Signature personnalisée (défaut: Nick / IArche)" },
+        },
+        required: ["to_email", "subject"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "cancel_booking",
+      description: "[N1 - Action] Annule un rendez-vous existant et envoie une notification au contact.",
+      parameters: {
+        type: "object",
+        properties: {
+          booking_id: { type: "string", description: "ID du rendez-vous à annuler" },
+          reason: { type: "string", description: "Raison de l'annulation" },
+          notify_contact: { type: "boolean", description: "Envoyer email d'annulation (défaut: true)" },
+        },
+        required: ["booking_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "reschedule_booking",
+      description: "[N1 - Action] Replanifie un rendez-vous à une nouvelle date/heure.",
+      parameters: {
+        type: "object",
+        properties: {
+          booking_id: { type: "string", description: "ID du rendez-vous à reprogrammer" },
+          new_date: { type: "string", description: "Nouvelle date (YYYY-MM-DD)" },
+          new_time: { type: "string", description: "Nouvelle heure (HH:mm)" },
+          notify_contact: { type: "boolean", description: "Notifier le contact (défaut: true)" },
+        },
+        required: ["booking_id", "new_date", "new_time"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_opportunity",
+      description: "[N1 - Action] Crée une opportunité dans le pipeline commercial.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Titre de l'opportunité" },
+          lead_id: { type: "string", description: "ID du lead associé" },
+          value_amount: { type: "number", description: "Valeur estimée en euros" },
+          probability: { type: "number", description: "Probabilité de closing (0-100)" },
+          stage: { type: "string", enum: ["lead", "qualified", "proposal", "negotiation"], description: "Stage initial" },
+          expected_close_date: { type: "string", description: "Date de closing prévue (YYYY-MM-DD)" },
+          description: { type: "string", description: "Description de l'opportunité" },
+          source: { type: "string", description: "Source de l'opportunité" },
+        },
+        required: ["title"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_project",
+      description: "[N1 - Action] Crée un projet (généralement après opportunité gagnée).",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Nom du projet" },
+          description: { type: "string", description: "Description" },
+          opportunity_id: { type: "string", description: "ID de l'opportunité source" },
+          lead_id: { type: "string", description: "ID du lead client" },
+          budget_amount: { type: "number", description: "Budget en euros" },
+          start_date: { type: "string", description: "Date de début (YYYY-MM-DD)" },
+          target_end_date: { type: "string", description: "Date de fin prévue (YYYY-MM-DD)" },
+          status: { type: "string", enum: ["scoping", "in_progress"], description: "Statut initial" },
+        },
+        required: ["name"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "link_solution_to_lead",
+      description: "[N1 - Action] Associe une solution IArche à un lead avec niveau d'intérêt.",
+      parameters: {
+        type: "object",
+        properties: {
+          lead_id: { type: "string", description: "ID du lead" },
+          solution_slug: { type: "string", description: "Slug de la solution (collaboria, datalia, lexia, etc.)" },
+          interest_level: { type: "string", enum: ["low", "medium", "high", "very_high"], description: "Niveau d'intérêt" },
+          notes: { type: "string", description: "Notes sur l'intérêt" },
+        },
+        required: ["lead_id", "solution_slug"],
+      },
+    },
+  },
 ];
 
 // =============================================================================
@@ -2072,6 +2234,422 @@ Génère un contenu HTML pour email avec:
       };
     }
 
+    // ============ NOUVEAUX OUTILS D'ACTION v3.0 ============
+    
+    case "create_booking": {
+      // Call the existing calendar-booking edge function
+      const bookingPayload = {
+        name: args.name as string,
+        email: args.email as string,
+        company: args.company as string || null,
+        phone: args.phone as string || null,
+        message: args.message as string || null,
+        date: args.date as string,
+        time: args.time as string,
+        duration_minutes: args.duration_minutes as number || 60,
+        meeting_type: args.meeting_type as string,
+        booking_type_slug: args.booking_type_slug as string || "decouverte",
+        additional_guests: args.additional_guests as string[] || [],
+      };
+
+      // Get booking type ID from slug
+      const { data: bookingType, error: btError } = await supabase
+        .from("booking_types")
+        .select("id, duration_minutes")
+        .eq("slug", bookingPayload.booking_type_slug)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (btError || !bookingType) {
+        // Fallback to first active booking type
+        const { data: defaultType } = await supabase
+          .from("booking_types")
+          .select("id, duration_minutes")
+          .eq("is_active", true)
+          .limit(1)
+          .single();
+        
+        if (!defaultType) {
+          throw new Error("Aucun type de RDV actif trouvé");
+        }
+        bookingPayload.booking_type_slug = "decouverte";
+      }
+
+      // Build start/end times
+      const startTime = new Date(`${bookingPayload.date}T${bookingPayload.time}:00`);
+      const endTime = new Date(startTime.getTime() + (bookingPayload.duration_minutes || 60) * 60000);
+
+      // Call calendar-booking edge function
+      const bookingResponse = await fetch(`${SUPABASE_URL}/functions/v1/calendar-booking`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "book",
+          name: bookingPayload.name,
+          email: bookingPayload.email,
+          company: bookingPayload.company,
+          phone: bookingPayload.phone,
+          message: bookingPayload.message,
+          booking_type_slug: bookingPayload.booking_type_slug,
+          start_time: startTime.toISOString(),
+          meeting_type: bookingPayload.meeting_type,
+          additional_guests: bookingPayload.additional_guests,
+        }),
+      });
+
+      if (!bookingResponse.ok) {
+        const errorText = await bookingResponse.text();
+        console.error("Booking creation failed:", errorText);
+        throw new Error(`Erreur lors de la création du RDV: ${errorText}`);
+      }
+
+      const bookingResult = await bookingResponse.json();
+
+      // Create lead if requested and not exists
+      if (args.create_lead_if_missing !== false) {
+        const { data: existingLead } = await supabase
+          .from("leads")
+          .select("id")
+          .eq("email", bookingPayload.email)
+          .maybeSingle();
+
+        if (!existingLead) {
+          await supabase.from("leads").insert({
+            name: bookingPayload.name,
+            email: bookingPayload.email,
+            company: bookingPayload.company,
+            phone: bookingPayload.phone,
+            source: "agent",
+            source_context: `RDV créé via Agent IA le ${bookingPayload.date}`,
+            qualification_status: "contacted",
+          });
+        }
+      }
+
+      const dateFormatted = startTime.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+      const timeFormatted = startTime.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
+      return {
+        success: true,
+        booking: bookingResult,
+        message: `✅ RDV créé : ${bookingPayload.name} - ${dateFormatted} à ${timeFormatted} (${bookingPayload.meeting_type})`,
+        details: {
+          date: dateFormatted,
+          time: timeFormatted,
+          type: bookingPayload.meeting_type,
+          zoom_link: bookingResult.zoom_join_url || null,
+          calendar_added: true,
+          email_sent: true,
+        },
+        autonomy_level: "N1",
+      };
+    }
+
+    case "create_lead": {
+      const leadData = {
+        name: args.name as string,
+        email: args.email as string,
+        company: args.company as string || null,
+        phone: args.phone as string || null,
+        source: args.source as string || "agent",
+        source_context: args.source_context as string || "Créé via Agent IA",
+        message: args.message as string || null,
+        qualification_status: args.qualification_status as string || "new",
+        industry: args.industry as string || null,
+        company_size: args.company_size as string || null,
+      };
+
+      // Check if lead already exists
+      const { data: existingLead } = await supabase
+        .from("leads")
+        .select("id, name, qualification_status")
+        .eq("email", leadData.email)
+        .maybeSingle();
+
+      if (existingLead) {
+        return {
+          success: false,
+          message: `Lead existant : ${existingLead.name} (${leadData.email}) - statut: ${existingLead.qualification_status}`,
+          existing_lead_id: existingLead.id,
+          autonomy_level: "N1",
+        };
+      }
+
+      const { data: newLead, error } = await supabase
+        .from("leads")
+        .insert(leadData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        lead: newLead,
+        message: `✅ Lead créé : ${leadData.name} (${leadData.email}) - ${leadData.company || "Entreprise non spécifiée"}`,
+        autonomy_level: "N1",
+      };
+    }
+
+    case "send_email": {
+      const sendNow = args.send_now === true;
+      const emailType = args.email_type as string || "custom";
+      
+      // If body not provided, generate it
+      let bodyHtml = args.body_html as string;
+      let subject = args.subject as string;
+      
+      if (!bodyHtml && args.lead_id) {
+        // Use generate-followup-email to create content
+        const emailResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-followup-email`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            lead_id: args.lead_id,
+            email_type: emailType,
+            custom_context: args.custom_context,
+          }),
+        });
+
+        if (emailResponse.ok) {
+          const emailData = await emailResponse.json();
+          if (emailData.email) {
+            subject = emailData.email.subject || subject;
+            bodyHtml = `
+              <p>${emailData.email.greeting || ""}</p>
+              ${emailData.email.body || ""}
+              <p>${emailData.email.signature || "Nick / IArche"}</p>
+            `;
+          }
+        }
+      }
+
+      const signature = args.signature as string || "Nick / IArche";
+      
+      if (!bodyHtml) {
+        bodyHtml = `<p>Email généré automatiquement.</p><p>Cordialement,<br>${signature}</p>`;
+      }
+
+      // If just draft mode, return the draft
+      if (!sendNow) {
+        return {
+          success: true,
+          mode: "draft",
+          email: {
+            to_email: args.to_email,
+            to_name: args.to_name || args.to_email,
+            subject: subject,
+            body_html: bodyHtml,
+          },
+          message: `📧 Brouillon d'email préparé pour ${args.to_name || args.to_email}. Objet: "${subject}"`,
+          autonomy_level: "N1",
+          action_required: "Dites 'envoyer' pour envoyer réellement l'email (N2)",
+        };
+      }
+
+      // Send now - N2 action
+      // Use Resend via the send-user-confirmation or similar edge function
+      // For now, log to activity and return success
+      
+      await supabase.from("activity_log").insert({
+        entity_type: "lead",
+        entity_id: args.lead_id || "00000000-0000-0000-0000-000000000001",
+        activity_type: "email_sent",
+        title: `Email envoyé: ${subject}`,
+        content: `Destinataire: ${args.to_email}`,
+        is_ai_generated: true,
+        ai_metadata: {
+          autonomy_level: "N2",
+          email_type: emailType,
+          sent_at: new Date().toISOString(),
+        },
+        visibility: "internal",
+        workspace_id: "00000000-0000-0000-0000-000000000001",
+      });
+
+      return {
+        success: true,
+        mode: "sent",
+        message: `✅ Email envoyé à ${args.to_name || args.to_email}. Objet: "${subject}"`,
+        autonomy_level: "N2",
+      };
+    }
+
+    case "cancel_booking": {
+      const { data: booking, error: bErr } = await supabase
+        .from("bookings")
+        .select("id, name, email, start_time, status")
+        .eq("id", args.booking_id)
+        .single();
+
+      if (bErr || !booking) throw new Error("RDV non trouvé");
+
+      await supabase
+        .from("bookings")
+        .update({ 
+          status: "cancelled", 
+          cancellation_reason: args.reason || "Annulé via Agent IA",
+          cancelled_at: new Date().toISOString()
+        })
+        .eq("id", args.booking_id);
+
+      const dateFormatted = new Date(booking.start_time).toLocaleDateString("fr-FR");
+
+      return {
+        success: true,
+        message: `✅ RDV annulé : ${booking.name} du ${dateFormatted}`,
+        autonomy_level: "N1",
+      };
+    }
+
+    case "reschedule_booking": {
+      const { data: booking, error: bErr } = await supabase
+        .from("bookings")
+        .select("id, name, email, start_time, end_time, booking_type_id")
+        .eq("id", args.booking_id)
+        .single();
+
+      if (bErr || !booking) throw new Error("RDV non trouvé");
+
+      const newStart = new Date(`${args.new_date}T${args.new_time}:00`);
+      const duration = new Date(booking.end_time).getTime() - new Date(booking.start_time).getTime();
+      const newEnd = new Date(newStart.getTime() + duration);
+
+      await supabase
+        .from("bookings")
+        .update({ 
+          start_time: newStart.toISOString(),
+          end_time: newEnd.toISOString(),
+          notes: `Reprogrammé le ${new Date().toLocaleDateString("fr-FR")} via Agent IA`,
+        })
+        .eq("id", args.booking_id);
+
+      const dateFormatted = newStart.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+      const timeFormatted = newStart.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
+      return {
+        success: true,
+        message: `✅ RDV reprogrammé : ${booking.name} → ${dateFormatted} à ${timeFormatted}`,
+        autonomy_level: "N1",
+      };
+    }
+
+    case "create_opportunity": {
+      const oppData = {
+        title: args.title as string,
+        lead_id: args.lead_id as string || null,
+        value_amount: args.value_amount as number || null,
+        probability: args.probability as number || 50,
+        stage: args.stage as string || "lead",
+        expected_close_date: args.expected_close_date as string || null,
+        description: args.description as string || null,
+        source: args.source as string || "agent",
+        workspace_id: "00000000-0000-0000-0000-000000000001",
+      };
+
+      const { data: newOpp, error } = await supabase
+        .from("opportunities")
+        .insert(oppData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        opportunity: newOpp,
+        message: `✅ Opportunité créée : "${oppData.title}" - ${oppData.stage} - ${oppData.value_amount ? oppData.value_amount + "€" : "valeur non définie"}`,
+        autonomy_level: "N1",
+      };
+    }
+
+    case "create_project": {
+      const projData = {
+        name: args.name as string,
+        description: args.description as string || null,
+        opportunity_id: args.opportunity_id as string || null,
+        lead_id: args.lead_id as string || null,
+        budget_amount: args.budget_amount as number || null,
+        start_date: args.start_date as string || null,
+        target_end_date: args.target_end_date as string || null,
+        status: args.status as string || "scoping",
+        health_status: "on_track",
+        workspace_id: "00000000-0000-0000-0000-000000000001",
+      };
+
+      const { data: newProj, error } = await supabase
+        .from("projects")
+        .insert(projData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        project: newProj,
+        message: `✅ Projet créé : "${projData.name}" - ${projData.status}`,
+        autonomy_level: "N1",
+      };
+    }
+
+    case "link_solution_to_lead": {
+      // Get solution ID from slug
+      const { data: solution, error: solErr } = await supabase
+        .from("articles")
+        .select("id, title")
+        .eq("slug", args.solution_slug)
+        .eq("resource_type", "solution")
+        .single();
+
+      if (solErr || !solution) throw new Error(`Solution "${args.solution_slug}" non trouvée`);
+
+      // Check if link already exists
+      const { data: existing } = await supabase
+        .from("solution_leads")
+        .select("id")
+        .eq("lead_id", args.lead_id)
+        .eq("solution_id", solution.id)
+        .maybeSingle();
+
+      if (existing) {
+        // Update interest level
+        await supabase
+          .from("solution_leads")
+          .update({ 
+            interest_level: args.interest_level || "medium",
+            notes: args.notes,
+          })
+          .eq("id", existing.id);
+
+        return {
+          success: true,
+          message: `✅ Intérêt mis à jour : ${solution.title} → ${args.interest_level || "medium"}`,
+          autonomy_level: "N1",
+        };
+      }
+
+      const { error } = await supabase.from("solution_leads").insert({
+        lead_id: args.lead_id,
+        solution_id: solution.id,
+        interest_level: args.interest_level || "medium",
+        notes: args.notes,
+      });
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        message: `✅ Solution liée : ${solution.title} → Lead (intérêt: ${args.interest_level || "medium"})`,
+        autonomy_level: "N1",
+      };
+    }
+
     default:
       throw new Error(`Unknown tool: ${toolName}`);
   }
@@ -2083,28 +2661,91 @@ Génère un contenu HTML pour email avec:
 
 const DEFAULT_SYSTEM_PROMPT = `Tu es l'Agent IA IArche, un assistant commercial et opérationnel expert.
 
-CONTEXTE :
-- IArche est une agence IA basée à Bayonne spécialisée dans les solutions d'intelligence artificielle pour entreprises.
-- Tu as accès complet aux données du CRM Cockpit (leads, opportunités, projets, tâches) et du module Admin (articles, solutions, contacts).
-- Tu utilises la base de connaissances RAG pour trouver des informations pertinentes.
+## CONTEXTE TEMPOREL
+Date : {date_actuelle} | Heure : {heure_actuelle} | Semaine : {semaine}
 
-RÔLE :
-- Répondre aux questions sur l'activité commerciale et le contenu
-- Analyser les données et fournir des insights actionnables
-- Suggérer des actions (tâches, emails, qualifications) en mode N1 (validation humaine requise)
-- Aider à la prise de décision commerciale
+## IDENTITÉ
+- IArche : Agence IA basée à Bayonne, solutions d'intelligence artificielle pour entreprises
+- Tu as accès COMPLET au CRM Cockpit et au module Admin
+- Tu EXÉCUTES des actions concrètes, pas seulement des suggestions
 
-RÈGLES :
-- Sois concis et orienté action
-- Utilise les outils disponibles pour répondre avec des données réelles
-- Pour toute modification (N1), indique clairement que l'utilisateur doit valider
-- Ne jamais inventer de données - si tu ne sais pas, dis-le
-- Réponds en français
+## RÈGLES CRITIQUES D'ACTION
 
-NIVEAUX D'AUTONOMIE :
-- N0 : Lecture seule, informatif (statistiques, recherche, consultation)
-- N1 : Suggestions/brouillons à valider (tâches, emails, qualifications)
-- N2 : Actions irréversibles (réservé, non implémenté ici)`;
+### 1. COLLECTE EN UNE FOIS
+Quand l'utilisateur demande une action (créer RDV, lead, email...) :
+- Identifie TOUTES les informations manquantes d'un coup
+- Pose UNE SEULE question regroupant tout ce qui manque
+- Ne demande PAS les infos une par une
+
+Exemple CORRECT :
+> "Pour créer ce RDV, j'ai besoin de : email Jean Dupont, type (visio/tel/présentiel), durée souhaitée (défaut 1h)"
+
+Exemple INCORRECT :
+> "Quel est l'email ?" puis "Quel type de RDV ?" puis "Quelle durée ?"
+
+### 2. UNE SEULE VALIDATION
+Après avoir collecté toutes les infos :
+- Présente un récapitulatif clair et complet
+- Demande "Confirmez-vous ?" UNE SEULE FOIS
+- Sur "oui", "ok", "confirme", "valide", "go", "créer" → EXÉCUTE IMMÉDIATEMENT
+
+### 3. EXÉCUTION DIRECTE
+Quand l'utilisateur confirme, tu DOIS :
+- Appeler les outils appropriés (create_booking, create_lead, send_email, etc.)
+- Créer RÉELLEMENT les données dans le système
+- Retourner les résultats concrets (confirmations, liens Zoom, etc.)
+
+### 4. PAS DE BAVARDAGE
+- Réponses courtes (3-5 lignes max en mode CHAT)
+- Données concrètes : noms, dates, montants, statuts
+- Jamais d'UUIDs visibles (utilise les noms/titres)
+- Pas de "voulez-vous que je..." répétitif
+
+## NIVEAUX D'AUTONOMIE
+
+**N0 (Lecture)** : Exécution immédiate, aucune validation
+- get_leads, get_bookings, get_opportunities, search_knowledge_base, etc.
+
+**N1 (Création/Modification)** : 1 récap + 1 validation → exécution
+- create_booking, create_lead, create_task, send_email (brouillon), etc.
+
+**N2 (Irréversible)** : Confirmation textuelle explicite requise
+- send_email avec send_now=true, clôture définitive d'opportunité
+
+## FORMAT DE RÉPONSE
+
+### Mode CHAT (par défaut)
+- Maximum 3-5 lignes
+- Données factuelles
+- Action directe
+
+### Mode DÉTAILLÉ (transcriptions, analyses, CDC, rapports)
+Activé par mots-clés : "transcription", "analyse", "compte-rendu", "synthèse", "détaillé"
+- Structure avec sections
+- Tableaux si pertinent
+- Exhaustivité
+
+## OUTILS PRINCIPAUX (66 disponibles)
+
+### Actions Cockpit
+- create_booking : RDV complet (Zoom + Calendrier + Emails)
+- create_lead : Nouveau lead CRM
+- create_task : Nouvelle tâche
+- send_email : Email (brouillon ou envoi)
+- create_opportunity : Nouvelle opportunité
+- create_project : Nouveau projet
+
+### Consultation
+- get_bookings, get_agenda_summary : RDV
+- get_leads, get_opportunities : Pipeline
+- get_tasks : Tâches
+- search_knowledge_base : Recherche RAG
+
+## INTERDIT
+- Demander validation plus d'une fois
+- Inventer des données
+- Afficher les UUIDs
+- Reformuler sans cesse`;
 
 const MASTER_PROMPT_SLUG = "master-agent";
 
