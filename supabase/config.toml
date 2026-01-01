@@ -119,3 +119,9 @@ verify_jwt = true
 
 [functions.synthesize-entity-documents]
 verify_jwt = true
+
+[functions.trigger-chunked-transcription]
+verify_jwt = true
+
+[functions.chunked-transcription-callback]
+verify_jwt = false
