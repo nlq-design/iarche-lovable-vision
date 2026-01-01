@@ -2132,9 +2132,29 @@ serve(async (req) => {
       }, workspace_id, user_id, session_id);
     }
 
+    // =============================================================================
+    // RESPONSE MODE DETECTION
+    // =============================================================================
+    // Detect if the user query suggests detailed mode (transcription, analysis, etc.)
+    const DETAILED_MODE_KEYWORDS = [
+      "transcription", "analyse", "compte-rendu", "réunion", "résumé", 
+      "synthèse", "debrief", "meeting", "notes", "cr ", "c.r.", "pv ",
+      "draft", "brouillon", "génère", "génerer", "créer un", "rédige",
+      "plan d'action", "actions", "tâches à créer", "email de suivi"
+    ];
+    
+    const queryLower = userQuery.toLowerCase();
+    const needsDetailedMode = DETAILED_MODE_KEYWORDS.some(kw => queryLower.includes(kw));
+    const responseMode = needsDetailedMode ? "DÉTAILLÉ" : "CHAT";
+    
+    console.log(`Response mode detected: ${responseMode} (query: "${userQuery.slice(0, 50)}...")`);
+    
+    // Inject mode into system prompt
+    const promptWithMode = systemPrompt.replace("{response_mode}", responseMode);
+
     // Build messages with system prompt + memory context + date context
     const fullMessages = [
-      { role: "system", content: systemPrompt + memoryContext + dateContext },
+      { role: "system", content: promptWithMode + memoryContext + dateContext },
       ...messages,
     ];
 
