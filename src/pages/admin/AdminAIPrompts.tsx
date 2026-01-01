@@ -1236,11 +1236,11 @@ export default function AdminAIPrompts() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                   <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-primary">41</p>
+                    <p className="text-2xl font-bold text-primary">48</p>
                     <p className="text-xs text-muted-foreground">Outils Agent</p>
                   </div>
                   <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-green-500">16</p>
+                    <p className="text-2xl font-bold text-green-500">22</p>
                     <p className="text-xs text-muted-foreground">Connectées Agent</p>
                   </div>
                   <div className="p-3 rounded-lg bg-background border text-center">
@@ -1268,7 +1268,7 @@ export default function AdminAIPrompts() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Wrench className="h-4 w-4" />
-                  Catalogue des 41 Outils Agent
+                  Catalogue des 48 Outils Agent
                 </CardTitle>
                 <CardDescription>
                   Outils disponibles pour l'orchestrateur IA, classés par domaine
@@ -1281,7 +1281,7 @@ export default function AdminAIPrompts() {
                     <div className="flex items-center gap-2">
                       <Eye className="h-4 w-4 text-blue-500" />
                       <span className="font-medium">COCKPIT - Lecture</span>
-                      <Badge variant="secondary" className="text-xs">13 outils</Badge>
+                      <Badge variant="secondary" className="text-xs">17 outils</Badge>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </CollapsibleTrigger>
@@ -1289,9 +1289,14 @@ export default function AdminAIPrompts() {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
                       {[
                         { name: "get_leads", desc: "Liste des leads", icon: <Users className="h-3 w-3" /> },
+                        { name: "get_lead_details", desc: "Détail lead complet", icon: <Users className="h-3 w-3" /> },
                         { name: "get_opportunities", desc: "Pipeline opportunités", icon: <Target className="h-3 w-3" /> },
                         { name: "get_projects", desc: "Liste projets", icon: <Briefcase className="h-3 w-3" /> },
+                        { name: "get_project_details", desc: "Détail projet", icon: <Briefcase className="h-3 w-3" /> },
                         { name: "get_tasks", desc: "Tâches avec filtres", icon: <ClipboardList className="h-3 w-3" /> },
+                        { name: "get_bookings", desc: "Liste RDV", icon: <Calendar className="h-3 w-3" /> },
+                        { name: "get_booking_details", desc: "Détail RDV complet", icon: <Calendar className="h-3 w-3" /> },
+                        { name: "get_agenda_summary", desc: "Résumé agenda", icon: <Calendar className="h-3 w-3" /> },
                         { name: "get_transcriptions", desc: "Transcriptions vocales", icon: <Mic className="h-3 w-3" /> },
                         { name: "get_meeting_notes", desc: "Notes réunion", icon: <FileText className="h-3 w-3" /> },
                         { name: "get_specifications", desc: "CDC", icon: <FileSignature className="h-3 w-3" /> },
@@ -1300,7 +1305,6 @@ export default function AdminAIPrompts() {
                         { name: "get_activity_log", desc: "Journal activité", icon: <Activity className="h-3 w-3" /> },
                         { name: "get_pipeline_stats", desc: "Stats pipeline", icon: <Target className="h-3 w-3" /> },
                         { name: "get_pending_ai_notifications", desc: "Notifs IA en attente", icon: <Bell className="h-3 w-3" /> },
-                        { name: "mark_notifications_reviewed", desc: "Marquer notifs lues", icon: <CheckCircle2 className="h-3 w-3" /> },
                       ].map((tool) => (
                         <TooltipProvider key={tool.name}>
                           <Tooltip>
@@ -1326,7 +1330,7 @@ export default function AdminAIPrompts() {
                     <div className="flex items-center gap-2">
                       <Edit className="h-4 w-4 text-green-500" />
                       <span className="font-medium">COCKPIT - Écriture/Actions</span>
-                      <Badge variant="secondary" className="text-xs">16 outils</Badge>
+                      <Badge variant="secondary" className="text-xs">19 outils</Badge>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </CollapsibleTrigger>
@@ -1337,18 +1341,21 @@ export default function AdminAIPrompts() {
                         { name: "cancel_booking", desc: "Annuler RDV", icon: <Calendar className="h-3 w-3" /> },
                         { name: "reschedule_booking", desc: "Reprogrammer RDV", icon: <Calendar className="h-3 w-3" /> },
                         { name: "create_lead", desc: "Créer lead CRM", icon: <Users className="h-3 w-3" /> },
+                        { name: "update_lead", desc: "Modifier lead", icon: <Users className="h-3 w-3" /> },
+                        { name: "link_solution_to_lead", desc: "Lier solution→lead", icon: <Sparkles className="h-3 w-3" /> },
                         { name: "send_email", desc: "Envoi email Resend", icon: <MessageSquare className="h-3 w-3" /> },
                         { name: "create_opportunity", desc: "Créer opportunité", icon: <Target className="h-3 w-3" /> },
+                        { name: "update_opportunity", desc: "Modifier opportunité", icon: <Target className="h-3 w-3" /> },
                         { name: "create_project", desc: "Créer projet", icon: <Briefcase className="h-3 w-3" /> },
+                        { name: "update_project", desc: "Modifier projet", icon: <Briefcase className="h-3 w-3" /> },
                         { name: "create_task", desc: "Créer tâche", icon: <ClipboardList className="h-3 w-3" /> },
+                        { name: "update_task", desc: "Modifier tâche", icon: <ClipboardList className="h-3 w-3" /> },
                         { name: "create_meeting_note", desc: "Note réunion", icon: <FileText className="h-3 w-3" /> },
-                        { name: "update_lead_qualification", desc: "Qualifier lead", icon: <Users className="h-3 w-3" /> },
-                        { name: "update_opportunity_stage", desc: "Changer étape pipeline", icon: <Target className="h-3 w-3" /> },
-                        { name: "draft_followup_email", desc: "Générer email suivi", icon: <MessageSquare className="h-3 w-3" /> },
-                        { name: "suggest_solutions_for_lead", desc: "Suggérer solutions", icon: <Sparkles className="h-3 w-3" /> },
-                        { name: "suggest_booking_action", desc: "Suggérer action RDV", icon: <Calendar className="h-3 w-3" /> },
+                        { name: "update_meeting_note", desc: "Modifier note", icon: <FileText className="h-3 w-3" /> },
+                        { name: "create_specification", desc: "Créer CDC", icon: <FileSignature className="h-3 w-3" /> },
+                        { name: "update_specification", desc: "Modifier CDC", icon: <FileSignature className="h-3 w-3" /> },
                         { name: "log_activity", desc: "Enregistrer activité", icon: <Activity className="h-3 w-3" /> },
-                        { name: "link_solution_to_lead", desc: "Lier solution→lead", icon: <Sparkles className="h-3 w-3" /> },
+                        { name: "mark_notifications_reviewed", desc: "Marquer notifs lues", icon: <CheckCircle2 className="h-3 w-3" /> },
                       ].map((tool) => (
                         <TooltipProvider key={tool.name}>
                           <Tooltip>
@@ -1374,7 +1381,7 @@ export default function AdminAIPrompts() {
                     <div className="flex items-center gap-2">
                       <Shield className="h-4 w-4 text-purple-500" />
                       <span className="font-medium">ADMIN - Lecture</span>
-                      <Badge variant="secondary" className="text-xs">12 outils</Badge>
+                      <Badge variant="secondary" className="text-xs">5 outils</Badge>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </CollapsibleTrigger>
@@ -1382,21 +1389,10 @@ export default function AdminAIPrompts() {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
                       {[
                         { name: "get_articles", desc: "Articles/Contenus", icon: <FileText className="h-3 w-3" /> },
-                        { name: "get_article_details", desc: "Détail article complet", icon: <FileText className="h-3 w-3" /> },
                         { name: "get_solutions", desc: "Solutions IArche", icon: <Sparkles className="h-3 w-3" /> },
-                        { name: "get_categories_tags", desc: "Catégories & Tags", icon: <Tag className="h-3 w-3" /> },
-                        { name: "get_contacts", desc: "Messages contact", icon: <Users className="h-3 w-3" /> },
-                        { name: "get_newsletters", desc: "Newsletters", icon: <MessageSquare className="h-3 w-3" /> },
-                        { name: "get_forms", desc: "Formulaires", icon: <ClipboardList className="h-3 w-3" /> },
-                        { name: "get_form_responses", desc: "Réponses formulaires", icon: <ClipboardList className="h-3 w-3" /> },
-                        { name: "get_brochures", desc: "Brochures marketing", icon: <FileText className="h-3 w-3" /> },
-                        { name: "get_atelier_inscriptions", desc: "Inscriptions ateliers", icon: <Calendar className="h-3 w-3" /> },
-                        { name: "get_bookings", desc: "Rendez-vous", icon: <Calendar className="h-3 w-3" /> },
-                        { name: "get_booking_details", desc: "Détail RDV complet", icon: <Calendar className="h-3 w-3" /> },
-                        { name: "get_agenda_summary", desc: "Résumé agenda", icon: <Calendar className="h-3 w-3" /> },
-                        { name: "get_comments", desc: "Commentaires", icon: <MessageSquare className="h-3 w-3" /> },
-                        { name: "get_cta_analytics", desc: "Analytics CTA", icon: <Activity className="h-3 w-3" /> },
+                        { name: "get_indexed_resources", desc: "Ressources indexées RAG", icon: <Database className="h-3 w-3" /> },
                         { name: "search_knowledge_base", desc: "Recherche RAG", icon: <Search className="h-3 w-3" /> },
+                        { name: "get_cta_analytics", desc: "Analytics CTA", icon: <Activity className="h-3 w-3" /> },
                       ].map((tool) => (
                         <TooltipProvider key={tool.name}>
                           <Tooltip>
@@ -1432,11 +1428,10 @@ export default function AdminAIPrompts() {
                         { name: "generate_document", desc: "Générer devis/CDC/proposition", icon: <FileText className="h-3 w-3" /> },
                         { name: "enrich_seo", desc: "Enrichir SEO article", icon: <Sparkles className="h-3 w-3" /> },
                         { name: "generate_faq", desc: "Générer FAQ article", icon: <MessageSquare className="h-3 w-3" /> },
-                        { name: "send_newsletter", desc: "Envoyer newsletter", icon: <MessageSquare className="h-3 w-3" /> },
                         { name: "suggest_tags", desc: "Suggérer tags article", icon: <Tag className="h-3 w-3" /> },
-                        { name: "draft_article_content", desc: "Brouillon article", icon: <FileText className="h-3 w-3" /> },
-                        { name: "suggest_article_improvements", desc: "Améliorer article", icon: <Sparkles className="h-3 w-3" /> },
-                        { name: "draft_newsletter", desc: "Brouillon newsletter", icon: <FileText className="h-3 w-3" /> },
+                        { name: "send_newsletter", desc: "Envoyer newsletter", icon: <MessageSquare className="h-3 w-3" /> },
+                        { name: "generate_article_gpt", desc: "Générer article GPT", icon: <Sparkles className="h-3 w-3" /> },
+                        { name: "generate_article_claude", desc: "Générer article Claude", icon: <Sparkles className="h-3 w-3" /> },
                       ].map((tool) => (
                         <TooltipProvider key={tool.name}>
                           <Tooltip>
@@ -1466,7 +1461,7 @@ export default function AdminAIPrompts() {
                   Edge Functions (38 déployées)
                 </CardTitle>
                 <CardDescription>
-                  Fonctions backend déployées. 16 sont connectées à l'agent IA.
+                  Fonctions backend déployées. 22 sont connectées à l'agent IA.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1475,16 +1470,16 @@ export default function AdminAIPrompts() {
                   <CollapsibleTrigger className="flex items-center justify-between w-full p-2 rounded-lg bg-green-500/10 border border-green-500/20 hover:bg-green-500/15 transition-colors">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span className="font-medium text-sm">Connectées à l'Agent (16)</span>
+                      <span className="font-medium text-sm">Connectées à l'Agent (22)</span>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {[
-                        { name: "ai-agent-orchestrator", desc: "Agent principal 41 outils", uses: "Master" },
+                        { name: "ai-agent-orchestrator", desc: "Agent principal 48 outils", uses: "Master" },
                         { name: "calendar-booking", desc: "Création RDV Zoom+Cal+Email", uses: "create_booking" },
-                        { name: "generate-followup-email", desc: "Email de suivi", uses: "draft_followup_email" },
+                        { name: "generate-followup-email", desc: "Email de suivi", uses: "send_email" },
                         { name: "search-embeddings", desc: "Recherche sémantique RAG", uses: "search_knowledge_base" },
                         { name: "generate-embeddings", desc: "Indexation vectorielle", uses: "RAG" },
                         { name: "process-voice-transcription", desc: "Traitement audio Whisper", uses: "get_transcriptions" },
@@ -1498,6 +1493,12 @@ export default function AdminAIPrompts() {
                         { name: "enrich-content-seo", desc: "Enrichissement SEO", uses: "enrich_seo" },
                         { name: "suggest-tags", desc: "Suggestion tags IA", uses: "suggest_tags" },
                         { name: "send-newsletter", desc: "Envoi newsletter", uses: "send_newsletter" },
+                        { name: "generate-article-gpt", desc: "Génération article GPT", uses: "generate_article_gpt" },
+                        { name: "generate-article-claude", desc: "Génération article Claude", uses: "generate_article_claude" },
+                        { name: "push-to-google-calendar", desc: "Sync Google Calendar", uses: "create_booking" },
+                        { name: "sync-google-calendar", desc: "Récupération agenda", uses: "get_agenda_summary" },
+                        { name: "analyze-comments-for-faq", desc: "Analyse commentaires→FAQ", uses: "Admin" },
+                        { name: "send-atelier-confirmation", desc: "Confirmation inscription atelier", uses: "Admin" },
                       ].map((fn) => (
                         <div key={fn.name} className="flex items-start p-2 rounded bg-background/50 border border-green-500/20">
                           <div className="flex-1 min-w-0">
