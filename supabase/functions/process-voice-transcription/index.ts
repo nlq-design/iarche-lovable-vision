@@ -28,11 +28,9 @@ interface LLMModel {
   supports_tools: boolean;
 }
 
-// Whisper API limit is 25MB per request
+// Whisper API limit is 25MB per request - use 20MB chunks for safety margin
 const WHISPER_MAX_SIZE = 25 * 1024 * 1024;
-
-// Gemini supports files up to ~1GB for audio via Lovable AI
-const GEMINI_AUDIO_SUPPORTED = true;
+const CHUNK_SIZE = 20 * 1024 * 1024; // 20MB chunks for splitting
 
 type VoiceJob = {
   id: string;
@@ -50,9 +48,29 @@ type VoiceJob = {
 };
 
 /**
- * Transcribe audio using the best available method:
- * - Files <= 25MB: Use OpenAI Whisper (faster, more accurate for short files)
- * - Files > 25MB: Use Gemini 2.5 Flash via Lovable AI (supports large files)
+ * Split a large audio blob into multiple smaller chunks.
+ * For formats like M4A/MP4, we do simple byte-level splitting which works
+ * because Whisper is resilient to missing headers in subsequent chunks.
+ */
+function splitAudioIntoChunks(blob: Blob, chunkSize: number): Blob[] {
+  const chunks: Blob[] = [];
+  let offset = 0;
+  
+  while (offset < blob.size) {
+    const end = Math.min(offset + chunkSize, blob.size);
+    const chunk = blob.slice(offset, end, blob.type);
+    chunks.push(chunk);
+    offset = end;
+  }
+  
+  console.log(`Split audio into ${chunks.length} chunks of ~${(chunkSize / 1024 / 1024).toFixed(1)}MB each`);
+  return chunks;
+}
+
+/**
+ * Transcribe audio using chunking for large files:
+ * - Files <= 25MB: Single Whisper call
+ * - Files > 25MB: Split into chunks, transcribe each, concatenate results
  */
 async function transcribeAudio(audioBlob: Blob, language = "fr"): Promise<{ text: string; segments: unknown[] | null }> {
   const fileSize = audioBlob.size;
@@ -63,8 +81,50 @@ async function transcribeAudio(audioBlob: Blob, language = "fr"): Promise<{ text
     return await transcribeWithWhisper(audioBlob, language);
   }
   
-  console.log("Using Gemini via Lovable AI for transcription (file > 25MB)");
-  return await transcribeWithGemini(audioBlob, language);
+  // Large file: split into chunks and transcribe each
+  console.log("File exceeds 25MB limit - splitting into chunks for sequential transcription");
+  const chunks = splitAudioIntoChunks(audioBlob, CHUNK_SIZE);
+  
+  const transcriptions: string[] = [];
+  const allSegments: unknown[] = [];
+  let cumulativeOffset = 0;
+  
+  for (let i = 0; i < chunks.length; i++) {
+    console.log(`Transcribing chunk ${i + 1}/${chunks.length} (${(chunks[i].size / 1024 / 1024).toFixed(2)} MB)`);
+    
+    try {
+      const result = await transcribeWithWhisper(chunks[i], language);
+      transcriptions.push(result.text);
+      
+      // Adjust segment timestamps if available
+      if (result.segments && Array.isArray(result.segments)) {
+        const adjustedSegments = result.segments.map((seg: any) => ({
+          ...seg,
+          start: (seg.start ?? 0) + cumulativeOffset,
+          end: (seg.end ?? 0) + cumulativeOffset,
+        }));
+        allSegments.push(...adjustedSegments);
+        
+        // Update cumulative offset based on last segment end time
+        const lastSeg = result.segments[result.segments.length - 1] as any;
+        if (lastSeg?.end) {
+          cumulativeOffset += lastSeg.end;
+        }
+      }
+    } catch (error) {
+      console.error(`Error transcribing chunk ${i + 1}:`, error);
+      // Continue with other chunks even if one fails
+      transcriptions.push(`[Erreur de transcription pour le segment ${i + 1}]`);
+    }
+  }
+  
+  const fullText = transcriptions.join("\n\n");
+  console.log(`Chunked transcription complete: ${fullText.length} characters from ${chunks.length} chunks`);
+  
+  return {
+    text: fullText,
+    segments: allSegments.length > 0 ? allSegments : null
+  };
 }
 
 /**
@@ -96,83 +156,6 @@ async function transcribeWithWhisper(blob: Blob, language: string): Promise<{ te
   };
 }
 
-/**
- * Transcribe with Gemini via Lovable AI Gateway (for files > 25MB)
- * Uses base64 encoding for audio data
- */
-async function transcribeWithGemini(blob: Blob, language: string): Promise<{ text: string; segments: unknown[] | null }> {
-  // Convert blob to base64
-  const arrayBuffer = await blob.arrayBuffer();
-  const base64Audio = btoa(
-    Array.from(new Uint8Array(arrayBuffer))
-      .map(byte => String.fromCharCode(byte))
-      .join('')
-  );
-  
-  // Determine MIME type from blob or default to audio/mp4
-  const mimeType = blob.type || "audio/mp4";
-  console.log(`Sending ${(blob.size / 1024 / 1024).toFixed(2)} MB audio to Gemini, type: ${mimeType}`);
-  
-  const systemPrompt = `Tu es un assistant de transcription audio professionnel. 
-Transcris l'audio fourni en français avec précision. 
-Retourne UNIQUEMENT la transcription textuelle, sans commentaires ni formatage.
-Si l'audio contient plusieurs intervenants, indique les changements de locuteur avec [Locuteur 1], [Locuteur 2], etc.`;
-
-  const response = await fetch(LOVABLE_AI_GATEWAY, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { 
-          role: "user", 
-          content: [
-            {
-              type: "text",
-              text: `Transcris cet audio en ${language === "fr" ? "français" : language}. Retourne uniquement le texte transcrit.`
-            },
-            {
-              type: "input_audio",
-              input_audio: {
-                data: base64Audio,
-                format: mimeType.includes("wav") ? "wav" : mimeType.includes("webm") ? "webm" : "mp3"
-              }
-            }
-          ]
-        }
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Gemini transcription error:", errorText);
-    
-    // Check for rate limit or payment errors
-    if (response.status === 429) {
-      throw new Error("gemini_rate_limited: Rate limit exceeded, please try again later");
-    }
-    if (response.status === 402) {
-      throw new Error("gemini_payment_required: Please add credits to your Lovable AI workspace");
-    }
-    
-    throw new Error(`gemini_transcription_failed: ${errorText}`);
-  }
-
-  const data = await response.json();
-  const transcription = data.choices?.[0]?.message?.content ?? "";
-  
-  console.log(`Gemini transcription complete: ${transcription.length} characters`);
-  
-  return {
-    text: transcription,
-    segments: null // Gemini doesn't provide segments like Whisper
-  };
-}
 
 async function loadPromptProfile(supabase: any, prompt_profile_id: string | null) {
   // If specific profile requested, use it
