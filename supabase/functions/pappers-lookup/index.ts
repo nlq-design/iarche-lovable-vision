@@ -16,6 +16,7 @@ interface PappersCompany {
   denomination: string;
   forme_juridique: string;
   date_creation: string;
+  date_cessation: string | null;
   effectif: string;
   effectif_min: number;
   effectif_max: number;
@@ -25,8 +26,12 @@ interface PappersCompany {
   domaine_activite: string;
   convention_collective: string;
   capital: number;
+  capital_formate: string;
   chiffre_affaires: number;
   resultat: number;
+  numero_tva_intracommunautaire: string;
+  greffe: string;
+  date_immatriculation_rcs: string;
   siege: {
     siret: string;
     code_postal: string;
@@ -36,12 +41,16 @@ interface PappersCompany {
     pays: string;
     latitude: number;
     longitude: number;
+    code_insee: string;
+    departement: string;
+    region: string;
   };
   representants: Array<{
     nom: string;
     prenom: string;
     qualite: string;
     date_prise_poste: string;
+    nationalite: string;
   }>;
   finances: Array<{
     annee: number;
@@ -52,6 +61,10 @@ interface PappersCompany {
   statut_rcs: string;
   objet_social: string;
   site_web: string;
+  derniere_mise_a_jour_sirene: string;
+  derniere_mise_a_jour_rcs: string;
+  categorie_entreprise: string;
+  annee_categorie_entreprise: number;
 }
 
 serve(async (req) => {
@@ -182,35 +195,69 @@ serve(async (req) => {
     
     const enrichedData = {
       found: true,
+      // Identifiants
       siren: company.siren,
       siret: company.siret || company.siege?.siret,
+      tva_intracommunautaire: company.numero_tva_intracommunautaire,
+      
+      // Entreprise
       company_name: company.nom_entreprise || company.denomination,
       legal_form: company.forme_juridique,
+      category: company.categorie_entreprise,
+      
+      // Dates
       creation_date: company.date_creation,
+      cessation_date: company.date_cessation,
+      rcs_date: company.date_immatriculation_rcs,
+      
+      // Adresse siège
       address: company.siege ? 
         [company.siege.adresse_ligne_1, company.siege.adresse_ligne_2].filter(Boolean).join(' ') : null,
       postal_code: company.siege?.code_postal,
       city: company.siege?.ville,
       country: company.siege?.pays || 'France',
+      code_insee: company.siege?.code_insee,
+      departement: company.siege?.departement,
+      region: company.siege?.region,
+      
+      // Activité
       naf_code: company.code_naf,
       naf_label: company.libelle_code_naf,
       industry: company.domaine_activite || company.libelle_code_naf,
+      object_social: company.objet_social,
+      convention_collective: company.convention_collective,
+      
+      // Effectifs
       employees: company.effectif,
       employees_range: company.tranche_effectif,
       employees_min: company.effectif_min,
       employees_max: company.effectif_max,
+      
+      // Finances
       capital: company.capital,
+      capital_formatted: company.capital_formate,
       revenue: company.chiffre_affaires,
       profit: company.resultat,
+      
+      // Autres
       website: company.site_web,
-      object_social: company.objet_social,
+      greffe: company.greffe,
       rcs_status: company.statut_rcs,
+      last_update_sirene: company.derniere_mise_a_jour_sirene,
+      last_update_rcs: company.derniere_mise_a_jour_rcs,
+      
+      // Dirigeants
       representatives: company.representants?.slice(0, 5).map(r => ({
         name: `${r.prenom} ${r.nom}`.trim(),
         position: r.qualite,
         since: r.date_prise_poste,
+        nationality: r.nationalite,
       })) || [],
-      finances: company.finances?.slice(0, 3) || [],
+      
+      // Historique financier
+      finances: company.finances?.slice(0, 5) || [],
+      
+      // Coordonnées GPS
       coordinates: company.siege?.latitude && company.siege?.longitude ? {
         lat: company.siege.latitude,
         lng: company.siege.longitude,
@@ -257,18 +304,31 @@ serve(async (req) => {
         pappers_enriched_at: new Date().toISOString(),
         pappers_data: {
           siren: enrichedData.siren,
+          tva_intracommunautaire: enrichedData.tva_intracommunautaire,
           legal_form: enrichedData.legal_form,
+          category: enrichedData.category,
           creation_date: enrichedData.creation_date,
+          cessation_date: enrichedData.cessation_date,
+          rcs_date: enrichedData.rcs_date,
           naf_code: enrichedData.naf_code,
           naf_label: enrichedData.naf_label,
+          convention_collective: enrichedData.convention_collective,
           capital: enrichedData.capital,
+          capital_formatted: enrichedData.capital_formatted,
           revenue: enrichedData.revenue,
           profit: enrichedData.profit,
           employees_exact: enrichedData.employees,
+          greffe: enrichedData.greffe,
+          rcs_status: enrichedData.rcs_status,
+          object_social: enrichedData.object_social,
+          departement: enrichedData.departement,
+          region: enrichedData.region,
+          code_insee: enrichedData.code_insee,
           representatives: enrichedData.representatives,
           finances: enrichedData.finances,
-          object_social: enrichedData.object_social,
-          rcs_status: enrichedData.rcs_status,
+          coordinates: enrichedData.coordinates,
+          last_update_sirene: enrichedData.last_update_sirene,
+          last_update_rcs: enrichedData.last_update_rcs,
         },
       };
 

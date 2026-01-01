@@ -87,7 +87,7 @@ import { toast } from 'sonner';
 import { LinkedPartnersSection } from './LinkedPartnersSection';
 import { useCockpitPartners } from '@/hooks/cockpit/useCockpitPartners';
 import { useEntityPartners } from '@/hooks/cockpit/usePartnerLinks';
-import { PappersEnrichment } from './PappersEnrichment';
+import { usePappersLookup } from '@/hooks/cockpit/usePappersLookup';
 
 interface Lead {
   id: string;
@@ -166,6 +166,10 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
   const [linkProjectOpen, setLinkProjectOpen] = useState(false);
   const [linkSolutionOpen, setLinkSolutionOpen] = useState(false);
   const [linkPartnerOpen, setLinkPartnerOpen] = useState(false);
+  const [siretInput, setSiretInput] = useState('');
+
+  // Pappers
+  const { lookupBySiret, isLoading: isPappersLoading } = usePappersLookup();
 
   // Partners
   const { partners: allPartners } = useCockpitPartners();
@@ -484,16 +488,20 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
                   <Building2 className="h-4 w-4" />
                   Entreprise
                 </h3>
-                <PappersEnrichment 
-                  leadId={lead.id}
-                  currentSiret={lead.siret}
-                  currentCompany={lead.company}
-                  onEnriched={() => {
-                    // Refetch lead data after enrichment
-                    onOpenChange(false);
-                    setTimeout(() => onOpenChange(true), 100);
-                  }}
-                />
+                <div className="flex items-center gap-2">
+                  {isPappersLoading && (
+                    <Badge variant="outline" className="gap-1 text-xs">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Enrichissement...
+                    </Badge>
+                  )}
+                  {(lead.ai_metadata as any)?.pappers_enriched_at && (
+                    <Badge variant="secondary" className="gap-1 text-xs">
+                      <Sparkles className="h-3 w-3" />
+                      Pappers
+                    </Badge>
+                  )}
+                </div>
               </div>
               
               <div className="grid gap-4">
@@ -507,20 +515,31 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
                   />
                 </div>
 
-                {/* SIRET field */}
-                {(lead.siret || lead.ai_metadata?.pappers_data) && (
-                  <div className="space-y-2">
-                    <Label htmlFor="siret" className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs">SIRET</Badge>
-                    </Label>
-                    <Input
-                      id="siret"
-                      value={lead.siret || ''}
-                      readOnly
-                      className="font-mono bg-muted"
-                    />
-                  </div>
-                )}
+                {/* SIRET field with auto-enrichment */}
+                <div className="space-y-2">
+                  <Label htmlFor="siret" className="flex items-center gap-2 text-xs">
+                    SIRET
+                    <span className="text-muted-foreground text-[10px]">(enrichissement auto)</span>
+                  </Label>
+                  <Input
+                    id="siret"
+                    value={siretInput || lead.siret || ''}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\s/g, '');
+                      setSiretInput(val);
+                    }}
+                    onBlur={async () => {
+                      const siret = siretInput || lead.siret;
+                      if (siret && siret.length >= 9 && lead?.id) {
+                        await lookupBySiret(siret, lead.id);
+                        onOpenChange(false);
+                        setTimeout(() => onOpenChange(true), 100);
+                      }
+                    }}
+                    placeholder="Entrez le SIRET pour enrichir"
+                    className="font-mono"
+                  />
+                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="company_size">Taille de l'entreprise</Label>
@@ -564,39 +583,65 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
                 </div>
 
                 {/* Pappers enriched data display */}
-                {lead.ai_metadata?.pappers_data && (
-                  <div className="p-3 bg-muted/50 rounded-lg space-y-2 border border-border/50">
+                {(lead.ai_metadata as any)?.pappers_data && (
+                  <div className="p-3 bg-muted/50 rounded-lg space-y-3 border border-border/50">
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <Sparkles className="h-3 w-3" />
                       Données Pappers
                     </p>
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      {lead.ai_metadata.pappers_data.legal_form && (
+                      {(lead.ai_metadata as any).pappers_data.siren && (
                         <div>
-                          <span className="text-muted-foreground">Forme juridique:</span>
-                          <span className="ml-1 font-medium">{lead.ai_metadata.pappers_data.legal_form}</span>
+                          <span className="text-muted-foreground">SIREN:</span>
+                          <span className="ml-1 font-mono font-medium">{(lead.ai_metadata as any).pappers_data.siren}</span>
                         </div>
                       )}
-                      {lead.ai_metadata.pappers_data.naf_label && (
+                      {(lead.ai_metadata as any).pappers_data.tva_intracommunautaire && (
+                        <div>
+                          <span className="text-muted-foreground">TVA Intra:</span>
+                          <span className="ml-1 font-mono font-medium">{(lead.ai_metadata as any).pappers_data.tva_intracommunautaire}</span>
+                        </div>
+                      )}
+                      {(lead.ai_metadata as any).pappers_data.naf_code && (
+                        <div>
+                          <span className="text-muted-foreground">NAF:</span>
+                          <span className="ml-1 font-medium">{(lead.ai_metadata as any).pappers_data.naf_code}</span>
+                        </div>
+                      )}
+                      {(lead.ai_metadata as any).pappers_data.legal_form && (
+                        <div>
+                          <span className="text-muted-foreground">Forme:</span>
+                          <span className="ml-1 font-medium">{(lead.ai_metadata as any).pappers_data.legal_form}</span>
+                        </div>
+                      )}
+                      {(lead.ai_metadata as any).pappers_data.naf_label && (
                         <div className="col-span-2">
                           <span className="text-muted-foreground">Activité:</span>
-                          <span className="ml-1 font-medium">{lead.ai_metadata.pappers_data.naf_label}</span>
+                          <span className="ml-1 font-medium">{(lead.ai_metadata as any).pappers_data.naf_label}</span>
                         </div>
                       )}
-                      {lead.ai_metadata.pappers_data.capital && (
+                      {(lead.ai_metadata as any).pappers_data.capital_formatted && (
                         <div>
                           <span className="text-muted-foreground">Capital:</span>
-                          <span className="ml-1 font-medium">
-                            {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(lead.ai_metadata.pappers_data.capital)}
-                          </span>
+                          <span className="ml-1 font-medium">{(lead.ai_metadata as any).pappers_data.capital_formatted}</span>
                         </div>
                       )}
-                      {lead.ai_metadata.pappers_data.revenue && (
+                      {(lead.ai_metadata as any).pappers_data.employees_exact && (
                         <div>
-                          <span className="text-muted-foreground">CA:</span>
-                          <span className="ml-1 font-medium">
-                            {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(lead.ai_metadata.pappers_data.revenue)}
-                          </span>
+                          <span className="text-muted-foreground">Effectif:</span>
+                          <span className="ml-1 font-medium">{(lead.ai_metadata as any).pappers_data.employees_exact}</span>
+                        </div>
+                      )}
+                      {(lead.ai_metadata as any).pappers_data.creation_date && (
+                        <div>
+                          <span className="text-muted-foreground">Création:</span>
+                          <span className="ml-1 font-medium">{(lead.ai_metadata as any).pappers_data.creation_date}</span>
+                        </div>
+                      )}
+                      {(lead.ai_metadata as any).pappers_data.greffe && (
+                        <div>
+                          <span className="text-muted-foreground">Greffe:</span>
+                          <span className="ml-1 font-medium">{(lead.ai_metadata as any).pappers_data.greffe}</span>
                         </div>
                       )}
                     </div>
