@@ -1157,7 +1157,7 @@ export default function AdminAIPrompts() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Cockpit Read Tools (N0) */}
+                {/* Cockpit Read Tools */}
                 <Collapsible>
                   <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-colors">
                     <div className="flex items-center gap-2">
@@ -1247,7 +1247,7 @@ export default function AdminAIPrompts() {
                         <TooltipProvider key={tool.name}>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className={`flex items-center gap-2 p-2 rounded text-xs ${tool.isNew ? 'bg-green-500/10 border border-green-500/30' : 'bg-background/50'}`}>
+                              <div className="flex items-center gap-2 p-2 rounded text-xs bg-background/50">
                                 {tool.icon}
                                 <code className="font-mono truncate">{tool.name}</code>
                               </div>
@@ -1381,44 +1381,35 @@ export default function AdminAIPrompts() {
               </CardContent>
             </Card>
 
-            {/* Autonomy Levels */}
+            {/* Execution Mode */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Gouvernance - Niveaux d'autonomie
+                  <Zap className="h-4 w-4" />
+                  Mode d'exécution
                 </CardTitle>
                 <CardDescription>
-                  Chaque action IA est tracée avec ai_metadata incluant le niveau d'autonomie
+                  L'agent exécute directement les actions sans demander de validation
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 rounded-lg border bg-blue-500/5 border-blue-500/20">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge className="bg-blue-500 text-white">N0</Badge>
-                      <span className="font-medium">Auto Informatif</span>
+                      <Badge className="bg-blue-500 text-white">Lecture</Badge>
+                      <span className="font-medium">Consultation</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Lecture seule : statistiques, recherche RAG, consultation données. Aucune validation requise.
+                      Statistiques, recherche RAG, consultation données. Résultats immédiats.
                     </p>
                   </div>
                   <div className="p-4 rounded-lg border bg-green-500/5 border-green-500/20">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge className="bg-green-500 text-white">N1</Badge>
-                      <span className="font-medium">Auto Brouillon</span>
+                      <Badge className="bg-green-500 text-white">Action</Badge>
+                      <span className="font-medium">Exécution directe</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Génération de brouillons : CDC, devis, emails, tâches. Éditable avant exécution.
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-lg border bg-orange-500/5 border-orange-500/20">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge className="bg-orange-500 text-white">N2</Badge>
-                      <span className="font-medium">Exécution Contrôlée</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Actions irréversibles : envoi email, changement statut terminal. Validation explicite obligatoire.
+                      Création RDV, leads, emails, tâches. Exécution immédiate sans confirmation.
                     </p>
                   </div>
                 </div>
