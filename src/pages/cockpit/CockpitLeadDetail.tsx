@@ -80,7 +80,8 @@ import { useCockpitPartners } from '@/hooks/cockpit/useCockpitPartners';
 import { useEntityPartners } from '@/hooks/cockpit/usePartnerLinks';
 import type { Database } from '@/integrations/supabase/types';
 import { LeadContactsSection } from '@/components/cockpit/LeadContactsSection';
-import { Users } from 'lucide-react';
+import { PappersEnrichment } from '@/components/cockpit/PappersEnrichment';
+import { Users, Sparkles } from 'lucide-react';
 
 type Lead = Database['public']['Tables']['leads']['Row'];
 
@@ -511,21 +512,29 @@ const CockpitLeadDetail = () => {
             {/* Entreprise */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
+                <CardTitle className="text-base flex items-center gap-2 flex-wrap">
                   <Building2 className="h-4 w-4" />
                   Entreprise
-                  {formData.website && (
-                    <a 
-                      href={formData.website.startsWith('http') ? formData.website : `https://${formData.website}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="ml-auto text-xs text-primary hover:underline flex items-center gap-1"
-                    >
-                      <Globe className="h-3 w-3" />
-                      Site web
-                      <ExternalLink className="h-2.5 w-2.5" />
-                    </a>
-                  )}
+                  <div className="ml-auto flex items-center gap-2">
+                    <PappersEnrichment 
+                      leadId={lead.id}
+                      currentSiret={lead.siret}
+                      currentCompany={lead.company}
+                      onEnriched={() => queryClient.invalidateQueries({ queryKey: ['lead-detail', id] })}
+                    />
+                    {formData.website && (
+                      <a 
+                        href={formData.website.startsWith('http') ? formData.website : `https://${formData.website}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline flex items-center gap-1"
+                      >
+                        <Globe className="h-3 w-3" />
+                        Site web
+                        <ExternalLink className="h-2.5 w-2.5" />
+                      </a>
+                    )}
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
