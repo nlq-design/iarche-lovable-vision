@@ -47,6 +47,7 @@ export interface UploadFileParams {
   category?: string;
   tags?: string[];
   extractedText?: string; // Client-side extracted text
+  signal?: AbortSignal;
 }
 
 export interface UploadTextParams {
@@ -121,10 +122,24 @@ export function useCockpitUploads(filters?: {
   // Upload file mutation
   const uploadFileMutation = useMutation({
     mutationFn: async (params: UploadFileParams) => {
-      const { file, projectIds = [], solutionIds = [], leadIds = [], documentId, category, tags = [], extractedText } = params;
+      const { file, projectIds = [], solutionIds = [], leadIds = [], documentId, category, tags = [], extractedText, signal } = params;
+
+      const makeAbortError = () => {
+        try {
+          return new DOMException('Upload cancelled', 'AbortError');
+        } catch {
+          const e = new Error('Upload cancelled');
+          (e as any).name = 'AbortError';
+          return e;
+        }
+      };
+
+      if (signal?.aborted) throw makeAbortError();
 
       // 1. Compute hash for deduplication
       const contentHash = await computeFileHash(file);
+
+      if (signal?.aborted) throw makeAbortError();
 
       // 2. Check if file already exists
       const { data: existing } = await supabase
@@ -138,6 +153,8 @@ export function useCockpitUploads(filters?: {
         return { duplicate: true, existingId: existing.id, file: existing };
       }
 
+      if (signal?.aborted) throw makeAbortError();
+
       // 3. Get current user
       const { data: { user } } = await supabase.auth.getUser();
 
@@ -146,12 +163,18 @@ export function useCockpitUploads(filters?: {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const storagePath = `${user?.id || 'anonymous'}/${timestamp}_${safeName}`;
 
-      // 5. Upload to storage
+      // 5. Upload to storage (abortable)
       const { error: uploadError } = await supabase.storage
         .from('cockpit-uploads')
-        .upload(storagePath, file);
+        .upload(storagePath, file, ({ signal } as any));
 
       if (uploadError) throw uploadError;
+
+      // If user cancelled right after upload, cleanup storage and stop.
+      if (signal?.aborted) {
+        await supabase.storage.from('cockpit-uploads').remove([storagePath]);
+        throw makeAbortError();
+      }
 
       // 6. Create database record
       const fileType = getFileType(file.type);
@@ -178,7 +201,11 @@ export function useCockpitUploads(filters?: {
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        // Best-effort cleanup of storage object if DB insert fails
+        await supabase.storage.from('cockpit-uploads').remove([storagePath]);
+        throw insertError;
+      }
 
       // 7. Trigger processing (async)
       supabase.functions.invoke('process-uploaded-file', {
