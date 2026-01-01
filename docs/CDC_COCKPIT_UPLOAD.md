@@ -1,6 +1,6 @@
 # Cahier des Charges — Module Upload Cockpit
 
-**Version** : 1.1.0  
+**Version** : 1.2.0  
 **Date** : 2026-01-01  
 **Statut** : 🔵 À IMPLÉMENTER  
 **Priorité** : Haute
@@ -13,7 +13,7 @@
 Créer un module centralisé d'upload de fichiers dans le Cockpit permettant :
 - L'import de documents variés (PDF, DOCX, TXT, fichiers texte collés)
 - La liaison multi-entités (Projets, Solutions, Leads, Documents générés)
-- L'analyse IA automatique avec extraction de contenu
+- L'analyse IA automatique avec extraction de contenu et OCR
 - Le stockage sécurisé avec gestion des fichiers volumineux
 
 ### 1.2 Route
@@ -66,19 +66,146 @@ if (fileSize < 5 * 1024 * 1024) {
 
 | Option | Avantages | Inconvénients |
 |--------|-----------|---------------|
-| **A. Service externe (Unstructured.io)** | API simple, tous formats, OCR inclus | Coût ($0.01/page), latence externe |
-| **B. Lovable AI vision** | Déjà intégré, gratuit | Limité à images/PDF visuels |
-| **C. Client-side extraction** | Pas de latence serveur | Sécurité moindre, JS uniquement |
-| **D. pdf.js + mammoth.js (Client)** | Gratuit, contrôle total | Implémentation complexe |
+| **A. OCR LLM externe** | APIs déjà configurées, précision élevée | Coût tokens |
+| **B. Client-side extraction** | Pas de latence serveur | Sécurité moindre, JS uniquement |
+| **C. pdf.js + mammoth.js (Client)** | Gratuit, contrôle total | Implémentation complexe |
 
-**Recommandation : Option D (Client-side) + fallback Lovable AI Vision**
+**Recommandation : Option C (Client-side) + fallback Option A (OCR LLM)**
 ```typescript
 // 1. Extraire le texte côté client avec pdf.js / mammoth.js
 // 2. Envoyer le texte extrait à l'Edge Function
-// 3. Si extraction échoue (PDF scanné), envoyer l'image à Lovable AI Vision
+// 3. Si extraction échoue (PDF scanné/image), fallback OCR via LLM Vision
 ```
 
-#### 🟡 C3 — Traitement asynchrone obligatoire
+#### 🔴 C3 — OCR pour documents scannés et images (NOUVEAU)
+| Aspect | Solution | Configuration |
+|--------|----------|---------------|
+| PDF scannés | LLM Vision API | OPENAI_API_KEY / ANTHROPIC_API_KEY configurés |
+| Images (JPG, PNG, WEBP) | LLM Vision API | GPT-4 Vision ou Claude Vision |
+| Documents manuscrits | LLM Vision API | Haute précision OCR |
+
+**Stratégie OCR via LLM externes (APIs déjà configurées) :**
+
+```typescript
+// Secrets disponibles dans l'environnement Supabase :
+// - OPENAI_API_KEY ✅
+// - ANTHROPIC_API_KEY ✅
+// - OPENROUTER_API_KEY ✅
+
+interface OCRStrategy {
+  provider: 'openai' | 'anthropic' | 'openrouter';
+  model: string;
+  capability: string;
+}
+
+const OCR_PROVIDERS: OCRStrategy[] = [
+  {
+    provider: 'openai',
+    model: 'gpt-4o',
+    capability: 'Vision + OCR haute précision, extraction structurée'
+  },
+  {
+    provider: 'anthropic', 
+    model: 'claude-3-5-sonnet-20241022',
+    capability: 'Vision + OCR, excellent pour documents complexes'
+  },
+  {
+    provider: 'openrouter',
+    model: 'anthropic/claude-3-5-sonnet',
+    capability: 'Fallback via OpenRouter si quota dépassé'
+  }
+];
+
+// Implémentation Edge Function
+async function extractTextWithOCR(imageBase64: string, mimeType: string): Promise<string> {
+  const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+  
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${OPENAI_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `Extrais TOUT le texte visible dans cette image/document de manière fidèle et structurée.
+              
+Règles :
+- Conserve la mise en forme (titres, listes, tableaux)
+- Transcris les tableaux en format Markdown
+- Indique [illisible] pour les passages non déchiffrables
+- Ne résume pas, extrais verbatim`
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${mimeType};base64,${imageBase64}`,
+                detail: 'high'
+              }
+            }
+          ]
+        }
+      ],
+      max_tokens: 4096,
+      temperature: 0
+    })
+  });
+
+  const result = await response.json();
+  return result.choices[0].message.content;
+}
+```
+
+**Fallback Anthropic Claude :**
+```typescript
+async function extractTextWithClaudeOCR(imageBase64: string, mimeType: string): Promise<string> {
+  const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
+  
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 4096,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mimeType,
+                data: imageBase64
+              }
+            },
+            {
+              type: 'text',
+              text: `Extrais TOUT le texte de ce document de manière fidèle et structurée. 
+Conserve la mise en forme originale. Transcris les tableaux en Markdown.`
+            }
+          ]
+        }
+      ]
+    })
+  });
+
+  const result = await response.json();
+  return result.content[0].text;
+}
+```
+
+#### 🟡 C4 — Traitement asynchrone obligatoire
 | Aspect | Contrainte | Impact |
 |--------|-----------|--------|
 | UX bloquante | Analyse IA peut prendre 30-60s | Utilisateur attend |
@@ -99,7 +226,7 @@ if (fileSize < 5 * 1024 * 1024) {
                      └──────────────────┘
 ```
 
-#### 🟡 C4 — Duplication potentielle fichiers
+#### 🟡 C5 — Duplication potentielle fichiers
 | Aspect | Contrainte | Impact |
 |--------|-----------|--------|
 | Même fichier uploadé 2x | Hash non vérifié | Stockage gaspillé |
@@ -111,7 +238,7 @@ ALTER TABLE uploaded_files ADD COLUMN content_hash TEXT;
 CREATE UNIQUE INDEX idx_uploaded_files_hash ON uploaded_files(content_hash) WHERE content_hash IS NOT NULL;
 ```
 
-#### 🟡 C5 — Quotas et limites workspace
+#### 🟡 C6 — Quotas et limites workspace
 | Aspect | Contrainte | Impact |
 |--------|-----------|--------|
 | Pas de limite définie | Un workspace peut saturer le bucket | Coûts imprévus |
@@ -133,12 +260,13 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 
-#### 🟢 C6 — Formats non supportés
-| Format | Risque | Solution |
-|--------|--------|----------|
-| Images (JPG, PNG) | OCR non prévu | Ajouter Lovable AI Vision |
-| Excel (XLSX) | Tableaux complexes | SheetJS client-side |
-| Archives (ZIP) | Contenu multiple | Décompression client |
+#### 🟢 C7 — Formats non supportés
+| Format | Solution |
+|--------|----------|
+| Images (JPG, PNG, WEBP) | OCR via GPT-4 Vision / Claude Vision |
+| PDF scannés | OCR via LLM Vision (détection automatique) |
+| Excel (XLSX) | SheetJS client-side |
+| Archives (ZIP) | Décompression client |
 
 ---
 
@@ -149,8 +277,15 @@ $$ LANGUAGE plpgsql;
 | `FileUploader` | Zone drag & drop cockpit | `src/components/cockpit/FileUploader.tsx` |
 | `process-voice-transcription` | Pattern async processing | Edge Function |
 | `voice-transcriptions` bucket | Pattern RLS storage | Supabase Storage |
-| `document--parse_document` | Extraction Lovable AI | Tool interne |
 | `useCockpitProjectDocuments` | Pattern hook CRUD | Hooks cockpit |
+
+### 2.3 APIs LLM déjà configurées (pour OCR)
+
+| Secret | Provider | Modèle Vision | Statut |
+|--------|----------|---------------|--------|
+| `OPENAI_API_KEY` | OpenAI | GPT-4o / GPT-4 Vision | ✅ Configuré |
+| `ANTHROPIC_API_KEY` | Anthropic | Claude 3.5 Sonnet Vision | ✅ Configuré |
+| `OPENROUTER_API_KEY` | OpenRouter | Multi-providers | ✅ Configuré |
 
 ---
 
@@ -370,6 +505,11 @@ CREATE TABLE public.uploaded_files (
   ai_summary TEXT, -- Résumé IA
   ai_metadata JSONB DEFAULT '{}', -- Tags, entités détectées, actions suggérées
   
+  -- OCR
+  ocr_required BOOLEAN DEFAULT false, -- Indique si OCR a été nécessaire
+  ocr_provider TEXT, -- 'openai', 'anthropic', 'openrouter'
+  ocr_confidence FLOAT, -- Score de confiance OCR
+  
   -- Liaisons multi-entités (toutes optionnelles, MULTI possible)
   project_ids UUID[] DEFAULT '{}', -- Plusieurs projets possibles
   solution_ids UUID[] DEFAULT '{}', -- Plusieurs solutions possibles
@@ -478,6 +618,7 @@ CREATE POLICY "uploaded_files_delete" ON uploaded_files
 │                                                             │
 │  ☑ Analyser avec IA (extraction + résumé + actions)        │
 │  ☐ Générer embeddings (recherche sémantique)               │
+│  ☑ OCR automatique si nécessaire (via GPT-4/Claude)        │
 │                                                             │
 │  [        UPLOADER ET ANALYSER        ]                    │
 │                                                             │
@@ -500,6 +641,14 @@ CREATE POLICY "uploaded_files_delete" ON uploaded_files
 │  │    🏷️ commercial, devis                               │ │
 │  │    💡 Action suggérée: Générer devis                  │ │
 │  │    [Voir] [Liaisons] [Partager] [Versions] [🗑️]       │ │
+│  └───────────────────────────────────────────────────────┘ │
+│                                                             │
+│  ┌───────────────────────────────────────────────────────┐ │
+│  │ 🖼️ Scan_Contrat_Signé.jpg               🔍 OCR       │ │
+│  │    Type: Image • 1.8 MB • ✅ OCR GPT-4 • Conf: 97%   │ │
+│  │    Lié à: 🏢 Projet Beta Corp                         │ │
+│  │    🏷️ juridique, contrat                              │ │
+│  │    [Voir] [Liaisons] [Partager] [🗑️]                  │ │
 │  └───────────────────────────────────────────────────────┘ │
 │                                                             │
 │  ┌───────────────────────────────────────────────────────┐ │
@@ -528,8 +677,14 @@ CREATE POLICY "uploaded_files_delete" ON uploaded_files
 │  1. Si extracted_text fourni (client-side extraction)      │
 │     → Passer directement à l'analyse IA                    │
 │                                                             │
-│  2. Si fichier image ou force_ocr                          │
-│     → Appeler Lovable AI Vision pour OCR                   │
+│  2. Si fichier image OU PDF scanné OU force_ocr            │
+│     → OCR via LLM Vision (GPT-4o / Claude)                 │
+│     ┌────────────────────────────────────────┐             │
+│     │  Stratégie OCR (fallback cascade) :    │             │
+│     │  1. OpenAI GPT-4o Vision               │             │
+│     │  2. Anthropic Claude 3.5 Sonnet        │             │
+│     │  3. OpenRouter (fallback)              │             │
+│     └────────────────────────────────────────┘             │
 │                                                             │
 │  3. Analyse IA (Lovable AI gemini-2.5-flash)               │
 │     → Résumé, entités, type document, actions suggérées    │
@@ -539,14 +694,105 @@ CREATE POLICY "uploaded_files_delete" ON uploaded_files
 │                                                             │
 │  5. Mise à jour uploaded_files                             │
 │     → extracted_content, ai_summary, ai_metadata           │
+│     → ocr_required, ocr_provider, ocr_confidence           │
 │     → processing_status = 'completed'                      │
 │                                                             │
-│  OUTPUT: { success, summary, actions_suggested }           │
+│  OUTPUT: { success, summary, actions_suggested, ocr_used } │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 6.2 Prompt IA `document-analysis`
+### 6.2 Logique OCR
+
+```typescript
+// process-uploaded-file/index.ts
+
+async function processFile(fileId: string, extractedText?: string, forceOcr?: boolean) {
+  const file = await getFileRecord(fileId);
+  const isImageFile = ['image/jpeg', 'image/png', 'image/webp'].includes(file.mime_type);
+  const isPdfScanné = file.mime_type === 'application/pdf' && !extractedText;
+  
+  let content = extractedText;
+  let ocrUsed = false;
+  let ocrProvider: string | null = null;
+  let ocrConfidence: number | null = null;
+  
+  // Détection besoin OCR
+  if (forceOcr || isImageFile || isPdfScanné) {
+    // Télécharger le fichier du Storage
+    const fileBuffer = await downloadFromStorage(file.storage_path);
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(fileBuffer)));
+    
+    // OCR via LLM Vision (cascade de providers)
+    try {
+      const ocrResult = await performOCR(base64, file.mime_type);
+      content = ocrResult.text;
+      ocrUsed = true;
+      ocrProvider = ocrResult.provider;
+      ocrConfidence = ocrResult.confidence;
+    } catch (error) {
+      await updateFileStatus(fileId, 'failed', `OCR failed: ${error.message}`);
+      throw error;
+    }
+  }
+  
+  // Analyse IA du contenu
+  const analysis = await analyzeContent(content);
+  
+  // Mise à jour du record
+  await updateFileRecord(fileId, {
+    extracted_content: content,
+    ai_summary: analysis.summary,
+    ai_metadata: analysis,
+    ocr_required: ocrUsed,
+    ocr_provider: ocrProvider,
+    ocr_confidence: ocrConfidence,
+    processing_status: 'completed',
+    processing_completed_at: new Date().toISOString()
+  });
+  
+  return { success: true, summary: analysis.summary, ocr_used: ocrUsed };
+}
+
+async function performOCR(base64: string, mimeType: string): Promise<{
+  text: string;
+  provider: string;
+  confidence: number;
+}> {
+  // Essai 1: OpenAI GPT-4o
+  const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+  if (OPENAI_API_KEY) {
+    try {
+      const result = await ocrWithOpenAI(base64, mimeType, OPENAI_API_KEY);
+      return { text: result, provider: 'openai', confidence: 0.95 };
+    } catch (e) {
+      console.warn('OpenAI OCR failed, trying Anthropic...', e);
+    }
+  }
+  
+  // Essai 2: Anthropic Claude
+  const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
+  if (ANTHROPIC_API_KEY) {
+    try {
+      const result = await ocrWithClaude(base64, mimeType, ANTHROPIC_API_KEY);
+      return { text: result, provider: 'anthropic', confidence: 0.93 };
+    } catch (e) {
+      console.warn('Anthropic OCR failed, trying OpenRouter...', e);
+    }
+  }
+  
+  // Essai 3: OpenRouter (fallback)
+  const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY');
+  if (OPENROUTER_API_KEY) {
+    const result = await ocrWithOpenRouter(base64, mimeType, OPENROUTER_API_KEY);
+    return { text: result, provider: 'openrouter', confidence: 0.90 };
+  }
+  
+  throw new Error('No OCR provider available');
+}
+```
+
+### 6.3 Prompt IA `document-analysis`
 
 **À ajouter dans `ai_prompts` table :**
 
@@ -560,6 +806,24 @@ CREATE POLICY "uploaded_files_delete" ON uploaded_files
     "model": "google/gemini-2.5-flash",
     "temperature": 0.1,
     "max_tokens": 2000
+  }
+}
+```
+
+### 6.4 Prompt OCR `document-ocr`
+
+**À ajouter dans `ai_prompts` table :**
+
+```json
+{
+  "slug": "document-ocr",
+  "name": "OCR documentaire",
+  "category": "agent",
+  "system_prompt": "Tu es un système OCR de haute précision. Extrais TOUT le texte visible dans l'image/document fourni.\n\n## RÈGLES D'EXTRACTION\n- Conserve la mise en forme originale (titres, sous-titres, listes)\n- Transcris les tableaux en format Markdown\n- Indique [illisible] pour les passages non déchiffrables\n- Respecte l'ordre de lecture naturel (gauche→droite, haut→bas)\n- Ne résume pas, extrais verbatim\n- Conserve les numéros, dates, montants exactement comme écrits\n\n## FORMAT DE SORTIE\nTexte brut structuré, sans JSON.",
+  "model_config": {
+    "model": "gpt-4o",
+    "temperature": 0,
+    "max_tokens": 4096
   }
 }
 ```
@@ -583,8 +847,9 @@ src/
 │   ├── FileDetailSheet.tsx             # Détail d'un fichier
 │   ├── FileVersionsPanel.tsx           # Historique versions
 │   ├── FileShareDialog.tsx             # Génération lien partage
-│   ├── ProcessingStatus.tsx            # Indicateur de statut
+│   ├── ProcessingStatus.tsx            # Indicateur de statut (avec OCR)
 │   ├── SuggestedActionsPanel.tsx       # Actions suggérées par IA
+│   ├── OCRResultViewer.tsx             # Visualisation résultat OCR
 │   └── ClientSideExtractor.tsx         # Extraction PDF/DOCX côté client
 └── hooks/cockpit/
     └── useCockpitUploads.ts            # Hook CRUD + upload + processing
@@ -599,7 +864,7 @@ export function useCockpitUploads() {
   const { data: uploads, isLoading, refetch } = useQuery(...)
   
   // Upload file to Storage + create record (avec resumable pour gros fichiers)
-  const uploadFile = useMutation(async ({ file, links, extractLocally }) => {
+  const uploadFile = useMutation(async ({ file, links, extractLocally, enableOcr }) => {
     // 1. Hash du fichier pour déduplication
     const hash = await computeSHA256(file);
     
@@ -619,8 +884,8 @@ export function useCockpitUploads() {
     // 5. Créer record
     const record = await createRecord({ file, storagePath, hash, extractedText, links });
     
-    // 6. Déclencher traitement async
-    await triggerProcessing(record.id, extractedText);
+    // 6. Déclencher traitement async (avec flag OCR)
+    await triggerProcessing(record.id, extractedText, enableOcr);
     
     return record;
   });
@@ -631,7 +896,7 @@ export function useCockpitUploads() {
   // Update entity links
   const updateLinks = useMutation(...)
   
-  // Trigger AI processing
+  // Trigger AI processing (with OCR option)
   const processFile = useMutation(...)
   
   // Generate share link
@@ -665,7 +930,18 @@ export function useCockpitUploads() {
 | 20-50 MB | Resumable (TUS) | Client-side | Asynchrone |
 | > 50 MB | **Rejeté** | N/A | N/A |
 
-### 8.2 Implémentation Resumable Upload
+### 8.2 Stratégie OCR selon type
+
+| Type fichier | Extraction | OCR nécessaire |
+|--------------|------------|----------------|
+| PDF texte | pdf.js client | Non |
+| PDF scanné | N/A | Oui (LLM Vision) |
+| DOCX | mammoth.js client | Non |
+| Image (JPG/PNG/WEBP) | N/A | Oui (LLM Vision) |
+| TXT/MD | Lecture directe | Non |
+| XLSX | SheetJS client | Non |
+
+### 8.3 Implémentation Resumable Upload
 
 ```typescript
 // Utiliser @uppy/tus pour upload resumable
@@ -681,9 +957,10 @@ const uppy = new Uppy()
   });
 ```
 
-### 8.3 Feedback utilisateur amélioré
+### 8.4 Feedback utilisateur amélioré
 - Barre de progression avec vitesse estimée
 - Statut en temps réel (Realtime Supabase)
+- Indicateur OCR en cours avec provider utilisé
 - Notification push à la fin du traitement
 - Retry automatique en cas d'échec réseau
 
@@ -738,13 +1015,14 @@ const uppy = new Uppy()
 - Log dans activity_log pour chaque opération
 - Compteur de téléchargements
 - Historique des versions
+- Traçabilité provider OCR utilisé
 
 ---
 
 ## 11. Roadmap d'implémentation Révisée
 
 ### Phase 1 : Fondations ✅ TODO
-- [ ] Migration DB : table `uploaded_files` enrichie
+- [ ] Migration DB : table `uploaded_files` enrichie (avec champs OCR)
 - [ ] Bucket Storage : `cockpit-uploads` avec policies
 - [ ] Hook `useCockpitUploads` basique
 - [ ] Page `/cockpit/upload` structure
@@ -756,10 +1034,12 @@ const uppy = new Uppy()
 - [ ] Hash SHA-256 et déduplication
 - [ ] Gestion quota workspace
 
-### Phase 3 : Traitement IA ✅ TODO
-- [ ] Edge Function `process-uploaded-file`
+### Phase 3 : Traitement IA + OCR ✅ TODO
+- [ ] Edge Function `process-uploaded-file` avec OCR
 - [ ] Prompt IA `document-analysis` dans ai_prompts
-- [ ] Affichage contenu extrait
+- [ ] Prompt IA `document-ocr` dans ai_prompts
+- [ ] Cascade OCR (OpenAI → Anthropic → OpenRouter)
+- [ ] Affichage contenu extrait + résultat OCR
 - [ ] Panel actions suggérées
 - [ ] Intégration Realtime pour statut
 
@@ -786,10 +1066,13 @@ const uppy = new Uppy()
 | Temps upload < 5 MB | < 3 secondes |
 | Temps upload 5-20 MB | < 15 secondes |
 | Temps traitement IA | < 45 secondes |
-| Taux d'extraction réussie | > 95% |
+| Temps OCR LLM | < 30 secondes |
+| Taux d'extraction réussie (texte) | > 98% |
+| Taux d'extraction OCR réussie | > 95% |
 | Formats supportés | PDF, DOCX, TXT, MD, XLSX, Images |
 | Précision entités détectées | > 85% |
 | Actions suggérées pertinentes | > 70% |
+| Précision OCR (documents clairs) | > 97% |
 
 ---
 
@@ -807,5 +1090,18 @@ npm install @uppy/core @uppy/tus
 
 ---
 
+## 14. Coûts estimés OCR
+
+| Provider | Modèle | Coût estimé/page | Notes |
+|----------|--------|------------------|-------|
+| OpenAI | GPT-4o | ~$0.01-0.03 | Haute précision, rapide |
+| Anthropic | Claude 3.5 Sonnet | ~$0.01-0.02 | Excellent pour docs complexes |
+| OpenRouter | Variable | ~$0.01-0.03 | Fallback, tarifs variables |
+
+**Budget mensuel estimé** : 100 documents OCR/mois = ~$2-3/mois
+
+---
+
 **Dernière mise à jour** : 2026-01-01  
-**Auteur** : Lovable AI Agent (Analyse Expert V1.1)
+**Version** : 1.2.0  
+**Auteur** : Lovable AI Agent (Analyse Expert V1.2 - OCR LLM)
