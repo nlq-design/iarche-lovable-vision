@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { useCockpitUploads, UploadedFile } from "@/hooks/cockpit/useCockpitUploads";
 import { useCockpitProjects } from "@/hooks/cockpit/useCockpitProjects";
@@ -203,28 +203,42 @@ export default function CockpitUploads() {
   // Fetch documents générés
   const [documents, setDocuments] = useState<{ id: string; title: string; document_type: string }[]>([]);
   
-  useState(() => {
-    import('@/integrations/supabase/client').then(({ supabase }) => {
+  // Load solutions and documents on mount
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadData = async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
+      
       // Solutions
-      supabase
+      const { data: solutionsData } = await supabase
         .from('articles')
         .select('id, title')
         .eq('resource_type', 'solution')
-        .eq('published', true)
-        .then(({ data }) => {
-          if (data) setSolutions(data);
-        });
+        .eq('published', true);
+      
+      if (isMounted && solutionsData) {
+        setSolutions(solutionsData);
+      }
+      
       // Documents générés
-      supabase
+      const { data: docsData } = await supabase
         .from('generated_documents')
         .select('id, title, document_type')
         .order('created_at', { ascending: false })
-        .limit(50)
-        .then(({ data }) => {
-          if (data) setDocuments(data);
-        });
-    });
-  });
+        .limit(50);
+      
+      if (isMounted && docsData) {
+        setDocuments(docsData);
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const { 
     uploads, 
