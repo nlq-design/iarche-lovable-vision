@@ -888,7 +888,21 @@ function extractJsonFromText(content: string): Record<string, unknown> {
       }
     }
     
-    throw new Error(`llm_invalid_json: Could not parse LLM response`);
+    // Fallback: return a basic structure with the raw content as summary
+    // This prevents crashes when LLM returns plain text instead of JSON
+    console.warn("Could not parse JSON from LLM response, using fallback structure");
+    return {
+      summary: content.trim().substring(0, 5000),
+      action_items: [],
+      entities: {
+        leads: [],
+        projects: [],
+        solutions: [],
+        partners: []
+      },
+      next_steps: null,
+      key_topics: []
+    };
   }
 }
 
