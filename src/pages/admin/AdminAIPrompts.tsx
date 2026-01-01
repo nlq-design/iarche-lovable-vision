@@ -1214,10 +1214,10 @@ function DynamicModulesOverview() {
           {/* Admin Write Tools */}
           {stats.tools.admin_write.length > 0 && (
             <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 hover:bg-orange-500/15 transition-colors">
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-slate-500/10 border border-slate-500/20 hover:bg-slate-500/15 transition-colors">
                 <div className="flex items-center gap-2">
-                  <Edit className="h-4 w-4 text-orange-500" />
-                  <span className="font-medium">ADMIN - Système/Sécurité</span>
+                  <Settings className="h-4 w-4 text-slate-500" />
+                  <span className="font-medium">ADMIN - Système</span>
                   <Badge variant="secondary" className="text-xs">{stats.tools.admin_write.length} outils</Badge>
                 </div>
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -1230,6 +1230,39 @@ function DynamicModulesOverview() {
                         <TooltipTrigger asChild>
                           <div className="flex items-center gap-2 p-2 rounded text-xs bg-background/50">
                             {toolIcons[tool.name] || <Settings className="h-3 w-3" />}
+                            <code className="font-mono truncate">{tool.name}</code>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{tool.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Admin Security Tools */}
+          {stats.tools.admin_security && stats.tools.admin_security.length > 0 && (
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 hover:bg-orange-500/15 transition-colors">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-orange-500" />
+                  <span className="font-medium">ADMIN - Sécurité</span>
+                  <Badge variant="secondary" className="text-xs">{stats.tools.admin_security.length} outils</Badge>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
+                  {stats.tools.admin_security.map((tool) => (
+                    <TooltipProvider key={tool.name}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 p-2 rounded text-xs bg-background/50">
+                            {toolIcons[tool.name] || <Shield className="h-3 w-3" />}
                             <code className="font-mono truncate">{tool.name}</code>
                           </div>
                         </TooltipTrigger>

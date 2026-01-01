@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export interface ToolDefinition {
   name: string;
   description: string;
-  category: 'cockpit_read' | 'cockpit_write' | 'admin_read' | 'admin_write' | 'email' | 'rag';
+  category: 'cockpit_read' | 'cockpit_write' | 'admin_read' | 'admin_write' | 'admin_security' | 'email' | 'rag';
   required_fields?: string[];
   optional_fields?: string[];
 }
@@ -28,6 +28,7 @@ export interface AIAgentStats {
     cockpit_write: ToolDefinition[];
     admin_read: ToolDefinition[];
     admin_write: ToolDefinition[];
+    admin_security: ToolDefinition[];
     email: ToolDefinition[];
     rag: ToolDefinition[];
   };
@@ -45,6 +46,7 @@ function parseToolsFromPrompt(content: string): AIAgentStats['tools'] {
     cockpit_write: [],
     admin_read: [],
     admin_write: [],
+    admin_security: [],
     email: [],
     rag: [],
   };
@@ -55,7 +57,7 @@ function parseToolsFromPrompt(content: string): AIAgentStats['tools'] {
     const lines = section.split('\n');
     
     for (const line of lines) {
-      if (!line.startsWith('|') || line.includes('---') || line.includes('Outil')) continue;
+      if (!line.startsWith('|') || line.includes('---') || line.includes('Outil') || line.includes('Fonction')) continue;
       const cols = line.split('|').map(c => c.trim()).filter(Boolean);
       if (cols.length >= 2 && cols[0] && !cols[0].includes('---')) {
         items.push({
@@ -69,7 +71,7 @@ function parseToolsFromPrompt(content: string): AIAgentStats['tools'] {
     return items;
   };
 
-  // Parse Cockpit Read tools - matches "## 🔵 OUTILS COCKPIT - LECTURE (15)"
+  // Parse Cockpit Read tools
   const cockpitReadMatch = content.match(/## 🔵 OUTILS COCKPIT - LECTURE[^\n]*\n([\s\S]*?)(?=\n## [🟢🟠🔴🟣⚫⚡]|$)/);
   if (cockpitReadMatch) {
     parseTableSection(cockpitReadMatch[1]).forEach(item => {
@@ -95,7 +97,13 @@ function parseToolsFromPrompt(content: string): AIAgentStats['tools'] {
   const emailMatch = content.match(/## 🟠 OUTILS COCKPIT - EMAIL[^\n]*\n([\s\S]*?)(?=\n## [🔵🟢🔴🟣⚫⚡]|$)/);
   if (emailMatch) {
     parseTableSection(emailMatch[1]).forEach(item => {
-      result.email.push({ name: item.name, description: item.description, category: 'email' });
+      result.email.push({ 
+        name: item.name, 
+        description: item.description, 
+        category: 'email',
+        required_fields: item.required,
+        optional_fields: item.optional
+      });
     });
   }
 
@@ -103,7 +111,13 @@ function parseToolsFromPrompt(content: string): AIAgentStats['tools'] {
   const ragMatch = content.match(/## 🔴 OUTILS COCKPIT - IA\/RAG[^\n]*\n([\s\S]*?)(?=\n## [🔵🟢🟠🟣⚫⚡]|$)/);
   if (ragMatch) {
     parseTableSection(ragMatch[1]).forEach(item => {
-      result.rag.push({ name: item.name, description: item.description, category: 'rag' });
+      result.rag.push({ 
+        name: item.name, 
+        description: item.description, 
+        category: 'rag',
+        required_fields: item.required,
+        optional_fields: item.optional
+      });
     });
   }
 
@@ -124,10 +138,10 @@ function parseToolsFromPrompt(content: string): AIAgentStats['tools'] {
   }
 
   // Parse Admin Security tools
-  const adminSecurityMatch = content.match(/## ⚡ OUTILS ADMIN - SÉCURITÉ[^\n]*\n([\s\S]*?)(?=\n## |---|\n\n##|$)/);
+  const adminSecurityMatch = content.match(/## ⚡ OUTILS ADMIN - SÉCURITÉ[^\n]*\n([\s\S]*?)(?=\n## |---\n\n|$)/);
   if (adminSecurityMatch) {
     parseTableSection(adminSecurityMatch[1]).forEach(item => {
-      result.admin_write.push({ name: item.name, description: item.description, category: 'admin_write' });
+      result.admin_security.push({ name: item.name, description: item.description, category: 'admin_security' });
     });
   }
 
@@ -139,12 +153,12 @@ function parseEdgeFunctionsFromPrompt(content: string): AIAgentStats['edgeFuncti
   const connected: EdgeFunctionDefinition[] = [];
   const other: EdgeFunctionDefinition[] = [];
 
-  // Parse Edge Functions section - matches "## 🔗 22 EDGE FUNCTIONS"
-  const edgeMatch = content.match(/## 🔗 \d+ EDGE FUNCTIONS[^\n]*\n([\s\S]*?)(?=\n---|\n## [📋]|$)/);
-  if (edgeMatch) {
-    const lines = edgeMatch[1].split('\n');
+  // Parse connected edge functions
+  const connectedMatch = content.match(/### Connectées à l'Agent IA[^\n]*\n([\s\S]*?)(?=\n### Autres|\n---\n|$)/);
+  if (connectedMatch) {
+    const lines = connectedMatch[1].split('\n');
     for (const line of lines) {
-      if (!line.startsWith('|') || line.includes('---') || line.includes('Fonction')) continue;
+      if (!line.startsWith('|') || line.includes('---') || line.includes('Fonction') || line.includes('Description')) continue;
       const cols = line.split('|').map(c => c.trim()).filter(Boolean);
       if (cols.length >= 2 && cols[0] && !cols[0].includes('---')) {
         connected.push({
@@ -157,20 +171,70 @@ function parseEdgeFunctionsFromPrompt(content: string): AIAgentStats['edgeFuncti
     }
   }
 
+  // Parse other edge functions
+  const otherMatch = content.match(/### Autres fonctions backend[^\n]*\n([\s\S]*?)(?=\n---\n|$)/);
+  if (otherMatch) {
+    const lines = otherMatch[1].split('\n');
+    for (const line of lines) {
+      if (!line.startsWith('|') || line.includes('---') || line.includes('Fonction') || line.includes('Description')) continue;
+      const cols = line.split('|').map(c => c.trim()).filter(Boolean);
+      if (cols.length >= 2 && cols[0] && !cols[0].includes('---')) {
+        other.push({
+          name: cols[0],
+          description: cols[1],
+          connected_to_agent: false,
+          usage: cols[1]
+        });
+      }
+    }
+  }
+
   return { connected, other };
 }
 
-// Extract stats from header
-function extractStatsFromPrompt(content: string): { totalTools: number; edgeFunctions: number; aiTables: number } {
-  const statsMatch = content.match(/## 📊 STATISTIQUES\n- \*\*Total outils\*\* : (\d+)\n- \*\*Edge Functions\*\* : (\d+)\n- \*\*Tables IA\*\* : (\d+)/);
-  if (statsMatch) {
-    return {
-      totalTools: parseInt(statsMatch[1], 10),
-      edgeFunctions: parseInt(statsMatch[2], 10),
-      aiTables: parseInt(statsMatch[3], 10)
-    };
+// Parse AI tables from prompt
+function parseAITablesFromPrompt(content: string): Array<{ name: string; description: string }> {
+  const tables: Array<{ name: string; description: string }> = [];
+  
+  const tablesMatch = content.match(/## 📋 TABLES IA DÉDIÉES[^\n]*\n([\s\S]*?)(?=\n---\n|$)/);
+  if (tablesMatch) {
+    const lines = tablesMatch[1].split('\n');
+    for (const line of lines) {
+      if (!line.startsWith('|') || line.includes('---') || line.includes('Table') || line.includes('Description')) continue;
+      const cols = line.split('|').map(c => c.trim()).filter(Boolean);
+      if (cols.length >= 2 && cols[0] && !cols[0].includes('---')) {
+        tables.push({
+          name: cols[0],
+          description: cols[1]
+        });
+      }
+    }
   }
-  return { totalTools: 0, edgeFunctions: 0, aiTables: 0 };
+  
+  return tables;
+}
+
+// Extract stats from header
+function extractStatsFromPrompt(content: string): { totalTools: number; connectedEdgeFunctions: number; totalEdgeFunctions: number; aiTables: number } {
+  const result = { totalTools: 0, connectedEdgeFunctions: 0, totalEdgeFunctions: 0, aiTables: 0 };
+  
+  // Parse total tools
+  const toolsMatch = content.match(/\*\*Total outils\*\* : (\d+)/);
+  if (toolsMatch) result.totalTools = parseInt(toolsMatch[1], 10);
+  
+  // Parse connected edge functions
+  const connectedMatch = content.match(/\*\*Edge Functions connectées\*\* : (\d+)/);
+  if (connectedMatch) result.connectedEdgeFunctions = parseInt(connectedMatch[1], 10);
+  
+  // Parse total edge functions
+  const totalEfMatch = content.match(/\*\*Edge Functions totales\*\* : (\d+)/);
+  if (totalEfMatch) result.totalEdgeFunctions = parseInt(totalEfMatch[1], 10);
+  
+  // Parse AI tables
+  const tablesMatch = content.match(/\*\*Tables IA\*\* : (\d+)/);
+  if (tablesMatch) result.aiTables = parseInt(tablesMatch[1], 10);
+  
+  return result;
 }
 
 export function useAIAgentStats() {
@@ -196,36 +260,37 @@ export function useAIAgentStats() {
       
       // Parse edge functions
       const edgeFunctions = parseEdgeFunctionsFromPrompt(content);
+      
+      // Parse AI tables
+      const aiTablesList = parseAITablesFromPrompt(content);
 
-      // Calculate totals
+      // Calculate totals from parsed data if header stats are missing
       const totalTools = headerStats.totalTools || 
         Object.values(tools).reduce((acc, arr) => acc + arr.length, 0);
       
-      const connectedEdgeFunctions = headerStats.edgeFunctions || edgeFunctions.connected.length;
+      const connectedEdgeFunctions = headerStats.connectedEdgeFunctions || edgeFunctions.connected.length;
+      const totalEdgeFunctions = headerStats.totalEdgeFunctions || (edgeFunctions.connected.length + edgeFunctions.other.length);
       
       // Count action tools (write operations)
-      const actionTools = tools.cockpit_write.length + tools.admin_write.length + tools.email.length;
-
-      // AI Tables list (static for now, but could be parsed too)
-      const aiTablesList = [
-        { name: "ai_prompts", description: "Prompts système configurables" },
-        { name: "ai_agent_memory", description: "Mémoire persistante agent" },
-        { name: "resource_embeddings", description: "Vecteurs RAG (pgvector)" },
-        { name: "voice_transcriptions", description: "Transcriptions audio" },
-        { name: "keyword_aliases", description: "Dictionnaire normalisation" },
-        { name: "llm_models", description: "Modèles LLM disponibles" },
-      ];
+      const actionTools = tools.cockpit_write.length + tools.admin_write.length + tools.admin_security.length + tools.email.length;
 
       return {
         totalTools,
         connectedEdgeFunctions,
-        totalEdgeFunctions: 38, // Could be fetched from file system in future
+        totalEdgeFunctions,
         aiTables: headerStats.aiTables || aiTablesList.length,
         actionTools,
         responseModes: 2, // CHAT and DETAILED
         tools,
         edgeFunctions,
-        aiTablesList
+        aiTablesList: aiTablesList.length > 0 ? aiTablesList : [
+          { name: "ai_prompts", description: "Prompts système configurables" },
+          { name: "ai_agent_memory", description: "Mémoire persistante agent" },
+          { name: "resource_embeddings", description: "Vecteurs RAG (pgvector)" },
+          { name: "voice_transcriptions", description: "Transcriptions audio" },
+          { name: "keyword_aliases", description: "Dictionnaire normalisation" },
+          { name: "llm_models", description: "Modèles LLM disponibles" },
+        ]
       };
     },
     staleTime: 60 * 1000, // 1 minute
@@ -238,8 +303,6 @@ export function useEdgeFunctionsList() {
   return useQuery({
     queryKey: ['edge-functions-list'],
     queryFn: async () => {
-      // This would ideally fetch from a Supabase function that lists deployed functions
-      // For now, we parse from tools-reference
       const { data, error } = await supabase
         .from('ai_prompts')
         .select('system_prompt')
