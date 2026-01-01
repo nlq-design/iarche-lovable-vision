@@ -18,7 +18,10 @@ import {
   Building2,
   User,
   Link as LinkIcon,
-  Loader2
+  Loader2,
+  Brain,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCockpitGeneratedDocuments, DOCUMENT_TYPE_LABELS, DOCUMENT_STATUS_CONFIG } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
@@ -46,6 +49,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 type DocumentType = 'quote' | 'spec' | 'proposal';
 type ViewMode = 'list' | 'editor' | 'preview';
@@ -61,6 +69,7 @@ const CockpitDocuments = () => {
   const [filterProject, setFilterProject] = useState<string>('all');
   const [filterLead, setFilterLead] = useState<string>('all');
   const [aiGenerationModalOpen, setAiGenerationModalOpen] = useState(false);
+  const [expandedSynthesis, setExpandedSynthesis] = useState<string | null>(null);
 
   const { documents, isLoading, deleteDocument, refetch } = useCockpitGeneratedDocuments();
   const { projects } = useCockpitProjects();
@@ -281,6 +290,12 @@ const CockpitDocuments = () => {
                                     IA
                                   </Badge>
                                 )}
+                                {doc.ai_documents_summary && (
+                                  <Badge variant="outline" className="text-xs gap-1 bg-primary/5 text-primary border-primary/20">
+                                    <Brain className="h-3 w-3" />
+                                    Synthèse
+                                  </Badge>
+                                )}
                               </div>
                               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                                 <span className="flex items-center gap-1">
@@ -340,6 +355,38 @@ const CockpitDocuments = () => {
                               </Button>
                             </div>
                           </div>
+                          
+                          {/* Synthèse IA collapsible */}
+                          {doc.ai_documents_summary && (
+                            <Collapsible 
+                              open={expandedSynthesis === doc.id}
+                              onOpenChange={(open) => setExpandedSynthesis(open ? doc.id : null)}
+                              className="mt-2"
+                            >
+                              <CollapsibleTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-6 px-2 text-xs gap-1 text-primary hover:text-primary"
+                                >
+                                  <Brain className="h-3 w-3" />
+                                  Voir la synthèse IA
+                                  {expandedSynthesis === doc.id ? (
+                                    <ChevronUp className="h-3 w-3" />
+                                  ) : (
+                                    <ChevronDown className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="mt-2">
+                                <div className="p-3 rounded-md bg-primary/5 border border-primary/10">
+                                  <p className="text-xs text-foreground whitespace-pre-wrap leading-relaxed">
+                                    {doc.ai_documents_summary}
+                                  </p>
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          )}
                         </div>
                       );
                     })}
