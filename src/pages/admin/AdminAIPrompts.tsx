@@ -140,6 +140,268 @@ const resourceTypeIcons: Record<string, React.ReactNode> = {
   generated_document: <FileCheck className="h-4 w-4" />
 };
 
+// =============================================================================
+// PROMPT ACCORDIONS COMPONENT - 3 blocs composés
+// =============================================================================
+
+interface PromptAccordionsProps {
+  masterPrompt: string;
+  onMasterChange: (value: string) => void;
+}
+
+function PromptAccordions({ masterPrompt, onMasterChange }: PromptAccordionsProps) {
+  const queryClient = useQueryClient();
+  const [uiNavPrompt, setUiNavPrompt] = useState("");
+  const [toolsRefPrompt, setToolsRefPrompt] = useState("");
+  const [openAccordions, setOpenAccordions] = useState<string[]>(["master-agent"]);
+  
+  // Fetch ui-navigation and tools-reference prompts
+  const { data: additionalPrompts, isLoading } = useQuery({
+    queryKey: ['additional-ai-prompts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ai_prompts')
+        .select('*')
+        .in('slug', ['ui-navigation', 'tools-reference']);
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+  
+  useEffect(() => {
+    if (additionalPrompts) {
+      const uiNav = additionalPrompts.find(p => p.slug === 'ui-navigation');
+      const toolsRef = additionalPrompts.find(p => p.slug === 'tools-reference');
+      if (uiNav) setUiNavPrompt(uiNav.system_prompt);
+      if (toolsRef) setToolsRefPrompt(toolsRef.system_prompt);
+    }
+  }, [additionalPrompts]);
+  
+  // Save ui-navigation prompt
+  const saveUiNavMutation = useMutation({
+    mutationFn: async (prompt: string) => {
+      const existing = additionalPrompts?.find(p => p.slug === 'ui-navigation');
+      if (existing) {
+        const { error } = await supabase
+          .from('ai_prompts')
+          .update({ system_prompt: prompt, updated_at: new Date().toISOString() })
+          .eq('id', existing.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['additional-ai-prompts'] });
+      toast.success("Prompt Navigation UI sauvegardé");
+    },
+    onError: () => toast.error("Erreur de sauvegarde")
+  });
+  
+  const getPromptStats = (prompt: string) => {
+    const chars = prompt.length;
+    const tokens = Math.ceil(chars / 4); // Approximation
+    return { chars, tokens };
+  };
+  
+  const masterStats = getPromptStats(masterPrompt);
+  const uiNavStats = getPromptStats(uiNavPrompt);
+  const toolsRefStats = getPromptStats(toolsRefPrompt);
+  const totalTokens = masterStats.tokens + uiNavStats.tokens + toolsRefStats.tokens;
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center h-32">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Token Budget Indicator */}
+      <Card className="border-dashed">
+        <CardContent className="py-3">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <Brain className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Budget tokens système :</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className={totalTokens > 6000 ? "text-destructive font-medium" : "text-muted-foreground"}>
+                ~{totalTokens.toLocaleString()} / 8,000 tokens
+              </span>
+              <Progress value={(totalTokens / 8000) * 100} className="w-24 h-2" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Accordion 1: Master Agent */}
+      <Collapsible 
+        open={openAccordions.includes("master-agent")} 
+        onOpenChange={(open) => {
+          setOpenAccordions(prev => 
+            open ? [...prev, "master-agent"] : prev.filter(a => a !== "master-agent")
+          );
+        }}
+      >
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Bot className="h-5 w-5 text-primary" />
+                  <div>
+                    <CardTitle className="text-base">Prompt Système (master-agent)</CardTitle>
+                    <CardDescription>Identité, règles d'exécution, formats de réponse</CardDescription>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">
+                    ~{masterStats.tokens} tokens
+                  </Badge>
+                  <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                    <Edit className="h-3 w-3 mr-1" />
+                    Éditable
+                  </Badge>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${openAccordions.includes("master-agent") ? "rotate-180" : ""}`} />
+                </div>
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <Textarea
+                value={masterPrompt}
+                onChange={(e) => onMasterChange(e.target.value)}
+                placeholder="Entrez le prompt système..."
+                className="min-h-[350px] font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                {masterPrompt.length} caractères
+              </p>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Accordion 2: UI Navigation */}
+      <Collapsible 
+        open={openAccordions.includes("ui-navigation")} 
+        onOpenChange={(open) => {
+          setOpenAccordions(prev => 
+            open ? [...prev, "ui-navigation"] : prev.filter(a => a !== "ui-navigation")
+          );
+        }}
+      >
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ExternalLink className="h-5 w-5 text-blue-500" />
+                  <div>
+                    <CardTitle className="text-base">Navigation UI (ui-navigation)</CardTitle>
+                    <CardDescription>Mapping pages Admin/Cockpit, boutons, actions</CardDescription>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">
+                    ~{uiNavStats.tokens} tokens
+                  </Badge>
+                  <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                    <Edit className="h-3 w-3 mr-1" />
+                    Éditable
+                  </Badge>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${openAccordions.includes("ui-navigation") ? "rotate-180" : ""}`} />
+                </div>
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0 space-y-3">
+              <Textarea
+                value={uiNavPrompt}
+                onChange={(e) => setUiNavPrompt(e.target.value)}
+                placeholder="Mapping des pages et actions UI..."
+                className="min-h-[300px] font-mono text-sm"
+              />
+              <div className="flex justify-between items-center">
+                <p className="text-xs text-muted-foreground">
+                  {uiNavPrompt.length} caractères
+                </p>
+                <Button 
+                  size="sm" 
+                  onClick={() => saveUiNavMutation.mutate(uiNavPrompt)}
+                  disabled={saveUiNavMutation.isPending}
+                >
+                  {saveUiNavMutation.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <Save className="h-3 w-3 mr-1" />
+                  )}
+                  Sauvegarder
+                </Button>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Accordion 3: Tools Reference (Read-only) */}
+      <Collapsible 
+        open={openAccordions.includes("tools-reference")} 
+        onOpenChange={(open) => {
+          setOpenAccordions(prev => 
+            open ? [...prev, "tools-reference"] : prev.filter(a => a !== "tools-reference")
+          );
+        }}
+      >
+        <Card className="border-muted">
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Wrench className="h-5 w-5 text-orange-500" />
+                  <div>
+                    <CardTitle className="text-base">Référentiel Outils (tools-reference)</CardTitle>
+                    <CardDescription>48 outils, 22 Edge Functions, 6 tables IA</CardDescription>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">
+                    ~{toolsRefStats.tokens} tokens
+                  </Badge>
+                  <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+                    <Shield className="h-3 w-3 mr-1" />
+                    Lecture seule
+                  </Badge>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${openAccordions.includes("tools-reference") ? "rotate-180" : ""}`} />
+                </div>
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <div className="rounded-md bg-muted/50 p-4">
+                <pre className="text-xs font-mono whitespace-pre-wrap text-muted-foreground max-h-[400px] overflow-y-auto">
+                  {toolsRefPrompt}
+                </pre>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                Ce bloc est généré automatiquement. Modifiez l'orchestrateur pour le mettre à jour.
+              </p>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+    </div>
+  );
+}
+
 function VectorizationCard({ status, onRefresh }: { status: VectorizationStatus[]; onRefresh: () => void }) {
   const generateAll = useGenerateAllEmbeddings();
   const [testQuery, setTestQuery] = useState("");
@@ -1168,29 +1430,11 @@ export default function AdminAIPrompts() {
               </CardContent>
             </Card>
 
-            {/* System Prompt Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Prompt Système</CardTitle>
-                <CardDescription>
-                  Ce prompt définit le comportement de votre assistant IA pour l'ensemble des fonctionnalités : 
-                  transcriptions, leads, projets, solutions, comptes-rendus, pipeline, agenda, documents.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={systemPrompt}
-                  onChange={(e) => handlePromptChange(e.target.value)}
-                  placeholder="Entrez le prompt système..."
-                  className="min-h-[400px] font-mono text-sm"
-                />
-                <div className="flex justify-between items-center mt-3">
-                  <p className="text-xs text-muted-foreground">
-                    {systemPrompt.length} caractères
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* System Prompts - 3 Blocs Composés */}
+            <PromptAccordions 
+              masterPrompt={systemPrompt}
+              onMasterChange={handlePromptChange}
+            />
           </TabsContent>
 
           <TabsContent value="documents" className="space-y-4">
