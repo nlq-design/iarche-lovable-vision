@@ -3268,31 +3268,72 @@ Activé par mots-clés : "transcription", "analyse", "compte-rendu", "synthèse"
 - Inventer des données
 - Afficher les UUIDs`;
 
-const MASTER_PROMPT_SLUG = "master-agent";
+// Slugs pour le système de prompts composés v3.2
+const PROMPT_SLUGS = {
+  master: "master-agent",
+  uiNavigation: "ui-navigation",
+  toolsReference: "tools-reference",
+};
+
+// Fallbacks pour chaque bloc
+const FALLBACK_UI_NAVIGATION = `## NAVIGATION UI
+- /admin : Espace administration (articles, contacts, newsletters)
+- /cockpit : Espace commercial (leads, pipeline, projets, agenda)`;
+
+const FALLBACK_TOOLS_REFERENCE = `## OUTILS DISPONIBLES
+- get_leads, get_opportunities, get_projects : Lecture CRM
+- create_booking, create_lead, send_email : Actions directes
+- search_knowledge_base : Recherche RAG`;
 
 // deno-lint-ignore no-explicit-any
 async function getSystemPrompt(supabase: any): Promise<{ prompt: string; model: string }> {
   try {
+    // Récupérer les 3 prompts en une seule requête
     const { data, error } = await supabase
       .from("ai_prompts")
-      .select("system_prompt, model_config")
-      .eq("slug", MASTER_PROMPT_SLUG)
-      .maybeSingle();
+      .select("slug, system_prompt, model_config")
+      .in("slug", [PROMPT_SLUGS.master, PROMPT_SLUGS.uiNavigation, PROMPT_SLUGS.toolsReference]);
     
     if (error) {
-      console.error("Error fetching master prompt:", error);
+      console.error("Error fetching prompts:", error);
       return { prompt: DEFAULT_SYSTEM_PROMPT, model: "google/gemini-2.5-flash" };
     }
     
-    if (data?.system_prompt) {
-      const modelConfig = data.model_config as { model?: string } | null;
-      const model = modelConfig?.model || "google/gemini-2.5-flash";
-      console.log("Using master prompt from ai_prompts, model:", model);
-      return { prompt: data.system_prompt, model };
-    }
+    // Helper pour récupérer un prompt par slug
+    const getPromptBySlug = (slug: string): string => {
+      const found = data?.find((p: { slug: string }) => p.slug === slug);
+      return found?.system_prompt?.trim() || "";
+    };
     
-    console.log("No master prompt found, using default");
-    return { prompt: DEFAULT_SYSTEM_PROMPT, model: "google/gemini-2.5-flash" };
+    // Récupérer chaque bloc avec fallback
+    const masterPrompt = getPromptBySlug(PROMPT_SLUGS.master) || DEFAULT_SYSTEM_PROMPT;
+    const uiNavigation = getPromptBySlug(PROMPT_SLUGS.uiNavigation) || FALLBACK_UI_NAVIGATION;
+    const toolsReference = getPromptBySlug(PROMPT_SLUGS.toolsReference) || FALLBACK_TOOLS_REFERENCE;
+    
+    // Récupérer le modèle depuis master-agent
+    const masterData = data?.find((p: { slug: string }) => p.slug === PROMPT_SLUGS.master);
+    const modelConfig = masterData?.model_config as { model?: string } | null;
+    const model = modelConfig?.model || "google/gemini-2.5-flash";
+    
+    // Composer le prompt final avec séparateurs clairs
+    const composedPrompt = [
+      `### AGENT IA IARCHE - PROMPT SYSTÈME COMPOSÉ v3.2`,
+      `### Blocs: master-agent + ui-navigation + tools-reference`,
+      ``,
+      masterPrompt,
+      ``,
+      `---`,
+      ``,
+      uiNavigation,
+      ``,
+      `---`,
+      ``,
+      toolsReference,
+    ].join("\n");
+    
+    console.log(`Composed system prompt from ${data?.length || 0} blocks, model: ${model}`);
+    return { prompt: composedPrompt, model };
+    
   } catch (err) {
     console.error("Failed to fetch system prompt:", err);
     return { prompt: DEFAULT_SYSTEM_PROMPT, model: "google/gemini-2.5-flash" };
