@@ -1,18 +1,14 @@
 // IArche PDF Brand Components - v4.0
 // High-fidelity static versions of animated brand elements
-// v4.0: Suppression du fond quadrillé (mesh)
+// v4.0: Suppression du fond quadrillé (mesh) et barres legacy
 
 // SVG-based components
 export { PDFLogo, PDFLogoText } from './PDFLogo';
 export { PDFLogoArc } from './PDFLogoArc';
 export { PDFArches } from './PDFArches';
 
-// Logo + Arc (Charte 4.0)
+// Logo + Arc (Charte 4.0) - RECOMMENDED
 export { PDFLogoWithArc } from './PDFLogoWithArc';
-
-// Legacy exports - deprecated, use PDFLogoArc instead
-export { PDFGradientBar } from './PDFGradientBar';
-export { PDFLogoWithBar } from './PDFLogoWithBar';
 
 // Base64 SVG components (reliable rendering) - RECOMMENDED
 export { 
