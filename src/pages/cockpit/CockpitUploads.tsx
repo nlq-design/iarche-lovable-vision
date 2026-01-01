@@ -1,6 +1,8 @@
 import { useState, useCallback } from "react";
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { useCockpitUploads, UploadedFile } from "@/hooks/cockpit/useCockpitUploads";
+import { useCockpitProjects } from "@/hooks/cockpit/useCockpitProjects";
+import { useCockpitLeads } from "@/hooks/cockpit/useCockpitLeads";
 import { extractFileContent, ExtractionResult } from "@/lib/fileExtraction";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -181,10 +183,34 @@ export default function CockpitUploads() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [tagsInput, setTagsInput] = useState('');
   
+  // Entity linking state
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+  const [selectedSolutionIds, setSelectedSolutionIds] = useState<string[]>([]);
+  
   // Extraction state
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionProgress, setExtractionProgress] = useState(0);
   const [extractionResults, setExtractionResults] = useState<Map<string, ExtractionResult>>(new Map());
+
+  // Fetch entities for linking
+  const { projects } = useCockpitProjects();
+  const { leads } = useCockpitLeads();
+  
+  // Fetch solutions (articles with resource_type = 'solution')
+  const [solutions, setSolutions] = useState<{ id: string; title: string }[]>([]);
+  useState(() => {
+    import('@/integrations/supabase/client').then(({ supabase }) => {
+      supabase
+        .from('articles')
+        .select('id, title')
+        .eq('resource_type', 'solution')
+        .eq('published', true)
+        .then(({ data }) => {
+          if (data) setSolutions(data);
+        });
+    });
+  });
 
   const { 
     uploads, 
@@ -264,6 +290,16 @@ export default function CockpitUploads() {
     }
   };
 
+  const resetForm = () => {
+    setSelectedFiles([]);
+    setSelectedCategory('');
+    setTagsInput('');
+    setExtractionResults(new Map());
+    setSelectedProjectIds([]);
+    setSelectedLeadIds([]);
+    setSelectedSolutionIds([]);
+  };
+
   const handleUpload = async () => {
     const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
     
@@ -276,13 +312,13 @@ export default function CockpitUploads() {
         category: selectedCategory || undefined,
         tags,
         extractedText,
+        projectIds: selectedProjectIds,
+        leadIds: selectedLeadIds,
+        solutionIds: selectedSolutionIds,
       });
     }
     
-    setSelectedFiles([]);
-    setSelectedCategory('');
-    setTagsInput('');
-    setExtractionResults(new Map());
+    resetForm();
     setActiveTab('list');
   };
 
@@ -296,11 +332,13 @@ export default function CockpitUploads() {
       filename: `texte_${Date.now()}.txt`,
       category: selectedCategory || undefined,
       tags,
+      projectIds: selectedProjectIds,
+      leadIds: selectedLeadIds,
+      solutionIds: selectedSolutionIds,
     });
     
     setPastedText('');
-    setSelectedCategory('');
-    setTagsInput('');
+    resetForm();
     setActiveTab('list');
   };
 
@@ -488,6 +526,67 @@ export default function CockpitUploads() {
                 <CardTitle className="text-lg">Options</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Entity Linking */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Lier à des Projets</label>
+                    <Select 
+                      value={selectedProjectIds[0] || "none"} 
+                      onValueChange={(v) => setSelectedProjectIds(v === "none" ? [] : [v])}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Projet..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Aucun</SelectItem>
+                        {projects?.map(project => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Lier à des Leads</label>
+                    <Select 
+                      value={selectedLeadIds[0] || "none"} 
+                      onValueChange={(v) => setSelectedLeadIds(v === "none" ? [] : [v])}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Lead..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Aucun</SelectItem>
+                        {leads?.map(lead => (
+                          <SelectItem key={lead.id} value={lead.id}>
+                            {lead.name} {lead.company && `(${lead.company})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Lier à des Solutions</label>
+                    <Select 
+                      value={selectedSolutionIds[0] || "none"} 
+                      onValueChange={(v) => setSelectedSolutionIds(v === "none" ? [] : [v])}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Solution..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Aucune</SelectItem>
+                        {solutions?.map(solution => (
+                          <SelectItem key={solution.id} value={solution.id}>
+                            {solution.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium mb-2 block">Catégorie</label>
