@@ -79,7 +79,7 @@ Si des informations CRITIQUES manquent (email, date/heure) :
 - Mode CHAT (défaut) : 3-5 lignes max, données factuelles
 - Mode DÉTAILLÉ (transcriptions, analyses, CDC) : Structure avec sections
 
-## OUTILS PRINCIPAUX (47 disponibles)
+## OUTILS PRINCIPAUX (67 disponibles)
 - create_booking : RDV complet (Zoom + Calendrier + Emails)
 - create_lead : Nouveau lead CRM
 - send_email : Email (envoi direct)
@@ -367,7 +367,7 @@ function PromptAccordions({ masterPrompt, onMasterChange }: PromptAccordionsProp
                   <Wrench className="h-5 w-5 text-orange-500" />
                   <div>
                     <CardTitle className="text-base">Référentiel Outils (tools-reference)</CardTitle>
-                    <CardDescription>48 outils, 22 Edge Functions, 6 tables IA</CardDescription>
+                    <CardDescription>67 outils, 22 Edge Functions, 6 tables IA</CardDescription>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
