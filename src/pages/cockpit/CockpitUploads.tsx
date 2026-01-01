@@ -171,8 +171,8 @@ function FileCard({
 export default function CockpitUploads() {
   const [activeTab, setActiveTab] = useState<'upload' | 'list'>('upload');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   
   // Upload state
   const [dragActive, setDragActive] = useState(false);
@@ -199,8 +199,8 @@ export default function CockpitUploads() {
     downloadFile,
     refetch
   } = useCockpitUploads({
-    status: statusFilter || undefined,
-    category: categoryFilter || undefined,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    category: categoryFilter !== 'all' ? categoryFilter : undefined,
   });
 
   const handleDrag = useCallback((e: React.DragEvent) => {
@@ -569,7 +569,7 @@ export default function CockpitUploads() {
                   <SelectValue placeholder="Statut" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tous</SelectItem>
+                  <SelectItem value="all">Tous</SelectItem>
                   <SelectItem value="pending">En attente</SelectItem>
                   <SelectItem value="processing">En cours</SelectItem>
                   <SelectItem value="completed">Terminé</SelectItem>
@@ -581,7 +581,7 @@ export default function CockpitUploads() {
                   <SelectValue placeholder="Catégorie" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Toutes</SelectItem>
+                  <SelectItem value="all">Toutes</SelectItem>
                   {CATEGORIES.map(cat => (
                     <SelectItem key={cat.value} value={cat.value}>
                       {cat.label}
