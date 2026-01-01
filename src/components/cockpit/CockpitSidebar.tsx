@@ -8,7 +8,8 @@ import {
   ArrowLeft,
   Package,
   Mic,
-  FileText
+  FileText,
+  Upload
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Link, useLocation } from 'react-router-dom';
@@ -31,6 +32,7 @@ const navigationItems = [
   { title: 'Leads', url: '/cockpit/leads', icon: Users },
   { title: 'Projets', url: '/cockpit/projects', icon: FolderKanban },
   { title: 'Solutions', url: '/cockpit/solutions', icon: Package },
+  { title: 'Documents', url: '/cockpit/upload', icon: Upload },
   { title: 'Devis/CDC', url: '/cockpit/documents', icon: FileText },
   { title: 'Transcriptions', url: '/cockpit/transcriptions', icon: Mic },
   { title: 'Agenda', url: '/cockpit/agenda', icon: Calendar },
