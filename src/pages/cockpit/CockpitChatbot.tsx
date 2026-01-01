@@ -1,15 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetHeader, 
-  SheetTitle, 
-  SheetTrigger 
-} from '@/components/ui/sheet';
+import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { 
   Send, 
   Loader2, 
@@ -23,7 +18,8 @@ import {
   MessageSquare,
   Wrench,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -37,13 +33,7 @@ interface Message {
   toolCalls?: { name: string; result: unknown }[];
 }
 
-interface AgentChatProps {
-  className?: string;
-  defaultOpen?: boolean;
-}
-
-export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
-  const [open, setOpen] = useState(defaultOpen);
+export default function CockpitChatbot() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -54,19 +44,17 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
   // Persistent session ID for memory continuity across the conversation
   const sessionIdRef = useRef<string>(crypto.randomUUID());
   
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
 
-  // Scroll to bottom when new messages arrive - more reliable approach
+  // Scroll to bottom when new messages arrive
   useEffect(() => {
     const scrollToBottom = () => {
       if (messagesEndRef.current) {
         messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }
     };
-    // Use requestAnimationFrame for reliable timing after DOM update
     const rafId = requestAnimationFrame(() => {
       requestAnimationFrame(scrollToBottom);
     });
@@ -84,15 +72,15 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
       recognitionRef.current.interimResults = true;
       recognitionRef.current.lang = 'fr-FR';
 
-      recognitionRef.current.onresult = (event) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      recognitionRef.current.onresult = (event: any) => {
         const transcript = Array.from(event.results)
           .map(result => result[0].transcript)
           .join('');
         setInputValue(transcript);
       };
 
-      recognitionRef.current.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
+      recognitionRef.current.onerror = () => {
         setIsListening(false);
         toast.error('Erreur de reconnaissance vocale');
       };
@@ -121,7 +109,6 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
   const sendMessage = useCallback(async () => {
     if (!inputValue.trim() || isLoading) return;
 
-    // Stop listening if active
     if (isListening && recognitionRef.current) {
       recognitionRef.current.stop();
       setIsListening(false);
@@ -139,7 +126,6 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
     setIsLoading(true);
 
     try {
-      // Build conversation history for context
       const conversationHistory = messages.map(m => ({
         role: m.role,
         content: m.content,
@@ -205,88 +191,69 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
       .replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  const clearConversation = () => {
+    setMessages([]);
+    sessionIdRef.current = crypto.randomUUID();
+    toast.success('Conversation effacée');
+  };
+
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          className={cn(
-            "fixed bottom-20 sm:bottom-6 right-4 sm:right-6 h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg",
-            "bg-gradient-to-br from-primary to-accent hover:from-primary/90 hover:to-accent/90",
-            "border-0 text-white z-50 touch-manipulation",
-            className
-          )}
-        >
-          <Bot className="h-5 w-5 sm:h-6 sm:w-6" />
-        </Button>
-      </SheetTrigger>
-      
-      <SheetContent 
-        side="right" 
-        className="w-full sm:w-[500px] p-0 flex flex-col"
-      >
-        <SheetHeader className="px-6 py-4 border-b bg-gradient-to-r from-primary/5 to-accent/5">
-          <SheetTitle className="flex items-center gap-3">
+    <CockpitLayout>
+      <div className="h-[calc(100vh-4rem)] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-primary/5 to-accent/5">
+          <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
-              <span className="text-xl font-semibold">Agent IArche</span>
-              <p className="text-xs text-muted-foreground font-normal mt-0.5">
+              <h1 className="text-xl font-semibold">Agent IArche</h1>
+              <p className="text-xs text-muted-foreground">
                 Assistant commercial & opérationnel
               </p>
             </div>
-          </SheetTitle>
-        </SheetHeader>
+          </div>
+          {messages.length > 0 && (
+            <Button variant="outline" size="sm" onClick={clearConversation}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Effacer
+            </Button>
+          )}
+        </div>
 
-        <ScrollArea ref={scrollAreaRef} className="flex-1 px-4 py-4">
+        {/* Messages */}
+        <ScrollArea className="flex-1 px-6 py-4">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-4">
-                <MessageSquare className="w-8 h-8 text-primary" />
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-6">
+                <MessageSquare className="w-10 h-10 text-primary" />
               </div>
-              <h3 className="text-lg font-medium mb-2">Bonjour !</h3>
-              <p className="text-sm text-muted-foreground max-w-[280px]">
+              <h3 className="text-xl font-medium mb-2">Bonjour !</h3>
+              <p className="text-muted-foreground max-w-md mb-8">
                 Je peux consulter vos leads, opportunités, projets et vous aider dans votre activité commerciale.
               </p>
-              <div className="mt-6 grid grid-cols-1 xs:grid-cols-2 gap-2 text-xs w-full px-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-10 touch-manipulation"
-                  onClick={() => setInputValue('Quels sont mes leads récents ?')}
-                >
-                  Leads récents
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-10 touch-manipulation"
-                  onClick={() => setInputValue('Stats du pipeline ?')}
-                >
-                  Stats pipeline
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-10 touch-manipulation"
-                  onClick={() => setInputValue('Tâches en retard ?')}
-                >
-                  Tâches en retard
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-10 touch-manipulation"
-                  onClick={() => setInputValue('Prochains RDV ?')}
-                >
-                  Prochains RDV
-                </Button>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl">
+                {[
+                  { label: 'Leads récents', prompt: 'Quels sont mes leads récents ?' },
+                  { label: 'Stats pipeline', prompt: 'Stats du pipeline ?' },
+                  { label: 'Tâches en retard', prompt: 'Tâches en retard ?' },
+                  { label: 'Prochains RDV', prompt: 'Prochains RDV ?' },
+                ].map(({ label, prompt }) => (
+                  <Card 
+                    key={label}
+                    className="cursor-pointer hover:border-primary/50 transition-colors"
+                    onClick={() => setInputValue(prompt)}
+                  >
+                    <CardContent className="p-4 text-center">
+                      <span className="text-sm font-medium">{label}</span>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 max-w-4xl mx-auto">
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -303,7 +270,7 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
                   
                   <div
                     className={cn(
-                      "rounded-2xl px-4 py-3 max-w-[85%] relative group",
+                      "rounded-2xl px-4 py-3 max-w-[75%] relative group",
                       message.role === 'user'
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted border"
@@ -311,7 +278,6 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
                   >
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                     
-                    {/* Tool calls display */}
                     {message.toolCalls && message.toolCalls.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-border/50">
                         <button
@@ -330,12 +296,12 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
                         </button>
                         
                         {expandedTools === message.id && (
-                          <div className="mt-2 space-y-1">
+                          <div className="mt-2 flex flex-wrap gap-1">
                             {message.toolCalls.map((tool, idx) => (
                               <Badge 
                                 key={idx} 
                                 variant="secondary" 
-                                className="text-[10px] mr-1"
+                                className="text-[10px]"
                               >
                                 {formatToolName(tool.name)}
                               </Badge>
@@ -345,7 +311,6 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
                       </div>
                     )}
 
-                    {/* Copy button for assistant messages */}
                     {message.role === 'assistant' && (
                       <button
                         onClick={() => copyToClipboard(message.content, message.id)}
@@ -381,25 +346,25 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
                   </div>
                 </div>
               )}
-              {/* Invisible anchor for auto-scroll */}
               <div ref={messagesEndRef} className="h-px" />
             </div>
           )}
         </ScrollArea>
 
-        <div className="border-t p-3 sm:p-4 bg-background safe-area-inset-bottom">
-          <div className="flex gap-2">
+        {/* Input */}
+        <div className="border-t p-4 bg-background">
+          <div className="max-w-4xl mx-auto flex gap-3">
             <Button
               variant={isListening ? "destructive" : "outline"}
               size="icon"
               onClick={toggleListening}
-              className="shrink-0 h-10 w-10 sm:h-9 sm:w-9 touch-manipulation"
+              className="shrink-0 h-12 w-12"
               disabled={isLoading}
             >
               {isListening ? (
-                <MicOff className="w-4 h-4" />
+                <MicOff className="w-5 h-5" />
               ) : (
-                <Mic className="w-4 h-4" />
+                <Mic className="w-5 h-5" />
               )}
             </Button>
             
@@ -408,7 +373,7 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={isListening ? "Parlez..." : "Posez votre question..."}
-              className="resize-none min-h-[44px] sm:min-h-[52px] max-h-[120px] text-base sm:text-sm"
+              className="resize-none min-h-[48px] max-h-[120px]"
               disabled={isLoading}
             />
             
@@ -416,22 +381,20 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
               onClick={sendMessage}
               disabled={!inputValue.trim() || isLoading}
               size="icon"
-              className="shrink-0 h-10 w-10 sm:h-9 sm:w-9 bg-gradient-to-br from-primary to-accent hover:from-primary/90 hover:to-accent/90 touch-manipulation"
+              className="shrink-0 h-12 w-12 bg-gradient-to-br from-primary to-accent hover:from-primary/90 hover:to-accent/90"
             >
               {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
-                <Send className="w-4 h-4" />
+                <Send className="w-5 h-5" />
               )}
             </Button>
           </div>
-          <p className="text-[10px] text-muted-foreground mt-2 text-center hidden sm:block">
+          <p className="text-xs text-muted-foreground mt-2 text-center">
             Entrée pour envoyer · Maj+Entrée pour nouvelle ligne · 🎤 pour parler
           </p>
         </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </CockpitLayout>
   );
 }
-
-export default AgentChat;
