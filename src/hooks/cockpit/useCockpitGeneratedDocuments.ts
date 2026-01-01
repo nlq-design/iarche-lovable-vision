@@ -24,6 +24,7 @@ export interface GeneratedDocument {
   output_storage_path: string | null;
   ai_generated: boolean;
   ai_metadata: Record<string, unknown>;
+  ai_documents_summary: string | null;
   created_by: string | null;
   approved_by: string | null;
   approved_at: string | null;
