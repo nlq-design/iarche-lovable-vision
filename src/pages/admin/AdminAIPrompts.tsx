@@ -923,17 +923,62 @@ function DynamicModulesOverview() {
     generate_document: <FileText className="h-3 w-3" />,
   };
 
-  // Cockpit modules - could be fetched dynamically too
-  const cockpitModules = [
-    { name: "Transcriptions", desc: "Synthèse audio + détection", path: "/cockpit/transcriptions", icon: <Mic className="h-4 w-4" /> },
-    { name: "Leads", desc: "Qualification & scoring", path: "/cockpit/leads", icon: <Users className="h-4 w-4" /> },
-    { name: "Projets", desc: "Suivi & recommandations", path: "/cockpit/projects", icon: <Briefcase className="h-4 w-4" /> },
-    { name: "Solutions", desc: "Analyse commerciale", path: "/cockpit/solutions", icon: <Sparkles className="h-4 w-4" /> },
-    { name: "Pipeline", desc: "Insights opportunités", path: "/cockpit/pipeline", icon: <Target className="h-4 w-4" /> },
-    { name: "Agenda", desc: "Préparation RDV", path: "/cockpit/agenda", icon: <Calendar className="h-4 w-4" /> },
-    { name: "Documents", desc: "Génération CDC/Devis", path: "/cockpit/documents", icon: <FileCheck className="h-4 w-4" /> },
-    { name: "Agent Chat", desc: "Flottant universel", path: "global", icon: <Bot className="h-4 w-4" /> }
-  ];
+  // Cockpit modules - dynamically loaded from ui-navigation prompt
+  const { data: cockpitModulesFromDB } = useQuery({
+    queryKey: ['cockpit-modules-dynamic'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ai_prompts')
+        .select('system_prompt')
+        .eq('slug', 'ui-navigation')
+        .maybeSingle();
+      
+      if (error) throw error;
+      const content = data?.system_prompt || '';
+      
+      // Parse COCKPIT routes from ui-navigation prompt
+      const modules: Array<{ name: string; desc: string; path: string }> = [];
+      const cockpitMatch = content.match(/### COCKPIT \(\d+ routes\)([\s\S]*?)(?=###|$)/);
+      if (cockpitMatch) {
+        const routePattern = /\| `([^`]+)` \| [^|]+ \| ([^|]+) \|/g;
+        let match;
+        while ((match = routePattern.exec(cockpitMatch[1])) !== null) {
+          const path = match[1];
+          const desc = match[2].trim();
+          const name = path.split('/').pop() || path;
+          modules.push({
+            name: name.charAt(0).toUpperCase() + name.slice(1).replace(/-/g, ' '),
+            desc,
+            path
+          });
+        }
+      }
+      return modules;
+    },
+    staleTime: 5 * 60 * 1000
+  });
+
+  // Icon mapping for cockpit modules
+  const moduleIconMap: Record<string, React.ReactNode> = {
+    transcriptions: <Mic className="h-4 w-4" />,
+    leads: <Users className="h-4 w-4" />,
+    projects: <Briefcase className="h-4 w-4" />,
+    solutions: <Sparkles className="h-4 w-4" />,
+    pipeline: <Target className="h-4 w-4" />,
+    agenda: <Calendar className="h-4 w-4" />,
+    documents: <FileCheck className="h-4 w-4" />,
+    dashboard: <Activity className="h-4 w-4" />,
+    uploads: <FileCode className="h-4 w-4" />,
+    chatbot: <Bot className="h-4 w-4" />,
+    analytics: <Database className="h-4 w-4" />,
+  };
+
+  const getModuleIcon = (path: string) => {
+    const key = path.split('/').pop()?.toLowerCase() || '';
+    return moduleIconMap[key] || <Bot className="h-4 w-4" />;
+  };
+
+  const cockpitModules = cockpitModulesFromDB || [];
 
   if (isLoading) {
     return (
@@ -1383,20 +1428,25 @@ function DynamicModulesOverview() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {cockpitModules.map((module) => (
+            {cockpitModules.length > 0 ? cockpitModules.map((module) => (
               <div 
                 key={module.name}
                 className="p-3 rounded-lg bg-muted/50 border flex items-start gap-3"
               >
                 <div className="p-1.5 rounded bg-primary/10 text-primary">
-                  {module.icon}
+                  {getModuleIcon(module.path)}
                 </div>
                 <div>
                   <p className="font-medium text-sm">{module.name}</p>
                   <p className="text-xs text-muted-foreground">{module.desc}</p>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="col-span-4 text-center text-muted-foreground py-4">
+                <Loader2 className="h-4 w-4 animate-spin mx-auto mb-2" />
+                Chargement des modules...
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -1430,14 +1480,8 @@ function DocumentGenerationConfig() {
   const { models: llmModels, byProvider } = useLLMModelsGrouped();
   const [editingPrompt, setEditingPrompt] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
-  
-  const DOCUMENT_TYPES = [
-    { slug: 'document_generation_quote', name: 'Devis', icon: <FileSignature className="h-4 w-4" />, type: 'quote' },
-    { slug: 'document_generation_spec', name: 'Cahier des charges', icon: <FileCheck className="h-4 w-4" />, type: 'spec' },
-    { slug: 'document_generation_proposal', name: 'Proposition commerciale', icon: <Briefcase className="h-4 w-4" />, type: 'proposal' },
-  ];
 
-  // Fetch all document prompts
+  // Fetch all document prompts FIRST
   const { data: docPrompts, isLoading } = useQuery({
     queryKey: ['document-prompts'],
     queryFn: async () => {
@@ -1458,11 +1502,47 @@ function DocumentGenerationConfig() {
         .from('ai_prompts')
         .select('*')
         .neq('category', 'document_generation')
-        .neq('slug', 'master-agent');
+        .neq('slug', 'master-agent')
+        .not('slug', 'in', '(ui-navigation,tools-reference)');
       if (error) throw error;
       return data || [];
     }
   });
+  
+  // Document type icon mapping (dynamic from db slug)
+  const docTypeIcons: Record<string, React.ReactNode> = {
+    document_generation_quote: <FileSignature className="h-4 w-4" />,
+    document_generation_spec: <FileCheck className="h-4 w-4" />,
+    document_generation_proposal: <Briefcase className="h-4 w-4" />,
+    document_generation_email: <MessageSquare className="h-4 w-4" />,
+    document_generation_report: <FileText className="h-4 w-4" />,
+  };
+  
+  const docTypeNames: Record<string, string> = {
+    document_generation_quote: 'Devis',
+    document_generation_spec: 'Cahier des charges',
+    document_generation_proposal: 'Proposition commerciale',
+    document_generation_email: 'Email commercial',
+    document_generation_report: 'Rapport',
+  };
+
+  // Build DOCUMENT_TYPES dynamically from docPrompts
+  const DOCUMENT_TYPES = useMemo(() => {
+    if (!docPrompts || docPrompts.length === 0) {
+      // Fallback to default types if no prompts exist yet
+      return [
+        { slug: 'document_generation_quote', name: 'Devis', icon: <FileSignature className="h-4 w-4" />, type: 'quote' },
+        { slug: 'document_generation_spec', name: 'Cahier des charges', icon: <FileCheck className="h-4 w-4" />, type: 'spec' },
+        { slug: 'document_generation_proposal', name: 'Proposition commerciale', icon: <Briefcase className="h-4 w-4" />, type: 'proposal' },
+      ];
+    }
+    return docPrompts.map(p => ({
+      slug: p.slug,
+      name: docTypeNames[p.slug] || p.name,
+      icon: docTypeIcons[p.slug] || <FileText className="h-4 w-4" />,
+      type: p.slug.replace('document_generation_', ''),
+    }));
+  }, [docPrompts]);
 
   const updatePromptMutation = useMutation({
     mutationFn: async ({ slug, updates }: { slug: string; updates: Record<string, unknown> }) => {
