@@ -51,7 +51,7 @@ interface CreateTranscriptionModalProps {
 }
 
 const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
-const MAX_TRANSCRIPTION_FILE_SIZE = 25 * 1024 * 1024; // 25MB - Whisper limit
+const MAX_TRANSCRIPTION_FILE_SIZE = 250 * 1024 * 1024; // 250MB - streaming allows larger files
 
 export function CreateTranscriptionModal({
   open,
