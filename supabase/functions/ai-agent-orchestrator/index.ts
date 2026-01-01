@@ -598,13 +598,15 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "create_meeting_note",
-      description: "Crée un compte-rendu de réunion.",
+      description: "Crée un compte-rendu de réunion. Si aucun booking_id/project_id/opportunity_id n'est fourni mais qu'un lead_name ou lead_email est donné, l'agent recherche automatiquement l'opportunité liée au lead.",
       parameters: {
         type: "object",
         properties: {
           booking_id: { type: "string", description: "ID du RDV associé" },
           project_id: { type: "string", description: "ID du projet associé" },
           opportunity_id: { type: "string", description: "ID de l'opportunité associée" },
+          lead_name: { type: "string", description: "Nom du lead (pour recherche auto de l'opportunité si pas d'ID fourni)" },
+          lead_email: { type: "string", description: "Email du lead (pour recherche auto de l'opportunité si pas d'ID fourni)" },
           notes: { type: "string", description: "Notes de la réunion" },
           objectives: { type: "string", description: "Objectifs de la réunion" },
           next_steps: { type: "string", description: "Prochaines étapes" },
@@ -808,11 +810,32 @@ const AGENT_TOOLS = [
           industry: { type: "string", description: "Secteur d'activité" },
           company_size: { type: "string", description: "Taille entreprise" },
         },
-        required: ["name", "email", "source"],
+      required: ["name", "email", "source"],
+    },
+  },
+},
+{
+  type: "function",
+  function: {
+    name: "update_lead",
+    description: "Met à jour les informations d'un lead existant (téléphone, entreprise, notes, etc.). Utilise cet outil pour modifier directement un lead au lieu de créer une tâche.",
+    parameters: {
+      type: "object",
+      properties: {
+        lead_id: { type: "string", description: "ID du lead (peut être retrouvé via get_leads)" },
+        email: { type: "string", description: "Email pour identifier le lead si pas d'ID" },
+        phone: { type: "string", description: "Nouveau téléphone" },
+        company: { type: "string", description: "Nouvelle entreprise" },
+        position: { type: "string", description: "Nouveau poste" },
+        linkedin_url: { type: "string", description: "URL LinkedIn" },
+        website: { type: "string", description: "Site web" },
+        source_context: { type: "string", description: "Ajouter au contexte existant" },
+        message: { type: "string", description: "Ajouter aux notes/messages" },
       },
     },
   },
-  {
+},
+{
     type: "function",
     function: {
       name: "send_email",
@@ -2073,20 +2096,74 @@ async function executeTool(
         };
       }
       
-      // Au moins une entité liée doit être spécifiée
-      if (!args.booking_id && !args.project_id && !args.opportunity_id) {
+      // Variables pour les IDs
+      let bookingId = args.booking_id as string | null;
+      let projectId = args.project_id as string | null;
+      let opportunityId = args.opportunity_id as string | null;
+      
+      // Si aucun ID fourni mais lead_name ou lead_email, recherche automatique
+      if (!bookingId && !projectId && !opportunityId) {
+        const leadName = args.lead_name as string | undefined;
+        const leadEmail = args.lead_email as string | undefined;
+        
+        if (leadName || leadEmail) {
+          // Rechercher le lead
+          let leadQuery = supabase.from("leads").select("id, name");
+          
+          if (leadEmail) {
+            leadQuery = leadQuery.eq("email", leadEmail.toLowerCase().trim());
+          } else if (leadName) {
+            leadQuery = leadQuery.ilike("name", `%${leadName}%`);
+          }
+          
+          const { data: foundLead } = await leadQuery.maybeSingle();
+          
+          if (foundLead) {
+            // Chercher l'opportunité liée à ce lead
+            const { data: foundOpp } = await supabase
+              .from("opportunities")
+              .select("id, title")
+              .eq("lead_id", foundLead.id)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            
+            if (foundOpp) {
+              opportunityId = foundOpp.id;
+              console.log(`[create_meeting_note] Auto-linked to opportunity "${foundOpp.title}" via lead "${foundLead.name}"`);
+            } else {
+              // Pas d'opportunité, chercher un booking récent pour ce lead
+              const { data: foundBooking } = await supabase
+                .from("bookings")
+                .select("id, name")
+                .eq("email", leadEmail || "")
+                .order("start_time", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+              
+              if (foundBooking) {
+                bookingId = foundBooking.id;
+                console.log(`[create_meeting_note] Auto-linked to booking for "${foundBooking.name}"`);
+              }
+            }
+          }
+        }
+      }
+      
+      // Si toujours aucun lien trouvé, retourner une erreur claire
+      if (!bookingId && !projectId && !opportunityId) {
         return {
           success: false,
-          error: "Au moins un lien (booking_id, project_id ou opportunity_id) est requis",
-          message: `⚠️ Je ne peux pas créer le compte-rendu sans lien à un RDV, projet ou opportunité.`,
+          error: "Aucun lien trouvé (booking_id, project_id ou opportunity_id)",
+          message: `⚠️ Je ne peux pas créer le compte-rendu. Aucun RDV, projet ou opportunité trouvé pour ce lead. Précisez le nom ou l'email du lead.`,
           autonomy_level: "execution_directe",
         };
       }
       
       const meetingNoteData = {
-        booking_id: args.booking_id as string || null,
-        project_id: args.project_id as string || null,
-        opportunity_id: args.opportunity_id as string || null,
+        booking_id: bookingId,
+        project_id: projectId,
+        opportunity_id: opportunityId,
         notes: rawNotes.trim(),
         objectives: args.objectives as string || null,
         next_steps: args.next_steps as string || null,
@@ -2096,6 +2173,7 @@ async function executeTool(
           generated_at: new Date().toISOString(),
           validation_required: false,
           validated_by_human: false,
+          auto_linked: !args.booking_id && !args.project_id && !args.opportunity_id,
         },
         workspace_id: "00000000-0000-0000-0000-000000000001",
       };
@@ -2592,6 +2670,85 @@ Génère un contenu HTML pour email avec:
         lead: newLead,
         message: `✅ Lead créé : ${leadData.name} (${leadData.email}) - ${leadData.company || "Entreprise non spécifiée"}`,
         autonomy_level: "N1",
+      };
+    }
+
+    case "update_lead": {
+      // Trouver le lead par ID ou email
+      let leadId = args.lead_id as string | undefined;
+      
+      if (!leadId && args.email) {
+        const { data: foundLead } = await supabase
+          .from("leads")
+          .select("id, name, phone, company, source_context, message")
+          .eq("email", (args.email as string).toLowerCase().trim())
+          .maybeSingle();
+        
+        if (foundLead) {
+          leadId = foundLead.id;
+        }
+      }
+      
+      if (!leadId) {
+        return {
+          success: false,
+          error: "Lead non trouvé",
+          message: "⚠️ Je ne trouve pas ce lead. Précisez l'ID ou l'email du lead à mettre à jour.",
+          autonomy_level: "execution_directe",
+        };
+      }
+      
+      // Récupérer le lead actuel pour les champs à concaténer
+      const { data: currentLead } = await supabase
+        .from("leads")
+        .select("name, phone, company, source_context, message")
+        .eq("id", leadId)
+        .single();
+      
+      // Construire l'objet de mise à jour
+      const updateData: Record<string, unknown> = {
+        last_contacted_at: new Date().toISOString(),
+      };
+      
+      if (args.phone) updateData.phone = (args.phone as string).trim();
+      if (args.company) updateData.company = (args.company as string).trim();
+      if (args.position) updateData.position = (args.position as string).trim();
+      if (args.linkedin_url) updateData.linkedin_url = (args.linkedin_url as string).trim();
+      if (args.website) updateData.website = (args.website as string).trim();
+      
+      // Concaténer source_context si fourni
+      if (args.source_context) {
+        const existingContext = currentLead?.source_context || "";
+        updateData.source_context = existingContext 
+          ? `${existingContext} | ${args.source_context}` 
+          : args.source_context;
+      }
+      
+      // Concaténer message/notes si fourni
+      if (args.message) {
+        const existingMessage = currentLead?.message || "";
+        updateData.message = existingMessage 
+          ? `${existingMessage}\n---\n${args.message}` 
+          : args.message;
+      }
+      
+      const { data: updatedLead, error } = await supabase
+        .from("leads")
+        .update(updateData)
+        .eq("id", leadId)
+        .select("id, name, email, phone, company")
+        .single();
+      
+      if (error) throw error;
+      
+      const updatedFields = Object.keys(updateData).filter(k => k !== "last_contacted_at");
+      
+      return {
+        success: true,
+        lead: updatedLead,
+        updated_fields: updatedFields,
+        message: `✅ Lead "${updatedLead.name}" mis à jour : ${updatedFields.join(", ")}`,
+        autonomy_level: "execution_directe",
       };
     }
 
@@ -3245,23 +3402,46 @@ Activé par mots-clés : "transcription", "analyse", "compte-rendu", "synthèse"
 - Tableaux si pertinent
 - Exhaustivité
 
-## RÈGLES D'INTERPRÉTATION DES REQUÊTES
+## RÈGLES DE CHAÎNAGE OBLIGATOIRE
 
-### Requêtes RDV / Agenda
-- "prochain rdv", "prochain rendez-vous", "prochains rdv" → TOUJOURS afficher les 5 PROCHAINS RDV (pas un seul)
-- Utilise get_bookings avec upcoming_only=true et limit=5 minimum
-- Format : date • heure • nom • type • statut
-- Singulier ou pluriel = même comportement (liste de 5)
+Quand une demande implique PLUSIEURS actions, tu DOIS les exécuter TOUTES en séquence :
 
-### Requêtes Leads / Tâches / Projets
-- "dernier lead", "derniers leads" → afficher les 5 derniers
-- "mes tâches", "tâche en cours" → afficher toutes les tâches non complétées
+### Exemple : "Créer un RDV avec Stéphane le 7 janvier à 17h, email so@net.fr"
+1. Vérifier si lead existe (get_leads avec email)
+2. Si non → create_lead(name, email, source="booking")
+3. PUIS → create_booking(name, email, date, time, meeting_type)
 
-## OUTILS PRINCIPAUX (66 disponibles)
+### Exemple : "Ajoute le téléphone 0637847951 à Robert"
+1. Chercher lead par nom/email (get_leads)
+2. update_lead(lead_id, phone="0637847951")
+
+### Exemple : "Compte-rendu de mon RDV avec Robert"
+1. Chercher le lead Robert (get_leads)
+2. Récupérer l'opportunité liée (get_opportunities avec lead_id)
+3. create_meeting_note avec opportunity_id trouvé
+
+### INTERDIT
+- Créer une tâche pour une action que tu peux faire directement
+- Stopper après le premier outil quand d'autres sont nécessaires
+
+## MÉMOIRE DE SESSION ACTIVE
+
+Tu DOIS utiliser les informations collectées précédemment :
+- Si l'utilisateur a donné un email → l'utiliser pour les actions suivantes
+- Si un lead a été créé → son ID est disponible pour les actions liées
+- Si une date/heure a été mentionnée → la conserver pour create_booking
+
+### INTERDICTION ABSOLUE
+- Redemander une info déjà fournie dans la conversation
+- Ignorer le contexte des messages précédents
+
+## OUTILS PRINCIPAUX (67 disponibles)
 
 ### Actions Cockpit
 - create_booking : RDV complet (Zoom + Calendrier + Emails)
 - create_lead : Nouveau lead CRM
+- update_lead : Mise à jour lead (téléphone, entreprise, notes)
+- create_meeting_note : Compte-rendu de réunion (auto-link vers opportunity via lead_name/lead_email)
 - create_task : Nouvelle tâche
 - send_email : Email (envoi direct)
 - create_opportunity : Nouvelle opportunité
@@ -3278,7 +3458,8 @@ Activé par mots-clés : "transcription", "analyse", "compte-rendu", "synthèse"
 - Dire "voulez-vous que je..." ou "souhaitez-vous..."
 - Reformuler au lieu d'agir
 - Inventer des données
-- Afficher les UUIDs`;
+- Afficher les UUIDs
+- Créer une tâche pour une action que tu peux faire directement (ex: update_lead)`;
 
 // Slugs pour le système de prompts composés v3.2
 const PROMPT_SLUGS = {

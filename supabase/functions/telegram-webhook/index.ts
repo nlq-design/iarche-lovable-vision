@@ -302,7 +302,7 @@ serve(async (req) => {
           
         case "/rdv":
           await sendTypingAction(chatId);
-          const rdvResponse = await callAIAgent("Liste les 5 prochains RDV avec date, heure, nom, type et statut", userId, userName);
+          const rdvResponse = await callAIAgent("Quels sont les prochains rendez-vous cette semaine ?", userId, userName);
           await sendTelegramMessage(chatId, rdvResponse);
           return new Response("OK", { status: 200 });
           
