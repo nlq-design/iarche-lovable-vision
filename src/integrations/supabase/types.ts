@@ -1126,6 +1126,45 @@ export type Database = {
         }
         Relationships: []
       }
+      document_partners: {
+        Row: {
+          created_at: string | null
+          document_id: string
+          id: string
+          partner_id: string
+          role: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_id: string
+          id?: string
+          partner_id: string
+          role?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_id?: string
+          id?: string
+          partner_id?: string
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_partners_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "generated_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_partners_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_configurations: {
         Row: {
           admin_email_subject: string | null
@@ -1527,6 +1566,53 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      lead_contacts: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          is_primary: boolean | null
+          lead_id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          position: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_primary?: boolean | null
+          lead_id: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          position?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_primary?: boolean | null
+          lead_id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          position?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_contacts_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       leads: {
         Row: {
@@ -1941,6 +2027,71 @@ export type Database = {
           },
         ]
       }
+      partners: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          commission_rate: number | null
+          company: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          linkedin_url: string | null
+          name: string
+          partner_type: string
+          phone: string | null
+          specialties: string[] | null
+          updated_at: string | null
+          website: string | null
+          workspace_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          commission_rate?: number | null
+          company?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          linkedin_url?: string | null
+          name: string
+          partner_type: string
+          phone?: string | null
+          specialties?: string[] | null
+          updated_at?: string | null
+          website?: string | null
+          workspace_id?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          commission_rate?: number | null
+          company?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          linkedin_url?: string | null
+          name?: string
+          partner_type?: string
+          phone?: string | null
+          specialties?: string[] | null
+          updated_at?: string | null
+          website?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partners_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       performance_metrics: {
         Row: {
           accessibility_score: number | null
@@ -2150,6 +2301,45 @@ export type Database = {
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_partners: {
+        Row: {
+          created_at: string | null
+          id: string
+          partner_id: string
+          project_id: string
+          role: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          partner_id: string
+          project_id: string
+          role?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          partner_id?: string
+          project_id?: string
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_partners_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_partners_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -2371,6 +2561,45 @@ export type Database = {
           },
           {
             foreignKeyName: "solution_leads_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solution_partners: {
+        Row: {
+          created_at: string | null
+          id: string
+          partner_id: string
+          role: string | null
+          solution_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          partner_id: string
+          role?: string | null
+          solution_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          partner_id?: string
+          role?: string | null
+          solution_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solution_partners_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solution_partners_solution_id_fkey"
             columns: ["solution_id"]
             isOneToOne: false
             referencedRelation: "articles"
