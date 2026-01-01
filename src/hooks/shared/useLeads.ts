@@ -82,10 +82,10 @@ export const useLeads = () => {
     },
   });
 
-  // Delete lead
+  // Delete lead (using cascade-safe RPC function)
   const deleteLead = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("leads").delete().eq("id", id);
+      const { error } = await supabase.rpc("delete_lead_cascade", { p_lead_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -101,11 +101,13 @@ export const useLeads = () => {
     },
   });
 
-  // Bulk delete leads
+  // Bulk delete leads (cascade-safe)
   const bulkDeleteLeads = useMutation({
     mutationFn: async (ids: string[]) => {
-      const { error } = await supabase.from("leads").delete().in("id", ids);
-      if (error) throw error;
+      for (const id of ids) {
+        const { error } = await supabase.rpc("delete_lead_cascade", { p_lead_id: id });
+        if (error) throw error;
+      }
     },
     onSuccess: (_, ids) => {
       queryClient.invalidateQueries({ queryKey: [LEADS_QUERY_KEY] });

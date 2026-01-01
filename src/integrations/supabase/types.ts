@@ -3089,6 +3089,11 @@ export type Database = {
         Args: { atelier_uuid: string }
         Returns: number
       }
+      delete_lead_cascade: { Args: { p_lead_id: string }; Returns: undefined }
+      delete_project_cascade: {
+        Args: { p_project_id: string }
+        Returns: undefined
+      }
       generate_file_share_link: {
         Args: {
           p_expires_in_days?: number
