@@ -20,7 +20,7 @@ import {
   Search, BookOpen, FileSignature, FileCheck, Briefcase,
   History, Trash2, Clock, MessageSquare, Wrench, ChevronDown,
   ExternalLink, Eye, Edit, Activity, Shield, Users, 
-  Calendar, Target, ClipboardList, Mic, FileCode, Settings, Tag
+  Calendar, Target, ClipboardList, Mic, FileCode, Settings, Tag, Bell
 } from "lucide-react";
 import { KeywordDictionary } from "@/components/admin/KeywordDictionary";
 import AdminLayout from "@/components/layouts/AdminLayout";
@@ -608,6 +608,8 @@ function AIMemoryManager() {
 function DocumentGenerationConfig() {
   const queryClient = useQueryClient();
   const { models: llmModels, byProvider } = useLLMModelsGrouped();
+  const [editingPrompt, setEditingPrompt] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
   
   const DOCUMENT_TYPES = [
     { slug: 'document_generation_quote', name: 'Devis', icon: <FileSignature className="h-4 w-4" />, type: 'quote' },
@@ -628,9 +630,24 @@ function DocumentGenerationConfig() {
     }
   });
 
+  // Fetch other specialized prompts (transcription, email, etc.)
+  const { data: specializedPrompts } = useQuery({
+    queryKey: ['specialized-prompts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ai_prompts')
+        .select('*')
+        .neq('category', 'document_generation')
+        .neq('slug', 'master-agent');
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
   const updatePromptMutation = useMutation({
-    mutationFn: async ({ slug, updates }: { slug: string; updates: any }) => {
-      const existingPrompt = docPrompts?.find(p => p.slug === slug);
+    mutationFn: async ({ slug, updates }: { slug: string; updates: Record<string, unknown> }) => {
+      const allPrompts = [...(docPrompts || []), ...(specializedPrompts || [])];
+      const existingPrompt = allPrompts.find(p => p.slug === slug);
       
       if (existingPrompt) {
         const { error } = await supabase
@@ -642,7 +659,9 @@ function DocumentGenerationConfig() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['document-prompts'] });
-      toast.success("Configuration document mise à jour");
+      queryClient.invalidateQueries({ queryKey: ['specialized-prompts'] });
+      toast.success("Prompt mis à jour");
+      setEditingPrompt(null);
     },
     onError: () => {
       toast.error("Erreur lors de la mise à jour");
@@ -650,7 +669,8 @@ function DocumentGenerationConfig() {
   });
 
   const getPromptConfig = (slug: string) => {
-    const prompt = docPrompts?.find(p => p.slug === slug);
+    const allPrompts = [...(docPrompts || []), ...(specializedPrompts || [])];
+    const prompt = allPrompts.find(p => p.slug === slug);
     const config = prompt?.model_config as { model?: string; provider?: string } || {};
     return {
       prompt,
@@ -659,7 +679,7 @@ function DocumentGenerationConfig() {
     };
   };
 
-  const handleModelChange = (slug: string, modelId: string, provider: string) => {
+  const handleModelChange = (slug: string, modelId: string) => {
     const model = llmModels.find(m => m.id === modelId);
     if (!model) return;
     
@@ -671,6 +691,20 @@ function DocumentGenerationConfig() {
           provider: model.provider,
         }
       }
+    });
+  };
+
+  const handleEditPrompt = (slug: string) => {
+    const config = getPromptConfig(slug);
+    setEditContent(config.prompt?.system_prompt || "");
+    setEditingPrompt(slug);
+  };
+
+  const handleSavePrompt = () => {
+    if (!editingPrompt) return;
+    updatePromptMutation.mutate({
+      slug: editingPrompt,
+      updates: { system_prompt: editContent }
     });
   };
 
@@ -686,32 +720,42 @@ function DocumentGenerationConfig() {
 
   return (
     <div className="space-y-4">
+      {/* Document Generation Prompts */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Configuration Génération Documents
+            Prompts Génération Documents
           </CardTitle>
           <CardDescription>
-            Configurez le modèle LLM utilisé pour chaque type de document généré dans le Cockpit.
-            Les prompts système sont pré-configurés et optimisés pour chaque type.
+            Configurez le modèle LLM et éditez le prompt système pour chaque type de document.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {DOCUMENT_TYPES.map((docType) => {
             const config = getPromptConfig(docType.slug);
             const selectedModel = llmModels.find(m => m.model_id === config.model);
+            const isEditing = editingPrompt === docType.slug;
             
             return (
               <div key={docType.slug} className="p-4 border rounded-lg space-y-3">
-                <div className="flex items-center gap-2">
-                  {docType.icon}
-                  <h3 className="font-medium">{docType.name}</h3>
-                  {config.prompt && (
-                    <Badge variant="outline" className="text-xs">
-                      {config.provider}
-                    </Badge>
-                  )}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {docType.icon}
+                    <h3 className="font-medium">{docType.name}</h3>
+                    {config.prompt && (
+                      <Badge variant="outline" className="text-xs">
+                        {config.provider}
+                      </Badge>
+                    )}
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => isEditing ? setEditingPrompt(null) : handleEditPrompt(docType.slug)}
+                  >
+                    {isEditing ? "Fermer" : "Éditer prompt"}
+                  </Button>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -719,12 +763,7 @@ function DocumentGenerationConfig() {
                     <Label className="text-sm text-muted-foreground">Modèle LLM</Label>
                     <Select 
                       value={selectedModel?.id || ""} 
-                      onValueChange={(modelId) => {
-                        const model = llmModels.find(m => m.id === modelId);
-                        if (model) {
-                          handleModelChange(docType.slug, modelId, model.provider);
-                        }
-                      }}
+                      onValueChange={(modelId) => handleModelChange(docType.slug, modelId)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionner un modèle">
@@ -775,11 +814,90 @@ function DocumentGenerationConfig() {
                     </div>
                   </div>
                 </div>
+
+                {isEditing && (
+                  <div className="space-y-3 pt-3 border-t">
+                    <Label>Prompt système</Label>
+                    <Textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      className="min-h-[200px] font-mono text-sm"
+                      placeholder="Prompt système pour ce type de document..."
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setEditingPrompt(null)}>
+                        Annuler
+                      </Button>
+                      <Button size="sm" onClick={handleSavePrompt} disabled={updatePromptMutation.isPending}>
+                        {updatePromptMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        Sauvegarder
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
         </CardContent>
       </Card>
+
+      {/* Other Specialized Prompts */}
+      {specializedPrompts && specializedPrompts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Autres Prompts Spécialisés
+            </CardTitle>
+            <CardDescription>
+              Prompts pour transcriptions, emails, enrichissement, etc.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {specializedPrompts.map((prompt) => {
+              const isEditing = editingPrompt === prompt.slug;
+              return (
+                <div key={prompt.id} className="p-4 border rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Brain className="h-4 w-4 text-muted-foreground" />
+                      <h3 className="font-medium">{prompt.name}</h3>
+                      <Badge variant="outline" className="text-xs">{prompt.category}</Badge>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => isEditing ? setEditingPrompt(null) : handleEditPrompt(prompt.slug)}
+                    >
+                      {isEditing ? "Fermer" : "Éditer"}
+                    </Button>
+                  </div>
+                  
+                  {isEditing && (
+                    <div className="space-y-3 pt-3 border-t">
+                      <Label>Prompt système</Label>
+                      <Textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        className="min-h-[200px] font-mono text-sm"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setEditingPrompt(null)}>
+                          Annuler
+                        </Button>
+                        <Button size="sm" onClick={handleSavePrompt} disabled={updatePromptMutation.isPending}>
+                          {updatePromptMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                          Sauvegarder
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Provider Info */}
       <Card>
@@ -1118,12 +1236,12 @@ export default function AdminAIPrompts() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                   <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-primary">47</p>
+                    <p className="text-2xl font-bold text-primary">41</p>
                     <p className="text-xs text-muted-foreground">Outils Agent</p>
                   </div>
                   <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-green-500">38</p>
-                    <p className="text-xs text-muted-foreground">Edge Functions</p>
+                    <p className="text-2xl font-bold text-green-500">16</p>
+                    <p className="text-xs text-muted-foreground">Connectées Agent</p>
                   </div>
                   <div className="p-3 rounded-lg bg-background border text-center">
                     <p className="text-2xl font-bold text-blue-500">6</p>
@@ -1150,7 +1268,7 @@ export default function AdminAIPrompts() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Wrench className="h-4 w-4" />
-                  Catalogue des 47 Outils Agent
+                  Catalogue des 41 Outils Agent
                 </CardTitle>
                 <CardDescription>
                   Outils disponibles pour l'orchestrateur IA, classés par domaine
@@ -1163,7 +1281,7 @@ export default function AdminAIPrompts() {
                     <div className="flex items-center gap-2">
                       <Eye className="h-4 w-4 text-blue-500" />
                       <span className="font-medium">COCKPIT - Lecture</span>
-                      <Badge variant="secondary" className="text-xs">18 outils</Badge>
+                      <Badge variant="secondary" className="text-xs">13 outils</Badge>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </CollapsibleTrigger>
@@ -1171,23 +1289,18 @@ export default function AdminAIPrompts() {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
                       {[
                         { name: "get_leads", desc: "Liste des leads", icon: <Users className="h-3 w-3" /> },
-                        { name: "get_lead_by_id", desc: "Détail lead", icon: <Users className="h-3 w-3" /> },
                         { name: "get_opportunities", desc: "Pipeline opportunités", icon: <Target className="h-3 w-3" /> },
-                        { name: "get_opportunity_by_id", desc: "Détail opportunité", icon: <Target className="h-3 w-3" /> },
                         { name: "get_projects", desc: "Liste projets", icon: <Briefcase className="h-3 w-3" /> },
-                        { name: "get_project_by_id", desc: "Détail projet", icon: <Briefcase className="h-3 w-3" /> },
-                        { name: "get_tasks", desc: "Tâches", icon: <ClipboardList className="h-3 w-3" /> },
+                        { name: "get_tasks", desc: "Tâches avec filtres", icon: <ClipboardList className="h-3 w-3" /> },
+                        { name: "get_transcriptions", desc: "Transcriptions vocales", icon: <Mic className="h-3 w-3" /> },
                         { name: "get_meeting_notes", desc: "Notes réunion", icon: <FileText className="h-3 w-3" /> },
-                        { name: "get_bookings", desc: "Rendez-vous", icon: <Calendar className="h-3 w-3" /> },
-                        { name: "get_voice_transcriptions", desc: "Transcriptions", icon: <Mic className="h-3 w-3" /> },
-                        { name: "get_generated_documents", desc: "Documents générés", icon: <FileCheck className="h-3 w-3" /> },
-                        { name: "get_activity_log", desc: "Journal activité", icon: <Activity className="h-3 w-3" /> },
                         { name: "get_specifications", desc: "CDC", icon: <FileSignature className="h-3 w-3" /> },
-                        { name: "get_dashboard_stats", desc: "Stats dashboard", icon: <Activity className="h-3 w-3" /> },
+                        { name: "get_generated_documents", desc: "Documents générés", icon: <FileCheck className="h-3 w-3" /> },
+                        { name: "get_solution_leads", desc: "Leads par solution", icon: <Sparkles className="h-3 w-3" /> },
+                        { name: "get_activity_log", desc: "Journal activité", icon: <Activity className="h-3 w-3" /> },
                         { name: "get_pipeline_stats", desc: "Stats pipeline", icon: <Target className="h-3 w-3" /> },
-                        { name: "search_knowledge_base", desc: "Recherche RAG", icon: <Search className="h-3 w-3" /> },
-                        { name: "get_current_datetime", desc: "Date/heure", icon: <Clock className="h-3 w-3" /> },
-                        { name: "get_today_agenda", desc: "Agenda du jour", icon: <Calendar className="h-3 w-3" /> },
+                        { name: "get_pending_ai_notifications", desc: "Notifs IA en attente", icon: <Bell className="h-3 w-3" /> },
+                        { name: "mark_notifications_reviewed", desc: "Marquer notifs lues", icon: <CheckCircle2 className="h-3 w-3" /> },
                       ].map((tool) => (
                         <TooltipProvider key={tool.name}>
                           <Tooltip>
@@ -1213,36 +1326,29 @@ export default function AdminAIPrompts() {
                     <div className="flex items-center gap-2">
                       <Edit className="h-4 w-4 text-green-500" />
                       <span className="font-medium">COCKPIT - Écriture/Actions</span>
-                      <Badge variant="secondary" className="text-xs">23 outils</Badge>
+                      <Badge variant="secondary" className="text-xs">16 outils</Badge>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-2">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
                       {[
-                        { name: "create_booking", desc: "Créer RDV complet (Zoom+Cal+Email)", icon: <Calendar className="h-3 w-3" /> },
-                        { name: "create_lead", desc: "Créer lead CRM", icon: <Users className="h-3 w-3" /> },
-                        { name: "send_email", desc: "Envoi email direct", icon: <MessageSquare className="h-3 w-3" /> },
+                        { name: "create_booking", desc: "RDV complet (Zoom+Cal+Email)", icon: <Calendar className="h-3 w-3" /> },
                         { name: "cancel_booking", desc: "Annuler RDV", icon: <Calendar className="h-3 w-3" /> },
                         { name: "reschedule_booking", desc: "Reprogrammer RDV", icon: <Calendar className="h-3 w-3" /> },
+                        { name: "create_lead", desc: "Créer lead CRM", icon: <Users className="h-3 w-3" /> },
+                        { name: "send_email", desc: "Envoi email Resend", icon: <MessageSquare className="h-3 w-3" /> },
                         { name: "create_opportunity", desc: "Créer opportunité", icon: <Target className="h-3 w-3" /> },
                         { name: "create_project", desc: "Créer projet", icon: <Briefcase className="h-3 w-3" /> },
-                        { name: "link_solution_to_lead", desc: "Lier solution→lead", icon: <Sparkles className="h-3 w-3" /> },
-                        { name: "generate_document", desc: "Générer devis/CDC/proposition", icon: <FileText className="h-3 w-3" /> },
-                        { name: "enrich_seo", desc: "Enrichir SEO article", icon: <Sparkles className="h-3 w-3" /> },
-                        { name: "generate_faq", desc: "Générer FAQ article", icon: <MessageSquare className="h-3 w-3" /> },
-                        { name: "send_newsletter", desc: "Envoyer newsletter", icon: <MessageSquare className="h-3 w-3" /> },
-                        { name: "suggest_tags", desc: "Suggérer tags article", icon: <Tag className="h-3 w-3" /> },
                         { name: "create_task", desc: "Créer tâche", icon: <ClipboardList className="h-3 w-3" /> },
-                        { name: "update_task", desc: "Modifier tâche", icon: <ClipboardList className="h-3 w-3" /> },
-                        { name: "update_lead_qualification", desc: "Qualifier lead", icon: <Users className="h-3 w-3" /> },
-                        { name: "update_opportunity_stage", desc: "Changer étape", icon: <Target className="h-3 w-3" /> },
                         { name: "create_meeting_note", desc: "Note réunion", icon: <FileText className="h-3 w-3" /> },
-                        { name: "log_activity", desc: "Log activité", icon: <Activity className="h-3 w-3" /> },
-                        { name: "draft_followup_email", desc: "Email suivi", icon: <MessageSquare className="h-3 w-3" /> },
-                        { name: "draft_article_content", desc: "Brouillon article", icon: <FileText className="h-3 w-3" /> },
-                        { name: "suggest_article_improvements", desc: "Améliorer article", icon: <Sparkles className="h-3 w-3" /> },
-                        { name: "draft_newsletter", desc: "Brouillon newsletter", icon: <FileText className="h-3 w-3" /> },
+                        { name: "update_lead_qualification", desc: "Qualifier lead", icon: <Users className="h-3 w-3" /> },
+                        { name: "update_opportunity_stage", desc: "Changer étape pipeline", icon: <Target className="h-3 w-3" /> },
+                        { name: "draft_followup_email", desc: "Générer email suivi", icon: <MessageSquare className="h-3 w-3" /> },
+                        { name: "suggest_solutions_for_lead", desc: "Suggérer solutions", icon: <Sparkles className="h-3 w-3" /> },
+                        { name: "suggest_booking_action", desc: "Suggérer action RDV", icon: <Calendar className="h-3 w-3" /> },
+                        { name: "log_activity", desc: "Enregistrer activité", icon: <Activity className="h-3 w-3" /> },
+                        { name: "link_solution_to_lead", desc: "Lier solution→lead", icon: <Sparkles className="h-3 w-3" /> },
                       ].map((tool) => (
                         <TooltipProvider key={tool.name}>
                           <Tooltip>
@@ -1268,24 +1374,74 @@ export default function AdminAIPrompts() {
                     <div className="flex items-center gap-2">
                       <Shield className="h-4 w-4 text-purple-500" />
                       <span className="font-medium">ADMIN - Lecture</span>
-                      <Badge variant="secondary" className="text-xs">6 outils</Badge>
+                      <Badge variant="secondary" className="text-xs">12 outils</Badge>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-2">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
                       {[
-                        { name: "get_articles", desc: "Articles blog", icon: <FileText className="h-3 w-3" /> },
+                        { name: "get_articles", desc: "Articles/Contenus", icon: <FileText className="h-3 w-3" /> },
+                        { name: "get_article_details", desc: "Détail article complet", icon: <FileText className="h-3 w-3" /> },
                         { name: "get_solutions", desc: "Solutions IArche", icon: <Sparkles className="h-3 w-3" /> },
-                        { name: "get_contacts", desc: "Contacts site", icon: <Users className="h-3 w-3" /> },
+                        { name: "get_categories_tags", desc: "Catégories & Tags", icon: <Tag className="h-3 w-3" /> },
+                        { name: "get_contacts", desc: "Messages contact", icon: <Users className="h-3 w-3" /> },
+                        { name: "get_newsletters", desc: "Newsletters", icon: <MessageSquare className="h-3 w-3" /> },
+                        { name: "get_forms", desc: "Formulaires", icon: <ClipboardList className="h-3 w-3" /> },
+                        { name: "get_form_responses", desc: "Réponses formulaires", icon: <ClipboardList className="h-3 w-3" /> },
+                        { name: "get_brochures", desc: "Brochures marketing", icon: <FileText className="h-3 w-3" /> },
+                        { name: "get_atelier_inscriptions", desc: "Inscriptions ateliers", icon: <Calendar className="h-3 w-3" /> },
+                        { name: "get_bookings", desc: "Rendez-vous", icon: <Calendar className="h-3 w-3" /> },
+                        { name: "get_booking_details", desc: "Détail RDV complet", icon: <Calendar className="h-3 w-3" /> },
+                        { name: "get_agenda_summary", desc: "Résumé agenda", icon: <Calendar className="h-3 w-3" /> },
                         { name: "get_comments", desc: "Commentaires", icon: <MessageSquare className="h-3 w-3" /> },
-                        { name: "get_newsletter_stats", desc: "Stats newsletter", icon: <Activity className="h-3 w-3" /> },
-                        { name: "get_audit_logs", desc: "Logs audit", icon: <Shield className="h-3 w-3" /> },
+                        { name: "get_cta_analytics", desc: "Analytics CTA", icon: <Activity className="h-3 w-3" /> },
+                        { name: "search_knowledge_base", desc: "Recherche RAG", icon: <Search className="h-3 w-3" /> },
                       ].map((tool) => (
                         <TooltipProvider key={tool.name}>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div className="flex items-center gap-2 p-2 rounded bg-background/50 text-xs">
+                                {tool.icon}
+                                <code className="font-mono truncate">{tool.name}</code>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{tool.desc}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                {/* Admin Write Tools */}
+                <Collapsible>
+                  <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 hover:bg-orange-500/15 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Edit className="h-4 w-4 text-orange-500" />
+                      <span className="font-medium">ADMIN - Écriture/Génération</span>
+                      <Badge variant="secondary" className="text-xs">7 outils</Badge>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-2">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
+                      {[
+                        { name: "generate_document", desc: "Générer devis/CDC/proposition", icon: <FileText className="h-3 w-3" /> },
+                        { name: "enrich_seo", desc: "Enrichir SEO article", icon: <Sparkles className="h-3 w-3" /> },
+                        { name: "generate_faq", desc: "Générer FAQ article", icon: <MessageSquare className="h-3 w-3" /> },
+                        { name: "send_newsletter", desc: "Envoyer newsletter", icon: <MessageSquare className="h-3 w-3" /> },
+                        { name: "suggest_tags", desc: "Suggérer tags article", icon: <Tag className="h-3 w-3" /> },
+                        { name: "draft_article_content", desc: "Brouillon article", icon: <FileText className="h-3 w-3" /> },
+                        { name: "suggest_article_improvements", desc: "Améliorer article", icon: <Sparkles className="h-3 w-3" /> },
+                        { name: "draft_newsletter", desc: "Brouillon newsletter", icon: <FileText className="h-3 w-3" /> },
+                      ].map((tool) => (
+                        <TooltipProvider key={tool.name}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-2 p-2 rounded text-xs bg-background/50">
                                 {tool.icon}
                                 <code className="font-mono truncate">{tool.name}</code>
                               </div>
@@ -1310,7 +1466,7 @@ export default function AdminAIPrompts() {
                   Edge Functions (38 déployées)
                 </CardTitle>
                 <CardDescription>
-                  Fonctions backend déployées automatiquement. Celles connectées à l'agent sont marquées.
+                  Fonctions backend déployées. 16 sont connectées à l'agent IA.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1319,25 +1475,29 @@ export default function AdminAIPrompts() {
                   <CollapsibleTrigger className="flex items-center justify-between w-full p-2 rounded-lg bg-green-500/10 border border-green-500/20 hover:bg-green-500/15 transition-colors">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span className="font-medium text-sm">Connectées à l'Agent (12)</span>
+                      <span className="font-medium text-sm">Connectées à l'Agent (16)</span>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {[
-                        { name: "ai-agent-orchestrator", desc: "Agent principal avec 45 outils", uses: "Prompt + LLM + RAG + Mémoire" },
-                        { name: "calendar-booking", desc: "Création RDV (Zoom+Cal+Email)", uses: "create_booking ✨" },
-                        { name: "generate-followup-email", desc: "Email de suivi", uses: "draft_followup_email, send_email" },
+                        { name: "ai-agent-orchestrator", desc: "Agent principal 41 outils", uses: "Master" },
+                        { name: "calendar-booking", desc: "Création RDV Zoom+Cal+Email", uses: "create_booking" },
+                        { name: "generate-followup-email", desc: "Email de suivi", uses: "draft_followup_email" },
                         { name: "search-embeddings", desc: "Recherche sémantique RAG", uses: "search_knowledge_base" },
-                        { name: "generate-embeddings", desc: "Indexation vectorielle", uses: "RAG base" },
-                        { name: "process-voice-transcription", desc: "Traitement audio", uses: "Whisper + LLM" },
-                        { name: "create-voice-transcription", desc: "Upload transcription", uses: "Whisper API" },
-                        { name: "generate-document", desc: "Génération Devis/CDC", uses: "Prompts docs" },
-                        { name: "send-lead-notification", desc: "Notification nouveau lead", uses: "Resend" },
-                        { name: "send-user-confirmation", desc: "Confirmation utilisateur", uses: "Resend templates" },
-                        { name: "telegram-webhook", desc: "Bot Telegram @IArche", uses: "Agent orchestrator" },
-                        { name: "enrich-all-resources", desc: "Enrichissement batch", uses: "generate-embeddings" },
+                        { name: "generate-embeddings", desc: "Indexation vectorielle", uses: "RAG" },
+                        { name: "process-voice-transcription", desc: "Traitement audio Whisper", uses: "get_transcriptions" },
+                        { name: "create-voice-transcription", desc: "Upload transcription", uses: "Whisper" },
+                        { name: "generate-document", desc: "Génération Devis/CDC", uses: "generate_document" },
+                        { name: "send-lead-notification", desc: "Notification nouveau lead", uses: "create_lead" },
+                        { name: "send-user-confirmation", desc: "Confirmation utilisateur", uses: "create_booking" },
+                        { name: "telegram-webhook", desc: "Bot Telegram @IArche", uses: "orchestrator" },
+                        { name: "enrich-all-resources", desc: "Enrichissement batch", uses: "RAG" },
+                        { name: "generate-faq", desc: "Génération FAQ article", uses: "generate_faq" },
+                        { name: "enrich-content-seo", desc: "Enrichissement SEO", uses: "enrich_seo" },
+                        { name: "suggest-tags", desc: "Suggestion tags IA", uses: "suggest_tags" },
+                        { name: "send-newsletter", desc: "Envoi newsletter", uses: "send_newsletter" },
                       ].map((fn) => (
                         <div key={fn.name} className="flex items-start p-2 rounded bg-background/50 border border-green-500/20">
                           <div className="flex-1 min-w-0">
@@ -1355,7 +1515,7 @@ export default function AdminAIPrompts() {
                   <CollapsibleTrigger className="flex items-center justify-between w-full p-2 rounded-lg bg-muted/50 border hover:bg-muted/70 transition-colors">
                     <div className="flex items-center gap-2">
                       <Zap className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium text-sm">Autres fonctions (26)</span>
+                      <span className="font-medium text-sm">Autres fonctions (22)</span>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </CollapsibleTrigger>
@@ -1364,12 +1524,11 @@ export default function AdminAIPrompts() {
                       {[
                         "analyze-comments-for-faq", "check-cta-conversion", "check-login-attempt",
                         "check-performance-threshold", "create-database-backup", "detect-anomalies",
-                        "enrich-content-seo", "generate-article-claude", "generate-article-gpt",
-                        "generate-docx", "generate-faq", "generate-sitemap", "notify-new-comment",
-                        "publish-scheduled-articles", "push-to-google-calendar", "record-lighthouse-metrics",
-                        "restore-backup", "send-atelier-confirmation", "send-brevo-campaign",
-                        "send-form-notification", "send-newsletter", "send-security-alert",
-                        "suggest-tags", "sync-google-calendar", "track-cta-click", "verify-backup-integrity"
+                        "generate-article-claude", "generate-article-gpt", "generate-docx", 
+                        "generate-sitemap", "notify-new-comment", "publish-scheduled-articles", 
+                        "push-to-google-calendar", "record-lighthouse-metrics", "restore-backup", 
+                        "send-atelier-confirmation", "send-brevo-campaign", "send-form-notification", 
+                        "send-security-alert", "sync-google-calendar", "track-cta-click", "verify-backup-integrity"
                       ].map((fn) => (
                         <div key={fn} className="p-1.5 rounded bg-muted/30 border">
                           <code className="text-xs font-mono text-muted-foreground">{fn}</code>
