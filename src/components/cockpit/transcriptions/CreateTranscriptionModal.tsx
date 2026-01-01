@@ -51,7 +51,7 @@ interface CreateTranscriptionModalProps {
 }
 
 const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
-const MAX_TRANSCRIPTION_FILE_SIZE = 500 * 1024 * 1024; // 500MB (ElevenLabs supports up to 1GB)
+const MAX_TRANSCRIPTION_FILE_SIZE = 30 * 1024 * 1024; // 30MB - Edge function limit to prevent memory exhaustion
 
 export function CreateTranscriptionModal({
   open,

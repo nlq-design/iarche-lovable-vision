@@ -21,6 +21,8 @@ const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 // Whisper file size limit
 const WHISPER_MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25MB
 const TARGET_CHUNK_SIZE_BYTES = 20 * 1024 * 1024; // 20MB for safety margin
+// Hard limit to prevent memory exhaustion in edge function
+const EDGE_FUNCTION_MAX_FILE_SIZE = 30 * 1024 * 1024; // 30MB absolute max - reject larger files
 
 type LLMProvider = "lovable" | "openai" | "anthropic" | "openrouter";
 
@@ -1229,14 +1231,39 @@ serve(async (req) => {
     if (!audioRes.ok) throw new Error(`audio_fetch_failed: ${await audioRes.text()}`);
 
     const audioBlob = await audioRes.blob();
-    console.log(`Audio fetched: ${(audioBlob.size / 1024 / 1024).toFixed(2)} MB, type: ${audioBlob.type}`);
+    const fileSizeMB = audioBlob.size / 1024 / 1024;
+    console.log(`Audio fetched: ${fileSizeMB.toFixed(2)} MB, type: ${audioBlob.type}`);
+
+    // CRITICAL: Reject files that are too large to prevent memory exhaustion
+    if (audioBlob.size > EDGE_FUNCTION_MAX_FILE_SIZE) {
+      console.error(`[REJECTED] File too large: ${fileSizeMB.toFixed(2)} MB > ${(EDGE_FUNCTION_MAX_FILE_SIZE / 1024 / 1024)} MB limit`);
+      await supabase.from("voice_transcriptions").update({
+        status: "error",
+        ai_metadata: {
+          ...(vjob.ai_metadata ?? {}),
+          error_code: "file_too_large",
+          error_message: `Fichier trop volumineux (${fileSizeMB.toFixed(1)} MB). Limite: ${(EDGE_FUNCTION_MAX_FILE_SIZE / 1024 / 1024)} MB. Veuillez compresser l'audio avant upload.`,
+          file_size_mb: fileSizeMB.toFixed(2),
+          rejected_at: new Date().toISOString(),
+        },
+      }).eq("id", job_id);
+      
+      return new Response(JSON.stringify({ 
+        ok: false, 
+        error: "file_too_large",
+        message: `Fichier audio trop volumineux (${fileSizeMB.toFixed(1)} MB). Maximum autorisé: ${(EDGE_FUNCTION_MAX_FILE_SIZE / 1024 / 1024)} MB. Compressez l'audio avant de réessayer.`
+      }), { 
+        status: 422, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      });
+    }
 
     // STT with Whisper (compression + chunking)
     const stt = await transcribeAudio(audioBlob, "fr");
     const rawText = stt.text ?? "";
     const processingInfo = stt.processingInfo;
 
-    console.log(`Transcription completed: ${rawText.length} chars, processed in ${processingInfo.chunksCount} chunk(s)`);
+    console.log(`Transcription: ${rawText.length} chars, ${processingInfo.chunksCount} chunk(s)`);
 
     await supabase
       .from("voice_transcriptions")
