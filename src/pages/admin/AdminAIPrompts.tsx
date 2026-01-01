@@ -20,7 +20,7 @@ import {
   Search, BookOpen, FileSignature, FileCheck, Briefcase,
   History, Trash2, Clock, MessageSquare, Wrench, ChevronDown,
   ExternalLink, Eye, Edit, Activity, Shield, Users, 
-  Calendar, Target, ClipboardList, Mic, FileCode, Settings, Tag, Bell
+  Calendar, Target, ClipboardList, Mic, FileCode, Settings, Tag, Bell, BarChart3
 } from "lucide-react";
 import { KeywordDictionary } from "@/components/admin/KeywordDictionary";
 import AdminLayout from "@/components/layouts/AdminLayout";
@@ -1480,6 +1480,7 @@ function DocumentGenerationConfig() {
   const { models: llmModels, byProvider } = useLLMModelsGrouped();
   const [editingPrompt, setEditingPrompt] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [editUserPrompt, setEditUserPrompt] = useState("");
 
   // Fetch all document prompts FIRST
   const { data: docPrompts, isLoading } = useQuery({
@@ -1597,6 +1598,7 @@ function DocumentGenerationConfig() {
   const handleEditPrompt = (slug: string) => {
     const config = getPromptConfig(slug);
     setEditContent(config.prompt?.system_prompt || "");
+    setEditUserPrompt(config.prompt?.user_prompt || "");
     setEditingPrompt(slug);
   };
 
@@ -1604,7 +1606,10 @@ function DocumentGenerationConfig() {
     if (!editingPrompt) return;
     updatePromptMutation.mutate({
       slug: editingPrompt,
-      updates: { system_prompt: editContent }
+      updates: { 
+        system_prompt: editContent,
+        user_prompt: editUserPrompt || null
+      }
     });
   };
 
@@ -1716,14 +1721,28 @@ function DocumentGenerationConfig() {
                 </div>
 
                 {isEditing && (
-                  <div className="space-y-3 pt-3 border-t">
-                    <Label>Prompt système</Label>
-                    <Textarea
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      className="min-h-[200px] font-mono text-sm"
-                      placeholder="Prompt système pour ce type de document..."
-                    />
+                  <div className="space-y-4 pt-3 border-t">
+                    <div className="space-y-2">
+                      <Label>Prompt système (principal)</Label>
+                      <Textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        className="min-h-[200px] font-mono text-sm"
+                        placeholder="Prompt système pour ce type de document..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>User Prompt (template secondaire)</Label>
+                      <Textarea
+                        value={editUserPrompt}
+                        onChange={(e) => setEditUserPrompt(e.target.value)}
+                        className="min-h-[60px] font-mono text-sm"
+                        placeholder="Instructions contextuelles pour la génération..."
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Ce prompt est envoyé avec le contexte (projet, client, etc.) lors de la génération.
+                      </p>
+                    </div>
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" size="sm" onClick={() => setEditingPrompt(null)}>
                         Annuler
@@ -1741,62 +1760,162 @@ function DocumentGenerationConfig() {
         </CardContent>
       </Card>
 
-      {/* Other Specialized Prompts */}
+      {/* Other Specialized Prompts - Grouped by category */}
       {specializedPrompts && specializedPrompts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Autres Prompts Spécialisés
-            </CardTitle>
-            <CardDescription>
-              Prompts pour transcriptions, emails, enrichissement, etc.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {specializedPrompts.map((prompt) => {
-              const isEditing = editingPrompt === prompt.slug;
-              return (
-                <div key={prompt.id} className="p-4 border rounded-lg space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Brain className="h-4 w-4 text-muted-foreground" />
-                      <h3 className="font-medium">{prompt.name}</h3>
-                      <Badge variant="outline" className="text-xs">{prompt.category}</Badge>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => isEditing ? setEditingPrompt(null) : handleEditPrompt(prompt.slug)}
-                    >
-                      {isEditing ? "Fermer" : "Éditer"}
-                    </Button>
-                  </div>
-                  
-                  {isEditing && (
-                    <div className="space-y-3 pt-3 border-t">
-                      <Label>Prompt système</Label>
-                      <Textarea
-                        value={editContent}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        className="min-h-[200px] font-mono text-sm"
-                      />
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setEditingPrompt(null)}>
-                          Annuler
-                        </Button>
-                        <Button size="sm" onClick={handleSavePrompt} disabled={updatePromptMutation.isPending}>
-                          {updatePromptMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                          Sauvegarder
-                        </Button>
+        <>
+          {/* Group prompts by category */}
+          {Object.entries(
+            specializedPrompts.reduce((acc, prompt) => {
+              const cat = prompt.category || 'other';
+              if (!acc[cat]) acc[cat] = [];
+              acc[cat].push(prompt);
+              return acc;
+            }, {} as Record<string, typeof specializedPrompts>)
+          ).map(([category, prompts]) => {
+            const categoryInfo: Record<string, { icon: React.ReactNode; label: string; description: string }> = {
+              transcription: { 
+                icon: <Mic className="h-5 w-5" />, 
+                label: 'Prompts Transcription', 
+                description: 'Analyse et structuration des transcriptions audio/vidéo selon le contexte'
+              },
+              cockpit: { 
+                icon: <BarChart3 className="h-5 w-5" />, 
+                label: 'Prompts Cockpit', 
+                description: 'Analyse, scoring, matching et génération de contenu pour le CRM'
+              },
+              assistant: { 
+                icon: <Bot className="h-5 w-5" />, 
+                label: 'Prompts Assistant', 
+                description: 'Configuration de l\'assistant conversationnel IA'
+              },
+            };
+            const info = categoryInfo[category] || { icon: <Settings className="h-5 w-5" />, label: category, description: '' };
+            
+            return (
+              <Card key={category}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    {info.icon}
+                    {info.label}
+                  </CardTitle>
+                  <CardDescription>{info.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {prompts.map((prompt) => {
+                    const config = getPromptConfig(prompt.slug);
+                    const selectedModel = llmModels.find(m => m.model_id === config.model);
+                    const isEditing = editingPrompt === prompt.slug;
+                    
+                    return (
+                      <div key={prompt.id} className="p-4 border rounded-lg space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Brain className="h-4 w-4 text-muted-foreground" />
+                            <h3 className="font-medium">{prompt.name}</h3>
+                            <Badge variant="outline" className="text-xs">{config.provider}</Badge>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => isEditing ? setEditingPrompt(null) : handleEditPrompt(prompt.slug)}
+                          >
+                            {isEditing ? "Fermer" : "Éditer"}
+                          </Button>
+                        </div>
+                        
+                        {/* LLM Model Selector - Always visible */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-sm text-muted-foreground">Modèle LLM</Label>
+                            <Select 
+                              value={selectedModel?.id || ""} 
+                              onValueChange={(modelId) => handleModelChange(prompt.slug, modelId)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Sélectionner un modèle">
+                                  {selectedModel?.display_name || config.model || "Sélectionner..."}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.entries(byProvider).map(([provider, models]) => {
+                                  if (models.length === 0) return null;
+                                  const providerInfo = PROVIDER_GROUPS[provider as keyof typeof PROVIDER_GROUPS];
+                                  return (
+                                    <div key={provider}>
+                                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-2 bg-muted/50">
+                                        {providerInfo?.icon}
+                                        {providerInfo?.label || provider}
+                                      </div>
+                                      {models.map((model) => (
+                                        <SelectItem key={model.id} value={model.id}>
+                                          <div className="flex flex-col">
+                                            <span className="font-medium">{model.display_name}</span>
+                                            <span className="text-xs text-muted-foreground">
+                                              {model.category} • {model.cost_tier}
+                                            </span>
+                                          </div>
+                                        </SelectItem>
+                                      ))}
+                                    </div>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm text-muted-foreground">User Prompt (template)</Label>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {prompt.user_prompt ? prompt.user_prompt.substring(0, 60) + '...' : 'Non défini'}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {isEditing && (
+                          <div className="space-y-4 pt-3 border-t">
+                            <div className="space-y-2">
+                              <Label>Prompt système (principal)</Label>
+                              <Textarea
+                                value={editContent}
+                                onChange={(e) => setEditContent(e.target.value)}
+                                className="min-h-[150px] font-mono text-sm"
+                                placeholder="Instructions système pour ce cas d'usage..."
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>User Prompt (template secondaire)</Label>
+                              <Textarea
+                                value={editUserPrompt}
+                                onChange={(e) => setEditUserPrompt(e.target.value)}
+                                className="min-h-[80px] font-mono text-sm"
+                                placeholder="Template avec variables {{variable}}..."
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Variables disponibles : {"{{content}}"}, {"{{context}}"}, {"{{lead}}"}, {"{{project}}"}, etc.
+                              </p>
+                            </div>
+                            <div className="flex justify-end gap-2">
+                              <Button variant="outline" size="sm" onClick={() => setEditingPrompt(null)}>
+                                Annuler
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                onClick={handleSavePrompt}
+                                disabled={updatePromptMutation.isPending}
+                              >
+                                {updatePromptMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                                Sauvegarder
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </>
       )}
 
       {/* Provider Info */}
