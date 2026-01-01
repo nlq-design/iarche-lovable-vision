@@ -8,7 +8,6 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY")!;
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
@@ -18,6 +17,10 @@ const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+// Whisper file size limit
+const WHISPER_MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25MB
+const TARGET_CHUNK_SIZE_BYTES = 20 * 1024 * 1024; // 20MB for safety margin
 
 type LLMProvider = "lovable" | "openai" | "anthropic" | "openrouter";
 
@@ -45,83 +48,231 @@ type VoiceJob = {
 };
 
 /**
- * ElevenLabs Scribe response types
+ * Compress audio using FFmpeg (available in Deno Deploy)
+ * Converts to mono 16kHz MP3 for optimal Whisper performance
  */
-interface ElevenLabsWord {
-  text: string;
-  start: number;
-  end: number;
-  speaker?: string;
-}
-
-interface ElevenLabsAudioEvent {
-  type: string;
-  start: number;
-  end: number;
-}
-
-interface ElevenLabsTranscription {
-  text: string;
-  words?: ElevenLabsWord[];
-  audio_events?: ElevenLabsAudioEvent[];
+async function compressAudio(audioBlob: Blob): Promise<Blob> {
+  const originalSize = audioBlob.size;
+  console.log(`[Compression] Original size: ${(originalSize / 1024 / 1024).toFixed(2)} MB`);
+  
+  // If already small enough, skip compression
+  if (originalSize <= WHISPER_MAX_SIZE_BYTES) {
+    console.log("[Compression] File already within limits, skipping compression");
+    return audioBlob;
+  }
+  
+  // Convert to ArrayBuffer
+  const arrayBuffer = await audioBlob.arrayBuffer();
+  const uint8Array = new Uint8Array(arrayBuffer);
+  
+  // Create temp files
+  const tempInputPath = `/tmp/input_${Date.now()}`;
+  const tempOutputPath = `/tmp/output_${Date.now()}.mp3`;
+  
+  try {
+    // Write input file
+    await Deno.writeFile(tempInputPath, uint8Array);
+    
+    // FFmpeg command: convert to mono 16kHz 64kbps MP3
+    const ffmpegProcess = new Deno.Command("ffmpeg", {
+      args: [
+        "-i", tempInputPath,
+        "-vn",              // No video
+        "-ac", "1",         // Mono
+        "-ar", "16000",     // 16kHz sample rate
+        "-ab", "64k",       // 64kbps bitrate
+        "-f", "mp3",        // MP3 format
+        "-y",               // Overwrite
+        tempOutputPath
+      ],
+      stdout: "piped",
+      stderr: "piped",
+    });
+    
+    const { code, stderr } = await ffmpegProcess.output();
+    
+    if (code !== 0) {
+      const errorOutput = new TextDecoder().decode(stderr);
+      console.error("[Compression] FFmpeg error:", errorOutput);
+      // Fallback: return original if compression fails
+      console.log("[Compression] Falling back to original audio");
+      return audioBlob;
+    }
+    
+    // Read compressed file
+    const compressedData = await Deno.readFile(tempOutputPath);
+    const compressedBlob = new Blob([compressedData], { type: "audio/mpeg" });
+    
+    console.log(`[Compression] Compressed size: ${(compressedBlob.size / 1024 / 1024).toFixed(2)} MB`);
+    console.log(`[Compression] Compression ratio: ${((1 - compressedBlob.size / originalSize) * 100).toFixed(1)}%`);
+    
+    return compressedBlob;
+    
+  } catch (err) {
+    console.warn("[Compression] FFmpeg not available or failed:", err);
+    // Fallback to original
+    return audioBlob;
+  } finally {
+    // Cleanup temp files
+    try { await Deno.remove(tempInputPath); } catch {}
+    try { await Deno.remove(tempOutputPath); } catch {}
+  }
 }
 
 /**
- * Transcribe audio using ElevenLabs Scribe API.
- * Supports files up to 1GB with speaker diarization and audio event tagging.
+ * Split audio into chunks of approximately targetSize bytes
+ * Uses FFmpeg to split at specific durations
  */
-async function transcribeAudio(
-  audioBlob: Blob,
-  language = "fra"
-): Promise<{ text: string; segments: unknown[] | null; speakers: string[]; audioEvents: ElevenLabsAudioEvent[] }> {
-  const fileSize = audioBlob.size;
-  console.log(`Audio file size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
-  console.log("Using ElevenLabs Scribe for transcription with diarization...");
+async function splitAudioIntoChunks(audioBlob: Blob, targetSizeBytes: number): Promise<Blob[]> {
+  const totalSize = audioBlob.size;
+  
+  // If already small enough, return single chunk
+  if (totalSize <= targetSizeBytes) {
+    return [audioBlob];
+  }
+  
+  const arrayBuffer = await audioBlob.arrayBuffer();
+  const uint8Array = new Uint8Array(arrayBuffer);
+  
+  const tempInputPath = `/tmp/chunk_input_${Date.now()}`;
+  const tempOutputPattern = `/tmp/chunk_output_${Date.now}_%03d.mp3`;
+  
+  try {
+    await Deno.writeFile(tempInputPath, uint8Array);
+    
+    // Estimate audio duration based on file size and typical bitrate
+    // For 64kbps audio: 1 minute ≈ 480KB
+    const estimatedDurationSeconds = (totalSize / (64 * 1024 / 8)); // 64kbps = 8KB/s
+    const numChunks = Math.ceil(totalSize / targetSizeBytes);
+    const chunkDurationSeconds = Math.ceil(estimatedDurationSeconds / numChunks);
+    
+    console.log(`[Chunking] Splitting ${(totalSize / 1024 / 1024).toFixed(2)} MB into ~${numChunks} chunks of ${chunkDurationSeconds}s each`);
+    
+    // Use FFmpeg segment muxer
+    const ffmpegProcess = new Deno.Command("ffmpeg", {
+      args: [
+        "-i", tempInputPath,
+        "-f", "segment",
+        "-segment_time", String(chunkDurationSeconds),
+        "-vn",
+        "-ac", "1",
+        "-ar", "16000",
+        "-ab", "64k",
+        "-reset_timestamps", "1",
+        tempOutputPattern
+      ],
+      stdout: "piped",
+      stderr: "piped",
+    });
+    
+    const { code, stderr } = await ffmpegProcess.output();
+    
+    if (code !== 0) {
+      const errorOutput = new TextDecoder().decode(stderr);
+      console.error("[Chunking] FFmpeg segmentation error:", errorOutput);
+      // Fallback: return original as single chunk
+      return [audioBlob];
+    }
+    
+    // Read all chunk files
+    const chunks: Blob[] = [];
+    for (let i = 0; i < 100; i++) { // Max 100 chunks
+      const chunkPath = tempOutputPattern.replace("%03d", String(i).padStart(3, "0"));
+      try {
+        const chunkData = await Deno.readFile(chunkPath);
+        chunks.push(new Blob([chunkData], { type: "audio/mpeg" }));
+        await Deno.remove(chunkPath);
+      } catch {
+        break; // No more chunks
+      }
+    }
+    
+    console.log(`[Chunking] Created ${chunks.length} chunks`);
+    return chunks.length > 0 ? chunks : [audioBlob];
+    
+  } catch (err) {
+    console.warn("[Chunking] FFmpeg chunking failed:", err);
+    return [audioBlob];
+  } finally {
+    try { await Deno.remove(tempInputPath); } catch {}
+  }
+}
 
+/**
+ * Transcribe a single audio chunk using OpenAI Whisper API
+ */
+async function transcribeChunkWithWhisper(audioBlob: Blob, language = "fr"): Promise<string> {
+  if (!OPENAI_API_KEY) {
+    throw new Error("openai_api_key_not_configured: OPENAI_API_KEY is required for Whisper transcription");
+  }
+  
   const formData = new FormData();
-  formData.append("file", audioBlob, "audio.m4a");
-  formData.append("model_id", "scribe_v1");
-  formData.append("tag_audio_events", "true");
-  formData.append("diarize", "true");
-  formData.append("language_code", language);
-
-  const res = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
+  formData.append("file", audioBlob, "audio.mp3");
+  formData.append("model", "whisper-1");
+  formData.append("language", language);
+  formData.append("response_format", "text");
+  
+  const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
     method: "POST",
     headers: {
-      "xi-api-key": ELEVENLABS_API_KEY,
+      "Authorization": `Bearer ${OPENAI_API_KEY}`,
     },
     body: formData,
   });
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("[Whisper] API error:", response.status, errorText);
+    throw new Error(`whisper_api_error: ${response.status} - ${errorText}`);
+  }
+  
+  return await response.text();
+}
 
-  const txt = await res.text();
-  if (!res.ok) {
-    console.error("ElevenLabs Scribe error:", txt);
-    throw new Error(`elevenlabs_stt_failed: ${txt}`);
+/**
+ * Main transcription function using Whisper with compression + chunking
+ */
+async function transcribeAudio(
+  audioBlob: Blob,
+  language = "fr"
+): Promise<{ text: string; processingInfo: { originalSizeMB: number; compressedSizeMB: number; chunksCount: number } }> {
+  const originalSizeMB = audioBlob.size / 1024 / 1024;
+  console.log(`[Transcription] Starting Whisper transcription, original size: ${originalSizeMB.toFixed(2)} MB`);
+  
+  // Step 1: Compress audio
+  let processedBlob = await compressAudio(audioBlob);
+  const compressedSizeMB = processedBlob.size / 1024 / 1024;
+  
+  // Step 2: Chunk if still too large
+  let chunks: Blob[];
+  if (processedBlob.size > WHISPER_MAX_SIZE_BYTES) {
+    console.log(`[Transcription] Still > 25MB after compression, chunking...`);
+    chunks = await splitAudioIntoChunks(processedBlob, TARGET_CHUNK_SIZE_BYTES);
+  } else {
+    chunks = [processedBlob];
   }
   
-  const result: ElevenLabsTranscription = JSON.parse(txt);
-  console.log(`Transcription completed: ${result.text?.length ?? 0} characters`);
+  console.log(`[Transcription] Processing ${chunks.length} chunk(s)`);
   
-  // Extract unique speakers from words
-  const speakers = new Set<string>();
-  for (const word of result.words ?? []) {
-    if (word.speaker) {
-      speakers.add(word.speaker);
-    }
+  // Step 3: Transcribe each chunk
+  const transcripts: string[] = [];
+  for (let i = 0; i < chunks.length; i++) {
+    console.log(`[Transcription] Processing chunk ${i + 1}/${chunks.length} (${(chunks[i].size / 1024 / 1024).toFixed(2)} MB)`);
+    const chunkText = await transcribeChunkWithWhisper(chunks[i], language);
+    transcripts.push(chunkText.trim());
   }
-  const uniqueSpeakers = Array.from(speakers).sort();
-  console.log(`Detected ${uniqueSpeakers.length} speakers:`, uniqueSpeakers);
   
-  // Log audio events if any
-  if (result.audio_events?.length) {
-    console.log(`Detected ${result.audio_events.length} audio events:`, result.audio_events.map(e => e.type));
-  }
+  // Step 4: Combine transcripts
+  const fullText = transcripts.join(" ");
+  console.log(`[Transcription] Completed: ${fullText.length} characters from ${chunks.length} chunk(s)`);
   
   return {
-    text: result.text ?? "",
-    segments: result.words ?? null,
-    speakers: uniqueSpeakers,
-    audioEvents: result.audio_events ?? []
+    text: fullText,
+    processingInfo: {
+      originalSizeMB,
+      compressedSizeMB,
+      chunksCount: chunks.length,
+    }
   };
 }
 
@@ -380,9 +531,7 @@ function buildLLM(
   userPrompt: string | null, 
   transcriptText: string, 
   ctx: ReturnType<typeof fetchEntityContext> extends Promise<infer T> ? T : never, 
-  schema: Record<string, unknown> | null,
-  speakers: string[] = [],
-  audioEvents: ElevenLabsAudioEvent[] = []
+  schema: Record<string, unknown> | null
 ) {
   // Build detected solutions context for RAG
   const detectedSolutionsContext = ctx.detectedSolutions?.length 
@@ -395,7 +544,7 @@ function buildLLM(
       }))
     : [];
 
-  // Build lead contacts context for speaker identification
+  // Build lead contacts context
   const leadContactsContext = ctx.leadContacts?.length
     ? ctx.leadContacts.map(c => ({
         name: c.name,
@@ -408,15 +557,6 @@ function buildLLM(
 
   const payload = {
     transcript: transcriptText,
-    // Diarization context
-    diarization: {
-      speakers_detected: speakers,
-      speaker_count: speakers.length,
-      audio_events: audioEvents.map(e => ({ type: e.type, start: e.start, end: e.end })),
-      identification_hints: leadContactsContext.length > 0
-        ? `Les contacts suivants pourraient correspondre aux speakers: ${leadContactsContext.map(c => c.name).join(', ')}`
-        : null,
-    },
     crm_context: {
       lead: ctx.lead,
       lead_contacts: leadContactsContext,
@@ -441,7 +581,6 @@ function buildLLM(
       unknown_to_null: true,
       max_executive_summary_words: 200,
       include_detected_solutions: ctx.autoDetectionUsed,
-      try_to_identify_speakers: speakers.length > 0,
     },
   };
 
@@ -963,7 +1102,7 @@ serve(async (req) => {
     const bucket = "voice-transcriptions";
     const { data: signed, error: signErr } = await supabase.storage
       .from(bucket)
-      .createSignedUrl(vjob.storage_path, 300); // 5 minutes for large files
+      .createSignedUrl(vjob.storage_path, 600); // 10 minutes for large files
     
     if (signErr || !signed?.signedUrl) {
       throw new Error(`signed_url_failed: ${signErr?.message ?? "no_url"}`);
@@ -975,30 +1114,27 @@ serve(async (req) => {
     const audioBlob = await audioRes.blob();
     console.log(`Audio fetched: ${(audioBlob.size / 1024 / 1024).toFixed(2)} MB, type: ${audioBlob.type}`);
 
-    // STT with ElevenLabs Scribe (supports diarization)
-    const stt = await transcribeAudio(audioBlob, "fra");
+    // STT with Whisper (compression + chunking)
+    const stt = await transcribeAudio(audioBlob, "fr");
     const rawText = stt.text ?? "";
-    const segments = stt.segments ?? null;
-    const speakers = stt.speakers ?? [];
-    const audioEvents = stt.audioEvents ?? [];
+    const processingInfo = stt.processingInfo;
 
-    console.log(`Transcription completed: ${rawText.length} chars, ${speakers.length} speakers detected`);
+    console.log(`Transcription completed: ${rawText.length} chars, processed in ${processingInfo.chunksCount} chunk(s)`);
 
     await supabase
       .from("voice_transcriptions")
       .update({
         raw_transcript: rawText,
-        segments,
+        segments: null, // Whisper doesn't provide word-level segments in simple mode
         status: "analyzing",
         ai_metadata: {
           ...(vjob.ai_metadata ?? {}),
-          source: "elevenlabs-scribe",
-          stt_model: "scribe_v1",
-          file_size_mb: (audioBlob.size / 1024 / 1024).toFixed(2),
+          source: "openai-whisper",
+          stt_model: "whisper-1",
+          file_size_mb: processingInfo.originalSizeMB.toFixed(2),
+          compressed_size_mb: processingInfo.compressedSizeMB.toFixed(2),
+          chunks_count: processingInfo.chunksCount,
           transcript_length: rawText.length,
-          speakers_detected: speakers,
-          speaker_count: speakers.length,
-          audio_events: audioEvents,
           generated_at: new Date().toISOString(),
         },
       })
@@ -1046,7 +1182,7 @@ serve(async (req) => {
       console.log(`Using legacy profile model: ${provider}/${modelId}`);
     }
 
-    const { sys, usr } = buildLLM(systemPrompt, userPrompt, rawText, ctx, outputSchema, speakers, audioEvents);
+    const { sys, usr } = buildLLM(systemPrompt, userPrompt, rawText, ctx, outputSchema);
 
     // LLM summarize using multi-provider routing
     console.log(`Calling LLM: ${provider}/${modelId}`);
@@ -1136,28 +1272,6 @@ serve(async (req) => {
       }
     } catch {
       // Ignore cleanup errors
-    }
-
-    // Avoid returning non-2xx for known provider errors to prevent client-side hard failures.
-    const isElevenLabsUnusualActivity =
-      errStr.includes("elevenlabs_stt_failed") &&
-      errStr.includes("detected_unusual_activity");
-
-    if (isElevenLabsUnusualActivity) {
-      return new Response(
-        JSON.stringify({
-          ok: false,
-          error: "elevenlabs_unusual_activity",
-          message:
-            "ElevenLabs a bloqué temporairement la transcription (activité inhabituelle / Free Tier). Vérifiez votre plan ou réessayez plus tard.",
-          details: errStr,
-        }),
-        {
-          // Keep 200 so supabase.functions.invoke doesn't surface it as a transport error.
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
     }
 
     return new Response(JSON.stringify({ error: "process_failed", details: errStr }), {
