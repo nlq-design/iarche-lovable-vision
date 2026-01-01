@@ -753,7 +753,7 @@ export default function CockpitUploads() {
                 <div className="flex gap-3">
                   <Button
                     onClick={handleUpload}
-                    disabled={selectedFiles.length === 0 || isUploading}
+                    disabled={selectedFiles.length === 0 || isUploading || isUploadQueueRunning}
                     className="flex-1"
                   >
                     {isUploading ? (
@@ -770,7 +770,7 @@ export default function CockpitUploads() {
                   </Button>
                   <Button
                     onClick={handleTextUpload}
-                    disabled={!pastedText.trim() || isUploadingText}
+                    disabled={!pastedText.trim() || isUploadingText || isUploadQueueRunning}
                     variant="secondary"
                   >
                     {isUploadingText ? (
@@ -783,6 +783,77 @@ export default function CockpitUploads() {
                     )}
                   </Button>
                 </div>
+
+                {(isUploadQueueRunning || uploadJobs.length > 0) && (
+                  <div className="mt-4">
+                    <div className="text-sm font-medium mb-2">File d'upload</div>
+                    <div className="space-y-2">
+                      {uploadJobs.map((job) => {
+                        const canCancel = job.status === 'queued' || job.status === 'uploading';
+
+                        const statusLabel: Record<UploadJobStatus, string> = {
+                          queued: 'En attente',
+                          uploading: 'Upload…',
+                          completed: 'Terminé',
+                          failed: 'Échec',
+                          cancelling: 'Annulation…',
+                          cancelled: 'Annulé',
+                        };
+
+                        const badgeVariant: Record<UploadJobStatus, 'secondary' | 'outline' | 'destructive'> = {
+                          queued: 'outline',
+                          uploading: 'secondary',
+                          completed: 'secondary',
+                          failed: 'destructive',
+                          cancelling: 'secondary',
+                          cancelled: 'outline',
+                        };
+
+                        return (
+                          <div
+                            key={job.jobId}
+                            className="flex items-center justify-between gap-3 rounded-lg border border-border p-2"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-sm truncate">{job.file.name}</span>
+                                <Badge variant={badgeVariant[job.status]} className="text-xs shrink-0">
+                                  {job.status === 'uploading' || job.status === 'cancelling' ? (
+                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  ) : job.status === 'failed' ? (
+                                    <XCircle className="h-3 w-3 mr-1" />
+                                  ) : job.status === 'completed' ? (
+                                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  ) : job.status === 'cancelled' ? (
+                                    <XCircle className="h-3 w-3 mr-1" />
+                                  ) : null}
+                                  {statusLabel[job.status]}
+                                </Badge>
+                              </div>
+                              {job.error && (
+                                <div className="text-xs text-muted-foreground mt-1 truncate">
+                                  {job.error}
+                                </div>
+                              )}
+                            </div>
+
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              disabled={!canCancel}
+                              onClick={() => cancelUploadJob(job.jobId)}
+                              aria-label="Annuler l'upload"
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
