@@ -8,22 +8,18 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
-const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-
-// Embedding dimension for our pseudo-embeddings (768 dimensions like typical sentence transformers)
-const EMBEDDING_DIM = 768;
+// Embedding dimension for OpenAI text-embedding-3-small
+const EMBEDDING_DIM = 1536;
 
 /**
- * Generate a deterministic pseudo-embedding using hash-based approach
- * Since Lovable AI doesn't support embeddings API, we use a hash-based method
- * that produces consistent vectors for semantic similarity
+ * Generate embedding using OpenAI API directly
+ * Falls back to deterministic hash-based approach if OpenAI fails
  */
 async function generateEmbedding(text: string): Promise<number[]> {
-  // First, try OpenAI if key is available
-  if (OPENAI_API_KEY) {
+  // Try OpenAI embeddings API
+  if (OPENAI_API_KEY && OPENAI_API_KEY.startsWith("sk-")) {
     try {
       const response = await fetch("https://api.openai.com/v1/embeddings", {
         method: "POST",
@@ -33,32 +29,33 @@ async function generateEmbedding(text: string): Promise<number[]> {
         },
         body: JSON.stringify({
           model: "text-embedding-3-small",
-          input: text,
+          input: text.slice(0, 8000), // Limit to 8000 chars for safety
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        return data.data[0].embedding;
+        if (data.data?.[0]?.embedding) {
+          return data.data[0].embedding;
+        }
+      } else {
+        const errorText = await response.text();
+        console.warn("OpenAI embedding API error:", response.status, errorText);
       }
     } catch (e) {
-      console.warn("OpenAI embedding failed, using hash-based fallback:", e);
+      console.warn("OpenAI embedding request failed:", e);
     }
   }
 
-  // Fallback: Generate deterministic hash-based embedding
-  // This uses a combination of character codes and position encoding
-  const embedding = new Array(EMBEDDING_DIM).fill(0);
+  // Fallback: Generate deterministic hash-based embedding (768 dims for compat)
+  console.log("Using hash-based fallback embedding");
+  const embedding = new Array(768).fill(0);
   const normalizedText = text.toLowerCase().trim();
   
-  // Generate multiple hash passes for better distribution
   for (let i = 0; i < normalizedText.length; i++) {
     const charCode = normalizedText.charCodeAt(i);
-    const position = i % EMBEDDING_DIM;
-    
-    // Use sine/cosine position encoding similar to transformers
-    for (let d = 0; d < EMBEDDING_DIM; d++) {
-      const angle = (i / Math.pow(10000, (2 * (d % (EMBEDDING_DIM / 2))) / EMBEDDING_DIM));
+    for (let d = 0; d < 768; d++) {
+      const angle = (i / Math.pow(10000, (2 * (d % 384)) / 768));
       if (d % 2 === 0) {
         embedding[d] += Math.sin(angle) * (charCode / 255);
       } else {
@@ -70,7 +67,7 @@ async function generateEmbedding(text: string): Promise<number[]> {
   // Normalize to unit vector
   const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
   if (magnitude > 0) {
-    for (let i = 0; i < EMBEDDING_DIM; i++) {
+    for (let i = 0; i < 768; i++) {
       embedding[i] = embedding[i] / magnitude;
     }
   }
@@ -110,11 +107,11 @@ const SERVICES_DATA = [
   }
 ];
 
-// Configuration chunking optimisée
+// Configuration chunking optimisée - REDUCED minLength for short content
 const CHUNK_CONFIG = {
-  maxLength: 800,      // Taille max par chunk (réduit de 2000)
-  overlap: 150,        // Chevauchement entre chunks
-  minLength: 100,      // Taille min pour éviter chunks trop petits
+  maxLength: 800,
+  overlap: 150,
+  minLength: 30, // Reduced from 100 to handle short lead/project descriptions
 };
 
 // Extended resource types for Cockpit modules
@@ -135,19 +132,14 @@ interface EmbeddingRequest {
 function extractSemanticSections(html: string): string[] {
   if (!html) return [];
   
-  // Nettoyer le HTML
   let cleanHtml = html
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
   
-  // Découper par titres H2 et H3
   const sectionPattern = /<h[23][^>]*>([\s\S]*?)<\/h[23]>/gi;
-  const sections: string[] = [];
-  let lastIndex = 0;
+  const headings: { index: number; title: string }[] = [];
   let match;
   
-  // Trouver tous les titres
-  const headings: { index: number; title: string }[] = [];
   while ((match = sectionPattern.exec(cleanHtml)) !== null) {
     headings.push({
       index: match.index,
@@ -155,7 +147,7 @@ function extractSemanticSections(html: string): string[] {
     });
   }
   
-  // Extraire le contenu entre chaque titre
+  const sections: string[] = [];
   for (let i = 0; i < headings.length; i++) {
     const start = headings[i].index;
     const end = i < headings.length - 1 ? headings[i + 1].index : cleanHtml.length;
@@ -167,7 +159,6 @@ function extractSemanticSections(html: string): string[] {
     }
   }
   
-  // Si pas de sections trouvées, retourner le contenu nettoyé complet
   if (sections.length === 0) {
     const fullText = cleanHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
     if (fullText.length >= CHUNK_CONFIG.minLength) {
@@ -185,65 +176,57 @@ function chunkTextWithOverlap(text: string): string[] {
   const { maxLength, overlap, minLength } = CHUNK_CONFIG;
   const chunks: string[] = [];
   
-  // Si le texte est assez court, retourner tel quel
   if (text.length <= maxLength) {
     return text.length >= minLength ? [text] : [];
   }
   
-  // Découper par phrases
   const sentences = text.split(/(?<=[.!?])\s+/);
   let currentChunk = "";
   let overlapBuffer = "";
   
   for (const sentence of sentences) {
-    // Si ajouter cette phrase dépasse la limite
     if ((currentChunk + " " + sentence).length > maxLength) {
       if (currentChunk.length >= minLength) {
         chunks.push(currentChunk.trim());
-        
-        // Garder les dernières phrases pour l'overlap
         const words = currentChunk.split(' ');
         overlapBuffer = words.slice(-Math.ceil(overlap / 5)).join(' ');
       }
-      
-      // Commencer nouveau chunk avec overlap
       currentChunk = overlapBuffer + " " + sentence;
     } else {
       currentChunk += (currentChunk ? " " : "") + sentence;
     }
   }
   
-  // Dernier chunk
   if (currentChunk.trim().length >= minLength) {
     chunks.push(currentChunk.trim());
   }
   
-  return chunks.length > 0 ? chunks : [text.substring(0, maxLength)];
+  return chunks.length > 0 ? chunks : (text.length >= minLength ? [text.substring(0, maxLength)] : []);
 }
 
 /**
  * Chunking intelligent combinant sections sémantiques et overlap
  */
 function smartChunk(content: string, isHtml: boolean = true): string[] {
+  if (!content || content.trim().length < CHUNK_CONFIG.minLength) {
+    return content && content.trim().length >= CHUNK_CONFIG.minLength ? [content.trim()] : [];
+  }
+  
   const allChunks: string[] = [];
   
   if (isHtml) {
-    // Extraire sections sémantiques
     const sections = extractSemanticSections(content);
     
-    // Chunker chaque section avec overlap
     for (const section of sections) {
       const sectionChunks = chunkTextWithOverlap(section);
       allChunks.push(...sectionChunks);
     }
     
-    // Si aucun chunk produit, fallback sur texte brut
     if (allChunks.length === 0) {
       const plainText = content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
       return chunkTextWithOverlap(plainText);
     }
   } else {
-    // Texte brut: juste overlap chunking
     return chunkTextWithOverlap(content);
   }
   
@@ -269,10 +252,11 @@ async function indexResource(
 
     // Smart chunking avec sections sémantiques et overlap
     const chunks = smartChunk(content, isHtml);
-    console.log(`Indexing ${resourceType}/${slug}: ${chunks.length} chunks (smart chunking)`);
+    console.log(`Indexing ${resourceType}/${slug.slice(0, 20)}: ${chunks.length} chunks`);
 
     if (chunks.length === 0) {
-      console.warn(`No chunks generated for ${resourceType}/${slug}`);
+      // Even if no chunks, we consider it "processed" - just no content to index
+      console.warn(`No chunks generated for ${resourceType}/${slug.slice(0, 20)} (content length: ${content?.length || 0})`);
       return { success: true, chunks: 0 };
     }
 
@@ -306,8 +290,9 @@ async function indexResource(
 
     return { success: true, chunks: chunks.length };
   } catch (error) {
+    const errorMsg = `Error: embedding_failed: ${JSON.stringify(error)}`;
     console.error(`Failed to index ${resourceType}/${slug}:`, error);
-    return { success: false, chunks: 0, error: String(error) };
+    return { success: false, chunks: 0, error: errorMsg };
   }
 }
 
@@ -327,7 +312,6 @@ async function indexArticle(supabase: any, article: any): Promise<{ success: boo
       .join("\n\n");
   }
 
-  // Construire le contenu enrichi
   const contentParts = [
     `Titre: ${article.title}`,
     article.excerpt ? `Résumé: ${article.excerpt}` : "",
@@ -351,18 +335,17 @@ async function indexArticle(supabase: any, article: any): Promise<{ success: boo
       secteur_activite: article.secteur_activite,
       has_faq: !!faqContent,
     },
-    true // is HTML
+    true
   );
 }
 
 async function indexService(supabase: any, service: typeof SERVICES_DATA[0]): Promise<{ success: boolean; chunks: number; error?: string }> {
   const content = [
-    `Service: ${service.title}`,
+    `Service IArche: ${service.title}`,
     service.description,
     `Mots-clés: ${service.keywords.join(", ")}`,
   ].join("\n\n");
 
-  // Use a deterministic UUID for services based on slug
   const serviceId = crypto.randomUUID();
 
   return indexResource(
@@ -373,31 +356,33 @@ async function indexService(supabase: any, service: typeof SERVICES_DATA[0]): Pr
     service.slug,
     content,
     { service_id: service.id, keywords: service.keywords },
-    false // not HTML
+    false
   );
 }
 
-// ===== NEW: Cockpit Module Indexing Functions =====
+// ===== Cockpit Module Indexing Functions =====
 
 async function indexLead(supabase: any, lead: any): Promise<{ success: boolean; chunks: number; error?: string }> {
   const content = [
-    `Lead: ${lead.name}`,
+    `Lead CRM: ${lead.name}`,
     lead.company ? `Entreprise: ${lead.company}` : "",
-    lead.email ? `Email: ${lead.email}` : "",
+    lead.email ? `Contact: ${lead.email}` : "",
     lead.phone ? `Téléphone: ${lead.phone}` : "",
-    lead.industry ? `Secteur: ${lead.industry}` : "",
-    lead.position ? `Poste: ${lead.position}` : "",
-    lead.source ? `Source: ${lead.source}` : "",
+    lead.industry ? `Secteur d'activité: ${lead.industry}` : "",
+    lead.position ? `Fonction: ${lead.position}` : "",
+    lead.company_size ? `Taille entreprise: ${lead.company_size}` : "",
+    lead.source ? `Canal d'acquisition: ${lead.source}` : "",
     lead.source_context ? `Contexte: ${lead.source_context}` : "",
     lead.message ? `Message: ${lead.message}` : "",
-    lead.qualification_status ? `Statut: ${lead.qualification_status}` : "",
+    lead.qualification_status ? `Statut qualification: ${lead.qualification_status}` : "",
+    lead.lead_score ? `Score: ${lead.lead_score}` : "",
   ].filter(Boolean).join("\n");
 
   return indexResource(
     supabase,
     lead.id,
     "lead",
-    lead.name,
+    `${lead.name}${lead.company ? ` - ${lead.company}` : ''}`,
     lead.email || lead.id,
     content,
     { 
@@ -411,11 +396,13 @@ async function indexLead(supabase: any, lead: any): Promise<{ success: boolean; 
 
 async function indexProject(supabase: any, project: any): Promise<{ success: boolean; chunks: number; error?: string }> {
   const content = [
-    `Projet: ${project.name}`,
-    project.description ? `Description: ${project.description}` : "",
-    project.status ? `Statut: ${project.status}` : "",
-    project.health_status ? `Santé: ${project.health_status}` : "",
-    project.budget_amount ? `Budget: ${project.budget_amount}€` : "",
+    `Projet IArche: ${project.name}`,
+    project.description ? `Description du projet: ${project.description}` : "",
+    project.status ? `Phase projet: ${project.status}` : "",
+    project.health_status ? `Santé projet: ${project.health_status}` : "",
+    project.budget_amount ? `Budget alloué: ${project.budget_amount}€` : "",
+    project.start_date ? `Démarrage: ${project.start_date}` : "",
+    project.end_date ? `Échéance: ${project.end_date}` : "",
     project.tags?.length ? `Tags: ${project.tags.join(", ")}` : "",
   ].filter(Boolean).join("\n");
 
@@ -437,10 +424,10 @@ async function indexProject(supabase: any, project: any): Promise<{ success: boo
 
 async function indexUploadedFile(supabase: any, file: any): Promise<{ success: boolean; chunks: number; error?: string }> {
   const content = [
-    `Fichier: ${file.original_filename}`,
-    file.file_type ? `Type: ${file.file_type}` : "",
+    `Document uploadé: ${file.original_filename}`,
+    file.file_type ? `Type de fichier: ${file.file_type}` : "",
     file.category ? `Catégorie: ${file.category}` : "",
-    file.extracted_text ? `Contenu: ${file.extracted_text}` : "",
+    file.extracted_text ? `Contenu extrait:\n${file.extracted_text}` : "",
     file.ai_summary ? `Résumé IA: ${file.ai_summary}` : "",
     file.tags?.length ? `Tags: ${file.tags.join(", ")}` : "",
   ].filter(Boolean).join("\n\n");
@@ -462,23 +449,42 @@ async function indexUploadedFile(supabase: any, file: any): Promise<{ success: b
 }
 
 async function indexSpecification(supabase: any, spec: any): Promise<{ success: boolean; chunks: number; error?: string }> {
-  // Parse content_json if it's a string
+  // Parse content_json robustly
   let contentJson = spec.content_json;
   if (typeof contentJson === 'string') {
     try {
       contentJson = JSON.parse(contentJson);
     } catch {
-      contentJson = { description: contentJson };
+      contentJson = { raw_content: contentJson };
     }
   }
 
+  // Extract all meaningful fields from content_json
+  const extractContent = (obj: any, prefix = ''): string[] => {
+    if (!obj) return [];
+    const parts: string[] = [];
+    
+    for (const [key, value] of Object.entries(obj)) {
+      if (value === null || value === undefined) continue;
+      if (typeof value === 'string' && value.trim()) {
+        parts.push(`${prefix}${key}: ${value}`);
+      } else if (Array.isArray(value)) {
+        const arrayStr = value.map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)).join(', ');
+        if (arrayStr) parts.push(`${prefix}${key}: ${arrayStr}`);
+      } else if (typeof value === 'object') {
+        parts.push(...extractContent(value, `${prefix}${key}.`));
+      }
+    }
+    return parts;
+  };
+
+  const jsonContent = extractContent(contentJson);
+  
   const content = [
-    `Spécification: ${spec.title}`,
+    `Cahier des charges: ${spec.title}`,
     spec.version ? `Version: ${spec.version}` : "",
-    contentJson?.description ? `Description: ${contentJson.description}` : "",
-    contentJson?.objectives ? `Objectifs: ${JSON.stringify(contentJson.objectives)}` : "",
-    contentJson?.requirements ? `Exigences: ${JSON.stringify(contentJson.requirements)}` : "",
-    contentJson?.scope ? `Périmètre: ${contentJson.scope}` : "",
+    spec.status ? `Statut: ${spec.status}` : "",
+    ...jsonContent,
   ].filter(Boolean).join("\n\n");
 
   return indexResource(
@@ -498,8 +504,8 @@ async function indexSpecification(supabase: any, spec: any): Promise<{ success: 
 
 async function indexVoiceTranscription(supabase: any, transcription: any): Promise<{ success: boolean; chunks: number; error?: string }> {
   const content = [
-    transcription.original_filename ? `Fichier: ${transcription.original_filename}` : "",
-    transcription.transcript_text ? `Transcription: ${transcription.transcript_text}` : "",
+    transcription.original_filename ? `Enregistrement audio: ${transcription.original_filename}` : "Transcription vocale",
+    transcription.transcript_text ? `Transcription complète:\n${transcription.transcript_text}` : "",
     transcription.ai_summary ? `Résumé IA: ${transcription.ai_summary}` : "",
     transcription.detected_entities ? `Entités détectées: ${JSON.stringify(transcription.detected_entities)}` : "",
   ].filter(Boolean).join("\n\n");
@@ -520,22 +526,48 @@ async function indexVoiceTranscription(supabase: any, transcription: any): Promi
 }
 
 async function indexGeneratedDocument(supabase: any, doc: any): Promise<{ success: boolean; chunks: number; error?: string }> {
-  // Parse content_json if it's a string
+  // Parse content_json robustly
   let contentJson = doc.content_json;
   if (typeof contentJson === 'string') {
     try {
       contentJson = JSON.parse(contentJson);
     } catch {
-      contentJson = { content: contentJson };
+      contentJson = { raw_content: contentJson };
     }
   }
 
+  // Recursive extraction for nested objects
+  const extractContent = (obj: any, depth = 0): string => {
+    if (!obj || depth > 3) return '';
+    if (typeof obj === 'string') return obj;
+    if (typeof obj === 'number') return String(obj);
+    if (Array.isArray(obj)) {
+      return obj.map(item => extractContent(item, depth + 1)).filter(Boolean).join('\n');
+    }
+    if (typeof obj === 'object') {
+      const parts: string[] = [];
+      for (const [key, value] of Object.entries(obj)) {
+        if (value === null || value === undefined) continue;
+        // Skip internal fields
+        if (['id', 'created_at', 'updated_at', 'workspace_id'].includes(key)) continue;
+        const extracted = extractContent(value, depth + 1);
+        if (extracted) {
+          parts.push(`${key}: ${extracted}`);
+        }
+      }
+      return parts.join('\n');
+    }
+    return '';
+  };
+
+  const jsonContent = extractContent(contentJson);
+  
   const content = [
-    `Document: ${doc.title}`,
+    `Document généré: ${doc.title}`,
     doc.document_type ? `Type: ${doc.document_type}` : "",
     doc.version ? `Version: ${doc.version}` : "",
-    contentJson?.description ? `Description: ${contentJson.description}` : "",
-    contentJson?.content ? `Contenu: ${typeof contentJson.content === 'string' ? contentJson.content : JSON.stringify(contentJson.content)}` : "",
+    doc.status ? `Statut: ${doc.status}` : "",
+    jsonContent ? `Contenu:\n${jsonContent}` : "",
   ].filter(Boolean).join("\n\n");
 
   return indexResource(
@@ -587,6 +619,7 @@ async function syncStatus(supabase: any): Promise<Record<string, any>> {
         indexed_resources: uniqueIndexed,
         total_chunks: chunkCount || 0,
         updated_at: new Date().toISOString(),
+        last_error: null, // Clear errors on sync
       }, { onConflict: 'resource_type' });
 
     status[type] = {
@@ -617,6 +650,7 @@ async function syncStatus(supabase: any): Promise<Record<string, any>> {
       indexed_resources: uniqueServiceCount,
       total_chunks: serviceChunkCount || 0,
       updated_at: new Date().toISOString(),
+      last_error: null,
     }, { onConflict: 'resource_type' });
 
   status.service = {
@@ -625,7 +659,7 @@ async function syncStatus(supabase: any): Promise<Record<string, any>> {
     chunks: serviceChunkCount || 0,
   };
 
-  // ===== NEW: Cockpit module status =====
+  // Cockpit module status
   const cockpitTables: Record<string, { table: string; filter?: Record<string, any> }> = {
     lead: { table: "leads" },
     project: { table: "projects" },
@@ -664,6 +698,7 @@ async function syncStatus(supabase: any): Promise<Record<string, any>> {
         indexed_resources: uniqueIndexed,
         total_chunks: chunkCount || 0,
         updated_at: new Date().toISOString(),
+        last_error: null,
       }, { onConflict: 'resource_type' });
 
     status[type] = {
@@ -751,7 +786,7 @@ async function generateAll(supabase: any): Promise<{
     };
   }
 
-  // ===== NEW: Index Cockpit modules =====
+  // ===== Index Cockpit modules =====
 
   // Index Leads
   console.log("Indexing leads...");
@@ -763,8 +798,14 @@ async function generateAll(supabase: any): Promise<{
   let leadIndexed = 0, leadErrors = 0, leadChunks = 0;
   for (const lead of leads || []) {
     const result = await indexLead(supabase, lead);
-    if (result.success) { indexed++; leadIndexed++; leadChunks += result.chunks; }
-    else { errors++; leadErrors++; }
+    if (result.success) { 
+      indexed++; 
+      leadIndexed++; 
+      leadChunks += result.chunks; 
+    } else { 
+      errors++; 
+      leadErrors++; 
+    }
   }
   totalChunks += leadChunks;
   details.lead = { indexed: leadIndexed, errors: leadErrors, total: leads?.length || 0, chunks: leadChunks };
@@ -779,8 +820,14 @@ async function generateAll(supabase: any): Promise<{
   let projectIndexed = 0, projectErrors = 0, projectChunks = 0;
   for (const project of projects || []) {
     const result = await indexProject(supabase, project);
-    if (result.success) { indexed++; projectIndexed++; projectChunks += result.chunks; }
-    else { errors++; projectErrors++; }
+    if (result.success) { 
+      indexed++; 
+      projectIndexed++; 
+      projectChunks += result.chunks; 
+    } else { 
+      errors++; 
+      projectErrors++; 
+    }
   }
   totalChunks += projectChunks;
   details.project = { indexed: projectIndexed, errors: projectErrors, total: projects?.length || 0, chunks: projectChunks };
@@ -796,8 +843,14 @@ async function generateAll(supabase: any): Promise<{
   let fileIndexed = 0, fileErrors = 0, fileChunks = 0;
   for (const file of files || []) {
     const result = await indexUploadedFile(supabase, file);
-    if (result.success) { indexed++; fileIndexed++; fileChunks += result.chunks; }
-    else { errors++; fileErrors++; }
+    if (result.success) { 
+      indexed++; 
+      fileIndexed++; 
+      fileChunks += result.chunks; 
+    } else { 
+      errors++; 
+      fileErrors++; 
+    }
   }
   totalChunks += fileChunks;
   details.uploaded_file = { indexed: fileIndexed, errors: fileErrors, total: files?.length || 0, chunks: fileChunks };
@@ -812,8 +865,14 @@ async function generateAll(supabase: any): Promise<{
   let specIndexed = 0, specErrors = 0, specChunks = 0;
   for (const spec of specs || []) {
     const result = await indexSpecification(supabase, spec);
-    if (result.success) { indexed++; specIndexed++; specChunks += result.chunks; }
-    else { errors++; specErrors++; }
+    if (result.success) { 
+      indexed++; 
+      specIndexed++; 
+      specChunks += result.chunks; 
+    } else { 
+      errors++; 
+      specErrors++; 
+    }
   }
   totalChunks += specChunks;
   details.specification = { indexed: specIndexed, errors: specErrors, total: specs?.length || 0, chunks: specChunks };
@@ -829,8 +888,14 @@ async function generateAll(supabase: any): Promise<{
   let transIndexed = 0, transErrors = 0, transChunks = 0;
   for (const trans of transcriptions || []) {
     const result = await indexVoiceTranscription(supabase, trans);
-    if (result.success) { indexed++; transIndexed++; transChunks += result.chunks; }
-    else { errors++; transErrors++; }
+    if (result.success) { 
+      indexed++; 
+      transIndexed++; 
+      transChunks += result.chunks; 
+    } else { 
+      errors++; 
+      transErrors++; 
+    }
   }
   totalChunks += transChunks;
   details.voice_transcription = { indexed: transIndexed, errors: transErrors, total: transcriptions?.length || 0, chunks: transChunks };
@@ -845,8 +910,14 @@ async function generateAll(supabase: any): Promise<{
   let docIndexed = 0, docErrors = 0, docChunks = 0;
   for (const doc of docs || []) {
     const result = await indexGeneratedDocument(supabase, doc);
-    if (result.success) { indexed++; docIndexed++; docChunks += result.chunks; }
-    else { errors++; docErrors++; }
+    if (result.success) { 
+      indexed++; 
+      docIndexed++; 
+      docChunks += result.chunks; 
+    } else { 
+      errors++; 
+      docErrors++; 
+    }
   }
   totalChunks += docChunks;
   details.generated_document = { indexed: docIndexed, errors: docErrors, total: docs?.length || 0, chunks: docChunks };
@@ -886,6 +957,36 @@ serve(async (req) => {
           const service = SERVICES_DATA.find(s => s.id === body.resource_id);
           if (!service) throw new Error("Service not found");
           result = await indexService(supabase, service);
+        } else if (COCKPIT_RESOURCE_TYPES.includes(body.resource_type)) {
+          // Handle Cockpit resource types
+          const tableMap: Record<string, string> = {
+            lead: "leads",
+            project: "projects",
+            uploaded_file: "uploaded_files",
+            specification: "specifications",
+            voice_transcription: "voice_transcriptions",
+            generated_document: "generated_documents",
+          };
+          const table = tableMap[body.resource_type];
+          if (!table) throw new Error("Unknown resource type");
+          
+          const { data: resource } = await supabase
+            .from(table)
+            .select("*")
+            .eq("id", body.resource_id)
+            .single();
+          
+          if (!resource) throw new Error("Resource not found");
+          
+          const indexFnMap: Record<string, Function> = {
+            lead: indexLead,
+            project: indexProject,
+            uploaded_file: indexUploadedFile,
+            specification: indexSpecification,
+            voice_transcription: indexVoiceTranscription,
+            generated_document: indexGeneratedDocument,
+          };
+          result = await indexFnMap[body.resource_type](supabase, resource);
         } else {
           const { data: article } = await supabase
             .from("articles")
