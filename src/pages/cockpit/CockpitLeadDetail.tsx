@@ -684,16 +684,14 @@ const CockpitLeadDetail = () => {
               </Card>
             )}
 
-            {/* AI Synthesis - only if files exist */}
-            {(linkedFiles?.length || 0) > 0 && (
-              <DocumentsSynthesisSection
-                entityType="lead"
-                entityId={id!}
-                summary={(lead as any)?.ai_documents_summary || null}
-                documentsCount={linkedFiles?.length || 0}
-                onSynthesisComplete={refetchLead}
-              />
-            )}
+            {/* AI Synthesis - show if files exist OR synthesis already exists */}
+            <DocumentsSynthesisSection
+              entityType="lead"
+              entityId={id!}
+              summary={(lead as any)?.ai_documents_summary || null}
+              documentsCount={linkedFiles?.length || 0}
+              onSynthesisComplete={refetchLead}
+            />
 
             {/* Linked Files */}
             <LinkedFilesSection entityType="lead" entityId={id!} title="Documents" />
