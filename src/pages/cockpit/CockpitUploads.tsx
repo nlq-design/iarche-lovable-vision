@@ -486,7 +486,7 @@ export default function CockpitUploads() {
                     {selectedFiles.map((file, i) => {
                       const result = extractionResults.get(file.name);
                       return (
-                        <div key={i} className="flex items-center justify-between p-2 bg-muted rounded">
+                        <div key={i} className="flex items-center justify-between p-2 bg-muted rounded group">
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <FileText className="h-4 w-4 shrink-0" />
                             <span className="text-sm truncate">{file.name}</span>
