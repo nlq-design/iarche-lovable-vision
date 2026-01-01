@@ -105,7 +105,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: emailResponse, error: emailError } = await resend.emails.send({
       from: "IArche Security <security@iarche.fr>",
       to: adminEmails,
-      replyTo: 'nlq@iarche.fr',
+      replyTo: 'nlq@nlq.fr',
       subject: emailSubject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

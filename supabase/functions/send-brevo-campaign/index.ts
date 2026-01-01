@@ -69,7 +69,7 @@ const handler = async (req: Request): Promise<Response> => {
       htmlContent, 
       senderName = "IArche",
       senderEmail = "newsletter@iarche.fr",
-      replyTo = "nlq@iarche.fr"
+      replyTo = "nlq@nlq.fr"
     }: CampaignRequest = await req.json();
 
     if (!subject || !htmlContent) {

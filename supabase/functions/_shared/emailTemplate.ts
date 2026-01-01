@@ -41,7 +41,7 @@ export function getEmailFooter(): string {
         <p style="margin: 0;">
           <a href="https://iarche.fr" style="color: ${EMAIL_COLORS.terracotta}; text-decoration: none; font-size: 12px; font-weight: 500;">iarche.fr</a>
           <span style="color: ${EMAIL_COLORS.lightGray}; margin: 0 8px;">·</span>
-          <a href="mailto:nlq@iarche.fr" style="color: ${EMAIL_COLORS.nightBlue}; text-decoration: none; font-size: 12px;">nlq@iarche.fr</a>
+          <a href="mailto:nlq@nlq.fr" style="color: ${EMAIL_COLORS.nightBlue}; text-decoration: none; font-size: 12px;">nlq@nlq.fr</a>
         </p>
       </td>
     </tr>
