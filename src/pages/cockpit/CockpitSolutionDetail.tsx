@@ -51,6 +51,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCockpitSolutionLeads, useCockpitLeads, useCockpitUploads } from "@/hooks/cockpit";
 import { LinkedFilesSection } from "@/components/cockpit/LinkedFilesSection";
 import { DocumentsSynthesisSection } from "@/components/cockpit/DocumentsSynthesisSection";
+import { LinkedPartnersSection } from "@/components/cockpit/LinkedPartnersSection";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -308,6 +309,19 @@ export default function CockpitSolutionDetail() {
               entityId={id!}
               title="Fichiers liés"
             />
+            
+            {/* Section Partenaires */}
+            <Card className="border">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Partenaires liés
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <LinkedPartnersSection entityType="solution" entityId={id} />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Overview Tab */}
