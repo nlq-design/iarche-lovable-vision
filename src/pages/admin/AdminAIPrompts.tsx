@@ -1118,8 +1118,8 @@ export default function AdminAIPrompts() {
                     <p className="text-xs text-muted-foreground">Modes réponse</p>
                   </div>
                   <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-orange-500">3</p>
-                    <p className="text-xs text-muted-foreground">Niveaux N0/N1/N2</p>
+                    <p className="text-2xl font-bold text-orange-500">∞</p>
+                    <p className="text-xs text-muted-foreground">Exécution directe</p>
                   </div>
                 </div>
               </CardContent>
