@@ -75,8 +75,12 @@ import { useCockpitLeads, useCockpitProjects, useCockpitTasks, useCockpitBooking
 import { useLeads } from '@/hooks/shared/useLeads';
 import { LinkedFilesSection } from '@/components/cockpit/LinkedFilesSection';
 import { DocumentsSynthesisSection } from '@/components/cockpit/DocumentsSynthesisSection';
+import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
+import { useCockpitPartners } from '@/hooks/cockpit/useCockpitPartners';
+import { useEntityPartners } from '@/hooks/cockpit/usePartnerLinks';
 import type { Database } from '@/integrations/supabase/types';
 import { LeadContactsSection } from '@/components/cockpit/LeadContactsSection';
+import { Users } from 'lucide-react';
 
 type Lead = Database['public']['Tables']['leads']['Row'];
 
@@ -119,6 +123,18 @@ const CockpitLeadDetail = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [linkProjectOpen, setLinkProjectOpen] = useState(false);
   const [linkSolutionOpen, setLinkSolutionOpen] = useState(false);
+  const [linkPartnerOpen, setLinkPartnerOpen] = useState(false);
+
+  // Partners
+  const { partners: allPartners } = useCockpitPartners();
+  const { partners: linkedPartners, linkPartner, unlinkPartner } = useEntityPartners('lead', id);
+  const linkedPartnerIds = linkedPartners?.map((lp: any) => lp.partner_id) || [];
+  const availablePartners = allPartners?.filter(p => !linkedPartnerIds.includes(p.id) && p.is_active) || [];
+
+  const handleLinkPartner = async (partnerId: string) => {
+    await linkPartner.mutateAsync({ partnerId });
+    setLinkPartnerOpen(false);
+  };
 
   // Filter tasks linked to this lead
   const leadTasks = tasks?.filter(t => t.lead_id === id) || [];
@@ -759,6 +775,49 @@ const CockpitLeadDetail = () => {
                     </Command>
                   </PopoverContent>
                 </Popover>
+
+                <Popover open={linkPartnerOpen} onOpenChange={setLinkPartnerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full justify-start" disabled={availablePartners.length === 0}>
+                      <Users className="h-4 w-4 mr-2" />
+                      Lier à un partenaire
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-0 w-[280px]" align="start">
+                    <Command>
+                      <CommandInput placeholder="Rechercher..." className="h-9" />
+                      <CommandList>
+                        <CommandEmpty>Aucun partenaire</CommandEmpty>
+                        <CommandGroup>
+                          {availablePartners.map((partner: any) => (
+                            <CommandItem
+                              key={partner.id}
+                              value={partner.name}
+                              onSelect={() => handleLinkPartner(partner.id)}
+                              className="text-sm"
+                            >
+                              <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+                              {partner.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </CardContent>
+            </Card>
+
+            {/* Linked Partners */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Partenaires liés
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <LinkedPartnersSection entityType="lead" entityId={id} />
               </CardContent>
             </Card>
 

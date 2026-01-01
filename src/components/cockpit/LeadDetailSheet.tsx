@@ -41,6 +41,7 @@ import {
   Loader2,
   FileText,
   Mic,
+  Users,
 } from "lucide-react";
 import {
   Popover,
@@ -84,6 +85,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { LinkedPartnersSection } from './LinkedPartnersSection';
+import { useCockpitPartners } from '@/hooks/cockpit/useCockpitPartners';
+import { useEntityPartners } from '@/hooks/cockpit/usePartnerLinks';
 
 interface Lead {
   id: string;
@@ -155,6 +158,18 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
   const [hasChanges, setHasChanges] = useState(false);
   const [linkProjectOpen, setLinkProjectOpen] = useState(false);
   const [linkSolutionOpen, setLinkSolutionOpen] = useState(false);
+  const [linkPartnerOpen, setLinkPartnerOpen] = useState(false);
+
+  // Partners
+  const { partners: allPartners } = useCockpitPartners();
+  const { partners: linkedPartners, linkPartner } = useEntityPartners('lead', lead?.id);
+  const linkedPartnerIds = linkedPartners?.map((lp: any) => lp.partner_id) || [];
+  const availablePartners = allPartners?.filter(p => !linkedPartnerIds.includes(p.id) && p.is_active) || [];
+
+  const handleLinkPartner = async (partnerId: string) => {
+    await linkPartner.mutateAsync({ partnerId });
+    setLinkPartnerOpen(false);
+  };
   
   // Email generation state
   const [showEmailDialog, setShowEmailDialog] = useState(false);
@@ -781,6 +796,36 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
                           >
                             <Package className="h-4 w-4 mr-2 text-muted-foreground" />
                             {solution.title}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              <Popover open={linkPartnerOpen} onOpenChange={setLinkPartnerOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex-1" disabled={availablePartners.length === 0}>
+                    <Users className="h-4 w-4 mr-1.5" />
+                    Lier partenaire
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 w-[280px]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Rechercher..." className="h-9" />
+                    <CommandList>
+                      <CommandEmpty>Aucun partenaire</CommandEmpty>
+                      <CommandGroup>
+                        {availablePartners.map((partner: any) => (
+                          <CommandItem
+                            key={partner.id}
+                            value={partner.name}
+                            onSelect={() => handleLinkPartner(partner.id)}
+                            className="text-sm"
+                          >
+                            <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+                            {partner.name}
                           </CommandItem>
                         ))}
                       </CommandGroup>

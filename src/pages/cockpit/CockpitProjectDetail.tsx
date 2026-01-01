@@ -79,6 +79,7 @@ import { SpecificationEditor } from '@/components/cockpit/SpecificationEditor';
 import { CreateTaskDialog } from '@/components/cockpit/dialogs/CreateTaskDialog';
 import { DocumentGenerator } from '@/components/cockpit/DocumentGenerator';
 import { LinkedFilesSection } from '@/components/cockpit/LinkedFilesSection';
+import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -594,6 +595,19 @@ const CockpitProjectDetail = () => {
                       Sélectionnez un contact pour voir les infos société
                     </p>
                   )}
+                </CardContent>
+              </Card>
+
+              {/* Partenaires */}
+              <Card className="border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Partenaires
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <LinkedPartnersSection entityType="project" entityId={id} />
                 </CardContent>
               </Card>
             </div>
