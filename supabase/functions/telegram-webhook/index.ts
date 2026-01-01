@@ -39,7 +39,9 @@ async function sendTelegramMessage(chatId: number, text: string, parseMode: stri
       ? text.slice(0, maxLength) + "\n\n_... (message tronqué)_"
       : text;
 
-    await fetch(`${TELEGRAM_API}/sendMessage`, {
+    console.log("Sending message to chat:", chatId, "Text length:", truncatedText.length);
+
+    const response = await fetch(`${TELEGRAM_API}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -48,6 +50,22 @@ async function sendTelegramMessage(chatId: number, text: string, parseMode: stri
         parse_mode: parseMode,
       }),
     });
+
+    const result = await response.json();
+    console.log("Telegram API response:", JSON.stringify(result));
+    
+    // If Markdown parsing fails, retry without parse_mode
+    if (!result.ok && result.description?.includes("parse")) {
+      console.log("Markdown parsing failed, retrying as plain text");
+      await fetch(`${TELEGRAM_API}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: truncatedText,
+        }),
+      });
+    }
   } catch (error) {
     console.error("Error sending Telegram message:", error);
   }
@@ -69,7 +87,7 @@ async function sendTypingAction(chatId: number): Promise<void> {
 }
 
 async function callAIAgent(message: string, userId: number, userName: string): Promise<string> {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  console.log("Calling AI agent with message:", message);
 
   try {
     // Call the AI agent orchestrator
@@ -88,17 +106,29 @@ async function callAIAgent(message: string, userId: number, userName: string): P
       }),
     });
 
+    console.log("AI Agent response status:", response.status);
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error("AI Agent error:", response.status, errorText);
-      return "❌ Désolé, une erreur s'est produite lors du traitement de votre demande.";
+      return `❌ Erreur (${response.status}): ${errorText.slice(0, 200)}`;
     }
 
     const data = await response.json();
-    return data.response || data.message || "Réponse reçue mais format inattendu.";
-  } catch (error) {
-    console.error("Error calling AI agent:", error);
-    return "❌ Erreur de connexion avec l'agent IA.";
+    console.log("AI Agent data:", JSON.stringify(data).slice(0, 500));
+    
+    const responseText = data.response || data.message || data.text || data.content;
+    
+    if (!responseText) {
+      console.error("No response field found in:", Object.keys(data));
+      return "⚠️ Réponse reçue mais format inattendu: " + JSON.stringify(data).slice(0, 200);
+    }
+    
+    return responseText;
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Error calling AI agent:", errorMessage);
+    return `❌ Erreur: ${errorMessage}`;
   }
 }
 
