@@ -20,7 +20,7 @@ import {
   Search, BookOpen, FileSignature, FileCheck, Briefcase,
   History, Trash2, Clock, MessageSquare, Wrench, ChevronDown,
   ExternalLink, Eye, Edit, Activity, Shield, Users, 
-  Calendar, Target, ClipboardList, Mic, FileCode, Settings
+  Calendar, Target, ClipboardList, Mic, FileCode, Settings, Tag
 } from "lucide-react";
 import { KeywordDictionary } from "@/components/admin/KeywordDictionary";
 import AdminLayout from "@/components/layouts/AdminLayout";
@@ -1098,7 +1098,7 @@ export default function AdminAIPrompts() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                   <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-primary">42</p>
+                    <p className="text-2xl font-bold text-primary">47</p>
                     <p className="text-xs text-muted-foreground">Outils Agent</p>
                   </div>
                   <div className="p-3 rounded-lg bg-background border text-center">
@@ -1110,7 +1110,7 @@ export default function AdminAIPrompts() {
                     <p className="text-xs text-muted-foreground">Tables IA</p>
                   </div>
                   <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-yellow-500">8</p>
+                    <p className="text-2xl font-bold text-yellow-500">13</p>
                     <p className="text-xs text-muted-foreground">Outils Actions</p>
                   </div>
                   <div className="p-3 rounded-lg bg-background border text-center">
@@ -1130,11 +1130,11 @@ export default function AdminAIPrompts() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Wrench className="h-4 w-4" />
-                  Catalogue des 42 Outils Agent v3.0
+                  Catalogue des 47 Outils Agent v3.1
                 </CardTitle>
                 <CardDescription>
                   Outils disponibles pour l'orchestrateur IA, classés par domaine et niveau d'autonomie. 
-                  <span className="text-green-500 font-medium"> +8 outils d'action directe (v3.0)</span>
+                  <span className="text-green-500 font-medium"> +13 outils d'action (v3.1)</span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1193,9 +1193,9 @@ export default function AdminAIPrompts() {
                   <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-green-500/10 border border-green-500/20 hover:bg-green-500/15 transition-colors">
                     <div className="flex items-center gap-2">
                       <Edit className="h-4 w-4 text-green-500" />
-                      <span className="font-medium">COCKPIT - Écriture (N1)</span>
-                      <Badge variant="secondary" className="text-xs">18 outils</Badge>
-                      <Badge className="bg-green-500 text-white text-xs">+8 v3.0</Badge>
+                      <span className="font-medium">COCKPIT - Écriture (N1/N2)</span>
+                      <Badge variant="secondary" className="text-xs">23 outils</Badge>
+                      <Badge className="bg-green-500 text-white text-xs">+13 v3.1</Badge>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </CollapsibleTrigger>
@@ -1210,6 +1210,11 @@ export default function AdminAIPrompts() {
                         { name: "create_opportunity", desc: "✨ Créer opportunité", icon: <Target className="h-3 w-3" />, isNew: true },
                         { name: "create_project", desc: "✨ Créer projet", icon: <Briefcase className="h-3 w-3" />, isNew: true },
                         { name: "link_solution_to_lead", desc: "✨ Lier solution→lead", icon: <Sparkles className="h-3 w-3" />, isNew: true },
+                        { name: "generate_document", desc: "✨ Générer devis/CDC/proposition", icon: <FileText className="h-3 w-3" />, isNew: true },
+                        { name: "enrich_seo", desc: "✨ Enrichir SEO article", icon: <Sparkles className="h-3 w-3" />, isNew: true },
+                        { name: "generate_faq", desc: "✨ Générer FAQ article", icon: <MessageSquare className="h-3 w-3" />, isNew: true },
+                        { name: "send_newsletter", desc: "✨ Envoyer newsletter (N2)", icon: <MessageSquare className="h-3 w-3" />, isNew: true },
+                        { name: "suggest_tags", desc: "✨ Suggérer tags article", icon: <Tag className="h-3 w-3" />, isNew: true },
                         { name: "create_task", desc: "Créer tâche", icon: <ClipboardList className="h-3 w-3" /> },
                         { name: "update_task", desc: "Modifier tâche", icon: <ClipboardList className="h-3 w-3" /> },
                         { name: "update_lead_qualification", desc: "Qualifier lead", icon: <Users className="h-3 w-3" /> },

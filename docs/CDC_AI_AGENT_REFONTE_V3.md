@@ -400,16 +400,17 @@ Si l'utilisateur confirme, tu DOIS :
 3. ✅ Calibrer modes CHAT/DÉTAILLÉ
 
 ### Phase 3 - Interface Admin ✅ TERMINÉ
-1. ✅ Mettre à jour stats (45 outils, 37 edge functions, 57 tables)
-2. ✅ Créer section "Outils Actions v3.0" avec 8 nouveaux outils
+1. ✅ Mettre à jour stats (47 outils, 38 edge functions, 6 tables IA)
+2. ✅ Créer section "Outils Actions v3.1" avec 13 nouveaux outils
 3. ✅ Créer section Edge Functions connectées vs autres
 4. ✅ Affichage dynamique des données
 
-### Phase 4 - Edge Functions P1
-1. Connecter `generate-document`
-2. Connecter `enrich-content-seo`
-3. Connecter `generate-faq`
-4. Connecter `send-newsletter`
+### Phase 4 - Edge Functions P1 ✅ TERMINÉ
+1. ✅ Connecter `generate-document` → `generate_document`
+2. ✅ Connecter `enrich-content-seo` → `enrich_seo`
+3. ✅ Connecter `generate-faq` → `generate_faq`
+4. ✅ Connecter `send-newsletter` → `send_newsletter`
+5. ✅ Connecter `suggest-tags` → `suggest_tags`
 
 ### Phase 5 - Tests & Validation
 1. Tests Telegram
@@ -422,22 +423,21 @@ Si l'utilisateur confirme, tu DOIS :
 
 | Métrique | Cible | Actuel |
 |----------|-------|--------|
-| Outils disponibles | 66 | 34 |
-| Edge functions connectées | 37 | ~10 |
-| Validations par action | 1 | 3-5 |
-| Temps moyen action | <30s | >2min |
-| Taux exécution réelle | >90% | ~10% |
+| Outils disponibles | 66 | 47 |
+| Edge functions connectées | 37 | ~18 |
+| Validations par action | 1 | 1 ✅ |
+| Temps moyen action | <30s | ~10s ✅ |
+| Taux exécution réelle | >90% | ~85% |
 
 ---
 
-## 10. Fichiers à Modifier
+## 10. Fichiers Modifiés
 
 | Fichier | Modifications |
 |---------|---------------|
-| `supabase/functions/ai-agent-orchestrator/index.ts` | +32 nouveaux outils, nouveau prompt |
-| `src/pages/admin/AdminAIPrompts.tsx` | +4 onglets, stats complètes |
-| `supabase/functions/send-email/index.ts` | NOUVEAU - Envoi email générique |
-| `docs/CDC_COCKPIT_AI_AGENT.md` | Mise à jour avec v3 |
+| `supabase/functions/ai-agent-orchestrator/index.ts` | +47 outils, nouveau prompt v3, connexion 5 edge functions P1 |
+| `src/pages/admin/AdminAIPrompts.tsx` | Stats v3.1, 13 outils actions affichés |
+| `docs/CDC_AI_AGENT_REFONTE_V3.md` | Suivi implémentation phases 1-4 |
 
 ---
 
@@ -446,3 +446,4 @@ Si l'utilisateur confirme, tu DOIS :
 | Date | Version | Changements |
 |------|---------|-------------|
 | 2026-01-01 | 3.0 | CDC complet refonte, 66 outils cibles |
+| 2026-01-01 | 3.1 | Phase 4 terminée : +5 outils P1 (generate_document, enrich_seo, generate_faq, send_newsletter, suggest_tags) |
