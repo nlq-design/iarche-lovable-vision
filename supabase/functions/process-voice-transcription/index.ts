@@ -8,7 +8,8 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
+const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY")!;
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
@@ -28,9 +29,6 @@ interface LLMModel {
   supports_tools: boolean;
 }
 
-// Whisper API limit is 25MB per request
-const WHISPER_MAX_SIZE = 25 * 1024 * 1024;
-
 type VoiceJob = {
   id: string;
   workspace_id: string;
@@ -47,56 +45,45 @@ type VoiceJob = {
 };
 
 /**
- * Transcribe audio with Whisper.
- * Note: Whisper has a hard 25MB limit; larger files must be split/converted before upload.
+ * Transcribe audio using ElevenLabs Scribe API.
+ * Supports files up to 1GB with speaker diarization and audio event tagging.
  */
 async function transcribeAudio(
   audioBlob: Blob,
-  language = "fr"
+  language = "fra"
 ): Promise<{ text: string; segments: unknown[] | null }> {
   const fileSize = audioBlob.size;
   console.log(`Audio file size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
+  console.log("Using ElevenLabs Scribe for transcription...");
 
-  if (fileSize > WHISPER_MAX_SIZE) {
-    throw new Error(
-      `file_too_large: Audio file exceeds 25MB limit (${(
-        fileSize /
-        1024 /
-        1024
-      ).toFixed(2)}MB). Please split/compress the audio before uploading.`
-    );
-  }
+  const formData = new FormData();
+  formData.append("file", audioBlob, "audio.m4a");
+  formData.append("model_id", "scribe_v1");
+  formData.append("tag_audio_events", "true");
+  formData.append("diarize", "true");
+  formData.append("language_code", language);
 
-  return await transcribeWithWhisper(audioBlob, language);
-}
-
-
-/**
- * Transcribe with OpenAI Whisper (for files <= 25MB)
- */
-async function transcribeWithWhisper(blob: Blob, language: string): Promise<{ text: string; segments: unknown[] | null }> {
-  const form = new FormData();
-  form.append("model", "whisper-1");
-  form.append("language", language);
-  form.append("response_format", "verbose_json");
-  form.append("file", blob, "audio.m4a");
-
-  const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+  const res = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
     method: "POST",
-    headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
-    body: form,
+    headers: {
+      "xi-api-key": ELEVENLABS_API_KEY,
+    },
+    body: formData,
   });
 
   const txt = await res.text();
   if (!res.ok) {
-    console.error("OpenAI Whisper error:", txt);
-    throw new Error(`openai_stt_failed: ${txt}`);
+    console.error("ElevenLabs Scribe error:", txt);
+    throw new Error(`elevenlabs_stt_failed: ${txt}`);
   }
   
   const result = JSON.parse(txt);
+  console.log(`Transcription completed: ${result.text?.length ?? 0} characters`);
+  
+  // Map ElevenLabs response to our expected format
   return {
     text: result.text ?? "",
-    segments: result.segments ?? null
+    segments: result.words ?? null
   };
 }
 

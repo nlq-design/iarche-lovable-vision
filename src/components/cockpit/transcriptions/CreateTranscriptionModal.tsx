@@ -51,7 +51,7 @@ interface CreateTranscriptionModalProps {
 }
 
 const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
-const MAX_TRANSCRIPTION_FILE_SIZE = 25 * 1024 * 1024; // 25MB (STT provider limit)
+const MAX_TRANSCRIPTION_FILE_SIZE = 500 * 1024 * 1024; // 500MB (ElevenLabs supports up to 1GB)
 
 export function CreateTranscriptionModal({
   open,
@@ -314,7 +314,7 @@ export function CreateTranscriptionModal({
                     Cliquez ou glissez des fichiers audio
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    MP3, M4A, WAV, WebM (max 25 MB par fichier) — <strong>Multi-sélection possible</strong>
+                    MP3, M4A, WAV, WebM (max 500 MB par fichier) — <strong>Multi-sélection possible</strong>
                   </p>
                 </div>
               )}
