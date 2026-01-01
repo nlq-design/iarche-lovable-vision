@@ -9,7 +9,8 @@ import {
   Package,
   Mic,
   FileText,
-  Upload
+  Upload,
+  Bot
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Link, useLocation } from 'react-router-dom';
@@ -37,6 +38,7 @@ const navigationItems = [
   { title: 'Transcriptions', url: '/cockpit/transcriptions', icon: Mic },
   { title: 'Agenda', url: '/cockpit/agenda', icon: Calendar },
   { title: 'Analytics', url: '/cockpit/analytics', icon: BarChart3 },
+  { title: 'Agent IA', url: '/cockpit/chatbot', icon: Bot },
 ];
 
 export function CockpitSidebar() {

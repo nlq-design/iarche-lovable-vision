@@ -2,7 +2,6 @@ import { ReactNode } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { CockpitSidebar } from './CockpitSidebar';
 import { CockpitHeader } from './CockpitHeader';
-import { AgentChat } from './AgentChat';
 
 interface CockpitLayoutProps {
   children: ReactNode;
@@ -21,9 +20,6 @@ export function CockpitLayout({ children }: CockpitLayoutProps) {
             {children}
           </main>
         </div>
-        
-        {/* Agent IA flottant */}
-        <AgentChat />
       </div>
     </SidebarProvider>
   );
