@@ -157,14 +157,10 @@ export function useCockpitProjects(workspaceId?: string) {
     },
   });
 
-  // Delete project
+  // Delete project (using cascade-safe RPC function)
   const deleteProject = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.rpc("delete_project_cascade", { p_project_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
