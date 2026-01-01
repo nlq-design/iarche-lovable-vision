@@ -447,6 +447,7 @@ export function useCockpitUploads(filters?: {
     reprocess: reprocessMutation.mutate,
     generateShareLink: generateShareLinkMutation.mutate,
     deleteFile: deleteMutation.mutate,
+    deleteFileAsync: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
     downloadFile,
   };
