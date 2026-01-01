@@ -72,6 +72,7 @@ import { useLeads } from '@/hooks/shared/useLeads';
 import { LinkedFilesSection } from '@/components/cockpit/LinkedFilesSection';
 import { DocumentsSynthesisSection } from '@/components/cockpit/DocumentsSynthesisSection';
 import type { Database } from '@/integrations/supabase/types';
+import { LeadContactsSection } from '@/components/cockpit/LeadContactsSection';
 
 type Lead = Database['public']['Tables']['leads']['Row'];
 
@@ -692,6 +693,9 @@ const CockpitLeadDetail = () => {
               documentsCount={linkedFiles?.length || 0}
               onSynthesisComplete={refetchLead}
             />
+
+            {/* Contacts (interlocuteurs) */}
+            <LeadContactsSection leadId={id!} />
 
             {/* Linked Files */}
             <LinkedFilesSection entityType="lead" entityId={id!} title="Documents" />
