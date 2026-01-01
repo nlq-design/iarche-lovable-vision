@@ -2647,6 +2647,7 @@ export type Database = {
           category: string | null
           content_hash: string | null
           created_at: string | null
+          document_id: string | null
           download_count: number | null
           extracted_content: string | null
           file_size_bytes: number | null
@@ -2683,6 +2684,7 @@ export type Database = {
           category?: string | null
           content_hash?: string | null
           created_at?: string | null
+          document_id?: string | null
           download_count?: number | null
           extracted_content?: string | null
           file_size_bytes?: number | null
@@ -2719,6 +2721,7 @@ export type Database = {
           category?: string | null
           content_hash?: string | null
           created_at?: string | null
+          document_id?: string | null
           download_count?: number | null
           extracted_content?: string | null
           file_size_bytes?: number | null
@@ -2750,6 +2753,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "uploaded_files_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "generated_documents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "uploaded_files_generated_document_id_fkey"
             columns: ["generated_document_id"]

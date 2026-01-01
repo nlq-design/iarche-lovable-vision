@@ -43,6 +43,7 @@ export interface UploadFileParams {
   projectIds?: string[];
   solutionIds?: string[];
   leadIds?: string[];
+  documentId?: string;
   category?: string;
   tags?: string[];
   extractedText?: string; // Client-side extracted text
@@ -54,6 +55,7 @@ export interface UploadTextParams {
   projectIds?: string[];
   solutionIds?: string[];
   leadIds?: string[];
+  documentId?: string;
   category?: string;
   tags?: string[];
 }
@@ -119,7 +121,7 @@ export function useCockpitUploads(filters?: {
   // Upload file mutation
   const uploadFileMutation = useMutation({
     mutationFn: async (params: UploadFileParams) => {
-      const { file, projectIds = [], solutionIds = [], leadIds = [], category, tags = [], extractedText } = params;
+      const { file, projectIds = [], solutionIds = [], leadIds = [], documentId, category, tags = [], extractedText } = params;
 
       // 1. Compute hash for deduplication
       const contentHash = await computeFileHash(file);
@@ -165,6 +167,7 @@ export function useCockpitUploads(filters?: {
           project_ids: projectIds,
           solution_ids: solutionIds,
           lead_ids: leadIds,
+          document_id: documentId || null,
           category,
           tags,
           extracted_content: extractedText || null,
@@ -203,7 +206,7 @@ export function useCockpitUploads(filters?: {
   // Upload pasted text mutation
   const uploadTextMutation = useMutation({
     mutationFn: async (params: UploadTextParams) => {
-      const { content, filename, projectIds = [], solutionIds = [], leadIds = [], category, tags = [] } = params;
+      const { content, filename, projectIds = [], solutionIds = [], leadIds = [], documentId, category, tags = [] } = params;
 
       const { data: { user } } = await supabase.auth.getUser();
 
@@ -226,6 +229,7 @@ export function useCockpitUploads(filters?: {
           project_ids: projectIds,
           solution_ids: solutionIds,
           lead_ids: leadIds,
+          document_id: documentId || null,
           category,
           tags,
           extracted_content: content,
