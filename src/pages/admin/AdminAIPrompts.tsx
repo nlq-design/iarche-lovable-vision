@@ -1630,10 +1630,10 @@ function DocumentGenerationConfig() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Prompts Génération Documents
+            Génération de Documents
           </CardTitle>
           <CardDescription>
-            Configurez le modèle LLM et éditez le prompt système pour chaque type de document.
+            Prompts spécialisés pour la génération de devis, CDC et propositions. Référencés par l'agent principal.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -1775,18 +1775,28 @@ function DocumentGenerationConfig() {
             const categoryInfo: Record<string, { icon: React.ReactNode; label: string; description: string }> = {
               transcription: { 
                 icon: <Mic className="h-5 w-5" />, 
-                label: 'Prompts Transcription', 
-                description: 'Analyse et structuration des transcriptions audio/vidéo selon le contexte'
+                label: 'Transcription Audio', 
+                description: 'Analyse et structuration des transcriptions audio/vidéo selon le contexte (RDV, projet, support)'
               },
               cockpit: { 
                 icon: <BarChart3 className="h-5 w-5" />, 
-                label: 'Prompts Cockpit', 
-                description: 'Analyse, scoring, matching et génération de contenu pour le CRM'
+                label: 'Cockpit CRM', 
+                description: 'Analyse, scoring, matching, OCR et génération de contenu commercial'
               },
               assistant: { 
                 icon: <Bot className="h-5 w-5" />, 
-                label: 'Prompts Assistant', 
-                description: 'Configuration de l\'assistant conversationnel IA'
+                label: 'Assistant Conversationnel', 
+                description: 'Configuration du chatbot assistant IA'
+              },
+              content: { 
+                icon: <FileText className="h-5 w-5" />, 
+                label: 'Contenu & SEO', 
+                description: 'Génération d\'articles, FAQ, tags et enrichissement SEO'
+              },
+              security: { 
+                icon: <Shield className="h-5 w-5" />, 
+                label: 'Sécurité', 
+                description: 'Détection d\'anomalies et analyse de sécurité'
               },
             };
             const info = categoryInfo[category] || { icon: <Settings className="h-5 w-5" />, label: category, description: '' };
@@ -2116,7 +2126,7 @@ export default function AdminAIPrompts() {
         <Tabs defaultValue="config" className="space-y-4">
           <TabsList>
             <TabsTrigger value="config">Configuration</TabsTrigger>
-            <TabsTrigger value="documents">Génération Docs</TabsTrigger>
+            <TabsTrigger value="documents">Prompts Secondaires</TabsTrigger>
             <TabsTrigger value="rag">Base RAG</TabsTrigger>
             <TabsTrigger value="dictionary">Dictionnaire</TabsTrigger>
             <TabsTrigger value="memory">Mémoire IA</TabsTrigger>
