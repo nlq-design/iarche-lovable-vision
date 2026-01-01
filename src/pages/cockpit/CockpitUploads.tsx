@@ -4,6 +4,7 @@ import { useCockpitUploads, UploadedFile } from "@/hooks/cockpit/useCockpitUploa
 import { useCockpitProjects } from "@/hooks/cockpit/useCockpitProjects";
 import { useCockpitLeads } from "@/hooks/cockpit/useCockpitLeads";
 import { extractFileContent, ExtractionResult } from "@/lib/fileExtraction";
+import { FileDetailSheet } from "@/components/cockpit/FileDetailSheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -175,6 +176,10 @@ export default function CockpitUploads() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  
+  // File detail sheet state
+  const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false);
   
   // Upload state
   const [dragActive, setDragActive] = useState(false);
@@ -769,13 +774,23 @@ export default function CockpitUploads() {
                     onDownload={() => downloadFile(file)}
                     onShare={() => generateShareLink({ fileId: file.id })}
                     onDelete={() => deleteFile(file.id)}
-                    onView={() => {/* TODO: Open detail sheet */}}
+                    onView={() => {
+                      setSelectedFile(file);
+                      setDetailSheetOpen(true);
+                    }}
                   />
                 ))}
               </div>
             )}
           </TabsContent>
         </Tabs>
+
+        {/* File Detail Sheet */}
+        <FileDetailSheet
+          file={selectedFile}
+          open={detailSheetOpen}
+          onOpenChange={setDetailSheetOpen}
+        />
       </div>
     </CockpitLayout>
   );
