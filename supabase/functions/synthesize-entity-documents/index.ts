@@ -12,6 +12,14 @@ interface SynthesizeRequest {
   entity_id: string;
 }
 
+interface ChronologicalEvent {
+  date: string;
+  dateObj: Date;
+  type: string;
+  title: string;
+  content: string;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -31,110 +39,294 @@ serve(async (req) => {
 
     console.log(`[synthesize] Starting for ${entity_type}:${entity_id}`);
 
-    // 1. Fetch linked documents based on entity type
-    let linkedFiles: any[] = [];
+    // 1. Load dynamic prompt from ai_prompts
+    const { data: promptData } = await supabase
+      .from('ai_prompts')
+      .select('system_prompt, user_prompt, model_config')
+      .eq('slug', 'entity-synthesis')
+      .single();
+
+    const systemPrompt = promptData?.system_prompt || getDefaultSystemPrompt();
+    const userPromptTemplate = promptData?.user_prompt || getDefaultUserPrompt();
+    const modelConfig = promptData?.model_config || { model: 'google/gemini-2.5-flash' };
+
+    // 2. Fetch all sources based on entity type
     let entityName = '';
+    const events: ChronologicalEvent[] = [];
 
+    // Fetch entity name first
     if (entity_type === 'lead') {
-      const { data: files } = await supabase
-        .from('uploaded_files')
-        .select('id, original_filename, ai_summary, extracted_content, created_at')
-        .contains('lead_ids', [entity_id])
-        .order('created_at', { ascending: true });
-      linkedFiles = files || [];
-
       const { data: lead } = await supabase
         .from('leads')
-        .select('name, company')
+        .select('name, company, created_at')
         .eq('id', entity_id)
         .single();
       entityName = lead?.company || lead?.name || 'Lead';
-
+      if (lead?.created_at) {
+        events.push({
+          date: formatDate(lead.created_at),
+          dateObj: new Date(lead.created_at),
+          type: 'Lead',
+          title: 'Création du lead',
+          content: `Lead ${lead.name}${lead.company ? ` (${lead.company})` : ''} créé`
+        });
+      }
     } else if (entity_type === 'project') {
-      const { data: files } = await supabase
-        .from('uploaded_files')
-        .select('id, original_filename, ai_summary, extracted_content, created_at')
-        .contains('project_ids', [entity_id])
-        .order('created_at', { ascending: true });
-      linkedFiles = files || [];
-
       const { data: project } = await supabase
         .from('projects')
-        .select('name')
+        .select('name, created_at, status')
         .eq('id', entity_id)
         .single();
       entityName = project?.name || 'Projet';
-
+      if (project?.created_at) {
+        events.push({
+          date: formatDate(project.created_at),
+          dateObj: new Date(project.created_at),
+          type: 'Projet',
+          title: 'Création du projet',
+          content: `Projet "${project.name}" créé - Statut: ${project.status}`
+        });
+      }
     } else if (entity_type === 'solution') {
-      const { data: files } = await supabase
-        .from('uploaded_files')
-        .select('id, original_filename, ai_summary, extracted_content, created_at')
-        .contains('solution_ids', [entity_id])
-        .order('created_at', { ascending: true });
-      linkedFiles = files || [];
-
       const { data: solution } = await supabase
         .from('articles')
-        .select('title')
+        .select('title, created_at')
         .eq('id', entity_id)
         .eq('resource_type', 'solution')
         .single();
       entityName = solution?.title || 'Solution';
-
     } else if (entity_type === 'document') {
-      // For generated_documents, fetch files linked via generated_document_id
-      const { data: files } = await supabase
-        .from('uploaded_files')
-        .select('id, original_filename, ai_summary, extracted_content, created_at')
-        .eq('generated_document_id', entity_id)
-        .order('created_at', { ascending: true });
-      linkedFiles = files || [];
-
       const { data: doc } = await supabase
         .from('generated_documents')
-        .select('title')
+        .select('title, created_at')
         .eq('id', entity_id)
         .single();
       entityName = doc?.title || 'Document';
     }
 
-    console.log(`[synthesize] Found ${linkedFiles.length} files for ${entityName}`);
+    // 3. Fetch uploaded files
+    let linkedFiles: any[] = [];
+    if (entity_type === 'lead') {
+      const { data } = await supabase
+        .from('uploaded_files')
+        .select('id, original_filename, ai_summary, extracted_content, created_at, file_type')
+        .contains('lead_ids', [entity_id]);
+      linkedFiles = data || [];
+    } else if (entity_type === 'project') {
+      const { data } = await supabase
+        .from('uploaded_files')
+        .select('id, original_filename, ai_summary, extracted_content, created_at, file_type')
+        .contains('project_ids', [entity_id]);
+      linkedFiles = data || [];
+    } else if (entity_type === 'solution') {
+      const { data } = await supabase
+        .from('uploaded_files')
+        .select('id, original_filename, ai_summary, extracted_content, created_at, file_type')
+        .contains('solution_ids', [entity_id]);
+      linkedFiles = data || [];
+    } else if (entity_type === 'document') {
+      const { data } = await supabase
+        .from('uploaded_files')
+        .select('id, original_filename, ai_summary, extracted_content, created_at, file_type')
+        .eq('generated_document_id', entity_id);
+      linkedFiles = data || [];
+    }
 
-    if (linkedFiles.length === 0) {
+    // Add files to events
+    linkedFiles.forEach(file => {
+      const content = file.ai_summary || file.extracted_content?.substring(0, 1500) || 'Contenu non disponible';
+      events.push({
+        date: formatDate(file.created_at),
+        dateObj: new Date(file.created_at),
+        type: 'Document',
+        title: file.original_filename,
+        content: `[${file.file_type || 'fichier'}] ${content}`
+      });
+    });
+
+    // 4. Fetch voice transcriptions
+    let transcriptions: any[] = [];
+    if (entity_type === 'lead') {
+      const { data } = await supabase
+        .from('voice_transcriptions')
+        .select('id, title, content, ai_summary, transcription_date, created_at, status')
+        .eq('lead_id', entity_id)
+        .eq('status', 'completed');
+      transcriptions = data || [];
+    } else if (entity_type === 'project') {
+      const { data } = await supabase
+        .from('voice_transcriptions')
+        .select('id, title, content, ai_summary, transcription_date, created_at, status')
+        .eq('project_id', entity_id)
+        .eq('status', 'completed');
+      transcriptions = data || [];
+    } else if (entity_type === 'solution') {
+      const { data } = await supabase
+        .from('voice_transcriptions')
+        .select('id, title, content, ai_summary, transcription_date, created_at, status')
+        .eq('solution_id', entity_id)
+        .eq('status', 'completed');
+      transcriptions = data || [];
+    }
+
+    // Add transcriptions to events (use transcription_date if available)
+    transcriptions.forEach(t => {
+      const eventDate = t.transcription_date || t.created_at;
+      const content = t.ai_summary || t.content?.substring(0, 1500) || '';
+      events.push({
+        date: formatDate(eventDate),
+        dateObj: new Date(eventDate),
+        type: 'Transcription',
+        title: t.title || 'Transcription audio',
+        content
+      });
+    });
+
+    // 5. Fetch linked partners
+    let partners: any[] = [];
+    const partnerTable = `${entity_type}_partners`;
+    const entityColumn = `${entity_type}_id`;
+    
+    try {
+      const { data } = await supabase
+        .from(partnerTable)
+        .select(`
+          created_at,
+          role,
+          partner:partners(id, name, type, company)
+        `)
+        .eq(entityColumn, entity_id);
+      partners = data || [];
+    } catch (e) {
+      console.log(`[synthesize] No partner table for ${entity_type}`);
+    }
+
+    // Add partners to events
+    partners.forEach(p => {
+      if (p.partner) {
+        events.push({
+          date: formatDate(p.created_at),
+          dateObj: new Date(p.created_at),
+          type: 'Partenaire',
+          title: `${p.partner.name}${p.partner.company ? ` (${p.partner.company})` : ''}`,
+          content: `Type: ${p.partner.type || 'non défini'}, Rôle: ${p.role || 'non défini'}`
+        });
+      }
+    });
+
+    // 6. Fetch tasks
+    let tasks: any[] = [];
+    if (entity_type === 'lead') {
+      const { data } = await supabase
+        .from('tasks')
+        .select('id, title, description, status, priority, due_date, completed_at, created_at')
+        .eq('lead_id', entity_id);
+      tasks = data || [];
+    } else if (entity_type === 'project') {
+      const { data } = await supabase
+        .from('tasks')
+        .select('id, title, description, status, priority, due_date, completed_at, created_at')
+        .eq('project_id', entity_id);
+      tasks = data || [];
+    }
+
+    // Add tasks to events
+    tasks.forEach(t => {
+      const eventDate = t.due_date || t.created_at;
+      events.push({
+        date: formatDate(eventDate),
+        dateObj: new Date(eventDate),
+        type: 'Tâche',
+        title: t.title,
+        content: `Statut: ${t.status}, Priorité: ${t.priority}${t.description ? `. ${t.description}` : ''}`
+      });
+    });
+
+    // 7. Fetch bookings
+    let bookings: any[] = [];
+    if (entity_type === 'lead') {
+      const { data } = await supabase
+        .from('bookings')
+        .select('id, name, email, start_time, status, message, notes')
+        .eq('lead_id', entity_id);
+      bookings = data || [];
+    }
+
+    // Add bookings to events
+    bookings.forEach(b => {
+      events.push({
+        date: formatDate(b.start_time),
+        dateObj: new Date(b.start_time),
+        type: 'RDV',
+        title: `RDV avec ${b.name}`,
+        content: `Statut: ${b.status}${b.message ? `. ${b.message}` : ''}${b.notes ? `. Notes: ${b.notes}` : ''}`
+      });
+    });
+
+    // 8. Fetch generated documents for this entity
+    let generatedDocs: any[] = [];
+    if (entity_type === 'lead') {
+      const { data } = await supabase
+        .from('generated_documents')
+        .select('id, title, document_type, status, created_at, version')
+        .eq('lead_id', entity_id);
+      generatedDocs = data || [];
+    } else if (entity_type === 'project') {
+      const { data } = await supabase
+        .from('generated_documents')
+        .select('id, title, document_type, status, created_at, version')
+        .eq('project_id', entity_id);
+      generatedDocs = data || [];
+    }
+
+    // Add generated docs to events
+    generatedDocs.forEach(d => {
+      events.push({
+        date: formatDate(d.created_at),
+        dateObj: new Date(d.created_at),
+        type: 'Document généré',
+        title: d.title,
+        content: `Type: ${d.document_type}, Version: ${d.version || '1.0'}, Statut: ${d.status}`
+      });
+    });
+
+    console.log(`[synthesize] Collected ${events.length} events for ${entityName}`);
+
+    // Check if we have any data to synthesize
+    if (events.length <= 1) {
       return new Response(
-        JSON.stringify({ success: false, message: 'Aucun document lié trouvé' }),
+        JSON.stringify({ success: false, message: 'Pas assez de données liées pour générer une synthèse' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // 2. Build context from all documents
-    const documentsContext = linkedFiles.map((file, index) => {
-      const date = new Date(file.created_at).toLocaleDateString('fr-FR');
-      const content = file.ai_summary || file.extracted_content?.substring(0, 2000) || 'Contenu non disponible';
-      return `### Document ${index + 1}: ${file.original_filename} (${date})\n${content}`;
-    }).join('\n\n---\n\n');
+    // 9. Sort events chronologically
+    events.sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
 
-    // 3. Generate synthesis with Lovable AI
-    const systemPrompt = `Tu es un assistant expert en synthèse documentaire pour IArche, cabinet de conseil en transformation digitale.
+    // 10. Build chronological context
+    const chronologicalContext = events.map((e, idx) => 
+      `### ${idx + 1}. [${e.date}] ${e.type}: ${e.title}\n${e.content}`
+    ).join('\n\n---\n\n');
 
-Ta mission : produire une synthèse complète et structurée de tous les documents fournis, en préservant TOUTES les informations importantes.
+    // 11. Prepare user prompt with variables
+    const synthesisDate = new Date().toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
 
-Règles :
-- Ne jamais perdre d'information clé
-- Organiser par thématiques ou chronologie selon pertinence
-- Identifier les évolutions entre versions si applicable
-- Mettre en avant les points d'action et décisions
-- Format Markdown avec sections claires
-- Longueur adaptée à la quantité d'information (pas de limite)`;
+    const userPrompt = userPromptTemplate
+      .replace('{{synthesis_date}}', synthesisDate)
+      .replace('{{entity_name}}', entityName)
+      .replace('{{entity_type}}', entity_type)
+      .replace('{{chronological_context}}', chronologicalContext);
 
-    const userPrompt = `Synthétise les ${linkedFiles.length} documents liés à "${entityName}" (${entity_type}).
+    console.log(`[synthesize] Calling Lovable AI with ${modelConfig.model || 'google/gemini-2.5-flash'}...`);
 
-${documentsContext}
-
-Produis une synthèse exhaustive en Markdown.`;
-
-    console.log(`[synthesize] Calling Lovable AI...`);
-
+    // 12. Generate synthesis with Lovable AI
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -142,7 +334,7 @@ Produis une synthèse exhaustive en Markdown.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: modelConfig.model || 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -178,7 +370,7 @@ Produis une synthèse exhaustive en Markdown.`;
 
     console.log(`[synthesize] Generated synthesis (${synthesis.length} chars)`);
 
-    // 4. Store synthesis in the appropriate table
+    // 13. Store synthesis in the appropriate table
     let updateError = null;
 
     if (entity_type === 'lead') {
@@ -203,13 +395,12 @@ Produis une synthèse exhaustive en Markdown.`;
       updateError = error;
 
     } else if (entity_type === 'project') {
-      // For projects, create/update a synthesis note instead
       const { data: existingNote } = await supabase
         .from('project_notes')
         .select('id')
         .eq('project_id', entity_id)
         .eq('note_type', 'synthesis')
-        .eq('title', 'Synthèse documentaire IA')
+        .eq('title', 'Synthèse IA Transversale')
         .maybeSingle();
 
       if (existingNote) {
@@ -227,10 +418,10 @@ Produis une synthèse exhaustive en Markdown.`;
           .insert({
             project_id: entity_id,
             workspace_id: '00000000-0000-0000-0000-000000000001',
-            title: 'Synthèse documentaire IA',
+            title: 'Synthèse IA Transversale',
             content: synthesis,
             note_type: 'synthesis',
-            tags: ['ia', 'auto-generated']
+            tags: ['ia', 'auto-generated', 'transversal']
           });
         updateError = error;
       }
@@ -241,19 +432,30 @@ Produis une synthèse exhaustive en Markdown.`;
       throw updateError;
     }
 
-    // 5. Log activity
+    // 14. Log activity with detailed metadata
+    const sourceCounts = {
+      documents: linkedFiles.length,
+      transcriptions: transcriptions.length,
+      partners: partners.length,
+      tasks: tasks.length,
+      bookings: bookings.length,
+      generated_documents: generatedDocs.length
+    };
+
     await supabase.from('activity_log').insert({
       workspace_id: '00000000-0000-0000-0000-000000000001',
       entity_type: entity_type === 'document' ? 'specification' : entity_type,
       entity_id: entity_id,
       activity_type: 'synthesis_generated',
-      title: `Synthèse IA générée pour ${entityName}`,
-      content: `Synthèse de ${linkedFiles.length} documents`,
+      title: `Synthèse IA transversale générée pour ${entityName}`,
+      content: `Synthèse de ${events.length} événements (${Object.entries(sourceCounts).filter(([,v]) => v > 0).map(([k,v]) => `${v} ${k}`).join(', ')})`,
       is_ai_generated: true,
       ai_metadata: {
-        documents_count: linkedFiles.length,
+        events_count: events.length,
+        source_counts: sourceCounts,
         synthesis_length: synthesis.length,
-        model: 'google/gemini-2.5-flash'
+        model: modelConfig.model || 'google/gemini-2.5-flash',
+        synthesis_date: synthesisDate
       }
     });
 
@@ -262,7 +464,8 @@ Produis une synthèse exhaustive en Markdown.`;
     return new Response(
       JSON.stringify({ 
         success: true, 
-        documents_count: linkedFiles.length,
+        events_count: events.length,
+        source_counts: sourceCounts,
         synthesis_length: synthesis.length 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -277,3 +480,37 @@ Produis une synthèse exhaustive en Markdown.`;
     );
   }
 });
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+}
+
+function getDefaultSystemPrompt(): string {
+  return `Tu es un assistant expert en synthèse documentaire pour IArche, cabinet de conseil en transformation digitale.
+
+Ta mission : produire une synthèse chronologique EXHAUSTIVE de toutes les informations liées à une entité.
+
+Règles :
+- Respecter strictement l'ordre chronologique
+- Ne jamais perdre d'information clé
+- Organiser par thématiques et chronologie
+- Identifier les évolutions entre versions
+- Mettre en avant les points d'action et décisions
+- Format Markdown avec sections claires`;
+}
+
+function getDefaultUserPrompt(): string {
+  return `Date de synthèse : {{synthesis_date}}
+
+Entité : {{entity_name}} ({{entity_type}})
+
+=== CONTEXTE CHRONOLOGIQUE ===
+
+{{chronological_context}}
+
+Produis une synthèse exhaustive en respectant strictement la chronologie.`;
+}
