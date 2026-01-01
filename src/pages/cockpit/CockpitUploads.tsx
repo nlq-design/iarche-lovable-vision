@@ -13,6 +13,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   Upload, 
   FileText, 
@@ -180,6 +190,11 @@ export default function CockpitUploads() {
   // File detail sheet state
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
+  
+  // Delete confirmation state
+  const [fileToDelete, setFileToDelete] = useState<UploadedFile | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Upload state
   const [dragActive, setDragActive] = useState(false);
@@ -948,7 +963,10 @@ export default function CockpitUploads() {
                     onReprocess={() => reprocess({ fileId: file.id })}
                     onDownload={() => downloadFile(file)}
                     onShare={() => generateShareLink({ fileId: file.id })}
-                    onDelete={() => deleteFile(file.id)}
+                    onDelete={() => {
+                      setFileToDelete(file);
+                      setShowDeleteDialog(true);
+                    }}
                     onView={() => {
                       setSelectedFile(file);
                       setDetailSheetOpen(true);
@@ -966,6 +984,48 @@ export default function CockpitUploads() {
           open={detailSheetOpen}
           onOpenChange={setDetailSheetOpen}
         />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer ce fichier ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Le fichier "{fileToDelete?.original_filename}" sera définitivement supprimé. Cette action est irréversible.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  if (!fileToDelete) return;
+                  setIsDeleting(true);
+                  try {
+                    await deleteFileAsync(fileToDelete.id);
+                    toast.success('Fichier supprimé');
+                    setShowDeleteDialog(false);
+                    setFileToDelete(null);
+                  } catch (error) {
+                    toast.error('Erreur lors de la suppression');
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                    Suppression...
+                  </>
+                ) : (
+                  'Supprimer'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </CockpitLayout>
   );

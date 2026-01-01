@@ -20,6 +20,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   FileText,
   Download,
   Share2,
@@ -92,6 +102,8 @@ export function FileDetailSheet({ file, open, onOpenChange }: FileDetailSheetPro
   const [selectedDocumentId, setSelectedDocumentId] = useState<string>('');
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch entities
   const { data: projects = [] } = useQuery({
@@ -201,10 +213,19 @@ export function FileDetailSheet({ file, open, onOpenChange }: FileDetailSheetPro
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!file) return;
-    deleteFile(file.id);
-    onOpenChange(false);
+    setIsDeleting(true);
+    try {
+      await deleteFile(file.id);
+      setShowDeleteDialog(false);
+      onOpenChange(false);
+      toast.success('Fichier supprimé');
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (!file) return null;
@@ -484,7 +505,7 @@ export function FileDetailSheet({ file, open, onOpenChange }: FileDetailSheetPro
               variant="destructive" 
               size="sm" 
               className="w-full" 
-              onClick={handleDelete}
+              onClick={() => setShowDeleteDialog(true)}
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Supprimer le fichier
@@ -492,6 +513,35 @@ export function FileDetailSheet({ file, open, onOpenChange }: FileDetailSheetPro
           </div>
         </ScrollArea>
       </SheetContent>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce fichier ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Le fichier "{file.original_filename}" sera définitivement supprimé. Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                'Supprimer'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }

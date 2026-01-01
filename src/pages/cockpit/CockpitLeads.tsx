@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Search, Download, Mail, Building2, Trash2, TrendingUp, TrendingDown, Minus, Mic } from "lucide-react";
+import { Users, Search, Download, Mail, Building2, Trash2, TrendingUp, TrendingDown, Minus, Mic, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -149,11 +149,18 @@ const CockpitLeads = () => {
     );
   };
 
+  const [isDeleting, setIsDeleting] = useState(false);
+  
   const handleBulkDelete = () => {
+    setIsDeleting(true);
     bulkDeleteLeads.mutate(selectedIds, {
       onSuccess: () => {
         setSelectedIds([]);
         setShowBulkDeleteDialog(false);
+        setIsDeleting(false);
+      },
+      onError: () => {
+        setIsDeleting(false);
       }
     });
   };
@@ -395,12 +402,20 @@ const CockpitLeads = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDelete}
+              disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Supprimer
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                'Supprimer'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
