@@ -112,16 +112,32 @@ const resourceTypeLabels: Record<string, string> = {
   "livre-blanc": "Livres blancs",
   "atelier-webinaire": "Ateliers/Webinaires",
   solution: "Solutions",
-  service: "Services"
+  service: "Services",
+  "cas-client": "Cas Clients",
+  // Cockpit types
+  lead: "Leads",
+  project: "Projets",
+  uploaded_file: "Fichiers",
+  specification: "CDC",
+  voice_transcription: "Transcriptions",
+  generated_document: "Documents"
 };
 
 const resourceTypeIcons: Record<string, React.ReactNode> = {
   article: <FileText className="h-4 w-4" />,
   actualite: <FileText className="h-4 w-4" />,
   "livre-blanc": <BookOpen className="h-4 w-4" />,
-  "atelier-webinaire": <FileText className="h-4 w-4" />,
+  "atelier-webinaire": <Calendar className="h-4 w-4" />,
   solution: <Sparkles className="h-4 w-4" />,
-  service: <Cpu className="h-4 w-4" />
+  service: <Cpu className="h-4 w-4" />,
+  "cas-client": <Briefcase className="h-4 w-4" />,
+  // Cockpit types
+  lead: <Users className="h-4 w-4" />,
+  project: <ClipboardList className="h-4 w-4" />,
+  uploaded_file: <FileCode className="h-4 w-4" />,
+  specification: <FileSignature className="h-4 w-4" />,
+  voice_transcription: <Mic className="h-4 w-4" />,
+  generated_document: <FileCheck className="h-4 w-4" />
 };
 
 function VectorizationCard({ status, onRefresh }: { status: VectorizationStatus[]; onRefresh: () => void }) {
