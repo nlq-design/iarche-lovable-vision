@@ -78,6 +78,7 @@ import { FileUploader } from '@/components/cockpit/FileUploader';
 import { SpecificationEditor } from '@/components/cockpit/SpecificationEditor';
 import { CreateTaskDialog } from '@/components/cockpit/dialogs/CreateTaskDialog';
 import { DocumentGenerator } from '@/components/cockpit/DocumentGenerator';
+import { LinkedFilesSection } from '@/components/cockpit/LinkedFilesSection';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -839,6 +840,9 @@ const CockpitProjectDetail = () => {
 
           {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-4">
+            {/* Uploaded Files from cockpit-uploads */}
+            <LinkedFilesSection entityType="project" entityId={id!} title="Fichiers importés" />
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">Documents</CardTitle>

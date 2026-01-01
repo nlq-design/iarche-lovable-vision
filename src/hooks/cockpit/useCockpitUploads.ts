@@ -299,6 +299,16 @@ export function useCockpitUploads(filters?: {
     },
   });
 
+  // Async version for external use
+  const updateLinksAsync = async (params: {
+    fileId: string;
+    projectIds?: string[];
+    solutionIds?: string[];
+    leadIds?: string[];
+  }) => {
+    return updateLinksMutation.mutateAsync(params);
+  };
+
   // Reprocess file mutation
   const reprocessMutation = useMutation({
     mutationFn: async ({ fileId, forceOcr }: { fileId: string; forceOcr?: boolean }) => {
@@ -433,7 +443,7 @@ export function useCockpitUploads(filters?: {
     uploadText: uploadTextMutation.mutate,
     uploadTextAsync: uploadTextMutation.mutateAsync,
     isUploadingText: uploadTextMutation.isPending,
-    updateLinks: updateLinksMutation.mutate,
+    updateLinks: updateLinksAsync,
     reprocess: reprocessMutation.mutate,
     generateShareLink: generateShareLinkMutation.mutate,
     deleteFile: deleteMutation.mutate,

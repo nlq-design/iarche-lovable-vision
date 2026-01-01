@@ -69,6 +69,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCockpitLeads, useCockpitProjects, useCockpitTasks, useCockpitBookings } from '@/hooks/cockpit';
 import { useLeads } from '@/hooks/shared/useLeads';
+import { LinkedFilesSection } from '@/components/cockpit/LinkedFilesSection';
 import type { Database } from '@/integrations/supabase/types';
 
 type Lead = Database['public']['Tables']['leads']['Row'];
@@ -680,6 +681,9 @@ const CockpitLeadDetail = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Linked Files */}
+            <LinkedFilesSection entityType="lead" entityId={id!} title="Documents" />
 
             {/* Complete History */}
             <Card>
