@@ -49,117 +49,85 @@ function parseToolsFromPrompt(content: string): AIAgentStats['tools'] {
     rag: [],
   };
 
-  // Parse Cockpit Read tools
-  const cockpitReadMatch = content.match(/## 🔵 OUTILS COCKPIT - LECTURE[^#]*?\n\n\|[^\|]+\|[^\|]+\|[^\|]+\|\n\|[-\s|]+\|\n([\s\S]*?)(?=\n\n##|$)/);
-  if (cockpitReadMatch) {
-    const rows = cockpitReadMatch[1].trim().split('\n');
-    rows.forEach(row => {
-      const cols = row.split('|').filter(c => c.trim());
-      if (cols.length >= 2) {
-        result.cockpit_read.push({
-          name: cols[0].trim(),
-          description: cols[1].trim(),
-          category: 'cockpit_read'
+  // Helper to parse table rows
+  const parseTableSection = (section: string): Array<{name: string; description: string; required?: string[]; optional?: string[]}> => {
+    const items: Array<{name: string; description: string; required?: string[]; optional?: string[]}> = [];
+    const lines = section.split('\n');
+    
+    for (const line of lines) {
+      if (!line.startsWith('|') || line.includes('---') || line.includes('Outil')) continue;
+      const cols = line.split('|').map(c => c.trim()).filter(Boolean);
+      if (cols.length >= 2 && cols[0] && !cols[0].includes('---')) {
+        items.push({
+          name: cols[0],
+          description: cols[1],
+          required: cols[2]?.split(',').map(s => s.trim()).filter(Boolean),
+          optional: cols[3]?.split(',').map(s => s.trim()).filter(Boolean)
         });
       }
+    }
+    return items;
+  };
+
+  // Parse Cockpit Read tools - matches "## 🔵 OUTILS COCKPIT - LECTURE (15)"
+  const cockpitReadMatch = content.match(/## 🔵 OUTILS COCKPIT - LECTURE[^\n]*\n([\s\S]*?)(?=\n## [🟢🟠🔴🟣⚫⚡]|$)/);
+  if (cockpitReadMatch) {
+    parseTableSection(cockpitReadMatch[1]).forEach(item => {
+      result.cockpit_read.push({ name: item.name, description: item.description, category: 'cockpit_read' });
     });
   }
 
   // Parse Cockpit Write tools
-  const cockpitWriteMatch = content.match(/## 🟢 OUTILS COCKPIT - ÉCRITURE[^#]*?\n\n\|[^\|]+\|[^\|]+\|[^\|]+\|[^\|]+\|\n\|[-\s|]+\|\n([\s\S]*?)(?=\n\n##|$)/);
+  const cockpitWriteMatch = content.match(/## 🟢 OUTILS COCKPIT - ÉCRITURE[^\n]*\n([\s\S]*?)(?=\n## [🔵🟠🔴🟣⚫⚡]|$)/);
   if (cockpitWriteMatch) {
-    const rows = cockpitWriteMatch[1].trim().split('\n');
-    rows.forEach(row => {
-      const cols = row.split('|').filter(c => c.trim());
-      if (cols.length >= 2) {
-        result.cockpit_write.push({
-          name: cols[0].trim(),
-          description: cols[1].trim(),
-          category: 'cockpit_write',
-          required_fields: cols[2]?.split(',').map(s => s.trim()).filter(Boolean),
-          optional_fields: cols[3]?.split(',').map(s => s.trim()).filter(Boolean)
-        });
-      }
+    parseTableSection(cockpitWriteMatch[1]).forEach(item => {
+      result.cockpit_write.push({ 
+        name: item.name, 
+        description: item.description, 
+        category: 'cockpit_write',
+        required_fields: item.required,
+        optional_fields: item.optional
+      });
     });
   }
 
   // Parse Email tools
-  const emailMatch = content.match(/## 🟠 OUTILS COCKPIT - EMAIL[^#]*?\n\n\|[^\|]+\|[^\|]+\|[^\|]+\|[^\|]+\|\n\|[-\s|]+\|\n([\s\S]*?)(?=\n\n##|$)/);
+  const emailMatch = content.match(/## 🟠 OUTILS COCKPIT - EMAIL[^\n]*\n([\s\S]*?)(?=\n## [🔵🟢🔴🟣⚫⚡]|$)/);
   if (emailMatch) {
-    const rows = emailMatch[1].trim().split('\n');
-    rows.forEach(row => {
-      const cols = row.split('|').filter(c => c.trim());
-      if (cols.length >= 2) {
-        result.email.push({
-          name: cols[0].trim(),
-          description: cols[1].trim(),
-          category: 'email'
-        });
-      }
+    parseTableSection(emailMatch[1]).forEach(item => {
+      result.email.push({ name: item.name, description: item.description, category: 'email' });
     });
   }
 
   // Parse RAG tools
-  const ragMatch = content.match(/## 🔴 OUTILS COCKPIT - IA\/RAG[^#]*?\n\n\|[^\|]+\|[^\|]+\|[^\|]+\|\n\|[-\s|]+\|\n([\s\S]*?)(?=\n\n##|$)/);
+  const ragMatch = content.match(/## 🔴 OUTILS COCKPIT - IA\/RAG[^\n]*\n([\s\S]*?)(?=\n## [🔵🟢🟠🟣⚫⚡]|$)/);
   if (ragMatch) {
-    const rows = ragMatch[1].trim().split('\n');
-    rows.forEach(row => {
-      const cols = row.split('|').filter(c => c.trim());
-      if (cols.length >= 2) {
-        result.rag.push({
-          name: cols[0].trim(),
-          description: cols[1].trim(),
-          category: 'rag'
-        });
-      }
+    parseTableSection(ragMatch[1]).forEach(item => {
+      result.rag.push({ name: item.name, description: item.description, category: 'rag' });
     });
   }
 
-  // Parse Admin Read tools
-  const adminReadMatch = content.match(/## 🟣 OUTILS ADMIN - CONTENU[^#]*?\n\n\|[^\|]+\|[^\|]+\|[^\|]+\|\n\|[-\s|]+\|\n([\s\S]*?)(?=\n\n##|$)/);
-  if (adminReadMatch) {
-    const rows = adminReadMatch[1].trim().split('\n');
-    rows.forEach(row => {
-      const cols = row.split('|').filter(c => c.trim());
-      if (cols.length >= 2) {
-        result.admin_read.push({
-          name: cols[0].trim(),
-          description: cols[1].trim(),
-          category: 'admin_read'
-        });
-      }
+  // Parse Admin Content tools
+  const adminContentMatch = content.match(/## 🟣 OUTILS ADMIN - CONTENU[^\n]*\n([\s\S]*?)(?=\n## [🔵🟢🟠🔴⚫⚡]|$)/);
+  if (adminContentMatch) {
+    parseTableSection(adminContentMatch[1]).forEach(item => {
+      result.admin_read.push({ name: item.name, description: item.description, category: 'admin_read' });
     });
   }
 
-  // Parse Admin Write tools
-  const adminWriteMatch = content.match(/## ⚫ OUTILS ADMIN - SYSTÈME[^#]*?\n\n\|[^\|]+\|[^\|]+\|[^\|]+\|\n\|[-\s|]+\|\n([\s\S]*?)(?=\n\n##|$)/);
-  if (adminWriteMatch) {
-    const rows = adminWriteMatch[1].trim().split('\n');
-    rows.forEach(row => {
-      const cols = row.split('|').filter(c => c.trim());
-      if (cols.length >= 2) {
-        result.admin_write.push({
-          name: cols[0].trim(),
-          description: cols[1].trim(),
-          category: 'admin_write'
-        });
-      }
+  // Parse Admin System tools
+  const adminSystemMatch = content.match(/## ⚫ OUTILS ADMIN - SYSTÈME[^\n]*\n([\s\S]*?)(?=\n## [🔵🟢🟠🔴🟣⚡]|$)/);
+  if (adminSystemMatch) {
+    parseTableSection(adminSystemMatch[1]).forEach(item => {
+      result.admin_write.push({ name: item.name, description: item.description, category: 'admin_write' });
     });
   }
 
-  // Also try to parse admin security tools
-  const adminSecurityMatch = content.match(/## ⚡ OUTILS ADMIN - SÉCURITÉ[^#]*?\n\n\|[^\|]+\|[^\|]+\|[^\|]+\|\n\|[-\s|]+\|\n([\s\S]*?)(?=\n\n##|$)/);
+  // Parse Admin Security tools
+  const adminSecurityMatch = content.match(/## ⚡ OUTILS ADMIN - SÉCURITÉ[^\n]*\n([\s\S]*?)(?=\n## |---|\n\n##|$)/);
   if (adminSecurityMatch) {
-    const rows = adminSecurityMatch[1].trim().split('\n');
-    rows.forEach(row => {
-      const cols = row.split('|').filter(c => c.trim());
-      if (cols.length >= 2) {
-        result.admin_write.push({
-          name: cols[0].trim(),
-          description: cols[1].trim(),
-          category: 'admin_write'
-        });
-      }
+    parseTableSection(adminSecurityMatch[1]).forEach(item => {
+      result.admin_write.push({ name: item.name, description: item.description, category: 'admin_write' });
     });
   }
 
@@ -171,21 +139,22 @@ function parseEdgeFunctionsFromPrompt(content: string): AIAgentStats['edgeFuncti
   const connected: EdgeFunctionDefinition[] = [];
   const other: EdgeFunctionDefinition[] = [];
 
-  // Parse Edge Functions section
-  const edgeMatch = content.match(/## 🔗 \d+ EDGE FUNCTIONS[^#]*?\n\n\|[^\|]+\|[^\|]+\|\n\|[-\s|]+\|\n([\s\S]*?)(?=\n\n---|$)/);
+  // Parse Edge Functions section - matches "## 🔗 22 EDGE FUNCTIONS"
+  const edgeMatch = content.match(/## 🔗 \d+ EDGE FUNCTIONS[^\n]*\n([\s\S]*?)(?=\n---|\n## [📋]|$)/);
   if (edgeMatch) {
-    const rows = edgeMatch[1].trim().split('\n');
-    rows.forEach(row => {
-      const cols = row.split('|').filter(c => c.trim());
-      if (cols.length >= 2) {
+    const lines = edgeMatch[1].split('\n');
+    for (const line of lines) {
+      if (!line.startsWith('|') || line.includes('---') || line.includes('Fonction')) continue;
+      const cols = line.split('|').map(c => c.trim()).filter(Boolean);
+      if (cols.length >= 2 && cols[0] && !cols[0].includes('---')) {
         connected.push({
-          name: cols[0].trim(),
-          description: cols[1].trim(),
+          name: cols[0],
+          description: cols[1],
           connected_to_agent: true,
-          usage: cols[1].trim()
+          usage: cols[1]
         });
       }
-    });
+    }
   }
 
   return { connected, other };
