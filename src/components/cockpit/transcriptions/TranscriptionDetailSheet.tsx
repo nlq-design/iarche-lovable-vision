@@ -654,28 +654,6 @@ export function TranscriptionDetailSheet({
                     </TabsContent>
 
                     <TabsContent value="transcript" className="pt-4 space-y-4">
-                      {/* Speaker info banner if diarization available */}
-                      {(transcription.ai_metadata as any)?.speaker_count > 0 && (
-                        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border text-sm">
-                          <Users className="h-4 w-4 text-primary" />
-                          <span className="font-medium">
-                            {(transcription.ai_metadata as any).speaker_count} intervenant{(transcription.ai_metadata as any).speaker_count > 1 ? 's' : ''} détecté{(transcription.ai_metadata as any).speaker_count > 1 ? 's' : ''}
-                          </span>
-                          <div className="flex gap-1.5 ml-2">
-                            {((transcription.ai_metadata as any)?.speakers_detected as string[] ?? []).map((speaker, idx) => (
-                              <Badge 
-                                key={speaker} 
-                                variant="outline" 
-                                className="text-xs"
-                                style={{ borderColor: SPEAKER_COLORS[idx % SPEAKER_COLORS.length], color: SPEAKER_COLORS[idx % SPEAKER_COLORS.length] }}
-                              >
-                                {speaker}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
                       <Card>
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
@@ -684,17 +662,7 @@ export function TranscriptionDetailSheet({
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-0">
-                          {/* If we have segments with speaker info, render with diarization */}
-                          {transcription.segments && Array.isArray(transcription.segments) && transcription.segments.length > 0 ? (
-                            <DiarizedTranscript 
-                              segments={transcription.segments as TranscriptSegment[]} 
-                              speakersDetected={(transcription.ai_metadata as any)?.speakers_detected ?? []}
-                            />
-                          ) : (
-                            <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                              {transcription.raw_transcript || 'Transcription non disponible'}
-                            </p>
-                          )}
+                          <SimpleTranscript text={transcription.raw_transcript || ''} />
                         </CardContent>
                       </Card>
                     </TabsContent>
