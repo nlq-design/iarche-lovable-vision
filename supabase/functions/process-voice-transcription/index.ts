@@ -663,7 +663,7 @@ CRITICAL OUTPUT RULES:
     case "lovable": {
       const requestBody: Record<string, unknown> = {
         model: modelId,
-        temperature: 0, // Force deterministic output
+        // Note: temperature not supported by GPT-5 models, using default
         messages: [
           { role: "system", content: systemContent },
           { role: "user", content: usr },
@@ -701,15 +701,24 @@ CRITICAL OUTPUT RULES:
     case "openai": {
       if (!OPENAI_API_KEY) throw new Error("openai_api_key_not_configured");
       
+      // Check if model supports temperature (GPT-5 and newer don't)
+      const isGpt5OrNewer = modelId.includes("gpt-5") || modelId.includes("o3") || modelId.includes("o4");
+      
       const requestBody: Record<string, unknown> = {
         model: modelId,
-        temperature: 0, // Force deterministic output
         messages: [
           { role: "system", content: systemContent },
           { role: "user", content: usr },
         ],
-        max_tokens: 4096,
       };
+      
+      // Add temperature only for legacy models
+      if (!isGpt5OrNewer) {
+        requestBody.temperature = 0;
+        requestBody.max_tokens = 4096;
+      } else {
+        requestBody.max_completion_tokens = 4096;
+      }
       
       // Force JSON mode when available
       if (!supportsTools || !outputSchema) {
@@ -774,14 +783,21 @@ CRITICAL OUTPUT RULES:
     case "openrouter": {
       if (!OPENROUTER_API_KEY) throw new Error("openrouter_api_key_not_configured");
       
+      // Check if model supports temperature
+      const isGpt5OrNewer = modelId.includes("gpt-5") || modelId.includes("o3") || modelId.includes("o4");
+      
       const requestBody: Record<string, unknown> = {
         model: modelId,
-        temperature: 0, // Force deterministic output
         messages: [
           { role: "system", content: systemContent },
           { role: "user", content: usr },
         ],
       };
+      
+      // Add temperature only for legacy models
+      if (!isGpt5OrNewer) {
+        requestBody.temperature = 0;
+      }
       
       if (outputSchema && supportsTools) {
         requestBody.tools = [{
