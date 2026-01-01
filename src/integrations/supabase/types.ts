@@ -48,6 +48,7 @@ export type Database = {
         Row: {
           activity_type: string
           ai_metadata: Json | null
+          ai_reviewed_at: string | null
           content: string | null
           created_at: string | null
           created_by: string | null
@@ -59,6 +60,7 @@ export type Database = {
           meeting_note_id: string | null
           metadata: Json | null
           opportunity_id: string | null
+          pending_ai_review: boolean | null
           project_id: string | null
           related_entity_id: string | null
           related_entity_type: string | null
@@ -70,6 +72,7 @@ export type Database = {
         Insert: {
           activity_type: string
           ai_metadata?: Json | null
+          ai_reviewed_at?: string | null
           content?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -81,6 +84,7 @@ export type Database = {
           meeting_note_id?: string | null
           metadata?: Json | null
           opportunity_id?: string | null
+          pending_ai_review?: boolean | null
           project_id?: string | null
           related_entity_id?: string | null
           related_entity_type?: string | null
@@ -92,6 +96,7 @@ export type Database = {
         Update: {
           activity_type?: string
           ai_metadata?: Json | null
+          ai_reviewed_at?: string | null
           content?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -103,6 +108,7 @@ export type Database = {
           meeting_note_id?: string | null
           metadata?: Json | null
           opportunity_id?: string | null
+          pending_ai_review?: boolean | null
           project_id?: string | null
           related_entity_id?: string | null
           related_entity_type?: string | null
@@ -2988,6 +2994,10 @@ export type Database = {
       is_workspace_member: {
         Args: { p_user_id: string; p_workspace_id: string }
         Returns: boolean
+      }
+      mark_ai_notifications_reviewed: {
+        Args: { p_ids: string[] }
+        Returns: number
       }
       search_ai_memory: {
         Args: {
