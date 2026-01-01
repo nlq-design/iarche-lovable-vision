@@ -3195,10 +3195,10 @@ serve(async (req) => {
       ? user_id
       : authedUserId;
 
-    const recentMemory = await getRecentMemory(supabase, workspace_id, safeUserId ?? undefined, session_id, 5);
+    const recentMemory = await getRecentMemory(supabase, workspace_id, safeUserId ?? undefined, session_id, 10);
 
     // 2. Search relevant memory semantically
-    const relevantMemory = userQuery ? await searchMemory(supabase, userQuery, workspace_id, safeUserId ?? undefined, 3) : [];
+    const relevantMemory = userQuery ? await searchMemory(supabase, userQuery, workspace_id, safeUserId ?? undefined, 5) : [];
     
     // 3. Build memory context string
     let memoryContext = "";
@@ -3208,7 +3208,7 @@ serve(async (req) => {
         memoryContext += "\n--- Mémoire pertinente ---\n" + relevantMemory.join("\n");
       }
       if (recentMemory.length > 0) {
-        memoryContext += "\n--- Actions récentes ---\n" + recentMemory.slice(0, 3).join("\n");
+        memoryContext += "\n--- Historique récent session ---\n" + recentMemory.slice(0, 8).join("\n");
       }
     }
 
@@ -3220,15 +3220,23 @@ serve(async (req) => {
 - Fuseau horaire : Europe/Paris
 - Semaine : ${getWeekNumber(now)}`;
 
-    // 5. Save the user query to memory
+    // 5. Save the user query to memory with higher importance
     if (userQuery) {
+      // Detect if message contains key info (email, name, date, etc.)
+      const hasEmail = /@/.test(userQuery);
+      const hasDate = /\d{1,2}[\/\-]\d{1,2}|\d{1,2}h|\d{2}:\d{2}|demain|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche/i.test(userQuery);
+      const hasName = /avec\s+[A-Z][a-zé]+|M\.\s*[A-Z]|Mme\s*[A-Z]|[A-Z][a-z]+\s+[A-Z][a-z]+/i.test(userQuery);
+      
+      const importanceScore = hasEmail || hasDate || hasName ? 0.8 : 0.4;
+      const category = hasEmail ? "contact_info" : hasDate ? "scheduling" : hasName ? "person" : "user_query";
+      
       await saveMemory(supabase, {
         memory_type: "conversation",
-        category: "user_query",
+        category: category,
         content: userQuery.slice(0, 500),
-        importance_score: 0.3,
+        importance_score: importanceScore,
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
-      }, workspace_id, user_id, session_id);
+      }, workspace_id, safeUserId ?? undefined, session_id);
     }
 
     // =============================================================================
