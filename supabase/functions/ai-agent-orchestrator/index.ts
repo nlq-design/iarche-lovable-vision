@@ -2670,6 +2670,16 @@ Génère un contenu HTML pour email avec:
     }
 
     case "cancel_booking": {
+      // VALIDATION: booking_id obligatoire
+      if (!args.booking_id) {
+        return {
+          success: false,
+          error: "ID du RDV obligatoire",
+          message: "⚠️ Je ne peux pas annuler le RDV sans son identifiant. Précisez quel RDV annuler.",
+          autonomy_level: "execution_directe",
+        };
+      }
+      
       const { data: booking, error: bErr } = await supabase
         .from("bookings")
         .select("id, name, email, start_time, status")
@@ -2697,6 +2707,21 @@ Génère un contenu HTML pour email avec:
     }
 
     case "reschedule_booking": {
+      // VALIDATION: champs obligatoires
+      const missingRescheduleFields: string[] = [];
+      if (!args.booking_id) missingRescheduleFields.push("booking_id (ID du RDV)");
+      if (!args.new_date) missingRescheduleFields.push("new_date (nouvelle date YYYY-MM-DD)");
+      if (!args.new_time) missingRescheduleFields.push("new_time (nouvelle heure HH:MM)");
+      
+      if (missingRescheduleFields.length > 0) {
+        return {
+          success: false,
+          error: `Champs obligatoires manquants : ${missingRescheduleFields.join(", ")}`,
+          message: `⚠️ Je ne peux pas reprogrammer le RDV. Il me manque : ${missingRescheduleFields.join(", ")}.`,
+          autonomy_level: "execution_directe",
+        };
+      }
+      
       const { data: booking, error: bErr } = await supabase
         .from("bookings")
         .select("id, name, email, start_time, end_time, booking_type_id")
@@ -2812,6 +2837,16 @@ Génère un contenu HTML pour email avec:
     }
 
     case "link_solution_to_lead": {
+      // VALIDATION: champs obligatoires
+      if (!args.solution_slug || !args.lead_id) {
+        return {
+          success: false,
+          error: "solution_slug et lead_id sont obligatoires",
+          message: "⚠️ Je ne peux pas lier la solution sans le slug de la solution et l'ID du lead.",
+          autonomy_level: "N1",
+        };
+      }
+      
       // Get solution ID from slug
       const { data: solution, error: solErr } = await supabase
         .from("articles")
@@ -2866,6 +2901,27 @@ Génère un contenu HTML pour email avec:
     // ============ NOUVEAUX OUTILS P1 (Phase 4) ============
     
     case "generate_document": {
+      // VALIDATION: document_type obligatoire
+      const validDocTypes = ["quote", "spec", "proposal"];
+      if (!args.document_type || !validDocTypes.includes(args.document_type as string)) {
+        return {
+          success: false,
+          error: "Type de document invalide",
+          message: `⚠️ Type de document obligatoire. Valeurs acceptées : ${validDocTypes.join(", ")}.`,
+          autonomy_level: "N1",
+        };
+      }
+      
+      // Au moins une entité liée requise
+      if (!args.project_id && !args.opportunity_id && !args.lead_id) {
+        return {
+          success: false,
+          error: "Entité liée manquante",
+          message: "⚠️ Précisez au moins un projet, une opportunité ou un lead pour générer le document.",
+          autonomy_level: "N1",
+        };
+      }
+      
       // Call the existing generate-document edge function
       const docResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-document`, {
         method: "POST",
