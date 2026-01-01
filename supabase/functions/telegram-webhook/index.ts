@@ -100,12 +100,14 @@ async function callAIAgent(message: string, userId: number, userName: string): P
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        // Internal server-to-server auth (avoids JWT requirements)
+        "x-internal-token": SUPABASE_SERVICE_ROLE_KEY,
       },
       body: JSON.stringify({
         messages: messagesPayload,
         source: "telegram",
-        user_id: `telegram_${userId}`,
+        // ai_agent_memory.user_id expects UUID; keep null for Telegram
+        user_id: null,
         session_id: `telegram_session_${userId}`,
         workspace_id: null, // Telegram uses global workspace
       }),

@@ -8,6 +8,7 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
@@ -2142,16 +2143,49 @@ serve(async (req) => {
   }
 
   try {
-    // Auth check
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    // Auth modes:
+    // - Internal calls (e.g. Telegram webhook) using x-internal-token
+    // - User JWT calls from the web app using Authorization: Bearer <jwt>
+
+    const internalToken = req.headers.get("x-internal-token");
+    const authHeader = req.headers.get("Authorization") ?? "";
+
+    let authedUserId: string | null = null;
+    let authMode: "internal" | "jwt" = "internal";
+
+    if (internalToken && internalToken === SUPABASE_SERVICE_ROLE_KEY) {
+      authMode = "internal";
+    } else {
+      if (!authHeader) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Validate JWT (we run our own validation because this function can be called by non-JWT clients)
+      const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { headers: { Authorization: authHeader } },
       });
+
+      const { data: u, error: uerr } = await supabaseAuth.auth.getUser();
+      if (uerr || !u?.user) {
+        console.error("[ai-agent-orchestrator] invalid_auth:", uerr?.message);
+        return new Response(JSON.stringify({ error: "invalid_auth" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      authMode = "jwt";
+      authedUserId = u.user.id;
     }
 
+    console.log("[ai-agent-orchestrator] authMode=", authMode, "user=", authedUserId ?? "(none)");
+
+    // Service client for DB operations (bypasses RLS by design)
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
     const body = await req.json();
     const { messages, stream = false, workspace_id, user_id, session_id } = body;
 
@@ -2176,10 +2210,15 @@ serve(async (req) => {
     // =============================================================================
     
     // 1. Fetch recent memory for context
-    const recentMemory = await getRecentMemory(supabase, workspace_id, user_id, session_id, 5);
-    
+    // NOTE: ai_agent_memory.user_id is UUID; ignore non-UUID user_id values.
+    const safeUserId = typeof user_id === "string" && /^[0-9a-fA-F-]{36}$/.test(user_id)
+      ? user_id
+      : authedUserId;
+
+    const recentMemory = await getRecentMemory(supabase, workspace_id, safeUserId ?? undefined, session_id, 5);
+
     // 2. Search relevant memory semantically
-    const relevantMemory = userQuery ? await searchMemory(supabase, userQuery, workspace_id, user_id, 3) : [];
+    const relevantMemory = userQuery ? await searchMemory(supabase, userQuery, workspace_id, safeUserId ?? undefined, 3) : [];
     
     // 3. Build memory context string
     let memoryContext = "";

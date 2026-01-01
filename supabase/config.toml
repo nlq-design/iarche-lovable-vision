@@ -106,7 +106,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.ai-agent-orchestrator]
-verify_jwt = true
+verify_jwt = false
 
 [functions.push-to-google-calendar]
 verify_jwt = true
