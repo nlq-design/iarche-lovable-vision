@@ -187,10 +187,19 @@ export function useCockpitVoiceTranscriptions(
       const { data, error } = await supabase.functions.invoke('process-voice-transcription', {
         body: { job_id: jobId },
       });
-      if (error) throw error;
-      if (!data?.ok && !data?.already_done) {
-        throw new Error(data?.error || 'Processing failed');
+
+      // When the function returns non-2xx, Supabase wraps it as a FunctionsHttpError.
+      // Convert it to a regular Error message to avoid hard UI failures.
+      if (error) {
+        const msg = (error as any)?.message || 'Erreur de traitement (backend)';
+        throw new Error(msg);
       }
+
+      if (!data?.ok && !data?.already_done) {
+        const msg = (data as any)?.message || data?.error || 'Processing failed';
+        throw new Error(msg);
+      }
+
       return data;
     },
     onSuccess: (_, jobId) => {
@@ -198,12 +207,16 @@ export function useCockpitVoiceTranscriptions(
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, 'detail', jobId] });
     },
     onError: (error: Error) => {
-      if (error.message.includes('rate_limited')) {
+      const msg = error.message || '';
+
+      if (msg.includes('rate_limited')) {
         toast.error('Limite de requêtes atteinte, réessayez plus tard');
-      } else if (error.message.includes('credits_exhausted')) {
+      } else if (msg.includes('credits_exhausted')) {
         toast.error('Crédits IA épuisés, veuillez recharger');
+      } else if (msg.includes('elevenlabs_unusual_activity') || msg.includes('detected_unusual_activity')) {
+        toast.error("Transcription bloquée par ElevenLabs (activité inhabituelle). Vérifiez le plan/clé puis réessayez.");
       } else {
-        toast.error(`Erreur de traitement: ${error.message}`);
+        toast.error(`Erreur de traitement: ${msg}`);
       }
     },
   });
