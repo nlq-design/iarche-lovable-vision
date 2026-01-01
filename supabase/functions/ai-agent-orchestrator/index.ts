@@ -140,11 +140,11 @@ async function searchMemory(supabase: any, query: string, workspaceId?: string, 
 }
 
 // =============================================================================
-// TOOL DEFINITIONS - Organized by Module and Autonomy Level
+// TOOL DEFINITIONS - Organized by Module
 // =============================================================================
 
 const AGENT_TOOLS = [
-  // ============ COCKPIT - Lecture (N0) ============
+  // ============ COCKPIT - Lecture ============
   {
     type: "function",
     function: {
@@ -682,7 +682,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "suggest_booking_action",
-      description: "[N1 - Suggestion] Suggère une action sur un rendez-vous (reporter, ajouter notes, envoyer rappel).",
+      description: "Suggère une action sur un rendez-vous (reporter, ajouter notes, envoyer rappel).",
       parameters: {
         type: "object",
         properties: {
@@ -699,7 +699,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "log_activity",
-      description: "[N1 - Action] Enregistre une activité dans le journal (appel, email, note, etc.).",
+      description: "Enregistre une activité dans le journal (appel, email, note, etc.).",
       parameters: {
         type: "object",
         properties: {
@@ -713,12 +713,12 @@ const AGENT_TOOLS = [
       },
     },
   },
-  // ============ ADMIN - Écriture (N1) ============
+  // ============ ADMIN - Écriture ============
   {
     type: "function",
     function: {
       name: "draft_article_content",
-      description: "[N1 - Brouillon] Génère un brouillon de contenu pour un article/actualité.",
+      description: "Génère un brouillon de contenu pour un article/actualité.",
       parameters: {
         type: "object",
         properties: {
@@ -736,7 +736,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "suggest_article_improvements",
-      description: "[N1 - Suggestion] Analyse un article et suggère des améliorations (SEO, structure, contenu).",
+      description: "Analyse un article et suggère des améliorations (SEO, structure, contenu).",
       parameters: {
         type: "object",
         properties: {
@@ -750,7 +750,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "draft_newsletter",
-      description: "[N1 - Brouillon] Génère un brouillon de newsletter basé sur les actualités récentes.",
+      description: "Génère un brouillon de newsletter basé sur les actualités récentes.",
       parameters: {
         type: "object",
         properties: {
