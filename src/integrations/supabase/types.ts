@@ -450,6 +450,7 @@ export type Database = {
       articles: {
         Row: {
           actualite_type: string | null
+          ai_documents_summary: string | null
           ai_source: string | null
           author: string | null
           author_id: string | null
@@ -507,6 +508,7 @@ export type Database = {
         }
         Insert: {
           actualite_type?: string | null
+          ai_documents_summary?: string | null
           ai_source?: string | null
           author?: string | null
           author_id?: string | null
@@ -564,6 +566,7 @@ export type Database = {
         }
         Update: {
           actualite_type?: string | null
+          ai_documents_summary?: string | null
           ai_source?: string | null
           author?: string | null
           author_id?: string | null
@@ -1374,6 +1377,7 @@ export type Database = {
       }
       generated_documents: {
         Row: {
+          ai_documents_summary: string | null
           ai_generated: boolean | null
           ai_metadata: Json | null
           approved_at: string | null
@@ -1399,6 +1403,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          ai_documents_summary?: string | null
           ai_generated?: boolean | null
           ai_metadata?: Json | null
           approved_at?: string | null
@@ -1424,6 +1429,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          ai_documents_summary?: string | null
           ai_generated?: boolean | null
           ai_metadata?: Json | null
           approved_at?: string | null
@@ -1525,6 +1531,7 @@ export type Database = {
       leads: {
         Row: {
           address: string | null
+          ai_documents_summary: string | null
           ai_metadata: Json | null
           city: string | null
           company: string | null
@@ -1554,6 +1561,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          ai_documents_summary?: string | null
           ai_metadata?: Json | null
           city?: string | null
           company?: string | null
@@ -1583,6 +1591,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          ai_documents_summary?: string | null
           ai_metadata?: Json | null
           city?: string | null
           company?: string | null
