@@ -352,6 +352,8 @@ export default function CockpitUploads() {
   };
 
   const cancelUploadJob = useCallback((jobId: string) => {
+    console.log('[cockpit-upload] cancel requested', { jobId });
+
     cancelJobIdsRef.current.add(jobId);
 
     const controller = abortControllersRef.current.get(jobId);

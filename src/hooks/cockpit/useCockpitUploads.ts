@@ -163,15 +163,44 @@ export function useCockpitUploads(filters?: {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const storagePath = `${user?.id || 'anonymous'}/${timestamp}_${safeName}`;
 
-      // 5. Upload to storage (abortable)
-      const { error: uploadError } = await supabase.storage
+      // 5. Upload to storage (abortable via signed URL + fetch)
+      const { data: signed, error: signedError } = await supabase.storage
         .from('cockpit-uploads')
-        .upload(storagePath, file, ({ signal } as any));
+        .createSignedUploadUrl(storagePath);
 
-      if (uploadError) throw uploadError;
+      if (signedError) throw signedError;
 
-      // If user cancelled right after upload, cleanup storage and stop.
+      try {
+        const headers: Record<string, string> = {
+          'Content-Type': file.type || 'application/octet-stream',
+        };
+
+        // Some backends require the token header in addition to the signed URL
+        const token = (signed as any)?.token as string | undefined;
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch((signed as any).signedUrl as string, {
+          method: 'PUT',
+          body: file,
+          signal,
+          headers,
+        });
+
+        if (!res.ok) {
+          throw new Error(`Upload failed (${res.status})`);
+        }
+      } catch (e: any) {
+        // Best-effort cleanup (even on abort, to avoid ghost objects)
+        await supabase.storage.from('cockpit-uploads').remove([storagePath]);
+
+        if (e?.name === 'AbortError' || signal?.aborted) {
+          throw makeAbortError();
+        }
+        throw e;
+      }
+
       if (signal?.aborted) {
+        // In case abort happened right after the fetch resolved
         await supabase.storage.from('cockpit-uploads').remove([storagePath]);
         throw makeAbortError();
       }
