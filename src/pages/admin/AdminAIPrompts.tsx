@@ -1358,11 +1358,7 @@ export default function AdminAIPrompts() {
           </div>
           
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleReset}>
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Réinitialiser
-            </Button>
-            <Button 
+            <Button
               onClick={handleSave} 
               disabled={!hasChanges || saveMutation.isPending}
             >
