@@ -1118,8 +1118,9 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("Process error:", e);
-    
+    const errStr = e instanceof Error ? (e.stack || e.message) : String(e);
+    console.error("Process error:", errStr);
+
     // Try to update job status to error
     try {
       const { job_id } = await req.clone().json();
@@ -1129,7 +1130,7 @@ serve(async (req) => {
           .from("voice_transcriptions")
           .update({
             status: "error",
-            ai_metadata: { last_error: String(e) },
+            ai_metadata: { last_error: errStr, last_error_at: new Date().toISOString() },
           })
           .eq("id", job_id);
       }
@@ -1137,9 +1138,31 @@ serve(async (req) => {
       // Ignore cleanup errors
     }
 
-    return new Response(JSON.stringify({ error: "process_failed", details: String(e) }), { 
-      status: 500, 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    // Avoid returning non-2xx for known provider errors to prevent client-side hard failures.
+    const isElevenLabsUnusualActivity =
+      errStr.includes("elevenlabs_stt_failed") &&
+      errStr.includes("detected_unusual_activity");
+
+    if (isElevenLabsUnusualActivity) {
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: "elevenlabs_unusual_activity",
+          message:
+            "ElevenLabs a bloqué temporairement la transcription (activité inhabituelle / Free Tier). Vérifiez votre plan ou réessayez plus tard.",
+          details: errStr,
+        }),
+        {
+          // Keep 200 so supabase.functions.invoke doesn't surface it as a transport error.
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    return new Response(JSON.stringify({ error: "process_failed", details: errStr }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
