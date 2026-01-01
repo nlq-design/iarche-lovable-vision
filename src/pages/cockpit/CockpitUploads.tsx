@@ -187,6 +187,7 @@ export default function CockpitUploads() {
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
   const [selectedSolutionIds, setSelectedSolutionIds] = useState<string[]>([]);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string>('');
   
   // Extraction state
   const [isExtracting, setIsExtracting] = useState(false);
@@ -199,8 +200,12 @@ export default function CockpitUploads() {
   
   // Fetch solutions (articles with resource_type = 'solution')
   const [solutions, setSolutions] = useState<{ id: string; title: string }[]>([]);
+  // Fetch documents générés
+  const [documents, setDocuments] = useState<{ id: string; title: string; document_type: string }[]>([]);
+  
   useState(() => {
     import('@/integrations/supabase/client').then(({ supabase }) => {
+      // Solutions
       supabase
         .from('articles')
         .select('id, title')
@@ -208,6 +213,15 @@ export default function CockpitUploads() {
         .eq('published', true)
         .then(({ data }) => {
           if (data) setSolutions(data);
+        });
+      // Documents générés
+      supabase
+        .from('generated_documents')
+        .select('id, title, document_type')
+        .order('created_at', { ascending: false })
+        .limit(50)
+        .then(({ data }) => {
+          if (data) setDocuments(data);
         });
     });
   });
@@ -298,6 +312,7 @@ export default function CockpitUploads() {
     setSelectedProjectIds([]);
     setSelectedLeadIds([]);
     setSelectedSolutionIds([]);
+    setSelectedDocumentId('');
   };
 
   const handleUpload = async () => {
@@ -315,6 +330,7 @@ export default function CockpitUploads() {
         projectIds: selectedProjectIds,
         leadIds: selectedLeadIds,
         solutionIds: selectedSolutionIds,
+        documentId: selectedDocumentId || undefined,
       });
     }
     
@@ -335,6 +351,7 @@ export default function CockpitUploads() {
       projectIds: selectedProjectIds,
       leadIds: selectedLeadIds,
       solutionIds: selectedSolutionIds,
+      documentId: selectedDocumentId || undefined,
     });
     
     setPastedText('');
@@ -527,9 +544,9 @@ export default function CockpitUploads() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Entity Linking */}
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Lier à des Projets</label>
+                    <label className="text-sm font-medium mb-2 block">Projet</label>
                     <Select 
                       value={selectedProjectIds[0] || "none"} 
                       onValueChange={(v) => setSelectedProjectIds(v === "none" ? [] : [v])}
@@ -548,7 +565,7 @@ export default function CockpitUploads() {
                     </Select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Lier à des Leads</label>
+                    <label className="text-sm font-medium mb-2 block">Lead</label>
                     <Select 
                       value={selectedLeadIds[0] || "none"} 
                       onValueChange={(v) => setSelectedLeadIds(v === "none" ? [] : [v])}
@@ -567,7 +584,7 @@ export default function CockpitUploads() {
                     </Select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-2 block">Lier à des Solutions</label>
+                    <label className="text-sm font-medium mb-2 block">Solution</label>
                     <Select 
                       value={selectedSolutionIds[0] || "none"} 
                       onValueChange={(v) => setSelectedSolutionIds(v === "none" ? [] : [v])}
@@ -580,6 +597,25 @@ export default function CockpitUploads() {
                         {solutions?.map(solution => (
                           <SelectItem key={solution.id} value={solution.id}>
                             {solution.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Document</label>
+                    <Select 
+                      value={selectedDocumentId || "none"} 
+                      onValueChange={(v) => setSelectedDocumentId(v === "none" ? '' : v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Document..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Aucun</SelectItem>
+                        {documents?.map(doc => (
+                          <SelectItem key={doc.id} value={doc.id}>
+                            {doc.title} ({doc.document_type})
                           </SelectItem>
                         ))}
                       </SelectContent>
