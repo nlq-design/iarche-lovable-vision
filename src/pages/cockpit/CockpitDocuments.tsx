@@ -17,7 +17,8 @@ import {
   Clock,
   Building2,
   User,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Loader2
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCockpitGeneratedDocuments, DOCUMENT_TYPE_LABELS, DOCUMENT_STATUS_CONFIG } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
@@ -56,6 +57,7 @@ const CockpitDocuments = () => {
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [filterProject, setFilterProject] = useState<string>('all');
   const [filterLead, setFilterLead] = useState<string>('all');
   const [aiGenerationModalOpen, setAiGenerationModalOpen] = useState(false);
@@ -76,9 +78,14 @@ const CockpitDocuments = () => {
 
   const handleDelete = async () => {
     if (documentToDelete) {
-      await deleteDocument.mutateAsync(documentToDelete);
-      setDocumentToDelete(null);
-      setDeleteDialogOpen(false);
+      setIsDeleting(true);
+      try {
+        await deleteDocument.mutateAsync(documentToDelete);
+        setDocumentToDelete(null);
+        setDeleteDialogOpen(false);
+      } finally {
+        setIsDeleting(false);
+      }
     }
   };
 
@@ -354,12 +361,20 @@ const CockpitDocuments = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Annuler</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDelete}
+              disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Supprimer
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  Suppression...
+                </>
+              ) : (
+                'Supprimer'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
