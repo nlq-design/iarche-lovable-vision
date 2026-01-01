@@ -212,13 +212,13 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
           variant="outline"
           size="icon"
           className={cn(
-            "fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg",
+            "fixed bottom-20 sm:bottom-6 right-4 sm:right-6 h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg",
             "bg-gradient-to-br from-primary to-accent hover:from-primary/90 hover:to-accent/90",
-            "border-0 text-white z-50",
+            "border-0 text-white z-50 touch-manipulation",
             className
           )}
         >
-          <Bot className="h-6 w-6" />
+          <Bot className="h-5 w-5 sm:h-6 sm:w-6" />
         </Button>
       </SheetTrigger>
       
@@ -250,11 +250,11 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
               <p className="text-sm text-muted-foreground max-w-[280px]">
                 Je peux consulter vos leads, opportunités, projets et vous aider dans votre activité commerciale.
               </p>
-              <div className="mt-6 grid grid-cols-2 gap-2 text-xs">
+              <div className="mt-6 grid grid-cols-1 xs:grid-cols-2 gap-2 text-xs w-full px-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs"
+                  className="text-xs h-10 touch-manipulation"
                   onClick={() => setInputValue('Quels sont mes leads récents ?')}
                 >
                   Leads récents
@@ -262,7 +262,7 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs"
+                  className="text-xs h-10 touch-manipulation"
                   onClick={() => setInputValue('Stats du pipeline ?')}
                 >
                   Stats pipeline
@@ -270,7 +270,7 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs"
+                  className="text-xs h-10 touch-manipulation"
                   onClick={() => setInputValue('Tâches en retard ?')}
                 >
                   Tâches en retard
@@ -278,7 +278,7 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs"
+                  className="text-xs h-10 touch-manipulation"
                   onClick={() => setInputValue('Prochains RDV ?')}
                 >
                   Prochains RDV
@@ -387,13 +387,13 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
           )}
         </ScrollArea>
 
-        <div className="border-t p-4 bg-background">
+        <div className="border-t p-3 sm:p-4 bg-background safe-area-inset-bottom">
           <div className="flex gap-2">
             <Button
               variant={isListening ? "destructive" : "outline"}
               size="icon"
               onClick={toggleListening}
-              className="shrink-0"
+              className="shrink-0 h-10 w-10 sm:h-9 sm:w-9 touch-manipulation"
               disabled={isLoading}
             >
               {isListening ? (
@@ -408,7 +408,7 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={isListening ? "Parlez..." : "Posez votre question..."}
-              className="resize-none min-h-[52px] max-h-[120px]"
+              className="resize-none min-h-[44px] sm:min-h-[52px] max-h-[120px] text-base sm:text-sm"
               disabled={isLoading}
             />
             
@@ -416,7 +416,7 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
               onClick={sendMessage}
               disabled={!inputValue.trim() || isLoading}
               size="icon"
-              className="shrink-0 bg-gradient-to-br from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+              className="shrink-0 h-10 w-10 sm:h-9 sm:w-9 bg-gradient-to-br from-primary to-accent hover:from-primary/90 hover:to-accent/90 touch-manipulation"
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -425,7 +425,7 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
               )}
             </Button>
           </div>
-          <p className="text-[10px] text-muted-foreground mt-2 text-center">
+          <p className="text-[10px] text-muted-foreground mt-2 text-center hidden sm:block">
             Entrée pour envoyer · Maj+Entrée pour nouvelle ligne · 🎤 pour parler
           </p>
         </div>

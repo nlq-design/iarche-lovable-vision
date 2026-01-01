@@ -138,13 +138,13 @@ const CockpitPipeline = () => {
 
         {/* Pipeline Kanban */}
         {isLoading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {[1, 2, 3, 4].map(i => (
-              <Skeleton key={i} className="h-[400px]" />
+              <Skeleton key={i} className="h-[300px] sm:h-[400px]" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 overflow-x-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {activeStages.map((stage) => {
               const stageOpps = opportunitiesByStage[stage] || [];
               const stageValue = stageOpps.reduce((sum, o) => sum + (Number(o.value_amount) || 0), 0);
@@ -153,7 +153,7 @@ const CockpitPipeline = () => {
               return (
                 <Card 
                   key={stage} 
-                  className="min-h-[400px] bg-card border"
+                  className="min-h-[280px] sm:min-h-[400px] bg-card border touch-manipulation"
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, stage)}
                 >

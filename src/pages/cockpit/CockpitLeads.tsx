@@ -269,22 +269,23 @@ const CockpitLeads = () => {
                 </p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-10">
-                      <Checkbox
-                        checked={selectedIds.length === filteredLeads.length && filteredLeads.length > 0}
-                        onCheckedChange={toggleSelectAll}
-                      />
-                    </TableHead>
-                    <TableHead className="text-xs">Contact</TableHead>
-                    <TableHead className="text-xs">Entreprise</TableHead>
-                    <TableHead className="text-xs">Source</TableHead>
-                    <TableHead className="text-xs w-16">Score</TableHead>
-                    <TableHead className="text-xs w-24">Date</TableHead>
-                  </TableRow>
-                </TableHeader>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-10 sticky left-0 bg-card z-10">
+                        <Checkbox
+                          checked={selectedIds.length === filteredLeads.length && filteredLeads.length > 0}
+                          onCheckedChange={toggleSelectAll}
+                        />
+                      </TableHead>
+                      <TableHead className="text-xs min-w-[180px]">Contact</TableHead>
+                      <TableHead className="text-xs min-w-[140px]">Entreprise</TableHead>
+                      <TableHead className="text-xs min-w-[120px]">Source</TableHead>
+                      <TableHead className="text-xs w-16 min-w-[70px]">Score</TableHead>
+                      <TableHead className="text-xs w-24 min-w-[80px]">Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
                 <TableBody>
                   {filteredLeads.map((lead) => (
                     <TableRow 
@@ -376,8 +377,9 @@ const CockpitLeads = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                </TableBody>
-              </Table>
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
