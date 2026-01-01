@@ -90,6 +90,11 @@ async function callAIAgent(message: string, userId: number, userName: string): P
   console.log("Calling AI agent with message:", message);
 
   try {
+    // Format messages array as expected by the orchestrator
+    const messagesPayload = [
+      { role: "user", content: message }
+    ];
+
     // Call the AI agent orchestrator
     const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-agent-orchestrator`, {
       method: "POST",
@@ -98,11 +103,11 @@ async function callAIAgent(message: string, userId: number, userName: string): P
         "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
       },
       body: JSON.stringify({
-        message,
+        messages: messagesPayload,
         source: "telegram",
-        userId: `telegram_${userId}`,
-        userName,
-        sessionId: `telegram_session_${userId}`,
+        user_id: `telegram_${userId}`,
+        session_id: `telegram_session_${userId}`,
+        workspace_id: null, // Telegram uses global workspace
       }),
     });
 
@@ -115,9 +120,11 @@ async function callAIAgent(message: string, userId: number, userName: string): P
     }
 
     const data = await response.json();
+    console.log("AI Agent data keys:", Object.keys(data));
     console.log("AI Agent data:", JSON.stringify(data).slice(0, 500));
     
-    const responseText = data.response || data.message || data.text || data.content;
+    // The orchestrator returns { ok, message, tool_calls, ... }
+    const responseText = data.message || data.response || data.text || data.content;
     
     if (!responseText) {
       console.error("No response field found in:", Object.keys(data));
