@@ -25,21 +25,15 @@ const NewsletterSection = () => {
       // Track CTA click
       await trackCTAClick('newsletter_inscription', 'newsletter_section_homepage', email);
       
-      // Créer ou mettre à jour le lead (upsert sur email)
-      const { data: leadData, error: leadError } = await supabase
-        .from('leads')
-        .upsert({
-          name: validatedData.email.split('@')[0],
-          email: validatedData.email,
-          source: 'newsletter',
-          source_context: email,
-          consent_marketing: true
-        }, { 
-          onConflict: 'email',
-          ignoreDuplicates: false 
-        })
-        .select()
-        .single();
+      // Créer ou mettre à jour le lead via fonction sécurisée
+      const { data: leadId, error: leadError } = await supabase
+        .rpc('upsert_lead', {
+          p_email: validatedData.email,
+          p_name: validatedData.email.split('@')[0],
+          p_source: 'newsletter',
+          p_source_context: email,
+          p_consent_marketing: true,
+        });
 
       if (leadError) {
         console.warn('Failed to create/update lead:', leadError);
@@ -74,7 +68,7 @@ const NewsletterSection = () => {
       try {
         await supabase.functions.invoke('send-lead-notification', {
           body: {
-            lead_id: leadData?.id || 'newsletter-' + Date.now(),
+            lead_id: leadId || 'newsletter-' + Date.now(),
             name: validatedData.email.split('@')[0],
             email: validatedData.email,
             source: 'newsletter',

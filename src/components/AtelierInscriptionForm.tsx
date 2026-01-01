@@ -91,21 +91,17 @@ const AtelierInscriptionForm = ({
       // Track CTA click
       await trackCTAClick('atelier_inscription', 'atelier_detail', articleTitle);
       
-      // Créer ou mettre à jour le lead (upsert sur email)
-      const { error: leadError } = await supabase
-        .from('leads')
-        .upsert({
-          name: validatedData.name,
-          email: validatedData.email,
-          company: validatedData.company || null,
-          phone: validatedData.phone || null,
-          source: 'atelier-webinaire',
-          source_id: articleId,
-          source_context: articleTitle,
-          consent_marketing: validatedData.consent_marketing,
-        }, { 
-          onConflict: 'email',
-          ignoreDuplicates: false 
+      // Créer ou mettre à jour le lead via fonction sécurisée
+      const { data: leadId, error: leadError } = await supabase
+        .rpc('upsert_lead', {
+          p_email: validatedData.email,
+          p_name: validatedData.name,
+          p_source: 'atelier-webinaire',
+          p_source_id: articleId,
+          p_source_context: articleTitle,
+          p_company: validatedData.company || null,
+          p_phone: validatedData.phone || null,
+          p_consent_marketing: validatedData.consent_marketing,
         });
 
       if (leadError) {
@@ -113,22 +109,13 @@ const AtelierInscriptionForm = ({
         throw new Error('Erreur lors de l\'enregistrement');
       }
 
-      // Créer l'inscription dans atelier_inscriptions
-      // Note: On utilise l'email pour retrouver le lead car on n'a pas son ID
-      const { data: leadForInscription } = await supabase
-        .from('leads')
-        .select('id')
-        .eq('email', validatedData.email)
-        .eq('source', 'atelier-webinaire')
-        .eq('source_id', articleId)
-        .maybeSingle();
-
-      if (leadForInscription) {
+      // Créer l'inscription dans atelier_inscriptions avec le lead_id retourné
+      if (leadId) {
         const { error: inscriptionError } = await supabase
           .from('atelier_inscriptions')
           .insert([{
             atelier_id: articleId,
-            lead_id: leadForInscription.id,
+            lead_id: leadId,
           }]);
 
         if (inscriptionError && inscriptionError.code !== '23505') {

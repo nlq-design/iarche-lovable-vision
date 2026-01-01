@@ -65,24 +65,18 @@ const LivreBlancsForm = ({ articleId, articleTitle }: LivreBlancsFormProps) => {
       // Track CTA click
       await trackCTAClick('livre_blanc_download', 'livre_blanc_detail', articleTitle);
       
-      // Créer ou mettre à jour le lead (upsert sur email)
-      const { data: leadData, error: leadError } = await supabase
-        .from('leads')
-        .upsert({
-          name: validatedData.name,
-          email: validatedData.email,
-          company: validatedData.company || null,
-          phone: validatedData.phone || null,
-          source: 'livre-blanc',
-          source_id: articleId,
-          source_context: articleTitle,
-          consent_marketing: validatedData.consent_marketing,
-        }, { 
-          onConflict: 'email',
-          ignoreDuplicates: false 
-        })
-        .select()
-        .single();
+      // Créer ou mettre à jour le lead via fonction sécurisée
+      const { data: leadId, error: leadError } = await supabase
+        .rpc('upsert_lead', {
+          p_email: validatedData.email,
+          p_name: validatedData.name,
+          p_source: 'livre-blanc',
+          p_source_id: articleId,
+          p_source_context: articleTitle,
+          p_company: validatedData.company || null,
+          p_phone: validatedData.phone || null,
+          p_consent_marketing: validatedData.consent_marketing,
+        });
 
       if (leadError) {
         console.error('Failed to create/update lead:', leadError);
@@ -103,11 +97,11 @@ const LivreBlancsForm = ({ articleId, articleTitle }: LivreBlancsFormProps) => {
       }
 
       // Envoyer notification email admin
-      if (leadData) {
+      if (leadId) {
         try {
           await supabase.functions.invoke('send-lead-notification', {
             body: {
-              lead_id: leadData.id,
+              lead_id: leadId,
               name: validatedData.name,
               email: validatedData.email,
               company: validatedData.company,

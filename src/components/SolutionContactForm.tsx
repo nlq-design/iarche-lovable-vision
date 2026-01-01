@@ -42,20 +42,16 @@ const SolutionContactForm = ({ solutionName }: SolutionContactFormProps) => {
     try {
       const validatedData = contactSchema.parse(formData);
       
-      // Créer ou mettre à jour le lead (upsert sur email)
+      // Créer ou mettre à jour le lead via fonction sécurisée
       const { error: leadError } = await supabase
-        .from('leads')
-        .upsert({
-          name: validatedData.name,
-          email: validatedData.email,
-          company: validatedData.company || null,
-          source: 'contact',
-          source_context: solutionName,
-          message: validatedData.message,
-          consent_marketing: false
-        }, { 
-          onConflict: 'email',
-          ignoreDuplicates: false 
+        .rpc('upsert_lead', {
+          p_email: validatedData.email,
+          p_name: validatedData.name,
+          p_source: 'contact',
+          p_source_context: solutionName,
+          p_message: validatedData.message,
+          p_company: validatedData.company || null,
+          p_consent_marketing: false,
         });
 
       if (leadError) {
