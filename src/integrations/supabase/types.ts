@@ -3038,6 +3038,21 @@ export type Database = {
         }[]
       }
       unlock_expired_accounts: { Args: never; Returns: undefined }
+      upsert_lead: {
+        Args: {
+          p_company?: string
+          p_consent_marketing?: boolean
+          p_email: string
+          p_message?: string
+          p_name: string
+          p_phone?: string
+          p_qualification_status?: string
+          p_source: string
+          p_source_context?: string
+          p_source_id?: string
+        }
+        Returns: string
+      }
       validate_resource_type: {
         Args: never
         Returns: {
