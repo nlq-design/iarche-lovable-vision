@@ -200,6 +200,7 @@ export default function CockpitUploads() {
   };
 
   const cancelJobIdsRef = useRef<Set<string>>(new Set());
+  const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
   const [uploadJobs, setUploadJobs] = useState<UploadJob[]>([]);
   const [isUploadQueueRunning, setIsUploadQueueRunning] = useState(false);
   
@@ -352,6 +353,12 @@ export default function CockpitUploads() {
 
   const cancelUploadJob = useCallback((jobId: string) => {
     cancelJobIdsRef.current.add(jobId);
+
+    const controller = abortControllersRef.current.get(jobId);
+    if (controller) {
+      controller.abort();
+    }
+
     setUploadJobs(prev => prev.map(job => {
       if (job.jobId !== jobId) return job;
       if (job.status === 'queued') return { ...job, status: 'cancelled' };
@@ -394,6 +401,9 @@ export default function CockpitUploads() {
 
         setUploadJobs(prev => prev.map(j => j.jobId === job.jobId ? { ...j, status: 'uploading' } : j));
 
+        const controller = new AbortController();
+        abortControllersRef.current.set(job.jobId, controller);
+
         try {
           const result = await uploadFileAsync({
             file: job.file,
@@ -404,6 +414,7 @@ export default function CockpitUploads() {
             leadIds: selectedLeadIds,
             solutionIds: selectedSolutionIds,
             documentId: selectedDocumentId || undefined,
+            signal: controller.signal,
           });
 
           // Duplicate -> nothing to delete
@@ -426,8 +437,17 @@ export default function CockpitUploads() {
             setUploadJobs(prev => prev.map(j => j.jobId === job.jobId ? { ...j, status: 'completed' } : j));
           }
         } catch (err) {
-          const message = err instanceof Error ? err.message : 'Erreur inconnue';
-          setUploadJobs(prev => prev.map(j => j.jobId === job.jobId ? { ...j, status: 'failed', error: message } : j));
+          const anyErr = err as any;
+          const isAbort = anyErr?.name === 'AbortError';
+
+          if (isAbort || cancelJobIdsRef.current.has(job.jobId)) {
+            setUploadJobs(prev => prev.map(j => j.jobId === job.jobId ? { ...j, status: 'cancelled' } : j));
+          } else {
+            const message = err instanceof Error ? err.message : 'Erreur inconnue';
+            setUploadJobs(prev => prev.map(j => j.jobId === job.jobId ? { ...j, status: 'failed', error: message } : j));
+          }
+        } finally {
+          abortControllersRef.current.delete(job.jobId);
         }
       }
 
