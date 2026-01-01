@@ -32,17 +32,13 @@ const Newsletter = () => {
       // Track CTA click
       await trackCTAClick('newsletter_inscription', 'newsletter_page', email);
       
-      // Créer ou mettre à jour le lead (upsert sur email)
+      // Créer ou mettre à jour le lead via fonction sécurisée
       const { error: leadError } = await supabase
-        .from('leads')
-        .upsert({
-          name: validatedData.email.split('@')[0],
-          email: validatedData.email,
-          source: 'newsletter',
-          consent_marketing: true
-        }, { 
-          onConflict: 'email',
-          ignoreDuplicates: false 
+        .rpc('upsert_lead', {
+          p_email: validatedData.email,
+          p_name: validatedData.email.split('@')[0],
+          p_source: 'newsletter',
+          p_consent_marketing: true,
         });
 
       if (leadError) {
