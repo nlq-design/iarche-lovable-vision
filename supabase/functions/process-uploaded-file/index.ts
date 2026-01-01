@@ -87,6 +87,17 @@ serve(async (req) => {
         extractedContent = await fileData.text();
         console.log(`[process-uploaded-file] Extracted ${extractedContent.length} chars from text file`);
       }
+    } else if (!extractedContent && mimeType.includes("wordprocessingml")) {
+      // DOCX files - use LLM vision to extract (convert to base64 and send to AI)
+      console.log("[process-uploaded-file] DOCX detected, using LLM extraction");
+      const docxResult = await extractDocxViaLLM(supabase, file);
+      if (docxResult.success) {
+        extractedContent = docxResult.text;
+        ocrProvider = docxResult.provider ?? null;
+        console.log(`[process-uploaded-file] DOCX extracted ${extractedContent.length} chars via ${ocrProvider}`);
+      } else {
+        console.warn("[process-uploaded-file] DOCX extraction failed:", docxResult.error);
+      }
     } else if (!extractedContent && (mimeType === "application/pdf" || mimeType.startsWith("image/"))) {
       // For PDFs and images, use OCR via LLM Vision
       ocrRequired = true;
@@ -173,6 +184,122 @@ serve(async (req) => {
     });
   }
 });
+
+// Extract text from DOCX files using Lovable AI Gateway
+async function extractDocxViaLLM(
+  supabase: any,
+  file: any,
+): Promise<{ success: boolean; text: string; provider?: string; error?: string }> {
+  try {
+    // Download file from storage
+    const { data: fileData, error: downloadError } = await supabase.storage
+      .from("cockpit-uploads")
+      .download(file.storage_path);
+
+    if (downloadError || !fileData) {
+      return { success: false, text: "", error: "Failed to download DOCX file" };
+    }
+
+    // Convert to base64
+    const arrayBuffer = await fileData.arrayBuffer();
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+
+    // Use Lovable AI Gateway (Gemini supports file inputs better for DOCX)
+    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+    if (lovableKey) {
+      try {
+        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${lovableKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "Tu es un expert en extraction de contenu documentaire. Extrais tout le texte du document avec précision, en conservant la structure (titres, paragraphes, listes, tableaux). Retourne uniquement le texte extrait, sans commentaires ni formatage markdown.",
+              },
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text: `Extrais tout le contenu texte de ce fichier DOCX (${file.original_filename}). Le fichier est encodé en base64:`,
+                  },
+                  {
+                    type: "file",
+                    file: {
+                      filename: file.original_filename,
+                      file_data: `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${base64}`,
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          const text = result.choices?.[0]?.message?.content || "";
+          if (text.length > 50) {
+            return { success: true, text, provider: "lovable-gemini" };
+          }
+        } else {
+          console.warn("[DOCX] Lovable AI failed:", await response.text());
+        }
+      } catch (e) {
+        console.warn("[DOCX] Lovable AI error:", e);
+      }
+    }
+
+    // Fallback to OpenAI
+    const openaiKey = Deno.env.get("OPENAI_API_KEY");
+    if (openaiKey) {
+      try {
+        // OpenAI doesn't support DOCX directly, but we can ask it to describe
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${openaiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "Tu reçois le contenu base64 d'un fichier DOCX. Tente de l'interpréter et d'en extraire le texte lisible. Si le contenu est trop corrompu, indique-le.",
+              },
+              {
+                role: "user",
+                content: `Fichier: ${file.original_filename}\nContenu base64 (tronqué): ${base64.substring(0, 8000)}...`,
+              },
+            ],
+            max_tokens: 4096,
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          const text = result.choices?.[0]?.message?.content || "";
+          return { success: true, text, provider: "openai-fallback" };
+        }
+      } catch (e) {
+        console.warn("[DOCX] OpenAI fallback error:", e);
+      }
+    }
+
+    return { success: false, text: "", error: "No AI provider available for DOCX extraction" };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "DOCX extraction failed";
+    return { success: false, text: "", error: message };
+  }
+}
 
 async function performOCR(supabase: any, file: any): Promise<{ success: boolean; text: string; provider?: string; confidence?: number; error?: string }> {
   try {
