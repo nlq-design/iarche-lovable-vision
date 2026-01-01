@@ -1,12 +1,74 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.18**  
-**Date : 11 Décembre 2025**  
+**Version mise à jour : V6.19**  
+**Date : 1er Janvier 2026**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.18 AGENT IA V3.1 — VALIDATION V1 PRODUCTION ✅ — V6.19
+
+**Date :** 1er Janvier 2026
+
+L'Agent IA IArche atteint le niveau de maturité V1 Production avec les caractéristiques suivantes :
+
+**Architecture validée :**
+
+| Composant | Version | Statut |
+|-----------|---------|--------|
+| Orchestrateur | v3.1 | ✅ 48 outils |
+| Edge Functions | 22 connectées | ✅ |
+| Mémoire | ai_agent_memory | ✅ Session persistante |
+| RAG | keyword_aliases | ✅ Normalisation phonétique |
+| Notifications | 10 triggers | ✅ Proactif |
+
+**Changements clés V3.0 → V3.1 :**
+
+1. **Exécution directe** — Suppression des niveaux d'autonomie N0/N1/N2
+2. **Collecte en une question** — Plus de validation répétitive
+3. **Confirmations brèves** — "Ok", "Oui" déclenchent action immédiate
+4. **Mémoire session** — 10 entrées historiques par session_id
+5. **Notifications proactives** — pending_ai_review sur 10 tables
+6. **Multi-canal** — Cockpit AgentChat + Telegram @IArche_bot
+
+**Outils par catégorie :**
+
+| Catégorie | Nombre | Exemples |
+|-----------|--------|----------|
+| Cockpit Read | 18 | get_leads, get_opportunities, get_projects |
+| Cockpit Write | 16 | create_booking, create_lead, log_activity |
+| Admin Read | 10 | get_articles, get_solutions, get_audit_logs |
+| Admin Write | 2 | create_article_draft, update_article |
+| RAG & Memory | 2 | search_knowledge_base, get_recent_memory |
+
+**Sécurité renforcée :**
+- Authentification double (JWT utilisateur + x-internal-token services)
+- Fonction upsert_lead SECURITY DEFINER (corrige PUBLIC_DATA_EXPOSURE)
+- Rate limiting MFA cockpit (3 tentatives / 5 min)
+
+**Control Plane :** `/admin/ai-prompts`
+- Édition prompt système Master Agent
+- Monitoring 48 outils et 22 edge functions
+- Dictionnaire IA (keyword_aliases)
+- Mémoire IA (ai_agent_memory)
+- Sélection modèle LLM avec fallback
+
+**Prochaines étapes V2 :**
+- Génération CDC multi-sources avancée
+- Emails personnalisés contextuels
+- Analytics agent et satisfaction
+- Voice-to-action
+
+**Fichiers référence :**
+- `supabase/functions/ai-agent-orchestrator/index.ts`
+- `src/components/cockpit/AgentChat.tsx`
+- `supabase/functions/telegram-webhook/index.ts`
+- `src/pages/admin/AdminAIPrompts.tsx`
+- `docs/CDC_AI_AGENT_REFONTE_V3.md`
+
+---
 
 ### 0.17 MODULE MÉDIAS - EXPORT AVANCÉ — MISE À JOUR V6.18 ✅
 

@@ -1,10 +1,21 @@
-# Cahier des Charges V3.1.4 — Cockpit Commercial IArche
+# Cahier des Charges V3.1.6 — Cockpit Commercial IArche
 
 ## Document de spécification
 
 **Projet :** Module Cockpit Commercial intégré au back-office existant  
-**Version :** 3.1.5  
-**Date :** 21 décembre 2025  
+**Version :** 3.1.6  
+**Date :** 1er Janvier 2026  
+**Statut :** ✅ V1 PRODUCTION READY
+
+**Changelog V3.1.5 → V3.1.6 (Audit V1) :**
+- **VALIDATION V1** : Toutes les fonctionnalités core opérationnelles
+- Update: Agent IA v3.1 avec exécution directe (plus de niveaux N0/N1/N2)
+- Add: Mémoire session persistante (ai_agent_memory + session_id)
+- Add: Notifications proactives (pending_ai_review triggers)
+- Add: Intégration Telegram (@IArche_bot)
+- Add: Control plane /admin/ai-prompts (48 outils, 22 edge functions)
+- Add: Dictionnaire normalisation RAG (keyword_aliases)
+- Fix: Sécurité PUBLIC_DATA_EXPOSURE sur leads (fonction upsert_lead SECURITY DEFINER)
 
 **Changelog V3.1.4 → V3.1.5 :**
 - Add: Champs enrichis table `leads` (website, address, city, postal_code, country, siret, revenue_range, linkedin_url, position)
