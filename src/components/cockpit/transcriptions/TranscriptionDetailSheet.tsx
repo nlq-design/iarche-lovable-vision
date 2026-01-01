@@ -75,6 +75,97 @@ import { toast } from 'sonner';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
 import { useQuery } from '@tanstack/react-query';
 
+// Speaker color palette for diarization display
+const SPEAKER_COLORS = [
+  '#2563eb', // blue
+  '#16a34a', // green
+  '#dc2626', // red
+  '#9333ea', // purple
+  '#ea580c', // orange
+  '#0891b2', // cyan
+  '#be185d', // pink
+  '#4f46e5', // indigo
+];
+
+// Type for transcript segments from ElevenLabs Scribe
+interface TranscriptSegment {
+  text: string;
+  start: number;
+  end: number;
+  speaker?: string;
+}
+
+// Group consecutive words by speaker for better display
+function groupSegmentsBySpeaker(segments: TranscriptSegment[]): Array<{ speaker: string; text: string; startTime: number }> {
+  if (!segments || segments.length === 0) return [];
+  
+  const groups: Array<{ speaker: string; text: string; startTime: number }> = [];
+  let currentGroup: { speaker: string; text: string; startTime: number } | null = null;
+  
+  for (const seg of segments) {
+    const speaker = seg.speaker || 'Unknown';
+    
+    if (!currentGroup || currentGroup.speaker !== speaker) {
+      // Start new group
+      if (currentGroup) groups.push(currentGroup);
+      currentGroup = { speaker, text: seg.text, startTime: seg.start };
+    } else {
+      // Append to current group
+      currentGroup.text += ' ' + seg.text;
+    }
+  }
+  
+  if (currentGroup) groups.push(currentGroup);
+  return groups;
+}
+
+// Format seconds to mm:ss
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Diarized transcript component
+function DiarizedTranscript({ segments, speakersDetected }: { segments: TranscriptSegment[]; speakersDetected: string[] }) {
+  const groups = groupSegmentsBySpeaker(segments);
+  
+  // Build speaker -> color index map
+  const speakerColorMap = new Map<string, number>();
+  speakersDetected.forEach((s, idx) => speakerColorMap.set(s, idx));
+  
+  if (groups.length === 0) {
+    return <p className="text-sm text-muted-foreground">Aucun segment disponible</p>;
+  }
+  
+  return (
+    <div className="space-y-3">
+      {groups.map((group, idx) => {
+        const colorIdx = speakerColorMap.get(group.speaker) ?? idx;
+        const color = SPEAKER_COLORS[colorIdx % SPEAKER_COLORS.length];
+        
+        return (
+          <div key={idx} className="flex gap-3">
+            <div className="flex-shrink-0 w-24">
+              <Badge 
+                variant="outline" 
+                className="text-xs font-medium"
+                style={{ borderColor: color, color }}
+              >
+                {group.speaker}
+              </Badge>
+              <span className="block text-[10px] text-muted-foreground mt-0.5">
+                {formatTime(group.startTime)}
+              </span>
+            </div>
+            <p className="text-sm leading-relaxed flex-1">{group.text}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 interface TranscriptionDetailSheetProps {
   transcriptionId: string | null;
   open: boolean;
@@ -640,7 +731,29 @@ export function TranscriptionDetailSheet({
                       )}
                     </TabsContent>
 
-                    <TabsContent value="transcript" className="pt-4">
+                    <TabsContent value="transcript" className="pt-4 space-y-4">
+                      {/* Speaker info banner if diarization available */}
+                      {(transcription.ai_metadata as any)?.speaker_count > 0 && (
+                        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border text-sm">
+                          <Users className="h-4 w-4 text-primary" />
+                          <span className="font-medium">
+                            {(transcription.ai_metadata as any).speaker_count} intervenant{(transcription.ai_metadata as any).speaker_count > 1 ? 's' : ''} détecté{(transcription.ai_metadata as any).speaker_count > 1 ? 's' : ''}
+                          </span>
+                          <div className="flex gap-1.5 ml-2">
+                            {((transcription.ai_metadata as any)?.speakers_detected as string[] ?? []).map((speaker, idx) => (
+                              <Badge 
+                                key={speaker} 
+                                variant="outline" 
+                                className="text-xs"
+                                style={{ borderColor: SPEAKER_COLORS[idx % SPEAKER_COLORS.length], color: SPEAKER_COLORS[idx % SPEAKER_COLORS.length] }}
+                              >
+                                {speaker}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <Card>
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
@@ -648,10 +761,18 @@ export function TranscriptionDetailSheet({
                             Transcription complète
                           </CardTitle>
                         </CardHeader>
-                        <CardContent>
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                            {transcription.raw_transcript || 'Transcription non disponible'}
-                          </p>
+                        <CardContent className="space-y-0">
+                          {/* If we have segments with speaker info, render with diarization */}
+                          {transcription.segments && Array.isArray(transcription.segments) && transcription.segments.length > 0 ? (
+                            <DiarizedTranscript 
+                              segments={transcription.segments as TranscriptSegment[]} 
+                              speakersDetected={(transcription.ai_metadata as any)?.speakers_detected ?? []}
+                            />
+                          ) : (
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                              {transcription.raw_transcript || 'Transcription non disponible'}
+                            </p>
+                          )}
                         </CardContent>
                       </Card>
                     </TabsContent>
