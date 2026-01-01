@@ -698,6 +698,45 @@ export type Database = {
           },
         ]
       }
+      booking_partners: {
+        Row: {
+          booking_id: string
+          created_at: string | null
+          id: string
+          partner_id: string
+          role: string | null
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string | null
+          id?: string
+          partner_id: string
+          role?: string | null
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string | null
+          id?: string
+          partner_id?: string
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_partners_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_partners_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_types: {
         Row: {
           buffer_minutes: number | null
@@ -1614,6 +1653,45 @@ export type Database = {
           },
         ]
       }
+      lead_partners: {
+        Row: {
+          created_at: string | null
+          id: string
+          lead_id: string
+          partner_id: string
+          role: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          lead_id: string
+          partner_id: string
+          role?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          lead_id?: string
+          partner_id?: string
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_partners_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_partners_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           address: string | null
@@ -2023,6 +2101,45 @@ export type Database = {
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_partners: {
+        Row: {
+          created_at: string | null
+          id: string
+          opportunity_id: string
+          partner_id: string
+          role: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          opportunity_id: string
+          partner_id: string
+          role?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          opportunity_id?: string
+          partner_id?: string
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_partners_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_partners_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
             referencedColumns: ["id"]
           },
         ]
@@ -2758,6 +2875,45 @@ export type Database = {
         }
         Relationships: []
       }
+      task_partners: {
+        Row: {
+          created_at: string | null
+          id: string
+          partner_id: string
+          role: string | null
+          task_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          partner_id: string
+          role?: string | null
+          task_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          partner_id?: string
+          role?: string | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_partners_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_partners_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           ai_generated: boolean | null
@@ -2874,6 +3030,45 @@ export type Database = {
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transcription_partners: {
+        Row: {
+          created_at: string | null
+          id: string
+          partner_id: string
+          role: string | null
+          transcription_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          partner_id: string
+          role?: string | null
+          transcription_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          partner_id?: string
+          role?: string | null
+          transcription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transcription_partners_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transcription_partners_transcription_id_fkey"
+            columns: ["transcription_id"]
+            isOneToOne: false
+            referencedRelation: "voice_transcriptions"
             referencedColumns: ["id"]
           },
         ]
