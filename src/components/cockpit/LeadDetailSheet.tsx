@@ -87,6 +87,7 @@ import { toast } from 'sonner';
 import { LinkedPartnersSection } from './LinkedPartnersSection';
 import { useCockpitPartners } from '@/hooks/cockpit/useCockpitPartners';
 import { useEntityPartners } from '@/hooks/cockpit/usePartnerLinks';
+import { PappersEnrichment } from './PappersEnrichment';
 
 interface Lead {
   id: string;
@@ -96,6 +97,11 @@ interface Lead {
   company?: string | null;
   company_size?: string | null;
   industry?: string | null;
+  siret?: string | null;
+  website?: string | null;
+  address?: string | null;
+  postal_code?: string | null;
+  city?: string | null;
   source: string;
   source_context?: string | null;
   message?: string | null;
@@ -104,6 +110,7 @@ interface Lead {
   consent_marketing?: boolean | null;
   created_at?: string | null;
   last_contacted_at?: string | null;
+  ai_metadata?: any | null;
 }
 
 interface LeadDetailSheetProps {
@@ -472,10 +479,22 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
 
             {/* Company Info Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Entreprise
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Entreprise
+                </h3>
+                <PappersEnrichment 
+                  leadId={lead.id}
+                  currentSiret={lead.siret}
+                  currentCompany={lead.company}
+                  onEnriched={() => {
+                    // Refetch lead data after enrichment
+                    onOpenChange(false);
+                    setTimeout(() => onOpenChange(true), 100);
+                  }}
+                />
+              </div>
               
               <div className="grid gap-4">
                 <div className="space-y-2">
@@ -487,6 +506,21 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
                     placeholder="Non renseigné"
                   />
                 </div>
+
+                {/* SIRET field */}
+                {(lead.siret || lead.ai_metadata?.pappers_data) && (
+                  <div className="space-y-2">
+                    <Label htmlFor="siret" className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs">SIRET</Badge>
+                    </Label>
+                    <Input
+                      id="siret"
+                      value={lead.siret || ''}
+                      readOnly
+                      className="font-mono bg-muted"
+                    />
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="company_size">Taille de l'entreprise</Label>
@@ -528,6 +562,46 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Pappers enriched data display */}
+                {lead.ai_metadata?.pappers_data && (
+                  <div className="p-3 bg-muted/50 rounded-lg space-y-2 border border-border/50">
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      Données Pappers
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {lead.ai_metadata.pappers_data.legal_form && (
+                        <div>
+                          <span className="text-muted-foreground">Forme juridique:</span>
+                          <span className="ml-1 font-medium">{lead.ai_metadata.pappers_data.legal_form}</span>
+                        </div>
+                      )}
+                      {lead.ai_metadata.pappers_data.naf_label && (
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">Activité:</span>
+                          <span className="ml-1 font-medium">{lead.ai_metadata.pappers_data.naf_label}</span>
+                        </div>
+                      )}
+                      {lead.ai_metadata.pappers_data.capital && (
+                        <div>
+                          <span className="text-muted-foreground">Capital:</span>
+                          <span className="ml-1 font-medium">
+                            {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(lead.ai_metadata.pappers_data.capital)}
+                          </span>
+                        </div>
+                      )}
+                      {lead.ai_metadata.pappers_data.revenue && (
+                        <div>
+                          <span className="text-muted-foreground">CA:</span>
+                          <span className="ml-1 font-medium">
+                            {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(lead.ai_metadata.pappers_data.revenue)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
