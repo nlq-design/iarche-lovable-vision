@@ -645,7 +645,17 @@ async function callLLM(
 ): Promise<Record<string, unknown>> {
   console.log(`Calling ${provider} with model: ${modelId}`);
   
-  const systemContent = sys + "\n\nRéponds UNIQUEMENT avec un objet JSON valide, sans markdown, sans ```json, sans texte avant ou après.";
+  // Hardened system prompt for strict JSON output
+  const jsonStrictSuffix = `
+
+CRITICAL OUTPUT RULES:
+- You MUST output ONLY valid JSON, nothing else.
+- Do NOT include markdown, code fences (\`\`\`), comments, or any extra text.
+- Do NOT include any text before or after the JSON.
+- If you cannot comply, output: {"error":"invalid_output"}.
+- Respect the exact keys and structure requested.`;
+
+  const systemContent = sys + jsonStrictSuffix;
   
   let response: Response;
   
@@ -653,11 +663,17 @@ async function callLLM(
     case "lovable": {
       const requestBody: Record<string, unknown> = {
         model: modelId,
+        temperature: 0, // Force deterministic output
         messages: [
           { role: "system", content: systemContent },
           { role: "user", content: usr },
         ],
       };
+      
+      // Force JSON mode when available (OpenAI-compatible)
+      if (!supportsTools || !outputSchema) {
+        requestBody.response_format = { type: "json_object" };
+      }
       
       if (outputSchema && supportsTools) {
         requestBody.tools = [{
@@ -687,12 +703,18 @@ async function callLLM(
       
       const requestBody: Record<string, unknown> = {
         model: modelId,
+        temperature: 0, // Force deterministic output
         messages: [
           { role: "system", content: systemContent },
           { role: "user", content: usr },
         ],
         max_tokens: 4096,
       };
+      
+      // Force JSON mode when available
+      if (!supportsTools || !outputSchema) {
+        requestBody.response_format = { type: "json_object" };
+      }
       
       if (outputSchema && supportsTools) {
         requestBody.tools = [{
@@ -723,6 +745,7 @@ async function callLLM(
       const requestBody: Record<string, unknown> = {
         model: modelId,
         max_tokens: 4096,
+        temperature: 0, // Force deterministic output
         system: systemContent,
         messages: [{ role: "user", content: usr }],
       };
@@ -753,6 +776,7 @@ async function callLLM(
       
       const requestBody: Record<string, unknown> = {
         model: modelId,
+        temperature: 0, // Force deterministic output
         messages: [
           { role: "system", content: systemContent },
           { role: "user", content: usr },
@@ -789,7 +813,8 @@ async function callLLM(
   }
   
   const txt = await response.text();
-  console.log("LLM response length:", txt.length);
+  console.log(`LLM response - provider: ${provider}, status: ${response.status}, length: ${txt.length}`);
+  console.log(`LLM raw response (first 1000 chars): ${txt.substring(0, 1000)}`);
   
   // Handle rate limiting
   if (response.status === 429) {
@@ -850,60 +875,92 @@ function parseProviderResponse(
 function extractJsonFromText(content: string): Record<string, unknown> {
   console.log("Parsing content response, first 500 chars:", content.substring(0, 500));
   
-  // Try direct parse first
-  try {
-    return JSON.parse(content);
-  } catch (e1) {
-    console.log("Direct parse failed, trying regex extraction");
-    
-    // Try to extract JSON from markdown code blocks
-    const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (codeBlockMatch) {
-      try {
-        return JSON.parse(codeBlockMatch[1].trim());
-      } catch (e2) {
-        console.log("Code block parse failed");
-      }
-    }
-    
-    // Try to find JSON object
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      try {
-        return JSON.parse(jsonMatch[0]);
-      } catch (e3) {
-        console.error("JSON regex parse failed:", e3);
-        // Try to fix common issues
-        let fixed = jsonMatch[0]
-          .replace(/,\s*}/g, '}')
-          .replace(/,\s*]/g, ']')
-          .replace(/\n/g, ' ')
-          .replace(/\t/g, ' ');
-        
-        try {
-          return JSON.parse(fixed);
-        } catch (e4) {
-          console.error("Fixed JSON parse failed:", e4);
-        }
-      }
-    }
-    
-    // Fallback: return a basic structure with the raw content as summary
-    // This prevents crashes when LLM returns plain text instead of JSON
-    console.warn("Could not parse JSON from LLM response, using fallback structure");
-    return {
-      summary: content.trim().substring(0, 5000),
-      action_items: [],
-      entities: {
-        leads: [],
-        projects: [],
-        solutions: [],
-        partners: []
-      },
-      next_steps: null,
-      key_topics: []
-    };
+  // Step 1: Clean up the content - strip any leading/trailing whitespace and backticks
+  let cleaned = content.trim();
+  
+  // Remove leading/trailing backticks if present (common LLM mistake)
+  if (cleaned.startsWith('`')) {
+    cleaned = cleaned.replace(/^`+/, '').replace(/`+$/, '');
   }
+  
+  // Step 2: Try direct parse first
+  try {
+    return JSON.parse(cleaned);
+  } catch (e1) {
+    console.log("Direct parse failed, trying extraction methods...");
+  }
+  
+  // Step 3: Extract from markdown code blocks (```json ... ``` or ``` ... ```)
+  const codeBlockPatterns = [
+    /```json\s*([\s\S]*?)```/i,
+    /```\s*([\s\S]*?)```/,
+  ];
+  
+  for (const pattern of codeBlockPatterns) {
+    const match = cleaned.match(pattern);
+    if (match && match[1]) {
+      try {
+        return JSON.parse(match[1].trim());
+      } catch (e) {
+        console.log(`Code block pattern failed: ${pattern}`);
+      }
+    }
+  }
+  
+  // Step 4: Find first { and last } to extract JSON object
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    const jsonCandidate = cleaned.substring(firstBrace, lastBrace + 1);
+    
+    try {
+      return JSON.parse(jsonCandidate);
+    } catch (e3) {
+      console.log("Direct JSON extraction failed, attempting repairs...");
+      
+      // Step 5: Try to fix common JSON issues
+      let fixed = jsonCandidate
+        // Remove trailing commas
+        .replace(/,\s*}/g, '}')
+        .replace(/,\s*]/g, ']')
+        // Replace newlines/tabs with spaces
+        .replace(/[\n\r\t]/g, ' ')
+        // Remove multiple spaces
+        .replace(/\s+/g, ' ')
+        // Fix unescaped quotes in strings (very basic)
+        .replace(/:\s*"([^"]*?)"\s*([,}\]])/g, (_, val, end) => {
+          const escaped = val.replace(/(?<!\\)"/g, '\\"');
+          return `: "${escaped}"${end}`;
+        });
+      
+      try {
+        return JSON.parse(fixed);
+      } catch (e4) {
+        console.error("JSON repair failed:", e4);
+      }
+    }
+  }
+  
+  // Step 6: Fallback - return a basic structure with the raw content as summary
+  // This prevents crashes when LLM returns plain text instead of JSON
+  console.warn("Could not parse JSON from LLM response, using fallback structure with raw content");
+  console.warn("Raw content that failed to parse:", cleaned.substring(0, 2000));
+  
+  return {
+    summary: cleaned.substring(0, 5000),
+    action_items: [],
+    entities: {
+      leads: [],
+      projects: [],
+      solutions: [],
+      partners: []
+    },
+    next_steps: null,
+    key_topics: [],
+    _parse_fallback: true,
+    _parse_error: "Could not extract valid JSON from LLM response"
+  };
 }
 
 /**
