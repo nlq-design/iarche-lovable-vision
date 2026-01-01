@@ -70,6 +70,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCockpitVoiceTranscriptions, TRANSCRIPTION_STATUSES } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { useCockpitLeads } from '@/hooks/cockpit/useCockpitLeads';
 import { useCockpitProjects } from '@/hooks/cockpit/useCockpitProjects';
+import { useCockpitLeadContacts } from '@/hooks/cockpit/useCockpitLeadContacts';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
@@ -110,6 +111,9 @@ export function TranscriptionDetailSheet({
   const { leads } = useCockpitLeads();
   const { projects } = useCockpitProjects();
   
+  // Fetch contacts for the linked lead
+  const { contacts: leadContacts = [] } = useCockpitLeadContacts(transcription?.lead_id || undefined);
+  
   // Fetch solutions (articles with resource_type = 'solution')
   const { data: solutions = [] } = useQuery({
     queryKey: ['cockpit-solutions-list'],
@@ -127,6 +131,7 @@ export function TranscriptionDetailSheet({
 
   // Entity selector states
   const [showLeadSelector, setShowLeadSelector] = useState(false);
+  const [showContactSelector, setShowContactSelector] = useState(false);
   const [showProjectSelector, setShowProjectSelector] = useState(false);
   const [showSolutionSelector, setShowSolutionSelector] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
@@ -375,6 +380,71 @@ export function TranscriptionDetailSheet({
                         Lier à un lead
                       </Badge>
                     )
+                  )}
+                  
+                  {/* Contact Link - Only show when lead is linked */}
+                  {transcription?.lead && (
+                    transcription?.lead_contact ? (
+                      <Badge variant="outline" className="group">
+                        <Users className="h-3 w-3 mr-1" />
+                        {transcription.lead_contact.name}
+                        {transcription.lead_contact.position && (
+                          <span className="text-muted-foreground ml-1">({transcription.lead_contact.position})</span>
+                        )}
+                        <button 
+                          className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (transcriptionId) {
+                              updateTranscription.mutate({ id: transcriptionId, updates: { lead_contact_id: null } });
+                            }
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ) : showContactSelector ? (
+                      <div className="flex items-center gap-2">
+                        <Select
+                          onValueChange={(contactId) => {
+                            if (transcriptionId) {
+                              updateTranscription.mutate(
+                                { id: transcriptionId, updates: { lead_contact_id: contactId } },
+                                { onSuccess: () => setShowContactSelector(false) }
+                              );
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-7 w-48 text-xs">
+                            <SelectValue placeholder="Sélectionner un contact..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {leadContacts.map((contact) => (
+                              <SelectItem key={contact.id} value={contact.id}>
+                                {contact.name} {contact.position && `(${contact.position})`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => setShowContactSelector(false)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : leadContacts.length > 0 ? (
+                      <Badge 
+                        variant="outline" 
+                        className="cursor-pointer hover:bg-muted"
+                        onClick={() => setShowContactSelector(true)}
+                      >
+                        <Users className="h-3 w-3 mr-1" />
+                        Lier à un contact
+                      </Badge>
+                    ) : null
                   )}
                   
                   {/* Project Link */}

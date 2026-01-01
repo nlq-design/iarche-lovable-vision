@@ -11,6 +11,7 @@ export interface VoiceTranscription {
   storage_path: string;
   source: 'upload' | 'recording';
   lead_id: string | null;
+  lead_contact_id: string | null;
   project_id: string | null;
   solution_id: string | null;
   meeting_note_id: string | null;
@@ -27,6 +28,7 @@ export interface VoiceTranscription {
   transcription_date: string | null;
   // Joined relations
   lead?: { id: string; name: string; company: string | null; email?: string } | null;
+  lead_contact?: { id: string; name: string; email: string | null; position: string | null } | null;
   project?: { id: string; name: string } | null;
   solution?: { id: string; title: string } | null;
   meeting_note?: { id: string; objectives: string | null; booking_id: string | null } | null;
@@ -113,6 +115,7 @@ export function useCockpitVoiceTranscriptions(
         .select(`
           *,
           lead:leads(id, name, company),
+          lead_contact:lead_contacts(id, name, email, position),
           project:projects(id, name),
           solution:articles(id, title),
           meeting_note:meeting_notes(id, objectives, booking_id),
@@ -145,6 +148,7 @@ export function useCockpitVoiceTranscriptions(
           .select(`
             *,
             lead:leads(id, name, company, email),
+            lead_contact:lead_contacts(id, name, email, position, phone),
             project:projects(id, name, status),
             solution:articles(id, title, slug),
             meeting_note:meeting_notes(id, objectives, booking_id, notes),
@@ -223,7 +227,7 @@ export function useCockpitVoiceTranscriptions(
 
   // Update transcription (lead_id, project_id, etc.)
   const updateTranscription = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Pick<VoiceTranscription, 'lead_id' | 'project_id' | 'solution_id' | 'meeting_note_id'>> }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Pick<VoiceTranscription, 'lead_id' | 'lead_contact_id' | 'project_id' | 'solution_id' | 'meeting_note_id'>> }) => {
       const { error } = await supabase
         .from('voice_transcriptions')
         .update(updates)
