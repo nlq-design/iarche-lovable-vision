@@ -6,10 +6,21 @@ export interface VectorizationStatus {
   resource_type: string;
   total_resources: number;
   indexed_resources: number;
+  total_chunks?: number;
   last_indexed_at: string | null;
   last_error: string | null;
   updated_at: string;
 }
+
+// All resource types including Cockpit modules
+export const ALL_RESOURCE_TYPES = [
+  // Content types
+  'article', 'actualite', 'livre-blanc', 'atelier-webinaire', 'solution', 'cas-client', 'service',
+  // Cockpit types
+  'lead', 'project', 'uploaded_file', 'specification', 'voice_transcription', 'generated_document'
+] as const;
+
+export type ResourceType = typeof ALL_RESOURCE_TYPES[number];
 
 export interface IndexedResource {
   resource_id: string;
