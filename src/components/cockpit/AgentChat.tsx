@@ -51,6 +51,9 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedTools, setExpandedTools] = useState<string | null>(null);
   
+  // Persistent session ID for memory continuity across the conversation
+  const sessionIdRef = useRef<string>(crypto.randomUUID());
+  
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -148,6 +151,7 @@ export function AgentChat({ className, defaultOpen = false }: AgentChatProps) {
             ...conversationHistory,
             { role: 'user', content: userMessage.content },
           ],
+          session_id: sessionIdRef.current,
         },
       });
 
