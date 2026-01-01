@@ -386,21 +386,24 @@ Si l'utilisateur confirme, tu DOIS :
 
 ## 8. Plan d'Implémentation
 
-### Phase 1 - Outils d'Action Critiques (P0) ✅ EN COURS
-1. Ajouter `create_booking` (connecter `calendar-booking`)
-2. Ajouter `create_lead` (insertion directe)
-3. Ajouter `send_email` (connecter Resend via edge function)
+### Phase 1 - Outils d'Action Critiques (P0) ✅ TERMINÉ
+1. ✅ Ajouter `create_booking` (connecter `calendar-booking`)
+2. ✅ Ajouter `create_lead` (insertion directe)
+3. ✅ Ajouter `send_email` (brouillon + envoi via Resend)
+4. ✅ Ajouter `cancel_booking`, `reschedule_booking`
+5. ✅ Ajouter `create_opportunity`, `create_project`
+6. ✅ Ajouter `link_solution_to_lead`
 
-### Phase 2 - Prompt Système
-1. Remplacer prompt par version v3
-2. Ajouter règles action directe
-3. Calibrer modes CHAT/DÉTAILLÉ
+### Phase 2 - Prompt Système ✅ TERMINÉ
+1. ✅ Remplacer prompt par version v3
+2. ✅ Ajouter règles action directe (collecte 1 fois, 1 validation)
+3. ✅ Calibrer modes CHAT/DÉTAILLÉ
 
-### Phase 3 - Interface Admin
-1. Créer onglet "Outils Agent"
-2. Créer onglet "Edge Functions"
-3. Créer onglet "Tables DB"
-4. Créer onglet "Statistiques"
+### Phase 3 - Interface Admin ✅ TERMINÉ
+1. ✅ Mettre à jour stats (45 outils, 37 edge functions, 57 tables)
+2. ✅ Créer section "Outils Actions v3.0" avec 8 nouveaux outils
+3. ✅ Créer section Edge Functions connectées vs autres
+4. ✅ Affichage dynamique des données
 
 ### Phase 4 - Edge Functions P1
 1. Connecter `generate-document`
