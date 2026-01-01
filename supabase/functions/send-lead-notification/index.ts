@@ -283,13 +283,13 @@ Deno.serve(async (req) => {
     const safeMessage = escapeHtml(message);
     const safeLeadId = escapeHtml(lead_id);
 
-    // Récupérer le template personnalisé depuis la base de données
+    // Récupérer la config email depuis la base (templates + destinataires)
     const { data: emailConfig } = await supabaseAdmin
       .from('email_configurations')
-      .select('admin_email_template, admin_email_subject')
+      .select('admin_email_template, admin_email_subject, admin_emails, send_admin_notification')
       .eq('source_type', source)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     console.log('Email config found:', !!emailConfig?.admin_email_template);
 
@@ -302,10 +302,10 @@ Deno.serve(async (req) => {
       const safeHeureDebut = escapeHtml(event_details.heure_debut);
       const safeTypeEvenement = escapeHtml(event_details.type_evenement);
       const formattedDate = event_details.date ? new Date(event_details.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '';
-      
+
       eventDate = formattedDate + (safeHeureDebut ? ` à ${safeHeureDebut}` : '');
       eventLocation = safeLocation || '';
-      
+
       eventDetailsHtml = `
         <h3 style="color: ${EMAIL_COLORS.nightBlue}; font-size: 16px; margin: 20px 0 12px 0;">📅 Détails de l'événement</h3>
         ${getInfoCard(`
@@ -347,7 +347,7 @@ Deno.serve(async (req) => {
         event_date: eventDate,
         event_location: eventLocation,
       });
-      emailSubject = emailConfig.admin_email_subject 
+      emailSubject = emailConfig.admin_email_subject
         ? replaceTemplateVariables(emailConfig.admin_email_subject, {
             name: safeName,
             email: safeEmail,
@@ -373,11 +373,59 @@ Deno.serve(async (req) => {
       console.log('Using default template');
     }
 
-    const adminEmail = 'nlq@iarche.fr';
+    // Respecter un éventuel flag de désactivation des notifications admin
+    if (emailConfig?.send_admin_notification === false) {
+      console.log('Admin notification disabled for source:', source);
+      return new Response(
+        JSON.stringify({ success: true, skipped: true, reason: 'admin_notification_disabled' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Destinataires admin:
+    // 1) si configurés dans email_configurations.admin_emails -> on les utilise
+    // 2) sinon -> emails des utilisateurs ayant le rôle 'admin'
+    const configuredAdminEmails: string[] = Array.isArray(emailConfig?.admin_emails)
+      ? (emailConfig!.admin_emails as string[]).map(e => (e || '').trim()).filter(Boolean)
+      : [];
+
+    let adminEmails: string[] = configuredAdminEmails;
+
+    if (adminEmails.length === 0) {
+      const { data: adminRoles, error: rolesError } = await supabaseAdmin
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+
+      if (rolesError) {
+        console.error('Error fetching admin roles:', rolesError);
+        adminEmails = [];
+      } else {
+        const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
+        if (usersError) {
+          console.error('Error fetching users:', usersError);
+          adminEmails = [];
+        } else {
+          const adminUserIds = (adminRoles || []).map(r => r.user_id);
+          adminEmails = (users || [])
+            .filter(u => adminUserIds.includes(u.id))
+            .map(u => u.email)
+            .filter((email): email is string => !!email);
+        }
+      }
+    }
+
+    if (adminEmails.length === 0) {
+      console.warn('No admin recipients resolved for lead notification');
+      return new Response(
+        JSON.stringify({ success: true, skipped: true, reason: 'no_admin_recipients' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const { data, error } = await resend.emails.send({
       from: 'IArche Notifications <notifications@iarche.fr>',
-      to: [adminEmail],
+      to: adminEmails,
       reply_to: 'nlq@iarche.fr',
       subject: emailSubject,
       html: emailHtml,
@@ -385,17 +433,20 @@ Deno.serve(async (req) => {
 
     if (error) {
       console.error('Error sending lead notification email:', error);
-      
-      await logEmail({
-        recipient_email: adminEmail,
-        subject: emailSubject,
-        source_type: source,
-        email_type: 'admin_notification',
-        source_id: lead_id,
-        status: 'failed',
-        error_message: error.message,
-        metadata: { name, email, company, phone, source_context }
-      });
+
+      // Log failed email for each admin recipient
+      for (const recipient of adminEmails) {
+        await logEmail({
+          recipient_email: recipient,
+          subject: emailSubject,
+          source_type: source,
+          email_type: 'admin_notification',
+          source_id: lead_id || undefined,
+          status: 'failed',
+          error_message: error.message,
+          metadata: { name, email, company, phone, source_context }
+        });
+      }
 
       return new Response(
         JSON.stringify({ error: error.message }),
@@ -405,18 +456,21 @@ Deno.serve(async (req) => {
 
     console.log('Lead notification email sent successfully:', data);
 
-    await logEmail({
-      recipient_email: adminEmail,
-      subject: emailSubject,
-      source_type: source,
-      email_type: 'admin_notification',
-      source_id: lead_id,
-      status: 'sent',
-      metadata: { name, email, company, phone, source_context, resend_id: data?.id }
-    });
+    // Log success email for each admin recipient
+    for (const recipient of adminEmails) {
+      await logEmail({
+        recipient_email: recipient,
+        subject: emailSubject,
+        source_type: source,
+        email_type: 'admin_notification',
+        source_id: lead_id || undefined,
+        status: 'sent',
+        metadata: { name, email, company, phone, source_context, resend_id: data?.id }
+      });
+    }
 
     return new Response(
-      JSON.stringify({ success: true, email_id: data?.id }),
+      JSON.stringify({ success: true, email_id: data?.id, recipients: adminEmails }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
