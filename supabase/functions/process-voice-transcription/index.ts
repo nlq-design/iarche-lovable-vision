@@ -45,16 +45,38 @@ type VoiceJob = {
 };
 
 /**
+ * ElevenLabs Scribe response types
+ */
+interface ElevenLabsWord {
+  text: string;
+  start: number;
+  end: number;
+  speaker?: string;
+}
+
+interface ElevenLabsAudioEvent {
+  type: string;
+  start: number;
+  end: number;
+}
+
+interface ElevenLabsTranscription {
+  text: string;
+  words?: ElevenLabsWord[];
+  audio_events?: ElevenLabsAudioEvent[];
+}
+
+/**
  * Transcribe audio using ElevenLabs Scribe API.
  * Supports files up to 1GB with speaker diarization and audio event tagging.
  */
 async function transcribeAudio(
   audioBlob: Blob,
   language = "fra"
-): Promise<{ text: string; segments: unknown[] | null }> {
+): Promise<{ text: string; segments: unknown[] | null; speakers: string[]; audioEvents: ElevenLabsAudioEvent[] }> {
   const fileSize = audioBlob.size;
   console.log(`Audio file size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
-  console.log("Using ElevenLabs Scribe for transcription...");
+  console.log("Using ElevenLabs Scribe for transcription with diarization...");
 
   const formData = new FormData();
   formData.append("file", audioBlob, "audio.m4a");
@@ -77,13 +99,29 @@ async function transcribeAudio(
     throw new Error(`elevenlabs_stt_failed: ${txt}`);
   }
   
-  const result = JSON.parse(txt);
+  const result: ElevenLabsTranscription = JSON.parse(txt);
   console.log(`Transcription completed: ${result.text?.length ?? 0} characters`);
   
-  // Map ElevenLabs response to our expected format
+  // Extract unique speakers from words
+  const speakers = new Set<string>();
+  for (const word of result.words ?? []) {
+    if (word.speaker) {
+      speakers.add(word.speaker);
+    }
+  }
+  const uniqueSpeakers = Array.from(speakers).sort();
+  console.log(`Detected ${uniqueSpeakers.length} speakers:`, uniqueSpeakers);
+  
+  // Log audio events if any
+  if (result.audio_events?.length) {
+    console.log(`Detected ${result.audio_events.length} audio events:`, result.audio_events.map(e => e.type));
+  }
+  
   return {
     text: result.text ?? "",
-    segments: result.words ?? null
+    segments: result.words ?? null,
+    speakers: uniqueSpeakers,
+    audioEvents: result.audio_events ?? []
   };
 }
 
@@ -289,9 +327,20 @@ async function fetchEntityContext(supabase: any, job: VoiceJob, transcript?: str
     leadId = data?.[0]?.lead_id ?? null;
   }
 
+  // Fetch lead contacts if lead exists
+  let leadContacts: any[] = [];
   if (leadId) {
     const { data } = await supabase.from("leads").select("*").eq("id", leadId).single();
     lead = data ?? null;
+    
+    // Fetch associated contacts
+    const { data: contacts } = await supabase
+      .from("lead_contacts")
+      .select("*")
+      .eq("lead_id", leadId)
+      .order("is_primary", { ascending: false });
+    leadContacts = contacts ?? [];
+    console.log(`Found ${leadContacts.length} contacts for lead ${leadId}`);
   }
 
   const activity = leadId
@@ -315,6 +364,7 @@ async function fetchEntityContext(supabase: any, job: VoiceJob, transcript?: str
 
   return { 
     lead, 
+    leadContacts,
     project, 
     solution, 
     leadId, 
@@ -330,7 +380,9 @@ function buildLLM(
   userPrompt: string | null, 
   transcriptText: string, 
   ctx: ReturnType<typeof fetchEntityContext> extends Promise<infer T> ? T : never, 
-  schema: Record<string, unknown> | null
+  schema: Record<string, unknown> | null,
+  speakers: string[] = [],
+  audioEvents: ElevenLabsAudioEvent[] = []
 ) {
   // Build detected solutions context for RAG
   const detectedSolutionsContext = ctx.detectedSolutions?.length 
@@ -343,10 +395,31 @@ function buildLLM(
       }))
     : [];
 
+  // Build lead contacts context for speaker identification
+  const leadContactsContext = ctx.leadContacts?.length
+    ? ctx.leadContacts.map(c => ({
+        name: c.name,
+        position: c.position,
+        email: c.email,
+        phone: c.phone,
+        is_primary: c.is_primary,
+      }))
+    : [];
+
   const payload = {
     transcript: transcriptText,
+    // Diarization context
+    diarization: {
+      speakers_detected: speakers,
+      speaker_count: speakers.length,
+      audio_events: audioEvents.map(e => ({ type: e.type, start: e.start, end: e.end })),
+      identification_hints: leadContactsContext.length > 0
+        ? `Les contacts suivants pourraient correspondre aux speakers: ${leadContactsContext.map(c => c.name).join(', ')}`
+        : null,
+    },
     crm_context: {
       lead: ctx.lead,
+      lead_contacts: leadContactsContext,
       project: ctx.project,
       solution: ctx.solution,
       recent_activity: ctx.activity,
@@ -368,6 +441,7 @@ function buildLLM(
       unknown_to_null: true,
       max_executive_summary_words: 200,
       include_detected_solutions: ctx.autoDetectionUsed,
+      try_to_identify_speakers: speakers.length > 0,
     },
   };
 
@@ -901,12 +975,14 @@ serve(async (req) => {
     const audioBlob = await audioRes.blob();
     console.log(`Audio fetched: ${(audioBlob.size / 1024 / 1024).toFixed(2)} MB, type: ${audioBlob.type}`);
 
-    // STT with best available method (Whisper for small files, Gemini for large)
-    const stt = await transcribeAudio(audioBlob, "fr");
+    // STT with ElevenLabs Scribe (supports diarization)
+    const stt = await transcribeAudio(audioBlob, "fra");
     const rawText = stt.text ?? "";
     const segments = stt.segments ?? null;
+    const speakers = stt.speakers ?? [];
+    const audioEvents = stt.audioEvents ?? [];
 
-    console.log(`Transcription completed: ${rawText.length} chars`);
+    console.log(`Transcription completed: ${rawText.length} chars, ${speakers.length} speakers detected`);
 
     await supabase
       .from("voice_transcriptions")
@@ -916,10 +992,13 @@ serve(async (req) => {
         status: "analyzing",
         ai_metadata: {
           ...(vjob.ai_metadata ?? {}),
-          source: "openai-whisper",
-          stt_model: "whisper-1",
+          source: "elevenlabs-scribe",
+          stt_model: "scribe_v1",
           file_size_mb: (audioBlob.size / 1024 / 1024).toFixed(2),
           transcript_length: rawText.length,
+          speakers_detected: speakers,
+          speaker_count: speakers.length,
+          audio_events: audioEvents,
           generated_at: new Date().toISOString(),
         },
       })
@@ -967,7 +1046,7 @@ serve(async (req) => {
       console.log(`Using legacy profile model: ${provider}/${modelId}`);
     }
 
-    const { sys, usr } = buildLLM(systemPrompt, userPrompt, rawText, ctx, outputSchema);
+    const { sys, usr } = buildLLM(systemPrompt, userPrompt, rawText, ctx, outputSchema, speakers, audioEvents);
 
     // LLM summarize using multi-provider routing
     console.log(`Calling LLM: ${provider}/${modelId}`);
