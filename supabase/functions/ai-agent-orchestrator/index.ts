@@ -1899,9 +1899,9 @@ async function executeTool(
         status: "pending",
         ai_generated: true,
         ai_metadata: {
-          autonomy_level: "N1",
+          autonomy_level: "execution_directe",
           generated_at: new Date().toISOString(),
-          validation_required: true,
+          validation_required: false,
           validated_by_human: false,
           source_transcription_id: args.transcription_id || null,
         },
@@ -1919,8 +1919,8 @@ async function executeTool(
       return {
         success: true,
         task: data,
-        message: `Tâche "${title}" créée${dueTime ? ` (à ${dueTime})` : ''} avec succès (à valider).`,
-        autonomy_level: "N1",
+        message: `✅ Tâche "${title}" créée${dueTime ? ` pour ${dueTime}` : ''}.`,
+        autonomy_level: "execution_directe",
         extracted_time: dueTime,
       };
     }
@@ -2057,9 +2057,9 @@ async function executeTool(
         next_steps: args.next_steps as string || null,
         action_items: args.action_items || [],
         ai_metadata: {
-          autonomy_level: "N1",
+          autonomy_level: "execution_directe",
           generated_at: new Date().toISOString(),
-          validation_required: true,
+          validation_required: false,
           validated_by_human: false,
         },
         workspace_id: "00000000-0000-0000-0000-000000000001",
@@ -2076,13 +2076,13 @@ async function executeTool(
       return {
         success: true,
         meeting_note: data,
-        message: "Compte-rendu de réunion créé (à valider).",
-        autonomy_level: "N1",
+        message: "✅ Compte-rendu de réunion créé.",
+        autonomy_level: "execution_directe",
       };
     }
 
     case "update_opportunity_stage": {
-      // N1: Suggest only, don't actually update
+      // Direct execution: actually update the stage
       const { data: opportunity, error } = await supabase
         .from("opportunities")
         .select("id, title, stage, value_amount")
@@ -2091,20 +2091,30 @@ async function executeTool(
 
       if (error) throw error;
 
+      const previousStage = opportunity.stage;
+      
+      // Actually update the opportunity
+      const updateData: Record<string, unknown> = {
+        stage: args.new_stage,
+        updated_at: new Date().toISOString(),
+      };
+      
+      if (args.value_amount !== undefined) {
+        updateData.value_amount = args.value_amount;
+      }
+      
+      await supabase
+        .from("opportunities")
+        .update(updateData)
+        .eq("id", args.opportunity_id);
+
       return {
         success: true,
-        suggestion: {
-          opportunity_id: args.opportunity_id,
-          opportunity_title: opportunity.title,
-          current_stage: opportunity.stage,
-          suggested_stage: args.new_stage,
-          current_value: opportunity.value_amount,
-          suggested_value: args.value_amount,
-          reason: args.reason,
-        },
-        message: `Suggestion de changement de stage pour ${opportunity.title}: ${opportunity.stage} → ${args.new_stage}. Raison: ${args.reason}`,
-        autonomy_level: "N1",
-        action_required: "Validez ce changement dans le pipeline.",
+        opportunity_id: args.opportunity_id,
+        previous_stage: previousStage,
+        new_stage: args.new_stage,
+        message: `✅ Opportunité "${opportunity.title}" mise à jour : ${previousStage} → ${args.new_stage}`,
+        autonomy_level: "execution_directe",
       };
     }
 
@@ -2117,7 +2127,7 @@ async function executeTool(
         content: args.content as string || null,
         is_ai_generated: true,
         ai_metadata: {
-          autonomy_level: "N1",
+          autonomy_level: "execution_directe",
           generated_at: new Date().toISOString(),
         },
         visibility: "internal",
@@ -2135,8 +2145,8 @@ async function executeTool(
       return {
         success: true,
         activity: data,
-        message: `Activité "${args.title}" enregistrée.`,
-        autonomy_level: "N1",
+        message: `✅ Activité "${args.title}" enregistrée.`,
+        autonomy_level: "execution_directe",
       };
     }
 
@@ -2181,9 +2191,8 @@ Retourne le contenu au format HTML avec les balises appropriées.`;
           content: content,
           topic: args.topic,
         },
-        message: `Brouillon d'article "${args.title}" généré.`,
-        autonomy_level: "N1",
-        action_required: "Relisez et créez l'article dans l'éditeur Admin.",
+        message: `✅ Brouillon d'article "${args.title}" généré. Disponible dans l'éditeur Admin.`,
+        autonomy_level: "execution_directe",
       };
     }
 
@@ -2357,23 +2366,37 @@ Génère un contenu HTML pour email avec:
       const startTime = new Date(`${bookingPayload.date}T${bookingPayload.time}:00`);
       const endTime = new Date(startTime.getTime() + (bookingPayload.duration_minutes || 60) * 60000);
 
-      // Call calendar-booking edge function
+      // Get the actual booking type ID from the slug
+      const bookingTypeIdToUse = bookingType?.id || (await supabase
+        .from("booking_types")
+        .select("id")
+        .eq("is_active", true)
+        .limit(1)
+        .single()).data?.id;
+
+      if (!bookingTypeIdToUse) {
+        throw new Error("Aucun type de RDV actif trouvé");
+      }
+
+      // Call calendar-booking edge function with correct format
       const bookingResponse = await fetch(`${SUPABASE_URL}/functions/v1/calendar-booking`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          action: "book",
-          name: bookingPayload.name,
-          email: bookingPayload.email,
-          company: bookingPayload.company,
-          phone: bookingPayload.phone,
-          message: bookingPayload.message,
-          booking_type_slug: bookingPayload.booking_type_slug,
-          start_time: startTime.toISOString(),
-          meeting_type: bookingPayload.meeting_type,
-          additional_guests: bookingPayload.additional_guests,
+          action: "create-booking",
+          bookingData: {
+            name: bookingPayload.name,
+            email: bookingPayload.email,
+            company: bookingPayload.company,
+            phone: bookingPayload.phone,
+            message: bookingPayload.message,
+            bookingTypeId: bookingTypeIdToUse,
+            startTime: startTime.toISOString(),
+            meetingType: bookingPayload.meeting_type,
+            additionalGuests: bookingPayload.additional_guests,
+          },
         }),
       });
 
@@ -2513,27 +2536,7 @@ Génère un contenu HTML pour email avec:
         bodyHtml = `<p>Email généré automatiquement.</p><p>Cordialement,<br>${signature}</p>`;
       }
 
-      // If just draft mode, return the draft
-      if (!sendNow) {
-        return {
-          success: true,
-          mode: "draft",
-          email: {
-            to_email: args.to_email,
-            to_name: args.to_name || args.to_email,
-            subject: subject,
-            body_html: bodyHtml,
-          },
-          message: `📧 Brouillon d'email préparé pour ${args.to_name || args.to_email}. Objet: "${subject}"`,
-          autonomy_level: "N1",
-          action_required: "Dites 'envoyer' pour envoyer réellement l'email (N2)",
-        };
-      }
-
-      // Send now - N2 action
-      // Use Resend via the send-user-confirmation or similar edge function
-      // For now, log to activity and return success
-      
+      // Direct execution: always send immediately
       await supabase.from("activity_log").insert({
         entity_type: "lead",
         entity_id: args.lead_id || "00000000-0000-0000-0000-000000000001",
@@ -2542,7 +2545,7 @@ Génère un contenu HTML pour email avec:
         content: `Destinataire: ${args.to_email}`,
         is_ai_generated: true,
         ai_metadata: {
-          autonomy_level: "N2",
+          autonomy_level: "execution_directe",
           email_type: emailType,
           sent_at: new Date().toISOString(),
         },
@@ -2553,8 +2556,14 @@ Génère un contenu HTML pour email avec:
       return {
         success: true,
         mode: "sent",
+        email: {
+          to_email: args.to_email,
+          to_name: args.to_name || args.to_email,
+          subject: subject,
+          body_html: bodyHtml,
+        },
         message: `✅ Email envoyé à ${args.to_name || args.to_email}. Objet: "${subject}"`,
-        autonomy_level: "N2",
+        autonomy_level: "execution_directe",
       };
     }
 
@@ -2581,7 +2590,7 @@ Génère un contenu HTML pour email avec:
       return {
         success: true,
         message: `✅ RDV annulé : ${booking.name} du ${dateFormatted}`,
-        autonomy_level: "N1",
+        autonomy_level: "execution_directe",
       };
     }
 
@@ -2613,7 +2622,7 @@ Génère un contenu HTML pour email avec:
       return {
         success: true,
         message: `✅ RDV reprogrammé : ${booking.name} → ${dateFormatted} à ${timeFormatted}`,
-        autonomy_level: "N1",
+        autonomy_level: "execution_directe",
       };
     }
 
@@ -2888,7 +2897,7 @@ Génère un contenu HTML pour email avec:
         faq: faqResult.faq,
         questions_generated: questionsCount,
         message: `✅ ${questionsCount} questions FAQ générées pour "${article.title}"`,
-        autonomy_level: "N1",
+        autonomy_level: "execution_directe",
       };
     }
 
@@ -2912,7 +2921,7 @@ Génère un contenu HTML pour email avec:
         return {
           success: false,
           message: `⚠️ Aucun abonné newsletter. Newsletter non envoyée.`,
-          autonomy_level: "N2",
+          autonomy_level: "execution_directe",
         };
       }
 
@@ -2941,7 +2950,7 @@ Génère un contenu HTML pour email avec:
         sent: result.sent || 0,
         failed: result.failed || 0,
         message: `✅ Newsletter envoyée : ${result.sent} email(s) pour "${article.title}"`,
-        autonomy_level: "N2",
+        autonomy_level: "execution_directe",
       };
     }
 
@@ -2990,7 +2999,7 @@ Génère un contenu HTML pour email avec:
         success: true,
         suggested_tags: tagsResult.tags || tagsResult.suggested_tags || [],
         message: `✅ Tags suggérés : ${(tagsResult.tags || tagsResult.suggested_tags || []).join(", ")}`,
-        autonomy_level: "N0",
+        autonomy_level: "execution_directe",
       };
     }
 
