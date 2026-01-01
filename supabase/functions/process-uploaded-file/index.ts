@@ -1,9 +1,10 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface ProcessRequest {
@@ -12,87 +13,95 @@ interface ProcessRequest {
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { file_id, force_reprocess = false }: ProcessRequest = await req.json();
 
     if (!file_id) {
-      return new Response(
-        JSON.stringify({ error: 'file_id is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: "file_id is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     console.log(`[process-uploaded-file] Processing file: ${file_id}`);
 
     // Fetch file metadata
     const { data: file, error: fileError } = await supabase
-      .from('uploaded_files')
-      .select('*')
-      .eq('id', file_id)
-      .single();
+      .from("uploaded_files")
+      .select("*")
+      .eq("id", file_id)
+      .maybeSingle();
 
     if (fileError || !file) {
-      console.error('[process-uploaded-file] File not found:', fileError);
-      return new Response(
-        JSON.stringify({ error: 'File not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error("[process-uploaded-file] File not found:", fileError);
+      return new Response(JSON.stringify({ error: "File not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Check if already processed
-    if (file.processing_status === 'completed' && !force_reprocess) {
-      console.log('[process-uploaded-file] File already processed, skipping');
-      return new Response(
-        JSON.stringify({ success: true, message: 'Already processed', file }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (file.processing_status === "completed" && !force_reprocess) {
+      console.log("[process-uploaded-file] File already processed, skipping");
+      return new Response(JSON.stringify({ success: true, message: "Already processed", file }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+
+    const processingStartedAt = new Date().toISOString();
 
     // Update status to processing
     await supabase
-      .from('uploaded_files')
-      .update({ processing_status: 'processing', processing_error: null })
-      .eq('id', file_id);
+      .from("uploaded_files")
+      .update({
+        processing_status: "processing",
+        processing_error: null,
+        processing_started_at: processingStartedAt,
+        processing_completed_at: null,
+      })
+      .eq("id", file_id);
 
-    let extractedContent = file.extracted_content || '';
+    let extractedContent = file.extracted_content || "";
     let ocrRequired = false;
     let ocrProvider: string | null = null;
     let ocrConfidence: number | null = null;
 
-    // Extract content based on file type
-    if (file.file_type === 'text/plain' || file.file_type?.startsWith('text/')) {
+    const mimeType = file.mime_type || "";
+
+    // Extract content based on MIME type
+    if (!extractedContent && (mimeType === "text/plain" || mimeType.startsWith("text/"))) {
       // For text files, download and read directly
       const { data: fileData, error: downloadError } = await supabase.storage
-        .from('cockpit-uploads')
+        .from("cockpit-uploads")
         .download(file.storage_path);
 
       if (!downloadError && fileData) {
         extractedContent = await fileData.text();
         console.log(`[process-uploaded-file] Extracted ${extractedContent.length} chars from text file`);
       }
-    } else if (file.file_type === 'application/pdf' || file.file_type?.includes('image')) {
+    } else if (!extractedContent && (mimeType === "application/pdf" || mimeType.startsWith("image/"))) {
       // For PDFs and images, use OCR via LLM Vision
       ocrRequired = true;
-      const ocrResult = await performOCR(supabase, file);
+      const ocrResult = await performOCR(supabase, { ...file, mime_type: mimeType });
       if (ocrResult.success) {
         extractedContent = ocrResult.text;
         ocrProvider = ocrResult.provider ?? null;
         ocrConfidence = ocrResult.confidence ?? null;
         console.log(`[process-uploaded-file] OCR extracted ${extractedContent.length} chars via ${ocrProvider}`);
       } else {
-        console.warn('[process-uploaded-file] OCR failed:', ocrResult.error);
+        console.warn("[process-uploaded-file] OCR failed:", ocrResult.error);
       }
     }
 
-    // Generate AI summary and tags if we have content
+    // Generate AI summary and metadata if we have content
     let aiSummary: string | null = null;
     let aiTags: string[] = [];
     let aiKeyPoints: object[] = [];
@@ -103,52 +112,65 @@ serve(async (req) => {
         aiSummary = analysisResult.summary ?? null;
         aiTags = analysisResult.tags ?? [];
         aiKeyPoints = analysisResult.keyPoints ?? [];
-        console.log(`[process-uploaded-file] AI analysis complete: ${aiTags.length} tags, ${aiKeyPoints.length} key points`);
+        console.log(
+          `[process-uploaded-file] AI analysis complete: ${aiTags.length} tags, ${aiKeyPoints.length} key points`,
+        );
       }
     }
 
     // Update file with extracted data
+    const mergedAiMetadata = {
+      ...(file.ai_metadata || {}),
+      ai_tags: aiTags,
+      ai_key_points: aiKeyPoints,
+    };
+
     const { error: updateError } = await supabase
-      .from('uploaded_files')
+      .from("uploaded_files")
       .update({
         extracted_content: extractedContent.substring(0, 100000), // Limit to 100k chars
         ai_summary: aiSummary,
-        ai_tags: aiTags,
-        ai_key_points: aiKeyPoints,
+        ai_metadata: mergedAiMetadata,
         ocr_required: ocrRequired,
         ocr_provider: ocrProvider,
         ocr_confidence: ocrConfidence,
-        processing_status: 'completed',
-        processed_at: new Date().toISOString(),
+        processing_status: "completed",
+        processing_completed_at: new Date().toISOString(),
       })
-      .eq('id', file_id);
+      .eq("id", file_id);
 
     if (updateError) {
-      console.error('[process-uploaded-file] Update error:', updateError);
+      console.error("[process-uploaded-file] Update error:", updateError);
       throw updateError;
     }
 
     console.log(`[process-uploaded-file] Successfully processed file: ${file_id}`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         file_id,
         content_length: extractedContent.length,
         has_summary: !!aiSummary,
         tags_count: aiTags.length,
-        ocr_used: ocrRequired
+        ocr_used: ocrRequired,
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-
   } catch (error: unknown) {
-    console.error('[process-uploaded-file] Error:', error);
-    const message = error instanceof Error ? error.message : 'Processing failed';
-    return new Response(
-      JSON.stringify({ error: message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.error("[process-uploaded-file] Error:", error);
+
+    // Supabase client errors are often plain objects
+    const message = error instanceof Error
+      ? error.message
+      : (typeof error === "object" && error && "message" in error)
+      ? String((error as any).message)
+      : "Processing failed";
+
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
 
