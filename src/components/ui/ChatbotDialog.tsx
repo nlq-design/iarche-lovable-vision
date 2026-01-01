@@ -42,18 +42,24 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
     setInputValue('');
     setIsLoading(true);
 
+    // Add timeout controller
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
     try {
-      const response = await fetch('https://mhynzlruietxushewupo.supabase.co/functions/v1/chat', {
+      const response = await fetch('https://mgjyhlyrwnnioctkbdkk.supabase.co/functions/v1/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          chatbotId: 'c397a5e9-3bcb-4c4b-8b75-16fa90e41f30',
           message: inputValue,
           conversationHistory: messages
-        })
+        }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error('Erreur lors de la communication avec le chatbot');
@@ -68,52 +74,70 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
 
       if (reader) {
         let buffer = '';
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
 
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') continue;
-              
-              try {
-                const parsed = JSON.parse(data);
-                const content = parsed.choices?.[0]?.delta?.content;
-                if (content) {
-                  assistantMessage += content;
-                  
-                  // Update the last message (assistant's response)
-                  setMessages(prev => {
-                    const newMessages = [...prev];
-                    newMessages[newMessages.length - 1] = {
-                      role: 'assistant',
-                      content: assistantMessage
-                    };
-                    return newMessages;
-                  });
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') continue;
+                
+                try {
+                  const parsed = JSON.parse(data);
+                  const content = parsed.choices?.[0]?.delta?.content;
+                  if (content) {
+                    assistantMessage += content;
+                    
+                    // Update the last message (assistant's response)
+                    setMessages(prev => {
+                      const newMessages = [...prev];
+                      newMessages[newMessages.length - 1] = {
+                        role: 'assistant',
+                        content: assistantMessage
+                      };
+                      return newMessages;
+                    });
+                  }
+                } catch {
+                  // Silent parse error for non-JSON lines
                 }
-              } catch (e) {
-                console.error('Error parsing SSE:', e);
               }
             }
           }
+        } finally {
+          reader.releaseLock();
         }
+      }
+
+      // If no content was received, show fallback
+      if (!assistantMessage) {
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = {
+            role: 'assistant',
+            content: 'Je suis désolé, je n\'ai pas pu traiter votre demande. Veuillez réessayer.'
+          };
+          return newMessages;
+        });
       }
     } catch (error) {
       console.error('Erreur chatbot:', error);
+      const errorMessage = error instanceof Error && error.name === 'AbortError'
+        ? 'La requête a pris trop de temps. Veuillez réessayer.'
+        : 'Désolé, une erreur est survenue. Veuillez réessayer ou nous contacter directement.';
+      
       setMessages(prev => [
-        ...prev,
-        { 
-          role: 'assistant', 
-          content: 'Désolé, une erreur est survenue. Veuillez réessayer ou nous contacter directement.' 
-        }
+        ...prev.filter(m => m.content !== ''), // Remove empty placeholder
+        { role: 'assistant', content: errorMessage }
       ]);
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
   };
