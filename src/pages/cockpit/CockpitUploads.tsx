@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { useCockpitUploads, UploadedFile } from "@/hooks/cockpit/useCockpitUploads";
 import { useCockpitProjects } from "@/hooks/cockpit/useCockpitProjects";
@@ -187,6 +187,21 @@ export default function CockpitUploads() {
   const [pastedText, setPastedText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [tagsInput, setTagsInput] = useState('');
+
+  type UploadJobStatus = 'queued' | 'uploading' | 'completed' | 'failed' | 'cancelling' | 'cancelled';
+
+  type UploadJob = {
+    jobId: string;
+    file: File;
+    extractedText?: string;
+    status: UploadJobStatus;
+    backendFileId?: string;
+    error?: string;
+  };
+
+  const cancelJobIdsRef = useRef<Set<string>>(new Set());
+  const [uploadJobs, setUploadJobs] = useState<UploadJob[]>([]);
+  const [isUploadQueueRunning, setIsUploadQueueRunning] = useState(false);
   
   // Entity linking state
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
@@ -248,13 +263,14 @@ export default function CockpitUploads() {
   const { 
     uploads, 
     isLoading, 
-    uploadFile, 
+    uploadFileAsync,
     uploadText,
     isUploading,
     isUploadingText,
     reprocess,
     generateShareLink,
     deleteFile,
+    deleteFileAsync,
     downloadFile,
     refetch
   } = useCockpitUploads({
@@ -334,27 +350,93 @@ export default function CockpitUploads() {
     setSelectedDocumentId('');
   };
 
-  const handleUpload = async () => {
+  const cancelUploadJob = useCallback((jobId: string) => {
+    cancelJobIdsRef.current.add(jobId);
+    setUploadJobs(prev => prev.map(job => {
+      if (job.jobId !== jobId) return job;
+      if (job.status === 'queued') return { ...job, status: 'cancelled' };
+      if (job.status === 'uploading') return { ...job, status: 'cancelling' };
+      return job;
+    }));
+  }, []);
+
+  const handleUpload = () => {
+    if (selectedFiles.length === 0 || isUploadQueueRunning) return;
+
     const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
-    
-    for (const file of selectedFiles) {
+
+    const jobs: UploadJob[] = selectedFiles.map((file, idx) => {
       const extractionResult = extractionResults.get(file.name);
       const extractedText = extractionResult?.success ? extractionResult.text : undefined;
-      
-      uploadFile({
+      const jobId = `${Date.now()}_${idx}_${file.name}`;
+
+      return {
+        jobId,
         file,
-        category: selectedCategory || undefined,
-        tags,
         extractedText,
-        projectIds: selectedProjectIds,
-        leadIds: selectedLeadIds,
-        solutionIds: selectedSolutionIds,
-        documentId: selectedDocumentId || undefined,
-      });
-    }
-    
-    resetForm();
-    setActiveTab('list');
+        status: 'queued',
+      };
+    });
+
+    // Reset selection UI but keep queue visible
+    setSelectedFiles([]);
+    setExtractionResults(new Map());
+    setUploadJobs(jobs);
+    setIsUploadQueueRunning(true);
+
+    void (async () => {
+      for (const job of jobs) {
+        // Skip cancelled jobs
+        if (cancelJobIdsRef.current.has(job.jobId)) {
+          setUploadJobs(prev => prev.map(j => j.jobId === job.jobId ? { ...j, status: 'cancelled' } : j));
+          continue;
+        }
+
+        setUploadJobs(prev => prev.map(j => j.jobId === job.jobId ? { ...j, status: 'uploading' } : j));
+
+        try {
+          const result = await uploadFileAsync({
+            file: job.file,
+            category: selectedCategory || undefined,
+            tags,
+            extractedText: job.extractedText,
+            projectIds: selectedProjectIds,
+            leadIds: selectedLeadIds,
+            solutionIds: selectedSolutionIds,
+            documentId: selectedDocumentId || undefined,
+          });
+
+          // Duplicate -> nothing to delete
+          if ((result as any)?.duplicate) {
+            setUploadJobs(prev => prev.map(j => j.jobId === job.jobId ? { ...j, status: cancelJobIdsRef.current.has(job.jobId) ? 'cancelled' : 'completed' } : j));
+            continue;
+          }
+
+          const backendId = (result as any)?.file?.id as string | undefined;
+          if (backendId) {
+            setUploadJobs(prev => prev.map(j => j.jobId === job.jobId ? { ...j, backendFileId: backendId } : j));
+          }
+
+          // If user cancelled while upload was running, delete right after creation
+          if (backendId && cancelJobIdsRef.current.has(job.jobId)) {
+            setUploadJobs(prev => prev.map(j => j.jobId === job.jobId ? { ...j, status: 'cancelling' } : j));
+            await deleteFileAsync(backendId);
+            setUploadJobs(prev => prev.map(j => j.jobId === job.jobId ? { ...j, status: 'cancelled' } : j));
+          } else {
+            setUploadJobs(prev => prev.map(j => j.jobId === job.jobId ? { ...j, status: 'completed' } : j));
+          }
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Erreur inconnue';
+          setUploadJobs(prev => prev.map(j => j.jobId === job.jobId ? { ...j, status: 'failed', error: message } : j));
+        }
+      }
+
+      setIsUploadQueueRunning(false);
+      cancelJobIdsRef.current.clear();
+      setUploadJobs([]);
+      resetForm();
+      setActiveTab('list');
+    })();
   };
 
   const handleTextUpload = async () => {
