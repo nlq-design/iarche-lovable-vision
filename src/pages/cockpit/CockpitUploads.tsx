@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { useCockpitUploads, UploadedFile } from "@/hooks/cockpit/useCockpitUploads";
+import { extractFileContent, ExtractionResult } from "@/lib/fileExtraction";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { 
   Upload, 
   FileText, 
@@ -26,11 +28,13 @@ import {
   XCircle,
   Clock,
   AlertCircle,
-  Clipboard
+  Clipboard,
+  Sparkles
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const CATEGORIES = [
   { value: 'commercial', label: 'Commercial' },
@@ -176,6 +180,11 @@ export default function CockpitUploads() {
   const [pastedText, setPastedText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [tagsInput, setTagsInput] = useState('');
+  
+  // Extraction state
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractionProgress, setExtractionProgress] = useState(0);
+  const [extractionResults, setExtractionResults] = useState<Map<string, ExtractionResult>>(new Map());
 
   const { 
     uploads, 
@@ -220,20 +229,60 @@ export default function CockpitUploads() {
     }
   };
 
+  // Extract text from files before upload
+  const extractFilesContent = async () => {
+    setIsExtracting(true);
+    setExtractionProgress(0);
+    const results = new Map<string, ExtractionResult>();
+    
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const file = selectedFiles[i];
+      try {
+        const result = await extractFileContent(file);
+        results.set(file.name, result);
+      } catch (error) {
+        results.set(file.name, { 
+          success: false, 
+          text: '', 
+          error: 'Extraction échouée' 
+        });
+      }
+      setExtractionProgress(((i + 1) / selectedFiles.length) * 100);
+    }
+    
+    setExtractionResults(results);
+    setIsExtracting(false);
+    
+    const successCount = Array.from(results.values()).filter(r => r.success).length;
+    const ocrCount = Array.from(results.values()).filter(r => r.needsOcr).length;
+    
+    if (successCount > 0) {
+      toast.success(`${successCount} fichier(s) analysé(s) localement`);
+    }
+    if (ocrCount > 0) {
+      toast.info(`${ocrCount} fichier(s) nécessitent un OCR serveur`);
+    }
+  };
+
   const handleUpload = async () => {
     const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean);
     
     for (const file of selectedFiles) {
+      const extractionResult = extractionResults.get(file.name);
+      const extractedText = extractionResult?.success ? extractionResult.text : undefined;
+      
       uploadFile({
         file,
         category: selectedCategory || undefined,
         tags,
+        extractedText,
       });
     }
     
     setSelectedFiles([]);
     setSelectedCategory('');
     setTagsInput('');
+    setExtractionResults(new Map());
     setActiveTab('list');
   };
 
@@ -333,30 +382,81 @@ export default function CockpitUploads() {
                 </div>
 
                 {selectedFiles.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    <p className="text-sm font-medium">{selectedFiles.length} fichier(s) sélectionné(s)</p>
-                    {selectedFiles.map((file, i) => (
-                      <div key={i} className="flex items-center justify-between p-2 bg-muted rounded">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          <span className="text-sm truncate">{file.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            ({formatFileSize(file.size)})
-                          </span>
-                        </div>
+                  <div className="mt-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">{selectedFiles.length} fichier(s) sélectionné(s)</p>
+                      {extractionResults.size === 0 && (
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedFiles(prev => prev.filter((_, idx) => idx !== i));
-                          }}
+                          variant="secondary"
+                          size="sm"
+                          onClick={extractFilesContent}
+                          disabled={isExtracting}
                         >
-                          <XCircle className="h-4 w-4" />
+                          {isExtracting ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4 mr-2" />
+                          )}
+                          Pré-analyser
                         </Button>
+                      )}
+                    </div>
+                    
+                    {isExtracting && (
+                      <div className="space-y-1">
+                        <Progress value={extractionProgress} className="h-2" />
+                        <p className="text-xs text-muted-foreground">Extraction en cours...</p>
                       </div>
-                    ))}
+                    )}
+                    
+                    {selectedFiles.map((file, i) => {
+                      const result = extractionResults.get(file.name);
+                      return (
+                        <div key={i} className="flex items-center justify-between p-2 bg-muted rounded">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <FileText className="h-4 w-4 shrink-0" />
+                            <span className="text-sm truncate">{file.name}</span>
+                            <span className="text-xs text-muted-foreground shrink-0">
+                              ({formatFileSize(file.size)})
+                            </span>
+                            {result && (
+                              result.success ? (
+                                <Badge variant="secondary" className="text-xs shrink-0">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  {result.text.length.toLocaleString()} car.
+                                </Badge>
+                              ) : result.needsOcr ? (
+                                <Badge variant="outline" className="text-xs shrink-0">
+                                  <AlertCircle className="h-3 w-3 mr-1" />
+                                  OCR requis
+                                </Badge>
+                              ) : (
+                                <Badge variant="destructive" className="text-xs shrink-0">
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  Échec
+                                </Badge>
+                              )
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedFiles(prev => prev.filter((_, idx) => idx !== i));
+                              setExtractionResults(prev => {
+                                const next = new Map(prev);
+                                next.delete(file.name);
+                                return next;
+                              });
+                            }}
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
