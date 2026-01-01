@@ -1,11 +1,19 @@
-# Cahier des Charges V3.1.6 — Cockpit Commercial IArche
+# Cahier des Charges V3.1.7 — Cockpit Commercial IArche
 
 ## Document de spécification
 
 **Projet :** Module Cockpit Commercial intégré au back-office existant  
-**Version :** 3.1.6  
+**Version :** 3.1.7  
 **Date :** 1er Janvier 2026  
 **Statut :** ✅ V1 PRODUCTION READY
+
+**Changelog V3.1.6 → V3.1.7 (Cleanup & Responsive) :**
+- **Cleanup**: Suppression composants deprecated (HTMLLogoWithBar, PDFLogoWithBar, PDFGradientBar)
+- **Responsive P1**: AgentChat widget repositionné mobile (bottom-20), boutons tactiles agrandis
+- **Responsive P2**: CockpitLeads table scrollable horizontalement, suggestions grid 1 col mobile
+- **Responsive P3**: Padding tactile amélioré sur LeadDetailSheet et autres Sheets
+- **Responsive**: CockpitPipeline Kanban adapté mobile (grid-cols-1 sm:grid-cols-2)
+- Update: Exports PDF/HTML index nettoyés (suppression legacy exports)
 
 **Changelog V3.1.5 → V3.1.6 (Audit V1) :**
 - **VALIDATION V1** : Toutes les fonctionnalités core opérationnelles
