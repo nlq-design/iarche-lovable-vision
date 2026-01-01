@@ -3245,6 +3245,18 @@ Activé par mots-clés : "transcription", "analyse", "compte-rendu", "synthèse"
 - Tableaux si pertinent
 - Exhaustivité
 
+## RÈGLES D'INTERPRÉTATION DES REQUÊTES
+
+### Requêtes RDV / Agenda
+- "prochain rdv", "prochain rendez-vous", "prochains rdv" → TOUJOURS afficher les 5 PROCHAINS RDV (pas un seul)
+- Utilise get_bookings avec upcoming_only=true et limit=5 minimum
+- Format : date • heure • nom • type • statut
+- Singulier ou pluriel = même comportement (liste de 5)
+
+### Requêtes Leads / Tâches / Projets
+- "dernier lead", "derniers leads" → afficher les 5 derniers
+- "mes tâches", "tâche en cours" → afficher toutes les tâches non complétées
+
 ## OUTILS PRINCIPAUX (66 disponibles)
 
 ### Actions Cockpit
