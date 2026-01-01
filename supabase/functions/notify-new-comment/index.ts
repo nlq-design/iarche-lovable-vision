@@ -257,7 +257,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: emailResponse, error: emailError } = await resend.emails.send({
       from: "IArche Notifications <notifications@iarche.fr>",
       to: adminEmails,
-      replyTo: 'nlq@iarche.fr',
+      replyTo: 'nlq@nlq.fr',
       subject: emailSubject,
       html: wrapEmailContent(header, emailContent, footer),
     });

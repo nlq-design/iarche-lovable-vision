@@ -426,7 +426,7 @@ Deno.serve(async (req) => {
     const { data, error } = await resend.emails.send({
       from: 'IArche Notifications <notifications@iarche.fr>',
       to: adminEmails,
-      reply_to: 'nlq@iarche.fr',
+      reply_to: 'nlq@nlq.fr',
       subject: emailSubject,
       html: emailHtml,
     });
