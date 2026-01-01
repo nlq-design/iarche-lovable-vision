@@ -158,6 +158,7 @@ export function useCockpitUploads(filters?: {
       const { data: record, error: insertError } = await supabase
         .from('uploaded_files')
         .insert({
+          workspace_id: '00000000-0000-0000-0000-000000000001', // Default workspace
           original_filename: file.name,
           file_type: fileType,
           mime_type: file.type,
@@ -167,7 +168,7 @@ export function useCockpitUploads(filters?: {
           project_ids: projectIds,
           solution_ids: solutionIds,
           lead_ids: leadIds,
-          document_id: documentId || null,
+          generated_document_id: documentId || null,
           category,
           tags,
           extracted_content: extractedText || null,
@@ -220,6 +221,7 @@ export function useCockpitUploads(filters?: {
       const { data: record, error } = await supabase
         .from('uploaded_files')
         .insert({
+          workspace_id: '00000000-0000-0000-0000-000000000001', // Default workspace
           original_filename: filename || `texte_${Date.now()}.txt`,
           file_type: 'pasted_text',
           mime_type: 'text/plain',
@@ -229,7 +231,7 @@ export function useCockpitUploads(filters?: {
           project_ids: projectIds,
           solution_ids: solutionIds,
           lead_ids: leadIds,
-          document_id: documentId || null,
+          generated_document_id: documentId || null,
           category,
           tags,
           extracted_content: content,
