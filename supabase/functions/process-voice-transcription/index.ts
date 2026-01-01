@@ -9,7 +9,6 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
@@ -19,10 +18,10 @@ const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-// Whisper file size limit (per request)
-const WHISPER_MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25MB - OpenAI Whisper limit per request
-// Edge function: we can accept larger files only if we stream them (no in-memory blob)
-const EDGE_FUNCTION_MAX_FILE_SIZE = 250 * 1024 * 1024; // 250MB safety cap
+// Whisper file size limit
+const WHISPER_MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25MB - OpenAI Whisper limit
+// Hard limit for edge function memory safety
+const EDGE_FUNCTION_MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB max - prevents memory exhaustion
 
 type LLMProvider = "lovable" | "openai" | "anthropic" | "openrouter";
 
@@ -261,143 +260,18 @@ async function transcribeChunkWithWhisper(audioBlob: Blob, language = "fr"): Pro
   return await response.text();
 }
 
-function streamFromAsyncIterator(it: AsyncIterator<Uint8Array>): ReadableStream<Uint8Array> {
-  return new ReadableStream<Uint8Array>({
-    async pull(controller) {
-      const { value, done } = await it.next();
-      if (done) controller.close();
-      else controller.enqueue(value);
-    },
-    async cancel() {
-      if (it.return) await it.return();
-    },
-  });
-}
-
-async function transcribeStreamWithElevenLabs(
-  audioStream: ReadableStream<Uint8Array>,
-  mimeType: string,
-  opts: { languageCode?: string; diarize?: boolean; tagAudioEvents?: boolean } = {}
-): Promise<string> {
-  if (!ELEVENLABS_API_KEY) {
-    throw new Error("elevenlabs_api_key_not_configured: ELEVENLABS_API_KEY is required for large-file transcription");
-  }
-
-  const boundary = `----iarche-${crypto.randomUUID()}`;
-  const enc = new TextEncoder();
-
-  const ext = getExtensionFromMimeType(mimeType);
-  const fileName = `audio.${ext}`;
-
-  const fields: Array<[string, string]> = [
-    ["model_id", "scribe_v1"],
-  ];
-  if (opts.languageCode) fields.push(["language_code", opts.languageCode]);
-  if (typeof opts.diarize === "boolean") fields.push(["diarize", String(opts.diarize)]);
-  if (typeof opts.tagAudioEvents === "boolean") fields.push(["tag_audio_events", String(opts.tagAudioEvents)]);
-
-  async function* multipart(): AsyncGenerator<Uint8Array> {
-    // Text fields
-    for (const [name, value] of fields) {
-      yield enc.encode(
-        `--${boundary}\r\n` +
-          `Content-Disposition: form-data; name="${name}"\r\n\r\n` +
-          `${value}\r\n`
-      );
-    }
-
-    // File field header
-    yield enc.encode(
-      `--${boundary}\r\n` +
-        `Content-Disposition: form-data; name="file"; filename="${fileName}"\r\n` +
-        `Content-Type: ${mimeType || "application/octet-stream"}\r\n\r\n`
-    );
-
-    // File bytes
-    for await (const chunk of audioStream) {
-      yield chunk;
-    }
-
-    // Closing
-    yield enc.encode(`\r\n--${boundary}--\r\n`);
-  }
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort("elevenlabs_timeout"), 120_000); // 2 min
-
-  try {
-    const response = await fetch("https://api.elevenlabs.io/v1/speech-to-text", {
-      method: "POST",
-      headers: {
-        "xi-api-key": ELEVENLABS_API_KEY,
-        "Content-Type": `multipart/form-data; boundary=${boundary}`,
-      },
-      body: streamFromAsyncIterator(multipart()[Symbol.asyncIterator]()),
-      signal: controller.signal,
-    });
-
-    const raw = await response.text();
-    if (!response.ok) {
-      console.error("[ElevenLabs] API error:", response.status, raw.slice(0, 500));
-      throw new Error(`elevenlabs_api_error: ${response.status} - ${raw.slice(0, 500)}`);
-    }
-
-    let json: any = null;
-    try {
-      json = JSON.parse(raw);
-    } catch {
-      // Sometimes APIs return plain text; keep as fallback
-      return raw;
-    }
-
-    const text = (json?.text ?? json?.transcription ?? "") as string;
-    if (!text) {
-      console.warn("[ElevenLabs] Unexpected response keys:", Object.keys(json ?? {}));
-      throw new Error("elevenlabs_unexpected_response: missing text");
-    }
-
-    return text;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
 /**
- * Main transcription function
- * - <=25MB: OpenAI Whisper
- * - >25MB: ElevenLabs Scribe (streamed upload to avoid memory explosion)
+ * Main transcription function - Whisper only (25MB max)
  */
 async function transcribeAudio(
-  audio: { blob?: Blob; stream?: ReadableStream<Uint8Array>; mimeType: string; sizeBytes?: number | null },
+  audioBlob: Blob,
   language = "fr"
-): Promise<{ text: string; processingInfo: { originalSizeMB: number | null; provider: "whisper" | "elevenlabs"; chunksCount: number } }> {
-  const originalSizeMB = typeof audio.sizeBytes === "number" ? audio.sizeBytes / 1024 / 1024 : (audio.blob ? audio.blob.size / 1024 / 1024 : null);
-  const mimeType = audio.mimeType;
-
-  // Prefer streaming for large/unknown sizes to avoid blob() memory spikes.
-  const sizeBytes = audio.sizeBytes ?? (audio.blob?.size ?? null);
-  const shouldUseElevenLabs = sizeBytes === null || sizeBytes > WHISPER_MAX_SIZE_BYTES;
-
-  if (shouldUseElevenLabs) {
-    if (!audio.stream) {
-      throw new Error("missing_audio_stream: stream is required for large-file transcription");
-    }
-    console.log(`[Transcription] Using ElevenLabs (stream), sizeMB=${originalSizeMB?.toFixed?.(2) ?? "unknown"}, type=${mimeType}`);
-    const text = await transcribeStreamWithElevenLabs(audio.stream, mimeType, {
-      languageCode: "fra",
-      diarize: true,
-      tagAudioEvents: false,
-    });
-    return { text: text.trim(), processingInfo: { originalSizeMB, provider: "elevenlabs", chunksCount: 1 } };
-  }
-
-  if (!audio.blob) {
-    throw new Error("missing_audio_blob: blob is required for whisper transcription");
-  }
-
-  console.log(`[Transcription] Using Whisper, sizeMB=${originalSizeMB?.toFixed?.(2) ?? "unknown"}, type=${mimeType}`);
-  const text = await transcribeChunkWithWhisper(audio.blob, language);
-  return { text: text.trim(), processingInfo: { originalSizeMB, provider: "whisper", chunksCount: 1 } };
+): Promise<{ text: string; processingInfo: { originalSizeMB: number; provider: "whisper" } }> {
+  const originalSizeMB = audioBlob.size / 1024 / 1024;
+  console.log(`[Transcription] Whisper, size=${originalSizeMB.toFixed(2)} MB`);
+  
+  const text = await transcribeChunkWithWhisper(audioBlob, language);
+  return { text: text.trim(), processingInfo: { originalSizeMB, provider: "whisper" } };
 }
 
 
@@ -1353,22 +1227,13 @@ serve(async (req) => {
       });
     }
 
-    // IMPORTANT: Do NOT load big audio in memory. If >25MB (or unknown size), stream to ElevenLabs.
-    const shouldStream = sizeBytes === null || sizeBytes > WHISPER_MAX_SIZE_BYTES;
-    const audioBlob = shouldStream ? null : await audioRes.blob();
+    // Load audio blob (size already validated to be <= 25MB)
+    const audioBlob = await audioRes.blob();
 
-    const stt = await transcribeAudio(
-      {
-        blob: audioBlob ?? undefined,
-        stream: shouldStream ? (audioRes.body ?? undefined) : undefined,
-        mimeType,
-        sizeBytes,
-      },
-      "fr"
-    );
+    const stt = await transcribeAudio(audioBlob, "fr");
 
     const rawText = stt.text ?? "";
-    console.log(`Transcription: ${rawText.length} chars (provider=${stt.processingInfo.provider})`);
+    console.log(`Transcription: ${rawText.length} chars`);
 
     await supabase
       .from("voice_transcriptions")
@@ -1378,10 +1243,9 @@ serve(async (req) => {
         status: "analyzing",
         ai_metadata: {
           ...(vjob.ai_metadata ?? {}),
-          source: stt.processingInfo.provider === "elevenlabs" ? "elevenlabs-scribe" : "openai-whisper",
-          stt_model: stt.processingInfo.provider === "elevenlabs" ? "scribe_v1" : "whisper-1",
+          source: "openai-whisper",
+          stt_model: "whisper-1",
           file_size_mb: fileSizeMB ? fileSizeMB.toFixed(2) : null,
-          chunks_count: stt.processingInfo.chunksCount,
           transcript_length: rawText.length,
           generated_at: new Date().toISOString(),
         },
