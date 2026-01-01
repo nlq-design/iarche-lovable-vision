@@ -51,6 +51,7 @@ interface CreateTranscriptionModalProps {
 }
 
 const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
+const MAX_TRANSCRIPTION_FILE_SIZE = 25 * 1024 * 1024; // 25MB (STT provider limit)
 
 export function CreateTranscriptionModal({
   open,
@@ -160,11 +161,19 @@ export function CreateTranscriptionModal({
 
   const handleSubmit = async () => {
     const filesToUpload = activeTab === 'upload' ? selectedFiles : (recordedBlob ? [recordedBlob] : []);
-    
+
     if (filesToUpload.length === 0) {
       toast.error('Veuillez sélectionner ou enregistrer un audio');
       return;
     }
+
+    const tooLarge = filesToUpload.find((f) => f.size > MAX_TRANSCRIPTION_FILE_SIZE);
+    if (tooLarge) {
+      const name = tooLarge instanceof File ? tooLarge.name : 'audio';
+      toast.error(`Fichier trop volumineux (max ${(MAX_TRANSCRIPTION_FILE_SIZE / (1024 * 1024)).toFixed(0)}MB) : ${name}`);
+      return;
+    }
+
 
     setIsUploading(true);
     setUploadProgress({ current: 0, total: filesToUpload.length });
@@ -305,7 +314,7 @@ export function CreateTranscriptionModal({
                     Cliquez ou glissez des fichiers audio
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    MP3, M4A, WAV, WebM (max 100 MB par fichier) — <strong>Multi-sélection possible</strong>
+                    MP3, M4A, WAV, WebM (max 25 MB par fichier) — <strong>Multi-sélection possible</strong>
                   </p>
                 </div>
               )}
