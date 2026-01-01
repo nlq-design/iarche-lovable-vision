@@ -51,6 +51,7 @@ import { useCockpitTasks } from '@/hooks/cockpit/useCockpitTasks';
 import { useCockpitMeetingNotes } from '@/hooks/cockpit/useCockpitMeetingNotes';
 import { useCockpitSpecifications } from '@/hooks/cockpit/useCockpitSpecifications';
 import { ProjectTimeline } from './ProjectTimeline';
+import { LinkedPartnersSection } from './LinkedPartnersSection';
 import type { Database } from '@/integrations/supabase/types';
 
 type Project = Database['public']['Tables']['projects']['Row'];
@@ -310,6 +311,11 @@ export function ProjectDetailSheet({ project, open, onOpenChange }: ProjectDetai
                     />
                   </div>
                 </div>
+
+                <Separator />
+
+                {/* Linked Partners */}
+                <LinkedPartnersSection entityType="project" entityId={project.id} />
 
                 <Separator />
 
