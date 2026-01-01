@@ -2640,6 +2640,132 @@ export type Database = {
           },
         ]
       }
+      uploaded_files: {
+        Row: {
+          ai_metadata: Json | null
+          ai_summary: string | null
+          category: string | null
+          content_hash: string | null
+          created_at: string | null
+          download_count: number | null
+          extracted_content: string | null
+          file_size_bytes: number | null
+          file_type: string
+          generated_document_id: string | null
+          id: string
+          is_latest: boolean | null
+          lead_ids: string[] | null
+          mime_type: string | null
+          ocr_confidence: number | null
+          ocr_provider: string | null
+          ocr_required: boolean | null
+          original_filename: string
+          parent_file_id: string | null
+          processing_completed_at: string | null
+          processing_error: string | null
+          processing_started_at: string | null
+          processing_status: string | null
+          project_ids: string[] | null
+          share_expires_at: string | null
+          share_password_hash: string | null
+          share_token: string | null
+          solution_ids: string[] | null
+          storage_path: string | null
+          tags: string[] | null
+          updated_at: string | null
+          uploaded_by: string | null
+          version: number | null
+          workspace_id: string
+        }
+        Insert: {
+          ai_metadata?: Json | null
+          ai_summary?: string | null
+          category?: string | null
+          content_hash?: string | null
+          created_at?: string | null
+          download_count?: number | null
+          extracted_content?: string | null
+          file_size_bytes?: number | null
+          file_type: string
+          generated_document_id?: string | null
+          id?: string
+          is_latest?: boolean | null
+          lead_ids?: string[] | null
+          mime_type?: string | null
+          ocr_confidence?: number | null
+          ocr_provider?: string | null
+          ocr_required?: boolean | null
+          original_filename: string
+          parent_file_id?: string | null
+          processing_completed_at?: string | null
+          processing_error?: string | null
+          processing_started_at?: string | null
+          processing_status?: string | null
+          project_ids?: string[] | null
+          share_expires_at?: string | null
+          share_password_hash?: string | null
+          share_token?: string | null
+          solution_ids?: string[] | null
+          storage_path?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+          version?: number | null
+          workspace_id?: string
+        }
+        Update: {
+          ai_metadata?: Json | null
+          ai_summary?: string | null
+          category?: string | null
+          content_hash?: string | null
+          created_at?: string | null
+          download_count?: number | null
+          extracted_content?: string | null
+          file_size_bytes?: number | null
+          file_type?: string
+          generated_document_id?: string | null
+          id?: string
+          is_latest?: boolean | null
+          lead_ids?: string[] | null
+          mime_type?: string | null
+          ocr_confidence?: number | null
+          ocr_provider?: string | null
+          ocr_required?: boolean | null
+          original_filename?: string
+          parent_file_id?: string | null
+          processing_completed_at?: string | null
+          processing_error?: string | null
+          processing_started_at?: string | null
+          processing_status?: string | null
+          project_ids?: string[] | null
+          share_expires_at?: string | null
+          share_password_hash?: string | null
+          share_token?: string | null
+          solution_ids?: string[] | null
+          storage_path?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+          version?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "uploaded_files_generated_document_id_fkey"
+            columns: ["generated_document_id"]
+            isOneToOne: false
+            referencedRelation: "generated_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "uploaded_files_parent_file_id_fkey"
+            columns: ["parent_file_id"]
+            isOneToOne: false
+            referencedRelation: "uploaded_files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -2953,6 +3079,14 @@ export type Database = {
         Args: { atelier_uuid: string }
         Returns: number
       }
+      generate_file_share_link: {
+        Args: {
+          p_expires_in_days?: number
+          p_file_id: string
+          p_password?: string
+        }
+        Returns: string
+      }
       generate_phonetic_key: { Args: { input_text: string }; Returns: string }
       get_recent_ai_memory: {
         Args: {
@@ -3060,6 +3194,17 @@ export type Database = {
           issue: string
           resource_type: string
           title: string
+        }[]
+      }
+      verify_file_share_access: {
+        Args: { p_password?: string; p_token: string }
+        Returns: {
+          error_message: string
+          file_id: string
+          file_type: string
+          original_filename: string
+          storage_path: string
+          valid: boolean
         }[]
       }
     }
