@@ -308,6 +308,38 @@ const AGENT_TOOLS = [
       parameters: { type: "object", properties: {} },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "get_pending_ai_notifications",
+      description: "Récupère les nouvelles entrées (leads, opportunités, projets, tâches, documents...) non encore revues par l'IA. UTILISE CE TOOL EN PREMIER pour être informé des nouveautés.",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: { type: "number", description: "Nombre max de notifications (défaut: 20)" },
+          entity_type: { type: "string", description: "Filtrer par type (lead, opportunity, project, task, booking, etc.)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "mark_notifications_reviewed",
+      description: "Marque les notifications comme lues après les avoir traitées. Appeler après get_pending_ai_notifications.",
+      parameters: {
+        type: "object",
+        properties: {
+          notification_ids: { 
+            type: "array", 
+            items: { type: "string" },
+            description: "Liste des IDs de notifications à marquer comme lues" 
+          },
+        },
+        required: ["notification_ids"],
+      },
+    },
+  },
   // ============ ADMIN - Lecture (N0) ============
   {
     type: "function",
@@ -995,6 +1027,54 @@ async function executeTool(
         total_opportunities: opportunities?.length || 0,
         total_pipeline_value: totalValue,
         conversion_rate: conversionRate.toFixed(1) + "%",
+      };
+    }
+
+    case "get_pending_ai_notifications": {
+      let query = supabase
+        .from("activity_log")
+        .select("id, entity_type, entity_id, activity_type, title, content, created_at, metadata")
+        .eq("pending_ai_review", true)
+        .order("created_at", { ascending: false })
+        .limit(args.limit as number || 20);
+
+      if (args.entity_type) query = query.eq("entity_type", args.entity_type);
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const notifications = data || [];
+      const summary = notifications.reduce((acc: Record<string, number>, n: { entity_type: string }) => {
+        acc[n.entity_type] = (acc[n.entity_type] || 0) + 1;
+        return acc;
+      }, {});
+
+      return { 
+        notifications,
+        count: notifications.length,
+        summary,
+        message: notifications.length > 0 
+          ? `${notifications.length} nouvelle(s) notification(s) à traiter`
+          : "Aucune nouvelle notification"
+      };
+    }
+
+    case "mark_notifications_reviewed": {
+      const ids = args.notification_ids as string[];
+      if (!ids || ids.length === 0) {
+        return { success: false, error: "Aucun ID fourni" };
+      }
+
+      const { data, error } = await supabase.rpc("mark_ai_notifications_reviewed", {
+        p_ids: ids
+      });
+
+      if (error) throw error;
+
+      return { 
+        success: true, 
+        marked_count: data,
+        message: `${data} notification(s) marquée(s) comme lue(s)`
       };
     }
 

@@ -273,7 +273,65 @@ cleanup_expired_ai_memory() RETURNS int
 
 -- Génération clé phonétique
 generate_phonetic_key(input_text text) RETURNS text
+
+-- Marquer notifications IA comme lues
+mark_ai_notifications_reviewed(p_ids UUID[]) RETURNS int
 ```
+
+### 3.3 Système de notifications automatiques
+
+L'agent IA est **automatiquement notifié** de chaque nouveau contenu grâce à des triggers SQL.
+
+#### Fonctionnement
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│   TRIGGERS SQL (AFTER INSERT)                                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│   leads ────────────┐                                                       │
+│   opportunities ────┤                                                       │
+│   projects ─────────┤                                                       │
+│   tasks ────────────┤── notify_ai_on_insert() ──▶ activity_log              │
+│   bookings ─────────┤                             (pending_ai_review=true)  │
+│   generated_documents┤                                                      │
+│   specifications ───┤                                                       │
+│   voice_transcriptions┤                                                     │
+│   articles ─────────┤                                                       │
+│   contacts ─────────┘                                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│   AGENT IA (au démarrage de chaque conversation)                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│   1. Appel get_pending_ai_notifications()                                   │
+│   2. Récupère toutes les entrées avec pending_ai_review=true               │
+│   3. Informe l'utilisateur des nouveautés                                   │
+│   4. Appel mark_notifications_reviewed(ids) après traitement               │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Tables avec triggers
+
+| Table | Trigger | entity_type |
+|-------|---------|-------------|
+| `leads` | `trg_notify_ai_leads` | `lead` |
+| `opportunities` | `trg_notify_ai_opportunities` | `opportunity` |
+| `projects` | `trg_notify_ai_projects` | `project` |
+| `tasks` | `trg_notify_ai_tasks` | `task` |
+| `bookings` | `trg_notify_ai_bookings` | `booking` |
+| `generated_documents` | `trg_notify_ai_documents` | `generated_document` |
+| `specifications` | `trg_notify_ai_specs` | `specification` |
+| `voice_transcriptions` | `trg_notify_ai_transcriptions` | `voice_transcription` |
+| `articles` | `trg_notify_ai_articles` | `article` |
+| `contacts` | `trg_notify_ai_contacts` | `contact` |
+
+#### Colonnes ajoutées à activity_log
+
+| Colonne | Type | Description |
+|---------|------|-------------|
+| `pending_ai_review` | BOOLEAN | `true` = non traité par l'IA |
+| `ai_reviewed_at` | TIMESTAMPTZ | Date de traitement par l'IA |
 
 ---
 
@@ -283,7 +341,7 @@ generate_phonetic_key(input_text text) RETURNS text
 
 | Fonction | Fichier | Description | Autonomie |
 |----------|---------|-------------|-----------|
-| **ai-agent-orchestrator** | `ai-agent-orchestrator/index.ts` | Orchestrateur principal avec 34 outils | N0/N1 |
+| **ai-agent-orchestrator** | `ai-agent-orchestrator/index.ts` | Orchestrateur principal avec 36 outils | N0/N1 |
 | **process-voice-transcription** | `process-voice-transcription/index.ts` | Transcription Whisper + analyse LLM | N0/N1 |
 | **create-voice-transcription** | `create-voice-transcription/index.ts` | Création job de transcription | N0 |
 | **generate-document** | `generate-document/index.ts` | Génération devis/CDC/proposition | N1 |
@@ -358,9 +416,9 @@ generate_phonetic_key(input_text text) RETURNS text
 
 ## 5. Orchestrateur Agent IA
 
-### 5.1 Outils disponibles (34 total)
+### 5.1 Outils disponibles (36 total)
 
-#### COCKPIT - Lecture (N0) : 12 outils
+#### COCKPIT - Lecture (N0) : 14 outils
 
 | Outil | Description |
 |-------|-------------|
@@ -376,6 +434,8 @@ generate_phonetic_key(input_text text) RETURNS text
 | `get_activity_log` | Historique activités |
 | `get_pipeline_stats` | Statistiques pipeline |
 | `get_agenda_summary` | Résumé agenda (today, this_week, etc.) |
+| `get_pending_ai_notifications` | **🔔 Nouvelles entrées non revues par l'IA** |
+| `mark_notifications_reviewed` | Marquer notifications comme lues |
 
 #### ADMIN - Lecture (N0) : 11 outils
 
