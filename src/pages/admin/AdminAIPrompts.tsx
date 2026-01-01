@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"; // v3.2
+import { useState, useEffect, useMemo } from "react"; // v3.2
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ import {
   useSemanticSearch,
   VectorizationStatus
 } from "@/hooks/useVectorization";
+import { useAIAgentStats } from "@/hooks/admin/useAIAgentStats";
 
 // Provider groups for LLM selection
 const PROVIDER_GROUPS = {
@@ -367,7 +368,7 @@ function PromptAccordions({ masterPrompt, onMasterChange }: PromptAccordionsProp
                   <Wrench className="h-5 w-5 text-orange-500" />
                   <div>
                     <CardTitle className="text-base">Référentiel Outils (tools-reference)</CardTitle>
-                    <CardDescription>67 outils, 22 Edge Functions, 6 tables IA</CardDescription>
+                    <CardDescription>Outils, Edge Functions, tables IA (chargé dynamiquement)</CardDescription>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -876,6 +877,514 @@ function AIMemoryManager() {
               </div>
             </ScrollArea>
           )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Dynamic Modules Overview Component - Fully Dynamic from Database
+function DynamicModulesOverview() {
+  const { data: stats, isLoading, refetch } = useAIAgentStats();
+
+  // Tool icons mapping
+  const toolIcons: Record<string, React.ReactNode> = {
+    get_leads: <Users className="h-3 w-3" />,
+    get_lead_detail: <Users className="h-3 w-3" />,
+    get_opportunities: <Target className="h-3 w-3" />,
+    get_projects: <Briefcase className="h-3 w-3" />,
+    get_project_detail: <Briefcase className="h-3 w-3" />,
+    get_tasks: <ClipboardList className="h-3 w-3" />,
+    get_bookings: <Calendar className="h-3 w-3" />,
+    get_booking_details: <Calendar className="h-3 w-3" />,
+    get_agenda_summary: <Calendar className="h-3 w-3" />,
+    get_transcriptions: <Mic className="h-3 w-3" />,
+    get_meeting_notes: <FileText className="h-3 w-3" />,
+    get_specifications: <FileSignature className="h-3 w-3" />,
+    get_generated_documents: <FileCheck className="h-3 w-3" />,
+    get_solution_leads: <Sparkles className="h-3 w-3" />,
+    get_activity_log: <Activity className="h-3 w-3" />,
+    get_pending_ai_notifications: <Bell className="h-3 w-3" />,
+    create_booking: <Calendar className="h-3 w-3" />,
+    cancel_booking: <Calendar className="h-3 w-3" />,
+    create_lead: <Users className="h-3 w-3" />,
+    update_lead: <Users className="h-3 w-3" />,
+    send_email: <MessageSquare className="h-3 w-3" />,
+    create_opportunity: <Target className="h-3 w-3" />,
+    update_opportunity: <Target className="h-3 w-3" />,
+    create_project: <Briefcase className="h-3 w-3" />,
+    update_project: <Briefcase className="h-3 w-3" />,
+    create_task: <ClipboardList className="h-3 w-3" />,
+    update_task: <ClipboardList className="h-3 w-3" />,
+    create_meeting_note: <FileText className="h-3 w-3" />,
+    log_activity: <Activity className="h-3 w-3" />,
+    search_knowledge_base: <Search className="h-3 w-3" />,
+    suggest_solutions_for_lead: <Sparkles className="h-3 w-3" />,
+    generate_document: <FileText className="h-3 w-3" />,
+  };
+
+  // Cockpit modules - could be fetched dynamically too
+  const cockpitModules = [
+    { name: "Transcriptions", desc: "Synthèse audio + détection", path: "/cockpit/transcriptions", icon: <Mic className="h-4 w-4" /> },
+    { name: "Leads", desc: "Qualification & scoring", path: "/cockpit/leads", icon: <Users className="h-4 w-4" /> },
+    { name: "Projets", desc: "Suivi & recommandations", path: "/cockpit/projects", icon: <Briefcase className="h-4 w-4" /> },
+    { name: "Solutions", desc: "Analyse commerciale", path: "/cockpit/solutions", icon: <Sparkles className="h-4 w-4" /> },
+    { name: "Pipeline", desc: "Insights opportunités", path: "/cockpit/pipeline", icon: <Target className="h-4 w-4" /> },
+    { name: "Agenda", desc: "Préparation RDV", path: "/cockpit/agenda", icon: <Calendar className="h-4 w-4" /> },
+    { name: "Documents", desc: "Génération CDC/Devis", path: "/cockpit/documents", icon: <FileCheck className="h-4 w-4" /> },
+    { name: "Agent Chat", desc: "Flottant universel", path: "global", icon: <Bot className="h-4 w-4" /> }
+  ];
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center h-48">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center h-48 text-muted-foreground">
+          <AlertCircle className="h-5 w-5 mr-2" />
+          Impossible de charger les statistiques
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const allTools = [
+    ...stats.tools.cockpit_read,
+    ...stats.tools.cockpit_write,
+    ...stats.tools.admin_read,
+    ...stats.tools.admin_write,
+    ...stats.tools.email,
+    ...stats.tools.rag,
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Agent Overview Stats - Dynamic */}
+      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Bot className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Agent IA IArche v3.1 - Vue d'ensemble</CardTitle>
+                <CardDescription>
+                  Master Agent multi-outils avec exécution directe, RAG et mémoire persistante
+                </CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => refetch()}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              <a 
+                href="/docs/CDC_AI_AGENT_REFONTE_V3.md" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                <FileCode className="h-3 w-3" />
+                CDC v3.0
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+            <div className="p-3 rounded-lg bg-background border text-center">
+              <p className="text-2xl font-bold text-primary">{stats.totalTools}</p>
+              <p className="text-xs text-muted-foreground">Outils Agent</p>
+            </div>
+            <div className="p-3 rounded-lg bg-background border text-center">
+              <p className="text-2xl font-bold text-green-500">{stats.connectedEdgeFunctions}</p>
+              <p className="text-xs text-muted-foreground">Connectées Agent</p>
+            </div>
+            <div className="p-3 rounded-lg bg-background border text-center">
+              <p className="text-2xl font-bold text-blue-500">{stats.aiTables}</p>
+              <p className="text-xs text-muted-foreground">Tables IA</p>
+            </div>
+            <div className="p-3 rounded-lg bg-background border text-center">
+              <p className="text-2xl font-bold text-yellow-500">{stats.actionTools}</p>
+              <p className="text-xs text-muted-foreground">Outils Actions</p>
+            </div>
+            <div className="p-3 rounded-lg bg-background border text-center">
+              <p className="text-2xl font-bold text-purple-500">{stats.responseModes}</p>
+              <p className="text-xs text-muted-foreground">Modes réponse</p>
+            </div>
+            <div className="p-3 rounded-lg bg-background border text-center">
+              <p className="text-2xl font-bold text-orange-500">∞</p>
+              <p className="text-xs text-muted-foreground">Exécution directe</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tools Catalog - Dynamic */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Wrench className="h-4 w-4" />
+            Catalogue des {stats.totalTools} Outils Agent
+          </CardTitle>
+          <CardDescription>
+            Outils disponibles pour l'orchestrateur IA, classés par domaine (chargé dynamiquement)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Cockpit Read Tools */}
+          {stats.tools.cockpit_read.length > 0 && (
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-colors">
+                <div className="flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-blue-500" />
+                  <span className="font-medium">COCKPIT - Lecture</span>
+                  <Badge variant="secondary" className="text-xs">{stats.tools.cockpit_read.length} outils</Badge>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
+                  {stats.tools.cockpit_read.map((tool) => (
+                    <TooltipProvider key={tool.name}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 p-2 rounded bg-background/50 text-xs">
+                            {toolIcons[tool.name] || <Wrench className="h-3 w-3" />}
+                            <code className="font-mono truncate">{tool.name}</code>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{tool.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Cockpit Write Tools */}
+          {stats.tools.cockpit_write.length > 0 && (
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-green-500/10 border border-green-500/20 hover:bg-green-500/15 transition-colors">
+                <div className="flex items-center gap-2">
+                  <Edit className="h-4 w-4 text-green-500" />
+                  <span className="font-medium">COCKPIT - Écriture/Actions</span>
+                  <Badge variant="secondary" className="text-xs">{stats.tools.cockpit_write.length} outils</Badge>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
+                  {stats.tools.cockpit_write.map((tool) => (
+                    <TooltipProvider key={tool.name}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 p-2 rounded text-xs bg-background/50">
+                            {toolIcons[tool.name] || <Wrench className="h-3 w-3" />}
+                            <code className="font-mono truncate">{tool.name}</code>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{tool.description}</p>
+                          {tool.required_fields && tool.required_fields.length > 0 && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Requis: {tool.required_fields.join(', ')}
+                            </p>
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Email Tools */}
+          {stats.tools.email.length > 0 && (
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 hover:bg-yellow-500/15 transition-colors">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-yellow-500" />
+                  <span className="font-medium">COCKPIT - Email</span>
+                  <Badge variant="secondary" className="text-xs">{stats.tools.email.length} outils</Badge>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
+                  {stats.tools.email.map((tool) => (
+                    <TooltipProvider key={tool.name}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 p-2 rounded bg-background/50 text-xs">
+                            {toolIcons[tool.name] || <MessageSquare className="h-3 w-3" />}
+                            <code className="font-mono truncate">{tool.name}</code>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{tool.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* RAG Tools */}
+          {stats.tools.rag.length > 0 && (
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-red-500/10 border border-red-500/20 hover:bg-red-500/15 transition-colors">
+                <div className="flex items-center gap-2">
+                  <Brain className="h-4 w-4 text-red-500" />
+                  <span className="font-medium">COCKPIT - IA/RAG</span>
+                  <Badge variant="secondary" className="text-xs">{stats.tools.rag.length} outils</Badge>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
+                  {stats.tools.rag.map((tool) => (
+                    <TooltipProvider key={tool.name}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 p-2 rounded bg-background/50 text-xs">
+                            {toolIcons[tool.name] || <Search className="h-3 w-3" />}
+                            <code className="font-mono truncate">{tool.name}</code>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{tool.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Admin Read Tools */}
+          {stats.tools.admin_read.length > 0 && (
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/15 transition-colors">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-purple-500" />
+                  <span className="font-medium">ADMIN - Contenu</span>
+                  <Badge variant="secondary" className="text-xs">{stats.tools.admin_read.length} outils</Badge>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
+                  {stats.tools.admin_read.map((tool) => (
+                    <TooltipProvider key={tool.name}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 p-2 rounded bg-background/50 text-xs">
+                            {toolIcons[tool.name] || <FileText className="h-3 w-3" />}
+                            <code className="font-mono truncate">{tool.name}</code>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{tool.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Admin Write Tools */}
+          {stats.tools.admin_write.length > 0 && (
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 hover:bg-orange-500/15 transition-colors">
+                <div className="flex items-center gap-2">
+                  <Edit className="h-4 w-4 text-orange-500" />
+                  <span className="font-medium">ADMIN - Système/Sécurité</span>
+                  <Badge variant="secondary" className="text-xs">{stats.tools.admin_write.length} outils</Badge>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
+                  {stats.tools.admin_write.map((tool) => (
+                    <TooltipProvider key={tool.name}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 p-2 rounded text-xs bg-background/50">
+                            {toolIcons[tool.name] || <Settings className="h-3 w-3" />}
+                            <code className="font-mono truncate">{tool.name}</code>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{tool.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Edge Functions Card - Dynamic */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            Edge Functions ({stats.totalEdgeFunctions} déployées)
+          </CardTitle>
+          <CardDescription>
+            Fonctions backend déployées. {stats.connectedEdgeFunctions} sont connectées à l'agent IA.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Connected to Agent */}
+          <Collapsible defaultOpen>
+            <CollapsibleTrigger className="flex items-center justify-between w-full p-2 rounded-lg bg-green-500/10 border border-green-500/20 hover:bg-green-500/15 transition-colors">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span className="font-medium text-sm">Connectées à l'Agent ({stats.edgeFunctions.connected.length})</span>
+              </div>
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {stats.edgeFunctions.connected.map((fn) => (
+                  <div key={fn.name} className="flex items-start p-2 rounded bg-background/50 border border-green-500/20">
+                    <div className="flex-1 min-w-0">
+                      <code className="text-xs font-mono text-green-600">{fn.name}</code>
+                      <p className="text-xs text-muted-foreground truncate">{fn.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Other Edge Functions */}
+          {stats.edgeFunctions.other.length > 0 && (
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-2 rounded-lg bg-muted/50 border hover:bg-muted/70 transition-colors">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium text-sm">Autres fonctions ({stats.edgeFunctions.other.length})</span>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                  {stats.edgeFunctions.other.map((fn) => (
+                    <div key={fn.name} className="p-1.5 rounded bg-muted/30 border">
+                      <code className="text-xs font-mono text-muted-foreground">{fn.name}</code>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Execution Mode */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            Mode d'exécution
+          </CardTitle>
+          <CardDescription>
+            L'agent exécute directement les actions sans demander de validation
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-lg border bg-blue-500/5 border-blue-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Badge className="bg-blue-500 text-white">Lecture</Badge>
+                <span className="font-medium">Consultation</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Statistiques, recherche RAG, consultation données. Résultats immédiats.
+              </p>
+            </div>
+            <div className="p-4 rounded-lg border bg-green-500/5 border-green-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Badge className="bg-green-500 text-white">Action</Badge>
+                <span className="font-medium">Exécution directe</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Création RDV, leads, emails, tâches. Exécution immédiate sans confirmation.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Modules Cockpit */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Modules Cockpit intégrés</CardTitle>
+          <CardDescription>
+            Tous ces modules invoquent l'agent via <code className="text-xs bg-muted px-1 rounded">ai-agent-orchestrator</code>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {cockpitModules.map((module) => (
+              <div 
+                key={module.name}
+                className="p-3 rounded-lg bg-muted/50 border flex items-start gap-3"
+              >
+                <div className="p-1.5 rounded bg-primary/10 text-primary">
+                  {module.icon}
+                </div>
+                <div>
+                  <p className="font-medium text-sm">{module.name}</p>
+                  <p className="text-xs text-muted-foreground">{module.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Database Tables - Dynamic */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Tables IA dédiées ({stats.aiTablesList.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {stats.aiTablesList.map((table) => (
+              <div key={table.name} className="p-3 rounded-lg bg-muted/30 border">
+                <code className="text-xs font-mono text-primary">{table.name}</code>
+                <p className="text-xs text-muted-foreground mt-1">{table.description}</p>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -1462,439 +1971,7 @@ export default function AdminAIPrompts() {
           </TabsContent>
 
           <TabsContent value="modules" className="space-y-4">
-            {/* Agent Overview Stats */}
-            <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Bot className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle>Agent IA IArche v3.1 - Vue d'ensemble</CardTitle>
-                      <CardDescription>
-                        Master Agent multi-outils avec exécution directe, RAG et mémoire persistante
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <a 
-                    href="/docs/CDC_AI_AGENT_REFONTE_V3.md" 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    <FileCode className="h-3 w-3" />
-                    CDC v3.0
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-                  <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-primary">48</p>
-                    <p className="text-xs text-muted-foreground">Outils Agent</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-green-500">22</p>
-                    <p className="text-xs text-muted-foreground">Connectées Agent</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-blue-500">6</p>
-                    <p className="text-xs text-muted-foreground">Tables IA</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-yellow-500">13</p>
-                    <p className="text-xs text-muted-foreground">Outils Actions</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-purple-500">2</p>
-                    <p className="text-xs text-muted-foreground">Modes réponse</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-orange-500">∞</p>
-                    <p className="text-xs text-muted-foreground">Exécution directe</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Tools Catalog */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Wrench className="h-4 w-4" />
-                  Catalogue des 48 Outils Agent
-                </CardTitle>
-                <CardDescription>
-                  Outils disponibles pour l'orchestrateur IA, classés par domaine
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Cockpit Read Tools */}
-                <Collapsible>
-                  <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <Eye className="h-4 w-4 text-blue-500" />
-                      <span className="font-medium">COCKPIT - Lecture</span>
-                      <Badge variant="secondary" className="text-xs">17 outils</Badge>
-                    </div>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
-                      {[
-                        { name: "get_leads", desc: "Liste des leads", icon: <Users className="h-3 w-3" /> },
-                        { name: "get_lead_details", desc: "Détail lead complet", icon: <Users className="h-3 w-3" /> },
-                        { name: "get_opportunities", desc: "Pipeline opportunités", icon: <Target className="h-3 w-3" /> },
-                        { name: "get_projects", desc: "Liste projets", icon: <Briefcase className="h-3 w-3" /> },
-                        { name: "get_project_details", desc: "Détail projet", icon: <Briefcase className="h-3 w-3" /> },
-                        { name: "get_tasks", desc: "Tâches avec filtres", icon: <ClipboardList className="h-3 w-3" /> },
-                        { name: "get_bookings", desc: "Liste RDV", icon: <Calendar className="h-3 w-3" /> },
-                        { name: "get_booking_details", desc: "Détail RDV complet", icon: <Calendar className="h-3 w-3" /> },
-                        { name: "get_agenda_summary", desc: "Résumé agenda", icon: <Calendar className="h-3 w-3" /> },
-                        { name: "get_transcriptions", desc: "Transcriptions vocales", icon: <Mic className="h-3 w-3" /> },
-                        { name: "get_meeting_notes", desc: "Notes réunion", icon: <FileText className="h-3 w-3" /> },
-                        { name: "get_specifications", desc: "CDC", icon: <FileSignature className="h-3 w-3" /> },
-                        { name: "get_generated_documents", desc: "Documents générés", icon: <FileCheck className="h-3 w-3" /> },
-                        { name: "get_solution_leads", desc: "Leads par solution", icon: <Sparkles className="h-3 w-3" /> },
-                        { name: "get_activity_log", desc: "Journal activité", icon: <Activity className="h-3 w-3" /> },
-                        { name: "get_pipeline_stats", desc: "Stats pipeline", icon: <Target className="h-3 w-3" /> },
-                        { name: "get_pending_ai_notifications", desc: "Notifs IA en attente", icon: <Bell className="h-3 w-3" /> },
-                      ].map((tool) => (
-                        <TooltipProvider key={tool.name}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex items-center gap-2 p-2 rounded bg-background/50 text-xs">
-                                {tool.icon}
-                                <code className="font-mono truncate">{tool.name}</code>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{tool.desc}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                {/* Cockpit Write Tools */}
-                <Collapsible>
-                  <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-green-500/10 border border-green-500/20 hover:bg-green-500/15 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <Edit className="h-4 w-4 text-green-500" />
-                      <span className="font-medium">COCKPIT - Écriture/Actions</span>
-                      <Badge variant="secondary" className="text-xs">19 outils</Badge>
-                    </div>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
-                      {[
-                        { name: "create_booking", desc: "RDV complet (Zoom+Cal+Email)", icon: <Calendar className="h-3 w-3" /> },
-                        { name: "cancel_booking", desc: "Annuler RDV", icon: <Calendar className="h-3 w-3" /> },
-                        { name: "reschedule_booking", desc: "Reprogrammer RDV", icon: <Calendar className="h-3 w-3" /> },
-                        { name: "create_lead", desc: "Créer lead CRM", icon: <Users className="h-3 w-3" /> },
-                        { name: "update_lead", desc: "Modifier lead", icon: <Users className="h-3 w-3" /> },
-                        { name: "link_solution_to_lead", desc: "Lier solution→lead", icon: <Sparkles className="h-3 w-3" /> },
-                        { name: "send_email", desc: "Envoi email Resend", icon: <MessageSquare className="h-3 w-3" /> },
-                        { name: "create_opportunity", desc: "Créer opportunité", icon: <Target className="h-3 w-3" /> },
-                        { name: "update_opportunity", desc: "Modifier opportunité", icon: <Target className="h-3 w-3" /> },
-                        { name: "create_project", desc: "Créer projet", icon: <Briefcase className="h-3 w-3" /> },
-                        { name: "update_project", desc: "Modifier projet", icon: <Briefcase className="h-3 w-3" /> },
-                        { name: "create_task", desc: "Créer tâche", icon: <ClipboardList className="h-3 w-3" /> },
-                        { name: "update_task", desc: "Modifier tâche", icon: <ClipboardList className="h-3 w-3" /> },
-                        { name: "create_meeting_note", desc: "Note réunion", icon: <FileText className="h-3 w-3" /> },
-                        { name: "update_meeting_note", desc: "Modifier note", icon: <FileText className="h-3 w-3" /> },
-                        { name: "create_specification", desc: "Créer CDC", icon: <FileSignature className="h-3 w-3" /> },
-                        { name: "update_specification", desc: "Modifier CDC", icon: <FileSignature className="h-3 w-3" /> },
-                        { name: "log_activity", desc: "Enregistrer activité", icon: <Activity className="h-3 w-3" /> },
-                        { name: "mark_notifications_reviewed", desc: "Marquer notifs lues", icon: <CheckCircle2 className="h-3 w-3" /> },
-                      ].map((tool) => (
-                        <TooltipProvider key={tool.name}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex items-center gap-2 p-2 rounded text-xs bg-background/50">
-                                {tool.icon}
-                                <code className="font-mono truncate">{tool.name}</code>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{tool.desc}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                {/* Admin Read Tools */}
-                <Collapsible>
-                  <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/15 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-purple-500" />
-                      <span className="font-medium">ADMIN - Lecture</span>
-                      <Badge variant="secondary" className="text-xs">5 outils</Badge>
-                    </div>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
-                      {[
-                        { name: "get_articles", desc: "Articles/Contenus", icon: <FileText className="h-3 w-3" /> },
-                        { name: "get_solutions", desc: "Solutions IArche", icon: <Sparkles className="h-3 w-3" /> },
-                        { name: "get_indexed_resources", desc: "Ressources indexées RAG", icon: <Database className="h-3 w-3" /> },
-                        { name: "search_knowledge_base", desc: "Recherche RAG", icon: <Search className="h-3 w-3" /> },
-                        { name: "get_cta_analytics", desc: "Analytics CTA", icon: <Activity className="h-3 w-3" /> },
-                      ].map((tool) => (
-                        <TooltipProvider key={tool.name}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex items-center gap-2 p-2 rounded bg-background/50 text-xs">
-                                {tool.icon}
-                                <code className="font-mono truncate">{tool.name}</code>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{tool.desc}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                {/* Admin Write Tools */}
-                <Collapsible>
-                  <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-orange-500/10 border border-orange-500/20 hover:bg-orange-500/15 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <Edit className="h-4 w-4 text-orange-500" />
-                      <span className="font-medium">ADMIN - Écriture/Génération</span>
-                      <Badge variant="secondary" className="text-xs">7 outils</Badge>
-                    </div>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
-                      {[
-                        { name: "generate_document", desc: "Générer devis/CDC/proposition", icon: <FileText className="h-3 w-3" /> },
-                        { name: "enrich_seo", desc: "Enrichir SEO article", icon: <Sparkles className="h-3 w-3" /> },
-                        { name: "generate_faq", desc: "Générer FAQ article", icon: <MessageSquare className="h-3 w-3" /> },
-                        { name: "suggest_tags", desc: "Suggérer tags article", icon: <Tag className="h-3 w-3" /> },
-                        { name: "send_newsletter", desc: "Envoyer newsletter", icon: <MessageSquare className="h-3 w-3" /> },
-                        { name: "generate_article_gpt", desc: "Générer article GPT", icon: <Sparkles className="h-3 w-3" /> },
-                        { name: "generate_article_claude", desc: "Générer article Claude", icon: <Sparkles className="h-3 w-3" /> },
-                      ].map((tool) => (
-                        <TooltipProvider key={tool.name}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex items-center gap-2 p-2 rounded text-xs bg-background/50">
-                                {tool.icon}
-                                <code className="font-mono truncate">{tool.name}</code>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{tool.desc}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              </CardContent>
-            </Card>
-
-            {/* Edge Functions Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  Edge Functions (38 déployées)
-                </CardTitle>
-                <CardDescription>
-                  Fonctions backend déployées. 22 sont connectées à l'agent IA.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Connected to Agent */}
-                <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="flex items-center justify-between w-full p-2 rounded-lg bg-green-500/10 border border-green-500/20 hover:bg-green-500/15 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span className="font-medium text-sm">Connectées à l'Agent (22)</span>
-                    </div>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {[
-                        { name: "ai-agent-orchestrator", desc: "Agent principal 48 outils", uses: "Master" },
-                        { name: "calendar-booking", desc: "Création RDV Zoom+Cal+Email", uses: "create_booking" },
-                        { name: "generate-followup-email", desc: "Email de suivi", uses: "send_email" },
-                        { name: "search-embeddings", desc: "Recherche sémantique RAG", uses: "search_knowledge_base" },
-                        { name: "generate-embeddings", desc: "Indexation vectorielle", uses: "RAG" },
-                        { name: "process-voice-transcription", desc: "Traitement audio Whisper", uses: "get_transcriptions" },
-                        { name: "create-voice-transcription", desc: "Upload transcription", uses: "Whisper" },
-                        { name: "generate-document", desc: "Génération Devis/CDC", uses: "generate_document" },
-                        { name: "send-lead-notification", desc: "Notification nouveau lead", uses: "create_lead" },
-                        { name: "send-user-confirmation", desc: "Confirmation utilisateur", uses: "create_booking" },
-                        { name: "telegram-webhook", desc: "Bot Telegram @IArche", uses: "orchestrator" },
-                        { name: "enrich-all-resources", desc: "Enrichissement batch", uses: "RAG" },
-                        { name: "generate-faq", desc: "Génération FAQ article", uses: "generate_faq" },
-                        { name: "enrich-content-seo", desc: "Enrichissement SEO", uses: "enrich_seo" },
-                        { name: "suggest-tags", desc: "Suggestion tags IA", uses: "suggest_tags" },
-                        { name: "send-newsletter", desc: "Envoi newsletter", uses: "send_newsletter" },
-                        { name: "generate-article-gpt", desc: "Génération article GPT", uses: "generate_article_gpt" },
-                        { name: "generate-article-claude", desc: "Génération article Claude", uses: "generate_article_claude" },
-                        { name: "push-to-google-calendar", desc: "Sync Google Calendar", uses: "create_booking" },
-                        { name: "sync-google-calendar", desc: "Récupération agenda", uses: "get_agenda_summary" },
-                        { name: "analyze-comments-for-faq", desc: "Analyse commentaires→FAQ", uses: "Admin" },
-                        { name: "send-atelier-confirmation", desc: "Confirmation inscription atelier", uses: "Admin" },
-                      ].map((fn) => (
-                        <div key={fn.name} className="flex items-start p-2 rounded bg-background/50 border border-green-500/20">
-                          <div className="flex-1 min-w-0">
-                            <code className="text-xs font-mono text-green-600">{fn.name}</code>
-                            <p className="text-xs text-muted-foreground truncate">{fn.desc}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                {/* Other Edge Functions */}
-                <Collapsible>
-                  <CollapsibleTrigger className="flex items-center justify-between w-full p-2 rounded-lg bg-muted/50 border hover:bg-muted/70 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium text-sm">Autres fonctions (22)</span>
-                    </div>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                      {[
-                        "analyze-comments-for-faq", "check-cta-conversion", "check-login-attempt",
-                        "check-performance-threshold", "create-database-backup", "detect-anomalies",
-                        "generate-article-claude", "generate-article-gpt", "generate-docx", 
-                        "generate-sitemap", "notify-new-comment", "publish-scheduled-articles", 
-                        "push-to-google-calendar", "record-lighthouse-metrics", "restore-backup", 
-                        "send-atelier-confirmation", "send-brevo-campaign", "send-form-notification", 
-                        "send-security-alert", "sync-google-calendar", "track-cta-click", "verify-backup-integrity"
-                      ].map((fn) => (
-                        <div key={fn} className="p-1.5 rounded bg-muted/30 border">
-                          <code className="text-xs font-mono text-muted-foreground">{fn}</code>
-                        </div>
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              </CardContent>
-            </Card>
-
-            {/* Execution Mode */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  Mode d'exécution
-                </CardTitle>
-                <CardDescription>
-                  L'agent exécute directement les actions sans demander de validation
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-lg border bg-blue-500/5 border-blue-500/20">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge className="bg-blue-500 text-white">Lecture</Badge>
-                      <span className="font-medium">Consultation</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Statistiques, recherche RAG, consultation données. Résultats immédiats.
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-lg border bg-green-500/5 border-green-500/20">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge className="bg-green-500 text-white">Action</Badge>
-                      <span className="font-medium">Exécution directe</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Création RDV, leads, emails, tâches. Exécution immédiate sans confirmation.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Modules Cockpit */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Modules Cockpit intégrés</CardTitle>
-                <CardDescription>
-                  Tous ces modules invoquent l'agent via <code className="text-xs bg-muted px-1 rounded">ai-agent-orchestrator</code>
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[
-                    { name: "Transcriptions", desc: "Synthèse audio + détection", path: "/cockpit/transcriptions", icon: <Mic className="h-4 w-4" /> },
-                    { name: "Leads", desc: "Qualification & scoring", path: "/cockpit/leads", icon: <Users className="h-4 w-4" /> },
-                    { name: "Projets", desc: "Suivi & recommandations", path: "/cockpit/projects", icon: <Briefcase className="h-4 w-4" /> },
-                    { name: "Solutions", desc: "Analyse commerciale", path: "/cockpit/solutions", icon: <Sparkles className="h-4 w-4" /> },
-                    { name: "Pipeline", desc: "Insights opportunités", path: "/cockpit/pipeline", icon: <Target className="h-4 w-4" /> },
-                    { name: "Agenda", desc: "Préparation RDV", path: "/cockpit/agenda", icon: <Calendar className="h-4 w-4" /> },
-                    { name: "Documents", desc: "Génération CDC/Devis", path: "/cockpit/documents", icon: <FileCheck className="h-4 w-4" /> },
-                    { name: "Agent Chat", desc: "Flottant universel", path: "global", icon: <Bot className="h-4 w-4" /> }
-                  ].map((module) => (
-                    <div 
-                      key={module.name}
-                      className="p-3 rounded-lg bg-muted/50 border flex items-start gap-3"
-                    >
-                      <div className="p-1.5 rounded bg-primary/10 text-primary">
-                        {module.icon}
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">{module.name}</p>
-                        <p className="text-xs text-muted-foreground">{module.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Database Tables */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Database className="h-4 w-4" />
-                  Tables IA dédiées (6)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {[
-                    { name: "ai_prompts", desc: "Prompts système configurables" },
-                    { name: "ai_agent_memory", desc: "Mémoire persistante agent" },
-                    { name: "resource_embeddings", desc: "Vecteurs RAG (pgvector)" },
-                    { name: "voice_transcriptions", desc: "Transcriptions audio" },
-                    { name: "keyword_aliases", desc: "Dictionnaire normalisation" },
-                    { name: "llm_models", desc: "Modèles LLM disponibles" },
-                  ].map((table) => (
-                    <div key={table.name} className="p-3 rounded-lg bg-muted/30 border">
-                      <code className="text-xs font-mono text-primary">{table.name}</code>
-                      <p className="text-xs text-muted-foreground mt-1">{table.desc}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <DynamicModulesOverview />
           </TabsContent>
         </Tabs>
       </div>
