@@ -1098,16 +1098,16 @@ export default function AdminAIPrompts() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                   <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-primary">45</p>
+                    <p className="text-2xl font-bold text-primary">42</p>
                     <p className="text-xs text-muted-foreground">Outils Agent</p>
                   </div>
                   <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-green-500">37</p>
+                    <p className="text-2xl font-bold text-green-500">38</p>
                     <p className="text-xs text-muted-foreground">Edge Functions</p>
                   </div>
                   <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-blue-500">57</p>
-                    <p className="text-xs text-muted-foreground">Tables DB</p>
+                    <p className="text-2xl font-bold text-blue-500">6</p>
+                    <p className="text-xs text-muted-foreground">Tables IA</p>
                   </div>
                   <div className="p-3 rounded-lg bg-background border text-center">
                     <p className="text-2xl font-bold text-yellow-500">8</p>
@@ -1130,7 +1130,7 @@ export default function AdminAIPrompts() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Wrench className="h-4 w-4" />
-                  Catalogue des 45 Outils Agent v3.0
+                  Catalogue des 42 Outils Agent v3.0
                 </CardTitle>
                 <CardDescription>
                   Outils disponibles pour l'orchestrateur IA, classés par domaine et niveau d'autonomie. 
@@ -1284,7 +1284,7 @@ export default function AdminAIPrompts() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Zap className="h-4 w-4" />
-                  Edge Functions (37 déployées)
+                  Edge Functions (38 déployées)
                 </CardTitle>
                 <CardDescription>
                   Fonctions backend déployées automatiquement. Celles connectées à l'agent sont marquées.
@@ -1332,7 +1332,7 @@ export default function AdminAIPrompts() {
                   <CollapsibleTrigger className="flex items-center justify-between w-full p-2 rounded-lg bg-muted/50 border hover:bg-muted/70 transition-colors">
                     <div className="flex items-center gap-2">
                       <Zap className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium text-sm">Autres fonctions (25)</span>
+                      <span className="font-medium text-sm">Autres fonctions (26)</span>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </CollapsibleTrigger>
@@ -1346,7 +1346,7 @@ export default function AdminAIPrompts() {
                         "publish-scheduled-articles", "push-to-google-calendar", "record-lighthouse-metrics",
                         "restore-backup", "send-atelier-confirmation", "send-brevo-campaign",
                         "send-form-notification", "send-newsletter", "send-security-alert",
-                        "suggest-tags", "sync-google-calendar", "verify-backup-integrity"
+                        "suggest-tags", "sync-google-calendar", "track-cta-click", "verify-backup-integrity"
                       ].map((fn) => (
                         <div key={fn} className="p-1.5 rounded bg-muted/30 border">
                           <code className="text-xs font-mono text-muted-foreground">{fn}</code>
