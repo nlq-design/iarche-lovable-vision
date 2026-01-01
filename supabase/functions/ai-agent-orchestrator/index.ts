@@ -1862,9 +1862,22 @@ async function executeTool(
 
     // ============ COCKPIT WRITES (N1) ============
     case "create_task": {
+      // VALIDATION du champ obligatoire
+      const rawTaskTitle = args.title as string | undefined;
+      
+      if (!rawTaskTitle || rawTaskTitle.trim() === "") {
+        return {
+          success: false,
+          error: "Le titre de la tâche est obligatoire",
+          message: `⚠️ Je ne peux pas créer la tâche. Merci de préciser un titre.`,
+          autonomy_level: "execution_directe",
+        };
+      }
+      
+      const title = rawTaskTitle.trim();
+      
       // Auto-extract time from title if not provided
       let dueTime = args.due_time as string | null;
-      const title = args.title as string;
       
       if (!dueTime && title) {
         // Regex patterns for French time formats
@@ -2048,11 +2061,33 @@ async function executeTool(
 
     // ============ NEW COCKPIT WRITES ============
     case "create_meeting_note": {
+      // VALIDATION du champ obligatoire
+      const rawNotes = args.notes as string | undefined;
+      
+      if (!rawNotes || rawNotes.trim() === "") {
+        return {
+          success: false,
+          error: "Le contenu des notes est obligatoire",
+          message: `⚠️ Je ne peux pas créer le compte-rendu. Merci de préciser les notes de la réunion.`,
+          autonomy_level: "execution_directe",
+        };
+      }
+      
+      // Au moins une entité liée doit être spécifiée
+      if (!args.booking_id && !args.project_id && !args.opportunity_id) {
+        return {
+          success: false,
+          error: "Au moins un lien (booking_id, project_id ou opportunity_id) est requis",
+          message: `⚠️ Je ne peux pas créer le compte-rendu sans lien à un RDV, projet ou opportunité.`,
+          autonomy_level: "execution_directe",
+        };
+      }
+      
       const meetingNoteData = {
         booking_id: args.booking_id as string || null,
         project_id: args.project_id as string || null,
         opportunity_id: args.opportunity_id as string || null,
-        notes: args.notes as string,
+        notes: rawNotes.trim(),
         objectives: args.objectives as string || null,
         next_steps: args.next_steps as string || null,
         action_items: args.action_items || [],
@@ -2119,11 +2154,39 @@ async function executeTool(
     }
 
     case "log_activity": {
+      // Liste blanche des activity_type valides
+      const VALID_ACTIVITY_TYPES = ['note', 'email', 'call', 'meeting', 'status_change', 'ai_action', 'document', 'task', 'comment'];
+      const VALID_ENTITY_TYPES = ['lead', 'opportunity', 'project', 'task', 'meeting_note', 'booking', 'specification', 'voice_transcription'];
+      
+      const rawActivityType = (args.activity_type as string || "note").toLowerCase();
+      const rawEntityType = (args.entity_type as string || "").toLowerCase();
+      
+      // Validation des types
+      const activityType = VALID_ACTIVITY_TYPES.includes(rawActivityType) ? rawActivityType : "note";
+      
+      if (!VALID_ENTITY_TYPES.includes(rawEntityType)) {
+        return {
+          success: false,
+          error: `entity_type invalide: ${rawEntityType}. Valeurs acceptées: ${VALID_ENTITY_TYPES.join(", ")}`,
+          message: `⚠️ Impossible d'enregistrer l'activité: type d'entité invalide.`,
+          autonomy_level: "execution_directe",
+        };
+      }
+      
+      if (!args.entity_id) {
+        return {
+          success: false,
+          error: "entity_id est obligatoire",
+          message: "⚠️ Impossible d'enregistrer l'activité: ID de l'entité manquant.",
+          autonomy_level: "execution_directe",
+        };
+      }
+      
       const activityData = {
-        entity_type: args.entity_type as string,
+        entity_type: rawEntityType,
         entity_id: args.entity_id as string,
-        activity_type: args.activity_type as string,
-        title: args.title as string,
+        activity_type: activityType,
+        title: (args.title as string || "Activité enregistrée").slice(0, 255),
         content: args.content as string || null,
         is_ai_generated: true,
         ai_metadata: {
@@ -2470,11 +2533,28 @@ Génère un contenu HTML pour email avec:
     }
 
     case "create_lead": {
+      // VALIDATION des champs obligatoires
+      const rawLeadName = args.name as string | undefined;
+      const rawLeadEmail = args.email as string | undefined;
+      
+      const missingLeadFields: string[] = [];
+      if (!rawLeadName || rawLeadName.trim() === "") missingLeadFields.push("name (nom du contact)");
+      if (!rawLeadEmail || rawLeadEmail.trim() === "" || !rawLeadEmail.includes("@")) missingLeadFields.push("email (adresse email valide)");
+      
+      if (missingLeadFields.length > 0) {
+        return {
+          success: false,
+          error: `Champs obligatoires manquants : ${missingLeadFields.join(", ")}`,
+          message: `⚠️ Je ne peux pas créer le lead. Il me manque : ${missingLeadFields.join(", ")}. Merci de préciser ces informations.`,
+          autonomy_level: "N1",
+        };
+      }
+      
       const leadData = {
-        name: args.name as string,
-        email: args.email as string,
-        company: args.company as string || null,
-        phone: args.phone as string || null,
+        name: rawLeadName!.trim(),
+        email: rawLeadEmail!.trim().toLowerCase(),
+        company: (args.company as string || "").trim() || null,
+        phone: (args.phone as string || "").trim() || null,
         source: args.source as string || "agent",
         source_context: args.source_context as string || "Créé via Agent IA",
         message: args.message as string || null,
@@ -2558,11 +2638,12 @@ Génère un contenu HTML pour email avec:
       }
 
       // Direct execution: always send immediately
+      // Note: activity_type "email" est dans la liste blanche de la contrainte
       await supabase.from("activity_log").insert({
         entity_type: "lead",
         entity_id: args.lead_id || "00000000-0000-0000-0000-000000000001",
-        activity_type: "email_sent",
-        title: `Email envoyé: ${subject}`,
+        activity_type: "email",
+        title: `Email envoyé: ${subject}`.slice(0, 255),
         content: `Destinataire: ${args.to_email}`,
         is_ai_generated: true,
         ai_metadata: {
@@ -2648,8 +2729,20 @@ Génère un contenu HTML pour email avec:
     }
 
     case "create_opportunity": {
+      // VALIDATION des champs obligatoires
+      const rawOppTitle = args.title as string | undefined;
+      
+      if (!rawOppTitle || rawOppTitle.trim() === "") {
+        return {
+          success: false,
+          error: "Le titre de l'opportunité est obligatoire",
+          message: `⚠️ Je ne peux pas créer l'opportunité. Merci de préciser un titre.`,
+          autonomy_level: "N1",
+        };
+      }
+      
       const oppData = {
-        title: args.title as string,
+        title: rawOppTitle.trim(),
         lead_id: args.lead_id as string || null,
         value_amount: args.value_amount as number || null,
         probability: args.probability as number || 50,
@@ -2677,8 +2770,20 @@ Génère un contenu HTML pour email avec:
     }
 
     case "create_project": {
+      // VALIDATION des champs obligatoires
+      const rawProjName = args.name as string | undefined;
+      
+      if (!rawProjName || rawProjName.trim() === "") {
+        return {
+          success: false,
+          error: "Le nom du projet est obligatoire",
+          message: `⚠️ Je ne peux pas créer le projet. Merci de préciser un nom.`,
+          autonomy_level: "N1",
+        };
+      }
+      
       const projData = {
-        name: args.name as string,
+        name: rawProjName.trim(),
         description: args.description as string || null,
         opportunity_id: args.opportunity_id as string || null,
         lead_id: args.lead_id as string || null,
