@@ -2324,17 +2324,38 @@ Génère un contenu HTML pour email avec:
     // ============ NOUVEAUX OUTILS D'ACTION v3.0 ============
     
     case "create_booking": {
+      // VALIDATION CRITIQUE : name et email sont obligatoires
+      const rawName = args.name as string | undefined;
+      const rawEmail = args.email as string | undefined;
+      const rawDate = args.date as string | undefined;
+      const rawTime = args.time as string | undefined;
+      
+      const missingFields: string[] = [];
+      if (!rawName || rawName.trim() === "") missingFields.push("name (nom du contact)");
+      if (!rawEmail || rawEmail.trim() === "" || !rawEmail.includes("@")) missingFields.push("email (adresse email valide)");
+      if (!rawDate) missingFields.push("date (format YYYY-MM-DD)");
+      if (!rawTime) missingFields.push("time (format HH:MM)");
+      
+      if (missingFields.length > 0) {
+        return {
+          success: false,
+          error: `Champs obligatoires manquants : ${missingFields.join(", ")}`,
+          message: `⚠️ Je ne peux pas créer le RDV. Il me manque : ${missingFields.join(", ")}. Merci de préciser ces informations.`,
+          autonomy_level: "execution_directe",
+        };
+      }
+      
       // Call the existing calendar-booking edge function
       const bookingPayload = {
-        name: args.name as string,
-        email: args.email as string,
-        company: args.company as string || null,
-        phone: args.phone as string || null,
-        message: args.message as string || null,
-        date: args.date as string,
-        time: args.time as string,
+        name: rawName!.trim(),
+        email: rawEmail!.trim().toLowerCase(),
+        company: (args.company as string || "").trim() || null,
+        phone: (args.phone as string || "").trim() || null,
+        message: (args.message as string || "").trim() || null,
+        date: rawDate!,
+        time: rawTime!,
         duration_minutes: args.duration_minutes as number || 60,
-        meeting_type: args.meeting_type as string,
+        meeting_type: args.meeting_type as string || "presentiel",
         booking_type_slug: args.booking_type_slug as string || "decouverte",
         additional_guests: args.additional_guests as string[] || [],
       };
