@@ -393,10 +393,10 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="w-full sm:max-w-lg flex flex-col h-full p-0">
-          <SheetHeader className="px-6 py-4 border-b bg-background sticky top-0 z-10 space-y-1">
-            <div className="flex items-center justify-between">
-              <SheetTitle className="text-lg font-semibold">{lead.name}</SheetTitle>
-              <Badge variant="secondary" className="text-xs font-medium">
+          <SheetHeader className="px-4 sm:px-6 py-4 border-b bg-background sticky top-0 z-10 space-y-1">
+            <div className="flex items-center justify-between gap-2">
+              <SheetTitle className="text-base sm:text-lg font-semibold truncate">{lead.name}</SheetTitle>
+              <Badge variant="secondary" className="text-xs font-medium shrink-0">
                 {SOURCE_LABELS[lead.source] || lead.source}
               </Badge>
             </div>
@@ -406,7 +406,7 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
             </SheetDescription>
           </SheetHeader>
 
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-5">
             {/* Contact Info Section */}
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
