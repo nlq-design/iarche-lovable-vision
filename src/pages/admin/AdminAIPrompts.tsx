@@ -47,30 +47,50 @@ const MASTER_PROMPT_SLUG = "master-agent";
 
 const DEFAULT_SYSTEM_PROMPT = `Tu es l'Agent IA IArche, un assistant commercial et opérationnel expert.
 
-CONTEXTE :
-- IArche est une agence IA basée à Bayonne spécialisée dans les solutions d'intelligence artificielle pour entreprises.
-- Tu as accès complet aux données du CRM Cockpit (leads, opportunités, projets, tâches) et du module Admin (articles, solutions, contacts).
-- Tu utilises la base de connaissances RAG pour trouver des informations pertinentes sur les offres IArche.
+## CONTEXTE TEMPOREL
+Date : {date_actuelle} | Heure : {heure_actuelle} | Semaine : {semaine}
 
-RÔLE :
-- Répondre aux questions sur l'activité commerciale et le contenu
-- Analyser les données et fournir des insights actionnables
-- Suggérer des actions (tâches, emails, qualifications) en mode N1 (validation humaine requise)
-- Aider à la prise de décision commerciale
-- Rechercher dans la base de connaissances pour enrichir tes réponses
+## IDENTITÉ
+- IArche : Agence IA basée à Bayonne, solutions d'intelligence artificielle pour entreprises
+- Tu as accès COMPLET au CRM Cockpit et au module Admin
+- Tu EXÉCUTES des actions concrètes, pas seulement des suggestions
 
-RÈGLES :
-- Sois concis et orienté action
-- Utilise les outils disponibles pour répondre avec des données réelles
-- Utilise search_knowledge_base pour chercher des informations sur les solutions, articles, cas clients IArche
-- Pour toute modification (N1), indique clairement que l'utilisateur doit valider
-- Ne jamais inventer de données - si tu ne sais pas, dis-le
-- Réponds en français
+## RÈGLES D'EXÉCUTION
 
-NIVEAUX D'AUTONOMIE :
-- N0 : Lecture seule, informatif (statistiques, recherche, consultation)
-- N1 : Suggestions/brouillons à valider (tâches, emails, qualifications)
-- N2 : Actions irréversibles (réservé, non implémenté ici)`;
+### 1. EXÉCUTION DIRECTE
+Quand l'utilisateur demande une action, tu DOIS :
+- Appeler les outils appropriés IMMÉDIATEMENT (create_booking, create_lead, send_email, etc.)
+- NE PAS demander de confirmation
+- Créer RÉELLEMENT les données dans le système
+- Retourner les résultats concrets (confirmations, liens Zoom, etc.)
+
+### 2. COLLECTE D'INFOS MINIMALE
+Si des informations CRITIQUES manquent (email, date/heure) :
+- Demande UNIQUEMENT les infos indispensables en UNE question
+- Dès que tu as les infos, EXÉCUTE sans demander validation
+
+### 3. PAS DE BAVARDAGE
+- Réponses courtes (3-5 lignes max en mode CHAT)
+- Données concrètes : noms, dates, montants, statuts
+- Jamais d'UUIDs visibles (utilise les noms/titres)
+- JAMAIS de "voulez-vous que je..." ou "confirmez-vous ?"
+
+## FORMAT DE RÉPONSE
+- Mode CHAT (défaut) : 3-5 lignes max, données factuelles
+- Mode DÉTAILLÉ (transcriptions, analyses, CDC) : Structure avec sections
+
+## OUTILS PRINCIPAUX (47 disponibles)
+- create_booking : RDV complet (Zoom + Calendrier + Emails)
+- create_lead : Nouveau lead CRM
+- send_email : Email (envoi direct)
+- create_opportunity / create_project : Pipeline
+- search_knowledge_base : Recherche RAG
+
+## INTERDIT
+- Demander validation ou confirmation
+- Dire "voulez-vous que je..." ou "souhaitez-vous..."
+- Reformuler au lieu d'agir
+- Inventer des données`;
 
 const categoryIcons: Record<string, React.ReactNode> = {
   fast: <Zap className="h-4 w-4" />,
@@ -1077,9 +1097,9 @@ export default function AdminAIPrompts() {
                       <Bot className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <CardTitle>Agent IA IArche v3.0 - Vue d'ensemble</CardTitle>
+                      <CardTitle>Agent IA IArche v3.1 - Vue d'ensemble</CardTitle>
                       <CardDescription>
-                        Master Agent multi-outils avec actions directes, RAG, mémoire persistante et gouvernance N0/N1/N2
+                        Master Agent multi-outils avec exécution directe, RAG et mémoire persistante
                       </CardDescription>
                     </div>
                   </div>
@@ -1130,11 +1150,10 @@ export default function AdminAIPrompts() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Wrench className="h-4 w-4" />
-                  Catalogue des 47 Outils Agent v3.1
+                  Catalogue des 47 Outils Agent
                 </CardTitle>
                 <CardDescription>
-                  Outils disponibles pour l'orchestrateur IA, classés par domaine et niveau d'autonomie. 
-                  <span className="text-green-500 font-medium"> +13 outils d'action (v3.1)</span>
+                  Outils disponibles pour l'orchestrateur IA, classés par domaine
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1143,7 +1162,7 @@ export default function AdminAIPrompts() {
                   <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-colors">
                     <div className="flex items-center gap-2">
                       <Eye className="h-4 w-4 text-blue-500" />
-                      <span className="font-medium">COCKPIT - Lecture (N0)</span>
+                      <span className="font-medium">COCKPIT - Lecture</span>
                       <Badge variant="secondary" className="text-xs">18 outils</Badge>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -1188,33 +1207,32 @@ export default function AdminAIPrompts() {
                   </CollapsibleContent>
                 </Collapsible>
 
-                {/* Cockpit Write Tools (N1) */}
+                {/* Cockpit Write Tools */}
                 <Collapsible>
                   <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-green-500/10 border border-green-500/20 hover:bg-green-500/15 transition-colors">
                     <div className="flex items-center gap-2">
                       <Edit className="h-4 w-4 text-green-500" />
-                      <span className="font-medium">COCKPIT - Écriture (N1/N2)</span>
+                      <span className="font-medium">COCKPIT - Écriture/Actions</span>
                       <Badge variant="secondary" className="text-xs">23 outils</Badge>
-                      <Badge className="bg-green-500 text-white text-xs">+13 v3.1</Badge>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-2">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
                       {[
-                        { name: "create_booking", desc: "✨ Créer RDV complet (Zoom+Cal+Email)", icon: <Calendar className="h-3 w-3" />, isNew: true },
-                        { name: "create_lead", desc: "✨ Créer lead CRM", icon: <Users className="h-3 w-3" />, isNew: true },
-                        { name: "send_email", desc: "✨ Brouillon/Envoi email", icon: <MessageSquare className="h-3 w-3" />, isNew: true },
-                        { name: "cancel_booking", desc: "✨ Annuler RDV", icon: <Calendar className="h-3 w-3" />, isNew: true },
-                        { name: "reschedule_booking", desc: "✨ Reprogrammer RDV", icon: <Calendar className="h-3 w-3" />, isNew: true },
-                        { name: "create_opportunity", desc: "✨ Créer opportunité", icon: <Target className="h-3 w-3" />, isNew: true },
-                        { name: "create_project", desc: "✨ Créer projet", icon: <Briefcase className="h-3 w-3" />, isNew: true },
-                        { name: "link_solution_to_lead", desc: "✨ Lier solution→lead", icon: <Sparkles className="h-3 w-3" />, isNew: true },
-                        { name: "generate_document", desc: "✨ Générer devis/CDC/proposition", icon: <FileText className="h-3 w-3" />, isNew: true },
-                        { name: "enrich_seo", desc: "✨ Enrichir SEO article", icon: <Sparkles className="h-3 w-3" />, isNew: true },
-                        { name: "generate_faq", desc: "✨ Générer FAQ article", icon: <MessageSquare className="h-3 w-3" />, isNew: true },
-                        { name: "send_newsletter", desc: "✨ Envoyer newsletter (N2)", icon: <MessageSquare className="h-3 w-3" />, isNew: true },
-                        { name: "suggest_tags", desc: "✨ Suggérer tags article", icon: <Tag className="h-3 w-3" />, isNew: true },
+                        { name: "create_booking", desc: "Créer RDV complet (Zoom+Cal+Email)", icon: <Calendar className="h-3 w-3" /> },
+                        { name: "create_lead", desc: "Créer lead CRM", icon: <Users className="h-3 w-3" /> },
+                        { name: "send_email", desc: "Envoi email direct", icon: <MessageSquare className="h-3 w-3" /> },
+                        { name: "cancel_booking", desc: "Annuler RDV", icon: <Calendar className="h-3 w-3" /> },
+                        { name: "reschedule_booking", desc: "Reprogrammer RDV", icon: <Calendar className="h-3 w-3" /> },
+                        { name: "create_opportunity", desc: "Créer opportunité", icon: <Target className="h-3 w-3" /> },
+                        { name: "create_project", desc: "Créer projet", icon: <Briefcase className="h-3 w-3" /> },
+                        { name: "link_solution_to_lead", desc: "Lier solution→lead", icon: <Sparkles className="h-3 w-3" /> },
+                        { name: "generate_document", desc: "Générer devis/CDC/proposition", icon: <FileText className="h-3 w-3" /> },
+                        { name: "enrich_seo", desc: "Enrichir SEO article", icon: <Sparkles className="h-3 w-3" /> },
+                        { name: "generate_faq", desc: "Générer FAQ article", icon: <MessageSquare className="h-3 w-3" /> },
+                        { name: "send_newsletter", desc: "Envoyer newsletter", icon: <MessageSquare className="h-3 w-3" /> },
+                        { name: "suggest_tags", desc: "Suggérer tags article", icon: <Tag className="h-3 w-3" /> },
                         { name: "create_task", desc: "Créer tâche", icon: <ClipboardList className="h-3 w-3" /> },
                         { name: "update_task", desc: "Modifier tâche", icon: <ClipboardList className="h-3 w-3" /> },
                         { name: "update_lead_qualification", desc: "Qualifier lead", icon: <Users className="h-3 w-3" /> },
@@ -1244,12 +1262,12 @@ export default function AdminAIPrompts() {
                   </CollapsibleContent>
                 </Collapsible>
 
-                {/* Admin Read Tools (N0) */}
+                {/* Admin Read Tools */}
                 <Collapsible>
                   <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/15 transition-colors">
                     <div className="flex items-center gap-2">
                       <Shield className="h-4 w-4 text-purple-500" />
-                      <span className="font-medium">ADMIN - Lecture (N0)</span>
+                      <span className="font-medium">ADMIN - Lecture</span>
                       <Badge variant="secondary" className="text-xs">6 outils</Badge>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
