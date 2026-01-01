@@ -4,8 +4,6 @@ import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -43,15 +41,16 @@ import {
   Users, 
   UserPlus,
   Trash2,
-  Search,
   Loader2,
   FileText,
   Mail,
-  Phone,
   Building2,
+  FileUp,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useCockpitSolutionLeads, useCockpitLeads } from "@/hooks/cockpit";
+import { useCockpitSolutionLeads, useCockpitLeads, useCockpitUploads } from "@/hooks/cockpit";
+import { LinkedFilesSection } from "@/components/cockpit/LinkedFilesSection";
+import { DocumentsSynthesisSection } from "@/components/cockpit/DocumentsSynthesisSection";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -64,6 +63,7 @@ interface Solution {
   cover_image_url: string | null;
   published: boolean | null;
   created_at: string | null;
+  ai_documents_summary: string | null;
 }
 
 const INTEREST_LEVELS = [
@@ -83,6 +83,7 @@ export default function CockpitSolutionDetail() {
 
   const { solutionLeads, isLoading: leadsLoading, linkLead, unlinkLead, updateLink } = useCockpitSolutionLeads(id);
   const { leads } = useCockpitLeads();
+  const { uploads: linkedFiles } = useCockpitUploads(id ? { solutionId: id } : undefined);
 
   // Filter leads that are NOT already linked
   const availableLeads = (leads || []).filter(
@@ -96,7 +97,7 @@ export default function CockpitSolutionDetail() {
   const loadSolution = async () => {
     const { data, error } = await supabase
       .from("articles")
-      .select("id, title, slug, excerpt, content, cover_image_url, published, created_at")
+      .select("id, title, slug, excerpt, content, cover_image_url, published, created_at, ai_documents_summary")
       .eq("id", id)
       .eq("resource_type", "solution")
       .single();
@@ -181,6 +182,10 @@ export default function CockpitSolutionDetail() {
             <TabsTrigger value="leads" className="gap-1.5 text-sm h-7">
               <Users className="h-3.5 w-3.5" />
               Leads ({solutionLeads.length})
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="gap-1.5 text-sm h-7">
+              <FileUp className="h-3.5 w-3.5" />
+              Documents ({linkedFiles?.length || 0})
             </TabsTrigger>
             <TabsTrigger value="overview" className="text-sm h-7">Aperçu</TabsTrigger>
           </TabsList>
@@ -287,6 +292,22 @@ export default function CockpitSolutionDetail() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          {/* Documents Tab */}
+          <TabsContent value="documents" className="space-y-3">
+            <DocumentsSynthesisSection
+              entityType="solution"
+              entityId={id!}
+              summary={solution.ai_documents_summary}
+              documentsCount={linkedFiles?.length || 0}
+              onSynthesisComplete={loadSolution}
+            />
+            <LinkedFilesSection
+              entityType="solution"
+              entityId={id!}
+              title="Fichiers liés"
+            />
           </TabsContent>
 
           {/* Overview Tab */}

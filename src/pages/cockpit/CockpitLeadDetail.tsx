@@ -67,9 +67,10 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useCockpitLeads, useCockpitProjects, useCockpitTasks, useCockpitBookings } from '@/hooks/cockpit';
+import { useCockpitLeads, useCockpitProjects, useCockpitTasks, useCockpitBookings, useCockpitUploads } from '@/hooks/cockpit';
 import { useLeads } from '@/hooks/shared/useLeads';
 import { LinkedFilesSection } from '@/components/cockpit/LinkedFilesSection';
+import { DocumentsSynthesisSection } from '@/components/cockpit/DocumentsSynthesisSection';
 import type { Database } from '@/integrations/supabase/types';
 
 type Lead = Database['public']['Tables']['leads']['Row'];
@@ -106,6 +107,7 @@ const CockpitLeadDetail = () => {
   const { deleteLead } = useLeads();
   const { tasks } = useCockpitTasks();
   const { bookings } = useCockpitBookings();
+  const { uploads: linkedFiles } = useCockpitUploads(id ? { leadId: id } : undefined);
 
   const [formData, setFormData] = useState<Partial<Lead>>({});
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -152,7 +154,7 @@ const CockpitLeadDetail = () => {
   });
 
   // Fetch lead
-  const { data: lead, isLoading } = useQuery({
+  const { data: lead, isLoading, refetch: refetchLead } = useQuery({
     queryKey: ['lead-detail', id],
     queryFn: async () => {
       if (!id) return null;
@@ -162,7 +164,7 @@ const CockpitLeadDetail = () => {
         .eq('id', id)
         .single();
       if (error) throw error;
-      return data as Lead;
+      return data as Lead & { ai_documents_summary?: string | null };
     },
     enabled: !!id,
   });
@@ -680,6 +682,17 @@ const CockpitLeadDetail = () => {
                   ))}
                 </CardContent>
               </Card>
+            )}
+
+            {/* AI Synthesis - only if files exist */}
+            {(linkedFiles?.length || 0) > 0 && (
+              <DocumentsSynthesisSection
+                entityType="lead"
+                entityId={id!}
+                summary={(lead as any)?.ai_documents_summary || null}
+                documentsCount={linkedFiles?.length || 0}
+                onSynthesisComplete={refetchLead}
+              />
             )}
 
             {/* Linked Files */}

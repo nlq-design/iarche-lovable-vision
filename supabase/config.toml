@@ -116,3 +116,6 @@ verify_jwt = false
 
 [functions.process-uploaded-file]
 verify_jwt = true
+
+[functions.synthesize-entity-documents]
+verify_jwt = true
