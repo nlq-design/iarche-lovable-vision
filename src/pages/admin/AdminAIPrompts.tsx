@@ -1077,37 +1077,41 @@ export default function AdminAIPrompts() {
                       <Bot className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <CardTitle>Agent IA IArche - Vue d'ensemble</CardTitle>
+                      <CardTitle>Agent IA IArche v3.0 - Vue d'ensemble</CardTitle>
                       <CardDescription>
-                        Master Agent multi-outils avec RAG, mémoire persistante et gouvernance N0/N1/N2
+                        Master Agent multi-outils avec actions directes, RAG, mémoire persistante et gouvernance N0/N1/N2
                       </CardDescription>
                     </div>
                   </div>
                   <a 
-                    href="https://github.com/lovable/project/blob/main/docs/CDC_COCKPIT_AI_AGENT.md" 
+                    href="/docs/CDC_AI_AGENT_REFONTE_V3.md" 
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
                   >
                     <FileCode className="h-3 w-3" />
-                    CDC v2.0
+                    CDC v3.0
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
                   <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-primary">34</p>
-                    <p className="text-xs text-muted-foreground">Outils disponibles</p>
+                    <p className="text-2xl font-bold text-primary">45</p>
+                    <p className="text-xs text-muted-foreground">Outils Agent</p>
                   </div>
                   <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-green-500">8</p>
+                    <p className="text-2xl font-bold text-green-500">37</p>
                     <p className="text-xs text-muted-foreground">Edge Functions</p>
                   </div>
                   <div className="p-3 rounded-lg bg-background border text-center">
-                    <p className="text-2xl font-bold text-blue-500">6</p>
-                    <p className="text-xs text-muted-foreground">Tables IA</p>
+                    <p className="text-2xl font-bold text-blue-500">57</p>
+                    <p className="text-xs text-muted-foreground">Tables DB</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-background border text-center">
+                    <p className="text-2xl font-bold text-yellow-500">8</p>
+                    <p className="text-xs text-muted-foreground">Outils Actions</p>
                   </div>
                   <div className="p-3 rounded-lg bg-background border text-center">
                     <p className="text-2xl font-bold text-purple-500">2</p>
@@ -1115,7 +1119,7 @@ export default function AdminAIPrompts() {
                   </div>
                   <div className="p-3 rounded-lg bg-background border text-center">
                     <p className="text-2xl font-bold text-orange-500">3</p>
-                    <p className="text-xs text-muted-foreground">Niveaux autonomie</p>
+                    <p className="text-xs text-muted-foreground">Niveaux N0/N1/N2</p>
                   </div>
                 </div>
               </CardContent>
@@ -1126,10 +1130,11 @@ export default function AdminAIPrompts() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Wrench className="h-4 w-4" />
-                  Catalogue des 34 Outils Agent
+                  Catalogue des 45 Outils Agent v3.0
                 </CardTitle>
                 <CardDescription>
-                  Outils disponibles pour l'orchestrateur IA, classés par domaine et niveau d'autonomie
+                  Outils disponibles pour l'orchestrateur IA, classés par domaine et niveau d'autonomie. 
+                  <span className="text-green-500 font-medium"> +8 outils d'action directe (v3.0)</span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1189,28 +1194,37 @@ export default function AdminAIPrompts() {
                     <div className="flex items-center gap-2">
                       <Edit className="h-4 w-4 text-green-500" />
                       <span className="font-medium">COCKPIT - Écriture (N1)</span>
-                      <Badge variant="secondary" className="text-xs">10 outils</Badge>
+                      <Badge variant="secondary" className="text-xs">18 outils</Badge>
+                      <Badge className="bg-green-500 text-white text-xs">+8 v3.0</Badge>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-2">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
                       {[
+                        { name: "create_booking", desc: "✨ Créer RDV complet (Zoom+Cal+Email)", icon: <Calendar className="h-3 w-3" />, isNew: true },
+                        { name: "create_lead", desc: "✨ Créer lead CRM", icon: <Users className="h-3 w-3" />, isNew: true },
+                        { name: "send_email", desc: "✨ Brouillon/Envoi email", icon: <MessageSquare className="h-3 w-3" />, isNew: true },
+                        { name: "cancel_booking", desc: "✨ Annuler RDV", icon: <Calendar className="h-3 w-3" />, isNew: true },
+                        { name: "reschedule_booking", desc: "✨ Reprogrammer RDV", icon: <Calendar className="h-3 w-3" />, isNew: true },
+                        { name: "create_opportunity", desc: "✨ Créer opportunité", icon: <Target className="h-3 w-3" />, isNew: true },
+                        { name: "create_project", desc: "✨ Créer projet", icon: <Briefcase className="h-3 w-3" />, isNew: true },
+                        { name: "link_solution_to_lead", desc: "✨ Lier solution→lead", icon: <Sparkles className="h-3 w-3" />, isNew: true },
                         { name: "create_task", desc: "Créer tâche", icon: <ClipboardList className="h-3 w-3" /> },
                         { name: "update_task", desc: "Modifier tâche", icon: <ClipboardList className="h-3 w-3" /> },
                         { name: "update_lead_qualification", desc: "Qualifier lead", icon: <Users className="h-3 w-3" /> },
                         { name: "update_opportunity_stage", desc: "Changer étape", icon: <Target className="h-3 w-3" /> },
                         { name: "create_meeting_note", desc: "Note réunion", icon: <FileText className="h-3 w-3" /> },
-                        { name: "create_activity_log", desc: "Log activité", icon: <Activity className="h-3 w-3" /> },
-                        { name: "generate_document_draft", desc: "Brouillon doc", icon: <FileSignature className="h-3 w-3" /> },
-                        { name: "generate_followup_email", desc: "Email suivi", icon: <MessageSquare className="h-3 w-3" /> },
-                        { name: "save_memory", desc: "Sauver mémoire", icon: <Brain className="h-3 w-3" /> },
-                        { name: "suggest_next_actions", desc: "Suggestions", icon: <Sparkles className="h-3 w-3" /> },
+                        { name: "log_activity", desc: "Log activité", icon: <Activity className="h-3 w-3" /> },
+                        { name: "draft_followup_email", desc: "Email suivi", icon: <MessageSquare className="h-3 w-3" /> },
+                        { name: "draft_article_content", desc: "Brouillon article", icon: <FileText className="h-3 w-3" /> },
+                        { name: "suggest_article_improvements", desc: "Améliorer article", icon: <Sparkles className="h-3 w-3" /> },
+                        { name: "draft_newsletter", desc: "Brouillon newsletter", icon: <FileText className="h-3 w-3" /> },
                       ].map((tool) => (
                         <TooltipProvider key={tool.name}>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="flex items-center gap-2 p-2 rounded bg-background/50 text-xs">
+                              <div className={`flex items-center gap-2 p-2 rounded text-xs ${tool.isNew ? 'bg-green-500/10 border border-green-500/30' : 'bg-background/50'}`}>
                                 {tool.icon}
                                 <code className="font-mono truncate">{tool.name}</code>
                               </div>
@@ -1270,91 +1284,77 @@ export default function AdminAIPrompts() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Zap className="h-4 w-4" />
-                  Edge Functions IA (8)
+                  Edge Functions (37 déployées)
                 </CardTitle>
                 <CardDescription>
-                  Fonctions backend déployées automatiquement, utilisant le prompt système et le modèle LLM configuré.
+                  Fonctions backend déployées automatiquement. Celles connectées à l'agent sont marquées.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {[
-                    { 
-                      name: "ai-agent-orchestrator", 
-                      desc: "Agent principal avec 34 outils", 
-                      uses: "Prompt + LLM + RAG + Mémoire",
-                      status: "active",
-                      color: "text-green-500"
-                    },
-                    { 
-                      name: "process-voice-transcription", 
-                      desc: "Traitement audio Whisper + synthèse", 
-                      uses: "Whisper + LLM + RAG",
-                      status: "active",
-                      color: "text-green-500"
-                    },
-                    { 
-                      name: "create-voice-transcription", 
-                      desc: "Upload et création transcription", 
-                      uses: "Whisper API",
-                      status: "active",
-                      color: "text-green-500"
-                    },
-                    { 
-                      name: "generate-document", 
-                      desc: "Génération Devis/CDC/Proposition", 
-                      uses: "Prompts doc (onglet Docs)",
-                      status: "active",
-                      color: "text-green-500"
-                    },
-                    { 
-                      name: "generate-followup-email", 
-                      desc: "Email de suivi post-RDV", 
-                      uses: "LLM + contexte lead",
-                      status: "active",
-                      color: "text-green-500"
-                    },
-                    { 
-                      name: "generate-embeddings", 
-                      desc: "Indexation vectorielle ressources", 
-                      uses: "text-embedding-3-small",
-                      status: "active",
-                      color: "text-green-500"
-                    },
-                    { 
-                      name: "search-embeddings", 
-                      desc: "Recherche sémantique RAG", 
-                      uses: "pgvector + cosine",
-                      status: "active",
-                      color: "text-green-500"
-                    },
-                    { 
-                      name: "enrich-all-resources", 
-                      desc: "Enrichissement batch ressources", 
-                      uses: "generate-embeddings",
-                      status: "active",
-                      color: "text-green-500"
-                    },
-                  ].map((fn) => (
-                    <div 
-                      key={fn.name}
-                      className="flex items-start justify-between p-3 rounded-lg bg-muted/50 border"
-                    >
-                      <div className="space-y-1 flex-1">
-                        <div className="flex items-center gap-2">
-                          <code className="text-sm font-mono bg-background px-2 py-0.5 rounded">
-                            {fn.name}
-                          </code>
-                          <span className={`h-2 w-2 rounded-full ${fn.color} bg-current`} />
-                        </div>
-                        <p className="text-sm text-muted-foreground">{fn.desc}</p>
-                        <p className="text-xs text-muted-foreground/80">
-                          <span className="font-medium">→</span> {fn.uses}
-                        </p>
-                      </div>
+              <CardContent className="space-y-4">
+                {/* Connected to Agent */}
+                <Collapsible defaultOpen>
+                  <CollapsibleTrigger className="flex items-center justify-between w-full p-2 rounded-lg bg-green-500/10 border border-green-500/20 hover:bg-green-500/15 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      <span className="font-medium text-sm">Connectées à l'Agent (12)</span>
                     </div>
-                  ))}
-                </div>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {[
+                        { name: "ai-agent-orchestrator", desc: "Agent principal avec 45 outils", uses: "Prompt + LLM + RAG + Mémoire" },
+                        { name: "calendar-booking", desc: "Création RDV (Zoom+Cal+Email)", uses: "create_booking ✨" },
+                        { name: "generate-followup-email", desc: "Email de suivi", uses: "draft_followup_email, send_email" },
+                        { name: "search-embeddings", desc: "Recherche sémantique RAG", uses: "search_knowledge_base" },
+                        { name: "generate-embeddings", desc: "Indexation vectorielle", uses: "RAG base" },
+                        { name: "process-voice-transcription", desc: "Traitement audio", uses: "Whisper + LLM" },
+                        { name: "create-voice-transcription", desc: "Upload transcription", uses: "Whisper API" },
+                        { name: "generate-document", desc: "Génération Devis/CDC", uses: "Prompts docs" },
+                        { name: "send-lead-notification", desc: "Notification nouveau lead", uses: "Resend" },
+                        { name: "send-user-confirmation", desc: "Confirmation utilisateur", uses: "Resend templates" },
+                        { name: "telegram-webhook", desc: "Bot Telegram @IArche", uses: "Agent orchestrator" },
+                        { name: "enrich-all-resources", desc: "Enrichissement batch", uses: "generate-embeddings" },
+                      ].map((fn) => (
+                        <div key={fn.name} className="flex items-start p-2 rounded bg-background/50 border border-green-500/20">
+                          <div className="flex-1 min-w-0">
+                            <code className="text-xs font-mono text-green-600">{fn.name}</code>
+                            <p className="text-xs text-muted-foreground truncate">{fn.desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                {/* Other Edge Functions */}
+                <Collapsible>
+                  <CollapsibleTrigger className="flex items-center justify-between w-full p-2 rounded-lg bg-muted/50 border hover:bg-muted/70 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium text-sm">Autres fonctions (25)</span>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-2">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                      {[
+                        "analyze-comments-for-faq", "check-cta-conversion", "check-login-attempt",
+                        "check-performance-threshold", "create-database-backup", "detect-anomalies",
+                        "enrich-content-seo", "generate-article-claude", "generate-article-gpt",
+                        "generate-docx", "generate-faq", "generate-sitemap", "notify-new-comment",
+                        "publish-scheduled-articles", "push-to-google-calendar", "record-lighthouse-metrics",
+                        "restore-backup", "send-atelier-confirmation", "send-brevo-campaign",
+                        "send-form-notification", "send-newsletter", "send-security-alert",
+                        "suggest-tags", "sync-google-calendar", "verify-backup-integrity"
+                      ].map((fn) => (
+                        <div key={fn} className="p-1.5 rounded bg-muted/30 border">
+                          <code className="text-xs font-mono text-muted-foreground">{fn}</code>
+                        </div>
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </CardContent>
             </Card>
 
