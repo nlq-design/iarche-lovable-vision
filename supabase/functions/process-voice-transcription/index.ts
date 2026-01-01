@@ -28,9 +28,8 @@ interface LLMModel {
   supports_tools: boolean;
 }
 
-// Whisper API limit is 25MB per request - use 20MB chunks for safety margin
+// Whisper API limit is 25MB per request
 const WHISPER_MAX_SIZE = 25 * 1024 * 1024;
-const CHUNK_SIZE = 20 * 1024 * 1024; // 20MB chunks for splitting
 
 type VoiceJob = {
   id: string;
@@ -48,84 +47,29 @@ type VoiceJob = {
 };
 
 /**
- * Split a large audio blob into multiple smaller chunks.
- * For formats like M4A/MP4, we do simple byte-level splitting which works
- * because Whisper is resilient to missing headers in subsequent chunks.
+ * Transcribe audio with Whisper.
+ * Note: Whisper has a hard 25MB limit; larger files must be split/converted before upload.
  */
-function splitAudioIntoChunks(blob: Blob, chunkSize: number): Blob[] {
-  const chunks: Blob[] = [];
-  let offset = 0;
-  
-  while (offset < blob.size) {
-    const end = Math.min(offset + chunkSize, blob.size);
-    const chunk = blob.slice(offset, end, blob.type);
-    chunks.push(chunk);
-    offset = end;
-  }
-  
-  console.log(`Split audio into ${chunks.length} chunks of ~${(chunkSize / 1024 / 1024).toFixed(1)}MB each`);
-  return chunks;
-}
-
-/**
- * Transcribe audio using chunking for large files:
- * - Files <= 25MB: Single Whisper call
- * - Files > 25MB: Split into chunks, transcribe each, concatenate results
- */
-async function transcribeAudio(audioBlob: Blob, language = "fr"): Promise<{ text: string; segments: unknown[] | null }> {
+async function transcribeAudio(
+  audioBlob: Blob,
+  language = "fr"
+): Promise<{ text: string; segments: unknown[] | null }> {
   const fileSize = audioBlob.size;
   console.log(`Audio file size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
 
-  if (fileSize <= WHISPER_MAX_SIZE) {
-    console.log("Using OpenAI Whisper for transcription (file <= 25MB)");
-    return await transcribeWithWhisper(audioBlob, language);
+  if (fileSize > WHISPER_MAX_SIZE) {
+    throw new Error(
+      `file_too_large: Audio file exceeds 25MB limit (${(
+        fileSize /
+        1024 /
+        1024
+      ).toFixed(2)}MB). Please split/compress the audio before uploading.`
+    );
   }
-  
-  // Large file: split into chunks and transcribe each
-  console.log("File exceeds 25MB limit - splitting into chunks for sequential transcription");
-  const chunks = splitAudioIntoChunks(audioBlob, CHUNK_SIZE);
-  
-  const transcriptions: string[] = [];
-  const allSegments: unknown[] = [];
-  let cumulativeOffset = 0;
-  
-  for (let i = 0; i < chunks.length; i++) {
-    console.log(`Transcribing chunk ${i + 1}/${chunks.length} (${(chunks[i].size / 1024 / 1024).toFixed(2)} MB)`);
-    
-    try {
-      const result = await transcribeWithWhisper(chunks[i], language);
-      transcriptions.push(result.text);
-      
-      // Adjust segment timestamps if available
-      if (result.segments && Array.isArray(result.segments)) {
-        const adjustedSegments = result.segments.map((seg: any) => ({
-          ...seg,
-          start: (seg.start ?? 0) + cumulativeOffset,
-          end: (seg.end ?? 0) + cumulativeOffset,
-        }));
-        allSegments.push(...adjustedSegments);
-        
-        // Update cumulative offset based on last segment end time
-        const lastSeg = result.segments[result.segments.length - 1] as any;
-        if (lastSeg?.end) {
-          cumulativeOffset += lastSeg.end;
-        }
-      }
-    } catch (error) {
-      console.error(`Error transcribing chunk ${i + 1}:`, error);
-      // Continue with other chunks even if one fails
-      transcriptions.push(`[Erreur de transcription pour le segment ${i + 1}]`);
-    }
-  }
-  
-  const fullText = transcriptions.join("\n\n");
-  console.log(`Chunked transcription complete: ${fullText.length} characters from ${chunks.length} chunks`);
-  
-  return {
-    text: fullText,
-    segments: allSegments.length > 0 ? allSegments : null
-  };
+
+  return await transcribeWithWhisper(audioBlob, language);
 }
+
 
 /**
  * Transcribe with OpenAI Whisper (for files <= 25MB)
