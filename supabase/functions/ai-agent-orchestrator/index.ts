@@ -570,12 +570,12 @@ const AGENT_TOOLS = [
       },
     },
   },
-  // ============ COCKPIT - Écriture (N1) ============
+  // ============ COCKPIT - Écriture ============
   {
     type: "function",
     function: {
       name: "create_task",
-      description: "[N1 - Brouillon] Crée une tâche de suivi. L'utilisateur doit valider avant exécution. Si une heure est mentionnée (ex: 'à 14h', 'pour 10h30'), elle sera automatiquement extraite et ajoutée.",
+      description: "Crée une tâche de suivi. Si une heure est mentionnée (ex: 'à 14h', 'pour 10h30'), elle sera automatiquement extraite et ajoutée.",
       parameters: {
         type: "object",
         properties: {
@@ -598,7 +598,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "create_meeting_note",
-      description: "[N1 - Brouillon] Crée un compte-rendu de réunion. L'utilisateur doit valider.",
+      description: "Crée un compte-rendu de réunion.",
       parameters: {
         type: "object",
         properties: {
@@ -618,7 +618,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "update_lead_qualification",
-      description: "[N1 - Suggestion] Suggère un changement de qualification pour un lead.",
+      description: "Change la qualification d'un lead.",
       parameters: {
         type: "object",
         properties: {
@@ -634,7 +634,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "update_opportunity_stage",
-      description: "[N1 - Suggestion] Suggère un changement de stage pour une opportunité.",
+      description: "Change le stage d'une opportunité.",
       parameters: {
         type: "object",
         properties: {
@@ -651,7 +651,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "draft_followup_email",
-      description: "[N1 - Brouillon] Génère un brouillon d'email de suivi pour un lead ou projet.",
+      description: "Génère un email de suivi pour un lead ou projet.",
       parameters: {
         type: "object",
         properties: {
@@ -668,7 +668,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "suggest_solutions_for_lead",
-      description: "[N1 - Suggestion] Analyse les besoins du lead et suggère les solutions IArche pertinentes.",
+      description: "Analyse les besoins du lead et identifie les solutions IArche pertinentes.",
       parameters: {
         type: "object",
         properties: {
@@ -768,7 +768,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "create_booking",
-      description: "[N1 - Action] Crée un rendez-vous COMPLET avec génération Zoom (si visio), ajout calendrier Google et envoi emails de confirmation. Collecte TOUTES les infos en une fois, puis exécute après 1 seule validation.",
+      description: "Crée un rendez-vous COMPLET avec génération Zoom (si visio), ajout calendrier Google et envoi emails de confirmation.",
       parameters: {
         type: "object",
         properties: {
@@ -793,7 +793,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "create_lead",
-      description: "[N1 - Action] Crée un lead dans le CRM avec toutes les informations. Exécute après 1 seule validation.",
+      description: "Crée un lead dans le CRM avec toutes les informations.",
       parameters: {
         type: "object",
         properties: {
@@ -816,7 +816,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "send_email",
-      description: "[N1/N2 - Action] Génère et envoie un email via Resend. Mode brouillon (N1) par défaut, envoi réel avec send_now=true (N2 - confirmation requise).",
+      description: "Génère et envoie un email via Resend. Envoi direct par défaut (send_now=true).",
       parameters: {
         type: "object",
         properties: {
@@ -826,7 +826,7 @@ const AGENT_TOOLS = [
           body_html: { type: "string", description: "Corps HTML de l'email (généré automatiquement si absent)" },
           email_type: { type: "string", enum: ["first_contact", "followup", "post_meeting", "proposal", "reminder", "custom"], description: "Type d'email pour génération automatique" },
           lead_id: { type: "string", description: "ID du lead pour enrichir le contexte" },
-          send_now: { type: "boolean", description: "true = envoi immédiat (N2), false = brouillon seul (N1). Défaut: false" },
+          send_now: { type: "boolean", description: "Envoi immédiat (défaut: true)" },
           signature: { type: "string", description: "Signature personnalisée (défaut: Nick / IArche)" },
         },
         required: ["to_email", "subject"],
@@ -837,7 +837,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "cancel_booking",
-      description: "[N1 - Action] Annule un rendez-vous existant et envoie une notification au contact.",
+      description: "Annule un rendez-vous existant et envoie une notification au contact.",
       parameters: {
         type: "object",
         properties: {
@@ -853,7 +853,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "reschedule_booking",
-      description: "[N1 - Action] Replanifie un rendez-vous à une nouvelle date/heure.",
+      description: "Replanifie un rendez-vous à une nouvelle date/heure.",
       parameters: {
         type: "object",
         properties: {
@@ -870,7 +870,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "create_opportunity",
-      description: "[N1 - Action] Crée une opportunité dans le pipeline commercial.",
+      description: "Crée une opportunité dans le pipeline commercial.",
       parameters: {
         type: "object",
         properties: {
@@ -891,7 +891,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "create_project",
-      description: "[N1 - Action] Crée un projet (généralement après opportunité gagnée).",
+      description: "Crée un projet (généralement après opportunité gagnée).",
       parameters: {
         type: "object",
         properties: {
@@ -912,7 +912,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "link_solution_to_lead",
-      description: "[N1 - Action] Associe une solution IArche à un lead avec niveau d'intérêt.",
+      description: "Associe une solution IArche à un lead avec niveau d'intérêt.",
       parameters: {
         type: "object",
         properties: {
@@ -930,7 +930,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "generate_document",
-      description: "[N1 - Action] Génère un document commercial (devis, CDC, proposition) via IA. Appelle l'edge function generate-document.",
+      description: "Génère un document commercial (devis, CDC, proposition) via IA.",
       parameters: {
         type: "object",
         properties: {
@@ -948,7 +948,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "enrich_seo",
-      description: "[N1 - Action] Enrichit le contenu HTML d'un article avec des balises SEO (<strong> sur mots-clés). Appelle l'edge function enrich-content-seo.",
+      description: "Enrichit le contenu HTML d'un article avec des balises SEO.",
       parameters: {
         type: "object",
         properties: {
@@ -963,7 +963,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "generate_faq",
-      description: "[N1 - Action] Génère une FAQ automatique pour un article. Appelle l'edge function generate-faq.",
+      description: "Génère une FAQ automatique pour un article.",
       parameters: {
         type: "object",
         properties: {
@@ -978,7 +978,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "send_newsletter",
-      description: "[N2 - Action] Envoie une newsletter à tous les abonnés pour un article. Nécessite confirmation explicite.",
+      description: "Envoie une newsletter à tous les abonnés pour un article.",
       parameters: {
         type: "object",
         properties: {
@@ -992,7 +992,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "suggest_tags",
-      description: "[N0 - Lecture] Suggère des tags pertinents pour un article basé sur son contenu.",
+      description: "Suggère des tags pertinents pour un article basé sur son contenu.",
       parameters: {
         type: "object",
         properties: {
@@ -3017,44 +3017,29 @@ Date : {date_actuelle} | Heure : {heure_actuelle} | Semaine : {semaine}
 
 ### 1. COLLECTE EN UNE FOIS
 Quand l'utilisateur demande une action (créer RDV, lead, email...) :
-- Identifie TOUTES les informations manquantes d'un coup
-- Pose UNE SEULE question regroupant tout ce qui manque
-- Ne demande PAS les infos une par une
+- Identifie les informations CRITIQUES manquantes (email pour créer lead, date/heure pour RDV)
+- Si infos critiques manquent, pose UNE question regroupant tout
+- Sinon, EXÉCUTE DIRECTEMENT
 
-Exemple CORRECT :
-> "Pour créer ce RDV, j'ai besoin de : email Jean Dupont, type (visio/tel/présentiel), durée souhaitée (défaut 1h)"
+## RÈGLES D'EXÉCUTION
 
-Exemple INCORRECT :
-> "Quel est l'email ?" puis "Quel type de RDV ?" puis "Quelle durée ?"
-
-### 2. UNE SEULE VALIDATION
-Après avoir collecté toutes les infos :
-- Présente un récapitulatif clair et complet
-- Demande "Confirmez-vous ?" UNE SEULE FOIS
-- Sur "oui", "ok", "confirme", "valide", "go", "créer" → EXÉCUTE IMMÉDIATEMENT
-
-### 3. EXÉCUTION DIRECTE
-Quand l'utilisateur confirme, tu DOIS :
-- Appeler les outils appropriés (create_booking, create_lead, send_email, etc.)
+### 1. EXÉCUTION DIRECTE
+Quand l'utilisateur demande une action, tu DOIS :
+- Appeler les outils appropriés IMMÉDIATEMENT (create_booking, create_lead, send_email, etc.)
+- NE PAS demander de confirmation
 - Créer RÉELLEMENT les données dans le système
 - Retourner les résultats concrets (confirmations, liens Zoom, etc.)
 
-### 4. PAS DE BAVARDAGE
+### 2. COLLECTE D'INFOS MINIMALE
+Si des informations CRITIQUES manquent :
+- Demande UNIQUEMENT les infos vraiment indispensables en UNE question
+- Dès que tu as les infos, EXÉCUTE sans demander validation
+
+### 3. PAS DE BAVARDAGE
 - Réponses courtes (3-5 lignes max en mode CHAT)
 - Données concrètes : noms, dates, montants, statuts
 - Jamais d'UUIDs visibles (utilise les noms/titres)
-- Pas de "voulez-vous que je..." répétitif
-
-## NIVEAUX D'AUTONOMIE
-
-**N0 (Lecture)** : Exécution immédiate, aucune validation
-- get_leads, get_bookings, get_opportunities, search_knowledge_base, etc.
-
-**N1 (Création/Modification)** : 1 récap + 1 validation → exécution
-- create_booking, create_lead, create_task, send_email (brouillon), etc.
-
-**N2 (Irréversible)** : Confirmation textuelle explicite requise
-- send_email avec send_now=true, clôture définitive d'opportunité
+- JAMAIS de "voulez-vous que je..." ou "confirmez-vous ?"
 
 ## FORMAT DE RÉPONSE
 
@@ -3075,7 +3060,7 @@ Activé par mots-clés : "transcription", "analyse", "compte-rendu", "synthèse"
 - create_booking : RDV complet (Zoom + Calendrier + Emails)
 - create_lead : Nouveau lead CRM
 - create_task : Nouvelle tâche
-- send_email : Email (brouillon ou envoi)
+- send_email : Email (envoi direct)
 - create_opportunity : Nouvelle opportunité
 - create_project : Nouveau projet
 
@@ -3086,10 +3071,11 @@ Activé par mots-clés : "transcription", "analyse", "compte-rendu", "synthèse"
 - search_knowledge_base : Recherche RAG
 
 ## INTERDIT
-- Demander validation plus d'une fois
+- Demander validation ou confirmation
+- Dire "voulez-vous que je..." ou "souhaitez-vous..."
+- Reformuler au lieu d'agir
 - Inventer des données
-- Afficher les UUIDs
-- Reformuler sans cesse`;
+- Afficher les UUIDs`;
 
 const MASTER_PROMPT_SLUG = "master-agent";
 
