@@ -237,6 +237,9 @@ serve(async (req) => {
     // Send typing indicator
     await sendTypingAction(chatId);
 
+    // Quick immediate acknowledgment (helps confirm Telegram sendMessage works)
+    await sendTelegramMessage(chatId, "⏳ Reçu. Je traite votre demande…", "Markdown");
+
     // Process with AI agent
     const aiResponse = await callAIAgent(text, userId, userName);
     await sendTelegramMessage(chatId, aiResponse);
