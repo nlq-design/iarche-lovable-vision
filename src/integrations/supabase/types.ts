@@ -3273,6 +3273,7 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
+          lead_contact_id: string | null
           lead_id: string | null
           llm_model_id: string | null
           meeting_note_id: string | null
@@ -3295,6 +3296,7 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
+          lead_contact_id?: string | null
           lead_id?: string | null
           llm_model_id?: string | null
           meeting_note_id?: string | null
@@ -3317,6 +3319,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          lead_contact_id?: string | null
           lead_id?: string | null
           llm_model_id?: string | null
           meeting_note_id?: string | null
@@ -3360,6 +3363,13 @@ export type Database = {
             columns: ["solution_id"]
             isOneToOne: false
             referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_transcriptions_lead_contact_id_fkey"
+            columns: ["lead_contact_id"]
+            isOneToOne: false
+            referencedRelation: "lead_contacts"
             referencedColumns: ["id"]
           },
           {
