@@ -772,13 +772,26 @@ export function TranscriptionDetailSheet({
                     <CardContent className="p-6 text-center">
                       <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
                       <h3 className="font-medium mb-2">Erreur de traitement</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        {(transcription.ai_metadata as any)?.last_error || 'Une erreur est survenue'}
-                      </p>
-                      <Button onClick={handleRetry}>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Réessayer
-                      </Button>
+                      {((transcription.ai_metadata as any)?.last_error || '').includes('WHISPER_MAX_SIZE') ? (
+                        <>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            <strong>Fichier trop volumineux</strong> — La limite Whisper est de 25 MB.
+                          </p>
+                          <p className="text-xs text-muted-foreground mb-4">
+                            Compressez le fichier ou découpez-le en segments plus courts avant de réuploader.
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            {(transcription.ai_metadata as any)?.last_error || 'Une erreur est survenue'}
+                          </p>
+                          <Button onClick={handleRetry}>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Réessayer
+                          </Button>
+                        </>
+                      )}
                     </CardContent>
                   </Card>
                 ) : (

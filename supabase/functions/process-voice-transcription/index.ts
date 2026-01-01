@@ -209,6 +209,10 @@ async function transcribeWithWhisperStreaming(params: {
     const txt = await res.text();
     logPreview("Whisper_Response", txt);
 
+    if (res.status === 413) {
+      throw new Error("WHISPER_MAX_SIZE: File exceeds Whisper API limit (25MB). Chunking or compression required.");
+    }
+
     if (!res.ok) {
       throw new Error(`whisper_api_error: ${res.status} - ${txt.slice(0, 500)}`);
     }
@@ -249,6 +253,10 @@ async function transcribeWithWhisperBlob(audioBlob: Blob, language = "fr"): Prom
       body: formData,
       signal: controller.signal,
     });
+
+    if (response.status === 413) {
+      throw new Error("WHISPER_MAX_SIZE: File exceeds Whisper API limit (25MB). Chunking or compression required.");
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
