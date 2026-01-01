@@ -925,6 +925,84 @@ const AGENT_TOOLS = [
       },
     },
   },
+  // ============ NOUVEAUX OUTILS P1 (Phase 4) ============
+  {
+    type: "function",
+    function: {
+      name: "generate_document",
+      description: "[N1 - Action] Génère un document commercial (devis, CDC, proposition) via IA. Appelle l'edge function generate-document.",
+      parameters: {
+        type: "object",
+        properties: {
+          document_type: { type: "string", enum: ["quote", "spec", "proposal"], description: "Type de document : quote (devis), spec (CDC), proposal (proposition)" },
+          project_id: { type: "string", description: "ID du projet associé" },
+          opportunity_id: { type: "string", description: "ID de l'opportunité associée" },
+          lead_id: { type: "string", description: "ID du lead client" },
+          custom_instructions: { type: "string", description: "Instructions personnalisées pour la génération" },
+        },
+        required: ["document_type"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "enrich_seo",
+      description: "[N1 - Action] Enrichit le contenu HTML d'un article avec des balises SEO (<strong> sur mots-clés). Appelle l'edge function enrich-content-seo.",
+      parameters: {
+        type: "object",
+        properties: {
+          article_id: { type: "string", description: "ID de l'article à enrichir" },
+          content: { type: "string", description: "Contenu HTML à enrichir (si pas d'article_id)" },
+          resource_type: { type: "string", description: "Type de ressource (actualite, article, cas-client)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "generate_faq",
+      description: "[N1 - Action] Génère une FAQ automatique pour un article. Appelle l'edge function generate-faq.",
+      parameters: {
+        type: "object",
+        properties: {
+          article_id: { type: "string", description: "ID de l'article" },
+          mode: { type: "string", enum: ["new", "add"], description: "Mode : new (remplacer), add (ajouter aux existantes)" },
+        },
+        required: ["article_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "send_newsletter",
+      description: "[N2 - Action] Envoie une newsletter à tous les abonnés pour un article. Nécessite confirmation explicite.",
+      parameters: {
+        type: "object",
+        properties: {
+          article_id: { type: "string", description: "ID de l'article à promouvoir" },
+        },
+        required: ["article_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "suggest_tags",
+      description: "[N0 - Lecture] Suggère des tags pertinents pour un article basé sur son contenu.",
+      parameters: {
+        type: "object",
+        properties: {
+          article_id: { type: "string", description: "ID de l'article" },
+          title: { type: "string", description: "Titre si pas d'article_id" },
+          content: { type: "string", description: "Contenu si pas d'article_id" },
+        },
+      },
+    },
+  },
 ];
 
 // =============================================================================
@@ -2647,6 +2725,272 @@ Génère un contenu HTML pour email avec:
         success: true,
         message: `✅ Solution liée : ${solution.title} → Lead (intérêt: ${args.interest_level || "medium"})`,
         autonomy_level: "N1",
+      };
+    }
+
+    // ============ NOUVEAUX OUTILS P1 (Phase 4) ============
+    
+    case "generate_document": {
+      // Call the existing generate-document edge function
+      const docResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-document`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          document_type: args.document_type,
+          project_id: args.project_id || null,
+          opportunity_id: args.opportunity_id || null,
+          lead_id: args.lead_id || null,
+          custom_instructions: args.custom_instructions || null,
+        }),
+      });
+
+      if (!docResponse.ok) {
+        const errorText = await docResponse.text();
+        console.error("Document generation failed:", errorText);
+        throw new Error(`Erreur génération document: ${errorText}`);
+      }
+
+      const docResult = await docResponse.json();
+
+      const typeLabels: Record<string, string> = {
+        quote: "Devis",
+        spec: "Cahier des charges",
+        proposal: "Proposition commerciale",
+      };
+
+      return {
+        success: true,
+        document: docResult,
+        message: `✅ ${typeLabels[args.document_type as string] || "Document"} généré : "${docResult.title || "Nouveau document"}"`,
+        autonomy_level: "N1",
+        action_required: "Relisez et validez dans le module Documents.",
+      };
+    }
+
+    case "enrich_seo": {
+      let contentToEnrich = args.content as string;
+      let resourceType = args.resource_type as string || "article";
+
+      // If article_id provided, fetch the article content
+      if (args.article_id && !contentToEnrich) {
+        const { data: article, error } = await supabase
+          .from("articles")
+          .select("content, resource_type")
+          .eq("id", args.article_id)
+          .single();
+
+        if (error || !article) throw new Error("Article non trouvé");
+        contentToEnrich = article.content;
+        resourceType = article.resource_type;
+      }
+
+      if (!contentToEnrich) {
+        throw new Error("Aucun contenu à enrichir (fournir article_id ou content)");
+      }
+
+      // Call the enrich-content-seo edge function
+      const seoResponse = await fetch(`${SUPABASE_URL}/functions/v1/enrich-content-seo`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: contentToEnrich,
+          resourceType: resourceType,
+        }),
+      });
+
+      if (!seoResponse.ok) {
+        const errorText = await seoResponse.text();
+        console.error("SEO enrichment failed:", errorText);
+        throw new Error(`Erreur enrichissement SEO: ${errorText}`);
+      }
+
+      const seoResult = await seoResponse.json();
+
+      // If article_id, update the article with enriched content
+      if (args.article_id && seoResult.enrichedContent) {
+        await supabase
+          .from("articles")
+          .update({ content: seoResult.enrichedContent })
+          .eq("id", args.article_id);
+
+        return {
+          success: true,
+          message: `✅ Contenu SEO enrichi et mis à jour pour l'article`,
+          enriched: true,
+          autonomy_level: "N1",
+        };
+      }
+
+      return {
+        success: true,
+        enrichedContent: seoResult.enrichedContent,
+        message: `✅ Contenu SEO enrichi (mots-clés mis en <strong>)`,
+        autonomy_level: "N1",
+      };
+    }
+
+    case "generate_faq": {
+      // Get article info
+      const { data: article, error: articleError } = await supabase
+        .from("articles")
+        .select("id, title, content, resource_type")
+        .eq("id", args.article_id)
+        .single();
+
+      if (articleError || !article) throw new Error("Article non trouvé");
+
+      // Get existing FAQ questions if mode is 'add'
+      let existingQuestions: string[] = [];
+      if (args.mode === "add") {
+        const { data: existingFaq } = await supabase
+          .from("faqs")
+          .select("questions")
+          .eq("article_id", args.article_id)
+          .maybeSingle();
+
+        if (existingFaq?.questions) {
+          existingQuestions = (existingFaq.questions as { question: string }[]).map(q => q.question);
+        }
+      }
+
+      // Call the generate-faq edge function
+      const faqResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-faq`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          article_id: args.article_id,
+          title: article.title,
+          content: article.content,
+          resource_type: article.resource_type,
+          mode: args.mode || "new",
+          existing_questions: existingQuestions,
+        }),
+      });
+
+      if (!faqResponse.ok) {
+        const errorText = await faqResponse.text();
+        console.error("FAQ generation failed:", errorText);
+        throw new Error(`Erreur génération FAQ: ${errorText}`);
+      }
+
+      const faqResult = await faqResponse.json();
+      const questionsCount = faqResult.questions?.length || 0;
+
+      return {
+        success: true,
+        faq: faqResult.faq,
+        questions_generated: questionsCount,
+        message: `✅ ${questionsCount} questions FAQ générées pour "${article.title}"`,
+        autonomy_level: "N1",
+      };
+    }
+
+    case "send_newsletter": {
+      // Get article info first
+      const { data: article, error: articleError } = await supabase
+        .from("articles")
+        .select("id, title, slug, published")
+        .eq("id", args.article_id)
+        .single();
+
+      if (articleError || !article) throw new Error("Article non trouvé");
+      if (!article.published) throw new Error("L'article doit être publié avant d'envoyer une newsletter");
+
+      // Count subscribers
+      const { count: subscriberCount } = await supabase
+        .from("newsletter_subscribers")
+        .select("*", { count: "exact", head: true });
+
+      if (!subscriberCount || subscriberCount === 0) {
+        return {
+          success: false,
+          message: `⚠️ Aucun abonné newsletter. Newsletter non envoyée.`,
+          autonomy_level: "N2",
+        };
+      }
+
+      // Call the send-newsletter edge function
+      const newsletterResponse = await fetch(`${SUPABASE_URL}/functions/v1/send-newsletter`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          articleId: args.article_id,
+        }),
+      });
+
+      if (!newsletterResponse.ok) {
+        const errorText = await newsletterResponse.text();
+        console.error("Newsletter send failed:", errorText);
+        throw new Error(`Erreur envoi newsletter: ${errorText}`);
+      }
+
+      const result = await newsletterResponse.json();
+
+      return {
+        success: true,
+        sent: result.sent || 0,
+        failed: result.failed || 0,
+        message: `✅ Newsletter envoyée : ${result.sent} email(s) pour "${article.title}"`,
+        autonomy_level: "N2",
+      };
+    }
+
+    case "suggest_tags": {
+      let title = args.title as string;
+      let content = args.content as string;
+
+      // If article_id provided, fetch article
+      if (args.article_id) {
+        const { data: article, error } = await supabase
+          .from("articles")
+          .select("title, content")
+          .eq("id", args.article_id)
+          .single();
+
+        if (error || !article) throw new Error("Article non trouvé");
+        title = article.title;
+        content = article.content;
+      }
+
+      if (!title && !content) {
+        throw new Error("Fournir article_id, ou title+content");
+      }
+
+      // Call suggest-tags edge function
+      const tagsResponse = await fetch(`${SUPABASE_URL}/functions/v1/suggest-tags`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: title,
+          content: content?.substring(0, 3000),
+        }),
+      });
+
+      if (!tagsResponse.ok) {
+        const errorText = await tagsResponse.text();
+        console.error("Tag suggestion failed:", errorText);
+        throw new Error(`Erreur suggestion tags: ${errorText}`);
+      }
+
+      const tagsResult = await tagsResponse.json();
+
+      return {
+        success: true,
+        suggested_tags: tagsResult.tags || tagsResult.suggested_tags || [],
+        message: `✅ Tags suggérés : ${(tagsResult.tags || tagsResult.suggested_tags || []).join(", ")}`,
+        autonomy_level: "N0",
       };
     }
 
