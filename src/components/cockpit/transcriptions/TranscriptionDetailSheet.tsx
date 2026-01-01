@@ -75,93 +75,15 @@ import { toast } from 'sonner';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
 import { useQuery } from '@tanstack/react-query';
 
-// Speaker color palette for diarization display
-const SPEAKER_COLORS = [
-  '#2563eb', // blue
-  '#16a34a', // green
-  '#dc2626', // red
-  '#9333ea', // purple
-  '#ea580c', // orange
-  '#0891b2', // cyan
-  '#be185d', // pink
-  '#4f46e5', // indigo
-];
-
-// Type for transcript segments from ElevenLabs Scribe
-interface TranscriptSegment {
-  text: string;
-  start: number;
-  end: number;
-  speaker?: string;
-}
-
-// Group consecutive words by speaker for better display
-function groupSegmentsBySpeaker(segments: TranscriptSegment[]): Array<{ speaker: string; text: string; startTime: number }> {
-  if (!segments || segments.length === 0) return [];
-  
-  const groups: Array<{ speaker: string; text: string; startTime: number }> = [];
-  let currentGroup: { speaker: string; text: string; startTime: number } | null = null;
-  
-  for (const seg of segments) {
-    const speaker = seg.speaker || 'Unknown';
-    
-    if (!currentGroup || currentGroup.speaker !== speaker) {
-      // Start new group
-      if (currentGroup) groups.push(currentGroup);
-      currentGroup = { speaker, text: seg.text, startTime: seg.start };
-    } else {
-      // Append to current group
-      currentGroup.text += ' ' + seg.text;
-    }
-  }
-  
-  if (currentGroup) groups.push(currentGroup);
-  return groups;
-}
-
-// Format seconds to mm:ss
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
-
-// Diarized transcript component
-function DiarizedTranscript({ segments, speakersDetected }: { segments: TranscriptSegment[]; speakersDetected: string[] }) {
-  const groups = groupSegmentsBySpeaker(segments);
-  
-  // Build speaker -> color index map
-  const speakerColorMap = new Map<string, number>();
-  speakersDetected.forEach((s, idx) => speakerColorMap.set(s, idx));
-  
-  if (groups.length === 0) {
-    return <p className="text-sm text-muted-foreground">Aucun segment disponible</p>;
+// Simple transcript display (Whisper doesn't provide diarization)
+function SimpleTranscript({ text }: { text: string }) {
+  if (!text) {
+    return <p className="text-sm text-muted-foreground">Aucune transcription disponible</p>;
   }
   
   return (
-    <div className="space-y-3">
-      {groups.map((group, idx) => {
-        const colorIdx = speakerColorMap.get(group.speaker) ?? idx;
-        const color = SPEAKER_COLORS[colorIdx % SPEAKER_COLORS.length];
-        
-        return (
-          <div key={idx} className="flex gap-3">
-            <div className="flex-shrink-0 w-24">
-              <Badge 
-                variant="outline" 
-                className="text-xs font-medium"
-                style={{ borderColor: color, color }}
-              >
-                {group.speaker}
-              </Badge>
-              <span className="block text-[10px] text-muted-foreground mt-0.5">
-                {formatTime(group.startTime)}
-              </span>
-            </div>
-            <p className="text-sm leading-relaxed flex-1">{group.text}</p>
-          </div>
-        );
-      })}
+    <div className="prose prose-sm max-w-none">
+      <p className="text-sm leading-relaxed whitespace-pre-wrap">{text}</p>
     </div>
   );
 }
