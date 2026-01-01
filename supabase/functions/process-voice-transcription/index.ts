@@ -199,6 +199,31 @@ async function splitAudioIntoChunks(audioBlob: Blob, targetSizeBytes: number): P
 }
 
 /**
+ * Get file extension from MIME type for Whisper API
+ */
+function getExtensionFromMimeType(mimeType: string): string {
+  const mimeToExt: Record<string, string> = {
+    'audio/mpeg': 'mp3',
+    'audio/mp3': 'mp3',
+    'audio/mp4': 'm4a',
+    'audio/m4a': 'm4a',
+    'audio/x-m4a': 'm4a',
+    'audio/aac': 'm4a',
+    'audio/wav': 'wav',
+    'audio/x-wav': 'wav',
+    'audio/wave': 'wav',
+    'audio/webm': 'webm',
+    'audio/ogg': 'ogg',
+    'audio/flac': 'flac',
+    'audio/x-flac': 'flac',
+    'video/mp4': 'mp4',
+    'video/webm': 'webm',
+  };
+  
+  return mimeToExt[mimeType.toLowerCase()] || 'mp3';
+}
+
+/**
  * Transcribe a single audio chunk using OpenAI Whisper API
  */
 async function transcribeChunkWithWhisper(audioBlob: Blob, language = "fr"): Promise<string> {
@@ -206,8 +231,13 @@ async function transcribeChunkWithWhisper(audioBlob: Blob, language = "fr"): Pro
     throw new Error("openai_api_key_not_configured: OPENAI_API_KEY is required for Whisper transcription");
   }
   
+  // Determine correct file extension from MIME type
+  const ext = getExtensionFromMimeType(audioBlob.type);
+  const fileName = `audio.${ext}`;
+  console.log(`[Whisper] Sending file: ${fileName}, size: ${(audioBlob.size / 1024).toFixed(1)} KB, type: ${audioBlob.type}`);
+  
   const formData = new FormData();
-  formData.append("file", audioBlob, "audio.mp3");
+  formData.append("file", audioBlob, fileName);
   formData.append("model", "whisper-1");
   formData.append("language", language);
   formData.append("response_format", "text");
