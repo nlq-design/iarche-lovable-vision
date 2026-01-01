@@ -1,6 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
 const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -164,13 +169,96 @@ Posez simplement votre question et je vous répondrai !`;
 }
 
 serve(async (req) => {
-  // Handle webhook verification (GET request from Telegram)
+  // Handle CORS preflight requests (useful for debugging from a browser)
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  // Debug / health endpoint
+  // - GET /telegram-webhook                 -> simple text health
+  // - GET /telegram-webhook?debug=1         -> bot + webhook status (no secrets)
+  // - GET /telegram-webhook?setup=1         -> set webhook to THIS endpoint (safe, no custom URL)
+  // - GET /telegram-webhook?setup=1&debug=1 -> set + return status
   if (req.method === "GET") {
-    return new Response("Telegram webhook is active", { status: 200 });
+    const url = new URL(req.url);
+    const debug = url.searchParams.get("debug") === "1";
+    const setup = url.searchParams.get("setup") === "1";
+
+    if (!debug && !setup) {
+      return new Response("Telegram webhook is active", { status: 200, headers: corsHeaders });
+    }
+
+    try {
+      const webhookUrl = `${SUPABASE_URL}/functions/v1/telegram-webhook`;
+      let setupJson: unknown = null;
+
+      if (setup) {
+        const setupResp = await fetch(`${TELEGRAM_API}/setWebhook`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: webhookUrl,
+            drop_pending_updates: true,
+          }),
+        });
+        setupJson = await setupResp.json();
+      }
+
+      const [meResp, hookResp] = await Promise.all([
+        fetch(`${TELEGRAM_API}/getMe`),
+        fetch(`${TELEGRAM_API}/getWebhookInfo`),
+      ]);
+
+      const meJson = await meResp.json();
+      const hookJson = await hookResp.json();
+
+      return new Response(
+        JSON.stringify(
+          {
+            ok: true,
+            setup_requested: setup,
+            setup_result: setupJson,
+            expected_webhook_url: webhookUrl,
+            bot_ok: !!meJson?.ok,
+            bot: meJson?.result
+              ? {
+                  id: meJson.result.id,
+                  username: meJson.result.username,
+                  first_name: meJson.result.first_name,
+                  can_join_groups: meJson.result.can_join_groups,
+                  can_read_all_group_messages: meJson.result.can_read_all_group_messages,
+                  supports_inline_queries: meJson.result.supports_inline_queries,
+                }
+              : null,
+            webhook_ok: !!hookJson?.ok,
+            webhook: hookJson?.result
+              ? {
+                  url: hookJson.result.url,
+                  has_custom_certificate: hookJson.result.has_custom_certificate,
+                  pending_update_count: hookJson.result.pending_update_count,
+                  last_error_date: hookJson.result.last_error_date,
+                  last_error_message: hookJson.result.last_error_message,
+                  max_connections: hookJson.result.max_connections,
+                  ip_address: hookJson.result.ip_address,
+                }
+              : null,
+          },
+          null,
+          2,
+        ),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    } catch (error) {
+      console.error("[telegram-webhook] debug_error:", error);
+      return new Response(JSON.stringify({ ok: false, error: "debug_failed" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
   }
 
   if (req.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
 
   try {
