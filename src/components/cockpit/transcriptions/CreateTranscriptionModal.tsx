@@ -63,9 +63,10 @@ export function CreateTranscriptionModal({
 }: CreateTranscriptionModalProps) {
   const [activeTab, setActiveTab] = useState<'upload' | 'record'>('upload');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   
   const [entityType, setEntityType] = useState<'lead' | 'project' | 'solution' | 'meeting_note' | 'none'>(
     defaultLeadId ? 'lead' : defaultProjectId ? 'project' : defaultSolutionId ? 'solution' : defaultMeetingNoteId ? 'meeting_note' : 'none'
@@ -102,21 +103,26 @@ export function CreateTranscriptionModal({
   });
 
   const resetForm = useCallback(() => {
-    setSelectedFile(null);
+    setSelectedFiles([]);
     setRecordedBlob(null);
     setEntityType('none');
     setSelectedEntityId('');
     setPromptProfileId('');
     setAutoCreateTasks(true);
     setTranscriptionDate(format(new Date(), 'yyyy-MM-dd'));
+    setUploadProgress({ current: 0, total: 0 });
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      setSelectedFiles(Array.from(files));
       setRecordedBlob(null);
     }
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const startRecording = async () => {
@@ -153,47 +159,70 @@ export function CreateTranscriptionModal({
   };
 
   const handleSubmit = async () => {
-    const audioBlob = activeTab === 'upload' ? selectedFile : recordedBlob;
-    if (!audioBlob) {
+    const filesToUpload = activeTab === 'upload' ? selectedFiles : (recordedBlob ? [recordedBlob] : []);
+    
+    if (filesToUpload.length === 0) {
       toast.error('Veuillez sélectionner ou enregistrer un audio');
       return;
     }
 
     setIsUploading(true);
+    setUploadProgress({ current: 0, total: filesToUpload.length });
 
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData?.user) throw new Error('Non authentifié');
 
       const userId = userData.user.id;
-      const fileExt = activeTab === 'upload' 
-        ? selectedFile?.name.split('.').pop() || 'm4a'
-        : 'webm';
-      const fileName = `${crypto.randomUUID()}.${fileExt}`;
-      const storagePath = `${DEFAULT_WORKSPACE_ID}/${userId}/${fileName}`;
+      let successCount = 0;
+      let errorCount = 0;
 
-      // Upload to storage
-      const { error: uploadError } = await supabase.storage
-        .from('voice-transcriptions')
-        .upload(storagePath, audioBlob);
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const audioBlob = filesToUpload[i];
+        setUploadProgress({ current: i + 1, total: filesToUpload.length });
 
-      if (uploadError) throw uploadError;
+        try {
+          const fileExt = activeTab === 'upload' && audioBlob instanceof File
+            ? audioBlob.name.split('.').pop() || 'm4a'
+            : 'webm';
+          const fileName = `${crypto.randomUUID()}.${fileExt}`;
+          const storagePath = `${DEFAULT_WORKSPACE_ID}/${userId}/${fileName}`;
 
-      // Create job
-      const job = await createTranscription.mutateAsync({
-        storage_path: storagePath,
-        source: activeTab === 'upload' ? 'upload' : 'recording',
-        lead_id: entityType === 'lead' ? selectedEntityId : null,
-        project_id: entityType === 'project' ? selectedEntityId : null,
-        solution_id: entityType === 'solution' ? selectedEntityId : null,
-        meeting_note_id: entityType === 'meeting_note' ? selectedEntityId : null,
-        auto_create_tasks: true, // Always force true
-        prompt_profile_id: promptProfileId || null,
-        transcription_date: transcriptionDate || null,
-      });
+          // Upload to storage
+          const { error: uploadError } = await supabase.storage
+            .from('voice-transcriptions')
+            .upload(storagePath, audioBlob);
 
-      // Start processing
-      processTranscription.mutate(job.id);
+          if (uploadError) throw uploadError;
+
+          // Create job
+          const job = await createTranscription.mutateAsync({
+            storage_path: storagePath,
+            source: activeTab === 'upload' ? 'upload' : 'recording',
+            lead_id: entityType === 'lead' ? selectedEntityId : null,
+            project_id: entityType === 'project' ? selectedEntityId : null,
+            solution_id: entityType === 'solution' ? selectedEntityId : null,
+            meeting_note_id: entityType === 'meeting_note' ? selectedEntityId : null,
+            auto_create_tasks: true,
+            prompt_profile_id: promptProfileId || null,
+            transcription_date: transcriptionDate || null,
+          });
+
+          // Start processing
+          processTranscription.mutate(job.id);
+          successCount++;
+        } catch (error) {
+          console.error(`Error uploading file ${i + 1}:`, error);
+          errorCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        toast.success(`${successCount} transcription${successCount > 1 ? 's' : ''} lancée${successCount > 1 ? 's' : ''}`);
+      }
+      if (errorCount > 0) {
+        toast.error(`${errorCount} fichier${errorCount > 1 ? 's' : ''} en erreur`);
+      }
 
       resetForm();
       onSuccess();
@@ -202,6 +231,7 @@ export function CreateTranscriptionModal({
       toast.error(`Erreur: ${error instanceof Error ? error.message : 'Échec de l\'upload'}`);
     } finally {
       setIsUploading(false);
+      setUploadProgress({ current: 0, total: 0 });
     }
   };
 
@@ -249,38 +279,56 @@ export function CreateTranscriptionModal({
 
           <TabsContent value="upload" className="space-y-4 pt-4">
             <div 
-              className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+              className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
               onClick={() => fileInputRef.current?.click()}
             >
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="audio/*"
+                multiple
                 onChange={handleFileChange}
                 className="hidden"
               />
-              {selectedFile ? (
-                <div className="space-y-2">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                    <Check className="h-6 w-6 text-primary" />
+              {selectedFiles.length > 0 ? (
+                <div className="space-y-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                    <Check className="h-5 w-5 text-primary" />
                   </div>
-                  <p className="font-medium">{selectedFile.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
-                  </p>
+                  <p className="font-medium">{selectedFiles.length} fichier{selectedFiles.length > 1 ? 's' : ''} sélectionné{selectedFiles.length > 1 ? 's' : ''}</p>
+                  <p className="text-xs text-muted-foreground">Cliquez pour modifier la sélection</p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <Upload className="h-12 w-12 text-muted-foreground mx-auto" />
+                  <Upload className="h-10 w-10 text-muted-foreground mx-auto" />
                   <p className="text-muted-foreground">
-                    Cliquez ou glissez un fichier audio
+                    Cliquez ou glissez des fichiers audio
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    MP3, M4A, WAV, WebM (max 100 MB)
+                    MP3, M4A, WAV, WebM (max 100 MB par fichier) — <strong>Multi-sélection possible</strong>
                   </p>
                 </div>
               )}
             </div>
+            {selectedFiles.length > 0 && (
+              <div className="max-h-32 overflow-y-auto space-y-1 rounded-md border p-2">
+                {selectedFiles.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between text-sm py-1 px-2 rounded hover:bg-muted/50">
+                    <span className="truncate flex-1 mr-2">{file.name}</span>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <span className="text-xs">{(file.size / (1024 * 1024)).toFixed(1)} MB</span>
+                      <button 
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); removeFile(index); }}
+                        className="text-destructive hover:text-destructive/80"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="record" className="space-y-4 pt-4">
@@ -450,15 +498,19 @@ export function CreateTranscriptionModal({
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={isUploading || (!selectedFile && !recordedBlob)}
+            disabled={isUploading || (selectedFiles.length === 0 && !recordedBlob)}
           >
             {isUploading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Traitement...
+                {uploadProgress.total > 1 
+                  ? `${uploadProgress.current}/${uploadProgress.total}...`
+                  : 'Traitement...'}
               </>
             ) : (
-              'Lancer la transcription'
+              selectedFiles.length > 1 
+                ? `Lancer ${selectedFiles.length} transcriptions`
+                : 'Lancer la transcription'
             )}
           </Button>
         </div>
