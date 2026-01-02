@@ -9,7 +9,9 @@
 import { supabase } from '@/integrations/supabase/client';
 
 const WHISPER_MAX_SIZE_BYTES = 24 * 1024 * 1024; // 24MB (safety margin)
-const OVERLAP_SECONDS = 5; // 5 second overlap between chunks
+const OVERLAP_SECONDS = 8; // 8 second overlap between chunks (increased for better merge accuracy)
+const MIN_OVERLAP_WORDS = 2; // Minimum words to consider for overlap detection
+const MAX_OVERLAP_WORDS = 25; // Maximum words to scan for overlap
 
 // Yield helper to keep the UI responsive during heavy CPU work
 async function yieldToMainThread(): Promise<void> {
@@ -315,6 +317,9 @@ export async function transcribeAllChunks(
  * Merge transcriptions from multiple chunks.
  * Handles overlap by detecting and removing duplicated content.
  */
+/**
+ * Merge transcriptions from all chunks, intelligently removing overlaps
+ */
 export function mergeTranscriptions(results: ChunkTranscriptionResult[]): string {
   if (results.length === 0) return '';
   if (results.length === 1) return results[0].transcript;
@@ -330,39 +335,103 @@ export function mergeTranscriptions(results: ChunkTranscriptionResult[]): string
     }
 
     const previous = mergedParts[mergedParts.length - 1];
-    const overlapRemoved = removeOverlap(previous, current);
+    const { cleanedCurrent, overlapFound, overlapLength } = removeOverlapAdvanced(previous, current);
 
-    if (overlapRemoved) {
-      mergedParts.push(overlapRemoved);
+    if (overlapFound) {
+      console.log(`[mergeTranscriptions] Chunk ${i}: detected ${overlapLength} word overlap`);
+      mergedParts.push(cleanedCurrent);
     } else {
-      mergedParts.push(current);
+      // No overlap detected - check for potential duplication by comparing last/first words
+      const lastWords = previous.split(/\s+/).slice(-3).join(' ').toLowerCase();
+      const firstWords = current.split(/\s+/).slice(0, 3).join(' ').toLowerCase();
+      
+      if (lastWords === firstWords && lastWords.length > 5) {
+        // Likely duplicate, skip first 3 words of current
+        console.log(`[mergeTranscriptions] Chunk ${i}: fallback dedup (${lastWords})`);
+        mergedParts.push(current.split(/\s+/).slice(3).join(' '));
+      } else {
+        mergedParts.push(current);
+      }
     }
   }
 
   return mergedParts.join(' ').replace(/\s+/g, ' ').trim();
 }
 
+interface OverlapResult {
+  cleanedCurrent: string;
+  overlapFound: boolean;
+  overlapLength: number;
+}
+
 /**
- * Attempt to detect and remove overlapping text between two strings
+ * Advanced overlap detection with fuzzy matching and partial word handling
  */
-function removeOverlap(previous: string, current: string): string | null {
+function removeOverlapAdvanced(previous: string, current: string): OverlapResult {
   const prevWords = previous.split(/\s+/);
   const currWords = current.split(/\s+/);
 
-  // Look for overlap of 3-15 words at the end of previous / start of current
-  const maxOverlap = Math.min(15, Math.floor(prevWords.length / 2), Math.floor(currWords.length / 2));
+  // Scan from larger to smaller overlap
+  const maxOverlap = Math.min(MAX_OVERLAP_WORDS, Math.floor(prevWords.length / 2), Math.floor(currWords.length / 2));
 
-  for (let overlap = maxOverlap; overlap >= 3; overlap--) {
-    const prevEnd = prevWords.slice(-overlap).join(' ').toLowerCase();
-    const currStart = currWords.slice(0, overlap).join(' ').toLowerCase();
+  for (let overlap = maxOverlap; overlap >= MIN_OVERLAP_WORDS; overlap--) {
+    const prevEnd = prevWords.slice(-overlap);
+    const currStart = currWords.slice(0, overlap);
 
-    // Fuzzy match (allow for small transcription differences)
-    if (prevEnd === currStart || levenshteinDistance(prevEnd, currStart) <= 2) {
-      return currWords.slice(overlap).join(' ');
+    // Calculate similarity score
+    const similarity = calculateSimilarity(prevEnd, currStart);
+    
+    // Accept if similarity is high enough (>80% match)
+    if (similarity >= 0.8) {
+      return {
+        cleanedCurrent: currWords.slice(overlap).join(' '),
+        overlapFound: true,
+        overlapLength: overlap,
+      };
+    }
+    
+    // Also try with one word less on either side (handles partial word cuts)
+    if (overlap > MIN_OVERLAP_WORDS) {
+      const prevEndMinus1 = prevWords.slice(-(overlap - 1));
+      const currStartPlus1 = currWords.slice(1, overlap);
+      
+      if (prevEndMinus1.length === currStartPlus1.length && prevEndMinus1.length >= MIN_OVERLAP_WORDS) {
+        const similarityAlt = calculateSimilarity(prevEndMinus1, currStartPlus1);
+        if (similarityAlt >= 0.85) {
+          return {
+            cleanedCurrent: currWords.slice(overlap - 1).join(' '),
+            overlapFound: true,
+            overlapLength: overlap - 1,
+          };
+        }
+      }
     }
   }
 
-  return null;
+  return { cleanedCurrent: current, overlapFound: false, overlapLength: 0 };
+}
+
+/**
+ * Calculate word-by-word similarity between two arrays
+ */
+function calculateSimilarity(words1: string[], words2: string[]): number {
+  if (words1.length !== words2.length || words1.length === 0) return 0;
+  
+  let matchScore = 0;
+  
+  for (let i = 0; i < words1.length; i++) {
+    const w1 = words1[i].toLowerCase().replace(/[.,!?;:'"]/g, '');
+    const w2 = words2[i].toLowerCase().replace(/[.,!?;:'"]/g, '');
+    
+    if (w1 === w2) {
+      matchScore += 1;
+    } else if (levenshteinDistance(w1, w2) <= Math.max(1, Math.floor(w1.length * 0.3))) {
+      // Allow ~30% character difference for typos/transcription variance
+      matchScore += 0.7;
+    }
+  }
+  
+  return matchScore / words1.length;
 }
 
 /**
@@ -372,23 +441,20 @@ function levenshteinDistance(a: string, b: string): number {
   if (a.length === 0) return b.length;
   if (b.length === 0) return a.length;
 
-  const matrix: number[][] = [];
+  // Use single array for memory efficiency
+  const row = Array.from({ length: b.length + 1 }, (_, i) => i);
 
-  for (let i = 0; i <= b.length; i++) {
-    matrix[i] = [i];
-  }
-  for (let j = 0; j <= a.length; j++) {
-    matrix[0][j] = j;
-  }
-
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      const cost = a[j - 1] === b[i - 1] ? 0 : 1;
-      matrix[i][j] = Math.min(matrix[i - 1][j] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j - 1] + cost);
+  for (let i = 1; i <= a.length; i++) {
+    let prev = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cur = a[i - 1] === b[j - 1] ? row[j - 1] : Math.min(row[j - 1], prev, row[j]) + 1;
+      row[j - 1] = prev;
+      prev = cur;
     }
+    row[b.length] = prev;
   }
 
-  return matrix[b.length][a.length];
+  return row[b.length];
 }
 
 /**
