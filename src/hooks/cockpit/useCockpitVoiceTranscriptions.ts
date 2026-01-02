@@ -187,11 +187,11 @@ export function useCockpitVoiceTranscriptions(
     },
   });
 
-  // Process transcription
+  // Process transcription (or re-analyze if force_reanalyze=true)
   const processTranscription = useMutation({
-    mutationFn: async (jobId: string) => {
+    mutationFn: async ({ jobId, forceReanalyze = false }: { jobId: string; forceReanalyze?: boolean }) => {
       const { data, error } = await supabase.functions.invoke('process-voice-transcription', {
-        body: { job_id: jobId },
+        body: { job_id: jobId, force_reanalyze: forceReanalyze },
       });
 
       // When the function returns non-2xx, Supabase wraps it as a FunctionsHttpError.

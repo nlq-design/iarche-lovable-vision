@@ -1009,11 +1009,20 @@ serve(async (req) => {
     }
 
     const vjob = job as VoiceJob;
-    if (vjob.status === "done") {
+    
+    // Check for force_reanalyze parameter - allows re-running LLM analysis on completed transcriptions
+    const forceReanalyze = body?.force_reanalyze === true;
+    
+    if (vjob.status === "done" && !forceReanalyze) {
       return new Response(JSON.stringify({ ok: true, already_done: true }), { 
         status: 200, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
+    }
+    
+    // If force reanalyze, log it
+    if (forceReanalyze && vjob.status === "done") {
+      console.log(`[Job] Force re-analyzing completed transcription ${jobId}`);
     }
 
     console.log(`[Job] Processing ${jobId}`);

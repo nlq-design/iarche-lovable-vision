@@ -26,12 +26,14 @@ import {
   Users,
   ListTodo,
   CalendarDays,
+  RefreshCw,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useCockpitVoiceTranscriptions, TRANSCRIPTION_STATUSES } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { CreateTranscriptionModal } from '@/components/cockpit/transcriptions/CreateTranscriptionModal';
 import { TranscriptionDetailSheet } from '@/components/cockpit/transcriptions/TranscriptionDetailSheet';
+import { toast } from 'sonner';
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   queued: <Clock className="h-4 w-4" />,
@@ -46,8 +48,42 @@ export default function CockpitTranscriptions() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedTranscription, setSelectedTranscription] = useState<string | null>(null);
+  const [isReanalyzing, setIsReanalyzing] = useState(false);
 
-  const { transcriptions, isLoading, stats, refetch } = useCockpitVoiceTranscriptions();
+  const { transcriptions, isLoading, stats, refetch, processTranscription } = useCockpitVoiceTranscriptions();
+
+  // Batch re-analyze all completed transcriptions
+  const handleBatchReanalyze = async () => {
+    const doneTranscriptions = transcriptions.filter(t => t.status === 'done');
+    if (doneTranscriptions.length === 0) {
+      toast.info('Aucune transcription terminée à ré-analyser');
+      return;
+    }
+
+    setIsReanalyzing(true);
+    toast.info(`Ré-analyse de ${doneTranscriptions.length} transcription(s) en cours...`);
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const t of doneTranscriptions) {
+      try {
+        await processTranscription.mutateAsync({ jobId: t.id, forceReanalyze: true });
+        successCount++;
+      } catch {
+        errorCount++;
+      }
+    }
+
+    setIsReanalyzing(false);
+    refetch();
+    
+    if (errorCount === 0) {
+      toast.success(`${successCount} transcription(s) ré-analysée(s) avec succès`);
+    } else {
+      toast.warning(`${successCount} succès, ${errorCount} erreur(s)`);
+    }
+  };
 
   const filteredTranscriptions = transcriptions.filter(t => {
     const searchLower = searchQuery.toLowerCase();
@@ -80,10 +116,28 @@ export default function CockpitTranscriptions() {
               Enregistrements audio en comptes-rendus
             </p>
           </div>
-          <Button size="sm" className="h-8 text-sm w-fit" onClick={() => setCreateModalOpen(true)}>
-            <Mic className="h-3.5 w-3.5 mr-1.5" />
-            Nouvelle transcription
-          </Button>
+          <div className="flex items-center gap-2">
+            {stats.done > 0 && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-8 text-sm"
+                onClick={handleBatchReanalyze}
+                disabled={isReanalyzing}
+              >
+                {isReanalyzing ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                Ré-analyser toutes
+              </Button>
+            )}
+            <Button size="sm" className="h-8 text-sm w-fit" onClick={() => setCreateModalOpen(true)}>
+              <Mic className="h-3.5 w-3.5 mr-1.5" />
+              Nouvelle transcription
+            </Button>
+          </div>
         </div>
 
         {/* Stats inline */}

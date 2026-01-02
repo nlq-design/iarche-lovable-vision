@@ -209,8 +209,20 @@ export function TranscriptionDetailSheet({
 
   const handleRetry = () => {
     if (transcriptionId) {
-      processTranscription.mutate(transcriptionId, {
+      processTranscription.mutate({ jobId: transcriptionId }, {
         onSuccess: () => refetch(),
+      });
+    }
+  };
+
+  const handleReanalyze = () => {
+    if (transcriptionId) {
+      toast.info('Ré-analyse en cours...');
+      processTranscription.mutate({ jobId: transcriptionId, forceReanalyze: true }, {
+        onSuccess: () => {
+          refetch();
+          toast.success('Synthèse et actions régénérées');
+        },
       });
     }
   };
@@ -403,6 +415,21 @@ export function TranscriptionDetailSheet({
                         <Button size="sm" variant="outline" onClick={handleRetry}>
                           <RefreshCw className="h-4 w-4 mr-2" />
                           Réessayer
+                        </Button>
+                      )}
+                      {transcription?.status === 'done' && (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={handleReanalyze}
+                          disabled={processTranscription.isPending}
+                        >
+                          {processTranscription.isPending ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4 mr-2" />
+                          )}
+                          Ré-analyser
                         </Button>
                       )}
                     </div>
