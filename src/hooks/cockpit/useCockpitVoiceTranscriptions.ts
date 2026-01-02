@@ -26,6 +26,7 @@ export interface VoiceTranscription {
   created_at: string;
   updated_at: string;
   transcription_date: string | null;
+  title: string | null; // Custom title (overrides summary.title if set)
   // Joined relations
   lead?: { id: string; name: string; company: string | null; email?: string } | null;
   lead_contact?: { id: string; name: string; email: string | null; position: string | null } | null;
@@ -224,9 +225,9 @@ export function useCockpitVoiceTranscriptions(
     },
   });
 
-  // Update transcription (lead_id, project_id, etc.)
+  // Update transcription (lead_id, project_id, title, transcription_date, etc.)
   const updateTranscription = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Pick<VoiceTranscription, 'lead_id' | 'lead_contact_id' | 'project_id' | 'solution_id' | 'meeting_note_id'>> }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Pick<VoiceTranscription, 'lead_id' | 'lead_contact_id' | 'project_id' | 'solution_id' | 'meeting_note_id' | 'title' | 'transcription_date'>> }) => {
       const { error } = await supabase
         .from('voice_transcriptions')
         .update(updates)
