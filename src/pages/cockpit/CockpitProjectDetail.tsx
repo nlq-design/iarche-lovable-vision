@@ -80,6 +80,7 @@ import { CreateTaskDialog } from '@/components/cockpit/dialogs/CreateTaskDialog'
 import { DocumentGenerator } from '@/components/cockpit/DocumentGenerator';
 import { LinkedFilesSection } from '@/components/cockpit/LinkedFilesSection';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
+import { DocumentsSynthesisSection } from '@/components/cockpit/DocumentsSynthesisSection';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -854,6 +855,15 @@ const CockpitProjectDetail = () => {
 
           {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-4">
+            {/* AI Synthesis Section */}
+            <DocumentsSynthesisSection
+              entityType="project"
+              entityId={id!}
+              summary={(project as any)?.ai_documents_summary || null}
+              documentsCount={documents?.length || 0}
+              onSynthesisComplete={() => queryClient.invalidateQueries({ queryKey: ['project-detail', id] })}
+            />
+            
             {/* Uploaded Files from cockpit-uploads */}
             <LinkedFilesSection entityType="project" entityId={id!} title="Fichiers importés" />
 
