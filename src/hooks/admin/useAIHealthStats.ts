@@ -30,6 +30,14 @@ export interface AIHealthStats {
   usageBookings: number;
   usageAIGenerated: number;
   
+  // Phase 2: Entity References
+  entityReferencesTotal: number;
+  entityReferencesByType: Record<string, number>;
+  
+  // Phase 2: Lead Familiarity
+  leadsFamiliarityAvg: number;
+  leadsWithHighFamiliarity: number;
+  
   // Health status
   healthStatus: 'healthy' | 'warning' | 'error';
   healthIssues: string[];
@@ -51,6 +59,8 @@ export function useAIHealthStats() {
         documentsResult,
         bookingsResult,
         aiGeneratedResult,
+        entityRefsResult,
+        leadsFamiliarityResult,
       ] = await Promise.all([
         // Aliases
         supabase.from('keyword_aliases').select('context_type, is_active'),
@@ -84,6 +94,12 @@ export function useAIHealthStats() {
           .select('id', { count: 'exact', head: true })
           .eq('is_ai_generated', true)
           .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+        
+        // Phase 2: Entity references
+        supabase.from('entity_name_references').select('reference_type'),
+        
+        // Phase 2: Leads familiarity
+        supabase.from('leads').select('familiarity_score'),
       ]);
 
       // Process aliases
@@ -132,6 +148,21 @@ export function useAIHealthStats() {
         healthIssues.push("Prompts primaires manquants (master-agent, tools-reference, ui-navigation)");
       }
 
+      // Phase 2: Process entity references
+      const entityRefs = entityRefsResult.data || [];
+      const entityReferencesByType: Record<string, number> = {};
+      entityRefs.forEach(r => {
+        entityReferencesByType[r.reference_type] = (entityReferencesByType[r.reference_type] || 0) + 1;
+      });
+
+      // Phase 2: Process lead familiarity
+      const leads = leadsFamiliarityResult.data || [];
+      const familiarityScores = leads.map(l => l.familiarity_score || 0);
+      const leadsFamiliarityAvg = familiarityScores.length > 0 
+        ? familiarityScores.reduce((a, b) => a + b, 0) / familiarityScores.length 
+        : 0;
+      const leadsWithHighFamiliarity = familiarityScores.filter(s => s >= 50).length;
+
       // Determine health status
       let healthStatus: 'healthy' | 'warning' | 'error' = 'healthy';
       if (healthIssues.length > 0) {
@@ -166,6 +197,12 @@ export function useAIHealthStats() {
         usageBookings: bookingsResult.count || 0,
         usageAIGenerated: aiGeneratedResult.count || 0,
         
+        entityReferencesTotal: entityRefs.length,
+        entityReferencesByType,
+        
+        leadsFamiliarityAvg: Math.round(leadsFamiliarityAvg * 10) / 10,
+        leadsWithHighFamiliarity,
+        
         healthStatus,
         healthIssues,
       };
@@ -189,6 +226,27 @@ export function useAIMemoryDetails(limit = 20) {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 30 * 1000
+  });
+}
+
+// Hook for entity references
+export function useEntityReferences(entityType: string, entityId: string | null) {
+  return useQuery({
+    queryKey: ['entity-references', entityType, entityId],
+    queryFn: async () => {
+      if (!entityId) return [];
+      
+      const { data, error } = await supabase
+        .rpc('get_entity_references', {
+          p_entity_type: entityType,
+          p_entity_id: entityId
+        });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!entityId,
     staleTime: 30 * 1000
   });
 }

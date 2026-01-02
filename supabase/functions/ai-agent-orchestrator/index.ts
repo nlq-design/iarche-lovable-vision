@@ -1026,6 +1026,70 @@ const AGENT_TOOLS = [
       },
     },
   },
+  // ============ PHASE 2: MÉMOIRE PERSISTANTE ============
+  {
+    type: "function",
+    function: {
+      name: "get_lead_familiarity",
+      description: "Récupère le score de familiarité d'un lead (historique d'interactions, documents, RDV, transcriptions).",
+      parameters: {
+        type: "object",
+        properties: {
+          lead_id: { type: "string", description: "ID du lead" },
+        },
+        required: ["lead_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_lead_familiarity",
+      description: "Recalcule et met à jour le score de familiarité d'un lead.",
+      parameters: {
+        type: "object",
+        properties: {
+          lead_id: { type: "string", description: "ID du lead" },
+        },
+        required: ["lead_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_entity_references",
+      description: "Récupère les références croisées entre entités (leads mentionnant projets, transcriptions mentionnant partenaires, etc.).",
+      parameters: {
+        type: "object",
+        properties: {
+          entity_type: { type: "string", description: "Type d'entité (lead, project, partner, solution)" },
+          entity_id: { type: "string", description: "ID de l'entité" },
+        },
+        required: ["entity_type", "entity_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_entity_reference",
+      description: "Crée une référence croisée entre deux entités (ex: transcription mentionne lead, document référence projet).",
+      parameters: {
+        type: "object",
+        properties: {
+          source_type: { type: "string", description: "Type de l'entité source" },
+          source_id: { type: "string", description: "ID de l'entité source" },
+          target_type: { type: "string", description: "Type de l'entité cible" },
+          target_id: { type: "string", description: "ID de l'entité cible" },
+          reference_type: { type: "string", description: "Type de référence (mention, link, cite, related)" },
+          context: { type: "string", description: "Contexte de la référence" },
+          confidence: { type: "number", description: "Score de confiance 0-1" },
+        },
+        required: ["source_type", "source_id", "target_type", "target_id"],
+      },
+    },
+  },
 ];
 
 // =============================================================================
@@ -3339,6 +3403,116 @@ Génère un contenu HTML pour email avec:
         suggested_tags: tagsResult.tags || tagsResult.suggested_tags || [],
         message: `✅ Tags suggérés : ${(tagsResult.tags || tagsResult.suggested_tags || []).join(", ")}`,
         autonomy_level: "execution_directe",
+      };
+    }
+
+    // ============ PHASE 2: MÉMOIRE PERSISTANTE ============
+    
+    case "get_lead_familiarity": {
+      const { data: lead, error } = await supabase
+        .from("leads")
+        .select("id, name, company, familiarity_score, familiarity_details")
+        .eq("id", args.lead_id)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        lead_id: lead.id,
+        name: lead.name,
+        company: lead.company,
+        familiarity_score: lead.familiarity_score || 0,
+        familiarity_details: lead.familiarity_details || {},
+        interpretation: lead.familiarity_score >= 50 
+          ? "Lead très familier - historique riche d'interactions"
+          : lead.familiarity_score >= 20 
+            ? "Lead connu - quelques interactions"
+            : "Lead récent - peu d'historique",
+      };
+    }
+
+    case "update_lead_familiarity": {
+      const { error } = await supabase.rpc("update_lead_familiarity", {
+        p_lead_id: args.lead_id,
+      });
+
+      if (error) throw error;
+
+      // Fetch updated score
+      const { data: lead } = await supabase
+        .from("leads")
+        .select("familiarity_score, familiarity_details")
+        .eq("id", args.lead_id)
+        .single();
+
+      return {
+        success: true,
+        lead_id: args.lead_id,
+        new_score: lead?.familiarity_score || 0,
+        details: lead?.familiarity_details || {},
+        message: `Score de familiarité mis à jour : ${lead?.familiarity_score || 0}%`,
+      };
+    }
+
+    case "get_entity_references": {
+      const { data: refs, error } = await supabase.rpc("get_entity_references", {
+        p_entity_type: args.entity_type,
+        p_entity_id: args.entity_id,
+      });
+
+      if (error) throw error;
+
+      // Enrich with entity names
+      const enrichedRefs = await Promise.all((refs || []).map(async (ref: any) => {
+        let relatedName = "";
+        
+        if (ref.related_entity_type === "lead") {
+          const { data } = await supabase.from("leads").select("name, company").eq("id", ref.related_entity_id).single();
+          relatedName = data ? `${data.name}${data.company ? ` (${data.company})` : ""}` : "";
+        } else if (ref.related_entity_type === "partner") {
+          const { data } = await supabase.from("partners").select("name").eq("id", ref.related_entity_id).single();
+          relatedName = data?.name || "";
+        } else if (ref.related_entity_type === "project") {
+          const { data } = await supabase.from("projects").select("name").eq("id", ref.related_entity_id).single();
+          relatedName = data?.name || "";
+        }
+        
+        return {
+          ...ref,
+          related_name: relatedName,
+        };
+      }));
+
+      return {
+        entity_type: args.entity_type,
+        entity_id: args.entity_id,
+        references: enrichedRefs,
+        total_count: enrichedRefs.length,
+        outgoing: enrichedRefs.filter((r: any) => r.direction === "outgoing").length,
+        incoming: enrichedRefs.filter((r: any) => r.direction === "incoming").length,
+      };
+    }
+
+    case "create_entity_reference": {
+      const { data: refId, error } = await supabase.rpc("create_entity_reference", {
+        p_source_type: args.source_type,
+        p_source_id: args.source_id,
+        p_target_type: args.target_type,
+        p_target_id: args.target_id,
+        p_reference_type: args.reference_type || "mention",
+        p_context: args.context || null,
+        p_confidence: args.confidence || 0.8,
+      });
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        reference_id: refId,
+        source: `${args.source_type}:${args.source_id}`,
+        target: `${args.target_type}:${args.target_id}`,
+        type: args.reference_type || "mention",
+        message: `Référence croisée créée entre ${args.source_type} et ${args.target_type}`,
       };
     }
 

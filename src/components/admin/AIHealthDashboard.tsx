@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { 
   RefreshCw, CheckCircle2, AlertCircle, AlertTriangle,
   BookOpen, Brain, Database, FileText, Mic, Calendar, Sparkles,
-  Activity, TrendingUp
+  Activity, TrendingUp, Link2, Users
 } from "lucide-react";
 
 const STATUS_ICONS = {
@@ -90,7 +90,7 @@ export function AIHealthDashboard() {
       )}
 
       {/* Main stats grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {/* Dictionnaire */}
         <Card>
           <CardHeader className="pb-2">
@@ -177,6 +177,52 @@ export function AIHealthDashboard() {
                 </Badge>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Phase 2: Cross-références */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Link2 className="h-4 w-4 text-cyan-500" />
+              Références
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{health.entityReferencesTotal}</div>
+            <p className="text-xs text-muted-foreground">
+              liens croisés
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1">
+              {Object.entries(health.entityReferencesByType).slice(0, 3).map(([type, count]) => (
+                <Badge key={type} variant="secondary" className="text-xs">
+                  {type}: {count}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Phase 2: Lead Familiarity */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Users className="h-4 w-4 text-rose-500" />
+              Familiarité
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{health.leadsFamiliarityAvg}%</div>
+            <p className="text-xs text-muted-foreground">
+              score moyen leads
+            </p>
+            <Progress 
+              value={health.leadsFamiliarityAvg} 
+              className="mt-2 h-1.5" 
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              {health.leadsWithHighFamiliarity} leads familiers
+            </p>
           </CardContent>
         </Card>
       </div>
