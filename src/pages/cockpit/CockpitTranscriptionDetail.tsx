@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Play,
   Pause,
@@ -62,6 +63,10 @@ import {
   PackagePlus,
   ListTodo,
   ArrowLeft,
+  HardDrive,
+  Clock,
+  FileAudio,
+  MessageSquareText,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -149,10 +154,15 @@ export default function CockpitTranscriptionDetail() {
   // Editable date state
   const [editingDate, setEditingDate] = useState(false);
 
+  // Analysis context state
+  const [editingContext, setEditingContext] = useState(false);
+  const [contextDraft, setContextDraft] = useState('');
+
   useEffect(() => {
     if (transcription) {
       const displayTitle = transcription.title || (transcription.summary?.title as string) || '';
       setTitleDraft(typeof displayTitle === 'string' ? displayTitle : JSON.stringify(displayTitle));
+      setContextDraft(transcription.analysis_context || '');
     }
   }, [transcription]);
 
@@ -308,6 +318,48 @@ export default function CockpitTranscriptionDetail() {
     }
   };
 
+  const handleSaveContext = () => {
+    if (transcriptionId) {
+      updateTranscription.mutate({ id: transcriptionId, updates: { analysis_context: contextDraft.trim() || null } });
+      setEditingContext(false);
+    }
+  };
+
+  const handleReanalyzeWithContext = () => {
+    if (transcriptionId) {
+      // Save context first, then reanalyze
+      const contextToSave = contextDraft.trim() || null;
+      if (contextToSave !== transcription?.analysis_context) {
+        updateTranscription.mutate({ id: transcriptionId, updates: { analysis_context: contextToSave } });
+      }
+      toast.info('Ré-analyse en cours avec le nouveau contexte...');
+      processTranscription.mutate({ jobId: transcriptionId, forceReanalyze: true }, {
+        onSuccess: () => {
+          refetch();
+          toast.success('Synthèse et actions régénérées');
+        },
+      });
+      setEditingContext(false);
+    }
+  };
+
+  // Helper to format file size
+  const formatFileSize = (bytes: number | null) => {
+    if (!bytes) return null;
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+  };
+
+  // Helper to format duration
+  const formatDuration = (seconds: number | null) => {
+    if (!seconds) return null;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    if (mins === 0) return `${secs}s`;
+    return `${mins}min ${secs}s`;
+  };
+
   // Redirect if not found after loading
   useEffect(() => {
     if (!listLoading && !isLoading && !transcription && slug) {
@@ -411,16 +463,36 @@ export default function CockpitTranscriptionDetail() {
           </div>
         </div>
 
-        {/* Audio Player */}
+        {/* Audio Player + File Info */}
         <Card>
-          <CardContent className="p-4">
+          <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-4">
               <Button size="icon" variant="outline" onClick={handlePlayPause} disabled={!audioUrl}>
                 {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               </Button>
               <div className="flex-1">
                 <p className="text-sm font-medium">{transcription.original_filename || 'Audio original'}</p>
-                <p className="text-xs text-muted-foreground">{transcription.source === 'upload' ? 'Fichier importé' : 'Enregistrement'}</p>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
+                  {transcription.source === 'upload' ? 'Fichier importé' : 'Enregistrement'}
+                  {transcription.file_size_bytes && (
+                    <span className="flex items-center gap-1">
+                      <HardDrive className="h-3 w-3" />
+                      {formatFileSize(transcription.file_size_bytes)}
+                    </span>
+                  )}
+                  {transcription.duration_seconds && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatDuration(transcription.duration_seconds)}
+                    </span>
+                  )}
+                  {transcription.audio_format && (
+                    <span className="flex items-center gap-1">
+                      <FileAudio className="h-3 w-3" />
+                      {transcription.audio_format.toUpperCase()}
+                    </span>
+                  )}
+                </div>
               </div>
               {transcription.status === 'error' && (
                 <Button size="sm" variant="outline" onClick={handleRetry}>
@@ -439,6 +511,60 @@ export default function CockpitTranscriptionDetail() {
                 </Button>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Analysis Context */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <MessageSquareText className="h-4 w-4" />
+              Contexte d'analyse
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {editingContext ? (
+              <div className="space-y-3">
+                <Textarea
+                  value={contextDraft}
+                  onChange={(e) => setContextDraft(e.target.value)}
+                  placeholder="Ajoutez du contexte pour améliorer l'analyse IA (ex: c'est un RDV de découverte avec un prospect du secteur santé, nous avons déjà échangé par email...)"
+                  rows={3}
+                  className="text-sm"
+                />
+                <div className="flex items-center gap-2">
+                  <Button size="sm" onClick={handleReanalyzeWithContext} disabled={processTranscription.isPending}>
+                    {processTranscription.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4 mr-2" />
+                    )}
+                    Sauvegarder et ré-analyser
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleSaveContext}>
+                    <Check className="h-4 w-4 mr-2" />
+                    Sauvegarder seulement
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => {
+                    setContextDraft(transcription.analysis_context || '');
+                    setEditingContext(false);
+                  }}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div
+                className="cursor-pointer p-2 -m-2 rounded hover:bg-muted/50 transition-colors"
+                onClick={() => setEditingContext(true)}
+              >
+                {transcription.analysis_context ? (
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{transcription.analysis_context}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">Cliquer pour ajouter du contexte à l'analyse IA...</p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
