@@ -1294,6 +1294,48 @@ export type Database = {
         }
         Relationships: []
       }
+      entity_name_references: {
+        Row: {
+          confidence_score: number | null
+          context: string | null
+          created_at: string | null
+          detected_by: string | null
+          id: string
+          reference_type: string
+          source_entity_id: string
+          source_entity_type: string
+          target_entity_id: string
+          target_entity_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          context?: string | null
+          created_at?: string | null
+          detected_by?: string | null
+          id?: string
+          reference_type?: string
+          source_entity_id: string
+          source_entity_type: string
+          target_entity_id: string
+          target_entity_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          context?: string | null
+          created_at?: string | null
+          detected_by?: string | null
+          id?: string
+          reference_type?: string
+          source_entity_id?: string
+          source_entity_type?: string
+          target_entity_id?: string
+          target_entity_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       faqs: {
         Row: {
           article_id: string
@@ -1704,6 +1746,8 @@ export type Database = {
           country: string | null
           created_at: string | null
           email: string
+          familiarity_details: Json | null
+          familiarity_score: number | null
           id: string
           industry: string | null
           last_contacted_at: string | null
@@ -1734,6 +1778,8 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           email: string
+          familiarity_details?: Json | null
+          familiarity_score?: number | null
           id?: string
           industry?: string | null
           last_contacted_at?: string | null
@@ -1764,6 +1810,8 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           email?: string
+          familiarity_details?: Json | null
+          familiarity_score?: number | null
           id?: string
           industry?: string | null
           last_contacted_at?: string | null
@@ -3544,6 +3592,18 @@ export type Database = {
         Args: { atelier_uuid: string }
         Returns: number
       }
+      create_entity_reference: {
+        Args: {
+          p_confidence?: number
+          p_context?: string
+          p_reference_type?: string
+          p_source_id: string
+          p_source_type: string
+          p_target_id: string
+          p_target_type: string
+        }
+        Returns: string
+      }
       delete_lead_cascade: { Args: { p_lead_id: string }; Returns: undefined }
       delete_project_cascade: {
         Args: { p_project_id: string }
@@ -3558,6 +3618,19 @@ export type Database = {
         Returns: string
       }
       generate_phonetic_key: { Args: { input_text: string }; Returns: string }
+      get_entity_references: {
+        Args: { p_entity_id: string; p_entity_type: string }
+        Returns: {
+          confidence_score: number
+          context: string
+          created_at: string
+          direction: string
+          id: string
+          reference_type: string
+          related_entity_id: string
+          related_entity_type: string
+        }[]
+      }
       get_recent_ai_memory: {
         Args: {
           p_limit?: number
@@ -3642,6 +3715,10 @@ export type Database = {
         }[]
       }
       unlock_expired_accounts: { Args: never; Returns: undefined }
+      update_lead_familiarity: {
+        Args: { p_lead_id: string }
+        Returns: undefined
+      }
       upsert_lead: {
         Args: {
           p_company?: string

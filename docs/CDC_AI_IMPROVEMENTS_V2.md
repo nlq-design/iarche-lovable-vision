@@ -549,17 +549,21 @@ await supabase.rpc('increment_ai_metric', {
 
 ## ✅ Checklist d'Implémentation
 
-### Phase 1 - Diagnostic (1-2 jours)
-- [ ] Créer composant `AIHealthDashboard.tsx`
-- [ ] Ajouter onglet "Diagnostic" dans `AdminAIPrompts.tsx`
-- [ ] Créer hook `useAIHealthStats.ts`
-- [ ] Enrichir `ai_metadata` dans les transcriptions
+### Phase 1 - Diagnostic (1-2 jours) ✅ COMPLÉTÉ
+- [x] Créer composant `AIHealthDashboard.tsx`
+- [x] Ajouter onglet "Diagnostic" dans `AdminAIPrompts.tsx`
+- [x] Créer hook `useAIHealthStats.ts`
+- [x] Enrichir `ai_metadata` dans les transcriptions
 
-### Phase 2 - Mémoire (2-3 jours)
-- [ ] Modifier `process-voice-transcription` pour mémoire permanente
-- [ ] Implémenter cross-référencement noms propres
-- [ ] Créer trigger/fonction `update_lead_familiarity`
-- [ ] Afficher `familiarity_score` dans `LeadDetailSheet`
+### Phase 2 - Mémoire (2-3 jours) ✅ COMPLÉTÉ
+- [x] Créer table `entity_name_references` pour cross-référencement
+- [x] Ajouter `familiarity_score` et `familiarity_details` aux leads
+- [x] Créer trigger/fonction `update_lead_familiarity` (auto-calculé)
+- [x] Créer fonction `create_entity_reference` pour liaisons
+- [x] Créer fonction `get_entity_references` pour récupération
+- [x] Ajouter 4 nouveaux outils agent : `get_lead_familiarity`, `update_lead_familiarity`, `get_entity_references`, `create_entity_reference`
+- [x] Afficher stats familiarité et références dans AIHealthDashboard
+- [x] Hook `useEntityReferences` pour frontend
 
 ### Phase 3 - Prompts (1-2 jours)
 - [ ] Créer 4 nouveaux prompts dans `ai_prompts`
@@ -590,16 +594,17 @@ await supabase.rpc('increment_ai_metric', {
 
 ## 📅 Planning Estimé
 
-| Phase | Durée | Priorité |
-|-------|-------|----------|
-| Phase 1 - Diagnostic | 2 jours | 🔴 Haute |
-| Phase 2 - Mémoire | 3 jours | 🔴 Haute |
-| Phase 3 - Prompts | 2 jours | 🟡 Moyenne |
-| Phase 4 - Dictionnaire | 2 jours | 🟡 Moyenne |
-| Phase 5 - Liaisons | 3 jours | 🟢 Basse |
-| Phase 6 - Métriques | 1 jour | 🟢 Basse |
+| Phase | Durée | Priorité | Statut |
+|-------|-------|----------|--------|
+| Phase 1 - Diagnostic | 2 jours | 🔴 Haute | ✅ Complété |
+| Phase 2 - Mémoire | 3 jours | 🔴 Haute | ✅ Complété |
+| Phase 3 - Prompts | 2 jours | 🟡 Moyenne | ⏳ À faire |
+| Phase 4 - Dictionnaire | 2 jours | 🟡 Moyenne | ⏳ À faire |
+| Phase 5 - Liaisons | 3 jours | 🟢 Basse | ⏳ À faire |
+| Phase 6 - Métriques | 1 jour | 🟢 Basse | ⏳ À faire |
 
 **Total estimé : 13 jours de développement**
+**Progression : 2/6 phases complétées (Phase 1 & 2)**
 
 ---
 
