@@ -27,7 +27,11 @@ const MAX_TRANSCRIPTION_CHARS = 15000; // Limit text sent to LLM
 // LLM timeout must be BELOW the Edge Function platform timeout (~60-150s) to fail gracefully.
 // If LLM takes too long, we catch the error and persist status before platform kills us.
 const LLM_TIMEOUT_MS = 50_000; // 50s - fail fast before platform timeout
-const WHISPER_TIMEOUT_MS = 55_000; // 55s - streaming helps but still cap it
+
+// Whisper can take longer on long audio even if file size is small.
+// Keep a conservative default, and allow a higher cap for long recordings.
+const WHISPER_TIMEOUT_MS = 55_000; // default
+const WHISPER_TIMEOUT_LONG_MS = 120_000; // for long audio (e.g. >20min)
 
 type LLMProvider = "lovable" | "openai" | "anthropic" | "openrouter";
 
@@ -199,15 +203,24 @@ async function transcribeWithWhisperStreaming(params: {
   const timeout = setTimeout(() => controller.abort("timeout"), WHISPER_TIMEOUT_MS);
 
   try {
-    const res = await fetch(WHISPER_API_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": `multipart/form-data; boundary=${boundary}`,
-      },
-      body: bodyStream,
-      signal: controller.signal,
-    });
+    let res: Response;
+    try {
+      res = await fetch(WHISPER_API_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": `multipart/form-data; boundary=${boundary}`,
+        },
+        body: bodyStream,
+        signal: controller.signal,
+      });
+    } catch (e) {
+      const msg = String((e as Error)?.message ?? e);
+      if (msg.includes("timeout") || msg.includes("abort")) {
+        throw new Error(`WHISPER_TIMEOUT: Transcription took too long (>${Math.round(WHISPER_TIMEOUT_MS / 1000)}s).`);
+      }
+      throw e;
+    }
 
     const txt = await res.text();
     logPreview("Whisper_Response", txt);
@@ -229,14 +242,18 @@ async function transcribeWithWhisperStreaming(params: {
 /**
  * Fallback: Transcribe small audio using blob (for files < 25MB already fetched)
  */
-async function transcribeWithWhisperBlob(audioBlob: Blob, language = "fr"): Promise<string> {
+async function transcribeWithWhisperBlob(
+  audioBlob: Blob,
+  language = "fr",
+  timeoutMs = WHISPER_TIMEOUT_MS
+): Promise<string> {
   if (!OPENAI_API_KEY) {
     throw new Error("openai_api_key_not_configured");
   }
 
   const ext = getExtensionFromMimeType(audioBlob.type);
   const fileName = `audio.${ext}`;
-  console.log(`[Whisper] Blob transcription: ${fileName}, size=${(audioBlob.size / 1024).toFixed(1)} KB`);
+  console.log(`[Whisper] Blob transcription: ${fileName}, size=${(audioBlob.size / 1024).toFixed(1)} KB, timeout=${Math.round(timeoutMs / 1000)}s`);
 
   const formData = new FormData();
   formData.append("file", audioBlob, fileName);
@@ -245,17 +262,26 @@ async function transcribeWithWhisperBlob(audioBlob: Blob, language = "fr"): Prom
   formData.append("response_format", "text");
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort("timeout"), WHISPER_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort("timeout"), timeoutMs);
 
   try {
-    const response = await fetch(WHISPER_API_URL, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
-      },
-      body: formData,
-      signal: controller.signal,
-    });
+    let response: Response;
+    try {
+      response = await fetch(WHISPER_API_URL, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: formData,
+        signal: controller.signal,
+      });
+    } catch (e) {
+      const msg = String((e as Error)?.message ?? e);
+      if (msg.includes("timeout") || msg.includes("abort")) {
+        throw new Error(`WHISPER_TIMEOUT: Transcription took too long (>${Math.round(timeoutMs / 1000)}s).`);
+      }
+      throw e;
+    }
 
     if (response.status === 413) {
       throw new Error("WHISPER_MAX_SIZE: File exceeds Whisper API limit (25MB). Chunking or compression required.");
@@ -1280,11 +1306,16 @@ serve(async (req) => {
       const ext = getExtensionFromMimeType(mimeType);
       const fileName = `audio.${ext}`;
 
-      console.log("[Whisper] Using blob mode for file <= 25MB");
+      const durationSeconds = (job as any)?.duration_seconds as number | null;
+      const whisperTimeoutMs = durationSeconds && durationSeconds >= 20 * 60
+        ? WHISPER_TIMEOUT_LONG_MS
+        : WHISPER_TIMEOUT_MS;
+
+      console.log(`[Whisper] Using blob mode for file <= 25MB (timeout=${Math.round(whisperTimeoutMs / 1000)}s)`);
       const audioRes = await fetch(signed.signedUrl);
       if (!audioRes.ok) throw new Error(`audio_fetch_failed: ${audioRes.status}`);
       const audioBlob = await audioRes.blob();
-      rawText = await transcribeWithWhisperBlob(audioBlob, "fr");
+      rawText = await transcribeWithWhisperBlob(audioBlob, "fr", whisperTimeoutMs);
 
       // Update with transcription result
       await supabase
@@ -1576,14 +1607,16 @@ serve(async (req) => {
       }
     }
 
-    const isExpected = errMsg.includes("LLM_TIMEOUT") || errMsg.includes("rate_limited") || errMsg.includes("credits_exhausted");
+    const isExpected = errMsg.includes("LLM_TIMEOUT") || errMsg.includes("WHISPER_TIMEOUT") || errMsg.includes("rate_limited") || errMsg.includes("credits_exhausted");
     const code = errMsg.includes("LLM_TIMEOUT")
       ? "LLM_TIMEOUT"
-      : errMsg.includes("rate_limited")
-        ? "rate_limited"
-        : errMsg.includes("credits_exhausted")
-          ? "credits_exhausted"
-          : "process_failed";
+      : errMsg.includes("WHISPER_TIMEOUT")
+        ? "WHISPER_TIMEOUT"
+        : errMsg.includes("rate_limited")
+          ? "rate_limited"
+          : errMsg.includes("credits_exhausted")
+            ? "credits_exhausted"
+            : "process_failed";
 
     return new Response(JSON.stringify({ ok: false, error: code, message: errMsg.slice(0, 500) }), {
       status: isExpected ? 200 : 500,

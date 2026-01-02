@@ -227,7 +227,9 @@ export function useCockpitVoiceTranscriptions(
     onError: (error: Error) => {
       const msg = error.message || '';
 
-      if (msg.includes('LLM_TIMEOUT')) {
+      if (msg.includes('WHISPER_TIMEOUT') || msg === 'timeout') {
+        toast.error("Transcription audio trop longue (timeout). Astuce : pour les audios > 20 min, réessaie (le traitement peut prendre plus de temps). Si ça persiste, découpe l'audio en segments plus courts.");
+      } else if (msg.includes('LLM_TIMEOUT')) {
         toast.error("Analyse IA trop longue (timeout). Astuce : ajoute un contexte court, lie à un lead/projet, puis ré-essaie.");
       } else if (msg.includes('rate_limited')) {
         toast.error('Limite de requêtes atteinte, réessayez plus tard');

@@ -551,8 +551,12 @@ export default function CockpitTranscriptionDetail() {
                 </div>
               </div>
               {transcription.status === 'error' && (
-                <Button size="sm" variant="outline" onClick={handleRetry}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                <Button size="sm" variant="outline" onClick={handleRetry} disabled={processTranscription.isPending}>
+                  {processTranscription.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                  )}
                   Réessayer
                 </Button>
               )}
@@ -1122,26 +1126,59 @@ export default function CockpitTranscriptionDetail() {
             <CardContent className="p-6 text-center">
               <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
               <h3 className="font-medium mb-2">Erreur de traitement</h3>
-              {((transcription.ai_metadata as any)?.last_error || '').includes('WHISPER_MAX_SIZE') ? (
-                <>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    <strong>Fichier trop volumineux</strong> — La limite Whisper est de 25 MB.
-                  </p>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Compressez le fichier ou découpez-le en segments plus courts avant de réuploader.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {(transcription.ai_metadata as any)?.last_error || 'Une erreur est survenue'}
-                  </p>
-                  <Button onClick={handleRetry}>
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Réessayer
-                  </Button>
-                </>
-              )}
+              {(() => {
+                const lastError = String(((transcription.ai_metadata as any)?.last_error || '') as string);
+
+                if (lastError.includes('WHISPER_MAX_SIZE')) {
+                  return (
+                    <>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        <strong>Fichier trop volumineux</strong> — La limite Whisper est de 25 MB.
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        Compressez le fichier ou découpez-le en segments plus courts avant de réuploader.
+                      </p>
+                    </>
+                  );
+                }
+
+                if (lastError.includes('WHISPER_TIMEOUT') || lastError === 'timeout') {
+                  return (
+                    <>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        <strong>Transcription trop longue</strong> — le traitement audio a dépassé le délai.
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        Réessayez : les audios &gt; 20 min peuvent nécessiter plus de temps. Si ça persiste, découpez l'audio en segments plus courts.
+                      </p>
+                      <Button onClick={handleRetry} disabled={processTranscription.isPending}>
+                        {processTranscription.isPending ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                        )}
+                        Réessayer
+                      </Button>
+                    </>
+                  );
+                }
+
+                return (
+                  <>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {lastError || 'Une erreur est survenue'}
+                    </p>
+                    <Button onClick={handleRetry} disabled={processTranscription.isPending}>
+                      {processTranscription.isPending ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                      )}
+                      Réessayer
+                    </Button>
+                  </>
+                );
+              })()}
             </CardContent>
           </Card>
         ) : (
