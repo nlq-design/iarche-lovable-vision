@@ -25,7 +25,8 @@ const EDGE_FUNCTION_MAX_FILE_SIZE = 250 * 1024 * 1024; // 250MB - streaming allo
 const MAX_TRANSCRIPTION_CHARS = 15000; // Limit text sent to LLM
 
 // LLM calls can legitimately take >30s on long transcripts; keep a higher ceiling to avoid false timeouts.
-const LLM_TIMEOUT_MS = 60_000;
+// NOTE: GPT-5-mini tool-calls can sometimes exceed 60s on long payloads.
+const LLM_TIMEOUT_MS = 120_000;
 const WHISPER_TIMEOUT_MS = 120_000; // 2 minutes for large files
 
 type LLMProvider = "lovable" | "openai" | "anthropic" | "openrouter";
@@ -585,8 +586,31 @@ function selectTranscriptionPromptSlug(job: VoiceJob): string {
 }
 
 // deno-lint-ignore no-explicit-any
+async function loadMasterPrompt(supabase: any) {
+  // Prefer the global master-agent, fallback to cockpit-master-assistant
+  const { data: master } = await supabase
+    .from("ai_prompts")
+    .select("id, slug, system_prompt, user_prompt, output_schema, model_config")
+    .eq("slug", "master-agent")
+    .maybeSingle();
+
+  if (master) return master;
+
+  const { data: cockpit } = await supabase
+    .from("ai_prompts")
+    .select("id, slug, system_prompt, user_prompt, output_schema, model_config")
+    .eq("slug", "cockpit-master-assistant")
+    .maybeSingle();
+
+  return cockpit ?? null;
+}
+
+// deno-lint-ignore no-explicit-any
 async function loadPromptProfile(supabase: any, prompt_profile_id: string | null, job?: VoiceJob) {
-  // 1. If explicit prompt profile ID is provided, use it
+  // Secondary prompt = the specialized transcription prompt
+  let secondary: any = null;
+
+  // 1) Explicit prompt profile
   if (prompt_profile_id) {
     const { data, error } = await supabase
       .from("ai_prompts")
@@ -595,38 +619,61 @@ async function loadPromptProfile(supabase: any, prompt_profile_id: string | null
       .single();
 
     if (error) throw new Error(`prompt_profile_not_found: ${error.message}`);
-    console.log(`[Prompt] Using explicit profile: ${data?.slug}`);
-    return data;
+    secondary = data;
+    console.log(`[Prompt] Using explicit profile: ${secondary?.slug}`);
+  } else {
+    // 2) Auto-select based on context (lead/project)
+    const selectedSlug = job ? selectTranscriptionPromptSlug(job) : "transcription_rdv_commercial";
+
+    const { data: ctxPrompt } = await supabase
+      .from("ai_prompts")
+      .select("id, slug, system_prompt, user_prompt, output_schema, model_config")
+      .eq("slug", selectedSlug)
+      .maybeSingle();
+
+    if (ctxPrompt) {
+      secondary = ctxPrompt;
+      console.log(`[Prompt] Auto-selected: ${secondary.slug}`);
+    }
   }
 
-  // 2. Auto-select based on context (lead/project)
-  const selectedSlug = job ? selectTranscriptionPromptSlug(job) : "transcription_rdv_commercial";
-  
-  const { data: contextPrompt } = await supabase
-    .from("ai_prompts")
-    .select("id, slug, system_prompt, user_prompt, output_schema, model_config")
-    .eq("slug", selectedSlug)
-    .maybeSingle();
+  // 3) Fallback secondary
+  if (!secondary) {
+    const { data: fallback } = await supabase
+      .from("ai_prompts")
+      .select("id, slug, system_prompt, user_prompt, output_schema, model_config")
+      .eq("slug", "transcription_rdv_commercial")
+      .maybeSingle();
 
-  if (contextPrompt) {
-    console.log(`[Prompt] Auto-selected: ${contextPrompt.slug}`);
-    return contextPrompt;
+    if (fallback) {
+      secondary = fallback;
+      console.log(`[Prompt] Fallback to: transcription_rdv_commercial`);
+    }
   }
 
-  // 3. Fallback: try default commercial prompt
-  const { data: fallbackPrompt } = await supabase
-    .from("ai_prompts")
-    .select("id, slug, system_prompt, user_prompt, output_schema, model_config")
-    .eq("slug", "transcription_rdv_commercial")
-    .maybeSingle();
+  // Master prompt is always prepended to the system prompt (as requested)
+  const master = await loadMasterPrompt(supabase);
+  if (master?.slug) console.log(`[Prompt] Master loaded: ${master.slug}`);
 
-  if (fallbackPrompt) {
-    console.log(`[Prompt] Fallback to: transcription_rdv_commercial`);
-    return fallbackPrompt;
+  if (!master && !secondary) {
+    console.warn("[Prompt] No prompts found - using minimal fallback");
+    return null;
   }
 
-  console.warn("[Prompt] No transcription prompt found - using minimal fallback");
-  return null;
+  const combinedSystem = [master?.system_prompt, secondary?.system_prompt]
+    .filter(Boolean)
+    .join("\n\n");
+
+  // Keep user_prompt/output_schema/model_config from secondary (the specialized one)
+  const out = {
+    ...(secondary ?? master),
+    system_prompt: combinedSystem,
+    user_prompt: secondary?.user_prompt ?? null,
+    output_schema: secondary?.output_schema ?? null,
+    model_config: (secondary?.model_config ?? master?.model_config) ?? null,
+  };
+
+  return out;
 }
 
 interface SemanticSearchResult {
@@ -750,7 +797,8 @@ async function fetchEntityContext(supabase: any, job: VoiceJob, transcript?: str
     solution = data ?? null;
   }
 
-  const shouldAutoDetect = !job.project_id && !job.solution_id && transcript;
+  // IMPORTANT: ensure this is a boolean (previously this accidentally became the transcript string)
+  const shouldAutoDetect = !job.project_id && !job.solution_id && !!transcript;
   if (shouldAutoDetect) {
     console.log("[Context] RAG auto-detection enabled");
     const aliasMap = await fetchKeywordAliases(supabase);
@@ -1012,15 +1060,18 @@ serve(async (req) => {
   }
 
   let jobId: string | null = null;
+  let initialStatus: string | null = null;
+  let forceReanalyze = false;
 
   try {
     const body = await req.json();
     jobId = body.job_id;
-    
+    forceReanalyze = body?.force_reanalyze === true;
+
     if (!jobId) {
-      return new Response(JSON.stringify({ error: "missing_job_id" }), { 
-        status: 400, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      return new Response(JSON.stringify({ error: "missing_job_id" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
@@ -1033,25 +1084,23 @@ serve(async (req) => {
       .single();
 
     if (jerr || !job) {
-      return new Response(JSON.stringify({ error: "job_not_found" }), { 
-        status: 404, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      return new Response(JSON.stringify({ error: "job_not_found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
     const vjob = job as VoiceJob;
-    
-    // Check for force_reanalyze parameter - allows re-running LLM analysis on completed transcriptions
-    const forceReanalyze = body?.force_reanalyze === true;
-    
+    initialStatus = vjob.status;
+
+    // Allows re-running LLM analysis on completed transcriptions
     if (vjob.status === "done" && !forceReanalyze) {
-      return new Response(JSON.stringify({ ok: true, already_done: true }), { 
-        status: 200, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      return new Response(JSON.stringify({ ok: true, already_done: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
-    
-    // If force reanalyze, log it
+
     if (forceReanalyze && vjob.status === "done") {
       console.log(`[Job] Force re-analyzing completed transcription ${jobId}`);
     }
@@ -1278,13 +1327,32 @@ serve(async (req) => {
     if (jobId) {
       try {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+        // Preserve existing metadata (and, on re-analysis, avoid flipping a previously done item to error)
+        const { data: current } = await supabase
+          .from("voice_transcriptions")
+          .select("ai_metadata")
+          .eq("id", jobId)
+          .maybeSingle();
+
+        const currentMeta = (current as any)?.ai_metadata ?? {};
+        const isReanalyzeFailure = forceReanalyze && initialStatus === "done";
+
         await supabase
           .from("voice_transcriptions")
           .update({
-            status: "error",
-            ai_metadata: { 
-              last_error: errMsg.slice(0, 1000), 
-              last_error_at: new Date().toISOString() 
+            status: isReanalyzeFailure ? "done" : "error",
+            ai_metadata: {
+              ...currentMeta,
+              ...(isReanalyzeFailure
+                ? {
+                    last_reanalyze_error: errMsg.slice(0, 1000),
+                    last_reanalyze_error_at: new Date().toISOString(),
+                  }
+                : {
+                    last_error: errMsg.slice(0, 1000),
+                    last_error_at: new Date().toISOString(),
+                  }),
             },
           })
           .eq("id", jobId);
