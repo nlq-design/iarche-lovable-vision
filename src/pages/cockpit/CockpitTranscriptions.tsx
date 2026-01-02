@@ -50,10 +50,15 @@ export default function CockpitTranscriptions() {
   const { transcriptions, isLoading, stats, refetch } = useCockpitVoiceTranscriptions();
 
   const filteredTranscriptions = transcriptions.filter(t => {
+    const searchLower = searchQuery.toLowerCase();
     const matchesSearch = searchQuery === '' || 
-      t.summary?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.lead?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.project?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      t.title?.toLowerCase().includes(searchLower) ||
+      (typeof t.summary?.title === 'string' && t.summary.title.toLowerCase().includes(searchLower)) ||
+      t.lead?.name?.toLowerCase().includes(searchLower) ||
+      t.lead?.company?.toLowerCase().includes(searchLower) ||
+      t.project?.name?.toLowerCase().includes(searchLower) ||
+      t.solution?.title?.toLowerCase().includes(searchLower) ||
+      t.lead_contact?.name?.toLowerCase().includes(searchLower);
     
     const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
     
