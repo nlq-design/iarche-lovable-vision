@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,15 +25,13 @@ import {
   Loader2,
   Users,
   ListTodo,
-  CalendarDays,
   RefreshCw,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useCockpitVoiceTranscriptions, TRANSCRIPTION_STATUSES } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { CreateTranscriptionModal } from '@/components/cockpit/transcriptions/CreateTranscriptionModal';
-import { TranscriptionDetailSheet } from '@/components/cockpit/transcriptions/TranscriptionDetailSheet';
 import { toast } from 'sonner';
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
@@ -46,31 +44,13 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
 
 export default function CockpitTranscriptions() {
   const navigate = useNavigate();
-  const { slug } = useParams<{ slug?: string }>();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [selectedTranscription, setSelectedTranscription] = useState<string | null>(null);
   const [isReanalyzing, setIsReanalyzing] = useState(false);
 
   const { transcriptions, isLoading, stats, refetch, processTranscription } = useCockpitVoiceTranscriptions();
-
-  // URL-driven selection: /cockpit/transcriptions/:slug
-  useEffect(() => {
-    if (!slug) return;
-
-    const match = transcriptions.find((t) => t.slug === slug || t.id === slug);
-    if (match) {
-      setSelectedTranscription(match.id);
-      return;
-    }
-
-    if (!isLoading) {
-      toast.error('Transcription introuvable');
-      navigate('/cockpit/transcriptions', { replace: true });
-    }
-  }, [slug, transcriptions, isLoading, navigate]);
 
   // Batch re-analyze all completed transcriptions
   const handleBatchReanalyze = async () => {
@@ -359,18 +339,6 @@ export default function CockpitTranscriptions() {
         onSuccess={() => {
           refetch();
           setCreateModalOpen(false);
-        }}
-      />
-
-      {/* Detail Sheet */}
-      <TranscriptionDetailSheet
-        transcriptionId={selectedTranscription}
-        open={!!selectedTranscription}
-        onOpenChange={(open) => {
-          if (!open) {
-            setSelectedTranscription(null);
-            if (slug) navigate('/cockpit/transcriptions', { replace: true });
-          }
         }}
       />
     </CockpitLayout>
