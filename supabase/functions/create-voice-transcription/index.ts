@@ -52,9 +52,24 @@ serve(async (req) => {
       auto_create_tasks = false,
       prompt_profile_id = null,
       llm_model_id = null,
+      pre_transcribed_text = null, // For client-side chunked transcription
+      transcription_date = null,
     } = body;
 
     console.log(`Creating voice transcription job for workspace: ${workspace_id}`);
+
+    // If pre_transcribed_text is provided, skip to analyzing phase
+    const initialStatus = pre_transcribed_text ? "analyzing" : "queued";
+    const initialMetadata: Record<string, unknown> = {
+      autonomy_level: "N0",
+      validated_by_human: false,
+      validation_required: false,
+    };
+
+    if (pre_transcribed_text) {
+      initialMetadata.chunked_client_side = true;
+      initialMetadata.pre_transcribed = true;
+    }
 
     const { data, error } = await supabase
       .from("voice_transcriptions")
@@ -69,13 +84,11 @@ serve(async (req) => {
         auto_create_tasks,
         prompt_profile_id,
         llm_model_id,
+        transcription_date,
         created_by: u.user.id,
-        status: "queued",
-        ai_metadata: {
-          autonomy_level: "N0",
-          validated_by_human: false,
-          validation_required: false,
-        },
+        status: initialStatus,
+        raw_transcript: pre_transcribed_text, // Store pre-transcribed text
+        ai_metadata: initialMetadata,
       })
       .select("id,status,created_at")
       .single();
