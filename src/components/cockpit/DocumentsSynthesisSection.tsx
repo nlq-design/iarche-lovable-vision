@@ -16,7 +16,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 interface DocumentsSynthesisSectionProps {
-  entityType: 'lead' | 'project' | 'solution' | 'document';
+  entityType: 'lead' | 'project' | 'solution' | 'document' | 'partner' | 'transcription';
   entityId: string;
   summary: string | null;
   documentsCount: number;
