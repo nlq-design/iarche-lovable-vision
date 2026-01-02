@@ -1016,95 +1016,126 @@ serve(async (req) => {
 
     console.log(`[Job] Processing ${jobId}`);
 
-    await supabase.from("voice_transcriptions").update({ status: "transcribing" }).eq("id", jobId);
+    // Check if already transcribed (client-side chunking case)
+    const existingRawTranscript = (job as Record<string, unknown>).raw_transcript as string | null;
+    const aiMeta = vjob.ai_metadata ?? {};
+    const isPreTranscribed = (aiMeta as Record<string, unknown>).pre_transcribed === true;
 
-    // Get signed URL for audio
-    const bucket = "voice-transcriptions";
-    const { data: signed, error: signErr } = await supabase.storage
-      .from(bucket)
-      .createSignedUrl(vjob.storage_path, 600);
-    
-    if (signErr || !signed?.signedUrl) {
-      throw new Error(`signed_url_failed: ${signErr?.message ?? "no_url"}`);
-    }
-
-    // Fetch audio with HEAD first to check size
-    const headRes = await fetch(signed.signedUrl, { method: "HEAD" });
-    const contentLength = headRes.headers.get("content-length");
-    const sizeBytes = contentLength ? Number(contentLength) : null;
-    const mimeType = (headRes.headers.get("content-type") ?? "application/octet-stream").split(";")[0];
-    const fileSizeMB = typeof sizeBytes === "number" && !Number.isNaN(sizeBytes) ? sizeBytes / 1024 / 1024 : null;
-
-    console.log(`[Audio] size=${fileSizeMB ? fileSizeMB.toFixed(2) + " MB" : "unknown"}, type=${mimeType}`);
-
-    // Safety cap
-    if (typeof sizeBytes === "number" && sizeBytes > EDGE_FUNCTION_MAX_FILE_SIZE) {
-      console.error(`[REJECTED] File too large: ${fileSizeMB?.toFixed(2)} MB`);
-      await supabase.from("voice_transcriptions").update({
-        status: "error",
-        ai_metadata: {
-          ...(vjob.ai_metadata ?? {}),
-          error_code: "file_too_large",
-          error_message: `Fichier trop volumineux (${fileSizeMB?.toFixed(1)} MB). Limite: ${(EDGE_FUNCTION_MAX_FILE_SIZE / 1024 / 1024)} MB.`,
-          rejected_at: new Date().toISOString(),
-        },
-      }).eq("id", jobId);
-
-      return new Response(JSON.stringify({
-        ok: false,
-        error: "file_too_large",
-        message: `Fichier audio trop volumineux. Maximum: ${(EDGE_FUNCTION_MAX_FILE_SIZE / 1024 / 1024)} MB.`,
-      }), {
-        status: 422,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Transcription: use streaming for files > 25MB or unknown size
     let rawText: string;
-    const ext = getExtensionFromMimeType(mimeType);
-    const fileName = `audio.${ext}`;
 
-    if (sizeBytes === null || sizeBytes > WHISPER_MAX_SIZE_BYTES) {
-      // STREAMING: Don't load into memory
-      console.log("[Whisper] Using streaming mode for large/unknown size file");
-      const audioRes = await fetch(signed.signedUrl);
-      if (!audioRes.ok || !audioRes.body) {
-        throw new Error(`audio_fetch_failed: ${audioRes.status}`);
-      }
-      rawText = await transcribeWithWhisperStreaming({
-        audioStream: audioRes.body,
-        fileName,
-        mimeType,
-        language: "fr",
-      });
+    if (existingRawTranscript && existingRawTranscript.trim().length > 0 && isPreTranscribed) {
+      // Use pre-transcribed text from client-side chunking
+      console.log("[Process] Using pre-transcribed text from client-side chunking");
+      rawText = existingRawTranscript;
+      
+      // Update status to analyzing (skip transcribing step)
+      await supabase.from("voice_transcriptions").update({ 
+        status: "analyzing",
+        ai_metadata: {
+          ...aiMeta,
+          source: "client-chunked-whisper",
+          transcription_skipped: true,
+          transcribed_at: new Date().toISOString(),
+        }
+      }).eq("id", jobId);
     } else {
-      // BLOB: Safe for small files
-      console.log("[Whisper] Using blob mode for small file");
+      // Need to transcribe the audio
+      await supabase.from("voice_transcriptions").update({ status: "transcribing" }).eq("id", jobId);
+
+      // Get signed URL for audio
+      const bucket = "voice-transcriptions";
+      const { data: signed, error: signErr } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(vjob.storage_path, 600);
+      
+      if (signErr || !signed?.signedUrl) {
+        throw new Error(`signed_url_failed: ${signErr?.message ?? "no_url"}`);
+      }
+
+      // Fetch audio with HEAD first to check size
+      const headRes = await fetch(signed.signedUrl, { method: "HEAD" });
+      const contentLength = headRes.headers.get("content-length");
+      const sizeBytes = contentLength ? Number(contentLength) : null;
+      const mimeType = (headRes.headers.get("content-type") ?? "application/octet-stream").split(";")[0];
+      const fileSizeMB = typeof sizeBytes === "number" && !Number.isNaN(sizeBytes) ? sizeBytes / 1024 / 1024 : null;
+
+      console.log(`[Audio] size=${fileSizeMB ? fileSizeMB.toFixed(2) + " MB" : "unknown"}, type=${mimeType}`);
+
+      // Check if file exceeds Whisper API limit - require client-side chunking
+      if (typeof sizeBytes === "number" && sizeBytes > WHISPER_MAX_SIZE_BYTES) {
+        console.error(`[Process] WHISPER_MAX_SIZE: File exceeds Whisper API limit (25MB). Chunking or compression required.`);
+        await supabase.from("voice_transcriptions").update({
+          status: "error",
+          ai_metadata: {
+            ...aiMeta,
+            error_code: "WHISPER_MAX_SIZE",
+            error_message: `Fichier trop volumineux (${fileSizeMB?.toFixed(1)} MB). Utilisez le découpage client-side pour les fichiers > 25MB.`,
+            rejected_at: new Date().toISOString(),
+          },
+        }).eq("id", jobId);
+
+        return new Response(JSON.stringify({
+          ok: false,
+          error: "process_failed",
+          details: "WHISPER_MAX_SIZE: File exceeds Whisper API limit (25MB). Chunking or compression required.",
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Safety cap for extreme files (streaming limit)
+      if (typeof sizeBytes === "number" && sizeBytes > EDGE_FUNCTION_MAX_FILE_SIZE) {
+        console.error(`[REJECTED] File too large: ${fileSizeMB?.toFixed(2)} MB`);
+        await supabase.from("voice_transcriptions").update({
+          status: "error",
+          ai_metadata: {
+            ...aiMeta,
+            error_code: "file_too_large",
+            error_message: `Fichier trop volumineux (${fileSizeMB?.toFixed(1)} MB). Limite: ${(EDGE_FUNCTION_MAX_FILE_SIZE / 1024 / 1024)} MB.`,
+            rejected_at: new Date().toISOString(),
+          },
+        }).eq("id", jobId);
+
+        return new Response(JSON.stringify({
+          ok: false,
+          error: "file_too_large",
+          message: `Fichier audio trop volumineux. Maximum: ${(EDGE_FUNCTION_MAX_FILE_SIZE / 1024 / 1024)} MB.`,
+        }), {
+          status: 422,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Transcription: files <= 25MB only (larger files use client-side chunking)
+      const ext = getExtensionFromMimeType(mimeType);
+      const fileName = `audio.${ext}`;
+
+      console.log("[Whisper] Using blob mode for file <= 25MB");
       const audioRes = await fetch(signed.signedUrl);
       if (!audioRes.ok) throw new Error(`audio_fetch_failed: ${audioRes.status}`);
       const audioBlob = await audioRes.blob();
       rawText = await transcribeWithWhisperBlob(audioBlob, "fr");
+
+      // Update with transcription result
+      await supabase
+        .from("voice_transcriptions")
+        .update({
+          raw_transcript: rawText,
+          segments: null,
+          status: "analyzing",
+          ai_metadata: {
+            ...aiMeta,
+            source: "openai-whisper",
+            transcribed_at: new Date().toISOString(),
+          },
+        })
+        .eq("id", jobId);
     }
 
     logPreview("Transcription", rawText);
 
-    await supabase
-      .from("voice_transcriptions")
-      .update({
-        raw_transcript: rawText,
-        segments: null,
-        status: "analyzing",
-        ai_metadata: {
-          ...(vjob.ai_metadata ?? {}),
-          source: "openai-whisper",
-          stt_model: "whisper-1",
-          file_size_mb: fileSizeMB?.toFixed(2) ?? null,
-          transcript_length: rawText.length,
-          generated_at: new Date().toISOString(),
-        },
-      })
-      .eq("id", jobId);
+    // Note: raw_transcript update is now handled in the transcription branches above
 
     // Context + RAG
     const ctx = await fetchEntityContext(supabase, vjob, rawText);
