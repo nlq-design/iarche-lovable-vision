@@ -620,7 +620,7 @@ export function TranscriptionDetailSheet({
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <p className="text-sm">{summary.executive_summary}</p>
+                          <p className="text-sm">{typeof summary.executive_summary === 'string' ? summary.executive_summary : JSON.stringify(summary.executive_summary)}</p>
                         </CardContent>
                       </Card>
 
@@ -635,7 +635,7 @@ export function TranscriptionDetailSheet({
                               {summary.key_points.map((point, i) => (
                                 <li key={i} className="text-sm flex items-start gap-2">
                                   <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
-                                  {point}
+                                  {typeof point === 'string' ? point : JSON.stringify(point)}
                                 </li>
                               ))}
                             </ul>
@@ -654,7 +654,7 @@ export function TranscriptionDetailSheet({
                               {summary.decisions.map((decision, i) => (
                                 <li key={i} className="text-sm flex items-start gap-2">
                                   <ArrowRight className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                                  {decision}
+                                  {typeof decision === 'string' ? decision : JSON.stringify(decision)}
                                 </li>
                               ))}
                             </ul>
@@ -674,7 +674,7 @@ export function TranscriptionDetailSheet({
                           <CardContent>
                             <ul className="space-y-1">
                               {summary.risks_blockers.map((risk, i) => (
-                                <li key={i} className="text-sm">{risk}</li>
+                                <li key={i} className="text-sm">{typeof risk === 'string' ? risk : JSON.stringify(risk)}</li>
                               ))}
                             </ul>
                           </CardContent>
@@ -693,7 +693,7 @@ export function TranscriptionDetailSheet({
                           <CardContent>
                             <ul className="space-y-1">
                               {summary.questions_open.map((q, i) => (
-                                <li key={i} className="text-sm">{q}</li>
+                                <li key={i} className="text-sm">{typeof q === 'string' ? q : JSON.stringify(q)}</li>
                               ))}
                             </ul>
                           </CardContent>
@@ -707,7 +707,7 @@ export function TranscriptionDetailSheet({
                             <CardTitle className="text-sm">Prochaines étapes</CardTitle>
                           </CardHeader>
                           <CardContent>
-                            <p className="text-sm">{summary.next_steps}</p>
+                            <p className="text-sm">{typeof summary.next_steps === 'string' ? summary.next_steps : JSON.stringify(summary.next_steps)}</p>
                           </CardContent>
                         </Card>
                       )}
