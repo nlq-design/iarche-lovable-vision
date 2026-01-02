@@ -778,6 +778,41 @@ async function searchSimilarResources(
 }
 
 // deno-lint-ignore no-explicit-any
+async function fetchRecentMemory(supabase: any, workspaceId: string, leadId?: string | null, projectId?: string | null): Promise<any[]> {
+  try {
+    // Fetch recent contextual memory from ai_agent_memory
+    let query = supabase
+      .from("ai_agent_memory")
+      .select("memory_type, category, entity_type, entity_id, content, metadata, importance_score, created_at")
+      .eq("workspace_id", workspaceId)
+      .order("importance_score", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(15);
+    
+    // Filter by linked entities if available
+    if (leadId) {
+      query = query.or(`entity_id.eq.${leadId},entity_type.eq.lead`);
+    }
+    if (projectId) {
+      query = query.or(`entity_id.eq.${projectId},entity_type.eq.project`);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      console.warn("[Memory] Failed to fetch:", error.message?.slice(0, 100));
+      return [];
+    }
+    
+    console.log(`[Memory] Loaded ${data?.length ?? 0} memory entries`);
+    return data ?? [];
+  } catch (err) {
+    logError("Memory", err);
+    return [];
+  }
+}
+
+// deno-lint-ignore no-explicit-any
 async function fetchEntityContext(supabase: any, job: VoiceJob, transcript?: string) {
   // deno-lint-ignore no-explicit-any
   let lead: any = null;
@@ -786,6 +821,11 @@ async function fetchEntityContext(supabase: any, job: VoiceJob, transcript?: str
   // deno-lint-ignore no-explicit-any
   let solution: any = null;
   let detectedSolutions: SemanticSearchResult[] = [];
+  // deno-lint-ignore no-explicit-any
+  let recentMemory: any[] = [];
+
+  // Always fetch keyword aliases for normalization
+  const aliasMap = await fetchKeywordAliases(supabase);
 
   if (job.project_id) {
     const { data } = await supabase.from("projects").select("*").eq("id", job.project_id).single();
@@ -806,7 +846,6 @@ async function fetchEntityContext(supabase: any, job: VoiceJob, transcript?: str
   const shouldAutoDetect = !job.project_id && !job.solution_id && !!transcript;
   if (shouldAutoDetect) {
     console.log("[Context] RAG auto-detection enabled");
-    const aliasMap = await fetchKeywordAliases(supabase);
     detectedSolutions = await searchSimilarResources(transcript, ["solution", "service"], aliasMap);
   }
 
@@ -856,6 +895,9 @@ async function fetchEntityContext(supabase: any, job: VoiceJob, transcript?: str
         .limit(50)).data
     : [];
 
+  // Fetch recent AI memory for this workspace/lead/project context
+  recentMemory = await fetchRecentMemory(supabase, job.workspace_id, leadId, job.project_id);
+
   return { 
     lead, 
     leadContacts,
@@ -866,6 +908,8 @@ async function fetchEntityContext(supabase: any, job: VoiceJob, transcript?: str
     tasks: tasks ?? [],
     detectedSolutions,
     autoDetectionUsed: shouldAutoDetect,
+    aliasMap,
+    recentMemory,
   };
 }
 
@@ -875,7 +919,7 @@ function buildLLM(
   systemPrompt: string,
   userPrompt: string | null,
   transcriptText: string,
-  ctx: EntityContext,
+  ctx: EntityContext & { aliasMap?: Map<string, string>; recentMemory?: any[] },
   schema: Record<string, unknown> | null,
   analysisContext: string | null
 ) {
@@ -898,6 +942,23 @@ function buildLLM(
       }))
     : [];
 
+  // Format dictionary aliases for context
+  const dictionaryContext = ctx.aliasMap && ctx.aliasMap.size > 0
+    ? Array.from(ctx.aliasMap.entries()).slice(0, 50).map(([alias, canonical]) => ({
+        alias,
+        canonical,
+      }))
+    : [];
+
+  // Format memory for context
+  const memoryContext = ctx.recentMemory?.slice(0, 10).map(m => ({
+    type: m.memory_type,
+    category: m.category,
+    content: m.content?.slice(0, 300),
+    importance: m.importance_score,
+    entity_type: m.entity_type,
+  })) ?? [];
+
   const payload = {
     transcript: transcriptText.slice(0, MAX_TRANSCRIPTION_CHARS),
     analysis_context: analysisContext ?? null,
@@ -912,6 +973,14 @@ function buildLLM(
     rag_context: {
       auto_detection_used: ctx.autoDetectionUsed ?? false,
       detected_solutions: detectedSolutionsContext,
+    },
+    dictionary_context: {
+      aliases_count: ctx.aliasMap?.size ?? 0,
+      sample_aliases: dictionaryContext,
+    },
+    memory_context: {
+      entries_count: ctx.recentMemory?.length ?? 0,
+      recent_memories: memoryContext,
     },
     output_schema: schema ?? null,
     rules: {
@@ -1434,6 +1503,34 @@ serve(async (req) => {
       .eq("id", jobId);
 
     console.log(`[Job] ${jobId} completed`);
+
+    // Trigger entity extraction to enrich dictionary (fire-and-forget)
+    try {
+      console.log(`[PostProcess] Triggering extract-entities for transcription ${jobId}`);
+      fetch(`${SUPABASE_URL}/functions/v1/extract-entities`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          mode: "scan_entity",
+          entity_type: "voice_transcription",
+          entity_id: jobId,
+        }),
+      }).then(res => {
+        if (res.ok) {
+          console.log(`[PostProcess] extract-entities triggered successfully`);
+        } else {
+          console.warn(`[PostProcess] extract-entities returned ${res.status}`);
+        }
+      }).catch(err => {
+        console.warn(`[PostProcess] extract-entities failed:`, err?.message?.slice(0, 100));
+      });
+    } catch (extractErr) {
+      // Non-blocking - don't fail the transcription if entity extraction fails
+      console.warn("[PostProcess] Failed to trigger extract-entities:", extractErr);
+    }
 
     return new Response(JSON.stringify({ ok: true, job_id: jobId, created_tasks: createdTasks.length }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
