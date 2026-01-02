@@ -248,24 +248,27 @@ export function CreateTranscriptionModal({
           const fileName = `${crypto.randomUUID()}.${fileExt}`;
           const storagePath = `${DEFAULT_WORKSPACE_ID}/${userId}/${fileName}`;
 
-          // Check if file needs chunking (> 24MB)
-          const requiresChunking = needsChunking(audioBlob);
+          // Get audio metadata first to determine if chunking is needed
+          const audioMeta = await getAudioMetadata(audioBlob);
+          
+          // Check if file needs chunking (> 24MB OR duration > 20 min)
+          const requiresChunking = needsChunking(audioBlob, audioMeta.duration);
           
           if (requiresChunking) {
-            // Large file: chunk + transcribe client-side, then create job with transcript
+            // Large/long file: chunk + transcribe client-side, then create job with transcript
             const estimatedChunks = estimateChunks(audioBlob.size);
-            toast.info(`Fichier volumineux détecté (${(audioBlob.size / (1024 * 1024)).toFixed(1)} MB) - Découpage en ~${estimatedChunks} segments...`);
+            const reason = audioMeta.duration && audioMeta.duration > 20 * 60 
+              ? `Audio long (${Math.round(audioMeta.duration / 60)} min)`
+              : `Fichier volumineux (${(audioBlob.size / (1024 * 1024)).toFixed(1)} MB)`;
+            toast.info(`${reason} - Découpage en ~${estimatedChunks} segments...`);
             
             try {
-              // Get audio metadata in parallel with transcription
-              const [transcriptText, audioMeta] = await Promise.all([
-                transcribeLargeAudio(
-                  audioBlob,
-                  'fr',
-                  (progress) => setChunkingProgress(progress)
-                ),
-                getAudioMetadata(audioBlob),
-              ]);
+              // Transcribe with chunking (audioMeta already fetched above)
+              const transcriptText = await transcribeLargeAudio(
+                audioBlob,
+                'fr',
+                (progress) => setChunkingProgress(progress)
+              );
               
               // Upload original file to storage (for reference)
               const { error: uploadError } = await supabase.storage
@@ -305,9 +308,7 @@ export function CreateTranscriptionModal({
               errorCount++;
             }
           } else {
-            // Small file: standard flow - get metadata first
-            const audioMeta = await getAudioMetadata(audioBlob);
-            
+            // Small/short file: standard flow (audioMeta already fetched above)
             const { error: uploadError } = await supabase.storage
               .from('voice-transcriptions')
               .upload(storagePath, audioBlob);
