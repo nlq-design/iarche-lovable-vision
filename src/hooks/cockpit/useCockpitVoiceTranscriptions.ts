@@ -228,15 +228,17 @@ export function useCockpitVoiceTranscriptions(
       const msg = error.message || '';
 
       if (msg.includes('WHISPER_TIMEOUT') || msg === 'timeout') {
-        toast.error("Transcription audio trop longue (timeout). Astuce : pour les audios > 20 min, réessaie (le traitement peut prendre plus de temps). Si ça persiste, découpe l'audio en segments plus courts.");
+        toast.error("Transcription audio trop longue (timeout Whisper). Clique sur 'Réessayer (découpage)' pour traiter l'audio en segments.", { duration: 8000 });
       } else if (msg.includes('LLM_TIMEOUT')) {
-        toast.error("Analyse IA trop longue (timeout). Astuce : ajoute un contexte court, lie à un lead/projet, puis ré-essaie.");
+        toast.error("Analyse IA trop longue (timeout LLM). Ajoute un contexte court puis ré-essaie.", { duration: 6000 });
       } else if (msg.includes('rate_limited')) {
-        toast.error('Limite de requêtes atteinte, réessayez plus tard');
+        toast.error('Limite de requêtes atteinte, réessayez dans quelques minutes');
       } else if (msg.includes('credits_exhausted')) {
         toast.error('Crédits IA épuisés, veuillez recharger');
+      } else if (msg.includes('WHISPER_MAX_SIZE')) {
+        toast.error("Fichier trop volumineux (>25MB). Utilisez le découpage automatique lors de l'upload.");
       } else {
-        toast.error(`Erreur de traitement: ${msg}`);
+        toast.error(`Erreur de traitement: ${msg.slice(0, 150)}`);
       }
     },
   });

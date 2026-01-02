@@ -29,9 +29,10 @@ const MAX_TRANSCRIPTION_CHARS = 15000; // Limit text sent to LLM
 const LLM_TIMEOUT_MS = 50_000; // 50s - fail fast before platform timeout
 
 // Whisper can take longer on long audio even if file size is small.
-// Keep a conservative default, and allow a higher cap for long recordings.
-const WHISPER_TIMEOUT_MS = 55_000; // default
-const WHISPER_TIMEOUT_LONG_MS = 120_000; // for long audio (e.g. >20min)
+// FIXED: Increase default timeout for files near the 25MB limit (often 20-40min audio).
+// The 55s default was causing timeouts on medium-length compressed audio.
+const WHISPER_TIMEOUT_MS = 90_000; // 90s default (covers most 10-30min audio)
+const WHISPER_TIMEOUT_LONG_MS = 180_000; // 180s for long audio (>15min or >15MB)
 
 type LLMProvider = "lovable" | "openai" | "anthropic" | "openrouter";
 
@@ -1235,7 +1236,13 @@ serve(async (req) => {
         .eq("id", jobId);
     } else {
       // Need to transcribe the audio
-      await supabase.from("voice_transcriptions").update({ status: "transcribing" }).eq("id", jobId);
+      await supabase.from("voice_transcriptions").update({ 
+        status: "transcribing",
+        ai_metadata: {
+          ...aiMeta,
+          transcription_started_at: new Date().toISOString(),
+        }
+      }).eq("id", jobId);
 
       // Get signed URL for audio
       const bucket = "voice-transcriptions";
@@ -1307,11 +1314,19 @@ serve(async (req) => {
       const fileName = `audio.${ext}`;
 
       const durationSeconds = (job as any)?.duration_seconds as number | null;
-      const whisperTimeoutMs = durationSeconds && durationSeconds >= 20 * 60
-        ? WHISPER_TIMEOUT_LONG_MS
-        : WHISPER_TIMEOUT_MS;
+      // FIXED: Use longer timeout for:
+      // - Files with known duration >= 15 min
+      // - Files >= 15MB (often contain 20-40min of compressed audio)
+      // - Always use longer timeout if duration is unknown (safer)
+      const fileSizeMBNum = typeof fileSizeMB === 'number' ? fileSizeMB : 0;
+      const needsLongTimeout = 
+        (durationSeconds && durationSeconds >= 15 * 60) ||  // >= 15 min
+        fileSizeMBNum >= 15 ||                               // >= 15MB
+        (!durationSeconds && fileSizeMBNum >= 10);           // Unknown duration + >= 10MB
 
-      console.log(`[Whisper] Using blob mode for file <= 25MB (timeout=${Math.round(whisperTimeoutMs / 1000)}s)`);
+      const whisperTimeoutMs = needsLongTimeout ? WHISPER_TIMEOUT_LONG_MS : WHISPER_TIMEOUT_MS;
+
+      console.log(`[Whisper] Using blob mode for file <= 25MB (size=${fileSizeMBNum.toFixed(1)}MB, duration=${durationSeconds ? Math.round(durationSeconds/60)+'min' : 'unknown'}, timeout=${Math.round(whisperTimeoutMs / 1000)}s)`);
       const audioRes = await fetch(signed.signedUrl);
       if (!audioRes.ok) throw new Error(`audio_fetch_failed: ${audioRes.status}`);
       const audioBlob = await audioRes.blob();
