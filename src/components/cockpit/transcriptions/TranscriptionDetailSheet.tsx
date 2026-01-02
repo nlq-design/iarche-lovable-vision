@@ -13,6 +13,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,6 +66,7 @@ import {
   Users,
   FolderPlus,
   PackagePlus,
+  ListTodo,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -71,6 +75,7 @@ import { useCockpitVoiceTranscriptions, TRANSCRIPTION_STATUSES } from '@/hooks/c
 import { useCockpitLeads } from '@/hooks/cockpit/useCockpitLeads';
 import { useCockpitProjects } from '@/hooks/cockpit/useCockpitProjects';
 import { useCockpitLeadContacts } from '@/hooks/cockpit/useCockpitLeadContacts';
+import { useCockpitTasks } from '@/hooks/cockpit/useCockpitTasks';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
@@ -110,6 +115,7 @@ export function TranscriptionDetailSheet({
   const { data: transcription, isLoading, refetch } = useTranscription(transcriptionId || '');
   const { leads } = useCockpitLeads();
   const { projects } = useCockpitProjects();
+  const { createTask } = useCockpitTasks();
   
   // Fetch contacts for the linked lead
   const { contacts: leadContacts = [] } = useCockpitLeadContacts(transcription?.lead_id || undefined);
@@ -128,6 +134,9 @@ export function TranscriptionDetailSheet({
       return data ?? [];
     },
   });
+
+  // Task creation state
+  const [creatingTaskIndex, setCreatingTaskIndex] = useState<number | null>(null);
 
   // Entity selector states
   const [showLeadSelector, setShowLeadSelector] = useState(false);
@@ -254,22 +263,107 @@ export function TranscriptionDetailSheet({
   const statusConfig = TRANSCRIPTION_STATUSES.find(s => s.value === transcription?.status);
   const summary = transcription?.summary;
 
+  // Editable title state
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState('');
+  
+  // Editable date state
+  const [editingDate, setEditingDate] = useState(false);
+
+  // Sync title draft when transcription loads
+  useEffect(() => {
+    if (transcription) {
+      const displayTitle = transcription.title || (summary?.title as string) || '';
+      setTitleDraft(typeof displayTitle === 'string' ? displayTitle : JSON.stringify(displayTitle));
+    }
+  }, [transcription, summary?.title]);
+
+  const handleSaveTitle = () => {
+    if (transcriptionId && titleDraft.trim()) {
+      updateTranscription.mutate({ id: transcriptionId, updates: { title: titleDraft.trim() } });
+      setEditingTitle(false);
+    }
+  };
+
+  const handleSaveDate = (date: Date | undefined) => {
+    if (transcriptionId && date) {
+      updateTranscription.mutate({ 
+        id: transcriptionId, 
+        updates: { transcription_date: format(date, 'yyyy-MM-dd') } 
+      });
+      setEditingDate(false);
+    }
+  };
+
+  const displayTitle = transcription?.title || (summary?.title ? (typeof summary.title === 'string' ? summary.title : JSON.stringify(summary.title)) : 'Transcription');
+
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="w-full sm:max-w-2xl flex flex-col h-full p-0">
           <SheetHeader className="px-6 py-4 border-b bg-background sticky top-0 z-10">
             <div className="flex items-center justify-between">
-              <div>
-                <SheetTitle className="text-lg">
-                  {isLoading ? 'Chargement...' : summary?.title || 'Transcription'}
-                </SheetTitle>
+              <div className="flex-1 min-w-0">
+                {editingTitle ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={titleDraft}
+                      onChange={(e) => setTitleDraft(e.target.value)}
+                      className="h-8 text-lg font-semibold"
+                      autoFocus
+                      onKeyDown={(e) => e.key === 'Enter' && handleSaveTitle()}
+                    />
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleSaveTitle}>
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setEditingTitle(false)}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <SheetTitle 
+                    className="text-lg cursor-pointer hover:text-primary transition-colors truncate"
+                    onClick={() => setEditingTitle(true)}
+                    title="Cliquer pour modifier"
+                  >
+                    {isLoading ? 'Chargement...' : displayTitle}
+                  </SheetTitle>
+                )}
                 <SheetDescription className="flex items-center gap-2 mt-1">
-                  <Calendar className="h-3 w-3" />
-                  {transcription?.transcription_date 
-                    ? format(new Date(transcription.transcription_date), 'dd MMMM yyyy', { locale: fr })
-                    : transcription?.created_at && 
-                      format(new Date(transcription.created_at), 'dd MMMM yyyy à HH:mm', { locale: fr })}
+                  {editingDate ? (
+                    <Popover open={editingDate} onOpenChange={setEditingDate}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-6 text-xs">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {transcription?.transcription_date 
+                            ? format(new Date(transcription.transcription_date), 'dd MMM yyyy', { locale: fr })
+                            : 'Sélectionner une date'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={transcription?.transcription_date ? new Date(transcription.transcription_date) : undefined}
+                          onSelect={handleSaveDate}
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                          locale={fr}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
+                    <span 
+                      className="flex items-center gap-1 cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => setEditingDate(true)}
+                      title="Cliquer pour modifier la date"
+                    >
+                      <Calendar className="h-3 w-3" />
+                      {transcription?.transcription_date 
+                        ? format(new Date(transcription.transcription_date), 'dd MMMM yyyy', { locale: fr })
+                        : transcription?.created_at && 
+                          format(new Date(transcription.created_at), 'dd MMMM yyyy à HH:mm', { locale: fr })}
+                    </span>
+                  )}
                 </SheetDescription>
               </div>
               {statusConfig && (
@@ -739,49 +833,124 @@ export function TranscriptionDetailSheet({
 
                     <TabsContent value="actions" className="space-y-4 pt-4">
                       {summary.action_items?.length > 0 ? (
-                        summary.action_items.map((action, i) => {
-                          // Safe string converter - prevents rendering objects as React children
-                          const safeStr = (v: unknown): string => {
-                            if (v == null) return '';
-                            if (typeof v === 'string') return v;
-                            if (typeof v === 'number') return String(v);
-                            if (v instanceof Date) return v.toISOString();
-                            if (typeof v === 'object') return JSON.stringify(v);
-                            return String(v);
-                          };
+                        <>
+                          {/* Bulk create button */}
+                          <div className="flex justify-end">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                const safeStr = (v: unknown): string => {
+                                  if (v == null) return '';
+                                  if (typeof v === 'string') return v;
+                                  if (typeof v === 'number') return String(v);
+                                  return JSON.stringify(v);
+                                };
+                                
+                                summary.action_items?.forEach((action) => {
+                                  const actionObj = action as Record<string, unknown>;
+                                  const taskText = typeof action === 'string' ? action : safeStr(actionObj.task || actionObj.step || '');
+                                  const priorityRaw = safeStr(actionObj.priority) || 'medium';
+                                  
+                                  if (taskText) {
+                                    createTask.mutate({
+                                      title: taskText.slice(0, 200),
+                                      task_type: 'follow_up',
+                                      priority: (['low', 'medium', 'high'].includes(priorityRaw) ? priorityRaw : 'medium') as 'low' | 'medium' | 'high',
+                                      lead_id: transcription?.lead_id || null,
+                                      project_id: transcription?.project_id || null,
+                                      ai_generated: true,
+                                      ai_metadata: { source: 'transcription', transcription_id: transcriptionId },
+                                    });
+                                  }
+                                });
+                                toast.success(`${summary.action_items?.length || 0} tâches créées`);
+                              }}
+                            >
+                              <ListTodo className="h-4 w-4 mr-2" />
+                              Créer toutes les tâches
+                            </Button>
+                          </div>
 
-                          // Handle different LLM schemas: { task, owner, due_date } or { step, owner, due }
-                          const actionObj = action as Record<string, unknown>;
-                          const taskText = typeof action === 'string' ? action : safeStr(actionObj.task || actionObj.step || '');
-                          const ownerText = typeof action === 'object' ? safeStr(actionObj.owner) : '';
-                          const dueText = typeof action === 'object' ? safeStr(actionObj.due_date || actionObj.due) : '';
-                          const priorityRaw = typeof action === 'object' ? safeStr(actionObj.priority) : 'medium';
-                          const priorityText = priorityRaw || 'medium';
+                          {summary.action_items.map((action, i) => {
+                            // Safe string converter - prevents rendering objects as React children
+                            const safeStr = (v: unknown): string => {
+                              if (v == null) return '';
+                              if (typeof v === 'string') return v;
+                              if (typeof v === 'number') return String(v);
+                              if (v instanceof Date) return v.toISOString();
+                              if (typeof v === 'object') return JSON.stringify(v);
+                              return String(v);
+                            };
 
-                          if (!taskText) return null;
+                            // Handle different LLM schemas: { task, owner, due_date } or { step, owner, due }
+                            const actionObj = action as Record<string, unknown>;
+                            const taskText = typeof action === 'string' ? action : safeStr(actionObj.task || actionObj.step || '');
+                            const ownerText = typeof action === 'object' ? safeStr(actionObj.owner) : '';
+                            const dueText = typeof action === 'object' ? safeStr(actionObj.due_date || actionObj.due) : '';
+                            const priorityRaw = typeof action === 'object' ? safeStr(actionObj.priority) : 'medium';
+                            const priorityText = priorityRaw || 'medium';
+                            const categoryRaw = typeof action === 'object' ? safeStr(actionObj.category) : '';
 
-                          return (
-                            <Card key={i}>
-                              <CardContent className="p-4">
-                                <div className="flex items-start justify-between gap-4">
-                                  <div className="flex-1">
-                                    <p className="font-medium text-sm">{taskText}</p>
-                                    <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                                      {ownerText && <span>👤 {ownerText}</span>}
-                                      {dueText && <span>📅 {dueText}</span>}
+                            if (!taskText) return null;
+
+                            return (
+                              <Card key={i}>
+                                <CardContent className="p-4">
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1">
+                                      <p className="font-medium text-sm">{taskText}</p>
+                                      <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-muted-foreground">
+                                        {ownerText && <span className="flex items-center gap-1"><User className="h-3 w-3" /> {ownerText}</span>}
+                                        {dueText && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {dueText}</span>}
+                                        {categoryRaw && (
+                                          <Badge variant="outline" className="text-xs h-5">
+                                            {categoryRaw}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant={
+                                        priorityText === 'high' ? 'destructive' :
+                                        priorityText === 'medium' ? 'default' : 'secondary'
+                                      }>
+                                        {priorityText}
+                                      </Badge>
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-8 w-8"
+                                        disabled={creatingTaskIndex === i}
+                                        onClick={() => {
+                                          setCreatingTaskIndex(i);
+                                          createTask.mutate({
+                                            title: taskText.slice(0, 200),
+                                            task_type: 'follow_up',
+                                            priority: (['low', 'medium', 'high'].includes(priorityText) ? priorityText : 'medium') as 'low' | 'medium' | 'high',
+                                            lead_id: transcription?.lead_id || null,
+                                            project_id: transcription?.project_id || null,
+                                            ai_generated: true,
+                                            ai_metadata: { source: 'transcription', transcription_id: transcriptionId },
+                                          }, {
+                                            onSettled: () => setCreatingTaskIndex(null),
+                                          });
+                                        }}
+                                        title="Créer une tâche"
+                                      >
+                                        {creatingTaskIndex === i ? (
+                                          <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                          <ListTodo className="h-4 w-4" />
+                                        )}
+                                      </Button>
                                     </div>
                                   </div>
-                                  <Badge variant={
-                                    priorityText === 'high' ? 'destructive' :
-                                    priorityText === 'medium' ? 'default' : 'secondary'
-                                  }>
-                                    {priorityText}
-                                  </Badge>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          );
-                        })
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </>
                       ) : (
                         <div className="text-center py-8 text-muted-foreground">
                           <p>Aucune action identifiée</p>

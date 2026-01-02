@@ -23,6 +23,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Users,
+  ListTodo,
+  CalendarDays,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -185,40 +188,64 @@ export default function CockpitTranscriptions() {
                         </div>
                         
                          <h3 className="font-medium truncate">
-                           {transcription.summary?.title
-                             ? (typeof transcription.summary.title === 'string'
-                               ? transcription.summary.title
-                               : JSON.stringify(transcription.summary.title))
-                             : 'Transcription en cours...'}
+                           {transcription.title 
+                             ? transcription.title
+                             : transcription.summary?.title
+                               ? (typeof transcription.summary.title === 'string'
+                                 ? transcription.summary.title
+                                 : JSON.stringify(transcription.summary.title))
+                               : 'Transcription en cours...'}
                          </h3>
                         
-                        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {format(new Date(transcription.created_at), 'dd MMM yyyy HH:mm', { locale: fr })}
-                          </span>
-                          
-                          {transcription.lead && (
-                            <span className="flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              {transcription.lead.name}
-                            </span>
-                          )}
-                          
-                          {transcription.project && (
-                            <span className="flex items-center gap-1">
-                              <FolderOpen className="h-3 w-3" />
-                              {transcription.project.name}
-                            </span>
-                          )}
-                          
-                          {transcription.solution && (
-                            <span className="flex items-center gap-1">
-                              <Package className="h-3 w-3" />
-                              {transcription.solution.title}
-                            </span>
-                          )}
-                        </div>
+                         <div className="flex flex-wrap items-center gap-2 mt-2">
+                           {/* Date */}
+                           <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                             <Clock className="h-3 w-3" />
+                             {transcription.transcription_date 
+                               ? format(new Date(transcription.transcription_date), 'dd MMM yyyy', { locale: fr })
+                               : format(new Date(transcription.created_at), 'dd MMM yyyy HH:mm', { locale: fr })}
+                           </span>
+                           
+                           {/* Lead */}
+                           {transcription.lead && (
+                             <Badge variant="secondary" className="text-xs h-5">
+                               <User className="h-3 w-3 mr-1" />
+                               {transcription.lead.name}
+                             </Badge>
+                           )}
+                           
+                           {/* Contact */}
+                           {transcription.lead_contact && (
+                             <Badge variant="outline" className="text-xs h-5">
+                               <Users className="h-3 w-3 mr-1" />
+                               {transcription.lead_contact.name}
+                             </Badge>
+                           )}
+                           
+                           {/* Project */}
+                           {transcription.project && (
+                             <Badge variant="secondary" className="text-xs h-5">
+                               <FolderOpen className="h-3 w-3 mr-1" />
+                               {transcription.project.name}
+                             </Badge>
+                           )}
+                           
+                           {/* Solution */}
+                           {transcription.solution && (
+                             <Badge variant="outline" className="text-xs h-5">
+                               <Package className="h-3 w-3 mr-1" />
+                               {transcription.solution.title}
+                             </Badge>
+                           )}
+
+                           {/* Actions count */}
+                           {transcription.summary?.action_items && transcription.summary.action_items.length > 0 && (
+                             <Badge variant="default" className="text-xs h-5 bg-primary/80">
+                               <ListTodo className="h-3 w-3 mr-1" />
+                               {transcription.summary.action_items.length} action{transcription.summary.action_items.length > 1 ? 's' : ''}
+                             </Badge>
+                           )}
+                         </div>
 
                          {transcription.summary?.executive_summary && (
                            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">

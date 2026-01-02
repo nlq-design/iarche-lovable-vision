@@ -3286,6 +3286,7 @@ export type Database = {
           status: string
           storage_path: string
           summary: Json | null
+          title: string | null
           transcription_date: string | null
           updated_at: string
           workspace_id: string
@@ -3309,6 +3310,7 @@ export type Database = {
           status?: string
           storage_path: string
           summary?: Json | null
+          title?: string | null
           transcription_date?: string | null
           updated_at?: string
           workspace_id: string
@@ -3332,6 +3334,7 @@ export type Database = {
           status?: string
           storage_path?: string
           summary?: Json | null
+          title?: string | null
           transcription_date?: string | null
           updated_at?: string
           workspace_id?: string
