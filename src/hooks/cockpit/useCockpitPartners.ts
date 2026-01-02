@@ -20,6 +20,7 @@ export interface Partner {
   avatar_url: string | null;
   commission_rate: number | null;
   is_active: boolean;
+  deleted_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -50,6 +51,21 @@ export function useCockpitPartners() {
       const { data, error } = await supabase
         .from("partners")
         .select("*")
+        .is("deleted_at", null)
+        .order("name");
+
+      if (error) throw error;
+      return data as Partner[];
+    },
+  });
+
+  // Inclut les partenaires supprimés (pour la corbeille)
+  const { data: allPartners } = useQuery({
+    queryKey: ["cockpit-partners-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("partners")
+        .select("*")
         .order("name");
 
       if (error) throw error;
@@ -58,7 +74,7 @@ export function useCockpitPartners() {
   });
 
   const createPartner = useMutation({
-    mutationFn: async (partner: Omit<Partner, "id" | "created_at" | "updated_at" | "workspace_id">) => {
+    mutationFn: async (partner: Omit<Partner, "id" | "created_at" | "updated_at" | "workspace_id" | "deleted_at">) => {
       const { data, error } = await supabase
         .from("partners")
         .insert({
@@ -73,6 +89,7 @@ export function useCockpitPartners() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cockpit-partners"] });
+      queryClient.invalidateQueries({ queryKey: ["cockpit-partners-all"] });
       toast({ title: "Partenaire créé" });
     },
     onError: (error) => {
@@ -108,7 +125,46 @@ export function useCockpitPartners() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cockpit-partners"] });
-      toast({ title: "Partenaire supprimé" });
+      queryClient.invalidateQueries({ queryKey: ["cockpit-partners-all"] });
+      toast({ title: "Partenaire supprimé définitivement" });
+    },
+    onError: (error) => {
+      toast({ title: "Erreur", description: (error as Error).message, variant: "destructive" });
+    },
+  });
+
+  // Soft delete - met à la corbeille
+  const softDeletePartner = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("partners")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cockpit-partners"] });
+      queryClient.invalidateQueries({ queryKey: ["cockpit-partners-all"] });
+      toast({ title: "Partenaire mis à la corbeille" });
+    },
+    onError: (error) => {
+      toast({ title: "Erreur", description: (error as Error).message, variant: "destructive" });
+    },
+  });
+
+  // Restaurer depuis la corbeille
+  const restorePartner = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("partners")
+        .update({ deleted_at: null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cockpit-partners"] });
+      queryClient.invalidateQueries({ queryKey: ["cockpit-partners-all"] });
+      toast({ title: "Partenaire restauré" });
     },
     onError: (error) => {
       toast({ title: "Erreur", description: (error as Error).message, variant: "destructive" });
@@ -123,10 +179,12 @@ export function useCockpitPartners() {
       apport_affaires: partners?.filter((p) => p.partner_type === "apport_affaires").length || 0,
     },
     active: partners?.filter((p) => p.is_active).length || 0,
+    deleted: allPartners?.filter((p) => p.deleted_at != null).length || 0,
   };
 
   return {
     partners,
+    allPartners,
     isLoading,
     error,
     refetch,
@@ -134,6 +192,8 @@ export function useCockpitPartners() {
     createPartner,
     updatePartner,
     deletePartner,
+    softDeletePartner,
+    restorePartner,
   };
 }
 

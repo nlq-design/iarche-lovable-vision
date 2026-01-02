@@ -106,6 +106,7 @@ const CockpitDocuments = lazy(() => import("./pages/cockpit/CockpitDocuments"));
 const CockpitUploads = lazy(() => import("./pages/cockpit/CockpitUploads"));
 const CockpitChatbot = lazy(() => import("./pages/cockpit/CockpitChatbot"));
 const CockpitPartenaires = lazy(() => import("./pages/cockpit/CockpitPartenaires"));
+const CockpitPartenaireDetail = lazy(() => import("./pages/cockpit/CockpitPartenaireDetail"));
 
 // QueryClient avec cache optimisé
 const queryClient = new QueryClient({
@@ -633,6 +634,11 @@ const App = () => (
           <Route path="/cockpit/partenaires" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedCockpitRoute><CockpitPartenaires /></ProtectedCockpitRoute>
+            </Suspense>
+          } />
+          <Route path="/cockpit/partenaires/:slug" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedCockpitRoute><CockpitPartenaireDetail /></ProtectedCockpitRoute>
             </Suspense>
           } />
           
