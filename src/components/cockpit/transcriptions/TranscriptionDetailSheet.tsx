@@ -155,6 +155,21 @@ export function TranscriptionDetailSheet({
   } | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
+  // Editable title state (moved before conditional return to respect hooks rules)
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState('');
+  
+  // Editable date state
+  const [editingDate, setEditingDate] = useState(false);
+
+  // Sync title draft when transcription loads
+  useEffect(() => {
+    if (transcription) {
+      const displayTitle = transcription.title || (transcription.summary?.title as string) || '';
+      setTitleDraft(typeof displayTitle === 'string' ? displayTitle : JSON.stringify(displayTitle));
+    }
+  }, [transcription]);
+
   // Fetch signed URL for audio playback
   useEffect(() => {
     if (transcription?.storage_path) {
@@ -262,21 +277,6 @@ export function TranscriptionDetailSheet({
 
   const statusConfig = TRANSCRIPTION_STATUSES.find(s => s.value === transcription?.status);
   const summary = transcription?.summary;
-
-  // Editable title state
-  const [editingTitle, setEditingTitle] = useState(false);
-  const [titleDraft, setTitleDraft] = useState('');
-  
-  // Editable date state
-  const [editingDate, setEditingDate] = useState(false);
-
-  // Sync title draft when transcription loads
-  useEffect(() => {
-    if (transcription) {
-      const displayTitle = transcription.title || (summary?.title as string) || '';
-      setTitleDraft(typeof displayTitle === 'string' ? displayTitle : JSON.stringify(displayTitle));
-    }
-  }, [transcription, summary?.title]);
 
   const handleSaveTitle = () => {
     if (transcriptionId && titleDraft.trim()) {
@@ -846,11 +846,29 @@ export function TranscriptionDetailSheet({
                                   if (typeof v === 'number') return String(v);
                                   return JSON.stringify(v);
                                 };
+
+                                // Parse due_date string (YYYY-MM-DD or various French formats)
+                                const parseDueDate = (raw: string): string | null => {
+                                  if (!raw) return null;
+                                  // Already ISO format
+                                  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+                                  // Try to extract YYYY-MM-DD from longer ISO string
+                                  const isoMatch = raw.match(/(\d{4}-\d{2}-\d{2})/);
+                                  if (isoMatch) return isoMatch[1];
+                                  // French DD/MM/YYYY
+                                  const frMatch = raw.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                                  if (frMatch) {
+                                    const [, d, m, y] = frMatch;
+                                    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+                                  }
+                                  return null;
+                                };
                                 
                                 summary.action_items?.forEach((action) => {
                                   const actionObj = action as Record<string, unknown>;
                                   const taskText = typeof action === 'string' ? action : safeStr(actionObj.task || actionObj.step || '');
                                   const priorityRaw = safeStr(actionObj.priority) || 'medium';
+                                  const dueDateParsed = parseDueDate(safeStr(actionObj.due_date || actionObj.due));
                                   
                                   if (taskText) {
                                     createTask.mutate({
@@ -859,6 +877,7 @@ export function TranscriptionDetailSheet({
                                       priority: (['low', 'medium', 'high'].includes(priorityRaw) ? priorityRaw : 'medium') as 'low' | 'medium' | 'high',
                                       lead_id: transcription?.lead_id || null,
                                       project_id: transcription?.project_id || null,
+                                      due_date: dueDateParsed,
                                       ai_generated: true,
                                       ai_metadata: { source: 'transcription', transcription_id: transcriptionId },
                                     });
@@ -883,11 +902,26 @@ export function TranscriptionDetailSheet({
                               return String(v);
                             };
 
+                            // Parse due_date string (YYYY-MM-DD or various French formats)
+                            const parseDueDate = (raw: string): string | null => {
+                              if (!raw) return null;
+                              if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+                              const isoMatch = raw.match(/(\d{4}-\d{2}-\d{2})/);
+                              if (isoMatch) return isoMatch[1];
+                              const frMatch = raw.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                              if (frMatch) {
+                                const [, d, m, y] = frMatch;
+                                return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+                              }
+                              return null;
+                            };
+
                             // Handle different LLM schemas: { task, owner, due_date } or { step, owner, due }
                             const actionObj = action as Record<string, unknown>;
                             const taskText = typeof action === 'string' ? action : safeStr(actionObj.task || actionObj.step || '');
                             const ownerText = typeof action === 'object' ? safeStr(actionObj.owner) : '';
                             const dueText = typeof action === 'object' ? safeStr(actionObj.due_date || actionObj.due) : '';
+                            const dueDateParsed = parseDueDate(dueText);
                             const priorityRaw = typeof action === 'object' ? safeStr(actionObj.priority) : 'medium';
                             const priorityText = priorityRaw || 'medium';
                             const categoryRaw = typeof action === 'object' ? safeStr(actionObj.category) : '';
@@ -930,6 +964,7 @@ export function TranscriptionDetailSheet({
                                             priority: (['low', 'medium', 'high'].includes(priorityText) ? priorityText : 'medium') as 'low' | 'medium' | 'high',
                                             lead_id: transcription?.lead_id || null,
                                             project_id: transcription?.project_id || null,
+                                            due_date: dueDateParsed,
                                             ai_generated: true,
                                             ai_metadata: { source: 'transcription', transcription_id: transcriptionId },
                                           }, {
