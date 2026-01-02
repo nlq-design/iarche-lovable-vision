@@ -184,9 +184,13 @@ export default function CockpitTranscriptions() {
                           </Badge>
                         </div>
                         
-                        <h3 className="font-medium truncate">
-                          {transcription.summary?.title || 'Transcription en cours...'}
-                        </h3>
+                         <h3 className="font-medium truncate">
+                           {transcription.summary?.title
+                             ? (typeof transcription.summary.title === 'string'
+                               ? transcription.summary.title
+                               : JSON.stringify(transcription.summary.title))
+                             : 'Transcription en cours...'}
+                         </h3>
                         
                         <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
@@ -216,11 +220,13 @@ export default function CockpitTranscriptions() {
                           )}
                         </div>
 
-                        {transcription.summary?.executive_summary && (
-                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                            {transcription.summary.executive_summary}
-                          </p>
-                        )}
+                         {transcription.summary?.executive_summary && (
+                           <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                             {typeof transcription.summary.executive_summary === 'string'
+                               ? transcription.summary.executive_summary
+                               : JSON.stringify(transcription.summary.executive_summary)}
+                           </p>
+                         )}
                       </div>
 
                       {transcription.summary?.extraction_quality && (
