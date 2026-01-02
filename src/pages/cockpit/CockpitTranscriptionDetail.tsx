@@ -258,20 +258,27 @@ export default function CockpitTranscriptionDetail() {
   };
 
   const handleRetry = () => {
-    if (transcriptionId) {
-      processTranscription.mutate({ jobId: transcriptionId }, { onSuccess: () => refetch() });
+    // Always use the actual transcription.id (UUID), not the slug from URL
+    const actualId = transcription?.id;
+    if (actualId) {
+      processTranscription.mutate({ jobId: actualId }, { onSuccess: () => refetch() });
+    } else {
+      toast.error('Transcription non trouvée');
     }
   };
 
   const handleReanalyze = () => {
-    if (transcriptionId) {
+    const actualId = transcription?.id;
+    if (actualId) {
       toast.info('Ré-analyse en cours...');
-      processTranscription.mutate({ jobId: transcriptionId, forceReanalyze: true }, {
+      processTranscription.mutate({ jobId: actualId, forceReanalyze: true }, {
         onSuccess: () => {
           refetch();
           toast.success('Synthèse et actions régénérées');
         },
       });
+    } else {
+      toast.error('Transcription non trouvée');
     }
   };
 
