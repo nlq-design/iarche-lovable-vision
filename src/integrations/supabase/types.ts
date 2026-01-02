@@ -2151,6 +2151,7 @@ export type Database = {
           commission_rate: number | null
           company: string | null
           created_at: string | null
+          deleted_at: string | null
           email: string | null
           id: string
           is_active: boolean | null
@@ -2170,6 +2171,7 @@ export type Database = {
           commission_rate?: number | null
           company?: string | null
           created_at?: string | null
+          deleted_at?: string | null
           email?: string | null
           id?: string
           is_active?: boolean | null
@@ -2189,6 +2191,7 @@ export type Database = {
           commission_rate?: number | null
           company?: string | null
           created_at?: string | null
+          deleted_at?: string | null
           email?: string | null
           id?: string
           is_active?: boolean | null

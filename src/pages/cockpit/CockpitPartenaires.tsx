@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,8 @@ const PARTNER_TYPE_CONFIG: Record<PartnerType, { label: string; icon: React.Reac
 };
 
 export default function CockpitPartenaires() {
-  const { partners, isLoading, stats, createPartner, updatePartner, deletePartner } = useCockpitPartners();
+  const navigate = useNavigate();
+  const { partners, isLoading, stats, createPartner, updatePartner, deletePartner, softDeletePartner } = useCockpitPartners();
   const { data: linkCounts } = usePartnerLinkCounts();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<PartnerType | "all">("all");
@@ -348,26 +350,10 @@ export default function CockpitPartenaires() {
             <p className="text-sm text-muted-foreground">Réseau d'experts et apporteurs</p>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Dialog open={isCreateOpen} onOpenChange={(open) => { setIsCreateOpen(open); if (!open) resetForm(); }}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="h-8 text-sm">
-                  <Plus className="h-3.5 w-3.5 mr-1.5" />
-                  Nouveau
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>Créer un partenaire</DialogTitle>
-                </DialogHeader>
-                <PartnerForm isCreate />
-                <DialogFooter>
-                  <Button variant="outline" size="sm" onClick={() => setIsCreateOpen(false)}>Annuler</Button>
-                  <Button size="sm" onClick={handleCreate} disabled={!formData.slug || !formData.name || createPartner.isPending}>
-                    Créer
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button size="sm" className="h-8 text-sm" onClick={() => navigate("/cockpit/partenaires/nouveau")}>
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              Nouveau
+            </Button>
           </div>
         </div>
 
@@ -592,16 +578,16 @@ export default function CockpitPartenaires() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => openEditDialog(partner)}>
+                                <DropdownMenuItem onClick={() => navigate(`/cockpit/partenaires/${partner.slug}`)}>
                                   <Pencil className="h-4 w-4 mr-2" />
                                   Modifier
                                 </DropdownMenuItem>
                                 <DropdownMenuItem 
-                                  onClick={() => setDeleteConfirm(partner.id)}
+                                  onClick={() => softDeletePartner.mutate(partner.id)}
                                   className="text-destructive"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
-                                  Supprimer
+                                  Mettre à la corbeille
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
