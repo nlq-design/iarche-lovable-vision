@@ -67,6 +67,7 @@ import {
   Clock,
   FileAudio,
   MessageSquareText,
+  Scissors,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -79,6 +80,7 @@ import { useCockpitTasks } from '@/hooks/cockpit/useCockpitTasks';
 import { toast } from 'sonner';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
 import { useQuery } from '@tanstack/react-query';
+import { transcribeLargeAudio, type TranscriptionProgress } from '@/lib/audioChunking';
 
 // Simple transcript display (Whisper doesn't provide diarization)
 function SimpleTranscript({ text }: { text: string }) {
@@ -161,6 +163,10 @@ export default function CockpitTranscriptionDetail() {
   // Analysis context state
   const [editingContext, setEditingContext] = useState(false);
   const [contextDraft, setContextDraft] = useState('');
+
+  // Chunking retry state (for WHISPER_TIMEOUT recovery)
+  const [isChunkingRetry, setIsChunkingRetry] = useState(false);
+  const [chunkingProgress, setChunkingProgress] = useState<TranscriptionProgress | null>(null);
 
   // If a transcription is still queued, auto-start processing once when opening the detail page.
   const autoStartForIdRef = useRef<string | null>(null);
@@ -276,6 +282,64 @@ export default function CockpitTranscriptionDetail() {
       processTranscription.mutate({ jobId: actualId }, { onSuccess: () => refetch() });
     } else {
       toast.error('Transcription non trouvée');
+    }
+  };
+
+  // Retry with client-side chunking (for WHISPER_TIMEOUT recovery)
+  const handleRetryWithChunking = async () => {
+    if (!transcription || !audioUrl) {
+      toast.error('Audio non disponible');
+      return;
+    }
+
+    setIsChunkingRetry(true);
+    setChunkingProgress({ phase: 'loading', message: 'Téléchargement de l\'audio...' });
+
+    try {
+      // Fetch the audio file
+      const audioRes = await fetch(audioUrl);
+      if (!audioRes.ok) throw new Error('Impossible de récupérer le fichier audio');
+      const audioBlob = await audioRes.blob();
+
+      // Transcribe with chunking
+      const transcriptText = await transcribeLargeAudio(
+        audioBlob,
+        'fr',
+        (progress) => setChunkingProgress(progress)
+      );
+
+      // Update the transcription with the new raw_transcript and reset status
+      const { error: updateError } = await supabase
+        .from('voice_transcriptions')
+        .update({
+          raw_transcript: transcriptText,
+          status: 'analyzing',
+          ai_metadata: {
+            ...(transcription.ai_metadata || {}),
+            chunked_client_side: true,
+            retry_with_chunking: true,
+            chunked_at: new Date().toISOString(),
+            last_error: null,
+          },
+        })
+        .eq('id', transcription.id);
+
+      if (updateError) throw updateError;
+
+      // Trigger LLM analysis (skip Whisper since we already have the transcript)
+      processTranscription.mutate({ jobId: transcription.id }, {
+        onSuccess: () => {
+          refetch();
+          toast.success('Transcription découpée avec succès, analyse en cours...');
+        },
+      });
+
+    } catch (err) {
+      console.error('Chunking retry error:', err);
+      toast.error(`Erreur: ${err instanceof Error ? err.message : 'Échec du découpage'}`);
+    } finally {
+      setIsChunkingRetry(false);
+      setChunkingProgress(null);
     }
   };
 
@@ -1148,17 +1212,54 @@ export default function CockpitTranscriptionDetail() {
                       <p className="text-sm text-muted-foreground mb-2">
                         <strong>Transcription trop longue</strong> — le traitement audio a dépassé le délai.
                       </p>
-                      <p className="text-xs text-muted-foreground mb-4">
-                        Réessayez : les audios &gt; 20 min peuvent nécessiter plus de temps. Si ça persiste, découpez l'audio en segments plus courts.
-                      </p>
-                      <Button onClick={handleRetry} disabled={processTranscription.isPending}>
-                        {processTranscription.isPending ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                        )}
-                        Réessayer
-                      </Button>
+                      {chunkingProgress ? (
+                        <div className="mb-4 space-y-2">
+                          <p className="text-xs text-muted-foreground">{chunkingProgress.message}</p>
+                          {chunkingProgress.currentChunk && chunkingProgress.totalChunks && (
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-primary transition-all duration-300"
+                                  style={{ width: `${(chunkingProgress.currentChunk / chunkingProgress.totalChunks) * 100}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {chunkingProgress.currentChunk}/{chunkingProgress.totalChunks}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mb-4">
+                          Le traitement en un seul bloc a échoué. Essayez le <strong>mode découpage</strong> pour transcriber par segments.
+                        </p>
+                      )}
+                      <div className="flex gap-2 justify-center">
+                        <Button 
+                          onClick={handleRetryWithChunking} 
+                          disabled={isChunkingRetry || processTranscription.isPending}
+                          variant="default"
+                        >
+                          {isChunkingRetry ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Scissors className="h-4 w-4 mr-2" />
+                          )}
+                          Réessayer (découpage)
+                        </Button>
+                        <Button 
+                          onClick={handleRetry} 
+                          disabled={isChunkingRetry || processTranscription.isPending}
+                          variant="outline"
+                        >
+                          {processTranscription.isPending ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                          )}
+                          Réessayer (normal)
+                        </Button>
+                      </div>
                     </>
                   );
                 }

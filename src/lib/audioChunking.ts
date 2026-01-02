@@ -39,10 +39,17 @@ export interface TranscriptionProgress {
 }
 
 /**
- * Check if a file needs chunking based on size
+ * Check if a file needs chunking based on size OR duration.
+ * Files > 24MB OR duration > 20 minutes should be chunked.
  */
-export function needsChunking(file: File | Blob): boolean {
-  return file.size > WHISPER_MAX_SIZE_BYTES;
+export function needsChunking(file: File | Blob, durationSeconds?: number | null): boolean {
+  // Size-based check (original)
+  if (file.size > WHISPER_MAX_SIZE_BYTES) return true;
+  
+  // Duration-based check: > 20 minutes → chunk to avoid Whisper timeout
+  if (durationSeconds && durationSeconds > 20 * 60) return true;
+  
+  return false;
 }
 
 /**
