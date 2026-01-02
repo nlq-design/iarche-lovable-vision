@@ -336,27 +336,41 @@ function ActivityIcon({ type }: { type: string }) {
 }
 
 function TaskCard({ task, showDate }: { task: any; showDate?: boolean }) {
+  // Determine provenance
+  const getProvenance = () => {
+    const sources: string[] = [];
+    if (task.leads?.name) sources.push(`Lead: ${task.leads.name}`);
+    else if (task.leads?.company) sources.push(`Lead: ${task.leads.company}`);
+    if (task.projects?.name) sources.push(`Projet: ${task.projects.name}`);
+    if (task.opportunities?.title) sources.push(`Opp: ${task.opportunities.title}`);
+    if (task.ai_generated && task.meeting_note_id) sources.push('Transcription');
+    return sources;
+  };
+  
+  const provenance = getProvenance();
+
   return (
     <div className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
         {task.priority === 'high' || task.priority === 'urgent' ? (
-          <AlertCircle className="h-4 w-4 text-destructive" />
+          <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />
         ) : (
-          <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+          <CheckCircle2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
         )}
-        <div>
-          <p className="font-medium text-sm">{task.title}</p>
-          <p className="text-xs text-muted-foreground capitalize">
-            {task.task_type}
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-sm truncate">{task.title}</p>
+          <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+            <span className="capitalize">{task.task_type}</span>
             {showDate && task.due_date && (
-              <span className="ml-2">
-                • {format(new Date(task.due_date), 'd MMM', { locale: fr })}
-              </span>
+              <span>• {format(new Date(task.due_date), 'd MMM', { locale: fr })}</span>
             )}
-          </p>
+            {provenance.length > 0 && (
+              <span className="text-primary/80">• {provenance[0]}</span>
+            )}
+          </div>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-shrink-0">
         {task.due_time && (
           <Badge variant="outline">{task.due_time.slice(0, 5)}</Badge>
         )}
