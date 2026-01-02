@@ -170,7 +170,7 @@ export function TranscriptionDetailSheet({
     }
   }, [transcription]);
 
-  // Fetch audio URL using the slug-based edge function (fixes same-file-playing bug)
+  // Fetch audio URL using direct storage signed URL (most reliable)
   useEffect(() => {
     // Reset audio when transcription changes
     if (audioElement) {
@@ -180,31 +180,22 @@ export function TranscriptionDetailSheet({
     }
     setAudioUrl(null);
 
-    if (!transcriptionId) return;
+    if (!transcriptionId || !transcription?.storage_path) return;
 
-    // Use slug if available, fallback to id
-    const identifier = transcription?.slug || transcriptionId;
-    const paramKey = transcription?.slug ? 'slug' : 'id';
-    
-    supabase.functions.invoke('serve-transcription-audio', {
-      body: null,
-      method: 'GET',
-    }).then(() => {
-      // Fallback: use direct signed URL if edge function not ready
-    });
-
-    // Direct signed URL approach (more reliable)
-    if (transcription?.storage_path) {
-      supabase.storage
-        .from('voice-transcriptions')
-        .createSignedUrl(transcription.storage_path, 3600)
-        .then(({ data }) => {
-          if (data?.signedUrl) {
-            console.log(`[Audio] Loaded URL for transcription ${identifier}`);
-            setAudioUrl(data.signedUrl);
-          }
-        });
-    }
+    // Use direct signed URL approach (avoids edge function parameter issues)
+    supabase.storage
+      .from('voice-transcriptions')
+      .createSignedUrl(transcription.storage_path, 3600)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('[Audio] Failed to get signed URL:', error);
+          return;
+        }
+        if (data?.signedUrl) {
+          console.log(`[Audio] Loaded URL for transcription ${transcription.slug || transcriptionId}`);
+          setAudioUrl(data.signedUrl);
+        }
+      });
     
     return () => {
       if (audioElement) {
