@@ -2158,6 +2158,7 @@ export type Database = {
           name: string
           partner_type: string
           phone: string | null
+          slug: string
           specialties: string[] | null
           updated_at: string | null
           website: string | null
@@ -2176,6 +2177,7 @@ export type Database = {
           name: string
           partner_type: string
           phone?: string | null
+          slug: string
           specialties?: string[] | null
           updated_at?: string | null
           website?: string | null
@@ -2194,6 +2196,7 @@ export type Database = {
           name?: string
           partner_type?: string
           phone?: string | null
+          slug?: string
           specialties?: string[] | null
           updated_at?: string | null
           website?: string | null

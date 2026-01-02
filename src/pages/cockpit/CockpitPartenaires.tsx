@@ -41,7 +41,7 @@ import {
   Calendar,
   Mic
 } from "lucide-react";
-import { useCockpitPartners, Partner, PartnerType, PARTNER_TYPES } from "@/hooks/cockpit/useCockpitPartners";
+import { useCockpitPartners, Partner, PartnerType, PARTNER_TYPES, generateSlug } from "@/hooks/cockpit/useCockpitPartners";
 import { usePartnerLinkCounts } from "@/hooks/cockpit/usePartnerLinks";
 import {
   DropdownMenu,
@@ -83,6 +83,7 @@ export default function CockpitPartenaires() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
+    slug: "",
     name: "",
     email: "",
     phone: "",
@@ -98,6 +99,7 @@ export default function CockpitPartenaires() {
 
   const resetForm = () => {
     setFormData({
+      slug: "",
       name: "",
       email: "",
       phone: "",
@@ -110,6 +112,17 @@ export default function CockpitPartenaires() {
       commission_rate: null,
       is_active: true,
     });
+  };
+
+  // Quand on tape le slug, on génère le nom automatiquement si vide
+  const handleSlugChange = (value: string) => {
+    const slug = generateSlug(value);
+    setFormData((prev) => ({
+      ...prev,
+      slug,
+      // Auto-fill name from slug if name is empty
+      name: prev.name || value.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+    }));
   };
 
   const handleCreate = async () => {
@@ -139,6 +152,7 @@ export default function CockpitPartenaires() {
 
   const openEditDialog = (partner: Partner) => {
     setFormData({
+      slug: partner.slug || "",
       name: partner.name,
       email: partner.email || "",
       phone: partner.phone || "",
@@ -173,11 +187,29 @@ export default function CockpitPartenaires() {
     );
   };
 
-  const PartnerForm = () => (
+  const PartnerForm = ({ isCreate = false }: { isCreate?: boolean }) => (
     <div className="grid gap-4 py-4">
+      {/* Slug - champ principal pour la création */}
+      <div className="space-y-2">
+        <Label htmlFor="slug" className="text-xs">
+          Slug (identifiant unique) *
+        </Label>
+        <Input
+          id="slug"
+          value={formData.slug}
+          onChange={(e) => handleSlugChange(e.target.value)}
+          placeholder="jean-dupont"
+          className="h-9 font-mono text-sm"
+          disabled={!isCreate && !!editingPartner}
+        />
+        <p className="text-xs text-muted-foreground">
+          Identifiant unique du partenaire (ex: prenom-nom)
+        </p>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="name" className="text-xs">Nom *</Label>
+          <Label htmlFor="name" className="text-xs">Nom complet *</Label>
           <Input
             id="name"
             value={formData.name}
@@ -327,10 +359,10 @@ export default function CockpitPartenaires() {
                 <DialogHeader>
                   <DialogTitle>Créer un partenaire</DialogTitle>
                 </DialogHeader>
-                <PartnerForm />
+                <PartnerForm isCreate />
                 <DialogFooter>
                   <Button variant="outline" size="sm" onClick={() => setIsCreateOpen(false)}>Annuler</Button>
-                  <Button size="sm" onClick={handleCreate} disabled={!formData.name || createPartner.isPending}>
+                  <Button size="sm" onClick={handleCreate} disabled={!formData.slug || !formData.name || createPartner.isPending}>
                     Créer
                   </Button>
                 </DialogFooter>
