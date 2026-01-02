@@ -23,7 +23,9 @@ const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
 const WHISPER_MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25MB - OpenAI Whisper per-request limit
 const EDGE_FUNCTION_MAX_FILE_SIZE = 250 * 1024 * 1024; // 250MB - streaming allows larger files
 const MAX_TRANSCRIPTION_CHARS = 15000; // Limit text sent to LLM
-const LLM_TIMEOUT_MS = 30_000;
+
+// LLM calls can legitimately take >30s on long transcripts; keep a higher ceiling to avoid false timeouts.
+const LLM_TIMEOUT_MS = 60_000;
 const WHISPER_TIMEOUT_MS = 120_000; // 2 minutes for large files
 
 type LLMProvider = "lovable" | "openai" | "anthropic" | "openrouter";
