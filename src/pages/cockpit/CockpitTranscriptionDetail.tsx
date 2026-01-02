@@ -79,7 +79,8 @@ import { useCockpitLeadContacts } from '@/hooks/cockpit/useCockpitLeadContacts';
 import { useCockpitTasks } from '@/hooks/cockpit/useCockpitTasks';
 import { toast } from 'sonner';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
-import { useQuery } from '@tanstack/react-query';
+import { DocumentsSynthesisSection } from '@/components/cockpit/DocumentsSynthesisSection';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { transcribeLargeAudio, type TranscriptionProgress } from '@/lib/audioChunking';
 
 // Simple transcript display (Whisper doesn't provide diarization)
@@ -115,6 +116,7 @@ export default function CockpitTranscriptionDetail() {
 
   const { leads } = useCockpitLeads();
   const { projects } = useCockpitProjects();
+  const queryClient = useQueryClient();
   const { createTask } = useCockpitTasks();
 
   const { contacts: leadContacts = [] } = useCockpitLeadContacts(transcription?.lead_id || undefined);
@@ -1293,6 +1295,18 @@ export default function CockpitTranscriptionDetail() {
             </CardContent>
           </Card>
         )}
+
+        {/* AI Synthesis Section */}
+        <DocumentsSynthesisSection
+          entityType="transcription"
+          entityId={transcription.id}
+          summary={(transcription as any).ai_documents_summary || null}
+          documentsCount={0}
+          onSynthesisComplete={() => {
+            refetch();
+            queryClient.invalidateQueries({ queryKey: ['cockpit-transcription', transcriptionId] });
+          }}
+        />
 
         {/* Footer Actions */}
         <div className="flex items-center gap-2 pt-4 border-t">

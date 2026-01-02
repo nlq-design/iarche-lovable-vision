@@ -26,6 +26,8 @@ import {
   RotateCcw
 } from "lucide-react";
 import { useCockpitPartners, Partner, PartnerType, PARTNER_TYPES, generateSlug } from "@/hooks/cockpit/useCockpitPartners";
+import { DocumentsSynthesisSection } from "@/components/cockpit/DocumentsSynthesisSection";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,6 +51,7 @@ export default function CockpitPartenaireDetail() {
   const isNew = slug === "nouveau";
   
   const { partners, allPartners, isLoading, createPartner, updatePartner, deletePartner, softDeletePartner, restorePartner } = useCockpitPartners();
+  const queryClient = useQueryClient();
   
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [formData, setFormData] = useState({
@@ -410,6 +413,17 @@ export default function CockpitPartenaireDetail() {
                   )}
                 </CardContent>
               </Card>
+            )}
+
+            {/* AI Synthesis Section */}
+            {!isNew && existingPartner && (
+              <DocumentsSynthesisSection
+                entityType="partner"
+                entityId={existingPartner.id}
+                summary={(existingPartner as any).ai_documents_summary || null}
+                documentsCount={0}
+                onSynthesisComplete={() => queryClient.invalidateQueries({ queryKey: ['cockpit-partners'] })}
+              />
             )}
           </div>
         </div>
