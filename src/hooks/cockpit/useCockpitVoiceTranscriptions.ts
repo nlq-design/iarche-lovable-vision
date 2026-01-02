@@ -77,6 +77,7 @@ export interface CreateTranscriptionInput {
   prompt_profile_id?: string | null;
   llm_model_id?: string | null;
   transcription_date?: string | null;
+  pre_transcribed_text?: string | null; // For chunked transcription done client-side
 }
 
 export interface LLMModel {
@@ -217,8 +218,6 @@ export function useCockpitVoiceTranscriptions(
         toast.error('Limite de requêtes atteinte, réessayez plus tard');
       } else if (msg.includes('credits_exhausted')) {
         toast.error('Crédits IA épuisés, veuillez recharger');
-      } else if (msg.includes('elevenlabs_unusual_activity') || msg.includes('detected_unusual_activity')) {
-        toast.error("Transcription bloquée par ElevenLabs (activité inhabituelle). Vérifiez le plan/clé puis réessayez.");
       } else {
         toast.error(`Erreur de traitement: ${msg}`);
       }
