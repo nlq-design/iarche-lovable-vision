@@ -102,6 +102,7 @@ const CockpitSolutions = lazy(() => import("./pages/cockpit/CockpitSolutions"));
 const CockpitSolutionDetail = lazy(() => import("./pages/cockpit/CockpitSolutionDetail"));
 const CockpitAnalytics = lazy(() => import("./pages/cockpit/CockpitAnalytics"));
 const CockpitTranscriptions = lazy(() => import("./pages/cockpit/CockpitTranscriptions"));
+const CockpitTranscriptionDetail = lazy(() => import("./pages/cockpit/CockpitTranscriptionDetail"));
 const CockpitDocuments = lazy(() => import("./pages/cockpit/CockpitDocuments"));
 const CockpitUploads = lazy(() => import("./pages/cockpit/CockpitUploads"));
 const CockpitChatbot = lazy(() => import("./pages/cockpit/CockpitChatbot"));
@@ -618,7 +619,7 @@ const App = () => (
           } />
           <Route path="/cockpit/transcriptions/:slug" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-              <ProtectedCockpitRoute><CockpitTranscriptions /></ProtectedCockpitRoute>
+              <ProtectedCockpitRoute><CockpitTranscriptionDetail /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/documents" element={
