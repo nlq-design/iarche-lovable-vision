@@ -88,6 +88,7 @@ export function CreateTranscriptionModal({
   const [autoCreateTasks, setAutoCreateTasks] = useState(true);
   const [entitySearchOpen, setEntitySearchOpen] = useState(false);
   const [transcriptionDate, setTranscriptionDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [analysisContext, setAnalysisContext] = useState<string>('');
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -121,6 +122,7 @@ export function CreateTranscriptionModal({
     setPromptProfileId('');
     setAutoCreateTasks(true);
     setTranscriptionDate(format(new Date(), 'yyyy-MM-dd'));
+    setAnalysisContext('');
     setUploadProgress({ current: 0, total: 0 });
     setChunkingProgress(null);
   }, []);
@@ -288,6 +290,7 @@ export function CreateTranscriptionModal({
                 file_size_bytes: audioBlob.size,
                 duration_seconds: audioMeta.duration,
                 audio_format: audioMeta.format,
+                analysis_context: analysisContext.trim() || null,
               });
 
               // Process for AI synthesis (skip Whisper, go straight to LLM)
@@ -325,6 +328,7 @@ export function CreateTranscriptionModal({
               file_size_bytes: audioBlob.size,
               duration_seconds: audioMeta.duration,
               audio_format: audioMeta.format,
+              analysis_context: analysisContext.trim() || null,
             });
 
             processTranscription.mutate({ jobId: job.id });
@@ -596,6 +600,25 @@ export function CreateTranscriptionModal({
               </SelectContent>
             </Select>
           </div>
+
+          {/* Contexte d'analyse */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Contexte d'analyse (optionnel)
+            </Label>
+            <textarea
+              value={analysisContext}
+              onChange={(e) => setAnalysisContext(e.target.value)}
+              placeholder="Ex: RDV de découverte avec prospect secteur santé, objectif: présenter notre offre audit SI..."
+              rows={2}
+              className="w-full px-3 py-2 text-sm border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <p className="text-xs text-muted-foreground">
+              Ce contexte aide l'IA à mieux comprendre et structurer l'analyse.
+            </p>
+          </div>
+
           {/* Auto create tasks - now always on */}
           <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
             <div className="space-y-0.5">

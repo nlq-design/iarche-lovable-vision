@@ -90,6 +90,7 @@ export interface CreateTranscriptionInput {
   file_size_bytes?: number | null;
   duration_seconds?: number | null;
   audio_format?: string | null;
+  analysis_context?: string | null; // Context to guide AI analysis
 }
 
 export interface LLMModel {

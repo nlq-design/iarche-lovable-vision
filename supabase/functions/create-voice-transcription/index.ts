@@ -58,6 +58,7 @@ serve(async (req) => {
       file_size_bytes = null,
       duration_seconds = null,
       audio_format = null,
+      analysis_context = null, // Context to guide AI analysis
     } = body;
 
     console.log(`Creating voice transcription job for workspace: ${workspace_id}`);
@@ -93,6 +94,7 @@ serve(async (req) => {
         file_size_bytes,
         duration_seconds,
         audio_format,
+        analysis_context, // Store analysis context
         created_by: u.user.id,
         status: initialStatus,
         raw_transcript: pre_transcribed_text, // Store pre-transcribed text
