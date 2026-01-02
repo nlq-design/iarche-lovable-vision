@@ -1040,6 +1040,17 @@ async function fetchLLMModel(supabase: any, modelId: string | null): Promise<LLM
 
 // ============= DATE/TIME PARSING =============
 
+// Validate that a date string represents a real date
+function isValidDate(dateStr: string): boolean {
+  const parsed = new Date(dateStr + 'T00:00:00Z');
+  if (isNaN(parsed.getTime())) return false;
+  // Check that the parsed date matches the input (handles invalid dates like Feb 29 in non-leap years)
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return parsed.getUTCFullYear() === year && 
+         parsed.getUTCMonth() + 1 === month && 
+         parsed.getUTCDate() === day;
+}
+
 function parseDueDate(dateStr: string | null | undefined): string | null {
   if (!dateStr) return null;
   
@@ -1047,12 +1058,17 @@ function parseDueDate(dateStr: string | null | undefined): string | null {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const normalized = dateStr.toLowerCase().trim();
   
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  // ISO format YYYY-MM-DD - validate it's a real date
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return isValidDate(dateStr) ? dateStr : null;
+  }
   
+  // French format DD/MM/YYYY or DD-MM-YYYY
   const frMatch = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
   if (frMatch) {
     const [, day, month, year] = frMatch;
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    return isValidDate(isoDate) ? isoDate : null;
   }
   
   if (normalized === "aujourd'hui" || normalized === "today") {
