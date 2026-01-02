@@ -3336,6 +3336,7 @@ export type Database = {
           prompt_profile_id: string | null
           raw_transcript: string | null
           segments: Json | null
+          slug: string | null
           solution_id: string | null
           source: string
           status: string
@@ -3361,6 +3362,7 @@ export type Database = {
           prompt_profile_id?: string | null
           raw_transcript?: string | null
           segments?: Json | null
+          slug?: string | null
           solution_id?: string | null
           source: string
           status?: string
@@ -3386,6 +3388,7 @@ export type Database = {
           prompt_profile_id?: string | null
           raw_transcript?: string | null
           segments?: Json | null
+          slug?: string | null
           solution_id?: string | null
           source?: string
           status?: string
