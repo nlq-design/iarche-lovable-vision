@@ -739,27 +739,38 @@ export function TranscriptionDetailSheet({
 
                     <TabsContent value="actions" className="space-y-4 pt-4">
                       {summary.action_items?.length > 0 ? (
-                        summary.action_items.map((action, i) => (
-                          <Card key={i}>
-                            <CardContent className="p-4">
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="flex-1">
-                                  <p className="font-medium text-sm">{action.task}</p>
-                                  <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                                    {action.owner && <span>👤 {action.owner}</span>}
-                                    {action.due_date && <span>📅 {action.due_date}</span>}
+                        summary.action_items.map((action, i) => {
+                          // Handle different LLM schemas: { task, owner, due_date } or { step, owner, due }
+                          const actionObj = action as Record<string, unknown>;
+                          const taskText = typeof action === 'string' ? action : ((actionObj.task || actionObj.step || '') as string);
+                          const ownerText = typeof action === 'object' ? ((actionObj.owner || '') as string) : '';
+                          const dueText = typeof action === 'object' ? ((actionObj.due_date || actionObj.due || '') as string) : '';
+                          const priorityText = typeof action === 'object' ? ((actionObj.priority || 'medium') as string) : 'medium';
+
+                          if (!taskText) return null;
+
+                          return (
+                            <Card key={i}>
+                              <CardContent className="p-4">
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex-1">
+                                    <p className="font-medium text-sm">{taskText}</p>
+                                    <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                                      {ownerText && <span>👤 {ownerText}</span>}
+                                      {dueText && <span>📅 {dueText}</span>}
+                                    </div>
                                   </div>
+                                  <Badge variant={
+                                    priorityText === 'high' ? 'destructive' :
+                                    priorityText === 'medium' ? 'default' : 'secondary'
+                                  }>
+                                    {priorityText}
+                                  </Badge>
                                 </div>
-                                <Badge variant={
-                                  action.priority === 'high' ? 'destructive' :
-                                  action.priority === 'medium' ? 'default' : 'secondary'
-                                }>
-                                  {action.priority}
-                                </Badge>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))
+                              </CardContent>
+                            </Card>
+                          );
+                        })
                       ) : (
                         <div className="text-center py-8 text-muted-foreground">
                           <p>Aucune action identifiée</p>
