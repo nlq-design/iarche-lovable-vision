@@ -34,11 +34,7 @@ export function DocumentsSynthesisSection({
   const [isExpanded, setIsExpanded] = useState(true);
 
   const handleGenerateSynthesis = async () => {
-    if (documentsCount === 0) {
-      toast.error('Aucun document à synthétiser');
-      return;
-    }
-
+    // Allow synthesis even without documents - the backend can pull from transcriptions, tasks, etc.
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('synthesize-entity-documents', {
@@ -67,11 +63,7 @@ export function DocumentsSynthesisSection({
     }
   };
 
-  // Don't render if no documents
-  if (documentsCount === 0 && !summary) {
-    return null;
-  }
-
+  // Always show the synthesis section - it can synthesize from any linked entity (documents, transcriptions, tasks, etc.)
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -79,7 +71,7 @@ export function DocumentsSynthesisSection({
           <CardTitle className="text-sm flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
             Synthèse IA
-            {summary && (
+            {documentsCount > 0 && (
               <Badge variant="secondary" className="text-xs">
                 {documentsCount} doc{documentsCount > 1 ? 's' : ''}
               </Badge>
@@ -105,7 +97,7 @@ export function DocumentsSynthesisSection({
               size="sm"
               className="h-7 text-xs"
               onClick={handleGenerateSynthesis}
-              disabled={isGenerating || documentsCount === 0}
+              disabled={isGenerating}
             >
               {isGenerating ? (
                 <Loader2 className="h-3 w-3 mr-1 animate-spin" />
@@ -139,7 +131,10 @@ export function DocumentsSynthesisSection({
             <div className="text-center py-4">
               <FileText className="h-8 w-8 mx-auto text-muted-foreground opacity-50 mb-2" />
               <p className="text-xs text-muted-foreground mb-2">
-                {documentsCount} document{documentsCount > 1 ? 's' : ''} lié{documentsCount > 1 ? 's' : ''}
+                {documentsCount > 0 
+                  ? `${documentsCount} document${documentsCount > 1 ? 's' : ''} lié${documentsCount > 1 ? 's' : ''}`
+                  : 'Aucune synthèse disponible'
+                }
               </p>
               <Button
                 variant="outline"
