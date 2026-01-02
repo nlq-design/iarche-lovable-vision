@@ -24,10 +24,10 @@ const WHISPER_MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25MB - OpenAI Whisper per-re
 const EDGE_FUNCTION_MAX_FILE_SIZE = 250 * 1024 * 1024; // 250MB - streaming allows larger files
 const MAX_TRANSCRIPTION_CHARS = 15000; // Limit text sent to LLM
 
-// LLM calls can legitimately take >30s on long transcripts; keep a higher ceiling to avoid false timeouts.
-// NOTE: GPT-5-mini tool-calls can sometimes exceed 60s on long payloads.
-const LLM_TIMEOUT_MS = 120_000;
-const WHISPER_TIMEOUT_MS = 120_000; // 2 minutes for large files
+// LLM timeout must be BELOW the Edge Function platform timeout (~60-150s) to fail gracefully.
+// If LLM takes too long, we catch the error and persist status before platform kills us.
+const LLM_TIMEOUT_MS = 50_000; // 50s - fail fast before platform timeout
+const WHISPER_TIMEOUT_MS = 55_000; // 55s - streaming helps but still cap it
 
 type LLMProvider = "lovable" | "openai" | "anthropic" | "openrouter";
 

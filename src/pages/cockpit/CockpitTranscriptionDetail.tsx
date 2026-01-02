@@ -537,6 +537,34 @@ export default function CockpitTranscriptionDetail() {
                   Réessayer
                 </Button>
               )}
+              {/* Stuck detection: analyzing for >3 minutes indicates platform timeout */}
+              {(transcription.status === 'analyzing' || transcription.status === 'transcribing') && transcription.created_at && (() => {
+                const createdAt = new Date(transcription.created_at);
+                const now = new Date();
+                const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+                const isStuck = diffMinutes > 3;
+                return isStuck ? (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="destructive" className="text-xs">
+                      <AlertTriangle className="h-3 w-3 mr-1" />
+                      Bloqué
+                    </Badge>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={handleRetry}
+                      disabled={processTranscription.isPending}
+                    >
+                      {processTranscription.isPending ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                      )}
+                      Relancer
+                    </Button>
+                  </div>
+                ) : null;
+              })()}
               {transcription.status === 'done' && (
                 <Button size="sm" variant="outline" onClick={handleReanalyze} disabled={processTranscription.isPending}>
                   {processTranscription.isPending ? (
