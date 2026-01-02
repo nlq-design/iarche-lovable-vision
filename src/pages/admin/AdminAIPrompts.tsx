@@ -23,6 +23,7 @@ import {
   Calendar, Target, ClipboardList, Mic, FileCode, Settings, Tag, Bell, BarChart3
 } from "lucide-react";
 import { KeywordDictionary } from "@/components/admin/KeywordDictionary";
+import { AIHealthDashboard } from "@/components/admin/AIHealthDashboard";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useLLMModelsGrouped } from "@/hooks/cockpit/useCockpitVoiceTranscriptions";
 import { 
@@ -2125,6 +2126,7 @@ export default function AdminAIPrompts() {
 
         <Tabs defaultValue="config" className="space-y-4">
           <TabsList>
+            <TabsTrigger value="diagnostic">Diagnostic</TabsTrigger>
             <TabsTrigger value="config">Configuration</TabsTrigger>
             <TabsTrigger value="documents">Prompts Secondaires</TabsTrigger>
             <TabsTrigger value="rag">Base RAG</TabsTrigger>
@@ -2132,6 +2134,10 @@ export default function AdminAIPrompts() {
             <TabsTrigger value="memory">Mémoire IA</TabsTrigger>
             <TabsTrigger value="modules">Modules</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="diagnostic" className="space-y-4">
+            <AIHealthDashboard />
+          </TabsContent>
 
           <TabsContent value="config" className="space-y-4">
             {/* Model Selection Card */}
