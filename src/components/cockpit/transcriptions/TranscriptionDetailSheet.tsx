@@ -406,7 +406,9 @@ export function TranscriptionDetailSheet({
                         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                       </Button>
                       <div className="flex-1">
-                        <p className="text-sm font-medium">Audio original</p>
+                        <p className="text-sm font-medium">
+                          {transcription?.original_filename || 'Audio original'}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {transcription?.source === 'upload' ? 'Fichier importé' : 'Enregistrement'}
                         </p>
