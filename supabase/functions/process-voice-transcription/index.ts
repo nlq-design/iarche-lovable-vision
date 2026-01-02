@@ -1016,28 +1016,30 @@ serve(async (req) => {
 
     console.log(`[Job] Processing ${jobId}`);
 
-    // Check if already transcribed (client-side chunking case)
+    // If raw transcript already exists, skip Whisper and go straight to analysis.
+    // This covers:
+    // - client-side chunking flow (pre_transcribed_text)
+    // - retries where transcription already completed
     const existingRawTranscript = (job as Record<string, unknown>).raw_transcript as string | null;
     const aiMeta = vjob.ai_metadata ?? {};
-    const isPreTranscribed = (aiMeta as Record<string, unknown>).pre_transcribed === true;
 
     let rawText: string;
 
-    if (existingRawTranscript && existingRawTranscript.trim().length > 0 && isPreTranscribed) {
-      // Use pre-transcribed text from client-side chunking
-      console.log("[Process] Using pre-transcribed text from client-side chunking");
+    if (existingRawTranscript && existingRawTranscript.trim().length > 0) {
+      console.log("[Process] Using existing raw_transcript (skip Whisper)");
       rawText = existingRawTranscript;
-      
-      // Update status to analyzing (skip transcribing step)
-      await supabase.from("voice_transcriptions").update({ 
-        status: "analyzing",
-        ai_metadata: {
-          ...aiMeta,
-          source: "client-chunked-whisper",
-          transcription_skipped: true,
-          transcribed_at: new Date().toISOString(),
-        }
-      }).eq("id", jobId);
+
+      await supabase
+        .from("voice_transcriptions")
+        .update({
+          status: "analyzing",
+          ai_metadata: {
+            ...aiMeta,
+            transcription_skipped: true,
+            transcribed_at: (aiMeta as Record<string, unknown>).transcribed_at ?? new Date().toISOString(),
+          },
+        })
+        .eq("id", jobId);
     } else {
       // Need to transcribe the audio
       await supabase.from("voice_transcriptions").update({ status: "transcribing" }).eq("id", jobId);
