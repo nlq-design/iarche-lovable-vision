@@ -740,12 +740,23 @@ export function TranscriptionDetailSheet({
                     <TabsContent value="actions" className="space-y-4 pt-4">
                       {summary.action_items?.length > 0 ? (
                         summary.action_items.map((action, i) => {
+                          // Safe string converter - prevents rendering objects as React children
+                          const safeStr = (v: unknown): string => {
+                            if (v == null) return '';
+                            if (typeof v === 'string') return v;
+                            if (typeof v === 'number') return String(v);
+                            if (v instanceof Date) return v.toISOString();
+                            if (typeof v === 'object') return JSON.stringify(v);
+                            return String(v);
+                          };
+
                           // Handle different LLM schemas: { task, owner, due_date } or { step, owner, due }
                           const actionObj = action as Record<string, unknown>;
-                          const taskText = typeof action === 'string' ? action : ((actionObj.task || actionObj.step || '') as string);
-                          const ownerText = typeof action === 'object' ? ((actionObj.owner || '') as string) : '';
-                          const dueText = typeof action === 'object' ? ((actionObj.due_date || actionObj.due || '') as string) : '';
-                          const priorityText = typeof action === 'object' ? ((actionObj.priority || 'medium') as string) : 'medium';
+                          const taskText = typeof action === 'string' ? action : safeStr(actionObj.task || actionObj.step || '');
+                          const ownerText = typeof action === 'object' ? safeStr(actionObj.owner) : '';
+                          const dueText = typeof action === 'object' ? safeStr(actionObj.due_date || actionObj.due) : '';
+                          const priorityRaw = typeof action === 'object' ? safeStr(actionObj.priority) : 'medium';
+                          const priorityText = priorityRaw || 'medium';
 
                           if (!taskText) return null;
 
