@@ -97,7 +97,8 @@ export function CreateTranscriptionModal({
   const { data: promptProfiles = [] } = useAIPromptProfiles('transcription');
   const { leads = [] } = useCockpitLeads();
   const { projects = [] } = useCockpitProjects();
-  const { meetingNotes = [] } = useCockpitMeetingNotes();
+  const meetingNotesResult = useCockpitMeetingNotes();
+  const meetingNotes = meetingNotesResult?.meetingNotes ?? [];
   
   const { data: solutions = [] } = useQuery({
     queryKey: ['solutions-for-transcription'],
