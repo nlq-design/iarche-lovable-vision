@@ -568,34 +568,65 @@ function parseProviderResponse(
 
 // ============= ENTITY CONTEXT & PROMPTS =============
 
+/**
+ * Determine the best transcription prompt based on context
+ * - If project is linked → transcription_reunion_projet
+ * - If lead is linked (commercial context) → transcription_rdv_commercial
+ * - Default → transcription_rdv_commercial
+ */
+function selectTranscriptionPromptSlug(job: VoiceJob): string {
+  // If project is linked, use project meeting prompt
+  if (job.project_id) {
+    return "transcription_reunion_projet";
+  }
+  
+  // Default: commercial RDV prompt (most common use case)
+  return "transcription_rdv_commercial";
+}
+
 // deno-lint-ignore no-explicit-any
-async function loadPromptProfile(supabase: any, prompt_profile_id: string | null) {
+async function loadPromptProfile(supabase: any, prompt_profile_id: string | null, job?: VoiceJob) {
+  // 1. If explicit prompt profile ID is provided, use it
   if (prompt_profile_id) {
     const { data, error } = await supabase
       .from("ai_prompts")
-      .select("id, system_prompt, user_prompt, output_schema, model_config")
+      .select("id, slug, system_prompt, user_prompt, output_schema, model_config")
       .eq("id", prompt_profile_id)
       .single();
 
     if (error) throw new Error(`prompt_profile_not_found: ${error.message}`);
+    console.log(`[Prompt] Using explicit profile: ${data?.slug}`);
     return data;
   }
 
-  const { data: masterPrompt } = await supabase
+  // 2. Auto-select based on context (lead/project)
+  const selectedSlug = job ? selectTranscriptionPromptSlug(job) : "transcription_rdv_commercial";
+  
+  const { data: contextPrompt } = await supabase
     .from("ai_prompts")
-    .select("id, system_prompt, user_prompt, output_schema, model_config")
-    .eq("slug", "cockpit-master-assistant")
+    .select("id, slug, system_prompt, user_prompt, output_schema, model_config")
+    .eq("slug", selectedSlug)
     .maybeSingle();
 
-  if (masterPrompt) return masterPrompt;
+  if (contextPrompt) {
+    console.log(`[Prompt] Auto-selected: ${contextPrompt.slug}`);
+    return contextPrompt;
+  }
 
-  const { data: legacyPrompt } = await supabase
+  // 3. Fallback: try default commercial prompt
+  const { data: fallbackPrompt } = await supabase
     .from("ai_prompts")
-    .select("id, system_prompt, user_prompt, output_schema, model_config")
+    .select("id, slug, system_prompt, user_prompt, output_schema, model_config")
     .eq("slug", "transcription_rdv_commercial")
     .maybeSingle();
 
-  return legacyPrompt ?? null;
+  if (fallbackPrompt) {
+    console.log(`[Prompt] Fallback to: transcription_rdv_commercial`);
+    return fallbackPrompt;
+  }
+
+  console.warn("[Prompt] No transcription prompt found - using minimal fallback");
+  return null;
 }
 
 interface SemanticSearchResult {
@@ -1155,7 +1186,7 @@ serve(async (req) => {
     console.log(`[Context] lead=${ctx.leadId}, project=${ctx.project?.id ?? null}, rag=${ctx.autoDetectionUsed}`);
 
     // LLM processing
-    const profile = await loadPromptProfile(supabase, vjob.prompt_profile_id);
+    const profile = await loadPromptProfile(supabase, vjob.prompt_profile_id, vjob);
     const systemPrompt = profile?.system_prompt ?? "Return JSON only.";
     const userPrompt = profile?.user_prompt ?? null;
     const outputSchema = profile?.output_schema ?? null;
