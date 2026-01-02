@@ -527,10 +527,15 @@ CRITICAL OUTPUT RULES:
     return await attempt(1);
   } catch (e: unknown) {
     const msg = String((e as Error)?.message ?? e);
-    // 1 retry on transient errors
-    if (msg.includes("timeout") || msg.includes("rate_limited") || msg.includes("fetch")) {
+    // 1 retry on transient errors - but NOT on timeout (abort kills us before we can catch)
+    // For timeout, we've already failed once; retrying just wastes time and risks platform kill
+    if (msg.includes("rate_limited") || (msg.includes("fetch") && !msg.includes("timeout") && !msg.includes("abort"))) {
       console.warn(`[LLM] retrying once due to: ${msg.slice(0, 120)}`);
       return await attempt(2);
+    }
+    // Re-throw with clear message for timeout
+    if (msg.includes("timeout") || msg.includes("abort")) {
+      throw new Error(`LLM_TIMEOUT: Analysis took too long (>${LLM_TIMEOUT_MS/1000}s). Transcript may be too complex or too long.`);
     }
     throw e;
   }
@@ -1265,7 +1270,43 @@ serve(async (req) => {
 
     const { sys, usr } = buildLLM(systemPrompt, userPrompt, rawText, ctx, outputSchema as Record<string, unknown> | null);
 
-    const summary = await callLLM(provider, modelId, sys, usr, outputSchema as Record<string, unknown> | null, supportsTools);
+    // CRITICAL: Mark as analyzing_llm before LLM call
+    // If LLM times out and kills the function, we need to persist error status BEFORE the call
+    // We use a pre-emptive metadata flag that the error handler can check
+    await supabase
+      .from("voice_transcriptions")
+      .update({
+        ai_metadata: {
+          ...(vjob.ai_metadata ?? {}),
+          llm_call_started_at: new Date().toISOString(),
+          llm_model: `${provider}/${modelId}`,
+        },
+      })
+      .eq("id", jobId);
+
+    let summary: Record<string, unknown>;
+    try {
+      summary = await callLLM(provider, modelId, sys, usr, outputSchema as Record<string, unknown> | null, supportsTools);
+    } catch (llmErr) {
+      // LLM failed - persist error status immediately before we might be killed
+      const llmErrMsg = llmErr instanceof Error ? llmErr.message : String(llmErr);
+      console.error(`[LLM] Failed: ${llmErrMsg.slice(0, 300)}`);
+      
+      await supabase
+        .from("voice_transcriptions")
+        .update({
+          status: "error",
+          ai_metadata: {
+            ...(vjob.ai_metadata ?? {}),
+            last_error: llmErrMsg.slice(0, 1000),
+            last_error_at: new Date().toISOString(),
+            llm_model: `${provider}/${modelId}`,
+          },
+        })
+        .eq("id", jobId);
+      
+      throw llmErr;
+    }
 
     // Tasks
     const createdTasks = await createTasksFromActions(supabase, vjob, summary, ctx.leadId);
