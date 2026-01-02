@@ -497,6 +497,7 @@ export type Database = {
           sondage_post_evenement_url: string | null
           source_externe: Json | null
           status: string | null
+          synthesis_stale: boolean | null
           tags: string[] | null
           taille_entreprise: string | null
           taille_fichier_bytes: number | null
@@ -555,6 +556,7 @@ export type Database = {
           sondage_post_evenement_url?: string | null
           source_externe?: Json | null
           status?: string | null
+          synthesis_stale?: boolean | null
           tags?: string[] | null
           taille_entreprise?: string | null
           taille_fichier_bytes?: number | null
@@ -613,6 +615,7 @@ export type Database = {
           sondage_post_evenement_url?: string | null
           source_externe?: Json | null
           status?: string | null
+          synthesis_stale?: boolean | null
           tags?: string[] | null
           taille_entreprise?: string | null
           taille_fichier_bytes?: number | null
@@ -1517,6 +1520,7 @@ export type Database = {
           specification_id: string | null
           status: string
           supersedes_document_id: string | null
+          synthesis_stale: boolean | null
           title: string
           updated_at: string | null
           version: string | null
@@ -1543,6 +1547,7 @@ export type Database = {
           specification_id?: string | null
           status?: string
           supersedes_document_id?: string | null
+          synthesis_stale?: boolean | null
           title: string
           updated_at?: string | null
           version?: string | null
@@ -1569,6 +1574,7 @@ export type Database = {
           specification_id?: string | null
           status?: string
           supersedes_document_id?: string | null
+          synthesis_stale?: boolean | null
           title?: string
           updated_at?: string | null
           version?: string | null
@@ -1765,6 +1771,7 @@ export type Database = {
           source: string
           source_context: string | null
           source_id: string | null
+          synthesis_stale: boolean | null
           website: string | null
         }
         Insert: {
@@ -1797,6 +1804,7 @@ export type Database = {
           source: string
           source_context?: string | null
           source_id?: string | null
+          synthesis_stale?: boolean | null
           website?: string | null
         }
         Update: {
@@ -1829,6 +1837,7 @@ export type Database = {
           source?: string
           source_context?: string | null
           source_id?: string | null
+          synthesis_stale?: boolean | null
           website?: string | null
         }
         Relationships: []
@@ -2194,6 +2203,7 @@ export type Database = {
       }
       partners: {
         Row: {
+          ai_documents_summary: string | null
           avatar_url: string | null
           bio: string | null
           commission_rate: number | null
@@ -2209,11 +2219,13 @@ export type Database = {
           phone: string | null
           slug: string
           specialties: string[] | null
+          synthesis_stale: boolean | null
           updated_at: string | null
           website: string | null
           workspace_id: string
         }
         Insert: {
+          ai_documents_summary?: string | null
           avatar_url?: string | null
           bio?: string | null
           commission_rate?: number | null
@@ -2229,11 +2241,13 @@ export type Database = {
           phone?: string | null
           slug: string
           specialties?: string[] | null
+          synthesis_stale?: boolean | null
           updated_at?: string | null
           website?: string | null
           workspace_id?: string
         }
         Update: {
+          ai_documents_summary?: string | null
           avatar_url?: string | null
           bio?: string | null
           commission_rate?: number | null
@@ -2249,6 +2263,7 @@ export type Database = {
           phone?: string | null
           slug?: string
           specialties?: string[] | null
+          synthesis_stale?: boolean | null
           updated_at?: string | null
           website?: string | null
           workspace_id?: string
@@ -2518,6 +2533,7 @@ export type Database = {
       projects: {
         Row: {
           actual_end_date: string | null
+          ai_documents_summary: string | null
           ai_metadata: Json | null
           assigned_to: string | null
           budget_amount: number | null
@@ -2532,12 +2548,14 @@ export type Database = {
           solution_id: string | null
           start_date: string | null
           status: string
+          synthesis_stale: boolean | null
           target_end_date: string | null
           updated_at: string | null
           workspace_id: string
         }
         Insert: {
           actual_end_date?: string | null
+          ai_documents_summary?: string | null
           ai_metadata?: Json | null
           assigned_to?: string | null
           budget_amount?: number | null
@@ -2552,12 +2570,14 @@ export type Database = {
           solution_id?: string | null
           start_date?: string | null
           status?: string
+          synthesis_stale?: boolean | null
           target_end_date?: string | null
           updated_at?: string | null
           workspace_id?: string
         }
         Update: {
           actual_end_date?: string | null
+          ai_documents_summary?: string | null
           ai_metadata?: Json | null
           assigned_to?: string | null
           budget_amount?: number | null
@@ -2572,6 +2592,7 @@ export type Database = {
           solution_id?: string | null
           start_date?: string | null
           status?: string
+          synthesis_stale?: boolean | null
           target_end_date?: string | null
           updated_at?: string | null
           workspace_id?: string
@@ -3322,6 +3343,7 @@ export type Database = {
       }
       voice_transcriptions: {
         Row: {
+          ai_documents_summary: string | null
           ai_metadata: Json
           analysis_context: string | null
           audio_format: string | null
@@ -3346,12 +3368,14 @@ export type Database = {
           status: string
           storage_path: string
           summary: Json | null
+          synthesis_stale: boolean | null
           title: string | null
           transcription_date: string | null
           updated_at: string
           workspace_id: string
         }
         Insert: {
+          ai_documents_summary?: string | null
           ai_metadata?: Json
           analysis_context?: string | null
           audio_format?: string | null
@@ -3376,12 +3400,14 @@ export type Database = {
           status?: string
           storage_path: string
           summary?: Json | null
+          synthesis_stale?: boolean | null
           title?: string | null
           transcription_date?: string | null
           updated_at?: string
           workspace_id: string
         }
         Update: {
+          ai_documents_summary?: string | null
           ai_metadata?: Json
           analysis_context?: string | null
           audio_format?: string | null
@@ -3406,6 +3432,7 @@ export type Database = {
           status?: string
           storage_path?: string
           summary?: Json | null
+          synthesis_stale?: boolean | null
           title?: string | null
           transcription_date?: string | null
           updated_at?: string
