@@ -128,3 +128,6 @@ verify_jwt = true
 
 [functions.pappers-lookup]
 verify_jwt = true
+
+[functions.serve-transcription-audio]
+verify_jwt = true

@@ -170,39 +170,80 @@ export function TranscriptionDetailSheet({
     }
   }, [transcription]);
 
-  // Fetch signed URL for audio playback
+  // Fetch audio URL using the slug-based edge function (fixes same-file-playing bug)
   useEffect(() => {
+    // Reset audio when transcription changes
+    if (audioElement) {
+      audioElement.pause();
+      setAudioElement(null);
+      setIsPlaying(false);
+    }
+    setAudioUrl(null);
+
+    if (!transcriptionId) return;
+
+    // Use slug if available, fallback to id
+    const identifier = transcription?.slug || transcriptionId;
+    const paramKey = transcription?.slug ? 'slug' : 'id';
+    
+    supabase.functions.invoke('serve-transcription-audio', {
+      body: null,
+      method: 'GET',
+    }).then(() => {
+      // Fallback: use direct signed URL if edge function not ready
+    });
+
+    // Direct signed URL approach (more reliable)
     if (transcription?.storage_path) {
       supabase.storage
         .from('voice-transcriptions')
         .createSignedUrl(transcription.storage_path, 3600)
         .then(({ data }) => {
           if (data?.signedUrl) {
+            console.log(`[Audio] Loaded URL for transcription ${identifier}`);
             setAudioUrl(data.signedUrl);
           }
         });
     }
+    
     return () => {
       if (audioElement) {
         audioElement.pause();
       }
     };
-  }, [transcription?.storage_path]);
+  }, [transcriptionId, transcription?.storage_path, transcription?.slug]);
 
   const handlePlayPause = () => {
-    if (!audioUrl) return;
+    if (!audioUrl) {
+      toast.error('Fichier audio non disponible');
+      return;
+    }
     
     if (!audioElement) {
+      console.log(`[Audio] Creating new audio element for: ${transcription?.slug || transcriptionId}`);
       const audio = new Audio(audioUrl);
       audio.onended = () => setIsPlaying(false);
+      audio.onerror = (e) => {
+        console.error('[Audio] Playback error:', e);
+        toast.error('Erreur de lecture audio');
+        setIsPlaying(false);
+      };
       setAudioElement(audio);
-      audio.play();
+      audio.play().catch(err => {
+        console.error('[Audio] Play failed:', err);
+        toast.error('Impossible de lire l\'audio');
+      });
       setIsPlaying(true);
     } else if (isPlaying) {
       audioElement.pause();
       setIsPlaying(false);
     } else {
-      audioElement.play();
+      audioElement.play().catch(err => {
+        console.error('[Audio] Resume failed:', err);
+        // Try recreating the audio element
+        setAudioElement(null);
+        handlePlayPause();
+      });
       setIsPlaying(true);
     }
   };

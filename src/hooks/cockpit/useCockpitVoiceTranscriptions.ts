@@ -28,6 +28,7 @@ export interface VoiceTranscription {
   transcription_date: string | null;
   title: string | null; // Custom title (overrides summary.title if set)
   original_filename: string | null;
+  slug: string | null; // Unique slug for audio URL routing
   // Joined relations
   lead?: { id: string; name: string; company: string | null; email?: string } | null;
   lead_contact?: { id: string; name: string; email: string | null; position: string | null } | null;
