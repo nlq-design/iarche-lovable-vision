@@ -1297,14 +1297,25 @@ serve(async (req) => {
       };
 
       const compressionSys =
-        "Tu compresses un verbatim long en notes fiables. Réponds uniquement via l'outil, sans texte hors JSON.";
+        "Tu es un expert en prise de notes et synthèse de réunions. Ta tâche est de compresser un verbatim long en notes structurées et fidèles. Réponds UNIQUEMENT via l'outil fourni, sans texte hors JSON.";
 
       const compressionUsr =
-        `Contexte d'analyse (optionnel):\n${analysisContext ?? ""}\n\n` +
-        "TÂCHE: Résume fidèlement ce transcript très long en notes structurées (FR), pour permettre une analyse rapide.\n" +
-        "FORMAT: un texte structuré avec sections: Participants, Contexte, Points clés, Décisions, Actions (avec échéances si mentionnées).\n" +
-        "CONTRAINTE: pas d'invention, pas de détails techniques non présents.\n\n" +
-        `TRANSCRIPT:\n${rawText}`;
+        `## CONTEXTE D'ANALYSE (fourni par l'utilisateur)\n${analysisContext ?? "(aucun contexte spécifique)"}\n\n` +
+        "## TÂCHE\n" +
+        "Compresse fidèlement ce transcript très long en notes structurées en français.\n\n" +
+        "## FORMAT ATTENDU (texte structuré)\n" +
+        "**Titre suggéré:** [Résume le sujet en une phrase courte]\n\n" +
+        "**Participants:** [Liste des personnes identifiées]\n\n" +
+        "**Contexte:** [De quoi parle cette réunion/échange]\n\n" +
+        "**Points clés:**\n- [Point 1]\n- [Point 2]\n...\n\n" +
+        "**Décisions prises:**\n- [Décision 1]\n- [Décision 2]\n...\n\n" +
+        "**Actions à mener:**\n- [Action] - Responsable: [Nom] - Échéance: [Date si mentionnée]\n...\n\n" +
+        "**Questions ouvertes / À clarifier:**\n- [Question ou incertitude]\n\n" +
+        "## CONTRAINTES CRITIQUES\n" +
+        "- ZÉRO invention : ne note que ce qui est explicitement dit\n" +
+        "- Préserve les noms propres, entreprises, dates mentionnées\n" +
+        "- Si une échéance est mentionnée (\"demain\", \"la semaine prochaine\"), note-la telle quelle\n\n" +
+        `## TRANSCRIPT À COMPRESSER\n${rawText}`;
 
       try {
         const compressed = await callLLM(
