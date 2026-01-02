@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Button } from '@/components/ui/button';
@@ -161,6 +161,18 @@ export default function CockpitTranscriptionDetail() {
   // Analysis context state
   const [editingContext, setEditingContext] = useState(false);
   const [contextDraft, setContextDraft] = useState('');
+
+  // If a transcription is still queued, auto-start processing once when opening the detail page.
+  const autoStartForIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!transcription?.id) return;
+    if (transcription.status !== 'queued') return;
+    if (autoStartForIdRef.current === transcription.id) return;
+
+    autoStartForIdRef.current = transcription.id;
+    toast.info('Lancement du traitement de la transcription...');
+    processTranscription.mutate({ jobId: transcription.id }, { onSuccess: () => refetch() });
+  }, [transcription?.id, transcription?.status]);
 
   useEffect(() => {
     if (transcription) {
