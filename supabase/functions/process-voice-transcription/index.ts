@@ -872,13 +872,14 @@ async function fetchEntityContext(supabase: any, job: VoiceJob, transcript?: str
 type EntityContext = Awaited<ReturnType<typeof fetchEntityContext>>;
 
 function buildLLM(
-  systemPrompt: string, 
-  userPrompt: string | null, 
-  transcriptText: string, 
-  ctx: EntityContext, 
-  schema: Record<string, unknown> | null
+  systemPrompt: string,
+  userPrompt: string | null,
+  transcriptText: string,
+  ctx: EntityContext,
+  schema: Record<string, unknown> | null,
+  analysisContext: string | null
 ) {
-  const detectedSolutionsContext = ctx.detectedSolutions?.length 
+  const detectedSolutionsContext = ctx.detectedSolutions?.length
     ? ctx.detectedSolutions.map(s => ({
         title: s.resource_title,
         type: s.resource_type,
@@ -899,6 +900,7 @@ function buildLLM(
 
   const payload = {
     transcript: transcriptText.slice(0, MAX_TRANSCRIPTION_CHARS),
+    analysis_context: analysisContext ?? null,
     crm_context: {
       lead: ctx.lead,
       lead_contacts: leadContactsContext,
@@ -1244,15 +1246,15 @@ serve(async (req) => {
     const systemPrompt = profile?.system_prompt ?? "Return JSON only.";
     const userPrompt = profile?.user_prompt ?? null;
     const outputSchema = profile?.output_schema ?? null;
-    
+
     let provider: LLMProvider = "lovable";
     let modelId = "google/gemini-2.5-flash";
     let supportsTools = true;
     let resolvedLLMModelId: string | null = null;
-    
+
     const profileModelConfig = profile?.model_config as Record<string, unknown> | null;
     const configuredLLMModelId = profileModelConfig?.llm_model_id as string | undefined;
-    
+
     if (configuredLLMModelId) {
       const llmModel = await fetchLLMModel(supabase, configuredLLMModelId);
       if (llmModel) {
@@ -1268,11 +1270,73 @@ serve(async (req) => {
       else if (profileModel.startsWith("claude-")) provider = "anthropic";
     }
 
-    const { sys, usr } = buildLLM(systemPrompt, userPrompt, rawText, ctx, outputSchema as Record<string, unknown> | null);
+    const analysisContext = (job as Record<string, unknown>).analysis_context as string | null;
+
+    // For very long transcriptions, use a fast 2-step pipeline to avoid LLM timeouts:
+    // 1) compress transcript -> 2) generate structured summary from compressed version
+    const isLongTranscript = rawText.length > MAX_TRANSCRIPTION_CHARS;
+    let analysisText = rawText;
+    let fastPipelineUsed = false;
+
+    if (isLongTranscript) {
+      fastPipelineUsed = true;
+
+      // Force Lovable gateway + Gemini Flash for reliability on long inputs
+      provider = "lovable";
+      modelId = "google/gemini-2.5-flash";
+      supportsTools = true;
+      resolvedLLMModelId = null;
+
+      const compressionSchema: Record<string, unknown> = {
+        type: "object",
+        properties: {
+          compressed_transcript: { type: "string", description: "Condensé structuré et fidèle du transcript" },
+        },
+        required: ["compressed_transcript"],
+        additionalProperties: false,
+      };
+
+      const compressionSys =
+        "Tu compresses un verbatim long en notes fiables. Réponds uniquement via l'outil, sans texte hors JSON.";
+
+      const compressionUsr =
+        `Contexte d'analyse (optionnel):\n${analysisContext ?? ""}\n\n` +
+        "TÂCHE: Résume fidèlement ce transcript très long en notes structurées (FR), pour permettre une analyse rapide.\n" +
+        "FORMAT: un texte structuré avec sections: Participants, Contexte, Points clés, Décisions, Actions (avec échéances si mentionnées).\n" +
+        "CONTRAINTE: pas d'invention, pas de détails techniques non présents.\n\n" +
+        `TRANSCRIPT:\n${rawText}`;
+
+      try {
+        const compressed = await callLLM(
+          "lovable",
+          "google/gemini-2.5-flash-lite",
+          compressionSys,
+          compressionUsr,
+          compressionSchema,
+          true
+        );
+
+        const c = (compressed as any)?.compressed_transcript;
+        if (typeof c === "string" && c.trim().length > 0) {
+          analysisText = c.trim();
+        }
+      } catch (compressErr) {
+        // If compression fails, fall back to default (truncated) transcript
+        logError("Compress", compressErr);
+        analysisText = rawText;
+      }
+    }
+
+    const { sys, usr } = buildLLM(
+      systemPrompt,
+      userPrompt,
+      analysisText,
+      ctx,
+      outputSchema as Record<string, unknown> | null,
+      analysisContext
+    );
 
     // CRITICAL: Mark as analyzing_llm before LLM call
-    // If LLM times out and kills the function, we need to persist error status BEFORE the call
-    // We use a pre-emptive metadata flag that the error handler can check
     await supabase
       .from("voice_transcriptions")
       .update({
@@ -1280,6 +1344,8 @@ serve(async (req) => {
           ...(vjob.ai_metadata ?? {}),
           llm_call_started_at: new Date().toISOString(),
           llm_model: `${provider}/${modelId}`,
+          fast_pipeline: fastPipelineUsed,
+          analysis_context_used: !!(analysisContext && analysisContext.trim()),
         },
       })
       .eq("id", jobId);
@@ -1288,10 +1354,9 @@ serve(async (req) => {
     try {
       summary = await callLLM(provider, modelId, sys, usr, outputSchema as Record<string, unknown> | null, supportsTools);
     } catch (llmErr) {
-      // LLM failed - persist error status immediately before we might be killed
       const llmErrMsg = llmErr instanceof Error ? llmErr.message : String(llmErr);
       console.error(`[LLM] Failed: ${llmErrMsg.slice(0, 300)}`);
-      
+
       await supabase
         .from("voice_transcriptions")
         .update({
@@ -1301,10 +1366,11 @@ serve(async (req) => {
             last_error: llmErrMsg.slice(0, 1000),
             last_error_at: new Date().toISOString(),
             llm_model: `${provider}/${modelId}`,
+            fast_pipeline: fastPipelineUsed,
           },
         })
         .eq("id", jobId);
-      
+
       throw llmErr;
     }
 
@@ -1402,8 +1468,17 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ error: "process_failed", details: errMsg.slice(0, 500) }), {
-      status: 500,
+    const isExpected = errMsg.includes("LLM_TIMEOUT") || errMsg.includes("rate_limited") || errMsg.includes("credits_exhausted");
+    const code = errMsg.includes("LLM_TIMEOUT")
+      ? "LLM_TIMEOUT"
+      : errMsg.includes("rate_limited")
+        ? "rate_limited"
+        : errMsg.includes("credits_exhausted")
+          ? "credits_exhausted"
+          : "process_failed";
+
+    return new Response(JSON.stringify({ ok: false, error: code, message: errMsg.slice(0, 500) }), {
+      status: isExpected ? 200 : 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
