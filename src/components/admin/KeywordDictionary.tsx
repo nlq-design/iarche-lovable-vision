@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -42,7 +43,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { 
   Plus, Trash2, Edit2, Download, Upload, RefreshCw, 
-  Loader2, Search, Sparkles, BookOpen, Filter
+  Loader2, Search, Sparkles, BookOpen, Filter, Zap, Brain, CheckCircle2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -76,6 +77,12 @@ export function KeywordDictionary() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingAlias, setEditingAlias] = useState<KeywordAlias | null>(null);
   const [deleteAlias, setDeleteAlias] = useState<KeywordAlias | null>(null);
+  const [isAutoExtracting, setIsAutoExtracting] = useState(false);
+  const [extractionProgress, setExtractionProgress] = useState<{
+    sources_scanned?: number;
+    entities_found?: number;
+    aliases_inserted?: number;
+  } | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -294,6 +301,38 @@ export function KeywordDictionary() {
     );
   };
 
+  // Auto-extraction from CRM data
+  const handleAutoExtract = async (mode: 'scan_all' | 'scan_recent' = 'scan_recent') => {
+    setIsAutoExtracting(true);
+    setExtractionProgress(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('extract-entities', {
+        body: { mode, days_back: mode === 'scan_recent' ? 30 : 365 }
+      });
+      
+      if (error) throw error;
+      
+      setExtractionProgress({
+        sources_scanned: data.sources_scanned,
+        entities_found: data.entities_found,
+        aliases_inserted: data.aliases_inserted,
+      });
+      
+      if (data.aliases_inserted > 0) {
+        toast.success(`${data.aliases_inserted} nouveaux alias extraits automatiquement`);
+        queryClient.invalidateQueries({ queryKey: ['keyword-aliases'] });
+      } else {
+        toast.info('Aucun nouvel alias détecté');
+      }
+    } catch (err) {
+      console.error('Auto-extraction error:', err);
+      toast.error('Erreur lors de l\'extraction automatique');
+    } finally {
+      setIsAutoExtracting(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Header Card */}
@@ -302,20 +341,42 @@ export function KeywordDictionary() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
-              <CardTitle>Dictionnaire de mots-clés</CardTitle>
+              <CardTitle>Dictionnaire IA Auto-alimenté</CardTitle>
             </div>
             <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleAutoExtract('scan_recent')}
+                disabled={isAutoExtracting}
+              >
+                {isAutoExtracting ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Brain className="h-4 w-4 mr-1" />
+                )}
+                Extraction IA (30j)
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleAutoExtract('scan_all')}
+                disabled={isAutoExtracting}
+              >
+                <Zap className="h-4 w-4 mr-1" />
+                Scan complet
+              </Button>
               <Button variant="outline" size="sm" onClick={() => refetch()}>
                 <RefreshCw className="h-4 w-4 mr-1" />
                 Rafraîchir
               </Button>
               <Button variant="outline" size="sm" onClick={handleExportCSV}>
                 <Download className="h-4 w-4 mr-1" />
-                Export CSV
+                CSV
               </Button>
               <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
                 <Upload className="h-4 w-4 mr-1" />
-                Import CSV
+                Import
               </Button>
               <input
                 ref={fileInputRef}
@@ -326,30 +387,44 @@ export function KeywordDictionary() {
               />
               <Button size="sm" onClick={() => setShowAddDialog(true)}>
                 <Plus className="h-4 w-4 mr-1" />
-                Ajouter
+                Manuel
               </Button>
             </div>
           </div>
           <CardDescription>
-            Améliorez la détection des solutions, clients et outils dans les transcriptions audio
-            en définissant des alias phonétiques et orthographiques.
+            Dictionnaire auto-alimenté par l'IA depuis les transcriptions, leads, projets et documents.
+            Les entités récurrentes sont détectées et normalisées automatiquement.
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Extraction Progress */}
+          {extractionProgress && (
+            <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+              <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>
+                  Dernière extraction : {extractionProgress.sources_scanned} sources analysées, 
+                  {' '}{extractionProgress.entities_found} entités détectées, 
+                  {' '}{extractionProgress.aliases_inserted} nouveaux alias
+                </span>
+              </div>
+            </div>
+          )}
+          
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
             <div className="p-3 rounded-lg bg-muted/50 border text-center">
               <p className="text-2xl font-bold">{stats.total}</p>
-              <p className="text-xs text-muted-foreground">Total alias</p>
+              <p className="text-xs text-muted-foreground">Total</p>
             </div>
             <div className="p-3 rounded-lg bg-muted/50 border text-center">
               <p className="text-2xl font-bold">{stats.active}</p>
               <p className="text-xs text-muted-foreground">Actifs</p>
             </div>
-            {stats.byContext.slice(0, 2).map(ctx => (
+            {stats.byContext.slice(0, 4).map(ctx => (
               <div key={ctx.value} className="p-3 rounded-lg bg-muted/50 border text-center">
                 <p className="text-2xl font-bold">{ctx.count}</p>
-                <p className="text-xs text-muted-foreground">{ctx.label}s</p>
+                <p className="text-xs text-muted-foreground">{ctx.label}</p>
               </div>
             ))}
           </div>
