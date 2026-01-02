@@ -29,6 +29,11 @@ export interface VoiceTranscription {
   title: string | null; // Custom title (overrides summary.title if set)
   original_filename: string | null;
   slug: string | null; // Unique slug for audio URL routing
+  // File metadata
+  file_size_bytes: number | null;
+  duration_seconds: number | null;
+  audio_format: string | null;
+  analysis_context: string | null;
   // Joined relations
   lead?: { id: string; name: string; company: string | null; email?: string } | null;
   lead_contact?: { id: string; name: string; email: string | null; position: string | null } | null;
@@ -82,6 +87,9 @@ export interface CreateTranscriptionInput {
   transcription_date?: string | null;
   pre_transcribed_text?: string | null; // For chunked transcription done client-side
   original_filename?: string | null;
+  file_size_bytes?: number | null;
+  duration_seconds?: number | null;
+  audio_format?: string | null;
 }
 
 export interface LLMModel {
@@ -228,9 +236,9 @@ export function useCockpitVoiceTranscriptions(
     },
   });
 
-  // Update transcription (lead_id, project_id, title, transcription_date, etc.)
+  // Update transcription (lead_id, project_id, title, transcription_date, analysis_context, etc.)
   const updateTranscription = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Pick<VoiceTranscription, 'lead_id' | 'lead_contact_id' | 'project_id' | 'solution_id' | 'meeting_note_id' | 'title' | 'transcription_date'>> }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Pick<VoiceTranscription, 'lead_id' | 'lead_contact_id' | 'project_id' | 'solution_id' | 'meeting_note_id' | 'title' | 'transcription_date' | 'analysis_context'>> }) => {
       const { error } = await supabase
         .from('voice_transcriptions')
         .update(updates)

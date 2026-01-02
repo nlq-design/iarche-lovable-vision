@@ -3323,9 +3323,13 @@ export type Database = {
       voice_transcriptions: {
         Row: {
           ai_metadata: Json
+          analysis_context: string | null
+          audio_format: string | null
           auto_create_tasks: boolean
           created_at: string
           created_by: string
+          duration_seconds: number | null
+          file_size_bytes: number | null
           id: string
           lead_contact_id: string | null
           lead_id: string | null
@@ -3349,9 +3353,13 @@ export type Database = {
         }
         Insert: {
           ai_metadata?: Json
+          analysis_context?: string | null
+          audio_format?: string | null
           auto_create_tasks?: boolean
           created_at?: string
           created_by: string
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
           id?: string
           lead_contact_id?: string | null
           lead_id?: string | null
@@ -3375,9 +3383,13 @@ export type Database = {
         }
         Update: {
           ai_metadata?: Json
+          analysis_context?: string | null
+          audio_format?: string | null
           auto_create_tasks?: boolean
           created_at?: string
           created_by?: string
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
           id?: string
           lead_contact_id?: string | null
           lead_id?: string | null

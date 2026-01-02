@@ -54,6 +54,10 @@ serve(async (req) => {
       llm_model_id = null,
       pre_transcribed_text = null, // For client-side chunked transcription
       transcription_date = null,
+      original_filename = null,
+      file_size_bytes = null,
+      duration_seconds = null,
+      audio_format = null,
     } = body;
 
     console.log(`Creating voice transcription job for workspace: ${workspace_id}`);
@@ -85,6 +89,10 @@ serve(async (req) => {
         prompt_profile_id,
         llm_model_id,
         transcription_date,
+        original_filename,
+        file_size_bytes,
+        duration_seconds,
+        audio_format,
         created_by: u.user.id,
         status: initialStatus,
         raw_transcript: pre_transcribed_text, // Store pre-transcribed text

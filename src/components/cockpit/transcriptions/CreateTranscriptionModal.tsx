@@ -170,8 +170,46 @@ export function CreateTranscriptionModal({
     }
   };
 
+  // Helper to get audio duration from a blob/file
+  const getAudioMetadata = async (blob: Blob | File): Promise<{ duration: number | null; format: string | null }> => {
+    return new Promise((resolve) => {
+      try {
+        const audio = new Audio();
+        const url = URL.createObjectURL(blob);
+        
+        audio.addEventListener('loadedmetadata', () => {
+          const duration = isFinite(audio.duration) && audio.duration > 0 ? Math.round(audio.duration) : null;
+          const format = blob.type?.split('/')[1] || (blob instanceof File ? blob.name.split('.').pop() : null);
+          URL.revokeObjectURL(url);
+          resolve({ duration, format: format || null });
+        });
+        
+        audio.addEventListener('error', () => {
+          URL.revokeObjectURL(url);
+          // Still try to get format from file extension
+          const format = blob instanceof File ? blob.name.split('.').pop() : null;
+          resolve({ duration: null, format: format || null });
+        });
+        
+        audio.src = url;
+        audio.load();
+        
+        // Timeout after 5s
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+          const format = blob instanceof File ? blob.name.split('.').pop() : null;
+          resolve({ duration: null, format: format || null });
+        }, 5000);
+      } catch {
+        const format = blob instanceof File ? blob.name.split('.').pop() : null;
+        resolve({ duration: null, format: format || null });
+      }
+    });
+  };
+
   const handleSubmit = async () => {
     const filesToUpload = activeTab === 'upload' ? selectedFiles : (recordedBlob ? [recordedBlob] : []);
+
 
     if (filesToUpload.length === 0) {
       toast.error('Veuillez sélectionner ou enregistrer un audio');
@@ -217,12 +255,15 @@ export function CreateTranscriptionModal({
             toast.info(`Fichier volumineux détecté (${(audioBlob.size / (1024 * 1024)).toFixed(1)} MB) - Découpage en ~${estimatedChunks} segments...`);
             
             try {
-              // Client-side chunking and transcription
-              const transcriptText = await transcribeLargeAudio(
-                audioBlob,
-                'fr',
-                (progress) => setChunkingProgress(progress)
-              );
+              // Get audio metadata in parallel with transcription
+              const [transcriptText, audioMeta] = await Promise.all([
+                transcribeLargeAudio(
+                  audioBlob,
+                  'fr',
+                  (progress) => setChunkingProgress(progress)
+                ),
+                getAudioMetadata(audioBlob),
+              ]);
               
               // Upload original file to storage (for reference)
               const { error: uploadError } = await supabase.storage
@@ -231,7 +272,7 @@ export function CreateTranscriptionModal({
 
               if (uploadError) throw uploadError;
 
-              // Create job with pre-transcribed text
+              // Create job with pre-transcribed text and metadata
               const job = await createTranscription.mutateAsync({
                 storage_path: storagePath,
                 source: activeTab === 'upload' ? 'upload' : 'recording',
@@ -242,8 +283,11 @@ export function CreateTranscriptionModal({
                 auto_create_tasks: true,
                 prompt_profile_id: promptProfileId || null,
                 transcription_date: transcriptionDate || null,
-                pre_transcribed_text: transcriptText, // Pass pre-transcribed text
+                pre_transcribed_text: transcriptText,
                 original_filename: audioBlob instanceof File ? audioBlob.name : null,
+                file_size_bytes: audioBlob.size,
+                duration_seconds: audioMeta.duration,
+                audio_format: audioMeta.format,
               });
 
               // Process for AI synthesis (skip Whisper, go straight to LLM)
@@ -258,7 +302,9 @@ export function CreateTranscriptionModal({
               errorCount++;
             }
           } else {
-            // Small file: standard flow
+            // Small file: standard flow - get metadata first
+            const audioMeta = await getAudioMetadata(audioBlob);
+            
             const { error: uploadError } = await supabase.storage
               .from('voice-transcriptions')
               .upload(storagePath, audioBlob);
@@ -276,6 +322,9 @@ export function CreateTranscriptionModal({
               prompt_profile_id: promptProfileId || null,
               transcription_date: transcriptionDate || null,
               original_filename: audioBlob instanceof File ? audioBlob.name : null,
+              file_size_bytes: audioBlob.size,
+              duration_seconds: audioMeta.duration,
+              audio_format: audioMeta.format,
             });
 
             processTranscription.mutate(job.id);
