@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useCockpitVoiceTranscriptions, TRANSCRIPTION_STATUSES } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { CreateTranscriptionModal } from '@/components/cockpit/transcriptions/CreateTranscriptionModal';
 import { TranscriptionDetailSheet } from '@/components/cockpit/transcriptions/TranscriptionDetailSheet';
@@ -44,6 +45,9 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
 };
 
 export default function CockpitTranscriptions() {
+  const navigate = useNavigate();
+  const { slug } = useParams<{ slug?: string }>();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -51,6 +55,22 @@ export default function CockpitTranscriptions() {
   const [isReanalyzing, setIsReanalyzing] = useState(false);
 
   const { transcriptions, isLoading, stats, refetch, processTranscription } = useCockpitVoiceTranscriptions();
+
+  // URL-driven selection: /cockpit/transcriptions/:slug
+  useEffect(() => {
+    if (!slug) return;
+
+    const match = transcriptions.find((t) => t.slug === slug || t.id === slug);
+    if (match) {
+      setSelectedTranscription(match.id);
+      return;
+    }
+
+    if (!isLoading) {
+      toast.error('Transcription introuvable');
+      navigate('/cockpit/transcriptions', { replace: true });
+    }
+  }, [slug, transcriptions, isLoading, navigate]);
 
   // Batch re-analyze all completed transcriptions
   const handleBatchReanalyze = async () => {
@@ -221,7 +241,7 @@ export default function CockpitTranscriptions() {
                 <Card
                   key={transcription.id}
                   className="cursor-pointer hover:border-primary/50 transition-colors"
-                  onClick={() => setSelectedTranscription(transcription.id)}
+                  onClick={() => navigate(`/cockpit/transcriptions/${transcription.slug || transcription.id}`)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-4">
@@ -346,7 +366,12 @@ export default function CockpitTranscriptions() {
       <TranscriptionDetailSheet
         transcriptionId={selectedTranscription}
         open={!!selectedTranscription}
-        onOpenChange={(open) => !open && setSelectedTranscription(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedTranscription(null);
+            if (slug) navigate('/cockpit/transcriptions', { replace: true });
+          }
+        }}
       />
     </CockpitLayout>
   );
