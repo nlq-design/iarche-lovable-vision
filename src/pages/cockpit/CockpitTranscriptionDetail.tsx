@@ -100,6 +100,10 @@ export default function CockpitTranscriptionDetail() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  
+  // Dynamic file metadata (for legacy transcriptions without stored metadata)
+  const [dynamicDuration, setDynamicDuration] = useState<number | null>(null);
+  const [dynamicFileSize, setDynamicFileSize] = useState<number | null>(null);
 
   const { useTranscription, deleteTranscription, processTranscription, updateTranscription, transcriptions, isLoading: listLoading } = useCockpitVoiceTranscriptions();
 
@@ -166,7 +170,7 @@ export default function CockpitTranscriptionDetail() {
     }
   }, [transcription]);
 
-  // Fetch audio URL
+  // Fetch audio URL and dynamic metadata for legacy transcriptions
   useEffect(() => {
     if (audioElement) {
       audioElement.pause();
@@ -174,9 +178,12 @@ export default function CockpitTranscriptionDetail() {
       setIsPlaying(false);
     }
     setAudioUrl(null);
+    setDynamicDuration(null);
+    setDynamicFileSize(null);
 
     if (!transcriptionId || !transcription?.storage_path) return;
 
+    // Fetch signed URL
     supabase.storage
       .from('voice-transcriptions')
       .createSignedUrl(transcription.storage_path, 3600)
@@ -187,6 +194,31 @@ export default function CockpitTranscriptionDetail() {
         }
         if (data?.signedUrl) {
           setAudioUrl(data.signedUrl);
+          
+          // If no stored metadata, try to get it dynamically
+          if (!transcription.duration_seconds || !transcription.file_size_bytes) {
+            // Try to get file size via HEAD request
+            fetch(data.signedUrl, { method: 'HEAD' })
+              .then(res => {
+                const contentLength = res.headers.get('content-length');
+                if (contentLength && !transcription.file_size_bytes) {
+                  setDynamicFileSize(parseInt(contentLength, 10));
+                }
+              })
+              .catch(() => {});
+            
+            // Try to get duration by loading audio metadata
+            if (!transcription.duration_seconds) {
+              const tempAudio = new Audio();
+              tempAudio.addEventListener('loadedmetadata', () => {
+                if (isFinite(tempAudio.duration) && tempAudio.duration > 0) {
+                  setDynamicDuration(Math.round(tempAudio.duration));
+                }
+              });
+              tempAudio.src = data.signedUrl;
+              tempAudio.load();
+            }
+          }
         }
       });
 
@@ -195,7 +227,7 @@ export default function CockpitTranscriptionDetail() {
         audioElement.pause();
       }
     };
-  }, [transcriptionId, transcription?.storage_path]);
+  }, [transcriptionId, transcription?.storage_path, transcription?.duration_seconds, transcription?.file_size_bytes]);
 
   const handlePlayPause = () => {
     if (!audioUrl) {
@@ -474,24 +506,29 @@ export default function CockpitTranscriptionDetail() {
                 <p className="text-sm font-medium">{transcription.original_filename || 'Audio original'}</p>
                 <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
                   {transcription.source === 'upload' ? 'Fichier importé' : 'Enregistrement'}
-                  {transcription.file_size_bytes && (
+                  {(transcription.file_size_bytes || dynamicFileSize) && (
                     <span className="flex items-center gap-1">
                       <HardDrive className="h-3 w-3" />
-                      {formatFileSize(transcription.file_size_bytes)}
+                      {formatFileSize(transcription.file_size_bytes || dynamicFileSize)}
                     </span>
                   )}
-                  {transcription.duration_seconds && (
+                  {(transcription.duration_seconds || dynamicDuration) && (
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {formatDuration(transcription.duration_seconds)}
+                      {formatDuration(transcription.duration_seconds || dynamicDuration)}
                     </span>
                   )}
-                  {transcription.audio_format && (
+                  {transcription.audio_format ? (
                     <span className="flex items-center gap-1">
                       <FileAudio className="h-3 w-3" />
                       {transcription.audio_format.toUpperCase()}
                     </span>
-                  )}
+                  ) : transcription.original_filename ? (
+                    <span className="flex items-center gap-1">
+                      <FileAudio className="h-3 w-3" />
+                      {(transcription.original_filename.split('.').pop() || '').toUpperCase()}
+                    </span>
+                  ) : null}
                 </div>
               </div>
               {transcription.status === 'error' && (
