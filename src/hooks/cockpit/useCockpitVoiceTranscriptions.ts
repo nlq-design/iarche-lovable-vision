@@ -27,6 +27,7 @@ export interface VoiceTranscription {
   updated_at: string;
   transcription_date: string | null;
   title: string | null; // Custom title (overrides summary.title if set)
+  original_filename: string | null;
   // Joined relations
   lead?: { id: string; name: string; company: string | null; email?: string } | null;
   lead_contact?: { id: string; name: string; email: string | null; position: string | null } | null;
@@ -79,6 +80,7 @@ export interface CreateTranscriptionInput {
   llm_model_id?: string | null;
   transcription_date?: string | null;
   pre_transcribed_text?: string | null; // For chunked transcription done client-side
+  original_filename?: string | null;
 }
 
 export interface LLMModel {

@@ -3283,6 +3283,7 @@ export type Database = {
           lead_id: string | null
           llm_model_id: string | null
           meeting_note_id: string | null
+          original_filename: string | null
           project_id: string | null
           prompt_profile_id: string | null
           raw_transcript: string | null
@@ -3307,6 +3308,7 @@ export type Database = {
           lead_id?: string | null
           llm_model_id?: string | null
           meeting_note_id?: string | null
+          original_filename?: string | null
           project_id?: string | null
           prompt_profile_id?: string | null
           raw_transcript?: string | null
@@ -3331,6 +3333,7 @@ export type Database = {
           lead_id?: string | null
           llm_model_id?: string | null
           meeting_note_id?: string | null
+          original_filename?: string | null
           project_id?: string | null
           prompt_profile_id?: string | null
           raw_transcript?: string | null

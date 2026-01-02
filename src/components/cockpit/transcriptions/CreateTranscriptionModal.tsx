@@ -242,6 +242,7 @@ export function CreateTranscriptionModal({
                 prompt_profile_id: promptProfileId || null,
                 transcription_date: transcriptionDate || null,
                 pre_transcribed_text: transcriptText, // Pass pre-transcribed text
+                original_filename: audioBlob instanceof File ? audioBlob.name : null,
               });
 
               // Process for AI synthesis (skip Whisper, go straight to LLM)
@@ -273,6 +274,7 @@ export function CreateTranscriptionModal({
               auto_create_tasks: true,
               prompt_profile_id: promptProfileId || null,
               transcription_date: transcriptionDate || null,
+              original_filename: audioBlob instanceof File ? audioBlob.name : null,
             });
 
             processTranscription.mutate(job.id);
