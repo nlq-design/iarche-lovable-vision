@@ -7,6 +7,7 @@ export type PartnerType = "expert_ia" | "independant" | "apport_affaires";
 export interface Partner {
   id: string;
   workspace_id: string;
+  slug: string;
   name: string;
   email: string | null;
   phone: string | null;
@@ -21,6 +22,16 @@ export interface Partner {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+// Génère un slug à partir d'un texte
+export function generateSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 export const PARTNER_TYPES: { value: PartnerType; label: string }[] = [
