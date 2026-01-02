@@ -226,7 +226,9 @@ export function useCockpitVoiceTranscriptions(
     onError: (error: Error) => {
       const msg = error.message || '';
 
-      if (msg.includes('rate_limited')) {
+      if (msg.includes('LLM_TIMEOUT')) {
+        toast.error("Analyse IA trop longue (timeout). Astuce : ajoute un contexte court, lie à un lead/projet, puis ré-essaie.");
+      } else if (msg.includes('rate_limited')) {
         toast.error('Limite de requêtes atteinte, réessayez plus tard');
       } else if (msg.includes('credits_exhausted')) {
         toast.error('Crédits IA épuisés, veuillez recharger');

@@ -291,7 +291,7 @@ export function CreateTranscriptionModal({
               });
 
               // Process for AI synthesis (skip Whisper, go straight to LLM)
-              processTranscription.mutate(job.id);
+              processTranscription.mutate({ jobId: job.id });
               successCount++;
               setChunkingProgress(null);
               
@@ -327,7 +327,7 @@ export function CreateTranscriptionModal({
               audio_format: audioMeta.format,
             });
 
-            processTranscription.mutate(job.id);
+            processTranscription.mutate({ jobId: job.id });
             successCount++;
           }
         } catch (error) {
