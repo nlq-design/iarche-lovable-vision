@@ -33,9 +33,14 @@ import {
   useSyncVectorizationStatus,
   useGenerateAllEmbeddings,
   useSemanticSearch,
+  useStaleResources,
+  useReindexStaleResources,
+  getFreshnessStatus,
   VectorizationStatus
 } from "@/hooks/useVectorization";
 import { useAIAgentStats } from "@/hooks/admin/useAIAgentStats";
+import { formatDistanceToNow } from "date-fns";
+import { fr } from "date-fns/locale";
 
 // Provider groups for LLM selection
 const PROVIDER_GROUPS = {
@@ -412,6 +417,8 @@ function VectorizationCard({ status, onRefresh }: { status: VectorizationStatus[
   const [testQuery, setTestQuery] = useState("");
   const semanticSearch = useSemanticSearch();
   const [isEnriching, setIsEnriching] = useState(false);
+  const { data: staleData, isLoading: staleLoading } = useStaleResources();
+  const reindexStale = useReindexStaleResources();
 
   const handleEnrichAll = async () => {
     setIsEnriching(true);
@@ -460,6 +467,18 @@ function VectorizationCard({ status, onRefresh }: { status: VectorizationStatus[
     }
   };
 
+  const handleReindexStale = async () => {
+    if (!staleData?.stale?.length) return;
+    toast.info(`Re-indexation de ${staleData.count} ressources obsolètes...`);
+    try {
+      const result = await reindexStale.mutateAsync(staleData.stale);
+      toast.success(`Re-indexation terminée : ${result.reindexed} OK, ${result.failed} erreurs`);
+    } catch (error) {
+      toast.error("Erreur lors de la re-indexation");
+      console.error(error);
+    }
+  };
+
   const handleTestSearch = async () => {
     if (!testQuery.trim()) return;
     try {
@@ -482,6 +501,20 @@ function VectorizationCard({ status, onRefresh }: { status: VectorizationStatus[
     }
   };
 
+  const getFreshnessBadge = (lastIndexedAt: string | null) => {
+    const freshness = getFreshnessStatus(lastIndexedAt);
+    switch (freshness) {
+      case 'fresh':
+        return <Badge className="bg-green-500/10 text-green-600 border-green-500/20 text-xs">Frais</Badge>;
+      case 'stale':
+        return <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20 text-xs">À rafraîchir</Badge>;
+      case 'outdated':
+        return <Badge className="bg-red-500/10 text-red-600 border-red-500/20 text-xs">Obsolète</Badge>;
+      case 'never':
+        return <Badge variant="outline" className="text-xs">Jamais indexé</Badge>;
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -490,11 +523,36 @@ function VectorizationCard({ status, onRefresh }: { status: VectorizationStatus[
             <Database className="h-5 w-5" />
             <CardTitle>Base de connaissances RAG</CardTitle>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="outline" size="sm" onClick={onRefresh}>
               <RefreshCw className="h-4 w-4 mr-1" />
               Sync
             </Button>
+            {(staleData?.count || 0) > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline"
+                      size="sm" 
+                      onClick={handleReindexStale}
+                      disabled={reindexStale.isPending}
+                      className="border-orange-500/50 text-orange-600 hover:bg-orange-500/10"
+                    >
+                      {reindexStale.isPending ? (
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                      )}
+                      {staleData?.count} obsolètes
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Re-indexer les ressources modifiées depuis leur dernière indexation</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             <Button 
               variant="secondary"
               size="sm" 
@@ -536,13 +594,29 @@ function VectorizationCard({ status, onRefresh }: { status: VectorizationStatus[
           <Progress value={overallProgress} className="h-2" />
         </div>
 
-        {/* Per-type status */}
+        {/* Stale resources alert */}
+        {(staleData?.count || 0) > 0 && (
+          <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
+            <div className="flex items-center gap-2 text-sm text-orange-700 dark:text-orange-400">
+              <AlertCircle className="h-4 w-4" />
+              <span className="font-medium">{staleData?.count} ressources modifiées</span>
+              <span className="text-muted-foreground">depuis leur dernière indexation</span>
+            </div>
+            <div className="mt-2 text-xs text-muted-foreground">
+              {staleData?.stale.slice(0, 3).map(r => r.resource_title).join(", ")}
+              {(staleData?.count || 0) > 3 && ` et ${(staleData?.count || 0) - 3} autres...`}
+            </div>
+          </div>
+        )}
+
+        {/* Per-type status with freshness indicators */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {status.map((s) => {
             const progress = s.total_resources > 0 
               ? (s.indexed_resources / s.total_resources) * 100 
               : 0;
             const isComplete = s.indexed_resources === s.total_resources && s.total_resources > 0;
+            const freshness = getFreshnessStatus(s.last_indexed_at);
             
             return (
               <div 
@@ -563,10 +637,16 @@ function VectorizationCard({ status, onRefresh }: { status: VectorizationStatus[
                   ) : null}
                 </div>
                 <Progress value={progress} className="h-1.5" />
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex justify-between items-center text-xs text-muted-foreground">
                   <span>{s.indexed_resources} / {s.total_resources}</span>
-                  <span>{progress.toFixed(0)}%</span>
+                  {getFreshnessBadge(s.last_indexed_at)}
                 </div>
+                {s.last_indexed_at && (
+                  <div className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {formatDistanceToNow(new Date(s.last_indexed_at), { addSuffix: true, locale: fr })}
+                  </div>
+                )}
               </div>
             );
           })}
