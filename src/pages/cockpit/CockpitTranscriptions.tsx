@@ -267,7 +267,14 @@ export default function CockpitTranscriptions() {
                            
                            {/* Lead */}
                            {transcription.lead && (
-                             <Badge variant="secondary" className="text-xs h-5">
+                             <Badge 
+                               variant="secondary" 
+                               className="text-xs h-5 cursor-pointer hover:bg-primary/20"
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 navigate(`/cockpit/leads/${transcription.lead!.id}`);
+                               }}
+                             >
                                <User className="h-3 w-3 mr-1" />
                                {transcription.lead.name}
                              </Badge>
@@ -283,7 +290,14 @@ export default function CockpitTranscriptions() {
                            
                            {/* Project */}
                            {transcription.project && (
-                             <Badge variant="secondary" className="text-xs h-5">
+                             <Badge 
+                               variant="secondary" 
+                               className="text-xs h-5 cursor-pointer hover:bg-primary/20"
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 navigate(`/cockpit/projects/${transcription.project!.id}`);
+                               }}
+                             >
                                <FolderOpen className="h-3 w-3 mr-1" />
                                {transcription.project.name}
                              </Badge>
@@ -291,7 +305,14 @@ export default function CockpitTranscriptions() {
                            
                            {/* Solution */}
                            {transcription.solution && (
-                             <Badge variant="outline" className="text-xs h-5">
+                             <Badge 
+                               variant="outline" 
+                               className="text-xs h-5 cursor-pointer hover:bg-primary/20"
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 navigate(`/cockpit/solutions/${transcription.solution_id}`);
+                               }}
+                             >
                                <Package className="h-3 w-3 mr-1" />
                                {transcription.solution.title}
                              </Badge>
