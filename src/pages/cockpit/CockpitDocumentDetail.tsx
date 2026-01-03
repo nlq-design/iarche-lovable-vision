@@ -349,6 +349,10 @@ export default function CockpitDocumentDetail() {
                   <Edit2 className="h-4 w-4" />
                   Édition
                 </TabsTrigger>
+                <TabsTrigger value="consulte" className="gap-1.5">
+                  <Sparkles className="h-4 w-4" />
+                  Consulte
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="apercu" className="mt-4">
@@ -369,6 +373,16 @@ export default function CockpitDocumentDetail() {
                     setActiveTab('apercu');
                     toast.success('Document mis à jour');
                   }}
+                />
+              </TabsContent>
+
+              <TabsContent value="consulte" className="mt-4">
+                <ConsulteTab
+                  entityType="document"
+                  entityId={document.id}
+                  entityName={document.title}
+                  summary={document.ai_documents_summary}
+                  onSynthesisComplete={() => refetch()}
                 />
               </TabsContent>
             </Tabs>
@@ -514,14 +528,7 @@ export default function CockpitDocumentDetail() {
               </CardContent>
             </Card>
 
-            {/* Consulte Tab - AI Synthesis with linked entities */}
-            <ConsulteTab
-              entityType="document"
-              entityId={document.id}
-              entityName={document.title}
-              summary={document.ai_documents_summary}
-              onSynthesisComplete={() => refetch()}
-            />
+            {/* AI Metadata */}
 
             {/* AI Metadata */}
             {document.ai_metadata && Object.keys(document.ai_metadata).length > 0 && (

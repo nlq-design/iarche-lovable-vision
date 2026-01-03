@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -66,6 +67,7 @@ import {
   Linkedin,
   MapPin,
   ExternalLink,
+  Sparkles,
 } from "lucide-react";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -81,7 +83,7 @@ import { useEntityPartners } from '@/hooks/cockpit/usePartnerLinks';
 import type { Database } from '@/integrations/supabase/types';
 import { LeadContactsSection } from '@/components/cockpit/LeadContactsSection';
 import { usePappersLookup } from '@/hooks/cockpit/usePappersLookup';
-import { Users, Sparkles, Loader2 as LoaderIcon } from 'lucide-react';
+import { Users, Loader2 as LoaderIcon } from 'lucide-react';
 
 type Lead = Database['public']['Tables']['leads']['Row'];
 
@@ -408,10 +410,23 @@ const CockpitLeadDetail = () => {
             </Button>
           </div>
         </div>
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="informations" className="space-y-4">
+          <TabsList className="h-9">
+            <TabsTrigger value="informations" className="gap-1.5 text-sm h-7">
+              <User className="h-3.5 w-3.5" />
+              Informations
+            </TabsTrigger>
+            <TabsTrigger value="consulte" className="gap-1.5 text-sm h-7">
+              <Sparkles className="h-3.5 w-3.5" />
+              Consulte
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Left Column - Contact Info */}
-          <div className="lg:col-span-2 space-y-4">
+          <TabsContent value="informations" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Left Column - Contact Info */}
+              <div className="lg:col-span-2 space-y-4">
             {/* Contact Principal (1er interlocuteur = le lead) */}
             <Card>
               <CardHeader className="pb-3">
@@ -1058,15 +1073,6 @@ const CockpitLeadDetail = () => {
               </Card>
             )}
 
-            {/* Consulte Tab - AI Synthesis with linked entities */}
-            <ConsulteTab
-              entityType="lead"
-              entityId={id!}
-              entityName={(lead as any)?.company || (lead as any)?.name || 'Lead'}
-              summary={(lead as any)?.ai_documents_summary || null}
-              onSynthesisComplete={refetchLead}
-            />
-
             {/* Contacts (interlocuteurs) */}
             <LeadContactsSection leadId={id!} />
 
@@ -1178,6 +1184,19 @@ const CockpitLeadDetail = () => {
             </Card>
           </div>
         </div>
+          </TabsContent>
+
+          {/* Consulte Tab */}
+          <TabsContent value="consulte">
+            <ConsulteTab
+              entityType="lead"
+              entityId={id!}
+              entityName={(lead as any)?.company || (lead as any)?.name || 'Lead'}
+              summary={(lead as any)?.ai_documents_summary || null}
+              onSynthesisComplete={refetchLead}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

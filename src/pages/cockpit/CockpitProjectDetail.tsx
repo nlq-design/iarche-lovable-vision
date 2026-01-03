@@ -53,6 +53,7 @@ import {
   X,
   Lightbulb,
   Mic,
+  Sparkles,
 } from "lucide-react";
 import {
   Select,
@@ -374,7 +375,7 @@ const CockpitProjectDetail = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5 h-9 overflow-x-auto">
+          <TabsList className="grid w-full grid-cols-6 h-9 overflow-x-auto">
             <TabsTrigger value="overview" className="flex items-center gap-1 text-xs sm:text-sm h-7 px-2">
               <LayoutDashboard className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Aperçu</span>
@@ -399,6 +400,10 @@ const CockpitProjectDetail = () => {
               {projectSpecs.length > 0 && (
                 <Badge variant="secondary" className="text-xs py-0 px-1 h-4 hidden sm:inline-flex">{projectSpecs.length}</Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="consulte" className="flex items-center gap-1 text-xs sm:text-sm h-7 px-2">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Consulte</span>
             </TabsTrigger>
             <TabsTrigger value="activity" className="flex items-center gap-1 text-xs sm:text-sm h-7 px-2">
               <ListTodo className="h-3.5 w-3.5" />
@@ -989,6 +994,17 @@ const CockpitProjectDetail = () => {
           {/* CDC Tab */}
           <TabsContent value="specs" className="space-y-4">
             <SpecificationEditor projectId={id || ''} specifications={projectSpecs} />
+          </TabsContent>
+
+          {/* Consulte Tab */}
+          <TabsContent value="consulte">
+            <ConsulteTab
+              entityType="project"
+              entityId={id!}
+              entityName={project.name || 'Projet'}
+              summary={(project as any).ai_documents_summary || null}
+              onSynthesisComplete={() => queryClient.invalidateQueries({ queryKey: ['project-detail', id] })}
+            />
           </TabsContent>
 
           {/* Activity Tab - Tâches + Réunions */}

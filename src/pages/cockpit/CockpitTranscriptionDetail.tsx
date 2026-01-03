@@ -915,10 +915,14 @@ export default function CockpitTranscriptionDetail() {
         {/* Content Tabs */}
         {transcription.status === 'done' && summary ? (
           <Tabs defaultValue="summary" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="summary">Synthèse</TabsTrigger>
               <TabsTrigger value="transcript">Transcription</TabsTrigger>
               <TabsTrigger value="actions">Actions</TabsTrigger>
+              <TabsTrigger value="consulte" className="gap-1">
+                <Sparkles className="h-3.5 w-3.5" />
+                Consulte
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="summary" className="space-y-4 pt-4">
@@ -1185,6 +1189,17 @@ export default function CockpitTranscriptionDetail() {
                   <p>Aucune action identifiée</p>
                 </div>
               )}
+            </TabsContent>
+
+            {/* Consulte Tab */}
+            <TabsContent value="consulte">
+              <ConsulteTab
+                entityType="transcription"
+                entityId={transcriptionId}
+                entityName={displayTitle}
+                summary={(transcription as any).ai_documents_summary || null}
+                onSynthesisComplete={() => refetch()}
+              />
             </TabsContent>
           </Tabs>
         ) : transcription.status === 'error' ? (
