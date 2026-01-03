@@ -1297,6 +1297,47 @@ export type Database = {
         }
         Relationships: []
       }
+      entity_context_notes: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_context_notes_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entity_name_references: {
         Row: {
           confidence_score: number | null

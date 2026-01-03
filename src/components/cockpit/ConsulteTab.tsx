@@ -22,13 +22,16 @@ import {
   Link2,
   History,
   Upload,
-  TrendingUp
+  TrendingUp,
+  StickyNote
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useEntityLinks, EntityType, ExtendedEntityType, LinkedEntity } from '@/hooks/cockpit/useEntityLinks';
+import { ContextNotesTab } from './ContextNotesTab';
+import type { ContextNoteEntityType } from '@/hooks/cockpit/useEntityContextNotes';
 
 interface ConsulteTabProps {
   entityType: EntityType;
@@ -79,8 +82,11 @@ export function ConsulteTab({
   onSynthesisComplete 
 }: ConsulteTabProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'history'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'history' | 'context'>('overview');
   const { links, totalCount, isLoading, refetch, isStale } = useEntityLinks(entityType, entityId);
+  
+  // Map EntityType to ContextNoteEntityType
+  const contextEntityType: ContextNoteEntityType = entityType as ContextNoteEntityType;
 
   // Auto-refresh when stale
   useEffect(() => {
@@ -218,7 +224,7 @@ export function ConsulteTab({
       
       <CardContent className="pt-0">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-          <TabsList className="w-full grid grid-cols-3 h-8">
+          <TabsList className="w-full grid grid-cols-4 h-8">
             <TabsTrigger value="overview" className="text-xs">
               <Sparkles className="h-3 w-3 mr-1" />
               Synthèse
@@ -230,6 +236,10 @@ export function ConsulteTab({
             <TabsTrigger value="history" className="text-xs">
               <History className="h-3 w-3 mr-1" />
               Historique
+            </TabsTrigger>
+            <TabsTrigger value="context" className="text-xs">
+              <StickyNote className="h-3 w-3 mr-1" />
+              Contexte
             </TabsTrigger>
           </TabsList>
 
@@ -348,6 +358,11 @@ export function ConsulteTab({
                 </div>
               </ScrollArea>
             )}
+          </TabsContent>
+
+          {/* Context Notes Tab */}
+          <TabsContent value="context" className="mt-3">
+            <ContextNotesTab entityType={contextEntityType} entityId={entityId} />
           </TabsContent>
         </Tabs>
       </CardContent>
