@@ -20,13 +20,14 @@ import {
   Loader2,
   AlertCircle,
   Link2,
-  History
+  History,
+  Upload
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useEntityLinks, EntityType, LinkedEntity } from '@/hooks/cockpit/useEntityLinks';
+import { useEntityLinks, EntityType, ExtendedEntityType, LinkedEntity } from '@/hooks/cockpit/useEntityLinks';
 
 interface ConsulteTabProps {
   entityType: EntityType;
@@ -36,31 +37,34 @@ interface ConsulteTabProps {
   onSynthesisComplete?: () => void;
 }
 
-const ENTITY_ICONS: Record<EntityType, React.ReactNode> = {
+const ENTITY_ICONS: Record<ExtendedEntityType, React.ReactNode> = {
   lead: <User className="h-4 w-4" />,
   project: <FolderOpen className="h-4 w-4" />,
   solution: <Package className="h-4 w-4" />,
   partner: <Users className="h-4 w-4" />,
   transcription: <Mic className="h-4 w-4" />,
   document: <FileText className="h-4 w-4" />,
+  upload: <Upload className="h-4 w-4" />,
 };
 
-const ENTITY_LABELS: Record<EntityType, string> = {
+const ENTITY_LABELS: Record<ExtendedEntityType, string> = {
   lead: 'Leads',
   project: 'Projets',
   solution: 'Solutions',
   partner: 'Partenaires',
   transcription: 'Transcriptions',
   document: 'Documents',
+  upload: 'Fichiers',
 };
 
-const ENTITY_ROUTES: Record<EntityType, string> = {
+const ENTITY_ROUTES: Record<ExtendedEntityType, string> = {
   lead: '/cockpit/leads',
   project: '/cockpit/projects',
   solution: '/cockpit/solutions',
   partner: '/cockpit/partenaires',
   transcription: '/cockpit/transcriptions',
   document: '/cockpit/documents',
+  upload: '/cockpit/uploads',
 };
 
 export function ConsulteTab({ 
@@ -126,7 +130,7 @@ export function ConsulteTab({
     return `${baseRoute}/${entity.id}`;
   };
 
-  const renderLinkedEntities = (entities: LinkedEntity[], type: EntityType) => {
+  const renderLinkedEntities = (entities: LinkedEntity[], type: ExtendedEntityType) => {
     if (entities.length === 0) return null;
 
     return (
@@ -160,13 +164,14 @@ export function ConsulteTab({
     );
   };
 
-  const allLinkedEntities = [
+  const allLinkedEntities: (LinkedEntity & { sortDate?: string })[] = [
     ...links.leads.map(e => ({ ...e, sortDate: e.created_at })),
     ...links.projects.map(e => ({ ...e, sortDate: e.created_at })),
     ...links.solutions.map(e => ({ ...e, sortDate: e.created_at })),
     ...links.partners.map(e => ({ ...e, sortDate: e.created_at })),
     ...links.transcriptions.map(e => ({ ...e, sortDate: e.created_at })),
     ...links.documents.map(e => ({ ...e, sortDate: e.created_at })),
+    ...links.uploads.map(e => ({ ...e, type: 'upload' as ExtendedEntityType, sortDate: e.created_at })),
   ].sort((a, b) => {
     if (!a.sortDate) return 1;
     if (!b.sortDate) return -1;
@@ -294,6 +299,7 @@ export function ConsulteTab({
                   {renderLinkedEntities(links.partners, 'partner')}
                   {renderLinkedEntities(links.transcriptions, 'transcription')}
                   {renderLinkedEntities(links.documents, 'document')}
+                  {renderLinkedEntities(links.uploads, 'upload')}
                 </div>
               </ScrollArea>
             )}
