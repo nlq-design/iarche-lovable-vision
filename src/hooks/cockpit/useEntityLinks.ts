@@ -3,10 +3,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export type EntityType = 'lead' | 'project' | 'solution' | 'partner' | 'transcription' | 'document';
+export type ExtendedEntityType = EntityType | 'upload';
 
 export interface LinkedEntity {
   id: string;
-  type: EntityType;
+  type: ExtendedEntityType;
   name: string;
   slug?: string;
   context?: string;
@@ -21,6 +22,7 @@ export interface EntityLinksData {
   partners: LinkedEntity[];
   transcriptions: LinkedEntity[];
   documents: LinkedEntity[];
+  uploads: LinkedEntity[];
 }
 
 interface UseEntityLinksResult {
@@ -46,7 +48,8 @@ export function useEntityLinks(entityType: EntityType, entityId: string | undefi
         solutions: [],
         partners: [],
         transcriptions: [],
-        documents: []
+        documents: [],
+        uploads: []
       };
 
       // Fetch based on entity type
@@ -111,7 +114,8 @@ export function useEntityLinks(entityType: EntityType, entityId: string | undefi
     solutions: [],
     partners: [],
     transcriptions: [],
-    documents: []
+    documents: [],
+    uploads: []
   };
 
   const totalCount = 
@@ -120,7 +124,8 @@ export function useEntityLinks(entityType: EntityType, entityId: string | undefi
     links.solutions.length + 
     links.partners.length + 
     links.transcriptions.length + 
-    links.documents.length;
+    links.documents.length +
+    links.uploads.length;
 
   return { links, totalCount, isLoading, refetch, isStale };
 }
@@ -213,6 +218,16 @@ async function fetchLeadLinks(leadId: string, links: EntityLinksData) {
       links.solutions.push({ id: s.solution.id, type: 'solution', name: s.solution.title, slug: s.solution.slug, context: s.interest_level, created_at: s.created_at });
     }
   });
+
+  // Uploaded files
+  const { data: files } = await supabase
+    .from('uploaded_files')
+    .select('id, original_filename, file_type, created_at')
+    .contains('lead_ids', [leadId]);
+
+  files?.forEach(f => {
+    links.uploads.push({ id: f.id, type: 'upload', name: f.original_filename, context: f.file_type, created_at: f.created_at });
+  });
 }
 
 async function fetchProjectLinks(projectId: string, links: EntityLinksData) {
@@ -260,6 +275,16 @@ async function fetchProjectLinks(projectId: string, links: EntityLinksData) {
   docs?.forEach(d => {
     links.documents.push({ id: d.id, type: 'document', name: d.title, context: d.document_type, created_at: d.created_at });
   });
+
+  // Uploaded files
+  const { data: files } = await supabase
+    .from('uploaded_files')
+    .select('id, original_filename, file_type, created_at')
+    .contains('project_ids', [projectId]);
+
+  files?.forEach(f => {
+    links.uploads.push({ id: f.id, type: 'upload', name: f.original_filename, context: f.file_type, created_at: f.created_at });
+  });
 }
 
 async function fetchSolutionLinks(solutionId: string, links: EntityLinksData) {
@@ -296,6 +321,16 @@ async function fetchSolutionLinks(solutionId: string, links: EntityLinksData) {
 
   trans?.forEach(t => {
     links.transcriptions.push({ id: t.id, type: 'transcription', name: t.title || 'Transcription', slug: t.slug, created_at: t.created_at });
+  });
+
+  // Uploaded files
+  const { data: files } = await supabase
+    .from('uploaded_files')
+    .select('id, original_filename, file_type, created_at')
+    .contains('solution_ids', [solutionId]);
+
+  files?.forEach(f => {
+    links.uploads.push({ id: f.id, type: 'upload', name: f.original_filename, context: f.file_type, created_at: f.created_at });
   });
 }
 
@@ -358,6 +393,16 @@ async function fetchPartnerLinks(partnerId: string, links: EntityLinksData) {
     if (d.document) {
       links.documents.push({ id: d.document.id, type: 'document', name: d.document.title, context: d.document.document_type, created_at: d.created_at });
     }
+  });
+
+  // Uploaded files
+  const { data: files } = await supabase
+    .from('uploaded_files')
+    .select('id, original_filename, file_type, created_at')
+    .contains('partner_ids', [partnerId]);
+
+  files?.forEach(f => {
+    links.uploads.push({ id: f.id, type: 'upload', name: f.original_filename, context: f.file_type, created_at: f.created_at });
   });
 }
 
