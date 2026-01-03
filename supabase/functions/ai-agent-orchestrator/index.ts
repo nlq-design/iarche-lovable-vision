@@ -3833,14 +3833,20 @@ Tu DOIS utiliser les informations collectées précédemment :
 - Créer une tâche pour une action directe (ex: update_lead, create_booking)
 - Stopper après un seul outil si la tâche en nécessite plusieurs`;
 
-// Slugs pour le système de prompts composés v3.2
+// Slugs pour le système de prompts composés v5.3 (avec gouverneur)
 const PROMPT_SLUGS = {
+  governor: "orchestrator-governor",
   master: "master-agent",
   uiNavigation: "ui-navigation",
   toolsReference: "tools-reference",
 };
 
 // Fallbacks pour chaque bloc
+const FALLBACK_GOVERNOR = `## GOUVERNANCE ORCHESTRATEUR
+- Priorité Cockpit > Admin
+- Canaux : Telegram (concis), Chat (détaillé), API (batch)
+- Escalade : Retry → Notification → Fallback manuel`;
+
 const FALLBACK_UI_NAVIGATION = `## NAVIGATION UI
 - /admin : Espace administration (articles, contacts, newsletters)
 - /cockpit : Espace commercial (leads, pipeline, projets, agenda)`;
@@ -3853,11 +3859,11 @@ const FALLBACK_TOOLS_REFERENCE = `## OUTILS DISPONIBLES
 // deno-lint-ignore no-explicit-any
 async function getSystemPrompt(supabase: any): Promise<{ prompt: string; model: string }> {
   try {
-    // Récupérer les 3 prompts en une seule requête
+    // Récupérer les 4 prompts en une seule requête (gouverneur + 3 blocs)
     const { data, error } = await supabase
       .from("ai_prompts")
       .select("slug, system_prompt, model_config")
-      .in("slug", [PROMPT_SLUGS.master, PROMPT_SLUGS.uiNavigation, PROMPT_SLUGS.toolsReference]);
+      .in("slug", [PROMPT_SLUGS.governor, PROMPT_SLUGS.master, PROMPT_SLUGS.uiNavigation, PROMPT_SLUGS.toolsReference]);
     
     if (error) {
       console.error("Error fetching prompts:", error);
@@ -3870,7 +3876,8 @@ async function getSystemPrompt(supabase: any): Promise<{ prompt: string; model: 
       return found?.system_prompt?.trim() || "";
     };
     
-    // Récupérer chaque bloc avec fallback
+    // Récupérer chaque bloc avec fallback - ORDRE HIÉRARCHIQUE
+    const governorPrompt = getPromptBySlug(PROMPT_SLUGS.governor) || FALLBACK_GOVERNOR;
     const masterPrompt = getPromptBySlug(PROMPT_SLUGS.master) || DEFAULT_SYSTEM_PROMPT;
     const uiNavigation = getPromptBySlug(PROMPT_SLUGS.uiNavigation) || FALLBACK_UI_NAVIGATION;
     const toolsReference = getPromptBySlug(PROMPT_SLUGS.toolsReference) || FALLBACK_TOOLS_REFERENCE;
@@ -3880,23 +3887,31 @@ async function getSystemPrompt(supabase: any): Promise<{ prompt: string; model: 
     const modelConfig = masterData?.model_config as { model?: string } | null;
     const model = modelConfig?.model || "google/gemini-2.5-flash";
     
-    // Composer le prompt final avec séparateurs clairs
+    // Composer le prompt final avec GOUVERNEUR EN PREMIER
     const composedPrompt = [
-      `### AGENT IA IARCHE - PROMPT SYSTÈME COMPOSÉ v3.2`,
-      `### Blocs: master-agent + ui-navigation + tools-reference`,
+      `### AGENT IA IARCHE - PROMPT SYSTÈME COMPOSÉ v5.3`,
+      `### Hiérarchie: governor → master-agent → ui-navigation → tools-reference`,
       ``,
+      `## NIVEAU 0 - GOUVERNEUR`,
+      governorPrompt,
+      ``,
+      `---`,
+      ``,
+      `## NIVEAU 1 - IDENTITÉ AGENT`,
       masterPrompt,
       ``,
       `---`,
       ``,
+      `## NIVEAU 2 - NAVIGATION`,
       uiNavigation,
       ``,
       `---`,
       ``,
+      `## NIVEAU 3 - OUTILS`,
       toolsReference,
     ].join("\n");
     
-    console.log(`Composed system prompt from ${data?.length || 0} blocks, model: ${model}`);
+    console.log(`Composed system prompt from ${data?.length || 0} blocks (v5.3 with governor), model: ${model}`);
     return { prompt: composedPrompt, model };
     
   } catch (err) {
