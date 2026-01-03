@@ -74,7 +74,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCockpitLeads, useCockpitProjects, useCockpitTasks, useCockpitBookings, useCockpitUploads } from '@/hooks/cockpit';
 import { useLeads } from '@/hooks/shared/useLeads';
 import { LinkedFilesSection } from '@/components/cockpit/LinkedFilesSection';
-import { DocumentsSynthesisSection } from '@/components/cockpit/DocumentsSynthesisSection';
+import { ConsulteTab } from '@/components/cockpit/ConsulteTab';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
 import { useCockpitPartners } from '@/hooks/cockpit/useCockpitPartners';
 import { useEntityPartners } from '@/hooks/cockpit/usePartnerLinks';
@@ -1058,12 +1058,12 @@ const CockpitLeadDetail = () => {
               </Card>
             )}
 
-            {/* AI Synthesis - show if files exist OR synthesis already exists */}
-            <DocumentsSynthesisSection
+            {/* Consulte Tab - AI Synthesis with linked entities */}
+            <ConsulteTab
               entityType="lead"
               entityId={id!}
+              entityName={(lead as any)?.company || (lead as any)?.name || 'Lead'}
               summary={(lead as any)?.ai_documents_summary || null}
-              documentsCount={linkedFiles?.length || 0}
               onSynthesisComplete={refetchLead}
             />
 
