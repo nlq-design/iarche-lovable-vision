@@ -21,7 +21,8 @@ import {
   AlertCircle,
   Link2,
   History,
-  Upload
+  Upload,
+  TrendingUp
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -45,6 +46,7 @@ const ENTITY_ICONS: Record<ExtendedEntityType, React.ReactNode> = {
   transcription: <Mic className="h-4 w-4" />,
   document: <FileText className="h-4 w-4" />,
   upload: <Upload className="h-4 w-4" />,
+  opportunity: <TrendingUp className="h-4 w-4" />,
 };
 
 const ENTITY_LABELS: Record<ExtendedEntityType, string> = {
@@ -55,6 +57,7 @@ const ENTITY_LABELS: Record<ExtendedEntityType, string> = {
   transcription: 'Transcriptions',
   document: 'Documents',
   upload: 'Fichiers',
+  opportunity: 'Opportunités',
 };
 
 const ENTITY_ROUTES: Record<ExtendedEntityType, string> = {
@@ -65,6 +68,7 @@ const ENTITY_ROUTES: Record<ExtendedEntityType, string> = {
   transcription: '/cockpit/transcriptions',
   document: '/cockpit/documents',
   upload: '/cockpit/uploads',
+  opportunity: '/cockpit/pipeline',
 };
 
 export function ConsulteTab({ 
