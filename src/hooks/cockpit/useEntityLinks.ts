@@ -217,7 +217,7 @@ async function fetchLeadLinks(leadId: string, links: EntityLinksData) {
     .from('voice_transcriptions')
     .select('id, title, slug, created_at')
     .eq('lead_id', leadId)
-    .eq('status', 'completed');
+    .eq('status', 'done');
 
   trans?.forEach(t => {
     links.transcriptions.push({ id: t.id, type: 'transcription', name: t.title || 'Transcription', slug: t.slug, created_at: t.created_at });

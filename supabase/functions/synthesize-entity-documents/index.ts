@@ -283,18 +283,18 @@ async function collectTranscriptions(supabase: any, entityType: EntityType, enti
   let transcriptions: any[] = [];
 
   if (entityType === 'lead') {
-    const { data } = await supabase.from('voice_transcriptions').select('*').eq('lead_id', entityId).eq('status', 'completed');
+    const { data } = await supabase.from('voice_transcriptions').select('*').eq('lead_id', entityId).eq('status', 'done');
     transcriptions = data || [];
   } else if (entityType === 'project') {
-    const { data } = await supabase.from('voice_transcriptions').select('*').eq('project_id', entityId).eq('status', 'completed');
+    const { data } = await supabase.from('voice_transcriptions').select('*').eq('project_id', entityId).eq('status', 'done');
     transcriptions = data || [];
   } else if (entityType === 'solution') {
-    const { data } = await supabase.from('voice_transcriptions').select('*').eq('solution_id', entityId).eq('status', 'completed');
+    const { data } = await supabase.from('voice_transcriptions').select('*').eq('solution_id', entityId).eq('status', 'done');
     transcriptions = data || [];
   } else if (entityType === 'partner') {
     const { data: links } = await supabase.from('transcription_partners').select('transcription_id').eq('partner_id', entityId);
     if (links?.length > 0) {
-      const { data } = await supabase.from('voice_transcriptions').select('*').in('id', links.map((l: any) => l.transcription_id)).eq('status', 'completed');
+      const { data } = await supabase.from('voice_transcriptions').select('*').in('id', links.map((l: any) => l.transcription_id)).eq('status', 'done');
       transcriptions = data || [];
     }
   }
