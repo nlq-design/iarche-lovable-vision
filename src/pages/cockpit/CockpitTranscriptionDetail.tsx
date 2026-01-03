@@ -1310,19 +1310,6 @@ export default function CockpitTranscriptionDetail() {
             </CardContent>
           </Card>
         )}
-
-        {/* Consulte Tab - AI Synthesis with linked entities */}
-        <ConsulteTab
-          entityType="transcription"
-          entityId={transcription.id}
-          entityName={transcription.title || 'Transcription'}
-          summary={(transcription as any).ai_documents_summary || null}
-          onSynthesisComplete={() => {
-            refetch();
-            queryClient.invalidateQueries({ queryKey: ['cockpit-transcription', transcriptionId] });
-          }}
-        />
-
         {/* Footer Actions */}
         <div className="flex items-center gap-2 pt-4 border-t">
           {transcription.status === 'done' && (
