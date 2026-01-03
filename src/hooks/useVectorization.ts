@@ -17,7 +17,7 @@ export const ALL_RESOURCE_TYPES = [
   // Content types
   'article', 'actualite', 'livre-blanc', 'atelier-webinaire', 'solution', 'cas-client', 'service',
   // Cockpit types
-  'lead', 'project', 'uploaded_file', 'specification', 'voice_transcription', 'generated_document'
+  'lead', 'project', 'partner', 'uploaded_file', 'specification', 'voice_transcription', 'generated_document'
 ] as const;
 
 export type ResourceType = typeof ALL_RESOURCE_TYPES[number];
