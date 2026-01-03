@@ -5,10 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   RefreshCw, CheckCircle2, AlertCircle, AlertTriangle,
   BookOpen, Brain, Database, FileText, Mic, Calendar, Sparkles,
-  Activity, TrendingUp, Link2, Users
+  Activity, TrendingUp, Link2, Users, ChevronDown, Settings,
+  Bot, Wrench, Briefcase, ClipboardList, FileSignature, FileCheck, FileCode
 } from "lucide-react";
 
 const STATUS_ICONS = {
@@ -50,6 +52,34 @@ export function AIHealthDashboard() {
 
   if (!health) return null;
 
+  // Resource type icons mapping
+  const resourceTypeIcons: Record<string, React.ReactNode> = {
+    article: <FileText className="h-3 w-3" />,
+    actualite: <FileText className="h-3 w-3" />,
+    "livre-blanc": <BookOpen className="h-3 w-3" />,
+    "atelier-webinaire": <Calendar className="h-3 w-3" />,
+    solution: <Sparkles className="h-3 w-3" />,
+    service: <Settings className="h-3 w-3" />,
+    "cas-client": <Briefcase className="h-3 w-3" />,
+    lead: <Users className="h-3 w-3" />,
+    project: <ClipboardList className="h-3 w-3" />,
+    partner: <Users className="h-3 w-3" />,
+    uploaded_file: <FileCode className="h-3 w-3" />,
+    specification: <FileSignature className="h-3 w-3" />,
+    voice_transcription: <Mic className="h-3 w-3" />,
+    generated_document: <FileCheck className="h-3 w-3" />,
+  };
+
+  // Module navigation items for quick access
+  const moduleItems = [
+    { key: 'config', label: 'Configuration', icon: <Bot className="h-4 w-4" />, desc: 'Master Agent, modèle LLM' },
+    { key: 'documents', label: 'Prompts Secondaires', icon: <FileText className="h-4 w-4" />, desc: `${health.promptsSecondary} prompts par catégorie`, count: health.promptsSecondary },
+    { key: 'rag', label: 'Base RAG', icon: <Database className="h-4 w-4" />, desc: `${health.ragTotalChunks} chunks, ${Object.keys(health.ragByType).length} types`, count: health.ragTotalChunks },
+    { key: 'dictionary', label: 'Dictionnaire', icon: <BookOpen className="h-4 w-4" />, desc: `${health.aliasesActive} alias actifs`, count: health.aliasesActive },
+    { key: 'memory', label: 'Mémoire IA', icon: <Brain className="h-4 w-4" />, desc: `${health.memoryActive} entrées actives`, count: health.memoryActive },
+    { key: 'modules', label: 'Modules', icon: <Wrench className="h-4 w-4" />, desc: `${stats?.totalTools || 0} outils agent`, count: stats?.totalTools || 0 },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header with status */}
@@ -59,7 +89,7 @@ export function AIHealthDashboard() {
             {STATUS_ICONS[health.healthStatus]}
           </div>
           <div>
-            <h3 className="font-semibold">Santé du Système AI</h3>
+            <h3 className="font-semibold">Diagnostic Système IA v5.0</h3>
             <p className="text-sm text-muted-foreground">
               {health.healthStatus === 'healthy' 
                 ? 'Tous les systèmes fonctionnent normalement'
@@ -72,6 +102,40 @@ export function AIHealthDashboard() {
           Actualiser
         </Button>
       </div>
+
+      {/* Module Navigation Cards */}
+      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Navigation Modules IA
+          </CardTitle>
+          <CardDescription>Vue d'ensemble des composants IA — cliquez sur les onglets ci-dessus pour accéder</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {moduleItems.map((mod) => (
+              <div 
+                key={mod.key}
+                className="p-3 rounded-lg border bg-background/80 hover:bg-muted/50 transition-colors space-y-2"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                    {mod.icon}
+                  </div>
+                  <span className="text-sm font-medium">{mod.label}</span>
+                </div>
+                <div className="text-xs text-muted-foreground">{mod.desc}</div>
+                {mod.count !== undefined && (
+                  <Badge variant="secondary" className="text-xs">
+                    {mod.count.toLocaleString()}
+                  </Badge>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Health issues */}
       {health.healthIssues.length > 0 && (
@@ -145,15 +209,29 @@ export function AIHealthDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{health.ragTotalChunks}</div>
             <p className="text-xs text-muted-foreground">
-              chunks indexés
+              chunks • {Object.keys(health.ragByType).length} types indexés
             </p>
-            <div className="mt-2 flex flex-wrap gap-1">
-              {Object.entries(health.ragByType).slice(0, 3).map(([type, count]) => (
-                <Badge key={type} variant="secondary" className="text-xs">
-                  {type}: {count}
-                </Badge>
-              ))}
-            </div>
+            <Collapsible>
+              <CollapsibleTrigger className="mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                <ChevronDown className="h-3 w-3" />
+                Détail par type
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 space-y-1">
+                  {Object.entries(health.ragByType).map(([type, count]) => (
+                    <div key={type} className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1">
+                        {resourceTypeIcons[type] || <FileText className="h-3 w-3" />}
+                        {type}
+                      </span>
+                      <Badge variant="outline" className="text-xs">
+                        {count}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </CardContent>
         </Card>
 
@@ -170,13 +248,21 @@ export function AIHealthDashboard() {
             <p className="text-xs text-muted-foreground">
               {health.promptsPrimary} primaires, {health.promptsSecondary} secondaires
             </p>
-            <div className="mt-2 flex flex-wrap gap-1">
-              {Object.entries(health.promptsByCategory).slice(0, 3).map(([cat, count]) => (
-                <Badge key={cat} variant="secondary" className="text-xs">
-                  {cat}: {count}
-                </Badge>
-              ))}
-            </div>
+            <Collapsible>
+              <CollapsibleTrigger className="mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                <ChevronDown className="h-3 w-3" />
+                Par catégorie
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {Object.entries(health.promptsByCategory).map(([cat, count]) => (
+                    <Badge key={cat} variant="secondary" className="text-xs">
+                      {cat}: {count}
+                    </Badge>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </CardContent>
         </Card>
 

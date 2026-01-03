@@ -119,6 +119,7 @@ const resourceTypeLabels: Record<string, string> = {
   // Cockpit types
   lead: "Leads",
   project: "Projets",
+  partner: "Partenaires",
   uploaded_file: "Fichiers",
   specification: "CDC",
   voice_transcription: "Transcriptions",
@@ -136,6 +137,7 @@ const resourceTypeIcons: Record<string, React.ReactNode> = {
   // Cockpit types
   lead: <Users className="h-4 w-4" />,
   project: <ClipboardList className="h-4 w-4" />,
+  partner: <Users className="h-4 w-4" />,
   uploaded_file: <FileCode className="h-4 w-4" />,
   specification: <FileSignature className="h-4 w-4" />,
   voice_transcription: <Mic className="h-4 w-4" />,
