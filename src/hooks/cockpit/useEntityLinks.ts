@@ -122,14 +122,14 @@ export function useEntityLinks(entityType: EntityType, entityId: string | undefi
   };
 
   const totalCount = 
-    links.leads.length + 
-    links.projects.length + 
-    links.solutions.length + 
-    links.partners.length + 
-    links.transcriptions.length + 
-    links.documents.length +
-    links.uploads.length +
-    links.opportunities.length;
+    (links.leads?.length || 0) + 
+    (links.projects?.length || 0) + 
+    (links.solutions?.length || 0) + 
+    (links.partners?.length || 0) + 
+    (links.transcriptions?.length || 0) + 
+    (links.documents?.length || 0) +
+    (links.uploads?.length || 0) +
+    (links.opportunities?.length || 0);
 
   return { links, totalCount, isLoading, refetch, isStale };
 }
