@@ -116,7 +116,7 @@ const CHUNK_CONFIG = {
 
 // Extended resource types for Cockpit modules
 const COCKPIT_RESOURCE_TYPES = [
-  'lead', 'project', 'uploaded_file', 'specification', 
+  'lead', 'project', 'partner', 'uploaded_file', 'specification',
   'voice_transcription', 'generated_document'
 ];
 
@@ -525,6 +525,36 @@ async function indexVoiceTranscription(supabase: any, transcription: any): Promi
   );
 }
 
+async function indexPartner(supabase: any, partner: any): Promise<{ success: boolean; chunks: number; error?: string }> {
+  const content = [
+    `Partenaire IArche: ${partner.name}`,
+    partner.type ? `Type de partenariat: ${partner.type}` : "",
+    partner.company ? `Entreprise: ${partner.company}` : "",
+    partner.email ? `Contact: ${partner.email}` : "",
+    partner.phone ? `Téléphone: ${partner.phone}` : "",
+    partner.specialty ? `Spécialité: ${partner.specialty}` : "",
+    partner.description ? `Description: ${partner.description}` : "",
+    partner.expertise_areas?.length ? `Domaines d'expertise: ${partner.expertise_areas.join(", ")}` : "",
+    partner.commission_rate ? `Taux commission: ${partner.commission_rate}%` : "",
+    partner.status ? `Statut: ${partner.status}` : "",
+  ].filter(Boolean).join("\n");
+
+  return indexResource(
+    supabase,
+    partner.id,
+    "partner",
+    partner.name,
+    partner.id,
+    content,
+    { 
+      type: partner.type, 
+      specialty: partner.specialty,
+      status: partner.status 
+    },
+    false
+  );
+}
+
 async function indexGeneratedDocument(supabase: any, doc: any): Promise<{ success: boolean; chunks: number; error?: string }> {
   // Parse content_json robustly
   let contentJson = doc.content_json;
@@ -663,6 +693,7 @@ async function syncStatus(supabase: any): Promise<Record<string, any>> {
   const cockpitTables: Record<string, { table: string; filter?: Record<string, any> }> = {
     lead: { table: "leads" },
     project: { table: "projects" },
+    partner: { table: "partners" },
     uploaded_file: { table: "uploaded_files" },
     specification: { table: "specifications" },
     voice_transcription: { table: "voice_transcriptions", filter: { status: "completed" } },
@@ -832,6 +863,28 @@ async function generateAll(supabase: any): Promise<{
   totalChunks += projectChunks;
   details.project = { indexed: projectIndexed, errors: projectErrors, total: projects?.length || 0, chunks: projectChunks };
 
+  // Index Partners
+  console.log("Indexing partners...");
+  const { data: partners } = await supabase
+    .from("partners")
+    .select("*")
+    .limit(200);
+  
+  let partnerIndexed = 0, partnerErrors = 0, partnerChunks = 0;
+  for (const partner of partners || []) {
+    const result = await indexPartner(supabase, partner);
+    if (result.success) { 
+      indexed++; 
+      partnerIndexed++; 
+      partnerChunks += result.chunks; 
+    } else { 
+      errors++; 
+      partnerErrors++; 
+    }
+  }
+  totalChunks += partnerChunks;
+  details.partner = { indexed: partnerIndexed, errors: partnerErrors, total: partners?.length || 0, chunks: partnerChunks };
+
   // Index Uploaded Files (with extracted text)
   console.log("Indexing uploaded files...");
   const { data: files } = await supabase
@@ -962,6 +1015,7 @@ serve(async (req) => {
           const tableMap: Record<string, string> = {
             lead: "leads",
             project: "projects",
+            partner: "partners",
             uploaded_file: "uploaded_files",
             specification: "specifications",
             voice_transcription: "voice_transcriptions",
@@ -981,6 +1035,7 @@ serve(async (req) => {
           const indexFnMap: Record<string, Function> = {
             lead: indexLead,
             project: indexProject,
+            partner: indexPartner,
             uploaded_file: indexUploadedFile,
             specification: indexSpecification,
             voice_transcription: indexVoiceTranscription,
