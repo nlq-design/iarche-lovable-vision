@@ -231,16 +231,40 @@ async function fetchLeadLinks(leadId: string, links: EntityLinksData) {
 }
 
 async function fetchProjectLinks(projectId: string, links: EntityLinksData) {
-  // Lead via opportunity
+  // Lead via opportunity + Solution via solution_id
   const { data: project } = await supabase
     .from('projects')
-    .select('opportunity:opportunities(lead:leads(id, name, company))')
+    .select('lead_id, solution_id, opportunity:opportunities(lead:leads(id, name, company))')
     .eq('id', projectId)
     .single();
 
   if ((project as any)?.opportunity?.lead) {
     const lead = (project as any).opportunity.lead;
     links.leads.push({ id: lead.id, type: 'lead', name: lead.company || lead.name });
+  }
+
+  // Direct lead_id on project
+  if ((project as any)?.lead_id) {
+    const { data: directLead } = await supabase
+      .from('leads')
+      .select('id, name, company')
+      .eq('id', (project as any).lead_id)
+      .single();
+    if (directLead && !links.leads.find(l => l.id === directLead.id)) {
+      links.leads.push({ id: directLead.id, type: 'lead', name: directLead.company || directLead.name });
+    }
+  }
+
+  // Solution via solution_id
+  if ((project as any)?.solution_id) {
+    const { data: sol } = await supabase
+      .from('articles')
+      .select('id, title, slug')
+      .eq('id', (project as any).solution_id)
+      .single();
+    if (sol) {
+      links.solutions.push({ id: sol.id, type: 'solution', name: sol.title, slug: sol.slug });
+    }
   }
 
   // Partners
@@ -259,8 +283,7 @@ async function fetchProjectLinks(projectId: string, links: EntityLinksData) {
   const { data: trans } = await supabase
     .from('voice_transcriptions')
     .select('id, title, slug, created_at')
-    .eq('project_id', projectId)
-    .eq('status', 'completed');
+    .eq('project_id', projectId);
 
   trans?.forEach(t => {
     links.transcriptions.push({ id: t.id, type: 'transcription', name: t.title || 'Transcription', slug: t.slug, created_at: t.created_at });
@@ -300,6 +323,16 @@ async function fetchSolutionLinks(solutionId: string, links: EntityLinksData) {
     }
   });
 
+  // Projects via solution_id
+  const { data: projs } = await supabase
+    .from('projects')
+    .select('id, name, status, created_at')
+    .eq('solution_id', solutionId);
+
+  projs?.forEach(p => {
+    links.projects.push({ id: p.id, type: 'project', name: p.name, context: p.status, created_at: p.created_at });
+  });
+
   // Partners
   const { data: partners } = await supabase
     .from('solution_partners')
@@ -316,12 +349,24 @@ async function fetchSolutionLinks(solutionId: string, links: EntityLinksData) {
   const { data: trans } = await supabase
     .from('voice_transcriptions')
     .select('id, title, slug, created_at')
-    .eq('solution_id', solutionId)
-    .eq('status', 'completed');
+    .eq('solution_id', solutionId);
 
   trans?.forEach(t => {
     links.transcriptions.push({ id: t.id, type: 'transcription', name: t.title || 'Transcription', slug: t.slug, created_at: t.created_at });
   });
+
+  // Documents (via project links)
+  const projectIds = projs?.map(p => p.id) || [];
+  if (projectIds.length > 0) {
+    const { data: docs } = await supabase
+      .from('generated_documents')
+      .select('id, title, document_type, created_at')
+      .in('project_id', projectIds);
+
+    docs?.forEach(d => {
+      links.documents.push({ id: d.id, type: 'document', name: d.title, context: d.document_type, created_at: d.created_at });
+    });
+  }
 
   // Uploaded files
   const { data: files } = await supabase
@@ -439,12 +484,50 @@ async function fetchTranscriptionLinks(transcriptionId: string, links: EntityLin
       links.partners.push({ id: p.partner.id, type: 'partner', name: p.partner.name, slug: p.partner.slug, context: p.partner.partner_type, created_at: p.created_at });
     }
   });
+
+  // Documents linked to the same lead/project
+  const leadId = (trans as any)?.lead?.id;
+  const projectId = (trans as any)?.project?.id;
+  
+  if (leadId) {
+    const { data: docs } = await supabase
+      .from('generated_documents')
+      .select('id, title, document_type, created_at')
+      .eq('lead_id', leadId);
+    docs?.forEach(d => {
+      if (!links.documents.find(x => x.id === d.id)) {
+        links.documents.push({ id: d.id, type: 'document', name: d.title, context: d.document_type, created_at: d.created_at });
+      }
+    });
+  }
+  
+  if (projectId) {
+    const { data: docs } = await supabase
+      .from('generated_documents')
+      .select('id, title, document_type, created_at')
+      .eq('project_id', projectId);
+    docs?.forEach(d => {
+      if (!links.documents.find(x => x.id === d.id)) {
+        links.documents.push({ id: d.id, type: 'document', name: d.title, context: d.document_type, created_at: d.created_at });
+      }
+    });
+  }
+
+  // Uploaded files linked to this transcription
+  const { data: files } = await supabase
+    .from('uploaded_files')
+    .select('id, original_filename, file_type, created_at')
+    .contains('transcription_ids', [transcriptionId]);
+
+  files?.forEach(f => {
+    links.uploads.push({ id: f.id, type: 'upload', name: f.original_filename, context: f.file_type, created_at: f.created_at });
+  });
 }
 
 async function fetchDocumentLinks(documentId: string, links: EntityLinksData) {
   const { data: doc } = await supabase
     .from('generated_documents')
-    .select('lead:leads(id, name, company), project:projects(id, name)')
+    .select('lead:leads(id, name, company), project:projects(id, name), lead_id, project_id')
     .eq('id', documentId)
     .single();
 
@@ -469,5 +552,43 @@ async function fetchDocumentLinks(documentId: string, links: EntityLinksData) {
     if (p.partner) {
       links.partners.push({ id: p.partner.id, type: 'partner', name: p.partner.name, slug: p.partner.slug, context: p.partner.partner_type, created_at: p.created_at });
     }
+  });
+
+  // Transcriptions linked to the same lead/project
+  const leadId = (doc as any)?.lead_id;
+  const projectId = (doc as any)?.project_id;
+  
+  if (leadId) {
+    const { data: trans } = await supabase
+      .from('voice_transcriptions')
+      .select('id, title, slug, created_at')
+      .eq('lead_id', leadId);
+    trans?.forEach(t => {
+      if (!links.transcriptions.find(x => x.id === t.id)) {
+        links.transcriptions.push({ id: t.id, type: 'transcription', name: t.title || 'Transcription', slug: t.slug, created_at: t.created_at });
+      }
+    });
+  }
+  
+  if (projectId) {
+    const { data: trans } = await supabase
+      .from('voice_transcriptions')
+      .select('id, title, slug, created_at')
+      .eq('project_id', projectId);
+    trans?.forEach(t => {
+      if (!links.transcriptions.find(x => x.id === t.id)) {
+        links.transcriptions.push({ id: t.id, type: 'transcription', name: t.title || 'Transcription', slug: t.slug, created_at: t.created_at });
+      }
+    });
+  }
+
+  // Uploaded files linked to this document
+  const { data: files } = await supabase
+    .from('uploaded_files')
+    .select('id, original_filename, file_type, created_at')
+    .contains('document_ids', [documentId]);
+
+  files?.forEach(f => {
+    links.uploads.push({ id: f.id, type: 'upload', name: f.original_filename, context: f.file_type, created_at: f.created_at });
   });
 }
