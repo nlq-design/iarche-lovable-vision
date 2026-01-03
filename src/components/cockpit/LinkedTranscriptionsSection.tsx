@@ -28,7 +28,7 @@ export function LinkedTranscriptionsSection({
       
       let query = supabase
         .from('voice_transcriptions')
-        .select('id, title, slug, source, status, created_at, transcription_date, ai_summary')
+        .select('id, title, slug, source, status, created_at, transcription_date, summary')
         .eq('status', 'done')
         .order('created_at', { ascending: false });
 
@@ -50,7 +50,7 @@ export function LinkedTranscriptionsSection({
         
         const { data, error } = await supabase
           .from('voice_transcriptions')
-          .select('id, title, slug, source, status, created_at, transcription_date, ai_summary')
+          .select('id, title, slug, source, status, created_at, transcription_date, summary')
           .in('id', links.map(l => l.transcription_id))
           .eq('status', 'done')
           .order('created_at', { ascending: false });
@@ -128,9 +128,9 @@ export function LinkedTranscriptionsSection({
                         {format(new Date(trans.transcription_date || trans.created_at), 'dd MMM yyyy', { locale: fr })}
                       </span>
                     </div>
-                    {trans.ai_summary && (
+                    {trans.summary?.title && (
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                        {trans.ai_summary.substring(0, 100)}...
+                        {trans.summary.title}
                       </p>
                     )}
                   </div>
