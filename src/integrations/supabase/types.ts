@@ -1625,16 +1625,10 @@ export type Database = {
           context_type: string
           created_at: string | null
           created_by: string | null
-          detected_count: number
-          first_detected_at: string | null
           id: string
           is_active: boolean | null
           phonetic_key: string | null
-          source_examples: Json | null
-          status: string
           updated_at: string | null
-          validated_at: string | null
-          validated_by: string | null
         }
         Insert: {
           alias: string
@@ -1642,16 +1636,10 @@ export type Database = {
           context_type?: string
           created_at?: string | null
           created_by?: string | null
-          detected_count?: number
-          first_detected_at?: string | null
           id?: string
           is_active?: boolean | null
           phonetic_key?: string | null
-          source_examples?: Json | null
-          status?: string
           updated_at?: string | null
-          validated_at?: string | null
-          validated_by?: string | null
         }
         Update: {
           alias?: string
@@ -1659,16 +1647,10 @@ export type Database = {
           context_type?: string
           created_at?: string | null
           created_by?: string | null
-          detected_count?: number
-          first_detected_at?: string | null
           id?: string
           is_active?: boolean | null
           phonetic_key?: string | null
-          source_examples?: Json | null
-          status?: string
           updated_at?: string | null
-          validated_at?: string | null
-          validated_by?: string | null
         }
         Relationships: []
       }
