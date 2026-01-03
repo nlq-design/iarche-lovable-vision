@@ -503,23 +503,41 @@ async function indexSpecification(supabase: any, spec: any): Promise<{ success: 
 }
 
 async function indexVoiceTranscription(supabase: any, transcription: any): Promise<{ success: boolean; chunks: number; error?: string }> {
+  // Extract summary text from jsonb if needed
+  let summaryText = '';
+  if (transcription.summary) {
+    if (typeof transcription.summary === 'string') {
+      summaryText = transcription.summary;
+    } else if (typeof transcription.summary === 'object') {
+      // Handle JSONB summary with structured data
+      summaryText = [
+        transcription.summary.summary || transcription.summary.text || '',
+        transcription.summary.key_points ? `Points clés: ${Array.isArray(transcription.summary.key_points) ? transcription.summary.key_points.join(', ') : transcription.summary.key_points}` : '',
+        transcription.summary.action_items ? `Actions: ${Array.isArray(transcription.summary.action_items) ? transcription.summary.action_items.join(', ') : transcription.summary.action_items}` : '',
+      ].filter(Boolean).join('\n');
+    }
+  }
+
   const content = [
-    transcription.original_filename ? `Enregistrement audio: ${transcription.original_filename}` : "Transcription vocale",
-    transcription.transcript_text ? `Transcription complète:\n${transcription.transcript_text}` : "",
-    transcription.ai_summary ? `Résumé IA: ${transcription.ai_summary}` : "",
-    transcription.detected_entities ? `Entités détectées: ${JSON.stringify(transcription.detected_entities)}` : "",
+    transcription.title ? `Réunion: ${transcription.title}` : '',
+    transcription.original_filename ? `Fichier audio: ${transcription.original_filename}` : "Transcription vocale",
+    transcription.analysis_context ? `Contexte: ${transcription.analysis_context}` : '',
+    transcription.raw_transcript ? `Transcription complète:\n${transcription.raw_transcript}` : "",
+    summaryText ? `Résumé IA:\n${summaryText}` : "",
+    transcription.ai_documents_summary ? `Synthèse documents: ${transcription.ai_documents_summary}` : "",
   ].filter(Boolean).join("\n\n");
 
   return indexResource(
     supabase,
     transcription.id,
     "voice_transcription",
-    transcription.original_filename || `Transcription ${transcription.id.slice(0, 8)}`,
-    transcription.id,
+    transcription.title || transcription.original_filename || `Transcription ${transcription.id.slice(0, 8)}`,
+    transcription.slug || transcription.id,
     content,
     { 
       status: transcription.status,
-      has_summary: !!transcription.ai_summary 
+      has_summary: !!summaryText,
+      duration_seconds: transcription.duration_seconds 
     },
     false
   );
@@ -696,7 +714,7 @@ async function syncStatus(supabase: any): Promise<Record<string, any>> {
     partner: { table: "partners" },
     uploaded_file: { table: "uploaded_files" },
     specification: { table: "specifications" },
-    voice_transcription: { table: "voice_transcriptions", filter: { status: "completed" } },
+    voice_transcription: { table: "voice_transcriptions", filter: { status: "done" } },
     generated_document: { table: "generated_documents" },
   };
 
@@ -951,12 +969,12 @@ async function generateAll(supabase: any): Promise<{
   details.specification = { indexed: specIndexed, errors: specErrors, total: specs?.length || 0, chunks: specChunks };
   await updateLastIndexedAt(supabase, 'specification');
 
-  // Index Voice Transcriptions (completed only)
+  // Index Voice Transcriptions (done status - completed transcriptions)
   console.log("Indexing voice transcriptions...");
   const { data: transcriptions } = await supabase
     .from("voice_transcriptions")
     .select("*")
-    .eq("status", "completed")
+    .eq("status", "done")
     .limit(500);
   
   let transIndexed = 0, transErrors = 0, transChunks = 0;
