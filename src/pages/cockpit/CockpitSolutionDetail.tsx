@@ -54,6 +54,7 @@ import { LinkedFilesSection } from "@/components/cockpit/LinkedFilesSection";
 import { LinkedTranscriptionsSection } from "@/components/cockpit/LinkedTranscriptionsSection";
 import { ConsulteTab } from "@/components/cockpit/ConsulteTab";
 import { LinkedPartnersSection } from "@/components/cockpit/LinkedPartnersSection";
+import { LinkedGeneratedDocumentsSection } from "@/components/cockpit/LinkedGeneratedDocumentsSection";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -306,24 +307,14 @@ export default function CockpitSolutionDetail() {
             {/* Transcriptions liées */}
             <LinkedTranscriptionsSection entityType="solution" entityId={id!} />
 
-            <LinkedFilesSection
-              entityType="solution"
-              entityId={id!}
-              title="Fichiers liés"
-            />
+            {/* Fichiers importés */}
+            <LinkedFilesSection entityType="solution" entityId={id!} title="Fichiers importés" />
+
+            {/* Documents liés from cockpit-documents */}
+            <LinkedGeneratedDocumentsSection entityType="solution" entityId={id!} title="Documents liés" />
             
-            {/* Section Partenaires */}
-            <Card className="border">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Partenaires liés
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <LinkedPartnersSection entityType="solution" entityId={id} />
-              </CardContent>
-            </Card>
+            {/* Partenaires liés */}
+            <LinkedPartnersSection entityType="solution" entityId={id} />
           </TabsContent>
 
           {/* Consulte Tab */}

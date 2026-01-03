@@ -78,6 +78,7 @@ import { useLeads } from '@/hooks/shared/useLeads';
 import { LinkedFilesSection } from '@/components/cockpit/LinkedFilesSection';
 import { LinkedTranscriptionsSection } from '@/components/cockpit/LinkedTranscriptionsSection';
 import { ConsulteTab } from '@/components/cockpit/ConsulteTab';
+import { LinkedGeneratedDocumentsSection } from '@/components/cockpit/LinkedGeneratedDocumentsSection';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
 import { useCockpitPartners } from '@/hooks/cockpit/useCockpitPartners';
 import { useEntityPartners } from '@/hooks/cockpit/usePartnerLinks';
@@ -417,6 +418,10 @@ const CockpitLeadDetail = () => {
             <TabsTrigger value="informations" className="gap-1.5 text-sm h-7">
               <User className="h-3.5 w-3.5" />
               Informations
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="gap-1.5 text-sm h-7">
+              <FileText className="h-3.5 w-3.5" />
+              Docs
             </TabsTrigger>
             <TabsTrigger value="consulte" className="gap-1.5 text-sm h-7">
               <Sparkles className="h-3.5 w-3.5" />
@@ -1202,6 +1207,21 @@ const CockpitLeadDetail = () => {
             </Card>
           </div>
         </div>
+          </TabsContent>
+
+          {/* Documents Tab */}
+          <TabsContent value="documents" className="space-y-4">
+            {/* Transcriptions liées */}
+            <LinkedTranscriptionsSection entityType="lead" entityId={id!} />
+
+            {/* Fichiers importés from cockpit-uploads */}
+            <LinkedFilesSection entityType="lead" entityId={id!} title="Fichiers importés" />
+
+            {/* Documents liés from cockpit-documents */}
+            <LinkedGeneratedDocumentsSection entityType="lead" entityId={id!} title="Documents liés" />
+
+            {/* Partenaires liés */}
+            <LinkedPartnersSection entityType="lead" entityId={id} />
           </TabsContent>
 
           {/* Consulte Tab */}

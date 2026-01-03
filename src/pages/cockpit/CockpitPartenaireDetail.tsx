@@ -30,6 +30,8 @@ import {
 import { useCockpitPartners, Partner, PartnerType, PARTNER_TYPES, generateSlug } from "@/hooks/cockpit/useCockpitPartners";
 import { ConsulteTab } from "@/components/cockpit/ConsulteTab";
 import { LinkedTranscriptionsSection } from "@/components/cockpit/LinkedTranscriptionsSection";
+import { LinkedFilesSection } from "@/components/cockpit/LinkedFilesSection";
+import { LinkedGeneratedDocumentsSection } from "@/components/cockpit/LinkedGeneratedDocumentsSection";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -227,6 +229,12 @@ export default function CockpitPartenaireDetail() {
               Informations
             </TabsTrigger>
             {!isNew && existingPartner && (
+              <TabsTrigger value="documents" className="gap-1.5 text-sm h-7">
+                <Building2 className="h-3.5 w-3.5" />
+                Docs
+              </TabsTrigger>
+            )}
+            {!isNew && existingPartner && (
               <TabsTrigger value="consulte" className="gap-1.5 text-sm h-7">
                 <Sparkles className="h-3.5 w-3.5" />
                 Consulte
@@ -417,11 +425,7 @@ export default function CockpitPartenaireDetail() {
                   </CardContent>
                 </Card>
 
-                {/* Linked Transcriptions */}
-                {!isNew && existingPartner && (
-                  <LinkedTranscriptionsSection entityType="partner" entityId={existingPartner.id} />
-                )}
-
+                {/* Métadonnées */}
                 {!isNew && existingPartner && (
                   <Card>
                     <CardHeader>
@@ -441,6 +445,20 @@ export default function CockpitPartenaireDetail() {
               </div>
             </div>
           </TabsContent>
+
+          {/* Documents Tab */}
+          {!isNew && existingPartner && (
+            <TabsContent value="documents" className="space-y-4">
+              {/* Transcriptions liées */}
+              <LinkedTranscriptionsSection entityType="partner" entityId={existingPartner.id} />
+
+              {/* Fichiers importés */}
+              <LinkedFilesSection entityType="partner" entityId={existingPartner.id} title="Fichiers importés" />
+
+              {/* Documents liés from cockpit-documents */}
+              <LinkedGeneratedDocumentsSection entityType="partner" entityId={existingPartner.id} title="Documents liés" />
+            </TabsContent>
+          )}
 
           {/* Consulte Tab */}
           {!isNew && existingPartner && (

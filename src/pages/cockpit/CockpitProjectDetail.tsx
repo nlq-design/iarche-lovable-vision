@@ -70,19 +70,15 @@ import { useCockpitProjects } from '@/hooks/cockpit';
 import { useCockpitTasks } from '@/hooks/cockpit/useCockpitTasks';
 import { useCockpitMeetingNotes } from '@/hooks/cockpit/useCockpitMeetingNotes';
 import { useCockpitVoiceTranscriptions } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
-import { useCockpitSpecifications } from '@/hooks/cockpit/useCockpitSpecifications';
-import { useCockpitProjectDocuments } from '@/hooks/cockpit/useCockpitProjectDocuments';
 import { useCockpitProjectNotes } from '@/hooks/cockpit/useCockpitProjectNotes';
 import { LeadSelector } from '@/components/cockpit/LeadSelector';
 import { ContentEditor } from '@/components/cockpit/ContentEditor';
-import { FileUploader } from '@/components/cockpit/FileUploader';
-import { SpecificationEditor } from '@/components/cockpit/SpecificationEditor';
 import { CreateTaskDialog } from '@/components/cockpit/dialogs/CreateTaskDialog';
-import { DocumentGenerator } from '@/components/cockpit/DocumentGenerator';
 import { ConsulteTab } from '@/components/cockpit/ConsulteTab';
 import { LinkedFilesSection } from '@/components/cockpit/LinkedFilesSection';
 import { LinkedTranscriptionsSection } from '@/components/cockpit/LinkedTranscriptionsSection';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
+import { LinkedGeneratedDocumentsSection } from '@/components/cockpit/LinkedGeneratedDocumentsSection';
 
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
@@ -99,11 +95,7 @@ const CockpitProjectDetail = () => {
   const { tasks } = useCockpitTasks();
   const { meetingNotes } = useCockpitMeetingNotes();
   const { transcriptions } = useCockpitVoiceTranscriptions();
-  const { useSpecificationsByProject } = useCockpitSpecifications();
-  const { documents, createDocument, deleteDocument } = useCockpitProjectDocuments(id);
-  const { notes: projectNotes, createNote, updateNote, deleteNote } = useCockpitProjectNotes(id);
-  
-  const { data: projectSpecs = [] } = useSpecificationsByProject(id || '');
+  const { notes: projectNotes, createNote, deleteNote } = useCockpitProjectNotes(id);
 
   // State
   const [formData, setFormData] = useState<Partial<Project> & { lead_id?: string | null; solution_id?: string | null }>({});
@@ -112,7 +104,6 @@ const CockpitProjectDetail = () => {
   
   // Dialog states for adding items
   const [showAddNoteDialog, setShowAddNoteDialog] = useState(false);
-  const [showAddDocDialog, setShowAddDocDialog] = useState(false);
   const [showAddTaskDialog, setShowAddTaskDialog] = useState(false);
   
   // New item form states
@@ -121,11 +112,6 @@ const CockpitProjectDetail = () => {
   const [newNoteFiles, setNewNoteFiles] = useState<File | File[] | null>(null);
   const [newNoteTags, setNewNoteTags] = useState<string[]>([]);
   const [newNoteTagInput, setNewNoteTagInput] = useState('');
-  
-  const [newDocTitle, setNewDocTitle] = useState('');
-  const [newDocFiles, setNewDocFiles] = useState<File | File[] | null>(null);
-  const [newDocTags, setNewDocTags] = useState<string[]>([]);
-  const [newDocTagInput, setNewDocTagInput] = useState('');
   
 
   // Fetch project
@@ -256,55 +242,23 @@ const CockpitProjectDetail = () => {
     });
   };
 
-  const handleAddDocument = () => {
-    if (!newDocTitle.trim() || !id) return;
-    
-    createDocument.mutate({
-      project_id: id,
-      workspace_id: '00000000-0000-0000-0000-000000000001',
-      name: newDocTitle,
-      description: null,
-      file_url: null,
-      file_type: newDocFiles && !Array.isArray(newDocFiles) ? newDocFiles.type : null,
-      file_size_bytes: newDocFiles && !Array.isArray(newDocFiles) ? newDocFiles.size : null,
-      category: 'document',
-      uploaded_by: null,
-      tags: newDocTags.length > 0 ? newDocTags : null,
-    }, {
-      onSuccess: () => {
-        setNewDocTitle('');
-        setNewDocFiles(null);
-        setNewDocTags([]);
-        setNewDocTagInput('');
-        setShowAddDocDialog(false);
-      }
-    });
-  };
-
-  // Tag handlers
-  const addTag = (type: 'note' | 'doc') => {
-    const input = type === 'note' ? newNoteTagInput : newDocTagInput;
-    const tags = type === 'note' ? newNoteTags : newDocTags;
-    const setTags = type === 'note' ? setNewNoteTags : setNewDocTags;
-    const setInput = type === 'note' ? setNewNoteTagInput : setNewDocTagInput;
-    
-    const tag = input.trim().toLowerCase();
-    if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag]);
+  // Tag handlers for notes
+  const addNoteTag = () => {
+    const tag = newNoteTagInput.trim().toLowerCase();
+    if (tag && !newNoteTags.includes(tag)) {
+      setNewNoteTags([...newNoteTags, tag]);
     }
-    setInput('');
+    setNewNoteTagInput('');
   };
 
-  const removeTag = (tag: string, type: 'note' | 'doc') => {
-    const setTags = type === 'note' ? setNewNoteTags : setNewDocTags;
-    const tags = type === 'note' ? newNoteTags : newDocTags;
-    setTags(tags.filter(t => t !== tag));
+  const removeNoteTag = (tag: string) => {
+    setNewNoteTags(newNoteTags.filter(t => t !== tag));
   };
 
-  const handleTagKeyPress = (e: React.KeyboardEvent, type: 'note' | 'doc') => {
+  const handleNoteTagKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
-      addTag(type);
+      addNoteTag();
     }
   };
 
@@ -376,7 +330,7 @@ const CockpitProjectDetail = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6 h-9 overflow-x-auto">
+          <TabsList className="grid w-full grid-cols-5 h-9 overflow-x-auto">
             <TabsTrigger value="overview" className="flex items-center gap-1 text-xs sm:text-sm h-7 px-2">
               <LayoutDashboard className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Aperçu</span>
@@ -391,16 +345,6 @@ const CockpitProjectDetail = () => {
             <TabsTrigger value="documents" className="flex items-center gap-1 text-xs sm:text-sm h-7 px-2">
               <FileUp className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Docs</span>
-              {(documents?.length || 0) > 0 && (
-                <Badge variant="secondary" className="text-xs py-0 px-1 h-4 hidden sm:inline-flex">{documents?.length}</Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="specs" className="flex items-center gap-1 text-xs sm:text-sm h-7 px-2">
-              <FileText className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">CDC</span>
-              {projectSpecs.length > 0 && (
-                <Badge variant="secondary" className="text-xs py-0 px-1 h-4 hidden sm:inline-flex">{projectSpecs.length}</Badge>
-              )}
             </TabsTrigger>
             <TabsTrigger value="consulte" className="flex items-center gap-1 text-xs sm:text-sm h-7 px-2">
               <Sparkles className="h-3.5 w-3.5" />
@@ -703,12 +647,6 @@ const CockpitProjectDetail = () => {
               </Card>
             </div>
 
-            {/* Linked Transcriptions */}
-            <LinkedTranscriptionsSection entityType="project" entityId={id} />
-
-            {/* Documents IA Generator */}
-            <DocumentGenerator projectId={id} />
-
             {/* Quick Summary */}
             <Card className="bg-muted/30 border">
               <CardContent className="py-3 px-4">
@@ -718,18 +656,6 @@ const CockpitProjectDetail = () => {
                       <StickyNote className="h-4 w-4 text-muted-foreground" />
                       <span className="text-muted-foreground">Notes</span>
                       <span className="font-semibold">{projectNotes?.length || 0}</span>
-                    </div>
-                    <div className="h-6 w-px bg-border" />
-                    <div className="flex items-center gap-2">
-                      <FileUp className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Documents</span>
-                      <span className="font-semibold">{documents?.length || 0}</span>
-                    </div>
-                    <div className="h-6 w-px bg-border" />
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">CDC</span>
-                      <span className="font-semibold">{projectSpecs.length}</span>
                     </div>
                     <div className="h-6 w-px bg-border" />
                     <div className="flex items-center gap-2">
@@ -790,15 +716,15 @@ const CockpitProjectDetail = () => {
                               {tag}
                               <X 
                                 className="h-3 w-3 cursor-pointer hover:text-destructive" 
-                                onClick={() => removeTag(tag, 'note')}
+                                onClick={() => removeNoteTag(tag)}
                               />
                             </Badge>
                           ))}
                           <Input
                             value={newNoteTagInput}
                             onChange={(e) => setNewNoteTagInput(e.target.value)}
-                            onKeyDown={(e) => handleTagKeyPress(e, 'note')}
-                            onBlur={() => addTag('note')}
+                            onKeyDown={handleNoteTagKeyPress}
+                            onBlur={addNoteTag}
                             placeholder={newNoteTags.length === 0 ? "Ajouter des tags..." : ""}
                             className="border-0 p-0 h-6 text-sm flex-1 min-w-[100px] focus-visible:ring-0 shadow-none"
                           />
@@ -868,130 +794,14 @@ const CockpitProjectDetail = () => {
             {/* Transcriptions liées */}
             <LinkedTranscriptionsSection entityType="project" entityId={id!} />
 
-            {/* Uploaded Files from cockpit-uploads */}
+            {/* Fichiers importés from cockpit-uploads */}
             <LinkedFilesSection entityType="project" entityId={id!} title="Fichiers importés" />
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">Documents</CardTitle>
-                <Dialog open={showAddDocDialog} onOpenChange={setShowAddDocDialog}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="h-4 w-4 mr-1" />
-                      Ajouter
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader>
-                      <DialogTitle>Nouveau document</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 pt-4">
-                      <div className="space-y-2">
-                        <Label>Nom du document *</Label>
-                        <Input
-                          value={newDocTitle}
-                          onChange={(e) => setNewDocTitle(e.target.value)}
-                          placeholder="Nom du document"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Fichier</Label>
-                        <FileUploader
-                          value={newDocFiles}
-                          onChange={setNewDocFiles}
-                          multiple={false}
-                        />
-                      </div>
-                      {/* Tags */}
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2">
-                          <Tag className="h-3.5 w-3.5" />
-                          Tags
-                        </Label>
-                        <div className="flex flex-wrap gap-1.5 p-2 border rounded-md min-h-[40px] bg-background">
-                          {newDocTags.map(tag => (
-                            <Badge key={tag} variant="secondary" className="gap-1 text-xs">
-                              {tag}
-                              <X 
-                                className="h-3 w-3 cursor-pointer hover:text-destructive" 
-                                onClick={() => removeTag(tag, 'doc')}
-                              />
-                            </Badge>
-                          ))}
-                          <Input
-                            value={newDocTagInput}
-                            onChange={(e) => setNewDocTagInput(e.target.value)}
-                            onKeyDown={(e) => handleTagKeyPress(e, 'doc')}
-                            onBlur={() => addTag('doc')}
-                            placeholder={newDocTags.length === 0 ? "Ajouter des tags..." : ""}
-                            className="border-0 p-0 h-6 text-sm flex-1 min-w-[100px] focus-visible:ring-0 shadow-none"
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground">Appuyez sur Entrée pour ajouter</p>
-                      </div>
-                      <div className="flex justify-end gap-2 pt-2">
-                        <Button variant="outline" onClick={() => setShowAddDocDialog(false)}>
-                          Annuler
-                        </Button>
-                        <Button onClick={handleAddDocument} disabled={!newDocTitle.trim()}>
-                          Ajouter
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </CardHeader>
-              <CardContent>
-                {!documents?.length ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                    <FileUp className="h-10 w-10 mb-3 opacity-50" />
-                    <p className="font-medium">Aucun document</p>
-                    <p className="text-sm">Ajoutez des documents liés à ce projet</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {documents.map(doc => (
-                      <div key={doc.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors group">
-                        <div className="flex items-start gap-3">
-                          <div className="h-10 w-10 rounded bg-primary/10 flex items-center justify-center shrink-0">
-                            <FileText className="h-5 w-5 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium truncate">{doc.name}</h4>
-                            {doc.tags && doc.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {doc.tags.map(tag => (
-                                  <Badge key={tag} variant="secondary" className="text-xs py-0">{tag}</Badge>
-                                ))}
-                              </div>
-                            )}
-                            {doc.file_type && (
-                              <p className="text-xs text-muted-foreground">{doc.file_type}</p>
-                            )}
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {format(new Date(doc.created_at), 'dd MMM yyyy', { locale: fr })}
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                            onClick={() => deleteDocument.mutate(doc.id)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+            {/* Documents liés from cockpit-documents */}
+            <LinkedGeneratedDocumentsSection entityType="project" entityId={id!} title="Documents liés" />
 
-          {/* CDC Tab */}
-          <TabsContent value="specs" className="space-y-4">
-            <SpecificationEditor projectId={id || ''} specifications={projectSpecs} />
+            {/* Partenaires liés */}
+            <LinkedPartnersSection entityType="project" entityId={id} />
           </TabsContent>
 
           {/* Consulte Tab */}
