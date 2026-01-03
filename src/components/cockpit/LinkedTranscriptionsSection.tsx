@@ -9,7 +9,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 interface LinkedTranscriptionsSectionProps {
-  entityType: 'lead' | 'project' | 'partner' | 'solution' | 'document';
+  entityType: 'lead' | 'project' | 'partner' | 'solution';
   entityId: string | undefined;
   title?: string;
 }
@@ -45,24 +45,6 @@ export function LinkedTranscriptionsSection({
           .from('transcription_partners')
           .select('transcription_id')
           .eq('partner_id', entityId);
-        
-        if (!links || links.length === 0) return [];
-        
-        const { data, error } = await supabase
-          .from('voice_transcriptions')
-          .select('id, title, slug, source, status, created_at, transcription_date, summary')
-          .in('id', links.map(l => l.transcription_id))
-          .eq('status', 'done')
-          .order('created_at', { ascending: false });
-        
-        if (error) return [];
-        return data;
-      } else if (entityType === 'document') {
-        // Documents use junction table
-        const { data: links } = await supabase
-          .from('transcription_documents')
-          .select('transcription_id')
-          .eq('document_id', entityId);
         
         if (!links || links.length === 0) return [];
         

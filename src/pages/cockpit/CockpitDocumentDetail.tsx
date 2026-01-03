@@ -53,7 +53,6 @@ import { useCockpitProjects } from '@/hooks/cockpit/useCockpitProjects';
 import { useCockpitLeads } from '@/hooks/cockpit/useCockpitLeads';
 import { ConsulteTab } from '@/components/cockpit/ConsulteTab';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
-import { LinkedTranscriptionsSection } from '@/components/cockpit/LinkedTranscriptionsSection';
 import { LinkedSourcesSection } from '@/components/cockpit/LinkedSourcesSection';
 import { DevisCDCPreview } from '@/components/cockpit/DevisCDCPreview';
 import { DevisCDCEditor } from '@/components/cockpit/DevisCDCEditor';
@@ -515,9 +514,6 @@ export default function CockpitDocumentDetail() {
               specificationId={document.specification_id}
               onSourceLinked={() => refetch()}
             />
-
-            {/* Linked Transcriptions */}
-            <LinkedTranscriptionsSection entityType="document" entityId={document.id} />
 
             {/* Linked Partners */}
             <Card>
