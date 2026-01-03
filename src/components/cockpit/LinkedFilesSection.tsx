@@ -50,7 +50,7 @@ function formatFileSize(bytes: number | null): string {
 }
 
 interface LinkedFilesSectionProps {
-  entityType: 'project' | 'lead' | 'solution';
+  entityType: 'project' | 'lead' | 'solution' | 'partner';
   entityId: string;
   title?: string;
 }
@@ -60,11 +60,14 @@ export function LinkedFilesSection({ entityType, entityId, title = 'Documents' }
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
+  // Partner not yet supported in uploaded_files schema (no partner_ids column)
   const filters = entityType === 'project' 
     ? { projectId: entityId } 
     : entityType === 'lead' 
     ? { leadId: entityId }
-    : { solutionId: entityId };
+    : entityType === 'solution'
+    ? { solutionId: entityId }
+    : undefined; // partner - will return empty
 
   const { uploads, isLoading, downloadFile } = useCockpitUploads(filters);
 
