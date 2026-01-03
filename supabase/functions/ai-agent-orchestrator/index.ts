@@ -1090,6 +1090,45 @@ const AGENT_TOOLS = [
       },
     },
   },
+  // ============ PHASE 3: OUTILS AMÉLIORATION IA v5.3 ============
+  {
+    type: "function",
+    function: {
+      name: "get_stale_syntheses",
+      description: "Récupère les entités dont la synthèse IA est obsolète et doit être recalculée. Utiliser pour maintenance proactive.",
+      parameters: {
+        type: "object",
+        properties: {
+          max_items: { type: "number", description: "Nombre max par type d'entité (défaut: 5)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_ai_dashboard_metrics",
+      description: "Récupère les métriques temps réel du système IA : synthèses obsolètes, notifications en attente, mémoire 24h, état RAG.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "trigger_proactive_notification",
+      description: "Envoie une notification proactive via Telegram pour un événement important (changement de stage, nouveau lead qualifié, etc.).",
+      parameters: {
+        type: "object",
+        properties: {
+          message: { type: "string", description: "Message à envoyer" },
+          entity_type: { type: "string", description: "Type d'entité concernée" },
+          entity_id: { type: "string", description: "ID de l'entité" },
+          priority: { type: "string", enum: ["low", "medium", "high", "urgent"], description: "Priorité du message" },
+        },
+        required: ["message"],
+      },
+    },
+  },
 ];
 
 // =============================================================================
@@ -3513,6 +3552,145 @@ Génère un contenu HTML pour email avec:
         target: `${args.target_type}:${args.target_id}`,
         type: args.reference_type || "mention",
         message: `Référence croisée créée entre ${args.source_type} et ${args.target_type}`,
+      };
+    }
+
+    // ============ v5.3 - NOUVEAUX OUTILS AMÉLIORATION IA ============
+    case "get_stale_syntheses": {
+      const maxItems = args.max_items as number || 5;
+      
+      const { data, error } = await supabase.rpc("refresh_stale_syntheses", {
+        max_items: maxItems,
+      });
+
+      if (error) throw error;
+
+      const grouped = {
+        leads: (data || []).filter((r: any) => r.entity_type === "lead"),
+        projects: (data || []).filter((r: any) => r.entity_type === "project"),
+        partners: (data || []).filter((r: any) => r.entity_type === "partner"),
+      };
+
+      return {
+        stale_entities: data || [],
+        summary: {
+          leads: grouped.leads.length,
+          projects: grouped.projects.length,
+          partners: grouped.partners.length,
+          total: (data || []).length,
+        },
+        message: `${(data || []).length} entité(s) avec synthèse obsolète : ${grouped.leads.length} leads, ${grouped.projects.length} projets, ${grouped.partners.length} partenaires`,
+      };
+    }
+
+    case "get_ai_dashboard_metrics": {
+      // Query the ai_dashboard_metrics view
+      const { data, error } = await supabase
+        .from("ai_dashboard_metrics")
+        .select("*")
+        .single();
+
+      if (error) {
+        console.error("Failed to fetch AI dashboard metrics:", error);
+        // Fallback to individual queries
+        const [leadsStale, projectsStale, partnersStale, pendingNotifs, memory24h, embeddings] = await Promise.all([
+          supabase.from("leads").select("id", { count: "exact", head: true }).eq("synthesis_stale", true),
+          supabase.from("projects").select("id", { count: "exact", head: true }).eq("synthesis_stale", true),
+          supabase.from("partners").select("id", { count: "exact", head: true }).eq("synthesis_stale", true),
+          supabase.from("activity_log").select("id", { count: "exact", head: true }).eq("pending_ai_review", true),
+          supabase.from("ai_agent_memory").select("id", { count: "exact", head: true }).gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
+          supabase.from("resource_embeddings").select("id, resource_type", { count: "exact" }),
+        ]);
+
+        return {
+          leads_stale: leadsStale.count || 0,
+          projects_stale: projectsStale.count || 0,
+          partners_stale: partnersStale.count || 0,
+          pending_notifications: pendingNotifs.count || 0,
+          memory_24h: memory24h.count || 0,
+          total_embeddings: embeddings.count || 0,
+          indexed_types: new Set((embeddings.data || []).map((e: any) => e.resource_type)).size,
+          message: "Métriques IA récupérées (mode fallback)",
+        };
+      }
+
+      return {
+        ...data,
+        health_status: data.pending_notifications > 50 ? "attention_needed" : 
+                       data.leads_stale + data.projects_stale > 10 ? "maintenance_suggested" : "healthy",
+        message: `État IA : ${data.total_embeddings} embeddings, ${data.pending_notifications} notifications en attente, ${data.leads_stale + data.projects_stale + data.partners_stale} synthèses à recalculer`,
+      };
+    }
+
+    case "trigger_proactive_notification": {
+      const telegramToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
+      const allowedUsers = Deno.env.get("ALLOWED_TELEGRAM_USERS");
+      
+      if (!telegramToken) {
+        return {
+          success: false,
+          message: "Telegram non configuré (TELEGRAM_BOT_TOKEN manquant)",
+        };
+      }
+
+      const priorityEmojis: Record<string, string> = {
+        low: "ℹ️",
+        medium: "📌",
+        high: "⚠️",
+        urgent: "🚨",
+      };
+
+      const priority = args.priority as string || "medium";
+      const emoji = priorityEmojis[priority] || "📌";
+      
+      let messageText = `${emoji} *Notification IArche*\n\n${args.message}`;
+      
+      if (args.entity_type && args.entity_id) {
+        messageText += `\n\n🔗 _${args.entity_type}: ${args.entity_id}_`;
+      }
+
+      // Send to allowed users
+      const chatIds = allowedUsers?.split(",").map(s => s.trim()).filter(Boolean) || [];
+      let sentCount = 0;
+
+      for (const chatId of chatIds) {
+        try {
+          const response = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: messageText,
+              parse_mode: "Markdown",
+            }),
+          });
+          
+          if (response.ok) sentCount++;
+        } catch (e) {
+          console.error(`Failed to send Telegram to ${chatId}:`, e);
+        }
+      }
+
+      // Log the notification
+      await supabase.from("activity_log").insert({
+        workspace_id: "00000000-0000-0000-0000-000000000001",
+        entity_type: args.entity_type || "system",
+        entity_id: args.entity_id || "00000000-0000-0000-0000-000000000000",
+        activity_type: "proactive_notification",
+        title: `Notification ${priority}`,
+        content: args.message as string,
+        is_ai_generated: true,
+        metadata: { priority, telegram_sent: sentCount, channel: "telegram" },
+      });
+
+      return {
+        success: sentCount > 0,
+        sent_to: sentCount,
+        total_recipients: chatIds.length,
+        priority,
+        message: sentCount > 0 
+          ? `✅ Notification envoyée à ${sentCount} destinataire(s) via Telegram`
+          : "⚠️ Notification enregistrée mais non envoyée (aucun destinataire configuré)",
       };
     }
 

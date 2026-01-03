@@ -1,6 +1,47 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+// Real-time AI Dashboard Metrics from view
+export interface AIDashboardMetrics {
+  leads_stale: number;
+  projects_stale: number;
+  partners_stale: number;
+  pending_notifications: number;
+  memory_24h: number;
+  total_embeddings: number;
+  indexed_types: number;
+}
+
+export function useAIDashboardMetrics() {
+  return useQuery({
+    queryKey: ['ai-dashboard-metrics'],
+    queryFn: async (): Promise<AIDashboardMetrics> => {
+      const { data, error } = await supabase
+        .from('ai_dashboard_metrics')
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Failed to fetch AI dashboard metrics:', error);
+        // Return defaults if view not accessible
+        return {
+          leads_stale: 0,
+          projects_stale: 0,
+          partners_stale: 0,
+          pending_notifications: 0,
+          memory_24h: 0,
+          total_embeddings: 0,
+          indexed_types: 0,
+        };
+      }
+
+      return data as AIDashboardMetrics;
+    },
+    staleTime: 30 * 1000, // 30 seconds
+    refetchInterval: 60 * 1000, // Auto-refresh every minute
+  });
+}
+
 export interface ToolDefinition {
   name: string;
   description: string;
