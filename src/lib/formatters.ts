@@ -82,15 +82,15 @@ export const getOpportunityStageConfig = (stage: string): StatusConfig => {
   switch (stage) {
     case "lead":
       return { label: "Lead", variant: "secondary", className: "bg-slate-100 text-slate-800" };
-    case "qualified":
-      return { label: "Qualifié", variant: "default", className: "bg-blue-100 text-blue-800" };
-    case "proposal":
-      return { label: "Proposition", variant: "default", className: "bg-amber-100 text-amber-800" };
-    case "negotiation":
-      return { label: "Négociation", variant: "default", className: "bg-orange-100 text-orange-800" };
-    case "closed_won":
+    case "r1":
+      return { label: "R1", variant: "default", className: "bg-blue-100 text-blue-800" };
+    case "r2":
+      return { label: "R2", variant: "default", className: "bg-amber-100 text-amber-800" };
+    case "pause":
+      return { label: "Pause", variant: "default", className: "bg-orange-100 text-orange-800" };
+    case "won":
       return { label: "Gagné", variant: "default", className: "bg-green-100 text-green-800" };
-    case "closed_lost":
+    case "lost":
       return { label: "Perdu", variant: "destructive", className: "bg-red-100 text-red-800" };
     default:
       return { label: stage, variant: "secondary" };
