@@ -865,6 +865,9 @@ const CockpitProjectDetail = () => {
 
           {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-4">
+            {/* Transcriptions liées */}
+            <LinkedTranscriptionsSection entityType="project" entityId={id!} />
+
             {/* Uploaded Files from cockpit-uploads */}
             <LinkedFilesSection entityType="project" entityId={id!} title="Fichiers importés" />
 
