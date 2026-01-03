@@ -46,6 +46,7 @@ import {
   Mail,
   Building2,
   FileUp,
+  Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCockpitSolutionLeads, useCockpitLeads, useCockpitUploads } from "@/hooks/cockpit";
@@ -188,6 +189,10 @@ export default function CockpitSolutionDetail() {
               <FileUp className="h-3.5 w-3.5" />
               Documents ({linkedFiles?.length || 0})
             </TabsTrigger>
+            <TabsTrigger value="consulte" className="gap-1.5 text-sm h-7">
+              <Sparkles className="h-3.5 w-3.5" />
+              Consulte
+            </TabsTrigger>
             <TabsTrigger value="overview" className="text-sm h-7">Aperçu</TabsTrigger>
           </TabsList>
 
@@ -297,13 +302,6 @@ export default function CockpitSolutionDetail() {
 
           {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-3">
-            <ConsulteTab
-              entityType="solution"
-              entityId={id!}
-              entityName={solution.title}
-              summary={solution.ai_documents_summary}
-              onSynthesisComplete={loadSolution}
-            />
             <LinkedFilesSection
               entityType="solution"
               entityId={id!}
@@ -322,6 +320,17 @@ export default function CockpitSolutionDetail() {
                 <LinkedPartnersSection entityType="solution" entityId={id} />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Consulte Tab */}
+          <TabsContent value="consulte">
+            <ConsulteTab
+              entityType="solution"
+              entityId={id!}
+              entityName={solution.title}
+              summary={solution.ai_documents_summary}
+              onSynthesisComplete={loadSolution}
+            />
           </TabsContent>
 
           {/* Overview Tab */}

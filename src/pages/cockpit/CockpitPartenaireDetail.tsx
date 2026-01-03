@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   ArrowLeft, 
   Save, 
@@ -23,7 +24,8 @@ import {
   Linkedin,
   Building2,
   Loader2,
-  RotateCcw
+  RotateCcw,
+  Sparkles
 } from "lucide-react";
 import { useCockpitPartners, Partner, PartnerType, PARTNER_TYPES, generateSlug } from "@/hooks/cockpit/useCockpitPartners";
 import { ConsulteTab } from "@/components/cockpit/ConsulteTab";
@@ -216,207 +218,227 @@ export default function CockpitPartenaireDetail() {
           </div>
         </div>
 
-        {/* Form */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Main info */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-base">Informations</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Slug */}
-              <div className="space-y-2">
-                <Label htmlFor="slug">Slug (identifiant unique) *</Label>
-                <Input
-                  id="slug"
-                  value={formData.slug}
-                  onChange={(e) => handleSlugChange(e.target.value)}
-                  placeholder="jean-dupont"
-                  className="font-mono"
-                  disabled={!isNew}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Identifiant unique du partenaire (ex: prenom-nom)
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nom complet *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Prénom Nom"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="company">Entreprise</Label>
-                  <div className="relative">
-                    <Building2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="company"
-                      value={formData.company}
-                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                      placeholder="Société"
-                      className="pl-9"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="partner_type">Type de partenaire *</Label>
-                <Select
-                  value={formData.partner_type}
-                  onValueChange={(v) => setFormData({ ...formData, partner_type: v as PartnerType })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PARTNER_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        <div className="flex items-center gap-2">
-                          {PARTNER_TYPE_CONFIG[type.value].icon}
-                          {type.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Separator />
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="email@exemple.com"
-                      className="pl-9"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Téléphone</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="+33 6 00 00 00 00"
-                      className="pl-9"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="linkedin">LinkedIn</Label>
-                  <div className="relative">
-                    <Linkedin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="linkedin"
-                      value={formData.linkedin_url}
-                      onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
-                      placeholder="linkedin.com/in/..."
-                      className="pl-9"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="website">Site web</Label>
-                  <div className="relative">
-                    <Globe className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="website"
-                      value={formData.website}
-                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                      placeholder="https://..."
-                      className="pl-9"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  value={formData.bio}
-                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  placeholder="Présentation du partenaire..."
-                  rows={4}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Sidebar */}
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Paramètres</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="is_active">Partenaire actif</Label>
-                  <Switch
-                    id="is_active"
-                    checked={formData.is_active}
-                    onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                  />
-                </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <Label htmlFor="commission">Taux de commission (%)</Label>
-                  <Input
-                    id="commission"
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={0.5}
-                    value={formData.commission_rate ?? ""}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      commission_rate: e.target.value ? parseFloat(e.target.value) : null 
-                    })}
-                    placeholder="10"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
+        {/* Main Tabs */}
+        <Tabs defaultValue="informations" className="space-y-4">
+          <TabsList className="h-9">
+            <TabsTrigger value="informations" className="gap-1.5 text-sm h-7">
+              <UserCheck className="h-3.5 w-3.5" />
+              Informations
+            </TabsTrigger>
             {!isNew && existingPartner && (
-              <Card>
+              <TabsTrigger value="consulte" className="gap-1.5 text-sm h-7">
+                <Sparkles className="h-3.5 w-3.5" />
+                Consulte
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          {/* Informations Tab */}
+          <TabsContent value="informations" className="space-y-4">
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* Main info */}
+              <Card className="lg:col-span-2">
                 <CardHeader>
-                  <CardTitle className="text-base">Métadonnées</CardTitle>
+                  <CardTitle className="text-base">Informations</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-muted-foreground space-y-1">
-                  <p>Créé le {new Date(existingPartner.created_at).toLocaleDateString("fr-FR")}</p>
-                  <p>Modifié le {new Date(existingPartner.updated_at).toLocaleDateString("fr-FR")}</p>
-                  {existingPartner.deleted_at && (
-                    <p className="text-destructive">
-                      Supprimé le {new Date(existingPartner.deleted_at).toLocaleDateString("fr-FR")}
+                <CardContent className="space-y-4">
+                  {/* Slug */}
+                  <div className="space-y-2">
+                    <Label htmlFor="slug">Slug (identifiant unique) *</Label>
+                    <Input
+                      id="slug"
+                      value={formData.slug}
+                      onChange={(e) => handleSlugChange(e.target.value)}
+                      placeholder="jean-dupont"
+                      className="font-mono"
+                      disabled={!isNew}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Identifiant unique du partenaire (ex: prenom-nom)
                     </p>
-                  )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Nom complet *</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="Prénom Nom"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="company">Entreprise</Label>
+                      <div className="relative">
+                        <Building2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="company"
+                          value={formData.company}
+                          onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                          placeholder="Société"
+                          className="pl-9"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="partner_type">Type de partenaire *</Label>
+                    <Select
+                      value={formData.partner_type}
+                      onValueChange={(v) => setFormData({ ...formData, partner_type: v as PartnerType })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PARTNER_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            <div className="flex items-center gap-2">
+                              {PARTNER_TYPE_CONFIG[type.value].icon}
+                              {type.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Separator />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          placeholder="email@exemple.com"
+                          className="pl-9"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Téléphone</Label>
+                      <div className="relative">
+                        <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="phone"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          placeholder="+33 6 00 00 00 00"
+                          className="pl-9"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="linkedin">LinkedIn</Label>
+                      <div className="relative">
+                        <Linkedin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="linkedin"
+                          value={formData.linkedin_url}
+                          onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
+                          placeholder="linkedin.com/in/..."
+                          className="pl-9"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="website">Site web</Label>
+                      <div className="relative">
+                        <Globe className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="website"
+                          value={formData.website}
+                          onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                          placeholder="https://..."
+                          className="pl-9"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                      id="bio"
+                      value={formData.bio}
+                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                      placeholder="Présentation du partenaire..."
+                      rows={4}
+                    />
+                  </div>
                 </CardContent>
               </Card>
-            )}
 
-            {/* Consulte Tab - AI Synthesis with linked entities */}
-            {!isNew && existingPartner && (
+              {/* Sidebar */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Paramètres</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="is_active">Partenaire actif</Label>
+                      <Switch
+                        id="is_active"
+                        checked={formData.is_active}
+                        onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                      />
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-2">
+                      <Label htmlFor="commission">Taux de commission (%)</Label>
+                      <Input
+                        id="commission"
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={0.5}
+                        value={formData.commission_rate ?? ""}
+                        onChange={(e) => setFormData({ 
+                          ...formData, 
+                          commission_rate: e.target.value ? parseFloat(e.target.value) : null 
+                        })}
+                        placeholder="10"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {!isNew && existingPartner && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Métadonnées</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-sm text-muted-foreground space-y-1">
+                      <p>Créé le {new Date(existingPartner.created_at).toLocaleDateString("fr-FR")}</p>
+                      <p>Modifié le {new Date(existingPartner.updated_at).toLocaleDateString("fr-FR")}</p>
+                      {existingPartner.deleted_at && (
+                        <p className="text-destructive">
+                          Supprimé le {new Date(existingPartner.deleted_at).toLocaleDateString("fr-FR")}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Consulte Tab */}
+          {!isNew && existingPartner && (
+            <TabsContent value="consulte">
               <ConsulteTab
                 entityType="partner"
                 entityId={existingPartner.id}
@@ -424,9 +446,9 @@ export default function CockpitPartenaireDetail() {
                 summary={(existingPartner as any).ai_documents_summary || null}
                 onSynthesisComplete={() => queryClient.invalidateQueries({ queryKey: ['cockpit-partners'] })}
               />
-            )}
-          </div>
-        </div>
+            </TabsContent>
+          )}
+        </Tabs>
       </div>
 
       {/* Delete confirmation */}
