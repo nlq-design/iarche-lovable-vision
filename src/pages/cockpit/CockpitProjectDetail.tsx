@@ -81,6 +81,7 @@ import { CreateTaskDialog } from '@/components/cockpit/dialogs/CreateTaskDialog'
 import { DocumentGenerator } from '@/components/cockpit/DocumentGenerator';
 import { ConsulteTab } from '@/components/cockpit/ConsulteTab';
 import { LinkedFilesSection } from '@/components/cockpit/LinkedFilesSection';
+import { LinkedTranscriptionsSection } from '@/components/cockpit/LinkedTranscriptionsSection';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
 
 import { useToast } from '@/hooks/use-toast';
@@ -701,6 +702,9 @@ const CockpitProjectDetail = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Linked Transcriptions */}
+            <LinkedTranscriptionsSection entityType="project" entityId={id} />
 
             {/* Documents IA Generator */}
             <DocumentGenerator projectId={id} />

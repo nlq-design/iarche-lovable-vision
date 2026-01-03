@@ -76,6 +76,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCockpitLeads, useCockpitProjects, useCockpitTasks, useCockpitBookings, useCockpitUploads } from '@/hooks/cockpit';
 import { useLeads } from '@/hooks/shared/useLeads';
 import { LinkedFilesSection } from '@/components/cockpit/LinkedFilesSection';
+import { LinkedTranscriptionsSection } from '@/components/cockpit/LinkedTranscriptionsSection';
 import { ConsulteTab } from '@/components/cockpit/ConsulteTab';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
 import { useCockpitPartners } from '@/hooks/cockpit/useCockpitPartners';
@@ -1075,6 +1076,9 @@ const CockpitLeadDetail = () => {
 
             {/* Contacts (interlocuteurs) */}
             <LeadContactsSection leadId={id!} />
+
+            {/* Linked Transcriptions */}
+            <LinkedTranscriptionsSection entityType="lead" entityId={id!} />
 
             {/* Linked Files */}
             <LinkedFilesSection entityType="lead" entityId={id!} title="Documents" />

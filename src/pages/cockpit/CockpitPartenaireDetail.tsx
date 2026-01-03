@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useCockpitPartners, Partner, PartnerType, PARTNER_TYPES, generateSlug } from "@/hooks/cockpit/useCockpitPartners";
 import { ConsulteTab } from "@/components/cockpit/ConsulteTab";
+import { LinkedTranscriptionsSection } from "@/components/cockpit/LinkedTranscriptionsSection";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -415,6 +416,11 @@ export default function CockpitPartenaireDetail() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Linked Transcriptions */}
+                {!isNew && existingPartner && (
+                  <LinkedTranscriptionsSection entityType="partner" entityId={existingPartner.id} />
+                )}
 
                 {!isNew && existingPartner && (
                   <Card>

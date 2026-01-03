@@ -51,6 +51,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useCockpitSolutionLeads, useCockpitLeads, useCockpitUploads } from "@/hooks/cockpit";
 import { LinkedFilesSection } from "@/components/cockpit/LinkedFilesSection";
+import { LinkedTranscriptionsSection } from "@/components/cockpit/LinkedTranscriptionsSection";
 import { ConsulteTab } from "@/components/cockpit/ConsulteTab";
 import { LinkedPartnersSection } from "@/components/cockpit/LinkedPartnersSection";
 import { format } from "date-fns";
@@ -302,6 +303,9 @@ export default function CockpitSolutionDetail() {
 
           {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-3">
+            {/* Transcriptions liées */}
+            <LinkedTranscriptionsSection entityType="solution" entityId={id!} />
+
             <LinkedFilesSection
               entityType="solution"
               entityId={id!}
