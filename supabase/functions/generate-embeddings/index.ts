@@ -729,6 +729,7 @@ async function syncStatus(supabase: any): Promise<Record<string, any>> {
         indexed_resources: uniqueIndexed,
         total_chunks: chunkCount || 0,
         updated_at: new Date().toISOString(),
+        last_indexed_at: uniqueIndexed > 0 ? new Date().toISOString() : null,
         last_error: null,
       }, { onConflict: 'resource_type' });
 
@@ -740,6 +741,17 @@ async function syncStatus(supabase: any): Promise<Record<string, any>> {
   }
 
   return status;
+}
+
+// Helper to update last_indexed_at for a specific type
+async function updateLastIndexedAt(supabase: any, resourceType: string): Promise<void> {
+  await supabase
+    .from("vectorization_status")
+    .update({ 
+      last_indexed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .eq("resource_type", resourceType);
 }
 
 async function generateAll(supabase: any): Promise<{
@@ -775,6 +787,7 @@ async function generateAll(supabase: any): Promise<{
   }
   totalChunks += serviceChunks;
   details.services = { indexed: SERVICES_DATA.length - errors, errors, chunks: serviceChunks };
+  await updateLastIndexedAt(supabase, 'service');
 
   // Index articles by type
   const resourceTypes = ['article', 'actualite', 'livre-blanc', 'atelier-webinaire', 'solution', 'cas-client'];
@@ -815,6 +828,9 @@ async function generateAll(supabase: any): Promise<{
       total: articles?.length || 0,
       chunks: typeChunks 
     };
+    
+    // Update last_indexed_at for this type
+    await updateLastIndexedAt(supabase, type);
   }
 
   // ===== Index Cockpit modules =====
@@ -840,6 +856,7 @@ async function generateAll(supabase: any): Promise<{
   }
   totalChunks += leadChunks;
   details.lead = { indexed: leadIndexed, errors: leadErrors, total: leads?.length || 0, chunks: leadChunks };
+  await updateLastIndexedAt(supabase, 'lead');
 
   // Index Projects
   console.log("Indexing projects...");
@@ -862,6 +879,7 @@ async function generateAll(supabase: any): Promise<{
   }
   totalChunks += projectChunks;
   details.project = { indexed: projectIndexed, errors: projectErrors, total: projects?.length || 0, chunks: projectChunks };
+  await updateLastIndexedAt(supabase, 'project');
 
   // Index Partners
   console.log("Indexing partners...");
@@ -884,6 +902,7 @@ async function generateAll(supabase: any): Promise<{
   }
   totalChunks += partnerChunks;
   details.partner = { indexed: partnerIndexed, errors: partnerErrors, total: partners?.length || 0, chunks: partnerChunks };
+  await updateLastIndexedAt(supabase, 'partner');
 
   // Index Uploaded Files (with extracted text)
   console.log("Indexing uploaded files...");
@@ -907,6 +926,7 @@ async function generateAll(supabase: any): Promise<{
   }
   totalChunks += fileChunks;
   details.uploaded_file = { indexed: fileIndexed, errors: fileErrors, total: files?.length || 0, chunks: fileChunks };
+  await updateLastIndexedAt(supabase, 'uploaded_file');
 
   // Index Specifications
   console.log("Indexing specifications...");
@@ -929,6 +949,7 @@ async function generateAll(supabase: any): Promise<{
   }
   totalChunks += specChunks;
   details.specification = { indexed: specIndexed, errors: specErrors, total: specs?.length || 0, chunks: specChunks };
+  await updateLastIndexedAt(supabase, 'specification');
 
   // Index Voice Transcriptions (completed only)
   console.log("Indexing voice transcriptions...");
@@ -952,6 +973,7 @@ async function generateAll(supabase: any): Promise<{
   }
   totalChunks += transChunks;
   details.voice_transcription = { indexed: transIndexed, errors: transErrors, total: transcriptions?.length || 0, chunks: transChunks };
+  await updateLastIndexedAt(supabase, 'voice_transcription');
 
   // Index Generated Documents
   console.log("Indexing generated documents...");
@@ -974,6 +996,7 @@ async function generateAll(supabase: any): Promise<{
   }
   totalChunks += docChunks;
   details.generated_document = { indexed: docIndexed, errors: docErrors, total: docs?.length || 0, chunks: docChunks };
+  await updateLastIndexedAt(supabase, 'generated_document');
 
   // Sync final status
   await syncStatus(supabase);
