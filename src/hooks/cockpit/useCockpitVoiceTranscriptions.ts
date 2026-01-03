@@ -34,6 +34,9 @@ export interface VoiceTranscription {
   duration_seconds: number | null;
   audio_format: string | null;
   analysis_context: string | null;
+  // AI Synthesis fields
+  ai_documents_summary: string | null;
+  synthesis_stale: boolean | null;
   // Joined relations
   lead?: { id: string; name: string; company: string | null; email?: string } | null;
   lead_contact?: { id: string; name: string; email: string | null; position: string | null } | null;

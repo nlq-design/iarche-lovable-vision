@@ -190,7 +190,7 @@ const CockpitLeadDetail = () => {
         .eq('id', id)
         .single();
       if (error) throw error;
-      return data as Lead & { ai_documents_summary?: string | null };
+      return data;
     },
     enabled: !!id,
   });
@@ -1191,8 +1191,8 @@ const CockpitLeadDetail = () => {
             <ConsulteTab
               entityType="lead"
               entityId={id!}
-              entityName={(lead as any)?.company || (lead as any)?.name || 'Lead'}
-              summary={(lead as any)?.ai_documents_summary || null}
+              entityName={lead?.company || lead?.name || 'Lead'}
+              summary={lead?.ai_documents_summary || null}
               onSynthesisComplete={refetchLead}
             />
           </TabsContent>
