@@ -1,5 +1,6 @@
 import { useAIHealthStats } from "@/hooks/admin/useAIHealthStats";
 import { useAIAgentStats } from "@/hooks/admin/useAIAgentStats";
+import { useInfrastructureStats } from "@/hooks/admin/useInfrastructureStats";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,8 @@ import {
   RefreshCw, CheckCircle2, AlertCircle, AlertTriangle,
   BookOpen, Brain, Database, FileText, Mic, Calendar, Sparkles,
   Activity, TrendingUp, Link2, Users, ChevronDown, Settings,
-  Bot, Wrench, Briefcase, ClipboardList, FileSignature, FileCheck, FileCode
+  Bot, Wrench, Briefcase, ClipboardList, FileSignature, FileCheck, FileCode,
+  Key, HardDrive, Plug, Server, FolderOpen
 } from "lucide-react";
 
 const STATUS_ICONS = {
@@ -28,14 +30,15 @@ const STATUS_COLORS = {
 export function AIHealthDashboard() {
   const { data: health, isLoading: healthLoading, refetch: refetchHealth } = useAIHealthStats();
   const { data: stats, isLoading: statsLoading } = useAIAgentStats();
+  const { data: infra, isLoading: infraLoading } = useInfrastructureStats();
 
-  const isLoading = healthLoading || statsLoading;
+  const isLoading = healthLoading || statsLoading || infraLoading;
 
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {[1, 2, 3, 4, 5].map(i => (
             <Card key={i}>
               <CardHeader className="pb-2">
                 <Skeleton className="h-4 w-24" />
@@ -50,7 +53,7 @@ export function AIHealthDashboard() {
     );
   }
 
-  if (!health) return null;
+  if (!health || !infra) return null;
 
   // Resource type icons mapping
   const resourceTypeIcons: Record<string, React.ReactNode> = {
@@ -403,6 +406,181 @@ export function AIHealthDashboard() {
           </CardContent>
         </Card>
       )}
+
+      {/* Infrastructure complète */}
+      <Card className="border-primary/20">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Server className="h-4 w-4" />
+            Infrastructure Complète (Vérifié)
+          </CardTitle>
+          <CardDescription>Inventaire réel du système</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {/* Prompts */}
+            <Collapsible>
+              <div className="p-3 rounded-lg border bg-orange-500/5 border-orange-500/20">
+                <div className="flex items-center gap-2 mb-1">
+                  <FileText className="h-4 w-4 text-orange-500" />
+                  <span className="text-sm font-medium">Prompts</span>
+                </div>
+                <div className="text-2xl font-bold">{infra.promptsTotal}</div>
+                <p className="text-xs text-muted-foreground">{infra.promptsCategories} catégories</p>
+                <CollapsibleTrigger className="mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                  <ChevronDown className="h-3 w-3" />
+                  Détail
+                </CollapsibleTrigger>
+              </div>
+              <CollapsibleContent>
+                <div className="mt-2 p-2 rounded border bg-muted/30 space-y-1 max-h-40 overflow-auto">
+                  {Object.entries(infra.promptsByCategory).map(([cat, data]) => (
+                    <div key={cat} className="flex justify-between text-xs">
+                      <span>{cat}</span>
+                      <Badge variant="outline" className="text-xs">{data.count}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Edge Functions */}
+            <Collapsible>
+              <div className="p-3 rounded-lg border bg-blue-500/5 border-blue-500/20">
+                <div className="flex items-center gap-2 mb-1">
+                  <Plug className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm font-medium">Edge Functions</span>
+                </div>
+                <div className="text-2xl font-bold">{infra.edgeFunctionsTotal}</div>
+                <p className="text-xs text-muted-foreground">+ _shared</p>
+                <CollapsibleTrigger className="mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                  <ChevronDown className="h-3 w-3" />
+                  Liste
+                </CollapsibleTrigger>
+              </div>
+              <CollapsibleContent>
+                <div className="mt-2 p-2 rounded border bg-muted/30 max-h-40 overflow-auto">
+                  <div className="flex flex-wrap gap-1">
+                    {infra.edgeFunctionsList.slice(0, 20).map((fn) => (
+                      <Badge key={fn} variant="secondary" className="text-xs">
+                        {fn}
+                      </Badge>
+                    ))}
+                    {infra.edgeFunctionsTotal > 20 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{infra.edgeFunctionsTotal - 20} autres
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Tables */}
+            <Collapsible>
+              <div className="p-3 rounded-lg border bg-green-500/5 border-green-500/20">
+                <div className="flex items-center gap-2 mb-1">
+                  <Database className="h-4 w-4 text-green-500" />
+                  <span className="text-sm font-medium">Tables</span>
+                </div>
+                <div className="text-2xl font-bold">{infra.tablesTotal}</div>
+                <p className="text-xs text-muted-foreground">{Object.keys(infra.tablesByGroup).length} groupes</p>
+                <CollapsibleTrigger className="mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                  <ChevronDown className="h-3 w-3" />
+                  Groupes
+                </CollapsibleTrigger>
+              </div>
+              <CollapsibleContent>
+                <div className="mt-2 p-2 rounded border bg-muted/30 space-y-2 max-h-40 overflow-auto">
+                  {Object.entries(infra.tablesByGroup).map(([group, tables]) => (
+                    <div key={group} className="text-xs">
+                      <div className="flex justify-between font-medium">
+                        <span>{group}</span>
+                        <Badge variant="outline">{tables.length}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Secrets */}
+            <Collapsible>
+              <div className="p-3 rounded-lg border bg-purple-500/5 border-purple-500/20">
+                <div className="flex items-center gap-2 mb-1">
+                  <Key className="h-4 w-4 text-purple-500" />
+                  <span className="text-sm font-medium">Secrets</span>
+                </div>
+                <div className="text-2xl font-bold">{infra.secretsTotal}</div>
+                <p className="text-xs text-muted-foreground">API Keys</p>
+                <CollapsibleTrigger className="mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                  <ChevronDown className="h-3 w-3" />
+                  Liste
+                </CollapsibleTrigger>
+              </div>
+              <CollapsibleContent>
+                <div className="mt-2 p-2 rounded border bg-muted/30 max-h-40 overflow-auto">
+                  <div className="flex flex-wrap gap-1">
+                    {infra.secretsList.map((secret) => (
+                      <Badge key={secret} variant="secondary" className="text-xs font-mono">
+                        {secret.replace(/_/g, '_​')}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Buckets */}
+            <Collapsible>
+              <div className="p-3 rounded-lg border bg-cyan-500/5 border-cyan-500/20">
+                <div className="flex items-center gap-2 mb-1">
+                  <HardDrive className="h-4 w-4 text-cyan-500" />
+                  <span className="text-sm font-medium">Buckets</span>
+                </div>
+                <div className="text-2xl font-bold">{infra.bucketsTotal}</div>
+                <p className="text-xs text-muted-foreground">Storage</p>
+                <CollapsibleTrigger className="mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                  <ChevronDown className="h-3 w-3" />
+                  Détail
+                </CollapsibleTrigger>
+              </div>
+              <CollapsibleContent>
+                <div className="mt-2 p-2 rounded border bg-muted/30 space-y-1">
+                  {infra.bucketsList.map((bucket) => (
+                    <div key={bucket.name} className="flex items-center justify-between text-xs">
+                      <span className="font-mono">{bucket.name}</span>
+                      <Badge variant={bucket.isPublic ? "default" : "secondary"} className="text-xs">
+                        {bucket.isPublic ? "public" : "privé"}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+
+          {/* Connecteurs */}
+          <div className="mt-4 pt-4 border-t">
+            <div className="flex items-center gap-2 mb-3">
+              <FolderOpen className="h-4 w-4" />
+              <span className="text-sm font-medium">Connecteurs</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {infra.connectorsActive.map((c) => (
+                <Badge key={c} className="bg-green-500/10 text-green-700 border-green-500/20">
+                  ✓ {c}
+                </Badge>
+              ))}
+              {infra.connectorsAvailable.map((c) => (
+                <Badge key={c} variant="outline" className="text-muted-foreground">
+                  {c} (disponible)
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
