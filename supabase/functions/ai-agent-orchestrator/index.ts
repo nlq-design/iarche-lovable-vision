@@ -168,7 +168,7 @@ const AGENT_TOOLS = [
       parameters: {
         type: "object",
         properties: {
-          stage: { type: "string", description: "Filtrer par stage (lead, qualified, proposal, negotiation, won, lost)" },
+          stage: { type: "string", description: "Filtrer par stage (lead, r1, r2, pause, won, lost)" },
           min_value: { type: "number", description: "Valeur minimum en euros" },
           limit: { type: "number", description: "Nombre max de résultats (défaut: 10)" },
         },
@@ -901,7 +901,7 @@ const AGENT_TOOLS = [
           lead_id: { type: "string", description: "ID du lead associé" },
           value_amount: { type: "number", description: "Valeur estimée en euros" },
           probability: { type: "number", description: "Probabilité de closing (0-100)" },
-          stage: { type: "string", enum: ["lead", "qualified", "proposal", "negotiation"], description: "Stage initial" },
+          stage: { type: "string", enum: ["lead", "r1", "r2", "pause"], description: "Stage initial" },
           expected_close_date: { type: "string", description: "Date de closing prévue (YYYY-MM-DD)" },
           description: { type: "string", description: "Description de l'opportunité" },
           source: { type: "string", description: "Source de l'opportunité" },

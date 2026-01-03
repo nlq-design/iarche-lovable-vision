@@ -13,7 +13,7 @@ interface CreateOpportunityDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const STAGES = ["lead", "qualification", "proposal", "negotiation", "closed_won", "closed_lost"] as const;
+const STAGES = ["lead", "r1", "r2", "pause", "won", "lost"] as const;
 
 export const CreateOpportunityDialog = ({ open, onOpenChange }: CreateOpportunityDialogProps) => {
   const { createOpportunity } = useCockpitOpportunities();
@@ -124,11 +124,11 @@ export const CreateOpportunityDialog = ({ open, onOpenChange }: CreateOpportunit
                   {STAGES.map((stage) => (
                     <SelectItem key={stage} value={stage}>
                       {stage === "lead" ? "Lead" :
-                       stage === "qualification" ? "Qualification" :
-                       stage === "proposal" ? "Proposition" :
-                       stage === "negotiation" ? "Négociation" :
-                       stage === "closed_won" ? "Gagné" :
-                       stage === "closed_lost" ? "Perdu" : stage}
+                       stage === "r1" ? "R1" :
+                       stage === "r2" ? "R2" :
+                       stage === "pause" ? "Pause" :
+                       stage === "won" ? "Gagné" :
+                       stage === "lost" ? "Perdu" : stage}
                     </SelectItem>
                   ))}
                 </SelectContent>
