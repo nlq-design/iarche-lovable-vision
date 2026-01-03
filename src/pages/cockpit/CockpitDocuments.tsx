@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,8 +30,6 @@ import { useCockpitProjects } from '@/hooks/cockpit/useCockpitProjects';
 import { useCockpitLeads } from '@/hooks/cockpit/useCockpitLeads';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { DevisCDCEditor } from '@/components/cockpit/DevisCDCEditor';
-import { DevisCDCPreview } from '@/components/cockpit/DevisCDCPreview';
 import { AIGenerationModal } from '@/components/cockpit/AIGenerationModal';
 import {
   AlertDialog,
@@ -56,13 +55,17 @@ import {
 } from "@/components/ui/collapsible";
 
 type DocumentType = 'quote' | 'spec' | 'proposal';
-type ViewMode = 'list' | 'editor' | 'preview';
+
+const SLUG_PREFIX_MAP: Record<DocumentType, string> = {
+  quote: 'devis',
+  spec: 'cdc',
+  proposal: 'proposition',
+};
 
 const CockpitDocuments = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<DocumentType>('quote');
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -99,18 +102,19 @@ const CockpitDocuments = () => {
   };
 
   const handleCreateNew = () => {
-    setSelectedDocumentId(null);
-    setViewMode('editor');
+    // Navigate to new document page with type-specific slug
+    const slugPrefix = SLUG_PREFIX_MAP[activeTab];
+    navigate(`/cockpit/documents/nouveau-${slugPrefix}`);
   };
 
   const handleViewDocument = (docId: string) => {
-    setSelectedDocumentId(docId);
-    setViewMode('preview');
+    // Navigate to document detail page
+    navigate(`/cockpit/documents/${docId}`);
   };
 
   const handleEditDocument = (docId: string) => {
-    setSelectedDocumentId(docId);
-    setViewMode('editor');
+    // Navigate to document detail page with edit mode
+    navigate(`/cockpit/documents/${docId}`);
   };
 
   const getLinkedEntityName = (doc: typeof documents[0]) => {
@@ -124,40 +128,6 @@ const CockpitDocuments = () => {
     }
     return null;
   };
-
-  if (viewMode === 'editor') {
-    return (
-      <CockpitLayout>
-        <DevisCDCEditor
-          documentId={selectedDocumentId}
-          documentType={activeTab}
-          onBack={() => {
-            setViewMode('list');
-            refetch();
-          }}
-          onSave={() => {
-            setViewMode('list');
-            refetch();
-          }}
-        />
-      </CockpitLayout>
-    );
-  }
-
-  if (viewMode === 'preview' && selectedDocumentId) {
-    const document = documents?.find(d => d.id === selectedDocumentId);
-    if (document) {
-      return (
-        <CockpitLayout>
-          <DevisCDCPreview
-            document={document}
-            onBack={() => setViewMode('list')}
-            onEdit={() => setViewMode('editor')}
-          />
-        </CockpitLayout>
-      );
-    }
-  }
 
   return (
     <CockpitLayout>
