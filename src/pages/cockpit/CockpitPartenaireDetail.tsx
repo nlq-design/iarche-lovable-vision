@@ -443,8 +443,11 @@ export default function CockpitPartenaireDetail() {
                 entityType="partner"
                 entityId={existingPartner.id}
                 entityName={existingPartner.name}
-                summary={(existingPartner as any).ai_documents_summary || null}
-                onSynthesisComplete={() => queryClient.invalidateQueries({ queryKey: ['cockpit-partners'] })}
+                summary={existingPartner.ai_documents_summary || null}
+                onSynthesisComplete={() => {
+                  queryClient.invalidateQueries({ queryKey: ['cockpit-partners'] });
+                  queryClient.invalidateQueries({ queryKey: ['cockpit-partners-all'] });
+                }}
               />
             </TabsContent>
           )}

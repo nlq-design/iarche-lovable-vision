@@ -1197,7 +1197,7 @@ export default function CockpitTranscriptionDetail() {
                 entityType="transcription"
                 entityId={transcriptionId}
                 entityName={displayTitle}
-                summary={(transcription as any).ai_documents_summary || null}
+                summary={transcription.ai_documents_summary || null}
                 onSynthesisComplete={() => refetch()}
               />
             </TabsContent>

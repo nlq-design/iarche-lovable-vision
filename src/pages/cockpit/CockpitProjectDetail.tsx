@@ -993,7 +993,7 @@ const CockpitProjectDetail = () => {
               entityType="project"
               entityId={id!}
               entityName={project.name || 'Projet'}
-              summary={(project as any).ai_documents_summary || null}
+              summary={project.ai_documents_summary || null}
               onSynthesisComplete={() => queryClient.invalidateQueries({ queryKey: ['project-detail', id] })}
             />
           </TabsContent>
