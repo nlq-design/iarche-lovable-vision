@@ -3557,6 +3557,18 @@ export type Database = {
       }
     }
     Views: {
+      ai_dashboard_metrics: {
+        Row: {
+          indexed_types: number | null
+          leads_stale: number | null
+          memory_24h: number | null
+          partners_stale: number | null
+          pending_notifications: number | null
+          projects_stale: number | null
+          total_embeddings: number | null
+        }
+        Relationships: []
+      }
       comments_public: {
         Row: {
           approved: boolean | null
@@ -3718,6 +3730,15 @@ export type Database = {
       mark_ai_notifications_reviewed: {
         Args: { p_ids: string[] }
         Returns: number
+      }
+      refresh_stale_syntheses: {
+        Args: { max_items?: number }
+        Returns: {
+          entity_id: string
+          entity_name: string
+          entity_type: string
+          refreshed: boolean
+        }[]
       }
       search_ai_memory: {
         Args: {
