@@ -114,6 +114,7 @@ const categoryLabels: Record<string, string> = {
   reasoning: "Raisonnement"
 };
 
+// NOTE: voice_transcription excluded from RAG - content indexed via Consulte on linked entities
 const resourceTypeLabels: Record<string, string> = {
   article: "Articles",
   actualite: "Actualités",
@@ -122,13 +123,12 @@ const resourceTypeLabels: Record<string, string> = {
   solution: "Solutions",
   service: "Services",
   "cas-client": "Cas Clients",
-  // Cockpit types
+  // Cockpit types (voice_transcription excluded - indexed via ai_documents_summary)
   lead: "Leads",
   project: "Projets",
   partner: "Partenaires",
   uploaded_file: "Fichiers",
   specification: "CDC",
-  voice_transcription: "Transcriptions",
   generated_document: "Documents"
 };
 
@@ -140,13 +140,12 @@ const resourceTypeIcons: Record<string, React.ReactNode> = {
   solution: <Sparkles className="h-4 w-4" />,
   service: <Cpu className="h-4 w-4" />,
   "cas-client": <Briefcase className="h-4 w-4" />,
-  // Cockpit types
+  // Cockpit types (voice_transcription excluded - indexed via Consulte)
   lead: <Users className="h-4 w-4" />,
   project: <ClipboardList className="h-4 w-4" />,
   partner: <Users className="h-4 w-4" />,
   uploaded_file: <FileCode className="h-4 w-4" />,
   specification: <FileSignature className="h-4 w-4" />,
-  voice_transcription: <Mic className="h-4 w-4" />,
   generated_document: <FileCheck className="h-4 w-4" />
 };
 

@@ -817,6 +817,18 @@ async function indexGeneratedDocument(supabase: any, doc: any): Promise<{ succes
 async function syncStatus(supabase: any): Promise<Record<string, any>> {
   const status: Record<string, any> = {};
 
+  // ===== CLEANUP: Remove orphan voice_transcription data =====
+  // Transcriptions are indexed via Consulte syntheses on linked entities
+  await supabase
+    .from("resource_embeddings")
+    .delete()
+    .eq("resource_type", "voice_transcription");
+  
+  await supabase
+    .from("vectorization_status")
+    .delete()
+    .eq("resource_type", "voice_transcription");
+
   // Count articles by resource_type
   const resourceTypes = ['article', 'actualite', 'livre-blanc', 'atelier-webinaire', 'solution', 'cas-client'];
   
@@ -962,6 +974,25 @@ async function generateAll(supabase: any): Promise<{
   let errors = 0;
   let totalChunks = 0;
   const details: Record<string, any> = {};
+
+  // ===== CLEANUP: Remove orphan voice_transcription embeddings =====
+  // Transcriptions are now indexed via Consulte syntheses on linked entities
+  console.log("Cleaning up orphan voice_transcription embeddings...");
+  const { count: deletedTranscriptions } = await supabase
+    .from("resource_embeddings")
+    .delete()
+    .eq("resource_type", "voice_transcription")
+    .select("id", { count: "exact", head: true });
+  
+  if (deletedTranscriptions && deletedTranscriptions > 0) {
+    console.log(`Deleted ${deletedTranscriptions} orphan voice_transcription embeddings`);
+  }
+
+  // Also clean up vectorization_status for voice_transcription
+  await supabase
+    .from("vectorization_status")
+    .delete()
+    .eq("resource_type", "voice_transcription");
 
   // Index services first (static data)
   console.log("Indexing services...");
