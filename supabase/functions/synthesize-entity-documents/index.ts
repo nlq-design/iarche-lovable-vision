@@ -39,6 +39,7 @@ interface GraphData {
   events: ChronologicalEvent[];
   linkedEntities: LinkedEntity[];
   provenance: { type: EntityType; id: string; name: string; date: string }[];
+  contextNotes: string[]; // User-provided context notes for synthesis enrichment
 }
 
 // ============= HELPERS (defined first) =============
@@ -558,6 +559,22 @@ async function collectLeads(supabase: any, entityType: EntityType, entityId: str
   }
 }
 
+// Collect context notes (user-provided context for AI synthesis)
+async function collectContextNotes(supabase: any, entityType: EntityType, entityId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('entity_context_notes')
+    .select('content, created_at')
+    .eq('entity_type', entityType)
+    .eq('entity_id', entityId)
+    .order('created_at', { ascending: true });
+
+  if (error || !data || data.length === 0) {
+    return [];
+  }
+
+  return data.map((note: any) => note.content);
+}
+
 // ============= GRAPH DATA COLLECTION =============
 
 async function collectGraphData(supabase: any, entityType: EntityType, entityId: string): Promise<GraphData> {
@@ -580,7 +597,8 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
     provenance.push({ type: entityType, id: entityId, name: entityName, date: formatDate(entityData.created_at) });
   }
 
-  await Promise.all([
+  // Collect all data in parallel
+  const [, , , , , , , , , , contextNotes] = await Promise.all([
     collectUploadedFiles(supabase, entityType, entityId, events, linkedEntities),
     collectTranscriptions(supabase, entityType, entityId, events, linkedEntities),
     collectPartners(supabase, entityType, entityId, events, linkedEntities),
@@ -591,9 +609,10 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
     collectProjects(supabase, entityType, entityId, events, linkedEntities),
     collectSolutions(supabase, entityType, entityId, events, linkedEntities),
     collectLeads(supabase, entityType, entityId, events, linkedEntities),
+    collectContextNotes(supabase, entityType, entityId),
   ]);
 
-  return { entityName, entityInfo, events, linkedEntities, provenance };
+  return { entityName, entityInfo, events, linkedEntities, provenance, contextNotes };
 }
 
 // ============= MAIN HANDLER =============
@@ -673,6 +692,11 @@ serve(async (req) => {
         ).join('\n')}`
       : '';
 
+    // Context notes from user (added as final enrichment source)
+    const contextNotesSection = graphData.contextNotes.length > 0
+      ? `\n\n## Contexte additionnel (notes utilisateur):\n_Ces notes sont fournies par l'utilisateur pour enrichir la synthèse. Elles représentent des informations non capturées ailleurs (rencontres, impressions, contexte oral...)._\n\n${graphData.contextNotes.map((note, idx) => `**Note ${idx + 1}:** ${note}`).join('\n\n')}`
+      : '';
+
     const synthesisDate = new Date().toLocaleDateString('fr-FR', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
@@ -682,11 +706,12 @@ serve(async (req) => {
       .replace('{{entity_name}}', graphData.entityName)
       .replace('{{entity_type}}', entity_type)
       .replace('{{entity_info}}', JSON.stringify(graphData.entityInfo, null, 2))
-      .replace('{{chronological_context}}', chronologicalContext + linkedEntitiesContext)
+      .replace('{{chronological_context}}', chronologicalContext + linkedEntitiesContext + contextNotesSection)
       .replace('{{linked_count}}', String(graphData.linkedEntities.length))
-      .replace('{{events_count}}', String(graphData.events.length));
+      .replace('{{events_count}}', String(graphData.events.length))
+      .replace('{{context_notes_count}}', String(graphData.contextNotes.length));
 
-    console.log(`[synthesize-v2] Calling Lovable AI...`);
+    console.log(`[synthesize-v2] Calling Lovable AI with ${graphData.contextNotes.length} context notes...`);
 
     // 5. Generate synthesis
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {

@@ -31,6 +31,7 @@ export { useCockpitPartners, useProjectPartners, PARTNER_TYPES } from './useCock
 export { usePartnerAllLinks, useEntityPartners, usePartnerLinkCounts } from './usePartnerLinks';
 export { usePappersLookup } from './usePappersLookup';
 export { useEntityLinks, type EntityType, type LinkedEntity, type EntityLinksData } from './useEntityLinks';
+export { useEntityContextNotes, type ContextNoteEntityType, type EntityContextNote } from './useEntityContextNotes';
 
 // Ré-exporter les hooks partagés pour faciliter les imports
 export { useBookings, useBookingTypes, BOOKING_QUERY_KEY } from '@/hooks/shared/useBookings';
