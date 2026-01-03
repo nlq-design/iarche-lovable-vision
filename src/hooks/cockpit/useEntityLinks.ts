@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export type EntityType = 'lead' | 'project' | 'solution' | 'partner' | 'transcription' | 'document';
-export type ExtendedEntityType = EntityType | 'upload';
+export type ExtendedEntityType = EntityType | 'upload' | 'opportunity';
 
 export interface LinkedEntity {
   id: string;
@@ -23,6 +23,7 @@ export interface EntityLinksData {
   transcriptions: LinkedEntity[];
   documents: LinkedEntity[];
   uploads: LinkedEntity[];
+  opportunities: LinkedEntity[];
 }
 
 interface UseEntityLinksResult {
@@ -49,7 +50,8 @@ export function useEntityLinks(entityType: EntityType, entityId: string | undefi
         partners: [],
         transcriptions: [],
         documents: [],
-        uploads: []
+        uploads: [],
+        opportunities: []
       };
 
       // Fetch based on entity type
@@ -115,7 +117,8 @@ export function useEntityLinks(entityType: EntityType, entityId: string | undefi
     partners: [],
     transcriptions: [],
     documents: [],
-    uploads: []
+    uploads: [],
+    opportunities: []
   };
 
   const totalCount = 
@@ -125,7 +128,8 @@ export function useEntityLinks(entityType: EntityType, entityId: string | undefi
     links.partners.length + 
     links.transcriptions.length + 
     links.documents.length +
-    links.uploads.length;
+    links.uploads.length +
+    links.opportunities.length;
 
   return { links, totalCount, isLoading, refetch, isStale };
 }
@@ -152,18 +156,40 @@ function getRelevantTables(entityType: EntityType): string[] {
 }
 
 async function fetchLeadLinks(leadId: string, links: EntityLinksData) {
-  // Projects via opportunities
+  // Opportunities linked to this lead
   const { data: opps } = await supabase
     .from('opportunities')
-    .select('id, title, projects(id, name, status)')
+    .select('id, title, stage, created_at, projects(id, name, status)')
     .eq('lead_id', leadId);
 
   opps?.forEach((opp: any) => {
+    // Add opportunity itself
+    links.opportunities.push({ 
+      id: opp.id, 
+      type: 'opportunity', 
+      name: opp.title, 
+      context: opp.stage,
+      created_at: opp.created_at
+    });
+    
+    // Add projects via opportunities
     opp.projects?.forEach((p: any) => {
       if (!links.projects.find(x => x.id === p.id)) {
         links.projects.push({ id: p.id, type: 'project', name: p.name, context: `via ${opp.title}` });
       }
     });
+  });
+
+  // Projects directly linked to lead (via lead_id)
+  const { data: directProjects } = await supabase
+    .from('projects')
+    .select('id, name, status, created_at')
+    .eq('lead_id', leadId);
+
+  directProjects?.forEach(p => {
+    if (!links.projects.find(x => x.id === p.id)) {
+      links.projects.push({ id: p.id, type: 'project', name: p.name, context: p.status, created_at: p.created_at });
+    }
   });
 
   // Partners
