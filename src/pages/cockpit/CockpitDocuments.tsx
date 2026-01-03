@@ -276,7 +276,17 @@ const CockpitDocuments = () => {
                                   <span>v{doc.version}</span>
                                 )}
                                 {linkedEntity && (
-                                  <span className="flex items-center gap-1">
+                                  <span 
+                                    className="flex items-center gap-1 cursor-pointer hover:text-primary transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (linkedEntity.type === 'project' && doc.project_id) {
+                                        navigate(`/cockpit/projects/${doc.project_id}`);
+                                      } else if (linkedEntity.type === 'lead' && doc.lead_id) {
+                                        navigate(`/cockpit/leads/${doc.lead_id}`);
+                                      }
+                                    }}
+                                  >
                                     <LinkIcon className="h-3 w-3" />
                                     {linkedEntity.type === 'project' ? (
                                       <Building2 className="h-3 w-3" />
