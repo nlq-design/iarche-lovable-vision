@@ -410,6 +410,35 @@ function VectorizationCard({ status, onRefresh }: { status: VectorizationStatus[
   const generateAll = useGenerateAllEmbeddings();
   const [testQuery, setTestQuery] = useState("");
   const semanticSearch = useSemanticSearch();
+  const [isEnriching, setIsEnriching] = useState(false);
+
+  const handleEnrichAll = async () => {
+    setIsEnriching(true);
+    toast.info("Enrichissement SEO en cours...", { duration: 120000 });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Session expirée, veuillez vous reconnecter");
+        return;
+      }
+      
+      const { data, error } = await supabase.functions.invoke('enrich-all-resources', {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+      
+      if (error) throw error;
+      
+      const results = data?.results;
+      if (results) {
+        toast.success(`Enrichissement terminé : ${results.enriched} articles enrichis, ${results.skipped} ignorés, ${results.failed} erreurs`);
+      }
+    } catch (error) {
+      toast.error("Erreur lors de l'enrichissement SEO");
+      console.error(error);
+    } finally {
+      setIsEnriching(false);
+    }
+  };
 
   const totalResources = status.reduce((acc, s) => acc + s.total_resources, 0);
   const indexedResources = status.reduce((acc, s) => acc + s.indexed_resources, 0);
@@ -464,6 +493,19 @@ function VectorizationCard({ status, onRefresh }: { status: VectorizationStatus[
             <Button variant="outline" size="sm" onClick={onRefresh}>
               <RefreshCw className="h-4 w-4 mr-1" />
               Sync
+            </Button>
+            <Button 
+              variant="secondary"
+              size="sm" 
+              onClick={handleEnrichAll}
+              disabled={isEnriching}
+            >
+              {isEnriching ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-1" />
+              )}
+              Enrichir SEO
             </Button>
             <Button 
               size="sm" 
