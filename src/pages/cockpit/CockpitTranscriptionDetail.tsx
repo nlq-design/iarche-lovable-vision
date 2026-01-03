@@ -79,7 +79,7 @@ import { useCockpitLeadContacts } from '@/hooks/cockpit/useCockpitLeadContacts';
 import { useCockpitTasks } from '@/hooks/cockpit/useCockpitTasks';
 import { toast } from 'sonner';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
-import { DocumentsSynthesisSection } from '@/components/cockpit/DocumentsSynthesisSection';
+import { ConsulteTab } from '@/components/cockpit/ConsulteTab';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { transcribeLargeAudio, type TranscriptionProgress } from '@/lib/audioChunking';
 
@@ -1296,12 +1296,12 @@ export default function CockpitTranscriptionDetail() {
           </Card>
         )}
 
-        {/* AI Synthesis Section */}
-        <DocumentsSynthesisSection
+        {/* Consulte Tab - AI Synthesis with linked entities */}
+        <ConsulteTab
           entityType="transcription"
           entityId={transcription.id}
+          entityName={transcription.title || 'Transcription'}
           summary={(transcription as any).ai_documents_summary || null}
-          documentsCount={0}
           onSynthesisComplete={() => {
             refetch();
             queryClient.invalidateQueries({ queryKey: ['cockpit-transcription', transcriptionId] });

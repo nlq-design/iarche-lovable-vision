@@ -30,6 +30,7 @@ export { useCockpitUploads } from './useCockpitUploads';
 export { useCockpitPartners, useProjectPartners, PARTNER_TYPES } from './useCockpitPartners';
 export { usePartnerAllLinks, useEntityPartners, usePartnerLinkCounts } from './usePartnerLinks';
 export { usePappersLookup } from './usePappersLookup';
+export { useEntityLinks, type EntityType, type LinkedEntity, type EntityLinksData } from './useEntityLinks';
 
 // Ré-exporter les hooks partagés pour faciliter les imports
 export { useBookings, useBookingTypes, BOOKING_QUERY_KEY } from '@/hooks/shared/useBookings';

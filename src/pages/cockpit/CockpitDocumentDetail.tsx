@@ -51,7 +51,7 @@ import { toast } from 'sonner';
 import { useCockpitGeneratedDocuments, DOCUMENT_TYPE_LABELS, DOCUMENT_STATUS_CONFIG, DocumentStatus, DocumentType } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
 import { useCockpitProjects } from '@/hooks/cockpit/useCockpitProjects';
 import { useCockpitLeads } from '@/hooks/cockpit/useCockpitLeads';
-import { DocumentsSynthesisSection } from '@/components/cockpit/DocumentsSynthesisSection';
+import { ConsulteTab } from '@/components/cockpit/ConsulteTab';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
 import { LinkedSourcesSection } from '@/components/cockpit/LinkedSourcesSection';
 import { DevisCDCPreview } from '@/components/cockpit/DevisCDCPreview';
@@ -514,12 +514,12 @@ export default function CockpitDocumentDetail() {
               </CardContent>
             </Card>
 
-            {/* AI Synthesis */}
-            <DocumentsSynthesisSection
+            {/* Consulte Tab - AI Synthesis with linked entities */}
+            <ConsulteTab
               entityType="document"
               entityId={document.id}
+              entityName={document.title}
               summary={document.ai_documents_summary}
-              documentsCount={0}
               onSynthesisComplete={() => refetch()}
             />
 

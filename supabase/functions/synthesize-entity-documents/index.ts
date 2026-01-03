@@ -594,20 +594,34 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { entity_type, entity_id, cascade = false }: SynthesizeRequest = await req.json();
+    const { entity_type, entity_id, cascade = false, use_consulte_prompt = false }: SynthesizeRequest & { use_consulte_prompt?: boolean } = await req.json();
 
-    console.log(`[synthesize-v2] Starting for ${entity_type}:${entity_id} (cascade=${cascade})`);
+    console.log(`[synthesize-v2] Starting for ${entity_type}:${entity_id} (cascade=${cascade}, consulte=${use_consulte_prompt})`);
 
     // 1. Load dynamic prompt from ai_prompts
+    // Use entity-specific prompts for Consulte tab, fallback to generic entity-synthesis
+    const promptSlug = use_consulte_prompt ? `consulte-${entity_type}` : 'entity-synthesis';
+    
     const { data: promptData } = await supabase
       .from('ai_prompts')
       .select('system_prompt, user_prompt, model_config')
-      .eq('slug', 'entity-synthesis')
+      .eq('slug', promptSlug)
       .single();
 
-    const systemPrompt = promptData?.system_prompt || getDefaultSystemPrompt();
-    const userPromptTemplate = promptData?.user_prompt || getDefaultUserPrompt();
-    const modelConfig = promptData?.model_config || { model: 'google/gemini-2.5-flash' };
+    // Fallback to entity-synthesis if specific prompt not found
+    let finalPromptData = promptData;
+    if (!promptData && use_consulte_prompt) {
+      const { data: fallbackPrompt } = await supabase
+        .from('ai_prompts')
+        .select('system_prompt, user_prompt, model_config')
+        .eq('slug', 'entity-synthesis')
+        .single();
+      finalPromptData = fallbackPrompt;
+    }
+
+    const systemPrompt = finalPromptData?.system_prompt || getDefaultSystemPrompt();
+    const userPromptTemplate = finalPromptData?.user_prompt || getDefaultUserPrompt();
+    const modelConfig = finalPromptData?.model_config || { model: 'google/gemini-2.5-flash' };
 
     // 2. Collect full graph data for the entity
     const graphData = await collectGraphData(supabase, entity_type, entity_id);

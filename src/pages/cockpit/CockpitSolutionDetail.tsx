@@ -50,7 +50,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useCockpitSolutionLeads, useCockpitLeads, useCockpitUploads } from "@/hooks/cockpit";
 import { LinkedFilesSection } from "@/components/cockpit/LinkedFilesSection";
-import { DocumentsSynthesisSection } from "@/components/cockpit/DocumentsSynthesisSection";
+import { ConsulteTab } from "@/components/cockpit/ConsulteTab";
 import { LinkedPartnersSection } from "@/components/cockpit/LinkedPartnersSection";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -297,11 +297,11 @@ export default function CockpitSolutionDetail() {
 
           {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-3">
-            <DocumentsSynthesisSection
+            <ConsulteTab
               entityType="solution"
               entityId={id!}
+              entityName={solution.title}
               summary={solution.ai_documents_summary}
-              documentsCount={linkedFiles?.length || 0}
               onSynthesisComplete={loadSolution}
             />
             <LinkedFilesSection

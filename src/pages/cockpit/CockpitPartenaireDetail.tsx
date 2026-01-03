@@ -26,7 +26,7 @@ import {
   RotateCcw
 } from "lucide-react";
 import { useCockpitPartners, Partner, PartnerType, PARTNER_TYPES, generateSlug } from "@/hooks/cockpit/useCockpitPartners";
-import { DocumentsSynthesisSection } from "@/components/cockpit/DocumentsSynthesisSection";
+import { ConsulteTab } from "@/components/cockpit/ConsulteTab";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -415,13 +415,13 @@ export default function CockpitPartenaireDetail() {
               </Card>
             )}
 
-            {/* AI Synthesis Section */}
+            {/* Consulte Tab - AI Synthesis with linked entities */}
             {!isNew && existingPartner && (
-              <DocumentsSynthesisSection
+              <ConsulteTab
                 entityType="partner"
                 entityId={existingPartner.id}
+                entityName={existingPartner.name}
                 summary={(existingPartner as any).ai_documents_summary || null}
-                documentsCount={0}
                 onSynthesisComplete={() => queryClient.invalidateQueries({ queryKey: ['cockpit-partners'] })}
               />
             )}
