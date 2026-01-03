@@ -13,11 +13,12 @@ export interface VectorizationStatus {
 }
 
 // All resource types including Cockpit modules
+// NOTE: voice_transcription excluded - content indexed via Consulte syntheses on linked entities
 export const ALL_RESOURCE_TYPES = [
   // Content types
   'article', 'actualite', 'livre-blanc', 'atelier-webinaire', 'solution', 'cas-client', 'service',
-  // Cockpit types
-  'lead', 'project', 'partner', 'uploaded_file', 'specification', 'voice_transcription', 'generated_document'
+  // Cockpit types (voice_transcription excluded - indexed via ai_documents_summary on leads/projects)
+  'lead', 'project', 'partner', 'uploaded_file', 'specification', 'generated_document'
 ] as const;
 
 export type ResourceType = typeof ALL_RESOURCE_TYPES[number];
