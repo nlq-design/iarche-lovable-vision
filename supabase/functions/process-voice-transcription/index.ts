@@ -584,17 +584,44 @@ function parseProviderResponse(
     throw new Error("anthropic_empty_content");
   }
   
+  // Check tool_calls first (most common response when using tools)
   const toolCall = json?.choices?.[0]?.message?.tool_calls?.[0];
   if (toolCall?.function?.arguments) {
     try {
-      return JSON.parse(toolCall.function.arguments);
-    } catch {
+      const parsed = JSON.parse(toolCall.function.arguments);
+      console.log(`[LLM] Parsed tool_call response successfully`);
+      return parsed;
+    } catch (parseErr) {
+      console.warn(`[LLM] tool_call parse failed, trying extractJsonFromText: ${String(parseErr).slice(0, 100)}`);
+      // Try to extract JSON from malformed arguments
+      const extracted = extractJsonFromText(toolCall.function.arguments);
+      if (extracted && Object.keys(extracted).length > 0 && !(extracted as any)._parse_fallback) {
+        return extracted;
+      }
       // Fall through to content extraction
     }
   }
   
+  // Check content field
   const content = json?.choices?.[0]?.message?.content;
-  if (!content) throw new Error("llm_empty_content");
+  
+  // If content is null/undefined but we have tool_calls, that's normal - the model used tools instead
+  // In this case, we should have returned above, but if parsing failed, create a fallback
+  if (!content && toolCall) {
+    console.warn(`[LLM] tool_call present but content empty, returning fallback`);
+    return { 
+      summary: "Analyse incomplète - réponse du modèle non parsable",
+      action_items: [],
+      _parse_fallback: true,
+      _raw_tool_call: toolCall?.function?.arguments?.slice(0, 500) ?? null
+    };
+  }
+  
+  // If no content and no tool_calls, that's an error
+  if (!content) {
+    console.error(`[LLM] llm_empty_content - response structure: choices=${JSON.stringify(json?.choices?.[0]?.message ?? null).slice(0, 300)}`);
+    throw new Error("llm_empty_content");
+  }
   
   return extractJsonFromText(content);
 }
