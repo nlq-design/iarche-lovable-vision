@@ -887,14 +887,13 @@ async function syncStatus(supabase: any): Promise<Record<string, any>> {
     chunks: serviceChunkCount || 0,
   };
 
-  // Cockpit module status
+  // Cockpit module status (voice_transcription excluded - indexed via Consulte syntheses)
   const cockpitTables: Record<string, { table: string; filter?: Record<string, any> }> = {
     lead: { table: "leads" },
     project: { table: "projects" },
     partner: { table: "partners" },
     uploaded_file: { table: "uploaded_files" },
     specification: { table: "specifications" },
-    voice_transcription: { table: "voice_transcriptions", filter: { status: "done" } },
     generated_document: { table: "generated_documents" },
   };
 
@@ -1149,29 +1148,10 @@ async function generateAll(supabase: any): Promise<{
   details.specification = { indexed: specIndexed, errors: specErrors, total: specs?.length || 0, chunks: specChunks };
   await updateLastIndexedAt(supabase, 'specification');
 
-  // Index Voice Transcriptions (done status - completed transcriptions)
-  console.log("Indexing voice transcriptions...");
-  const { data: transcriptions } = await supabase
-    .from("voice_transcriptions")
-    .select("*")
-    .eq("status", "done")
-    .limit(500);
-  
-  let transIndexed = 0, transErrors = 0, transChunks = 0;
-  for (const trans of transcriptions || []) {
-    const result = await indexVoiceTranscription(supabase, trans);
-    if (result.success) { 
-      indexed++; 
-      transIndexed++; 
-      transChunks += result.chunks; 
-    } else { 
-      errors++; 
-      transErrors++; 
-    }
-  }
-  totalChunks += transChunks;
-  details.voice_transcription = { indexed: transIndexed, errors: transErrors, total: transcriptions?.length || 0, chunks: transChunks };
-  await updateLastIndexedAt(supabase, 'voice_transcription');
+  // NOTE: Voice transcriptions are NOT indexed directly in RAG
+  // Their content is captured via Consulte syntheses (ai_documents_summary) on linked entities
+  // This avoids indexing noisy raw transcripts while preserving valuable insights
+  console.log("Skipping voice transcriptions (indexed via Consulte on linked entities)...");
 
   // Index Generated Documents
   console.log("Indexing generated documents...");
