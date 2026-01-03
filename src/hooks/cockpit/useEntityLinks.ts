@@ -309,7 +309,8 @@ async function fetchProjectLinks(projectId: string, links: EntityLinksData) {
   const { data: trans } = await supabase
     .from('voice_transcriptions')
     .select('id, title, slug, created_at')
-    .eq('project_id', projectId);
+    .eq('project_id', projectId)
+    .eq('status', 'done');
 
   trans?.forEach(t => {
     links.transcriptions.push({ id: t.id, type: 'transcription', name: t.title || 'Transcription', slug: t.slug, created_at: t.created_at });
@@ -375,7 +376,8 @@ async function fetchSolutionLinks(solutionId: string, links: EntityLinksData) {
   const { data: trans } = await supabase
     .from('voice_transcriptions')
     .select('id, title, slug, created_at')
-    .eq('solution_id', solutionId);
+    .eq('solution_id', solutionId)
+    .eq('status', 'done');
 
   trans?.forEach(t => {
     links.transcriptions.push({ id: t.id, type: 'transcription', name: t.title || 'Transcription', slug: t.slug, created_at: t.created_at });
@@ -588,7 +590,8 @@ async function fetchDocumentLinks(documentId: string, links: EntityLinksData) {
     const { data: trans } = await supabase
       .from('voice_transcriptions')
       .select('id, title, slug, created_at')
-      .eq('lead_id', leadId);
+      .eq('lead_id', leadId)
+      .eq('status', 'done');
     trans?.forEach(t => {
       if (!links.transcriptions.find(x => x.id === t.id)) {
         links.transcriptions.push({ id: t.id, type: 'transcription', name: t.title || 'Transcription', slug: t.slug, created_at: t.created_at });
@@ -600,7 +603,8 @@ async function fetchDocumentLinks(documentId: string, links: EntityLinksData) {
     const { data: trans } = await supabase
       .from('voice_transcriptions')
       .select('id, title, slug, created_at')
-      .eq('project_id', projectId);
+      .eq('project_id', projectId)
+      .eq('status', 'done');
     trans?.forEach(t => {
       if (!links.transcriptions.find(x => x.id === t.id)) {
         links.transcriptions.push({ id: t.id, type: 'transcription', name: t.title || 'Transcription', slug: t.slug, created_at: t.created_at });

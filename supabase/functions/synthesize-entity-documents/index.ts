@@ -297,6 +297,25 @@ async function collectTranscriptions(supabase: any, entityType: EntityType, enti
       const { data } = await supabase.from('voice_transcriptions').select('*').in('id', links.map((l: any) => l.transcription_id)).eq('status', 'done');
       transcriptions = data || [];
     }
+  } else if (entityType === 'document') {
+    // For documents, get transcriptions via lead_id and project_id
+    const { data: doc } = await supabase.from('generated_documents').select('lead_id, project_id').eq('id', entityId).single();
+    if (doc) {
+      const allTrans: any[] = [];
+      if (doc.lead_id) {
+        const { data } = await supabase.from('voice_transcriptions').select('*').eq('lead_id', doc.lead_id).eq('status', 'done');
+        if (data) allTrans.push(...data);
+      }
+      if (doc.project_id) {
+        const { data } = await supabase.from('voice_transcriptions').select('*').eq('project_id', doc.project_id).eq('status', 'done');
+        if (data) {
+          data.forEach((t: any) => {
+            if (!allTrans.find(x => x.id === t.id)) allTrans.push(t);
+          });
+        }
+      }
+      transcriptions = allTrans;
+    }
   }
 
   transcriptions.forEach(t => {
