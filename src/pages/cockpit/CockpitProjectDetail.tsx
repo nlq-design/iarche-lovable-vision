@@ -861,15 +861,6 @@ const CockpitProjectDetail = () => {
 
           {/* Documents Tab */}
           <TabsContent value="documents" className="space-y-4">
-            {/* Consulte Tab - AI Synthesis with linked entities */}
-            <ConsulteTab
-              entityType="project"
-              entityId={id!}
-              entityName={(project as any)?.name || 'Projet'}
-              summary={(project as any)?.ai_documents_summary || null}
-              onSynthesisComplete={() => queryClient.invalidateQueries({ queryKey: ['project-detail', id] })}
-            />
-            
             {/* Uploaded Files from cockpit-uploads */}
             <LinkedFilesSection entityType="project" entityId={id!} title="Fichiers importés" />
 
