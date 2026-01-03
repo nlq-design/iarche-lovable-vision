@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { KeywordDictionary } from "@/components/admin/KeywordDictionary";
 import { AIHealthDashboard } from "@/components/admin/AIHealthDashboard";
+import { OrchestratorConfig } from "@/components/admin/OrchestratorConfig";
 import AdminLayout from "@/components/layouts/AdminLayout";
 import { useLLMModelsGrouped } from "@/hooks/cockpit/useCockpitVoiceTranscriptions";
 import { 
@@ -2169,8 +2170,9 @@ export default function AdminAIPrompts() {
         </div>
 
         <Tabs defaultValue="config" className="space-y-4">
-          <TabsList>
+          <TabsList className="flex-wrap">
             <TabsTrigger value="diagnostic">Diagnostic</TabsTrigger>
+            <TabsTrigger value="orchestrator">Orchestrateur</TabsTrigger>
             <TabsTrigger value="config">Configuration</TabsTrigger>
             <TabsTrigger value="documents">Prompts Secondaires</TabsTrigger>
             <TabsTrigger value="rag">Base RAG</TabsTrigger>
@@ -2181,6 +2183,10 @@ export default function AdminAIPrompts() {
 
           <TabsContent value="diagnostic" className="space-y-4">
             <AIHealthDashboard />
+          </TabsContent>
+
+          <TabsContent value="orchestrator" className="space-y-4">
+            <OrchestratorConfig />
           </TabsContent>
 
           <TabsContent value="config" className="space-y-4">
