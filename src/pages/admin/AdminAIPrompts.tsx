@@ -943,6 +943,7 @@ function DynamicModulesOverview() {
     get_tasks: <ClipboardList className="h-3 w-3" />,
     get_bookings: <Calendar className="h-3 w-3" />,
     get_booking_details: <Calendar className="h-3 w-3" />,
+    get_booking_types: <Calendar className="h-3 w-3" />,
     get_agenda_summary: <Calendar className="h-3 w-3" />,
     get_transcriptions: <Mic className="h-3 w-3" />,
     get_meeting_notes: <FileText className="h-3 w-3" />,
@@ -950,23 +951,59 @@ function DynamicModulesOverview() {
     get_generated_documents: <FileCheck className="h-3 w-3" />,
     get_solution_leads: <Sparkles className="h-3 w-3" />,
     get_activity_log: <Activity className="h-3 w-3" />,
+    get_pipeline_stats: <Activity className="h-3 w-3" />,
     get_pending_ai_notifications: <Bell className="h-3 w-3" />,
+    mark_notifications_reviewed: <Bell className="h-3 w-3" />,
     create_booking: <Calendar className="h-3 w-3" />,
     cancel_booking: <Calendar className="h-3 w-3" />,
     create_lead: <Users className="h-3 w-3" />,
     update_lead: <Users className="h-3 w-3" />,
     send_email: <MessageSquare className="h-3 w-3" />,
+    generate_followup_email: <MessageSquare className="h-3 w-3" />,
     create_opportunity: <Target className="h-3 w-3" />,
     update_opportunity: <Target className="h-3 w-3" />,
     create_project: <Briefcase className="h-3 w-3" />,
     update_project: <Briefcase className="h-3 w-3" />,
     create_task: <ClipboardList className="h-3 w-3" />,
     update_task: <ClipboardList className="h-3 w-3" />,
+    complete_task: <ClipboardList className="h-3 w-3" />,
     create_meeting_note: <FileText className="h-3 w-3" />,
+    add_activity_log: <Activity className="h-3 w-3" />,
+    link_solution_to_lead: <Sparkles className="h-3 w-3" />,
+    create_specification: <FileSignature className="h-3 w-3" />,
+    update_specification: <FileSignature className="h-3 w-3" />,
     log_activity: <Activity className="h-3 w-3" />,
     search_knowledge_base: <Search className="h-3 w-3" />,
     suggest_solutions_for_lead: <Sparkles className="h-3 w-3" />,
     generate_document: <FileText className="h-3 w-3" />,
+    generate_cdc: <FileSignature className="h-3 w-3" />,
+    analyze_transcription: <Mic className="h-3 w-3" />,
+    suggest_next_actions: <Sparkles className="h-3 w-3" />,
+    synthesize_entity: <Brain className="h-3 w-3" />,
+    // Orchestration tools
+    get_stale_syntheses: <RefreshCw className="h-3 w-3" />,
+    get_ai_dashboard_metrics: <Activity className="h-3 w-3" />,
+    trigger_proactive_notification: <Bell className="h-3 w-3" />,
+    // Admin tools
+    get_articles: <FileText className="h-3 w-3" />,
+    get_article_details: <FileText className="h-3 w-3" />,
+    get_solutions: <Sparkles className="h-3 w-3" />,
+    get_categories_tags: <Tag className="h-3 w-3" />,
+    get_contacts: <Users className="h-3 w-3" />,
+    get_newsletters: <FileText className="h-3 w-3" />,
+    get_forms: <FileText className="h-3 w-3" />,
+    get_form_responses: <FileText className="h-3 w-3" />,
+    get_brochures: <FileText className="h-3 w-3" />,
+    get_atelier_inscriptions: <Calendar className="h-3 w-3" />,
+    get_partners: <Users className="h-3 w-3" />,
+    get_uploaded_files: <FileCode className="h-3 w-3" />,
+    create_article: <FileText className="h-3 w-3" />,
+    update_article: <FileText className="h-3 w-3" />,
+    publish_article: <FileText className="h-3 w-3" />,
+    create_newsletter: <FileText className="h-3 w-3" />,
+    send_newsletter: <FileText className="h-3 w-3" />,
+    get_audit_logs: <Shield className="h-3 w-3" />,
+    get_login_attempts: <Shield className="h-3 w-3" />,
   };
 
   // Cockpit modules - dynamically loaded from ui-navigation prompt
@@ -1054,6 +1091,7 @@ function DynamicModulesOverview() {
     ...stats.tools.admin_write,
     ...stats.tools.email,
     ...stats.tools.rag,
+    ...(stats.tools.orchestration || []),
   ];
 
   return (
@@ -1067,7 +1105,7 @@ function DynamicModulesOverview() {
                 <Bot className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <CardTitle>Agent IA IArche v3.1 - Vue d'ensemble</CardTitle>
+                <CardTitle>Agent IA IArche v5.3 - Vue d'ensemble</CardTitle>
                 <CardDescription>
                   Master Agent multi-outils avec exécution directe, RAG et mémoire persistante
                 </CardDescription>
@@ -1354,6 +1392,39 @@ function DynamicModulesOverview() {
                         <TooltipTrigger asChild>
                           <div className="flex items-center gap-2 p-2 rounded text-xs bg-background/50">
                             {toolIcons[tool.name] || <Shield className="h-3 w-3" />}
+                            <code className="font-mono truncate">{tool.name}</code>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{tool.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Orchestration Tools */}
+          {stats.tools.orchestration && stats.tools.orchestration.length > 0 && (
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/15 transition-colors">
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 text-cyan-500" />
+                  <span className="font-medium">Orchestration v5.3</span>
+                  <Badge variant="secondary" className="text-xs">{stats.tools.orchestration.length} outils</Badge>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-muted/30 rounded-lg">
+                  {stats.tools.orchestration.map((tool) => (
+                    <TooltipProvider key={tool.name}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 p-2 rounded text-xs bg-background/50">
+                            {toolIcons[tool.name] || <RefreshCw className="h-3 w-3" />}
                             <code className="font-mono truncate">{tool.name}</code>
                           </div>
                         </TooltipTrigger>
