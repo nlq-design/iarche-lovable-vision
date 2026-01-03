@@ -1006,40 +1006,21 @@ function DynamicModulesOverview() {
     get_login_attempts: <Shield className="h-3 w-3" />,
   };
 
-  // Cockpit modules - dynamically loaded from ui-navigation prompt
-  const { data: cockpitModulesFromDB } = useQuery({
-    queryKey: ['cockpit-modules-dynamic'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('ai_prompts')
-        .select('system_prompt')
-        .eq('slug', 'ui-navigation')
-        .maybeSingle();
-      
-      if (error) throw error;
-      const content = data?.system_prompt || '';
-      
-      // Parse COCKPIT routes from ui-navigation prompt
-      const modules: Array<{ name: string; desc: string; path: string }> = [];
-      const cockpitMatch = content.match(/### COCKPIT \(\d+ routes\)([\s\S]*?)(?=###|$)/);
-      if (cockpitMatch) {
-        const routePattern = /\| `([^`]+)` \| [^|]+ \| ([^|]+) \|/g;
-        let match;
-        while ((match = routePattern.exec(cockpitMatch[1])) !== null) {
-          const path = match[1];
-          const desc = match[2].trim();
-          const name = path.split('/').pop() || path;
-          modules.push({
-            name: name.charAt(0).toUpperCase() + name.slice(1).replace(/-/g, ' '),
-            desc,
-            path
-          });
-        }
-      }
-      return modules;
-    },
-    staleTime: 5 * 60 * 1000
-  });
+// Cockpit modules - hardcoded for reliability (synced with ui-navigation prompt)
+  const cockpitModulesFromDB = [
+    { name: "Dashboard", desc: "Vue d'ensemble CRM", path: "/cockpit" },
+    { name: "Leads", desc: "Gestion des prospects", path: "/cockpit/leads" },
+    { name: "Pipeline", desc: "Opportunités commerciales", path: "/cockpit/pipeline" },
+    { name: "Projects", desc: "Gestion des projets", path: "/cockpit/projects" },
+    { name: "Agenda", desc: "Rendez-vous et planning", path: "/cockpit/agenda" },
+    { name: "Documents", desc: "Documents générés", path: "/cockpit/documents" },
+    { name: "Transcriptions", desc: "Transcriptions vocales", path: "/cockpit/transcriptions" },
+    { name: "Partenaires", desc: "Réseau partenaires", path: "/cockpit/partenaires" },
+    { name: "Solutions", desc: "Détection solutions", path: "/cockpit/solutions" },
+    { name: "Uploads", desc: "Fichiers uploadés", path: "/cockpit/uploads" },
+    { name: "Chatbot", desc: "Agent conversationnel", path: "/cockpit/chatbot" },
+    { name: "Analytics", desc: "Statistiques avancées", path: "/cockpit/analytics" },
+  ];
 
   // Icon mapping for cockpit modules
   const moduleIconMap: Record<string, React.ReactNode> = {
@@ -1061,7 +1042,7 @@ function DynamicModulesOverview() {
     return moduleIconMap[key] || <Bot className="h-4 w-4" />;
   };
 
-  const cockpitModules = cockpitModulesFromDB || [];
+  const cockpitModules = cockpitModulesFromDB;
 
   if (isLoading) {
     return (
@@ -1545,7 +1526,7 @@ function DynamicModulesOverview() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {cockpitModules.length > 0 ? cockpitModules.map((module) => (
+            {cockpitModules.map((module) => (
               <div 
                 key={module.name}
                 className="p-3 rounded-lg bg-muted/50 border flex items-start gap-3"
@@ -1558,12 +1539,7 @@ function DynamicModulesOverview() {
                   <p className="text-xs text-muted-foreground">{module.desc}</p>
                 </div>
               </div>
-            )) : (
-              <div className="col-span-4 text-center text-muted-foreground py-4">
-                <Loader2 className="h-4 w-4 animate-spin mx-auto mb-2" />
-                Chargement des modules...
-              </div>
-            )}
+            ))}
           </div>
         </CardContent>
       </Card>

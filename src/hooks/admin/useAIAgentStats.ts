@@ -245,43 +245,27 @@ export function useEdgeFunctionsList() {
   });
 }
 
-// Hook to get cockpit modules configuration
+// Hook to get cockpit modules configuration - hardcoded for reliability
 export function useCockpitModules() {
   return useQuery({
     queryKey: ['cockpit-modules'],
     queryFn: async () => {
-      // Fetch from ui-navigation prompt
-      const { data, error } = await supabase
-        .from('ai_prompts')
-        .select('system_prompt')
-        .eq('slug', 'ui-navigation')
-        .maybeSingle();
-
-      if (error) throw error;
-      
-      // Parse modules from prompt
-      const content = data?.system_prompt || '';
-      const modules: Array<{ name: string; description: string; path: string }> = [];
-      
-      // Parse COCKPIT routes
-      const cockpitMatch = content.match(/### COCKPIT \(\d+ routes\)([\s\S]*?)(?=###|$)/);
-      if (cockpitMatch) {
-        const routePattern = /\| `([^`]+)` \| [^|]+ \| ([^|]+) \|/g;
-        let match;
-        while ((match = routePattern.exec(cockpitMatch[1])) !== null) {
-          const path = match[1];
-          const description = match[2].trim();
-          const name = path.split('/').pop() || path;
-          modules.push({
-            name: name.charAt(0).toUpperCase() + name.slice(1),
-            description,
-            path
-          });
-        }
-      }
-
-      return modules;
+      // Hardcoded modules synced with ui-navigation prompt
+      return [
+        { name: "Dashboard", description: "Vue d'ensemble CRM", path: "/cockpit" },
+        { name: "Leads", description: "Gestion des prospects", path: "/cockpit/leads" },
+        { name: "Pipeline", description: "Opportunités commerciales", path: "/cockpit/pipeline" },
+        { name: "Projects", description: "Gestion des projets", path: "/cockpit/projects" },
+        { name: "Agenda", description: "Rendez-vous et planning", path: "/cockpit/agenda" },
+        { name: "Documents", description: "Documents générés", path: "/cockpit/documents" },
+        { name: "Transcriptions", description: "Transcriptions vocales", path: "/cockpit/transcriptions" },
+        { name: "Partenaires", description: "Réseau partenaires", path: "/cockpit/partenaires" },
+        { name: "Solutions", description: "Détection solutions", path: "/cockpit/solutions" },
+        { name: "Uploads", description: "Fichiers uploadés", path: "/cockpit/uploads" },
+        { name: "Chatbot", description: "Agent conversationnel", path: "/cockpit/chatbot" },
+        { name: "Analytics", description: "Statistiques avancées", path: "/cockpit/analytics" },
+      ];
     },
-    staleTime: 5 * 60 * 1000
+    staleTime: Infinity // Never refetch, data is static
   });
 }
