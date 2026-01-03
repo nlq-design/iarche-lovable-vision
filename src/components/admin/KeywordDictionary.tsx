@@ -43,11 +43,9 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { 
   Plus, Trash2, Edit2, Download, Upload, RefreshCw, 
-  Loader2, Search, Sparkles, BookOpen, Filter, Zap, Brain, CheckCircle2,
-  Bell, Check, X, AlertTriangle, Eye
+  Loader2, Search, Sparkles, BookOpen, Filter, Zap, Brain, CheckCircle2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -58,30 +56,17 @@ interface KeywordAlias {
   context_type: string;
   phonetic_key: string | null;
   is_active: boolean;
-  status: 'pending' | 'validated' | 'rejected';
-  detected_count: number;
-  first_detected_at: string | null;
-  validated_at: string | null;
-  validated_by: string | null;
-  source_examples: unknown;
   created_at: string;
 }
 
 const CONTEXT_TYPES = [
-  { value: 'lead', label: 'Lead/Client', color: 'bg-blue-500/10 text-blue-600' },
-  { value: 'projet', label: 'Projet', color: 'bg-indigo-500/10 text-indigo-600' },
   { value: 'solution', label: 'Solution', color: 'bg-purple-500/10 text-purple-600' },
-  { value: 'outil', label: 'Outil/Tech', color: 'bg-green-500/10 text-green-600' },
+  { value: 'client', label: 'Client', color: 'bg-blue-500/10 text-blue-600' },
   { value: 'concurrent', label: 'Concurrent', color: 'bg-red-500/10 text-red-600' },
-  { value: 'partenaire', label: 'Partenaire', color: 'bg-amber-500/10 text-amber-600' },
+  { value: 'outil', label: 'Outil', color: 'bg-green-500/10 text-green-600' },
+  { value: 'service', label: 'Service', color: 'bg-orange-500/10 text-orange-600' },
   { value: 'autre', label: 'Autre', color: 'bg-gray-500/10 text-gray-600' },
 ];
-
-const STATUS_CONFIG = {
-  pending: { label: 'À valider', color: 'bg-amber-500/10 text-amber-600 border-amber-500/30' },
-  validated: { label: 'Validé', color: 'bg-green-500/10 text-green-600 border-green-500/30' },
-  rejected: { label: 'Rejeté', color: 'bg-red-500/10 text-red-600 border-red-500/30' },
-};
 
 export function KeywordDictionary() {
   const queryClient = useQueryClient();
@@ -89,11 +74,9 @@ export function KeywordDictionary() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [filterContext, setFilterContext] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<string>('pending'); // Default to pending
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingAlias, setEditingAlias] = useState<KeywordAlias | null>(null);
   const [deleteAlias, setDeleteAlias] = useState<KeywordAlias | null>(null);
-  const [validatingAlias, setValidatingAlias] = useState<KeywordAlias | null>(null);
   const [isAutoExtracting, setIsAutoExtracting] = useState(false);
   const [extractionProgress, setExtractionProgress] = useState<{
     sources_scanned?: number;
@@ -111,19 +94,15 @@ export function KeywordDictionary() {
 
   // Fetch aliases
   const { data: aliases = [], isLoading, refetch } = useQuery({
-    queryKey: ['keyword-aliases', filterContext, filterStatus],
+    queryKey: ['keyword-aliases', filterContext],
     queryFn: async () => {
       let query = supabase
         .from('keyword_aliases')
         .select('*')
-        .order('detected_count', { ascending: false })
         .order('canonical_name');
       
       if (filterContext !== 'all') {
         query = query.eq('context_type', filterContext);
-      }
-      if (filterStatus !== 'all') {
-        query = query.eq('status', filterStatus);
       }
       
       const { data, error } = await query;
@@ -132,24 +111,10 @@ export function KeywordDictionary() {
     },
   });
 
-  // Count pending for badge
-  const { data: pendingCount = 0 } = useQuery({
-    queryKey: ['keyword-aliases-pending-count'],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('keyword_aliases')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
-      if (error) throw error;
-      return count || 0;
-    },
-  });
-
   // Stats
   const stats = {
     total: aliases.length,
-    pending: aliases.filter(a => a.status === 'pending').length,
-    validated: aliases.filter(a => a.status === 'validated').length,
+    active: aliases.filter(a => a.is_active).length,
     byContext: CONTEXT_TYPES.map(ct => ({
       ...ct,
       count: aliases.filter(a => a.context_type === ct.value).length,
@@ -162,6 +127,7 @@ export function KeywordDictionary() {
     a.canonical_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     a.alias.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
   // Mutations
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -223,70 +189,10 @@ export function KeywordDictionary() {
     },
   });
 
-  // Validation mutation
-  const validateMutation = useMutation({
-    mutationFn: async ({ id, canonical_name, context_type }: { id: string; canonical_name: string; context_type: string }) => {
-      const { error } = await supabase
-        .from('keyword_aliases')
-        .update({ 
-          canonical_name,
-          context_type,
-          status: 'validated',
-          validated_at: new Date().toISOString(),
-          is_active: true
-        })
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['keyword-aliases'] });
-      queryClient.invalidateQueries({ queryKey: ['keyword-aliases-pending-count'] });
-      toast.success('Alias validé');
-      setValidatingAlias(null);
-    },
-    onError: (err) => {
-      toast.error(err instanceof Error ? err.message : 'Erreur de validation');
-    },
-  });
-
-  // Reject mutation
-  const rejectMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('keyword_aliases')
-        .update({ status: 'rejected', is_active: false })
-        .eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['keyword-aliases'] });
-      queryClient.invalidateQueries({ queryKey: ['keyword-aliases-pending-count'] });
-      toast.success('Alias rejeté');
-    },
-  });
-
-  const handleReject = (id: string) => {
-    rejectMutation.mutate(id);
-  };
-
-  const handleValidate = () => {
-    if (!validatingAlias) return;
-    if (!formData.canonical_name) {
-      toast.error('Veuillez saisir le nom correct');
-      return;
-    }
-    validateMutation.mutate({
-      id: validatingAlias.id,
-      canonical_name: formData.canonical_name,
-      context_type: formData.context_type
-    });
-  };
-
   const resetForm = () => {
     setFormData({ canonical_name: '', alias: '', context_type: 'solution', is_active: true });
     setShowAddDialog(false);
     setEditingAlias(null);
-    setValidatingAlias(null);
   };
 
   const handleSubmit = () => {
@@ -506,26 +412,16 @@ export function KeywordDictionary() {
           )}
           
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
             <div className="p-3 rounded-lg bg-muted/50 border text-center">
               <p className="text-2xl font-bold">{stats.total}</p>
               <p className="text-xs text-muted-foreground">Total</p>
             </div>
-            <div 
-              className={`p-3 rounded-lg border text-center cursor-pointer transition-colors ${filterStatus === 'pending' ? 'bg-amber-500/20 border-amber-500' : 'bg-amber-500/10 hover:bg-amber-500/15'}`}
-              onClick={() => setFilterStatus('pending')}
-            >
-              <p className="text-2xl font-bold text-amber-600">{pendingCount}</p>
-              <p className="text-xs text-amber-700">À valider</p>
+            <div className="p-3 rounded-lg bg-muted/50 border text-center">
+              <p className="text-2xl font-bold">{stats.active}</p>
+              <p className="text-xs text-muted-foreground">Actifs</p>
             </div>
-            <div 
-              className={`p-3 rounded-lg border text-center cursor-pointer transition-colors ${filterStatus === 'validated' ? 'bg-green-500/20 border-green-500' : 'bg-green-500/10 hover:bg-green-500/15'}`}
-              onClick={() => setFilterStatus('validated')}
-            >
-              <p className="text-2xl font-bold text-green-600">{stats.validated}</p>
-              <p className="text-xs text-green-700">Validés</p>
-            </div>
-            {stats.byContext.slice(0, 2).map(ctx => (
+            {stats.byContext.slice(0, 4).map(ctx => (
               <div key={ctx.value} className="p-3 rounded-lg bg-muted/50 border text-center">
                 <p className="text-2xl font-bold">{ctx.count}</p>
                 <p className="text-xs text-muted-foreground">{ctx.label}</p>
@@ -544,17 +440,6 @@ export function KeywordDictionary() {
                 className="pl-9"
               />
             </div>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous statuts</SelectItem>
-                <SelectItem value="pending">À valider</SelectItem>
-                <SelectItem value="validated">Validés</SelectItem>
-                <SelectItem value="rejected">Rejetés</SelectItem>
-              </SelectContent>
-            </Select>
             <Select value={filterContext} onValueChange={setFilterContext}>
               <SelectTrigger className="w-40">
                 <Filter className="h-4 w-4 mr-2" />
@@ -591,89 +476,37 @@ export function KeywordDictionary() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Mot détecté</TableHead>
-                  <TableHead>Nom validé</TableHead>
+                  <TableHead>Nom canonique</TableHead>
+                  <TableHead>Alias</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead className="text-center">Détections</TableHead>
-                  <TableHead>Statut</TableHead>
+                  <TableHead>Clé phonétique</TableHead>
+                  <TableHead className="text-center">Actif</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAliases.map((alias) => (
-                  <TableRow key={alias.id} className={alias.status === 'pending' ? 'bg-amber-500/5' : ''}>
+                  <TableRow key={alias.id}>
+                    <TableCell className="font-medium">{alias.canonical_name}</TableCell>
                     <TableCell>
                       <code className="text-sm bg-muted px-2 py-0.5 rounded">{alias.alias}</code>
-                      {alias.phonetic_key && (
-                        <span className="ml-2 text-xs text-muted-foreground">({alias.phonetic_key})</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {alias.status === 'pending' ? (
-                        <span className="text-muted-foreground italic">À définir...</span>
-                      ) : (
-                        alias.canonical_name
-                      )}
                     </TableCell>
                     <TableCell>{getContextBadge(alias.context_type)}</TableCell>
-                    <TableCell className="text-center">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <Badge variant="outline" className="text-xs">
-                              {alias.detected_count}x
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            Détecté {alias.detected_count} fois
-                            {alias.first_detected_at && (
-                              <> depuis le {format(new Date(alias.first_detected_at), 'dd/MM/yy', { locale: fr })}</>
-                            )}
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </TableCell>
                     <TableCell>
-                      <Badge className={STATUS_CONFIG[alias.status]?.color || ''}>
-                        {STATUS_CONFIG[alias.status]?.label || alias.status}
-                      </Badge>
+                      {alias.phonetic_key ? (
+                        <code className="text-xs text-muted-foreground">{alias.phonetic_key}</code>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Switch
+                        checked={alias.is_active}
+                        onCheckedChange={(checked) => 
+                          toggleActiveMutation.mutate({ id: alias.id, is_active: checked })
+                        }
+                      />
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        {alias.status === 'pending' && (
-                          <>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-500/10"
-                                    onClick={() => setValidatingAlias(alias)}
-                                  >
-                                    <Check className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Valider</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-500/10"
-                                    onClick={() => handleReject(alias.id)}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Rejeter</TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </>
-                        )}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -780,107 +613,6 @@ export function KeywordDictionary() {
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               )}
               {editingAlias ? 'Mettre à jour' : 'Créer'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Validation Dialog */}
-      <Dialog open={!!validatingAlias} onOpenChange={(open) => { 
-        if (!open) {
-          setValidatingAlias(null);
-          setFormData({ canonical_name: '', alias: '', context_type: 'solution', is_active: true });
-        }
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-amber-500" />
-              Valider ce terme
-            </DialogTitle>
-            <DialogDescription>
-              Ce mot a été détecté {validatingAlias?.detected_count} fois. Indiquez le nom correct et le type.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-              <p className="text-sm font-medium">Mot détecté :</p>
-              <code className="text-lg font-mono">{validatingAlias?.alias}</code>
-              {validatingAlias?.phonetic_key && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Clé phonétique : {validatingAlias.phonetic_key}
-                </p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="valid_name">Nom correct *</Label>
-              <Input
-                id="valid_name"
-                placeholder="Ex: Datalia, Google, OpenAI..."
-                value={formData.canonical_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, canonical_name: e.target.value }))}
-                autoFocus
-              />
-              <p className="text-xs text-muted-foreground">
-                Le nom officiel vers lequel normaliser
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Type</Label>
-              <Select 
-                value={formData.context_type} 
-                onValueChange={(v) => setFormData(prev => ({ ...prev, context_type: v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CONTEXT_TYPES.map(ct => (
-                    <SelectItem key={ct.value} value={ct.value}>
-                      <span className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${ct.color.split(' ')[0]}`} />
-                        {ct.label}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <DialogFooter className="gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setValidatingAlias(null);
-                setFormData({ canonical_name: '', alias: '', context_type: 'solution', is_active: true });
-              }}
-            >
-              Annuler
-            </Button>
-            <Button 
-              variant="destructive"
-              onClick={() => {
-                if (validatingAlias) {
-                  handleReject(validatingAlias.id);
-                  setValidatingAlias(null);
-                }
-              }}
-            >
-              <X className="h-4 w-4 mr-1" />
-              Rejeter
-            </Button>
-            <Button 
-              onClick={handleValidate}
-              disabled={validateMutation.isPending || !formData.canonical_name}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              {validateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              <Check className="h-4 w-4 mr-1" />
-              Valider
             </Button>
           </DialogFooter>
         </DialogContent>
