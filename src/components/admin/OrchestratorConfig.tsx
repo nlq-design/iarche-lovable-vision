@@ -146,18 +146,20 @@ function ToolCategory({ category, tools, defaultOpen = false }: {
 export function OrchestratorConfig() {
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Récupérer les prompts liés à l'orchestrateur
+  // Récupérer les prompts liés à l'orchestrateur (avec gouverneur en premier)
   const { data: orchestratorPrompts, isLoading } = useQuery({
     queryKey: ['orchestrator-prompts'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ai_prompts')
         .select('*')
-        .in('slug', ['master-agent', 'ui-navigation', 'tools-reference'])
-        .order('slug');
+        .in('slug', ['orchestrator-governor', 'master-agent', 'ui-navigation', 'tools-reference']);
       
       if (error) throw error;
-      return data;
+      
+      // Trier selon la hiérarchie : governor → master → ui-navigation → tools-reference
+      const order = ['orchestrator-governor', 'master-agent', 'ui-navigation', 'tools-reference'];
+      return data?.sort((a, b) => order.indexOf(a.slug) - order.indexOf(b.slug)) || [];
     }
   });
 
@@ -405,7 +407,7 @@ export function OrchestratorConfig() {
                 <label className="text-sm font-medium">Architecture</label>
                 <div className="bg-muted p-4 rounded-lg font-mono text-xs space-y-1">
                   <p>📡 Canaux : Telegram Bot, Cockpit Chat, API interne</p>
-                  <p>🧠 Prompts : master-agent + ui-navigation + tools-reference</p>
+                  <p>🧠 Prompts : governor → master-agent → ui-navigation → tools-reference</p>
                   <p>🔧 Outils : {totalTools} fonctions (CRUD + IA + RAG)</p>
                   <p>📊 Tables : 69 tables Supabase</p>
                   <p>⚡ Edge Functions : 45 fonctions déployées</p>
@@ -425,19 +427,38 @@ export function OrchestratorConfig() {
                 Prompts Système de l'Orchestrateur
               </CardTitle>
               <CardDescription>
-                Les 3 prompts principaux qui composent le contexte de l'agent IA
+                Les 4 prompts hiérarchiques qui composent le contexte de l'agent IA (Niveau 0 → Niveau 3)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {orchestratorPrompts?.map((prompt) => (
-                <Collapsible key={prompt.id}>
-                  <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-lg border hover:bg-muted/50 transition-colors">
+              {orchestratorPrompts?.map((prompt, index) => {
+                const isGovernor = prompt.slug === 'orchestrator-governor';
+                const levelLabels: Record<string, string> = {
+                  'orchestrator-governor': 'Niveau 0 - Gouverneur',
+                  'master-agent': 'Niveau 1 - Identité',
+                  'ui-navigation': 'Niveau 2 - Navigation',
+                  'tools-reference': 'Niveau 3 - Outils'
+                };
+                return (
+                <Collapsible key={prompt.id} defaultOpen={isGovernor}>
+                  <CollapsibleTrigger className={`flex items-center justify-between w-full p-4 rounded-lg border hover:bg-muted/50 transition-colors ${isGovernor ? 'border-primary bg-primary/5' : ''}`}>
                     <div className="flex items-center gap-3">
-                      <Bot className="h-5 w-5 text-primary" />
+                      {isGovernor ? (
+                        <Shield className="h-5 w-5 text-primary" />
+                      ) : (
+                        <Bot className="h-5 w-5 text-muted-foreground" />
+                      )}
                       <div className="text-left">
-                        <p className="font-medium">{prompt.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{prompt.name}</p>
+                          {isGovernor && (
+                            <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">
+                              Hiérarchie Supérieure
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground">
-                          slug: <code className="bg-muted px-1 rounded">{prompt.slug}</code>
+                          <span className="font-medium">{levelLabels[prompt.slug] || ''}</span> • slug: <code className="bg-muted px-1 rounded">{prompt.slug}</code>
                         </p>
                       </div>
                     </div>
@@ -477,7 +498,8 @@ export function OrchestratorConfig() {
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
-              ))}
+                );
+              })}
 
               <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                 <p className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
