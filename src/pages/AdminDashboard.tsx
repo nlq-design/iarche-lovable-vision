@@ -243,7 +243,7 @@ const AdminDashboard = () => {
         <div className="container mx-auto max-w-7xl space-y-8">
           {/* Header avec message de bienvenue */}
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-foreground">Bienvenue, Nicolas</h1>
+            <h1 className="text-3xl font-bold text-foreground">Bienvenue, {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Admin'}</h1>
             <p className="text-muted-foreground">
               Vue d'ensemble de votre activité • {format(new Date(), 'EEEE d MMMM yyyy', { locale: fr })}
             </p>
