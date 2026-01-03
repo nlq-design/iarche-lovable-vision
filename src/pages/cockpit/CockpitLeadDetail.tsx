@@ -1143,13 +1143,27 @@ const CockpitLeadDetail = () => {
                           Transcriptions ({leadTranscriptions.length})
                         </p>
                         {leadTranscriptions.slice(0, 3).map((trans: any) => (
-                          <div key={trans.id} className="p-2 border rounded mb-1 text-sm">
+                          <div 
+                            key={trans.id} 
+                            className="p-2 border rounded mb-1 text-sm cursor-pointer hover:bg-accent/50 transition-colors"
+                            onClick={() => navigate(`/cockpit/transcriptions/${trans.id}`)}
+                          >
                             <span className="truncate capitalize">{trans.source}</span>
                             <p className="text-xs text-muted-foreground">
                               {format(new Date(trans.created_at), 'dd MMM', { locale: fr })}
                             </p>
                           </div>
                         ))}
+                        {leadTranscriptions.length > 3 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full text-xs"
+                            onClick={() => navigate(`/cockpit/transcriptions?lead_id=${id}`)}
+                          >
+                            Voir toutes ({leadTranscriptions.length})
+                          </Button>
+                        )}
                       </div>
                     )}
 
