@@ -363,6 +363,55 @@ async function indexService(supabase: any, service: typeof SERVICES_DATA[0]): Pr
 // ===== Cockpit Module Indexing Functions =====
 
 async function indexLead(supabase: any, lead: any): Promise<{ success: boolean; chunks: number; error?: string }> {
+  // Fetch linked opportunities
+  const { data: opportunities } = await supabase
+    .from("opportunities")
+    .select("title, stage, value_amount, description")
+    .eq("lead_id", lead.id);
+  
+  const opportunitiesText = opportunities?.length 
+    ? `\n--- Opportunités commerciales ---\n${opportunities.map((o: any) => 
+        `• ${o.title} (${o.stage})${o.value_amount ? ` - ${o.value_amount}€` : ''}${o.description ? `: ${o.description}` : ''}`
+      ).join('\n')}`
+    : '';
+
+  // Fetch linked projects
+  const { data: projects } = await supabase
+    .from("projects")
+    .select("name, status, description")
+    .eq("lead_id", lead.id);
+  
+  const projectsText = projects?.length
+    ? `\n--- Projets liés ---\n${projects.map((p: any) => 
+        `• ${p.name} (${p.status})${p.description ? `: ${p.description}` : ''}`
+      ).join('\n')}`
+    : '';
+
+  // Fetch linked contacts
+  const { data: contacts } = await supabase
+    .from("lead_contacts")
+    .select("name, position, email")
+    .eq("lead_id", lead.id);
+  
+  const contactsText = contacts?.length
+    ? `\n--- Contacts ---\n${contacts.map((c: any) => 
+        `• ${c.name}${c.position ? ` (${c.position})` : ''}${c.email ? ` - ${c.email}` : ''}`
+      ).join('\n')}`
+    : '';
+
+  // Fetch meeting notes
+  const { data: meetingNotes } = await supabase
+    .from("meeting_notes")
+    .select("title, summary")
+    .eq("lead_id", lead.id)
+    .limit(10);
+  
+  const meetingNotesText = meetingNotes?.length
+    ? `\n--- Notes de réunion ---\n${meetingNotes.map((m: any) => 
+        `• ${m.title}${m.summary ? `: ${m.summary}` : ''}`
+      ).join('\n')}`
+    : '';
+
   const content = [
     `Lead CRM: ${lead.name}`,
     lead.company ? `Entreprise: ${lead.company}` : "",
@@ -371,11 +420,20 @@ async function indexLead(supabase: any, lead: any): Promise<{ success: boolean; 
     lead.industry ? `Secteur d'activité: ${lead.industry}` : "",
     lead.position ? `Fonction: ${lead.position}` : "",
     lead.company_size ? `Taille entreprise: ${lead.company_size}` : "",
+    lead.website ? `Site web: ${lead.website}` : "",
+    lead.city ? `Ville: ${lead.city}` : "",
+    lead.siret ? `SIRET: ${lead.siret}` : "",
     lead.source ? `Canal d'acquisition: ${lead.source}` : "",
     lead.source_context ? `Contexte: ${lead.source_context}` : "",
-    lead.message ? `Message: ${lead.message}` : "",
+    lead.message ? `Message initial: ${lead.message}` : "",
     lead.qualification_status ? `Statut qualification: ${lead.qualification_status}` : "",
     lead.lead_score ? `Score: ${lead.lead_score}` : "",
+    // Synthèse Consulte IA
+    lead.ai_documents_summary ? `\n--- Synthèse IA (Consulte) ---\n${lead.ai_documents_summary}` : "",
+    contactsText,
+    opportunitiesText,
+    projectsText,
+    meetingNotesText,
   ].filter(Boolean).join("\n");
 
   return indexResource(
@@ -388,13 +446,80 @@ async function indexLead(supabase: any, lead: any): Promise<{ success: boolean; 
     { 
       company: lead.company, 
       qualification_status: lead.qualification_status,
-      lead_score: lead.lead_score 
+      lead_score: lead.lead_score,
+      has_consulte: !!lead.ai_documents_summary,
+      opportunities_count: opportunities?.length || 0,
+      projects_count: projects?.length || 0
     },
     false
   );
 }
 
 async function indexProject(supabase: any, project: any): Promise<{ success: boolean; chunks: number; error?: string }> {
+  // Fetch linked lead info
+  let leadInfo = '';
+  if (project.lead_id) {
+    const { data: lead } = await supabase
+      .from("leads")
+      .select("name, company, email")
+      .eq("id", project.lead_id)
+      .single();
+    if (lead) {
+      leadInfo = `Lead associé: ${lead.name}${lead.company ? ` (${lead.company})` : ''}`;
+    }
+  }
+
+  // Fetch linked specifications
+  const { data: specs } = await supabase
+    .from("specifications")
+    .select("title, version, status")
+    .eq("project_id", project.id);
+  
+  const specsText = specs?.length
+    ? `\n--- Cahiers des charges ---\n${specs.map((s: any) => 
+        `• ${s.title} v${s.version || '1'} (${s.status})`
+      ).join('\n')}`
+    : '';
+
+  // Fetch project documents
+  const { data: docs } = await supabase
+    .from("project_documents")
+    .select("name, category, description")
+    .eq("project_id", project.id)
+    .limit(20);
+  
+  const docsText = docs?.length
+    ? `\n--- Documents projet ---\n${docs.map((d: any) => 
+        `• ${d.name}${d.category ? ` [${d.category}]` : ''}${d.description ? `: ${d.description}` : ''}`
+      ).join('\n')}`
+    : '';
+
+  // Fetch tasks
+  const { data: tasks } = await supabase
+    .from("tasks")
+    .select("title, status, priority")
+    .eq("project_id", project.id)
+    .limit(20);
+  
+  const tasksText = tasks?.length
+    ? `\n--- Tâches ---\n${tasks.map((t: any) => 
+        `• ${t.title} (${t.status}, ${t.priority})`
+      ).join('\n')}`
+    : '';
+
+  // Fetch meeting notes
+  const { data: meetingNotes } = await supabase
+    .from("meeting_notes")
+    .select("title, summary")
+    .eq("project_id", project.id)
+    .limit(10);
+  
+  const meetingNotesText = meetingNotes?.length
+    ? `\n--- Notes de réunion ---\n${meetingNotes.map((m: any) => 
+        `• ${m.title}${m.summary ? `: ${m.summary}` : ''}`
+      ).join('\n')}`
+    : '';
+
   const content = [
     `Projet IArche: ${project.name}`,
     project.description ? `Description du projet: ${project.description}` : "",
@@ -404,6 +529,13 @@ async function indexProject(supabase: any, project: any): Promise<{ success: boo
     project.start_date ? `Démarrage: ${project.start_date}` : "",
     project.end_date ? `Échéance: ${project.end_date}` : "",
     project.tags?.length ? `Tags: ${project.tags.join(", ")}` : "",
+    leadInfo,
+    // Synthèse Consulte IA
+    project.ai_documents_summary ? `\n--- Synthèse IA (Consulte) ---\n${project.ai_documents_summary}` : "",
+    specsText,
+    docsText,
+    tasksText,
+    meetingNotesText,
   ].filter(Boolean).join("\n");
 
   return indexResource(
@@ -416,7 +548,10 @@ async function indexProject(supabase: any, project: any): Promise<{ success: boo
     { 
       status: project.status, 
       health_status: project.health_status,
-      budget_amount: project.budget_amount 
+      budget_amount: project.budget_amount,
+      has_consulte: !!project.ai_documents_summary,
+      specs_count: specs?.length || 0,
+      docs_count: docs?.length || 0
     },
     false
   );
@@ -544,6 +679,43 @@ async function indexVoiceTranscription(supabase: any, transcription: any): Promi
 }
 
 async function indexPartner(supabase: any, partner: any): Promise<{ success: boolean; chunks: number; error?: string }> {
+  // Fetch linked leads
+  const { data: leadPartners } = await supabase
+    .from("lead_partners")
+    .select("lead_id, role, leads(name, company)")
+    .eq("partner_id", partner.id);
+  
+  const leadsText = leadPartners?.length
+    ? `\n--- Leads liés ---\n${leadPartners.map((lp: any) => 
+        `• ${lp.leads?.name || 'Lead'}${lp.leads?.company ? ` (${lp.leads.company})` : ''}${lp.role ? ` - Rôle: ${lp.role}` : ''}`
+      ).join('\n')}`
+    : '';
+
+  // Fetch linked projects
+  const { data: projectPartners } = await supabase
+    .from("project_partners")
+    .select("project_id, role, projects(name, status)")
+    .eq("partner_id", partner.id);
+  
+  const projectsText = projectPartners?.length
+    ? `\n--- Projets liés ---\n${projectPartners.map((pp: any) => 
+        `• ${pp.projects?.name || 'Projet'}${pp.projects?.status ? ` (${pp.projects.status})` : ''}${pp.role ? ` - Rôle: ${pp.role}` : ''}`
+      ).join('\n')}`
+    : '';
+
+  // Fetch linked bookings
+  const { data: bookingPartners } = await supabase
+    .from("booking_partners")
+    .select("booking_id, role, bookings(name, start_time)")
+    .eq("partner_id", partner.id)
+    .limit(10);
+  
+  const bookingsText = bookingPartners?.length
+    ? `\n--- Rendez-vous ---\n${bookingPartners.map((bp: any) => 
+        `• ${bp.bookings?.name || 'RDV'}${bp.bookings?.start_time ? ` (${new Date(bp.bookings.start_time).toLocaleDateString('fr-FR')})` : ''}`
+      ).join('\n')}`
+    : '';
+
   const content = [
     `Partenaire IArche: ${partner.name}`,
     partner.type ? `Type de partenariat: ${partner.type}` : "",
@@ -555,6 +727,11 @@ async function indexPartner(supabase: any, partner: any): Promise<{ success: boo
     partner.expertise_areas?.length ? `Domaines d'expertise: ${partner.expertise_areas.join(", ")}` : "",
     partner.commission_rate ? `Taux commission: ${partner.commission_rate}%` : "",
     partner.status ? `Statut: ${partner.status}` : "",
+    // Synthèse Consulte IA
+    partner.ai_documents_summary ? `\n--- Synthèse IA (Consulte) ---\n${partner.ai_documents_summary}` : "",
+    leadsText,
+    projectsText,
+    bookingsText,
   ].filter(Boolean).join("\n");
 
   return indexResource(
@@ -562,12 +739,15 @@ async function indexPartner(supabase: any, partner: any): Promise<{ success: boo
     partner.id,
     "partner",
     partner.name,
-    partner.id,
+    partner.slug || partner.id,
     content,
     { 
       type: partner.type, 
       specialty: partner.specialty,
-      status: partner.status 
+      status: partner.status,
+      has_consulte: !!partner.ai_documents_summary,
+      leads_count: leadPartners?.length || 0,
+      projects_count: projectPartners?.length || 0
     },
     false
   );
