@@ -11,7 +11,8 @@ import {
   FileText,
   Upload,
   Bot,
-  Handshake
+  Handshake,
+  Send
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Link, useLocation } from 'react-router-dom';
@@ -38,6 +39,7 @@ const navigationItems = [
   { title: 'Documents', url: '/cockpit/upload', icon: Upload },
   { title: 'Devis/CDC', url: '/cockpit/documents', icon: FileText },
   { title: 'Transcriptions', url: '/cockpit/transcriptions', icon: Mic },
+  { title: 'Imports Telegram', url: '/cockpit/imports', icon: Send },
   { title: 'Agenda', url: '/cockpit/agenda', icon: Calendar },
   { title: 'Analytics', url: '/cockpit/analytics', icon: BarChart3 },
   { title: 'Agent IA', url: '/cockpit/chatbot', icon: Bot },
