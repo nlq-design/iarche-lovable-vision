@@ -92,7 +92,7 @@ export function AIHealthDashboard() {
             {STATUS_ICONS[health.healthStatus]}
           </div>
           <div>
-            <h3 className="font-semibold">Diagnostic Système IA v5.0</h3>
+            <h3 className="font-semibold">Diagnostic Système IA v6.22</h3>
             <p className="text-sm text-muted-foreground">
               {health.healthStatus === 'healthy' 
                 ? 'Tous les systèmes fonctionnent normalement'
