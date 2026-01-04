@@ -1,6 +1,6 @@
-# CDC Module Viviers - Cockpit IArche
+# CDC Module Viviers - IArche
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Statut:** 📋 SPÉCIFICATION VALIDÉE  
 **Date:** 2026-01-04  
 **Auteur:** Lovable AI
@@ -10,44 +10,49 @@
 ## 1. Vue d'ensemble
 
 ### 1.1 Objectif
-Module de gestion des **leads froids** (viviers) permettant d'importer, stocker et qualifier des prospects issus de sources externes (INSEE, Google Business, listes enrichies, CSV).
+Module **distinct** de gestion des **leads froids** (viviers) permettant d'importer, stocker et qualifier des prospects issus de sources externes (INSEE, Google Business, listes enrichies, CSV).
 
-### 1.2 Positionnement dans le flux CRM
+### 1.2 Architecture modules IArche
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        FLUX CRM COCKPIT                              │
+│                      MODULES IARCHE                                  │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                      │
-│  [SOURCES EXTERNES]          [SITE PUBLIC]                          │
-│       │                           │                                  │
-│       ▼                           ▼                                  │
-│  ┌─────────┐               ┌─────────────┐                          │
-│  │ VIVIERS │               │ Formulaires │                          │
-│  │ (froids)│               │  Contact    │                          │
-│  └────┬────┘               └──────┬──────┘                          │
-│       │                           │                                  │
-│       │ promotion                 │ auto-sync                       │
-│       ▼                           ▼                                  │
-│  ┌────────────────────────────────────┐                             │
-│  │              LEADS                  │                             │
-│  │         (qualifiés/chauds)          │                             │
-│  └─────────────────┬──────────────────┘                             │
-│                    │                                                 │
-│                    ▼                                                 │
-│  ┌────────────────────────────────────┐                             │
-│  │          OPPORTUNITIES              │                             │
-│  └─────────────────┬──────────────────┘                             │
-│                    │                                                 │
-│                    ▼                                                 │
-│  ┌────────────────────────────────────┐                             │
-│  │            PROJECTS                 │                             │
-│  └────────────────────────────────────┘                             │
+│  /              → Site public (vitrine, blog, formulaires)          │
+│                   Auth: public                                       │
+│                                                                      │
+│  /admin         → Back-office éditorial (articles, médias)          │
+│                   Auth: admin role                                   │
+│                                                                      │
+│  /cockpit       → CRM commercial (leads chauds, pipeline)           │
+│                   Auth: cockpit_user + step-up MFA                   │
+│                                                                      │
+│  /viviers       → Base prospects froids (100k+ lignes)              │ ◄── NEW
+│                   Auth: cockpit_user + step-up MFA (identique)       │
+│                   Layout: VivierLayout (dédié)                       │
+│                   Accès: Badge orange dans header Cockpit            │
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### 1.3 Sources de données
+### 1.3 Flux CRM complet
+
+```
+/viviers (froid)                    /cockpit
+      │                                 │
+      │ promotion                       │ auto-sync (formulaires)
+      ▼                                 ▼
+┌────────────────────────────────────────────┐
+│              /cockpit/leads                 │
+│            (leads qualifiés)                │
+└─────────────────┬──────────────────────────┘
+                  │
+                  ▼
+         /cockpit/pipeline → /cockpit/projets
+```
+
+### 1.4 Sources de données
 
 | Source | Description | Format |
 |--------|-------------|--------|
@@ -60,7 +65,44 @@ Module de gestion des **leads froids** (viviers) permettant d'importer, stocker 
 
 ## 2. Architecture technique
 
-### 2.1 Schéma de données
+### 2.1 Routes
+
+| Route | Description | Composant | Layout |
+|-------|-------------|-----------|--------|
+| `/viviers` | Liste des leads froids | `Viviers.tsx` | `VivierLayout` |
+| `/viviers/:id` | Détail d'un lead froid | `VivierDetail.tsx` | `VivierLayout` |
+| `/viviers/import` | Interface d'import | `VivierImport.tsx` | `VivierLayout` |
+
+### 2.2 Composants
+
+```
+src/
+├── components/
+│   └── viviers/
+│       ├── VivierLayout.tsx         # Layout dédié module
+│       ├── VivierHeader.tsx         # Header minimaliste
+│       ├── VivierTable.tsx          # Table avec pagination serveur
+│       ├── VivierFilters.tsx        # Filtres avancés
+│       ├── VivierDetailSheet.tsx    # Vue détail
+│       ├── VivierImportWizard.tsx   # Wizard import multi-étapes
+│       ├── VivierScoreBadge.tsx     # Affichage score coloré
+│       └── ProtectedVivierRoute.tsx # Auth guard
+│
+├── hooks/
+│   └── viviers/
+│       ├── useViviers.ts            # CRUD + pagination
+│       ├── useVivierImport.ts       # Import CSV/XLSX/paste
+│       ├── useVivierPromotion.ts    # Promotion → leads
+│       └── useVivierScoring.ts      # Calcul scoring auto
+│
+└── pages/
+    └── viviers/
+        ├── Viviers.tsx              # Liste principale
+        ├── VivierDetail.tsx         # Page détail
+        └── VivierImport.tsx         # Page import
+```
+
+### 2.3 Schéma de données
 
 ```sql
 -- Table principale des viviers (leads froids)
@@ -169,13 +211,39 @@ CREATE POLICY "Authenticated users can manage vivier_imports"
   WITH CHECK (true);
 ```
 
-### 2.2 Routes
+### 2.4 Hooks
 
-| Route | Description | Composant |
-|-------|-------------|-----------|
-| `/cockpit/viviers` | Liste des leads froids | `CockpitViviers.tsx` |
-| `/cockpit/viviers/:id` | Détail d'un lead froid | `CockpitVivierDetail.tsx` |
-| `/cockpit/viviers/import` | Interface d'import CSV | `CockpitVivierImport.tsx` |
+```typescript
+// src/hooks/viviers/useViviers.ts
+export function useViviers() {
+  // CRUD viviers
+  // Filtrage avancé
+  // Pagination serveur (100k lignes)
+  // Stats
+}
+
+// src/hooks/viviers/useVivierImport.ts
+export function useVivierImport() {
+  // Upload CSV/XLSX
+  // Paste depuis tableur
+  // Mapping colonnes
+  // Import batch
+  // Détection doublons
+}
+
+// src/hooks/viviers/useVivierPromotion.ts
+export function useVivierPromotion() {
+  // Promotion vivier → lead (suppression après)
+  // Enrichissement si email existe dans leads
+  // Bulk promotion
+}
+
+// src/hooks/viviers/useVivierScoring.ts
+export function useVivierScoring() {
+  // Calcul automatique du score
+  // Règles configurables
+}
+```
 
 ### 2.3 Hooks
 
@@ -325,32 +393,49 @@ Vivier (froid) ──promotion──▶ Lead (qualifié)
 
 ## 4. UI/UX
 
-### 4.1 Navigation Cockpit
+### 4.1 Accès au module /viviers
 
-**Accès principal:** Bouton/badge en haut à droite du header Cockpit avec marqueur orange (indicateur visuel distinct)
+**Depuis /cockpit:** Badge orange en haut à droite du header Cockpit
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ COCKPIT                              [🟠 Viviers (12.4k)]   │
+│ COCKPIT                              [🟠 Viviers (12.4k)] ──┼──▶ /viviers
 ├─────────────────────────────────────────────────────────────┤
 │ Sidebar                              Content                 │
 │ ├── Dashboard                                               │
 │ ├── Pipeline                                                │
 │ ├── Leads                                                   │
-│ ├── Projets                                                 │
 │ └── ...                                                     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-> Le lien Viviers est positionné en **haut à droite** du header avec un badge orange affichant le nombre total de leads froids.
+**Module /viviers (layout dédié):**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ VIVIERS                    [Import] [← Retour Cockpit]       │
+│ ─────────────────────────────────────────────────────────── │
+│                                                              │
+│  Filtres: [Source ▼] [Score ▼] [Région ▼] [Recherche...]    │
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │ Table (pagination serveur)                              │ │
+│  │ Entreprise | Contact | Score | Source | Actions         │ │
+│  └────────────────────────────────────────────────────────┘ │
+│                                                              │
+│  [Précédent] Page 1/2000 [Suivant]                          │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ### 4.2 Design
 
+- **VivierLayout:** Header minimaliste + contenu (pas de sidebar lourde)
 - **Liste:** Table dense avec infos essentielles
 - **Score visuel:** Jauge colorée (🔴 froid → 🟠 tiède → 🟢 chaud)
 - **Statut badges:** Couleurs distinctives par statut
 - **Import:** Wizard multi-étapes
-- **Badge header:** Marqueur orange avec compteur
+- **Badge header Cockpit:** Marqueur orange avec compteur cliquable
 
 ---
 
