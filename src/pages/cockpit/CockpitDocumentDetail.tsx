@@ -56,8 +56,20 @@ import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSectio
 import { LinkedSourcesSection } from '@/components/cockpit/LinkedSourcesSection';
 import { DevisCDCPreview } from '@/components/cockpit/DevisCDCPreview';
 import { DevisCDCEditor } from '@/components/cockpit/DevisCDCEditor';
-import { ExportSettingsDialog, ExportSettings } from '@/components/cockpit/ExportSettingsDialog';
 import { supabase } from '@/integrations/supabase/client';
+
+interface ExportSettings {
+  header: {
+    companyName: string;
+    tagline: string;
+    showLogo: boolean;
+  };
+  footer: {
+    line1: string;
+    line2: string;
+    showPageNumbers: boolean;
+  };
+}
 
 const DOCUMENT_TYPE_ICONS: Record<string, React.ElementType> = {
   quote: FileText,
@@ -91,7 +103,28 @@ export default function CockpitDocumentDetail() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  
+  // Export settings state
+  const [exportSettings, setExportSettings] = useState<ExportSettings>(() => {
+    const saved = localStorage.getItem('cockpit-export-settings');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // fallback
+      }
+    }
+    return {
+      header: { companyName: 'IArche', tagline: 'Architecture de Solutions IA', showLogo: true },
+      footer: { line1: 'IArche - Conseil en Architecture IA & Transformation Digitale', line2: 'contact@iarche.fr  •  www.iarche.fr', showPageNumbers: true },
+    };
+  });
+
+  // Update export settings with localStorage persistence
+  const updateExportSettings = (newSettings: ExportSettings) => {
+    setExportSettings(newSettings);
+    localStorage.setItem('cockpit-export-settings', JSON.stringify(newSettings));
+  };
 
   // Determine if this is a new document
   const isNewDocument = slug?.startsWith('nouveau-');
@@ -178,7 +211,7 @@ export default function CockpitDocumentDetail() {
     }
   };
 
-  const handleExportPDF = async (settings: ExportSettings) => {
+  const handleExportPDF = async () => {
     if (!document) return;
     setIsExporting(true);
     try {
@@ -201,8 +234,8 @@ export default function CockpitDocumentDetail() {
           theme,
           documentType: document.document_type,
           exportSettings: {
-            header: settings.header,
-            footer: settings.footer,
+            header: exportSettings.header,
+            footer: exportSettings.footer,
           },
         }
       });
@@ -372,17 +405,16 @@ export default function CockpitDocumentDetail() {
                   Modifier
                 </Button>
                 <Button 
-                  variant="outline" 
                   size="sm" 
-                  onClick={() => setExportDialogOpen(true)}
+                  onClick={() => handleExportPDF()}
                   disabled={isExporting}
                 >
                   {isExporting ? (
                     <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                   ) : (
-                    <Download className="h-4 w-4 mr-1" />
+                    <FileText className="h-4 w-4 mr-1" />
                   )}
-                  Exporter
+                  Export PDF
                 </Button>
                 <Button 
                   variant="outline" 
@@ -590,7 +622,65 @@ export default function CockpitDocumentDetail() {
               </CardContent>
             </Card>
 
-            {/* AI Metadata */}
+            {/* Export PDF Settings */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Paramètres Export PDF
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">En-tête - Entreprise</Label>
+                  <Input
+                    value={exportSettings.header.companyName}
+                    onChange={(e) => updateExportSettings({
+                      ...exportSettings,
+                      header: { ...exportSettings.header, companyName: e.target.value }
+                    })}
+                    className="h-8 text-sm"
+                    placeholder="IArche"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">En-tête - Slogan</Label>
+                  <Input
+                    value={exportSettings.header.tagline}
+                    onChange={(e) => updateExportSettings({
+                      ...exportSettings,
+                      header: { ...exportSettings.header, tagline: e.target.value }
+                    })}
+                    className="h-8 text-sm"
+                    placeholder="Architecture de Solutions IA"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Pied de page - Ligne 1</Label>
+                  <Input
+                    value={exportSettings.footer.line1}
+                    onChange={(e) => updateExportSettings({
+                      ...exportSettings,
+                      footer: { ...exportSettings.footer, line1: e.target.value }
+                    })}
+                    className="h-8 text-sm"
+                    placeholder="IArche - Conseil en Architecture IA"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Pied de page - Ligne 2</Label>
+                  <Input
+                    value={exportSettings.footer.line2}
+                    onChange={(e) => updateExportSettings({
+                      ...exportSettings,
+                      footer: { ...exportSettings.footer, line2: e.target.value }
+                    })}
+                    className="h-8 text-sm"
+                    placeholder="contact@iarche.fr"
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
             {/* AI Metadata */}
             {document.ai_metadata && Object.keys(document.ai_metadata).length > 0 && (
@@ -649,14 +739,6 @@ export default function CockpitDocumentDetail() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Export Settings Dialog */}
-      <ExportSettingsDialog
-        open={exportDialogOpen}
-        onOpenChange={setExportDialogOpen}
-        onExport={handleExportPDF}
-        documentTitle={document.title}
-        isExporting={isExporting}
-      />
     </CockpitLayout>
   );
 }
