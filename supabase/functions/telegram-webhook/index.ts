@@ -688,12 +688,12 @@ async function createTranscriptionJob(
         title: caption ? `Telegram: ${caption.slice(0, 50)}` : `Transcription Telegram - ${userName}`,
         source: source,
         storage_path: storagePath,
-        status: "pending",
+        status: "queued",
         created_by: null,
         workspace_id: null,
         lead_id: linkedLeadId || null,
         project_id: linkedProjectId || null,
-        metadata,
+        ai_metadata: metadata,
       })
       .select("id")
       .single();
