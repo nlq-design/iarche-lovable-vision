@@ -134,3 +134,12 @@ verify_jwt = true
 
 [functions.convert-to-pdf]
 verify_jwt = true
+
+[functions.promote-vivier-to-lead]
+verify_jwt = true
+
+[functions.send-instantly-campaign]
+verify_jwt = true
+
+[functions.instantly-webhook]
+verify_jwt = false
