@@ -1287,11 +1287,17 @@ serve(async (req) => {
         }
       }).eq("id", jobId);
 
-      // Get signed URL for audio
-      const bucket = "voice-transcriptions";
+      // Get signed URL for audio - detect bucket from path prefix
+      // Telegram imports use cockpit-uploads bucket (telegram-audio/ prefix), others use voice-transcriptions
+      const storagePath = vjob.storage_path;
+      const isTelegramAudio = storagePath.startsWith("telegram-audio/");
+      const bucket = isTelegramAudio ? "cockpit-uploads" : "voice-transcriptions";
+      
+      console.log(`[Audio] Using bucket: ${bucket}, path: ${storagePath}`);
+      
       const { data: signed, error: signErr } = await supabase.storage
         .from(bucket)
-        .createSignedUrl(vjob.storage_path, 600);
+        .createSignedUrl(storagePath, 600);
       
       if (signErr || !signed?.signedUrl) {
         throw new Error(`signed_url_failed: ${signErr?.message ?? "no_url"}`);
