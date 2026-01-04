@@ -1,7 +1,7 @@
 # CDC Module Viviers - Cockpit IArche
 
-**Version:** 1.0.0  
-**Statut:** 📋 SPÉCIFICATION  
+**Version:** 1.1.0  
+**Statut:** 📋 SPÉCIFICATION VALIDÉE  
 **Date:** 2026-01-04  
 **Auteur:** Lovable AI
 
@@ -207,16 +207,30 @@ export function useVivierPromotion() {
 
 ## 3. Fonctionnalités
 
-### 3.1 Import CSV
+### 3.1 Import multi-format
+
+**Formats supportés:**
+- CSV (séparateur auto-détecté)
+- XLSX (Excel)
+- Copier-coller depuis tableur
 
 **Interface d'import:**
-1. Upload fichier CSV/XLSX
+1. Upload fichier OU coller données depuis tableur
 2. Prévisualisation des 10 premières lignes
 3. Mapping colonnes (drag & drop ou select)
 4. Détection automatique des colonnes standards
 5. Validation avant import
 6. Progress bar pour gros fichiers
 7. Rapport d'import (succès, doublons, erreurs)
+
+**Colonnes mappables (toutes prioritaires):**
+
+| Groupe | Colonnes |
+|--------|----------|
+| Essentiels | company_name, siret, email, phone |
+| Adresse | address, postal_code, city, region |
+| Business | industry, company_size, revenue_range, employee_count |
+| Contact | contact_name, contact_position, linkedin_url |
 
 **Détection doublons:**
 - Par email (prioritaire)
@@ -313,23 +327,30 @@ Vivier (froid) ──promotion──▶ Lead (qualifié)
 
 ### 4.1 Navigation Cockpit
 
+**Accès principal:** Bouton/badge en haut à droite du header Cockpit avec marqueur orange (indicateur visuel distinct)
+
 ```
-Sidebar Cockpit
-├── Dashboard
-├── Pipeline
-├── Leads ◄────────── [leads qualifiés]
-├── Viviers ◄───────── [NEW: leads froids]
-├── Projets
-├── Solutions
-├── ...
+┌─────────────────────────────────────────────────────────────┐
+│ COCKPIT                              [🟠 Viviers (12.4k)]   │
+├─────────────────────────────────────────────────────────────┤
+│ Sidebar                              Content                 │
+│ ├── Dashboard                                               │
+│ ├── Pipeline                                                │
+│ ├── Leads                                                   │
+│ ├── Projets                                                 │
+│ └── ...                                                     │
+└─────────────────────────────────────────────────────────────┘
 ```
+
+> Le lien Viviers est positionné en **haut à droite** du header avec un badge orange affichant le nombre total de leads froids.
 
 ### 4.2 Design
 
 - **Liste:** Table dense avec infos essentielles
-- **Score visuel:** Jauge colorée (rouge → orange → vert)
+- **Score visuel:** Jauge colorée (🔴 froid → 🟠 tiède → 🟢 chaud)
 - **Statut badges:** Couleurs distinctives par statut
 - **Import:** Wizard multi-étapes
+- **Badge header:** Marqueur orange avec compteur
 
 ---
 
