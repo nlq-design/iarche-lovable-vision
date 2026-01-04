@@ -142,25 +142,70 @@ function multipartStream(params: {
  */
 function getExtensionFromMimeType(mimeType: string): string {
   const mimeToExt: Record<string, string> = {
-    'audio/mpeg': 'mp3',
-    'audio/mp3': 'mp3',
-    'audio/mp4': 'm4a',
-    'audio/m4a': 'm4a',
-    'audio/x-m4a': 'm4a',
-    'audio/aac': 'm4a',
-    'audio/wav': 'wav',
-    'audio/x-wav': 'wav',
-    'audio/wave': 'wav',
-    'audio/webm': 'webm',
-    'audio/ogg': 'ogg',
-    'audio/flac': 'flac',
-    'audio/x-flac': 'flac',
-    'video/mp4': 'mp4',
-    'video/webm': 'webm',
+    "audio/mpeg": "mp3",
+    "audio/mp3": "mp3",
+    "audio/mp4": "m4a",
+    "audio/m4a": "m4a",
+    "audio/x-m4a": "m4a",
+    "audio/aac": "m4a",
+    "audio/wav": "wav",
+    "audio/x-wav": "wav",
+    "audio/wave": "wav",
+    "audio/webm": "webm",
+    "audio/ogg": "ogg",
+    "audio/flac": "flac",
+    "audio/x-flac": "flac",
+    "video/mp4": "mp4",
+    "video/webm": "webm",
   };
-  
-  return mimeToExt[mimeType.toLowerCase()] || 'mp3';
+
+  return mimeToExt[mimeType.toLowerCase()] || "mp3";
 }
+
+function detectAudioFormatFromMagic(bytes: Uint8Array): { mime: string; ext: string } | null {
+  const startsWithAscii = (ascii: string) => {
+    if (bytes.length < ascii.length) return false;
+    for (let i = 0; i < ascii.length; i++) {
+      if (bytes[i] !== ascii.charCodeAt(i)) return false;
+    }
+    return true;
+  };
+
+  const matchAsciiAt = (offset: number, ascii: string) => {
+    if (bytes.length < offset + ascii.length) return false;
+    for (let i = 0; i < ascii.length; i++) {
+      if (bytes[offset + i] !== ascii.charCodeAt(i)) return false;
+    }
+    return true;
+  };
+
+  // OGG container (often Opus-in-OGG for Telegram voice notes)
+  if (startsWithAscii("OggS")) return { mime: "audio/ogg", ext: "ogg" };
+
+  // WAV (RIFF....WAVE)
+  if (startsWithAscii("RIFF") && matchAsciiAt(8, "WAVE")) return { mime: "audio/wav", ext: "wav" };
+
+  // FLAC
+  if (startsWithAscii("fLaC")) return { mime: "audio/flac", ext: "flac" };
+
+  // WebM / Matroska
+  if (bytes.length >= 4 && bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3) {
+    return { mime: "audio/webm", ext: "webm" };
+  }
+
+  // MP3 (ID3 tag or frame sync)
+  if (startsWithAscii("ID3") || (bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0)) {
+    return { mime: "audio/mpeg", ext: "mp3" };
+  }
+
+  // MP4/M4A family: ....ftyp
+  if (matchAsciiAt(4, "ftyp")) {
+    return { mime: "audio/mp4", ext: "mp4" };
+  }
+
+  return null;
+}
+
 
 // ============= WHISPER TRANSCRIPTION (STREAMING) =============
 
@@ -1378,7 +1423,22 @@ serve(async (req) => {
       console.log(`[Whisper] Using blob mode for file <= 25MB (size=${fileSizeMBNum.toFixed(1)}MB, duration=${durationSeconds ? Math.round(durationSeconds/60)+'min' : 'unknown'}, timeout=${Math.round(whisperTimeoutMs / 1000)}s)`);
       const audioRes = await fetch(signed.signedUrl);
       if (!audioRes.ok) throw new Error(`audio_fetch_failed: ${audioRes.status}`);
-      const audioBlob = await audioRes.blob();
+
+      let audioBlob = await audioRes.blob();
+
+      // Telegram sometimes serves misleading MIME types (or octet-stream).
+      // Whisper relies heavily on container/extension; sniff the magic bytes and override type when needed.
+      try {
+        const head = new Uint8Array(await audioBlob.slice(0, 64).arrayBuffer());
+        const detected = detectAudioFormatFromMagic(head);
+        if (detected && detected.mime !== audioBlob.type) {
+          console.log(`[Audio] magic_detected mime=${detected.mime} ext=${detected.ext} (was ${audioBlob.type || 'unknown'})`);
+          audioBlob = new Blob([audioBlob], { type: detected.mime });
+        }
+      } catch (e) {
+        logError("Audio_Sniff", e);
+      }
+
       rawText = await transcribeWithWhisperBlob(audioBlob, "fr", whisperTimeoutMs);
 
       // Update with transcription result
