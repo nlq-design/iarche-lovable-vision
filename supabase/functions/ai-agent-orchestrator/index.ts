@@ -1129,6 +1129,78 @@ const AGENT_TOOLS = [
       },
     },
   },
+  // ============ PARTENAIRES (v5.4) ============
+  {
+    type: "function",
+    function: {
+      name: "get_partners",
+      description: "Récupère la liste des partenaires (experts IA, indépendants, apporteurs d'affaires). Différent des leads (clients potentiels).",
+      parameters: {
+        type: "object",
+        properties: {
+          partner_type: { type: "string", enum: ["expert_ia", "independant", "apporteur"], description: "Filtrer par type de partenaire" },
+          is_active: { type: "boolean", description: "Filtrer les partenaires actifs uniquement (défaut: true)" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 20)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_partners",
+      description: "Recherche un partenaire par nom, email ou entreprise. À utiliser AVANT de créer un nouveau partenaire pour éviter les doublons.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Terme de recherche (nom, email, entreprise)" },
+        },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_partner",
+      description: "Crée un partenaire dans le CRM. ATTENTION: Un partenaire n'est PAS un lead. Utiliser pour experts IA, indépendants ou apporteurs d'affaires.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Nom complet du partenaire" },
+          email: { type: "string", description: "Email du partenaire" },
+          company: { type: "string", description: "Entreprise/Structure" },
+          phone: { type: "string", description: "Téléphone" },
+          partner_type: { type: "string", enum: ["expert_ia", "independant", "apporteur"], description: "Type de partenaire (défaut: independant)" },
+          specialties: { type: "array", items: { type: "string" }, description: "Spécialités/compétences" },
+          commission_rate: { type: "number", description: "Taux de commission en % (pour apporteurs)" },
+          notes: { type: "string", description: "Notes sur le partenaire" },
+        },
+        required: ["name"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_partner",
+      description: "Met à jour les informations d'un partenaire existant.",
+      parameters: {
+        type: "object",
+        properties: {
+          partner_id: { type: "string", description: "ID du partenaire" },
+          email: { type: "string", description: "Email pour identifier le partenaire si pas d'ID" },
+          name: { type: "string", description: "Nouveau nom" },
+          phone: { type: "string", description: "Nouveau téléphone" },
+          company: { type: "string", description: "Nouvelle entreprise" },
+          partner_type: { type: "string", enum: ["expert_ia", "independant", "apporteur"], description: "Nouveau type" },
+          specialties: { type: "array", items: { type: "string" }, description: "Nouvelles spécialités" },
+          is_active: { type: "boolean", description: "Statut actif/inactif" },
+          notes: { type: "string", description: "Notes à ajouter" },
+        },
+      },
+    },
+  },
 ];
 
 // =============================================================================
@@ -1178,6 +1250,206 @@ async function executeTool(
       const { data, error } = await query;
       if (error) throw error;
       return { leads: data, count: data?.length || 0 };
+    }
+
+    // ============ PARTENAIRES (v5.4) ============
+    case "get_partners": {
+      let query = supabase
+        .from("partners")
+        .select("id, name, email, company, phone, partner_type, specialties, is_active, commission_rate, notes, slug, created_at")
+        .order("created_at", { ascending: false })
+        .limit(args.limit as number || 20);
+
+      if (args.partner_type) query = query.eq("partner_type", args.partner_type);
+      if (args.is_active !== false) query = query.eq("is_active", true).is("deleted_at", null);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return { partners: data, count: data?.length || 0, note: "Les partenaires sont différents des leads (clients). Un partenaire est un expert IA, indépendant ou apporteur d'affaires." };
+    }
+
+    case "search_partners": {
+      const searchQuery = (args.query as string || "").toLowerCase().trim();
+      if (!searchQuery) {
+        return { error: "Requête de recherche vide", partners: [] };
+      }
+
+      const { data, error } = await supabase
+        .from("partners")
+        .select("id, name, email, company, phone, partner_type, specialties, is_active, slug")
+        .is("deleted_at", null)
+        .or(`name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%,slug.ilike.%${searchQuery}%`)
+        .limit(10);
+
+      if (error) throw error;
+      return { 
+        partners: data, 
+        count: data?.length || 0,
+        search_query: searchQuery,
+        hint: data?.length === 0 ? "Aucun partenaire trouvé. Pour créer un nouveau partenaire, utilise create_partner." : null
+      };
+    }
+
+    case "create_partner": {
+      const rawName = args.name as string | undefined;
+      
+      if (!rawName || rawName.trim() === "") {
+        return {
+          success: false,
+          error: "Le nom du partenaire est obligatoire",
+          message: "⚠️ Je ne peux pas créer le partenaire. Merci de préciser un nom.",
+          autonomy_level: "execution_directe",
+        };
+      }
+
+      const partnerName = rawName.trim();
+      const partnerEmail = (args.email as string || "").trim().toLowerCase();
+      
+      // Generate slug from name
+      const slug = partnerName
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+
+      // Check for duplicate by email or slug
+      if (partnerEmail) {
+        const { data: existingByEmail } = await supabase
+          .from("partners")
+          .select("id, name, slug")
+          .eq("email", partnerEmail)
+          .is("deleted_at", null)
+          .maybeSingle();
+
+        if (existingByEmail) {
+          return {
+            success: false,
+            error: "Un partenaire avec cet email existe déjà",
+            existing_partner: existingByEmail,
+            message: `⚠️ Le partenaire "${existingByEmail.name}" existe déjà avec cet email.`,
+            autonomy_level: "execution_directe",
+          };
+        }
+      }
+
+      const { data: existingBySlug } = await supabase
+        .from("partners")
+        .select("id, name")
+        .eq("slug", slug)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      if (existingBySlug) {
+        return {
+          success: false,
+          error: "Un partenaire avec ce nom existe déjà",
+          existing_partner: existingBySlug,
+          message: `⚠️ Le partenaire "${existingBySlug.name}" existe déjà.`,
+          autonomy_level: "execution_directe",
+        };
+      }
+
+      const partnerData = {
+        name: partnerName,
+        slug,
+        email: partnerEmail || null,
+        company: (args.company as string || "").trim() || null,
+        phone: (args.phone as string || "").trim() || null,
+        partner_type: args.partner_type as string || "independant",
+        specialties: args.specialties as string[] || [],
+        commission_rate: args.commission_rate as number || null,
+        notes: args.notes as string || null,
+        is_active: true,
+      };
+
+      const { data: newPartner, error } = await supabase
+        .from("partners")
+        .insert(partnerData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const typeLabels: Record<string, string> = {
+        expert_ia: "Expert IA",
+        independant: "Indépendant",
+        apporteur: "Apporteur d'affaires",
+      };
+
+      return {
+        success: true,
+        partner: newPartner,
+        message: `✅ Partenaire créé : "${partnerName}" (${typeLabels[partnerData.partner_type] || partnerData.partner_type})${partnerEmail ? ` - ${partnerEmail}` : ""}`,
+        autonomy_level: "execution_directe",
+      };
+    }
+
+    case "update_partner": {
+      // Find partner by ID or email
+      let partnerId = args.partner_id as string;
+      
+      if (!partnerId && args.email) {
+        const { data: foundPartner } = await supabase
+          .from("partners")
+          .select("id, name")
+          .eq("email", (args.email as string).toLowerCase())
+          .is("deleted_at", null)
+          .maybeSingle();
+        
+        if (!foundPartner) {
+          return {
+            success: false,
+            error: "Partenaire non trouvé",
+            message: `⚠️ Aucun partenaire trouvé avec l'email "${args.email}".`,
+            autonomy_level: "execution_directe",
+          };
+        }
+        partnerId = foundPartner.id;
+      }
+
+      if (!partnerId) {
+        return {
+          success: false,
+          error: "ID ou email du partenaire requis",
+          message: "⚠️ Précisez partner_id ou email pour identifier le partenaire.",
+          autonomy_level: "execution_directe",
+        };
+      }
+
+      const updateData: Record<string, unknown> = {};
+      if (args.name) updateData.name = (args.name as string).trim();
+      if (args.phone) updateData.phone = (args.phone as string).trim();
+      if (args.company) updateData.company = (args.company as string).trim();
+      if (args.partner_type) updateData.partner_type = args.partner_type;
+      if (args.specialties) updateData.specialties = args.specialties;
+      if (args.is_active !== undefined) updateData.is_active = args.is_active;
+      if (args.notes) updateData.notes = args.notes;
+
+      if (Object.keys(updateData).length === 0) {
+        return {
+          success: false,
+          error: "Aucune modification spécifiée",
+          message: "⚠️ Précisez au moins un champ à modifier.",
+          autonomy_level: "execution_directe",
+        };
+      }
+
+      const { data: updatedPartner, error } = await supabase
+        .from("partners")
+        .update(updateData)
+        .eq("id", partnerId)
+        .select("id, name, email, partner_type")
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        partner: updatedPartner,
+        updated_fields: Object.keys(updateData),
+        message: `✅ Partenaire "${updatedPartner.name}" mis à jour : ${Object.keys(updateData).join(", ")}`,
+        autonomy_level: "execution_directe",
+      };
     }
 
     case "get_opportunities": {
