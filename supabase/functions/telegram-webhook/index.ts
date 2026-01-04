@@ -974,7 +974,7 @@ async function processAudioInBackground(
     }
     
     const result = await createTranscriptionJob(
-      storagePath, "telegram", userId, userName, caption,
+      storagePath, "upload", userId, userName, caption,
       linkedLeadId, linkedProjectId
     );
     
