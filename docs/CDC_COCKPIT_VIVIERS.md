@@ -223,6 +223,9 @@ export function useVivierPromotion() {
 - Par SIRET
 - Par combo company_name + city
 
+**Gestion doublons vivier ↔ leads existants:**
+> Si un email existe déjà dans `leads`, le vivier **enrichit le lead** existant (merge des données manquantes) au lieu de créer un doublon.
+
 ### 3.2 Liste des viviers
 
 **Affichage:**
@@ -268,18 +271,41 @@ export function useVivierPromotion() {
 ```
 Vivier (froid) ──promotion──▶ Lead (qualifié)
      │                              │
-     │ status = 'promoted'          │ source = 'vivier'
-     │ promoted_to_lead_id = X      │ source_id = vivier.id
-     │ promoted_at = now()          │
+     │ [SUPPRIMÉ]                   │ source = 'vivier'
+     │                              │ source_id = vivier.id (conservé)
      ▼                              ▼
-[Archivé dans viviers]    [Actif dans leads]
+[Entrée supprimée]         [Actif dans leads]
 ```
+
+> **Post-promotion:** L'entrée vivier est **supprimée** après promotion. Les données sont transférées intégralement vers leads, avec `source_id` pointant vers l'ancien ID vivier pour traçabilité.
 
 **Données transférées:**
 - Toutes les infos entreprise/contact
 - Tags
 - Notes
-- Référence source vivier
+- raw_data (données brutes CSV originales)
+
+### 3.5 Scoring automatique
+
+**Critères de scoring (0-100):**
+
+| Critère | Points | Condition |
+|---------|--------|-----------|
+| Email valide | +15 | Format email correct |
+| Téléphone | +10 | Numéro renseigné |
+| SIRET valide | +15 | 14 chiffres vérifiés |
+| Secteur cible | +20 | Match avec secteurs prioritaires |
+| Taille PME/ETI | +15 | company_size in ('pme', 'eti') |
+| Région IDF | +10 | postal_code starts with 75/77/78/91/92/93/94/95 |
+| Site web | +10 | URL renseignée |
+| LinkedIn | +5 | Profil renseigné |
+
+**Calcul:** Score = Σ points applicables (max 100)
+
+**Seuils:**
+- 🔴 0-30: Froid
+- 🟠 31-60: Tiède  
+- 🟢 61-100: Chaud (prioritaire)
 
 ---
 
