@@ -89,6 +89,7 @@ export default function CockpitDocumentDetail() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   // Determine if this is a new document
   const isNewDocument = slug?.startsWith('nouveau-');
@@ -190,6 +191,36 @@ export default function CockpitDocumentDetail() {
       }
     } catch (error: any) {
       toast.error(`Erreur export: ${error.message}`);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (!document) return;
+    setIsExportingPDF(true);
+    try {
+      // First generate DOCX if not already done
+      const { data: docxData, error: docxError } = await supabase.functions.invoke('generate-docx', {
+        body: { document_id: document.id }
+      });
+      
+      if (docxError) throw docxError;
+      
+      // Then convert to PDF via iLovePDF
+      const { data, error } = await supabase.functions.invoke('convert-to-pdf', {
+        body: { document_id: document.id }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.pdf_url) {
+        window.open(data.pdf_url, '_blank');
+        toast.success('PDF généré avec succès');
+      }
+    } catch (error: any) {
+      console.error('PDF export error:', error);
+      toast.error(`Erreur export PDF: ${error.message}`);
+    } finally {
+      setIsExportingPDF(false);
     }
   };
 
@@ -321,6 +352,19 @@ export default function CockpitDocumentDetail() {
                 <Button variant="outline" size="sm" onClick={handleExportDOCX}>
                   <Download className="h-4 w-4 mr-1" />
                   DOCX
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleExportPDF}
+                  disabled={isExportingPDF}
+                >
+                  {isExportingPDF ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <FileText className="h-4 w-4 mr-1" />
+                  )}
+                  PDF
                 </Button>
                 <Button 
                   variant="outline" 
