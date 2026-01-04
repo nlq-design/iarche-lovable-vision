@@ -1,11 +1,16 @@
-# Cahier des Charges V3.1.7 — Cockpit Commercial IArche
+# Cahier des Charges V3.2.0 — Cockpit Commercial IArche
 
 ## Document de spécification
 
 **Projet :** Module Cockpit Commercial intégré au back-office existant  
-**Version :** 3.1.7  
-**Date :** 1er Janvier 2026  
+**Version :** 3.2.0  
+**Date :** 4 Janvier 2026  
 **Statut :** ✅ V1 PRODUCTION READY
+
+**Changelog V3.1.7 → V3.2.0 (Consolidation V6.22) :**
+- **Code cleanup**: Suppression des TODO codés en dur, utilisation de l'utilisateur authentifié
+- **Sécurité**: Politique RLS ajoutée sur `telegram_processed_updates`
+- **Mentions légales**: Informations hébergeur complétées
 
 **Changelog V3.1.6 → V3.1.7 (Cleanup & Responsive) :**
 - **Cleanup**: Suppression composants deprecated (HTMLLogoWithBar, PDFLogoWithBar, PDFGradientBar)

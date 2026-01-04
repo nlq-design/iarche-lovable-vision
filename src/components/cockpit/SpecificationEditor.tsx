@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -90,6 +91,7 @@ const getFileIcon = (fileType: string | null) => {
 };
 
 export const SpecificationEditor = ({ projectId, specifications }: SpecificationEditorProps) => {
+  const { user } = useAuth();
   const { createSpecification, updateSpecification, approveSpecification, deleteSpecification } = useCockpitSpecifications();
 
   // Dialog states
@@ -254,9 +256,10 @@ export const SpecificationEditor = ({ projectId, specifications }: Specification
   };
 
   const handleApprove = (spec: Specification) => {
+    const userEmail = user?.email || "Admin";
     approveSpecification.mutate({
       id: spec.id,
-      approvedBy: "Admin", // TODO: use actual user
+      approvedBy: userEmail,
     });
   };
 

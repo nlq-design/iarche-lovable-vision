@@ -70,8 +70,10 @@ const MentionsLegales = () => {
               <div>
                 <h2 className="text-2xl font-bold text-foreground mb-4">Hébergement</h2>
                 <p>
-                  Ce site est hébergé par Lovable.dev<br />
-                  [Informations d'hébergement à compléter]
+                  Ce site est hébergé par :<br />
+                  <strong>Lovable Technologies</strong><br />
+                  Email : support@lovable.dev<br />
+                  Site web : lovable.dev
                 </p>
               </div>
 
