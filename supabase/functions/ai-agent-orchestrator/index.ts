@@ -1375,6 +1375,449 @@ const AGENT_TOOLS = [
       },
     },
   },
+  // ============ CRUD COMPLET COCKPIT (v5.5) ============
+  {
+    type: "function",
+    function: {
+      name: "update_task",
+      description: "Met à jour une tâche existante (titre, description, priorité, échéance, statut).",
+      parameters: {
+        type: "object",
+        properties: {
+          task_id: { type: "string", description: "ID de la tâche" },
+          title: { type: "string", description: "Nouveau titre" },
+          description: { type: "string", description: "Nouvelle description" },
+          priority: { type: "string", enum: ["low", "medium", "high", "urgent"], description: "Nouvelle priorité" },
+          status: { type: "string", enum: ["pending", "in_progress", "completed", "cancelled"], description: "Nouveau statut" },
+          due_date: { type: "string", description: "Nouvelle date d'échéance (YYYY-MM-DD)" },
+          due_time: { type: "string", description: "Nouvelle heure d'échéance (HH:mm)" },
+        },
+        required: ["task_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "complete_task",
+      description: "Marque une tâche comme terminée.",
+      parameters: {
+        type: "object",
+        properties: {
+          task_id: { type: "string", description: "ID de la tâche" },
+        },
+        required: ["task_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "snooze_task",
+      description: "Reporte une tâche à une date ultérieure.",
+      parameters: {
+        type: "object",
+        properties: {
+          task_id: { type: "string", description: "ID de la tâche" },
+          snooze_until: { type: "string", description: "Reporter jusqu'à (YYYY-MM-DD)" },
+        },
+        required: ["task_id", "snooze_until"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_task",
+      description: "Supprime une tâche.",
+      parameters: {
+        type: "object",
+        properties: {
+          task_id: { type: "string", description: "ID de la tâche" },
+        },
+        required: ["task_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_project",
+      description: "Met à jour un projet (nom, description, statut, budget, dates).",
+      parameters: {
+        type: "object",
+        properties: {
+          project_id: { type: "string", description: "ID du projet" },
+          name: { type: "string", description: "Nouveau nom" },
+          description: { type: "string", description: "Nouvelle description" },
+          status: { type: "string", enum: ["scoping", "in_progress", "on_hold", "completed", "cancelled"], description: "Nouveau statut" },
+          health_status: { type: "string", enum: ["on_track", "at_risk", "blocked"], description: "Nouvelle santé" },
+          budget_amount: { type: "number", description: "Nouveau budget" },
+          start_date: { type: "string", description: "Nouvelle date de début (YYYY-MM-DD)" },
+          target_end_date: { type: "string", description: "Nouvelle date de fin (YYYY-MM-DD)" },
+        },
+        required: ["project_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_project",
+      description: "Supprime un projet et toutes ses données liées (cascade).",
+      parameters: {
+        type: "object",
+        properties: {
+          project_id: { type: "string", description: "ID du projet" },
+        },
+        required: ["project_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_meeting_note",
+      description: "Met à jour un compte-rendu de réunion.",
+      parameters: {
+        type: "object",
+        properties: {
+          meeting_note_id: { type: "string", description: "ID du compte-rendu" },
+          notes: { type: "string", description: "Nouvelles notes" },
+          objectives: { type: "string", description: "Nouveaux objectifs" },
+          next_steps: { type: "string", description: "Nouvelles prochaines étapes" },
+          action_items: { type: "array", items: { type: "string" }, description: "Nouvelles actions" },
+        },
+        required: ["meeting_note_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_meeting_note",
+      description: "Supprime un compte-rendu de réunion.",
+      parameters: {
+        type: "object",
+        properties: {
+          meeting_note_id: { type: "string", description: "ID du compte-rendu" },
+        },
+        required: ["meeting_note_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_transcription",
+      description: "Met à jour une transcription (lead, projet, titre, date).",
+      parameters: {
+        type: "object",
+        properties: {
+          transcription_id: { type: "string", description: "ID de la transcription" },
+          title: { type: "string", description: "Nouveau titre" },
+          lead_id: { type: "string", description: "Nouveau lead associé" },
+          project_id: { type: "string", description: "Nouveau projet associé" },
+          transcription_date: { type: "string", description: "Nouvelle date (YYYY-MM-DD)" },
+        },
+        required: ["transcription_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_specification",
+      description: "Met à jour un cahier des charges.",
+      parameters: {
+        type: "object",
+        properties: {
+          specification_id: { type: "string", description: "ID du CDC" },
+          title: { type: "string", description: "Nouveau titre" },
+          description: { type: "string", description: "Nouvelle description" },
+          content: { type: "string", description: "Nouveau contenu" },
+          status: { type: "string", enum: ["draft", "review", "approved", "archived"], description: "Nouveau statut" },
+        },
+        required: ["specification_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "approve_specification",
+      description: "Approuve un cahier des charges.",
+      parameters: {
+        type: "object",
+        properties: {
+          specification_id: { type: "string", description: "ID du CDC" },
+        },
+        required: ["specification_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_document",
+      description: "Met à jour un document généré (titre, statut, version).",
+      parameters: {
+        type: "object",
+        properties: {
+          document_id: { type: "string", description: "ID du document" },
+          title: { type: "string", description: "Nouveau titre" },
+          status: { type: "string", enum: ["draft", "pending_review", "approved", "sent", "archived"], description: "Nouveau statut" },
+          version: { type: "string", description: "Nouvelle version" },
+        },
+        required: ["document_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "approve_document",
+      description: "Approuve un document généré.",
+      parameters: {
+        type: "object",
+        properties: {
+          document_id: { type: "string", description: "ID du document" },
+        },
+        required: ["document_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_lead",
+      description: "Supprime un lead et toutes ses données liées (opportunités, projets, tâches - cascade sécurisée).",
+      parameters: {
+        type: "object",
+        properties: {
+          lead_id: { type: "string", description: "ID du lead" },
+        },
+        required: ["lead_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_opportunity",
+      description: "Met à jour une opportunité (titre, valeur, probabilité, dates).",
+      parameters: {
+        type: "object",
+        properties: {
+          opportunity_id: { type: "string", description: "ID de l'opportunité" },
+          title: { type: "string", description: "Nouveau titre" },
+          description: { type: "string", description: "Nouvelle description" },
+          value_amount: { type: "number", description: "Nouvelle valeur en euros" },
+          probability: { type: "number", description: "Nouvelle probabilité (0-100)" },
+          expected_close_date: { type: "string", description: "Nouvelle date de closing (YYYY-MM-DD)" },
+        },
+        required: ["opportunity_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_opportunity",
+      description: "Supprime une opportunité.",
+      parameters: {
+        type: "object",
+        properties: {
+          opportunity_id: { type: "string", description: "ID de l'opportunité" },
+        },
+        required: ["opportunity_id"],
+      },
+    },
+  },
+  // ============ CRUD ADMIN (v5.5) ============
+  {
+    type: "function",
+    function: {
+      name: "create_article",
+      description: "Crée un article/contenu (actualité, article, cas-client).",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Titre de l'article" },
+          slug: { type: "string", description: "Slug URL unique" },
+          resource_type: { type: "string", enum: ["actualite", "article", "cas-client", "livre-blanc", "atelier-webinaire"], description: "Type de ressource" },
+          excerpt: { type: "string", description: "Résumé/extrait" },
+          content: { type: "string", description: "Contenu HTML" },
+          meta_title: { type: "string", description: "Titre SEO" },
+          meta_description: { type: "string", description: "Description SEO" },
+          tags: { type: "array", items: { type: "string" }, description: "Tags" },
+          published: { type: "boolean", description: "Publier immédiatement (défaut: false)" },
+          cover_image_url: { type: "string", description: "URL image de couverture" },
+        },
+        required: ["title", "slug", "resource_type", "content"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_article",
+      description: "Met à jour un article existant.",
+      parameters: {
+        type: "object",
+        properties: {
+          article_id: { type: "string", description: "ID de l'article" },
+          title: { type: "string", description: "Nouveau titre" },
+          excerpt: { type: "string", description: "Nouveau résumé" },
+          content: { type: "string", description: "Nouveau contenu" },
+          published: { type: "boolean", description: "Publier/dépublier" },
+          meta_title: { type: "string", description: "Titre SEO" },
+          meta_description: { type: "string", description: "Description SEO" },
+          tags: { type: "array", items: { type: "string" }, description: "Tags" },
+        },
+        required: ["article_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_article",
+      description: "Supprime un article.",
+      parameters: {
+        type: "object",
+        properties: {
+          article_id: { type: "string", description: "ID de l'article" },
+        },
+        required: ["article_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_brochure",
+      description: "Crée une brochure marketing.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Titre interne" },
+          slug: { type: "string", description: "Slug URL unique" },
+          cover_title: { type: "string", description: "Titre affiché en couverture" },
+          cover_subtitle: { type: "string", description: "Sous-titre couverture" },
+          cover_image_url: { type: "string", description: "URL image de couverture" },
+          published: { type: "boolean", description: "Publier immédiatement (défaut: false)" },
+        },
+        required: ["title", "slug", "cover_title"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_brochure",
+      description: "Met à jour une brochure.",
+      parameters: {
+        type: "object",
+        properties: {
+          brochure_id: { type: "string", description: "ID de la brochure" },
+          title: { type: "string", description: "Nouveau titre" },
+          cover_title: { type: "string", description: "Nouveau titre couverture" },
+          cover_subtitle: { type: "string", description: "Nouveau sous-titre" },
+          published: { type: "boolean", description: "Publier/dépublier" },
+        },
+        required: ["brochure_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_brochure",
+      description: "Supprime une brochure.",
+      parameters: {
+        type: "object",
+        properties: {
+          brochure_id: { type: "string", description: "ID de la brochure" },
+        },
+        required: ["brochure_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_form",
+      description: "Crée un formulaire.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Titre du formulaire" },
+          description: { type: "string", description: "Description" },
+        },
+        required: ["title"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_form",
+      description: "Met à jour un formulaire (titre, description, activation).",
+      parameters: {
+        type: "object",
+        properties: {
+          form_id: { type: "string", description: "ID du formulaire" },
+          title: { type: "string", description: "Nouveau titre" },
+          description: { type: "string", description: "Nouvelle description" },
+          is_active: { type: "boolean", description: "Activer/désactiver" },
+        },
+        required: ["form_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_form",
+      description: "Supprime un formulaire.",
+      parameters: {
+        type: "object",
+        properties: {
+          form_id: { type: "string", description: "ID du formulaire" },
+        },
+        required: ["form_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "approve_comment",
+      description: "Approuve un commentaire sur un article.",
+      parameters: {
+        type: "object",
+        properties: {
+          comment_id: { type: "string", description: "ID du commentaire" },
+        },
+        required: ["comment_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "reject_comment",
+      description: "Rejette/supprime un commentaire sur un article.",
+      parameters: {
+        type: "object",
+        properties: {
+          comment_id: { type: "string", description: "ID du commentaire" },
+        },
+        required: ["comment_id"],
+      },
+    },
+  },
 ];
 
 // =============================================================================
@@ -4674,6 +5117,511 @@ Génère un contenu HTML pour email avec:
           ? `✅ Notification envoyée à ${sentCount} destinataire(s) via Telegram`
           : "⚠️ Notification enregistrée mais non envoyée (aucun destinataire configuré)",
       };
+    }
+
+    // ============ CRUD COMPLET COCKPIT (v5.5) ============
+    
+    case "update_task": {
+      if (!args.task_id) {
+        return { success: false, error: "task_id obligatoire" };
+      }
+      
+      const updates: Record<string, unknown> = {};
+      if (args.title) updates.title = args.title;
+      if (args.description) updates.description = args.description;
+      if (args.priority) updates.priority = args.priority;
+      if (args.status) updates.status = args.status;
+      if (args.due_date) updates.due_date = args.due_date;
+      if (args.due_time) updates.due_time = args.due_time;
+      
+      const { data, error } = await supabase
+        .from("tasks")
+        .update(updates)
+        .eq("id", args.task_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, task: data, message: `✅ Tâche "${data.title}" mise à jour` };
+    }
+
+    case "complete_task": {
+      if (!args.task_id) {
+        return { success: false, error: "task_id obligatoire" };
+      }
+      
+      const { data, error } = await supabase
+        .from("tasks")
+        .update({ status: "completed", completed_at: new Date().toISOString() })
+        .eq("id", args.task_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, task: data, message: `✅ Tâche "${data.title}" marquée comme terminée` };
+    }
+
+    case "snooze_task": {
+      if (!args.task_id || !args.snooze_until) {
+        return { success: false, error: "task_id et snooze_until obligatoires" };
+      }
+      
+      const { data, error } = await supabase
+        .from("tasks")
+        .update({ snoozed_until: args.snooze_until })
+        .eq("id", args.task_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, task: data, message: `✅ Tâche "${data.title}" reportée au ${args.snooze_until}` };
+    }
+
+    case "delete_task": {
+      if (!args.task_id) {
+        return { success: false, error: "task_id obligatoire" };
+      }
+      
+      const { data: task } = await supabase.from("tasks").select("title").eq("id", args.task_id).single();
+      const { error } = await supabase.from("tasks").delete().eq("id", args.task_id);
+      
+      if (error) throw error;
+      return { success: true, message: `✅ Tâche "${task?.title || args.task_id}" supprimée` };
+    }
+
+    case "update_project": {
+      if (!args.project_id) {
+        return { success: false, error: "project_id obligatoire" };
+      }
+      
+      const updates: Record<string, unknown> = {};
+      if (args.name) updates.name = args.name;
+      if (args.description) updates.description = args.description;
+      if (args.status) updates.status = args.status;
+      if (args.health_status) updates.health_status = args.health_status;
+      if (args.budget_amount !== undefined) updates.budget_amount = args.budget_amount;
+      if (args.start_date) updates.start_date = args.start_date;
+      if (args.target_end_date) updates.target_end_date = args.target_end_date;
+      
+      const { data, error } = await supabase
+        .from("projects")
+        .update(updates)
+        .eq("id", args.project_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, project: data, message: `✅ Projet "${data.name}" mis à jour` };
+    }
+
+    case "delete_project": {
+      if (!args.project_id) {
+        return { success: false, error: "project_id obligatoire" };
+      }
+      
+      const { data: proj } = await supabase.from("projects").select("name").eq("id", args.project_id).single();
+      const { error } = await supabase.rpc("delete_project_cascade", { p_project_id: args.project_id });
+      
+      if (error) throw error;
+      return { success: true, message: `✅ Projet "${proj?.name || args.project_id}" supprimé avec ses données liées` };
+    }
+
+    case "update_meeting_note": {
+      if (!args.meeting_note_id) {
+        return { success: false, error: "meeting_note_id obligatoire" };
+      }
+      
+      const updates: Record<string, unknown> = {};
+      if (args.notes) updates.notes = args.notes;
+      if (args.objectives) updates.objectives = args.objectives;
+      if (args.next_steps) updates.next_steps = args.next_steps;
+      if (args.action_items) updates.action_items = args.action_items;
+      
+      const { data, error } = await supabase
+        .from("meeting_notes")
+        .update(updates)
+        .eq("id", args.meeting_note_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, meeting_note: data, message: `✅ Compte-rendu mis à jour` };
+    }
+
+    case "delete_meeting_note": {
+      if (!args.meeting_note_id) {
+        return { success: false, error: "meeting_note_id obligatoire" };
+      }
+      
+      const { error } = await supabase.from("meeting_notes").delete().eq("id", args.meeting_note_id);
+      
+      if (error) throw error;
+      return { success: true, message: `✅ Compte-rendu supprimé` };
+    }
+
+    case "update_transcription": {
+      if (!args.transcription_id) {
+        return { success: false, error: "transcription_id obligatoire" };
+      }
+      
+      const updates: Record<string, unknown> = {};
+      if (args.title) updates.title = args.title;
+      if (args.lead_id) updates.lead_id = args.lead_id;
+      if (args.project_id) updates.project_id = args.project_id;
+      if (args.transcription_date) updates.transcription_date = args.transcription_date;
+      
+      const { data, error } = await supabase
+        .from("voice_transcriptions")
+        .update(updates)
+        .eq("id", args.transcription_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, transcription: data, message: `✅ Transcription "${data.title || data.id}" mise à jour` };
+    }
+
+    case "update_specification": {
+      if (!args.specification_id) {
+        return { success: false, error: "specification_id obligatoire" };
+      }
+      
+      const updates: Record<string, unknown> = {};
+      if (args.title) updates.title = args.title;
+      if (args.description) updates.description = args.description;
+      if (args.content) updates.content = args.content;
+      if (args.status) updates.status = args.status;
+      
+      const { data, error } = await supabase
+        .from("specifications")
+        .update(updates)
+        .eq("id", args.specification_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, specification: data, message: `✅ CDC "${data.title}" mis à jour` };
+    }
+
+    case "approve_specification": {
+      if (!args.specification_id) {
+        return { success: false, error: "specification_id obligatoire" };
+      }
+      
+      const { data, error } = await supabase
+        .from("specifications")
+        .update({ 
+          status: "approved", 
+          approved_at: new Date().toISOString() 
+        })
+        .eq("id", args.specification_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, specification: data, message: `✅ CDC "${data.title}" approuvé` };
+    }
+
+    case "update_document": {
+      if (!args.document_id) {
+        return { success: false, error: "document_id obligatoire" };
+      }
+      
+      const updates: Record<string, unknown> = {};
+      if (args.title) updates.title = args.title;
+      if (args.status) updates.status = args.status;
+      if (args.version) updates.version = args.version;
+      
+      const { data, error } = await supabase
+        .from("generated_documents")
+        .update(updates)
+        .eq("id", args.document_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, document: data, message: `✅ Document "${data.title}" mis à jour` };
+    }
+
+    case "approve_document": {
+      if (!args.document_id) {
+        return { success: false, error: "document_id obligatoire" };
+      }
+      
+      const { data, error } = await supabase
+        .from("generated_documents")
+        .update({ 
+          status: "approved", 
+          approved_at: new Date().toISOString() 
+        })
+        .eq("id", args.document_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, document: data, message: `✅ Document "${data.title}" approuvé` };
+    }
+
+    case "delete_lead": {
+      if (!args.lead_id) {
+        return { success: false, error: "lead_id obligatoire" };
+      }
+      
+      const { data: lead } = await supabase.from("leads").select("name, email").eq("id", args.lead_id).single();
+      const { error } = await supabase.rpc("delete_lead_cascade", { p_lead_id: args.lead_id });
+      
+      if (error) throw error;
+      return { success: true, message: `✅ Lead "${lead?.name || args.lead_id}" et ses données liées supprimés` };
+    }
+
+    case "update_opportunity": {
+      if (!args.opportunity_id) {
+        return { success: false, error: "opportunity_id obligatoire" };
+      }
+      
+      const updates: Record<string, unknown> = {};
+      if (args.title) updates.title = args.title;
+      if (args.description) updates.description = args.description;
+      if (args.value_amount !== undefined) updates.value_amount = args.value_amount;
+      if (args.probability !== undefined) updates.probability = args.probability;
+      if (args.expected_close_date) updates.expected_close_date = args.expected_close_date;
+      
+      const { data, error } = await supabase
+        .from("opportunities")
+        .update(updates)
+        .eq("id", args.opportunity_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, opportunity: data, message: `✅ Opportunité "${data.title}" mise à jour` };
+    }
+
+    case "delete_opportunity": {
+      if (!args.opportunity_id) {
+        return { success: false, error: "opportunity_id obligatoire" };
+      }
+      
+      const { data: opp } = await supabase.from("opportunities").select("title").eq("id", args.opportunity_id).single();
+      const { error } = await supabase.from("opportunities").delete().eq("id", args.opportunity_id);
+      
+      if (error) throw error;
+      return { success: true, message: `✅ Opportunité "${opp?.title || args.opportunity_id}" supprimée` };
+    }
+
+    // ============ CRUD ADMIN (v5.5) ============
+    
+    case "create_article": {
+      if (!args.title || !args.slug || !args.resource_type || !args.content) {
+        return { success: false, error: "title, slug, resource_type et content obligatoires" };
+      }
+      
+      const { data, error } = await supabase
+        .from("articles")
+        .insert({
+          title: args.title,
+          slug: args.slug,
+          resource_type: args.resource_type,
+          excerpt: args.excerpt || null,
+          content: args.content,
+          meta_title: args.meta_title || args.title,
+          meta_description: args.meta_description || args.excerpt || null,
+          tags: args.tags || [],
+          published: args.published || false,
+          cover_image_url: args.cover_image_url || null,
+          status: args.published ? "published" : "draft",
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, article: data, message: `✅ Article "${data.title}" créé (${data.resource_type})` };
+    }
+
+    case "update_article": {
+      if (!args.article_id) {
+        return { success: false, error: "article_id obligatoire" };
+      }
+      
+      const updates: Record<string, unknown> = {};
+      if (args.title) updates.title = args.title;
+      if (args.excerpt) updates.excerpt = args.excerpt;
+      if (args.content) updates.content = args.content;
+      if (args.published !== undefined) {
+        updates.published = args.published;
+        updates.status = args.published ? "published" : "draft";
+        if (args.published) updates.published_at = new Date().toISOString();
+      }
+      if (args.meta_title) updates.meta_title = args.meta_title;
+      if (args.meta_description) updates.meta_description = args.meta_description;
+      if (args.tags) updates.tags = args.tags;
+      
+      const { data, error } = await supabase
+        .from("articles")
+        .update(updates)
+        .eq("id", args.article_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, article: data, message: `✅ Article "${data.title}" mis à jour` };
+    }
+
+    case "delete_article": {
+      if (!args.article_id) {
+        return { success: false, error: "article_id obligatoire" };
+      }
+      
+      const { data: article } = await supabase.from("articles").select("title").eq("id", args.article_id).single();
+      const { error } = await supabase.from("articles").delete().eq("id", args.article_id);
+      
+      if (error) throw error;
+      return { success: true, message: `✅ Article "${article?.title || args.article_id}" supprimé` };
+    }
+
+    case "create_brochure": {
+      if (!args.title || !args.slug || !args.cover_title) {
+        return { success: false, error: "title, slug et cover_title obligatoires" };
+      }
+      
+      const { data, error } = await supabase
+        .from("brochures")
+        .insert({
+          title: args.title,
+          slug: args.slug,
+          cover_title: args.cover_title,
+          cover_subtitle: args.cover_subtitle || null,
+          cover_image_url: args.cover_image_url || null,
+          published: args.published || false,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, brochure: data, message: `✅ Brochure "${data.title}" créée` };
+    }
+
+    case "update_brochure": {
+      if (!args.brochure_id) {
+        return { success: false, error: "brochure_id obligatoire" };
+      }
+      
+      const updates: Record<string, unknown> = {};
+      if (args.title) updates.title = args.title;
+      if (args.cover_title) updates.cover_title = args.cover_title;
+      if (args.cover_subtitle) updates.cover_subtitle = args.cover_subtitle;
+      if (args.published !== undefined) updates.published = args.published;
+      
+      const { data, error } = await supabase
+        .from("brochures")
+        .update(updates)
+        .eq("id", args.brochure_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, brochure: data, message: `✅ Brochure "${data.title}" mise à jour` };
+    }
+
+    case "delete_brochure": {
+      if (!args.brochure_id) {
+        return { success: false, error: "brochure_id obligatoire" };
+      }
+      
+      const { data: brochure } = await supabase.from("brochures").select("title").eq("id", args.brochure_id).single();
+      const { error } = await supabase.from("brochures").delete().eq("id", args.brochure_id);
+      
+      if (error) throw error;
+      return { success: true, message: `✅ Brochure "${brochure?.title || args.brochure_id}" supprimée` };
+    }
+
+    case "create_form": {
+      if (!args.title) {
+        return { success: false, error: "title obligatoire" };
+      }
+      
+      // Generate slug
+      const slug = (args.title as string)
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "") + "-" + Math.random().toString(36).substring(2, 8);
+      
+      const { data, error } = await supabase
+        .from("forms")
+        .insert({
+          title: args.title,
+          slug,
+          description: args.description || null,
+          is_active: true,
+          fields: [],
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, form: data, message: `✅ Formulaire "${data.title}" créé` };
+    }
+
+    case "update_form": {
+      if (!args.form_id) {
+        return { success: false, error: "form_id obligatoire" };
+      }
+      
+      const updates: Record<string, unknown> = {};
+      if (args.title) updates.title = args.title;
+      if (args.description) updates.description = args.description;
+      if (args.is_active !== undefined) updates.is_active = args.is_active;
+      
+      const { data, error } = await supabase
+        .from("forms")
+        .update(updates)
+        .eq("id", args.form_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, form: data, message: `✅ Formulaire "${data.title}" mis à jour` };
+    }
+
+    case "delete_form": {
+      if (!args.form_id) {
+        return { success: false, error: "form_id obligatoire" };
+      }
+      
+      const { data: form } = await supabase.from("forms").select("title").eq("id", args.form_id).single();
+      const { error } = await supabase.from("forms").delete().eq("id", args.form_id);
+      
+      if (error) throw error;
+      return { success: true, message: `✅ Formulaire "${form?.title || args.form_id}" supprimé` };
+    }
+
+    case "approve_comment": {
+      if (!args.comment_id) {
+        return { success: false, error: "comment_id obligatoire" };
+      }
+      
+      const { data, error } = await supabase
+        .from("comments")
+        .update({ approved: true })
+        .eq("id", args.comment_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, comment: data, message: `✅ Commentaire de "${data.author_name}" approuvé` };
+    }
+
+    case "reject_comment": {
+      if (!args.comment_id) {
+        return { success: false, error: "comment_id obligatoire" };
+      }
+      
+      const { data: comment } = await supabase.from("comments").select("author_name").eq("id", args.comment_id).single();
+      const { error } = await supabase.from("comments").delete().eq("id", args.comment_id);
+      
+      if (error) throw error;
+      return { success: true, message: `✅ Commentaire de "${comment?.author_name || "inconnu"}" supprimé` };
     }
 
     default:
