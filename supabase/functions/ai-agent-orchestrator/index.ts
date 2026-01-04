@@ -1192,6 +1192,63 @@ const AGENT_TOOLS = [
   {
     type: "function",
     function: {
+      name: "search_solutions",
+      description: "Recherche une solution IArche par nom ou slug (Collaboria, Datalia, Lexia, Team 5 Connect, Dialogue Plus). Inclut la synthèse Consulte.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Terme de recherche (nom, slug)" },
+        },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_documents",
+      description: "Recherche dans les documents générés (devis, CDC, propositions) par titre ou type. Inclut la synthèse Consulte.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Terme de recherche (titre, contenu)" },
+          document_type: { type: "string", enum: ["quote", "cdc", "proposal", "email"], description: "Filtrer par type" },
+        },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_transcriptions",
+      description: "Recherche dans les transcriptions vocales par résumé, besoins détectés ou lead/projet lié. Inclut la synthèse Consulte.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Terme de recherche (résumé, besoins, action items)" },
+        },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_specifications",
+      description: "Recherche dans les cahiers des charges (CDC/Spécifications) par titre ou contenu. Inclut la synthèse Consulte.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Terme de recherche (titre, contenu, exigences)" },
+        },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "create_partner",
       description: "Crée un partenaire dans le CRM. ATTENTION: Un partenaire n'est PAS un lead. Utiliser pour experts IA, indépendants ou apporteurs d'affaires.",
       parameters: {
@@ -1270,7 +1327,11 @@ async function executeTool(
     case "get_leads": {
       let query = supabase
         .from("leads")
-        .select("id, name, email, company, phone, source, source_context, lead_score, qualification_status, created_at, last_contacted_at")
+        .select(`
+          id, name, email, company, phone, source, source_context, 
+          lead_score, qualification_status, created_at, last_contacted_at,
+          ai_documents_summary, synthesis_stale
+        `)
         .order("created_at", { ascending: false })
         .limit(args.limit as number || 10);
 
@@ -1284,7 +1345,7 @@ async function executeTool(
 
       const { data, error } = await query;
       if (error) throw error;
-      return { leads: data, count: data?.length || 0 };
+      return { leads: data, count: data?.length || 0, consulte_available: (data || []).some((l: any) => l.ai_documents_summary) };
     }
 
     case "search_leads": {
@@ -1298,7 +1359,8 @@ async function executeTool(
         .select(`
           id, name, email, company, phone, source, source_context, 
           lead_score, qualification_status, created_at, last_contacted_at,
-          position, website, linkedin_url, city, industry, company_size
+          position, website, linkedin_url, city, industry, company_size,
+          ai_documents_summary, synthesis_stale
         `)
         .or(`name.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`)
         .order("lead_score", { ascending: false, nullsFirst: false })
@@ -1310,6 +1372,7 @@ async function executeTool(
         leads: data,
         count: data?.length || 0,
         query: searchQuery,
+        consulte_available: (data || []).some((l: any) => l.ai_documents_summary),
         message: (data?.length || 0) > 0 
           ? `${data?.length} lead(s) trouvé(s) pour "${searchQuery}"`
           : `Aucun lead trouvé pour "${searchQuery}"`
@@ -1320,7 +1383,11 @@ async function executeTool(
     case "get_partners": {
       let query = supabase
         .from("partners")
-        .select("id, name, email, company, phone, partner_type, specialties, is_active, commission_rate, notes, slug, created_at")
+        .select(`
+          id, name, email, company, phone, partner_type, specialties, 
+          is_active, commission_rate, notes, slug, created_at,
+          ai_documents_summary, synthesis_stale
+        `)
         .order("created_at", { ascending: false })
         .limit(args.limit as number || 20);
 
@@ -1329,7 +1396,12 @@ async function executeTool(
 
       const { data, error } = await query;
       if (error) throw error;
-      return { partners: data, count: data?.length || 0, note: "Les partenaires sont différents des leads (clients). Un partenaire est un expert IA, indépendant ou apporteur d'affaires." };
+      return { 
+        partners: data, 
+        count: data?.length || 0, 
+        consulte_available: (data || []).some((p: any) => p.ai_documents_summary),
+        note: "Les partenaires sont différents des leads (clients). Un partenaire est un expert IA, indépendant ou apporteur d'affaires." 
+      };
     }
 
     case "search_partners": {
@@ -1340,7 +1412,10 @@ async function executeTool(
 
       const { data, error } = await supabase
         .from("partners")
-        .select("id, name, email, company, phone, partner_type, specialties, is_active, slug")
+        .select(`
+          id, name, email, company, phone, partner_type, specialties, 
+          is_active, slug, ai_documents_summary, synthesis_stale
+        `)
         .is("deleted_at", null)
         .or(`name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%,slug.ilike.%${searchQuery}%`)
         .limit(10);
@@ -1350,6 +1425,7 @@ async function executeTool(
         partners: data, 
         count: data?.length || 0,
         search_query: searchQuery,
+        consulte_available: (data || []).some((p: any) => p.ai_documents_summary),
         hint: data?.length === 0 ? "Aucun partenaire trouvé. Pour créer un nouveau partenaire, utilise create_partner." : null
       };
     }
@@ -1541,6 +1617,7 @@ async function executeTool(
         .select(`
           id, name, description, status, health_status, 
           budget_amount, consumed_amount, start_date, target_end_date,
+          ai_documents_summary, synthesis_stale,
           lead:leads(id, name, company),
           opportunity:opportunities(id, title, value_amount)
         `)
@@ -1556,7 +1633,11 @@ async function executeTool(
 
       const { data, error } = await query;
       if (error) throw error;
-      return { projects: data, count: data?.length || 0 };
+      return { 
+        projects: data, 
+        count: data?.length || 0,
+        consulte_available: (data || []).some((p: any) => p.ai_documents_summary)
+      };
     }
 
     case "search_projects": {
@@ -1570,6 +1651,7 @@ async function executeTool(
         .select(`
           id, name, description, status, health_status, 
           budget_amount, start_date, target_end_date, created_at,
+          ai_documents_summary, synthesis_stale,
           lead:leads(id, name, company, email),
           opportunity:opportunities(id, title, stage, value_amount)
         `)
@@ -1583,7 +1665,7 @@ async function executeTool(
       const { data: projectsByLead, error: leadError } = await supabase
         .from("projects")
         .select(`
-          id, name, description, status, health_status,
+          id, name, description, status, health_status, ai_documents_summary,
           lead:leads!inner(id, name, company)
         `)
         .ilike("leads.name", `%${searchQuery}%`)
@@ -1599,9 +1681,137 @@ async function executeTool(
         projects: [...allProjects, ...leadMatches],
         count: allProjects.length + leadMatches.length,
         query: searchQuery,
+        consulte_available: allProjects.some((p: any) => p.ai_documents_summary),
         message: allProjects.length > 0 
           ? `${allProjects.length} projet(s) trouvé(s) pour "${searchQuery}"`
           : `Aucun projet trouvé pour "${searchQuery}"`
+      };
+    }
+
+    case "search_solutions": {
+      const searchQuery = (args.query as string || "").trim().toLowerCase();
+      if (!searchQuery) {
+        return { solutions: [], count: 0, message: "Terme de recherche requis" };
+      }
+
+      const { data, error } = await supabase
+        .from("articles")
+        .select(`
+          id, title, slug, excerpt, content, published, published_at,
+          cover_image_url, ai_documents_summary, synthesis_stale
+        `)
+        .eq("resource_type", "solution")
+        .or(`title.ilike.%${searchQuery}%,slug.ilike.%${searchQuery}%,excerpt.ilike.%${searchQuery}%`)
+        .order("title")
+        .limit(10);
+
+      if (error) throw error;
+      
+      return { 
+        solutions: data,
+        count: data?.length || 0,
+        query: searchQuery,
+        consulte_available: (data || []).some((s: any) => s.ai_documents_summary),
+        message: (data?.length || 0) > 0 
+          ? `${data?.length} solution(s) trouvée(s) pour "${searchQuery}"`
+          : `Aucune solution trouvée pour "${searchQuery}"`
+      };
+    }
+
+    case "search_documents": {
+      const searchQuery = (args.query as string || "").trim();
+      if (!searchQuery) {
+        return { documents: [], count: 0, message: "Terme de recherche requis" };
+      }
+
+      let query = supabase
+        .from("generated_documents")
+        .select(`
+          id, title, document_type, status, version, ai_generated, 
+          ai_documents_summary, synthesis_stale, created_at, updated_at,
+          lead:leads(id, name, company),
+          project:projects(id, name)
+        `)
+        .ilike("title", `%${searchQuery}%`)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (args.document_type) query = query.eq("document_type", args.document_type);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      return { 
+        documents: data,
+        count: data?.length || 0,
+        query: searchQuery,
+        consulte_available: (data || []).some((d: any) => d.ai_documents_summary),
+        message: (data?.length || 0) > 0 
+          ? `${data?.length} document(s) trouvé(s) pour "${searchQuery}"`
+          : `Aucun document trouvé pour "${searchQuery}"`
+      };
+    }
+
+    case "search_transcriptions": {
+      const searchQuery = (args.query as string || "").trim();
+      if (!searchQuery) {
+        return { transcriptions: [], count: 0, message: "Terme de recherche requis" };
+      }
+
+      const { data, error } = await supabase
+        .from("voice_transcriptions")
+        .select(`
+          id, title, transcript_summary, detected_needs, action_items,
+          key_decisions, next_steps, status, duration_seconds, created_at,
+          lead:leads(id, name, company),
+          project:projects(id, name),
+          partner:partners(id, name)
+        `)
+        .or(`transcript_summary.ilike.%${searchQuery}%,title.ilike.%${searchQuery}%`)
+        .eq("status", "done")
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      
+      return { 
+        transcriptions: data,
+        count: data?.length || 0,
+        query: searchQuery,
+        message: (data?.length || 0) > 0 
+          ? `${data?.length} transcription(s) trouvée(s) pour "${searchQuery}"`
+          : `Aucune transcription trouvée pour "${searchQuery}"`
+      };
+    }
+
+    case "search_specifications": {
+      const searchQuery = (args.query as string || "").trim();
+      if (!searchQuery) {
+        return { specifications: [], count: 0, message: "Terme de recherche requis" };
+      }
+
+      const { data, error } = await supabase
+        .from("specifications")
+        .select(`
+          id, title, description, status, version, 
+          functional_requirements, technical_requirements,
+          created_at, updated_at,
+          project:projects(id, name, ai_documents_summary),
+          lead:leads(id, name, company)
+        `)
+        .or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`)
+        .order("updated_at", { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      
+      return { 
+        specifications: data,
+        count: data?.length || 0,
+        query: searchQuery,
+        message: (data?.length || 0) > 0 
+          ? `${data?.length} cahier(s) des charges trouvé(s) pour "${searchQuery}"`
+          : `Aucun CDC trouvé pour "${searchQuery}"`
       };
     }
 
@@ -1633,10 +1843,10 @@ async function executeTool(
       let query = supabase
         .from("voice_transcriptions")
         .select(`
-          id, raw_transcript, transcript_summary, detected_needs, 
+          id, title, raw_transcript, transcript_summary, detected_needs, 
           action_items, key_decisions, next_steps, status, created_at,
-          lead:leads(id, name, company),
-          project:projects(id, name)
+          lead:leads(id, name, company, ai_documents_summary),
+          project:projects(id, name, ai_documents_summary)
         `)
         .order("created_at", { ascending: false })
         .limit(args.limit as number || 5);
@@ -1697,6 +1907,7 @@ async function executeTool(
         .from("generated_documents")
         .select(`
           id, title, document_type, status, version, ai_generated, 
+          ai_documents_summary, synthesis_stale,
           content_json, created_at, updated_at, sent_at, sent_to,
           lead:leads(id, name, company, email),
           project:projects(id, name),
@@ -1712,7 +1923,11 @@ async function executeTool(
 
       const { data, error } = await query;
       if (error) throw error;
-      return { documents: data, count: data?.length || 0 };
+      return { 
+        documents: data, 
+        count: data?.length || 0,
+        consulte_available: (data || []).some((d: any) => d.ai_documents_summary)
+      };
     }
 
     case "get_solution_leads": {
@@ -1850,7 +2065,10 @@ async function executeTool(
     case "get_solutions": {
       let query = supabase
         .from("articles")
-        .select("id, title, slug, excerpt, cover_image_url, published")
+        .select(`
+          id, title, slug, excerpt, cover_image_url, published,
+          ai_documents_summary, synthesis_stale
+        `)
         .eq("resource_type", "solution")
         .order("title");
 
@@ -1858,7 +2076,11 @@ async function executeTool(
 
       const { data, error } = await query;
       if (error) throw error;
-      return { solutions: data, count: data?.length || 0 };
+      return { 
+        solutions: data, 
+        count: data?.length || 0,
+        consulte_available: (data || []).some((s: any) => s.ai_documents_summary)
+      };
     }
 
     case "get_article_details": {
