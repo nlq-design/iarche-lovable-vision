@@ -56,7 +56,7 @@ const ProtectedVivierRoute = ({ children }: ProtectedVivierRouteProps) => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-orange-500 mx-auto" />
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
           <p className="text-muted-foreground">Vérification des accès Viviers...</p>
         </div>
       </div>
@@ -72,7 +72,7 @@ const ProtectedVivierRoute = ({ children }: ProtectedVivierRouteProps) => {
   if (deniedReason === 'NO_ROLE') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="max-w-md w-full border-orange-200">
+        <Card className="max-w-md w-full">
           <CardHeader className="text-center">
             <ShieldX className="h-12 w-12 text-destructive mx-auto mb-2" />
             <CardTitle>Accès non autorisé</CardTitle>
@@ -94,9 +94,9 @@ const ProtectedVivierRoute = ({ children }: ProtectedVivierRouteProps) => {
   if (deniedReason === 'MFA_NOT_ENABLED') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="max-w-md w-full border-orange-200">
+        <Card className="max-w-md w-full">
           <CardHeader className="text-center">
-            <KeyRound className="h-12 w-12 text-orange-500 mx-auto mb-2" />
+            <KeyRound className="h-12 w-12 text-accent mx-auto mb-2" />
             <CardTitle>Authentification 2FA requise</CardTitle>
             <CardDescription>
               Vous devez activer la 2FA pour accéder aux Viviers. 
@@ -107,7 +107,7 @@ const ProtectedVivierRoute = ({ children }: ProtectedVivierRouteProps) => {
             <Button onClick={() => window.history.back()} variant="outline">
               Retour
             </Button>
-            <Button onClick={() => window.location.href = '/admin/settings'} className="bg-orange-500 hover:bg-orange-600">
+            <Button onClick={() => window.location.href = '/admin/settings'}>
               Paramètres
             </Button>
           </CardContent>
@@ -121,11 +121,11 @@ const ProtectedVivierRoute = ({ children }: ProtectedVivierRouteProps) => {
     return (
       <>
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
-          <Card className="max-w-md w-full border-orange-200">
+          <Card className="max-w-md w-full">
             <CardHeader className="text-center">
               <div className="relative mx-auto mb-2">
-                <Fish className="h-12 w-12 text-orange-500" />
-                <ShieldAlert className="h-5 w-5 text-primary absolute -bottom-1 -right-1" />
+                <Fish className="h-12 w-12 text-primary" />
+                <ShieldAlert className="h-5 w-5 text-accent absolute -bottom-1 -right-1" />
               </div>
               <CardTitle>Vérification requise</CardTitle>
               <CardDescription>
@@ -136,7 +136,7 @@ const ProtectedVivierRoute = ({ children }: ProtectedVivierRouteProps) => {
               <Button onClick={() => window.history.back()} variant="outline">
                 Annuler
               </Button>
-              <Button onClick={() => setShowMfaDialog(true)} className="bg-orange-500 hover:bg-orange-600">
+              <Button onClick={() => setShowMfaDialog(true)}>
                 Vérifier
               </Button>
             </CardContent>

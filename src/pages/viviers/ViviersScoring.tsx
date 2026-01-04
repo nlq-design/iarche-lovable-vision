@@ -1,18 +1,15 @@
 import { VivierLayout } from '@/components/viviers/VivierLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { 
   Target, 
   Sparkles, 
   Play,
-  Pause,
-  RefreshCw,
   CheckCircle2,
   AlertTriangle,
   XCircle
 } from 'lucide-react';
+import LogoArc from '@/components/ui/LogoArc';
 
 export default function ViviersScoring() {
   return (
@@ -22,11 +19,12 @@ export default function ViviersScoring() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Scoring IA</h1>
-            <p className="text-muted-foreground">
+            <LogoArc size="sm" className="mt-2" />
+            <p className="text-muted-foreground mt-2">
               Qualification automatique des leads par intelligence artificielle
             </p>
           </div>
-          <Button className="bg-orange-500 hover:bg-orange-600">
+          <Button>
             <Play className="w-4 h-4 mr-2" />
             Lancer le scoring
           </Button>
@@ -41,7 +39,7 @@ export default function ViviersScoring() {
                   <p className="text-sm text-muted-foreground">En attente</p>
                   <p className="text-2xl font-bold">0</p>
                 </div>
-                <Target className="h-8 w-8 text-orange-500" />
+                <Target className="h-8 w-8 text-accent" />
               </div>
             </CardContent>
           </Card>
@@ -51,9 +49,9 @@ export default function ViviersScoring() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Score élevé (≥80)</p>
-                  <p className="text-2xl font-bold text-emerald-600">0</p>
+                  <p className="text-2xl font-bold text-success">0</p>
                 </div>
-                <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+                <CheckCircle2 className="h-8 w-8 text-success" />
               </div>
             </CardContent>
           </Card>
@@ -75,9 +73,9 @@ export default function ViviersScoring() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Score faible (&lt;40)</p>
-                  <p className="text-2xl font-bold text-red-600">0</p>
+                  <p className="text-2xl font-bold text-destructive">0</p>
                 </div>
-                <XCircle className="h-8 w-8 text-red-500" />
+                <XCircle className="h-8 w-8 text-destructive" />
               </div>
             </CardContent>
           </Card>
@@ -87,7 +85,7 @@ export default function ViviersScoring() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-orange-500" />
+              <Sparkles className="h-5 w-5 text-accent" />
               Configuration du scoring
             </CardTitle>
             <CardDescription>

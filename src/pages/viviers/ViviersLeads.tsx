@@ -1,18 +1,15 @@
 import { VivierLayout } from '@/components/viviers/VivierLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { 
   Users, 
   Search, 
   Filter, 
-  Upload,
-  MoreHorizontal,
-  ArrowUpRight,
-  Trash2
+  Upload
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import LogoArc from '@/components/ui/LogoArc';
 
 export default function ViviersLeads() {
   return (
@@ -22,11 +19,12 @@ export default function ViviersLeads() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Leads Vivier</h1>
-            <p className="text-muted-foreground">
+            <LogoArc size="sm" className="mt-2" />
+            <p className="text-muted-foreground mt-2">
               Gérez vos leads froids avant promotion vers le CRM
             </p>
           </div>
-          <Button className="bg-orange-500 hover:bg-orange-600" asChild>
+          <Button asChild>
             <Link to="/viviers/import">
               <Upload className="w-4 h-4 mr-2" />
               Importer
@@ -61,7 +59,7 @@ export default function ViviersLeads() {
             <p className="text-muted-foreground mb-4 max-w-md mx-auto">
               Importez vos leads froids depuis un fichier CSV ou XLSX pour commencer.
             </p>
-            <Button className="bg-orange-500 hover:bg-orange-600" asChild>
+            <Button asChild>
               <Link to="/viviers/import">
                 <Upload className="w-4 h-4 mr-2" />
                 Importer des leads
