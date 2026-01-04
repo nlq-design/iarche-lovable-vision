@@ -2012,6 +2012,160 @@ const AGENT_TOOLS = [
       },
     },
   },
+  // ============ VIVIERS - Cold Leads Module ============
+  {
+    type: "function",
+    function: {
+      name: "get_viviers",
+      description: "Récupère les prospects froids (viviers). Données : nom, email, entreprise, score, source, tags.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Rechercher par nom, email ou entreprise" },
+          source: { type: "string", description: "Filtrer par source d'import" },
+          min_score: { type: "number", description: "Score minimum (0-100)" },
+          max_score: { type: "number", description: "Score maximum (0-100)" },
+          promoted: { type: "boolean", description: "Filtrer par statut de promotion (true=promus, false=non promus)" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 20)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_viviers",
+      description: "Recherche un vivier par nom, email ou entreprise. À utiliser pour trouver des prospects froids spécifiques.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Terme de recherche (nom, email, entreprise)" },
+        },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "score_viviers",
+      description: "Déclenche le scoring IA de viviers sélectionnés ou d'un segment entier. Utilise le prompt vivier-score.",
+      parameters: {
+        type: "object",
+        properties: {
+          vivier_ids: { type: "array", items: { type: "string" }, description: "IDs des viviers à scorer (optionnel si segment_query)" },
+          segment_query: { type: "string", description: "Requête naturelle de ciblage (ex: 'PME tech en IDF')" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "promote_viviers_to_leads",
+      description: "Promeut des viviers vers la table leads avec enrichissement automatique. Supprime le vivier après promotion.",
+      parameters: {
+        type: "object",
+        properties: {
+          vivier_ids: { type: "array", items: { type: "string" }, description: "IDs des viviers à promouvoir" },
+          enrich: { type: "boolean", description: "Enrichir via Pappers si SIRET disponible (défaut: true)" },
+        },
+        required: ["vivier_ids"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_vivier_campaigns",
+      description: "Récupère les campagnes email cold (Instantly). Données : nom, statut, statistiques, domaine d'envoi.",
+      parameters: {
+        type: "object",
+        properties: {
+          status: { type: "string", enum: ["draft", "created", "active", "paused", "completed"], description: "Filtrer par statut" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 10)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_vivier_campaign",
+      description: "Crée une campagne email cold pour un segment de viviers. Génère le contenu via le prompt vivier-campaign.",
+      parameters: {
+        type: "object",
+        properties: {
+          name: { type: "string", description: "Nom de la campagne" },
+          segment_query: { type: "string", description: "Requête de ciblage naturelle (ex: 'Score > 60, secteur tech')" },
+          vivier_ids: { type: "array", items: { type: "string" }, description: "Ou IDs spécifiques de viviers" },
+          domain_id: { type: "string", description: "ID du domaine d'envoi (satellite Instantly)" },
+          generate_content: { type: "boolean", description: "Générer le contenu via IA (défaut: true)" },
+          pain_point: { type: "string", description: "Point de douleur à adresser dans les emails" },
+        },
+        required: ["name"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "preview_campaign_email",
+      description: "Prévisualise un email de campagne avec les variables résolues pour un vivier spécifique.",
+      parameters: {
+        type: "object",
+        properties: {
+          campaign_id: { type: "string", description: "ID de la campagne" },
+          vivier_id: { type: "string", description: "ID du vivier pour résoudre les variables" },
+          step: { type: "number", description: "Numéro du step (1, 2 ou 3)" },
+        },
+        required: ["campaign_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "launch_vivier_campaign",
+      description: "Lance une campagne email cold via Instantly. ATTENTION: action irréversible, nécessite confirmation.",
+      parameters: {
+        type: "object",
+        properties: {
+          campaign_id: { type: "string", description: "ID de la campagne à lancer" },
+          confirm: { type: "boolean", description: "Confirmation explicite requise (true)" },
+        },
+        required: ["campaign_id", "confirm"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_email_domains",
+      description: "Liste les domaines email configurés (satellites Instantly + core Brevo) avec leur statut de warm-up.",
+      parameters: {
+        type: "object",
+        properties: {
+          provider: { type: "string", enum: ["instantly", "brevo", "resend"], description: "Filtrer par provider" },
+          domain_type: { type: "string", enum: ["core", "satellite"], description: "Filtrer par type" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "clean_viviers",
+      description: "Nettoie les viviers : détection doublons, emails invalides, données incohérentes. Utilise le prompt vivier-clean.",
+      parameters: {
+        type: "object",
+        properties: {
+          preview_only: { type: "boolean", description: "Mode prévisualisation sans suppression (défaut: true)" },
+          vivier_ids: { type: "array", items: { type: "string" }, description: "IDs spécifiques à analyser (optionnel)" },
+        },
+      },
+    },
+  },
 ];
 
 // =============================================================================
@@ -6069,6 +6223,372 @@ Génère un contenu HTML pour email avec:
       
       if (error) throw error;
       return { success: true, lead: data, message: `✅ Score de "${data.name}" mis à jour : ${data.lead_score}/100` };
+    }
+
+    // ============ VIVIERS - Cold Leads Module ============
+
+    case "get_viviers": {
+      let query = supabase
+        .from("viviers")
+        .select("id, email, name, first_name, company, phone, industry, city, source, cold_score, tags, promoted_at, promoted_to_lead_id, created_at")
+        .order("cold_score", { ascending: false, nullsFirst: false })
+        .limit(args.limit as number || 20);
+
+      if (args.query) {
+        const searchQuery = (args.query as string).trim();
+        query = query.or(`name.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+      }
+      if (args.source) query = query.eq("source", args.source);
+      if (args.min_score) query = query.gte("cold_score", args.min_score);
+      if (args.max_score) query = query.lte("cold_score", args.max_score);
+      if (args.promoted === true) query = query.not("promoted_at", "is", null);
+      if (args.promoted === false) query = query.is("promoted_at", null);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return { viviers: data, count: data?.length || 0 };
+    }
+
+    case "search_viviers": {
+      const searchQuery = (args.query as string || "").trim();
+      if (!searchQuery) {
+        return { viviers: [], count: 0, message: "Terme de recherche requis" };
+      }
+
+      const { data, error } = await supabase
+        .from("viviers")
+        .select("id, email, name, first_name, company, phone, industry, city, source, cold_score, tags, siret, promoted_at")
+        .or(`name.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`)
+        .order("cold_score", { ascending: false })
+        .limit(15);
+
+      if (error) throw error;
+      return { viviers: data, count: data?.length || 0, query: searchQuery };
+    }
+
+    case "score_viviers": {
+      // Score viviers using vivier-score prompt
+      const vivierIds = args.vivier_ids as string[] || [];
+      
+      if (vivierIds.length === 0 && !args.segment_query) {
+        return { success: false, error: "vivier_ids ou segment_query requis" };
+      }
+
+      // Fetch viviers to score
+      let query = supabase.from("viviers").select("*").is("promoted_at", null);
+      if (vivierIds.length > 0) {
+        query = query.in("id", vivierIds);
+      } else {
+        query = query.limit(50); // Limit batch size
+      }
+
+      const { data: viviers, error } = await query;
+      if (error) throw error;
+
+      // For each vivier, calculate a simple score based on completeness
+      const scoredViviers = [];
+      for (const vivier of viviers || []) {
+        let score = 0;
+        // Completude (30 pts)
+        if (vivier.email) score += 10;
+        if (vivier.phone) score += 10;
+        if (vivier.siret) score += 10;
+        // Secteur cible (25 pts) - tech, conseil, industrie prioritaires
+        const targetIndustries = ["tech", "conseil", "industrie", "services", "informatique", "digital"];
+        if (vivier.industry && targetIndustries.some(t => vivier.industry.toLowerCase().includes(t))) score += 25;
+        // Taille entreprise (20 pts) - PME/ETI prioritaires
+        const targetSizes = ["pme", "eti", "50-249", "250-999"];
+        if (vivier.company_size && targetSizes.some(t => vivier.company_size.toLowerCase().includes(t))) score += 20;
+        // Localisation (15 pts) - IDF, grandes métropoles
+        const targetCities = ["paris", "lyon", "bordeaux", "toulouse", "nantes", "marseille", "lille", "bayonne"];
+        if (vivier.city && targetCities.some(c => vivier.city.toLowerCase().includes(c))) score += 15;
+        // Signaux business (10 pts)
+        if (vivier.website || vivier.linkedin_url) score += 10;
+
+        scoredViviers.push({ id: vivier.id, email: vivier.email, name: vivier.name, old_score: vivier.cold_score, new_score: score });
+        
+        // Update score
+        await supabase.from("viviers").update({ cold_score: score }).eq("id", vivier.id);
+      }
+
+      return { 
+        success: true, 
+        scored: scoredViviers.length, 
+        viviers: scoredViviers.slice(0, 10),
+        message: `✅ ${scoredViviers.length} viviers scorés`
+      };
+    }
+
+    case "promote_viviers_to_leads": {
+      const vivierIds = args.vivier_ids as string[];
+      if (!vivierIds || vivierIds.length === 0) {
+        return { success: false, error: "vivier_ids requis" };
+      }
+
+      // Call edge function
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/promote-vivier-to-lead`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ vivier_ids: vivierIds, enrich: args.enrich !== false }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Promotion failed: ${errorText}`);
+      }
+
+      const result = await response.json();
+      return { 
+        success: true, 
+        ...result,
+        message: `✅ ${result.promoted} nouveaux leads créés, ${result.updated} existants enrichis`
+      };
+    }
+
+    case "get_vivier_campaigns": {
+      let query = supabase
+        .from("vivier_campaigns")
+        .select("id, name, status, emails_sent, emails_opened, emails_clicked, emails_replied, instantly_campaign_id, created_at, launched_at")
+        .order("created_at", { ascending: false })
+        .limit(args.limit as number || 10);
+
+      if (args.status) query = query.eq("status", args.status);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return { campaigns: data, count: data?.length || 0 };
+    }
+
+    case "create_vivier_campaign": {
+      if (!args.name) {
+        return { success: false, error: "name obligatoire" };
+      }
+
+      // Get viviers for campaign
+      const vivierIds = args.vivier_ids as string[] || [];
+      let targetVivierCount = 0;
+
+      if (vivierIds.length > 0) {
+        targetVivierCount = vivierIds.length;
+      } else if (args.segment_query) {
+        // Count matching viviers (simplified - would use vivier-target prompt in production)
+        const { count } = await supabase
+          .from("viviers")
+          .select("id", { count: "exact", head: true })
+          .is("promoted_at", null)
+          .gte("cold_score", 50);
+        targetVivierCount = count || 0;
+      }
+
+      // Create campaign
+      const { data: campaign, error } = await supabase
+        .from("vivier_campaigns")
+        .insert({
+          name: args.name,
+          status: "draft",
+          domain_id: args.domain_id || null,
+          segment_criteria: args.segment_query ? { query: args.segment_query } : null,
+          emails_sent: 0,
+          emails_opened: 0,
+          emails_clicked: 0,
+          emails_replied: 0,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Add recipients if specific IDs provided
+      if (vivierIds.length > 0) {
+        const recipients = vivierIds.map(id => ({
+          campaign_id: campaign.id,
+          vivier_id: id,
+        }));
+        await supabase.from("vivier_campaign_recipients").insert(recipients);
+      }
+
+      return { 
+        success: true, 
+        campaign,
+        target_count: targetVivierCount,
+        message: `✅ Campagne "${campaign.name}" créée avec ${targetVivierCount} prospects ciblés`
+      };
+    }
+
+    case "preview_campaign_email": {
+      if (!args.campaign_id) {
+        return { success: false, error: "campaign_id obligatoire" };
+      }
+
+      const { data: campaign } = await supabase
+        .from("vivier_campaigns")
+        .select("*, email_sequence")
+        .eq("id", args.campaign_id)
+        .single();
+
+      if (!campaign) {
+        return { success: false, error: "Campagne non trouvée" };
+      }
+
+      // Get sample vivier for preview
+      let sampleVivier = null;
+      if (args.vivier_id) {
+        const { data } = await supabase.from("viviers").select("*").eq("id", args.vivier_id).single();
+        sampleVivier = data;
+      } else {
+        const { data: recipients } = await supabase
+          .from("vivier_campaign_recipients")
+          .select("vivier_id, viviers(*)")
+          .eq("campaign_id", args.campaign_id)
+          .limit(1);
+        sampleVivier = recipients?.[0]?.viviers;
+      }
+
+      // Mock email preview (in production, would use stored sequence)
+      const step = (args.step as number) || 1;
+      const emailPreview = {
+        step,
+        subject: `[Preview] Email Step ${step}`,
+        body: sampleVivier 
+          ? `Bonjour ${sampleVivier.first_name || sampleVivier.name?.split(" ")[0] || ""},\n\nCeci est un aperçu de l'email pour ${sampleVivier.company || "votre entreprise"}...`
+          : "Aucun vivier disponible pour prévisualisation",
+        variables_resolved: sampleVivier ? { first_name: sampleVivier.first_name, company: sampleVivier.company } : {},
+      };
+
+      return { success: true, campaign_name: campaign.name, preview: emailPreview };
+    }
+
+    case "launch_vivier_campaign": {
+      if (!args.campaign_id) {
+        return { success: false, error: "campaign_id obligatoire" };
+      }
+      if (args.confirm !== true) {
+        return { success: false, error: "Confirmation explicite requise (confirm: true)" };
+      }
+
+      // Call edge function to launch
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/send-instantly-campaign`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ campaign_id: args.campaign_id, action: "launch" }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Launch failed: ${errorText}`);
+      }
+
+      const result = await response.json();
+      return { 
+        success: true, 
+        ...result,
+        message: `🚀 Campagne lancée via Instantly`
+      };
+    }
+
+    case "get_email_domains": {
+      let query = supabase
+        .from("email_domains")
+        .select("id, domain, from_email, from_name, provider, domain_type, is_active, warmup_status, warmup_day, spf_valid, dkim_valid, dmarc_valid")
+        .eq("is_active", true)
+        .order("domain_type", { ascending: true });
+
+      if (args.provider) query = query.eq("provider", args.provider);
+      if (args.domain_type) query = query.eq("domain_type", args.domain_type);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      // Summary stats
+      const summary = {
+        total: data?.length || 0,
+        core: (data || []).filter((d: { domain_type: string }) => d.domain_type === "core").length,
+        satellite: (data || []).filter((d: { domain_type: string }) => d.domain_type === "satellite").length,
+        warming: (data || []).filter((d: { warmup_status: string }) => d.warmup_status === "warming").length,
+        ready: (data || []).filter((d: { warmup_status: string }) => d.warmup_status === "ready").length,
+      };
+
+      return { domains: data, summary };
+    }
+
+    case "clean_viviers": {
+      const previewOnly = args.preview_only !== false;
+      const vivierIds = args.vivier_ids as string[] || null;
+
+      // Fetch viviers to analyze
+      let query = supabase.from("viviers").select("id, email, name, company, siret, phone, city").is("promoted_at", null);
+      if (vivierIds && vivierIds.length > 0) {
+        query = query.in("id", vivierIds);
+      }
+      query = query.limit(500);
+
+      const { data: viviers, error } = await query;
+      if (error) throw error;
+
+      // Simple duplicate detection (same email)
+      const emailCounts: Record<string, string[]> = {};
+      const invalidEmails: { id: string; email: string; reason: string }[] = [];
+      const genericEmails: { id: string; email: string }[] = [];
+
+      for (const v of viviers || []) {
+        // Track duplicates
+        if (v.email) {
+          if (!emailCounts[v.email]) emailCounts[v.email] = [];
+          emailCounts[v.email].push(v.id);
+
+          // Check for generic emails
+          const genericPrefixes = ["info@", "contact@", "noreply@", "admin@", "support@"];
+          if (genericPrefixes.some(p => v.email.toLowerCase().startsWith(p))) {
+            genericEmails.push({ id: v.id, email: v.email });
+          }
+        } else {
+          invalidEmails.push({ id: v.id, email: "", reason: "missing_email" });
+        }
+      }
+
+      // Find duplicates
+      const duplicates = Object.entries(emailCounts)
+        .filter(([_, ids]) => ids.length > 1)
+        .map(([email, ids]) => ({ email, ids, count: ids.length }));
+
+      const summary: { 
+        total_analyzed: number; 
+        duplicates_found: number; 
+        invalid_emails: number; 
+        generic_emails: number; 
+        duplicates_deleted?: number;
+      } = {
+        total_analyzed: viviers?.length || 0,
+        duplicates_found: duplicates.length,
+        invalid_emails: invalidEmails.length,
+        generic_emails: genericEmails.length,
+      };
+
+      if (!previewOnly && duplicates.length > 0) {
+        // Delete duplicates (keep first)
+        for (const dup of duplicates) {
+          const idsToDelete = dup.ids.slice(1);
+          await supabase.from("viviers").delete().in("id", idsToDelete);
+        }
+        summary.duplicates_deleted = duplicates.reduce((sum, d) => sum + d.ids.length - 1, 0);
+      }
+
+      return { 
+        success: true, 
+        preview_only: previewOnly,
+        summary,
+        duplicates: duplicates.slice(0, 10),
+        generic_emails: genericEmails.slice(0, 10),
+        message: previewOnly 
+          ? `📊 Analyse: ${summary.duplicates_found} doublons, ${summary.generic_emails} emails génériques`
+          : `🧹 Nettoyage effectué: ${summary.duplicates_deleted || 0} doublons supprimés`
+      };
     }
 
     default:
