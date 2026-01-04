@@ -24,6 +24,53 @@ const TYPING_INTERVAL_MS = 4000;
 // Supabase client for deduplication
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+// Default workspace for Telegram imports
+const DEFAULT_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
+
+let cachedTelegramSystemUserId: string | null = null;
+
+async function getTelegramSystemUserId(): Promise<string> {
+  if (cachedTelegramSystemUserId) return cachedTelegramSystemUserId;
+
+  // Prefer the default workspace owner
+  const { data: owner, error: ownerError } = await supabase
+    .from("workspace_members")
+    .select("user_id")
+    .eq("workspace_id", DEFAULT_WORKSPACE_ID)
+    .eq("role", "owner")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (ownerError) {
+    console.error("Error fetching default workspace owner:", ownerError);
+  }
+
+  if (owner?.user_id) {
+    cachedTelegramSystemUserId = owner.user_id;
+    return owner.user_id;
+  }
+
+  // Fallback: any admin user
+  const { data: admin, error: adminError } = await supabase
+    .from("user_roles")
+    .select("user_id")
+    .eq("role", "admin")
+    .limit(1)
+    .maybeSingle();
+
+  if (adminError) {
+    console.error("Error fetching admin user:", adminError);
+  }
+
+  if (admin?.user_id) {
+    cachedTelegramSystemUserId = admin.user_id;
+    return admin.user_id;
+  }
+
+  throw new Error("no_system_user_configured");
+}
+
 // =============================================================================
 // INTERFACES
 // =============================================================================
@@ -681,7 +728,9 @@ async function createTranscriptionJob(
     if (caption) {
       metadata.user_context = caption;
     }
-    
+
+    const systemUserId = await getTelegramSystemUserId();
+
     const { data, error } = await supabase
       .from("voice_transcriptions")
       .insert({
@@ -689,8 +738,8 @@ async function createTranscriptionJob(
         source: source,
         storage_path: storagePath,
         status: "queued",
-        created_by: null,
-        workspace_id: null,
+        created_by: systemUserId,
+        workspace_id: DEFAULT_WORKSPACE_ID,
         lead_id: linkedLeadId || null,
         project_id: linkedProjectId || null,
         ai_metadata: metadata,
@@ -736,7 +785,9 @@ async function createUploadedFile(
     
     const leadIds = linkedLeadId ? [linkedLeadId] : null;
     const projectIds = linkedProjectId ? [linkedProjectId] : null;
-    
+
+    const systemUserId = await getTelegramSystemUserId();
+
     const { data, error } = await supabase
       .from("uploaded_files")
       .insert({
@@ -747,11 +798,11 @@ async function createUploadedFile(
         file_size_bytes: fileSize,
         category: "import",
         processing_status: "uploaded",
-        workspace_id: "00000000-0000-0000-0000-000000000001",
-        created_by: null,
+        workspace_id: DEFAULT_WORKSPACE_ID,
+        uploaded_by: systemUserId,
         lead_ids: leadIds,
         project_ids: projectIds,
-        metadata,
+        ai_metadata: metadata,
       })
       .select("id")
       .single();
