@@ -249,15 +249,33 @@ export default function CockpitDocumentDetail() {
       });
       
       if (docxError) throw docxError;
+      if (!docxData?.docxBase64) throw new Error('DOCX generation failed');
       
       // Then convert to PDF via iLovePDF
       const { data, error } = await supabase.functions.invoke('convert-to-pdf', {
-        body: { document_id: document.id }
+        body: { 
+          docx_base64: docxData.docxBase64,
+          filename: document.title.replace(/[^a-zA-Z0-9]/g, '_'),
+          document_id: document.id,
+          save_to_storage: true
+        }
       });
       
       if (error) throw error;
       
-      if (data?.pdf_url) {
+      // Download the PDF
+      if (data?.pdf_base64) {
+        const blob = new Blob([Uint8Array.from(atob(data.pdf_base64), c => c.charCodeAt(0))], {
+          type: 'application/pdf',
+        });
+        const url = URL.createObjectURL(blob);
+        const link = window.document.createElement('a');
+        link.href = url;
+        link.download = `${document.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
+        toast.success('PDF généré avec succès');
+      } else if (data?.pdf_url) {
         window.open(data.pdf_url, '_blank');
         toast.success('PDF généré avec succès');
       }

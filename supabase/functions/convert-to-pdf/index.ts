@@ -23,7 +23,16 @@ serve(async (req) => {
   }
 
   try {
-    const { document_id, source_type = "docx" } = await req.json();
+    const { 
+      docx_base64, 
+      filename = "document",
+      document_id,
+      save_to_storage = true 
+    } = await req.json();
+
+    if (!docx_base64) {
+      throw new Error("docx_base64 is required");
+    }
 
     const publicKey = Deno.env.get("ILOVEPDF_PUBLIC_KEY");
     const secretKey = Deno.env.get("ILOVEPDF_SECRET_KEY");
@@ -32,17 +41,7 @@ serve(async (req) => {
       throw new Error("iLovePDF API keys not configured");
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Get auth user
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("Authorization required");
-    }
-
-    console.log(`[convert-to-pdf] Starting conversion for document: ${document_id}`);
+    console.log(`[convert-to-pdf] Starting conversion for: ${filename}`);
 
     // 1. Authenticate with iLovePDF
     console.log("[convert-to-pdf] Authenticating with iLovePDF...");
@@ -78,43 +77,21 @@ serve(async (req) => {
     const { server, task } = taskData;
     console.log(`[convert-to-pdf] Task created: ${task} on server: ${server}`);
 
-    // 3. Get the DOCX file from storage
-    console.log("[convert-to-pdf] Fetching DOCX from storage...");
+    // 3. Convert base64 to blob and upload
+    console.log("[convert-to-pdf] Uploading DOCX to iLovePDF...");
     
-    // First get the document metadata
-    const { data: docData, error: docError } = await supabase
-      .from("generated_documents")
-      .select("*")
-      .eq("id", document_id)
-      .single();
-
-    if (docError || !docData) {
-      throw new Error(`Document not found: ${document_id}`);
+    // Decode base64 to bytes
+    const binaryString = atob(docx_base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
     }
-
-    // Check if we have the DOCX file path
-    const docxPath = docData.output_storage_path;
-    if (!docxPath) {
-      throw new Error("No DOCX file found for this document. Generate DOCX first.");
-    }
-
-    // Download DOCX from storage
-    const { data: fileData, error: downloadError } = await supabase.storage
-      .from("generated-documents")
-      .download(docxPath);
-
-    if (downloadError || !fileData) {
-      console.error("[convert-to-pdf] Download error:", downloadError);
-      throw new Error(`Failed to download DOCX: ${downloadError?.message}`);
-    }
-
-    console.log(`[convert-to-pdf] DOCX downloaded: ${fileData.size} bytes`);
-
-    // 4. Upload file to iLovePDF
-    console.log("[convert-to-pdf] Uploading to iLovePDF...");
+    
     const formData = new FormData();
     formData.append("task", task);
-    formData.append("file", new Blob([await fileData.arrayBuffer()]), "document.docx");
+    formData.append("file", new Blob([bytes], { 
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" 
+    }), `${filename}.docx`);
 
     const uploadResponse = await fetch(`https://${server}/v1/upload`, {
       method: "POST",
@@ -131,7 +108,7 @@ serve(async (req) => {
     const uploadData: UploadResponse = await uploadResponse.json();
     console.log(`[convert-to-pdf] File uploaded: ${uploadData.server_filename}`);
 
-    // 5. Process conversion
+    // 4. Process conversion
     console.log("[convert-to-pdf] Processing conversion...");
     const processResponse = await fetch(`https://${server}/v1/process`, {
       method: "POST",
@@ -142,7 +119,7 @@ serve(async (req) => {
       body: JSON.stringify({
         task,
         tool: "officepdf",
-        files: [{ server_filename: uploadData.server_filename, filename: "document.docx" }],
+        files: [{ server_filename: uploadData.server_filename, filename: `${filename}.docx` }],
       }),
     });
 
@@ -154,7 +131,7 @@ serve(async (req) => {
 
     console.log("[convert-to-pdf] Conversion processed");
 
-    // 6. Download converted PDF
+    // 5. Download converted PDF
     console.log("[convert-to-pdf] Downloading converted PDF...");
     const downloadResponse = await fetch(`https://${server}/v1/download/${task}`, {
       method: "GET",
@@ -167,47 +144,55 @@ serve(async (req) => {
       throw new Error(`Download failed: ${downloadResponse.status}`);
     }
 
-    const pdfBlob = await downloadResponse.blob();
-    console.log(`[convert-to-pdf] PDF downloaded: ${pdfBlob.size} bytes`);
+    const pdfArrayBuffer = await downloadResponse.arrayBuffer();
+    const pdfBytes = new Uint8Array(pdfArrayBuffer);
+    console.log(`[convert-to-pdf] PDF downloaded: ${pdfBytes.length} bytes`);
 
-    // 7. Upload PDF to Supabase storage
-    const pdfPath = docxPath.replace(".docx", ".pdf");
-    console.log(`[convert-to-pdf] Uploading PDF to storage: ${pdfPath}`);
+    // 6. Convert to base64 for response
+    let pdfBase64 = "";
+    const chunkSize = 8192;
+    for (let i = 0; i < pdfBytes.length; i += chunkSize) {
+      const chunk = pdfBytes.slice(i, i + chunkSize);
+      pdfBase64 += String.fromCharCode(...chunk);
+    }
+    pdfBase64 = btoa(pdfBase64);
 
-    const { error: uploadStorageError } = await supabase.storage
-      .from("generated-documents")
-      .upload(pdfPath, pdfBlob, {
-        contentType: "application/pdf",
-        upsert: true,
-      });
+    // 7. Optionally save to Supabase storage
+    let publicUrl = null;
+    if (save_to_storage && document_id) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
 
-    if (uploadStorageError) {
-      console.error("[convert-to-pdf] Storage upload error:", uploadStorageError);
-      throw new Error(`Failed to save PDF: ${uploadStorageError.message}`);
+      const storagePath = `documents/${document_id}/${filename}.pdf`;
+      
+      const { error: uploadStorageError } = await supabase.storage
+        .from("generated-documents")
+        .upload(storagePath, new Blob([pdfBytes], { type: "application/pdf" }), {
+          contentType: "application/pdf",
+          upsert: true,
+        });
+
+      if (uploadStorageError) {
+        console.error("[convert-to-pdf] Storage upload error:", uploadStorageError);
+        // Don't fail, still return the base64
+      } else {
+        const { data: urlData } = supabase.storage
+          .from("generated-documents")
+          .getPublicUrl(storagePath);
+        publicUrl = urlData.publicUrl;
+        console.log(`[convert-to-pdf] PDF saved to storage: ${publicUrl}`);
+      }
     }
 
-    // 8. Get public URL
-    const { data: urlData } = supabase.storage
-      .from("generated-documents")
-      .getPublicUrl(pdfPath);
-
-    console.log(`[convert-to-pdf] PDF saved successfully: ${urlData.publicUrl}`);
-
-    // 9. Update document metadata
-    await supabase
-      .from("generated_documents")
-      .update({
-        output_format: "pdf",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", document_id);
+    console.log("[convert-to-pdf] Conversion complete!");
 
     return new Response(
       JSON.stringify({
         success: true,
-        pdf_url: urlData.publicUrl,
-        pdf_path: pdfPath,
-        file_size: pdfBlob.size,
+        pdf_base64: pdfBase64,
+        pdf_url: publicUrl,
+        file_size: pdfBytes.length,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
