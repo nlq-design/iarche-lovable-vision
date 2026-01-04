@@ -4333,7 +4333,7 @@ serve(async (req) => {
         .or(session_id ? `session_id.eq.${session_id}` : `user_id.eq.${safeUserId}`)
         .gte("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false })
-        .limit(5);
+        .limit(3); // Reduced from 5 to avoid context pollution
       
       if (contextMemory && contextMemory.length > 0) {
         activeEntities = contextMemory.map((m: { entity_type: string | null; entity_id: string | null; content: string }) => ({
@@ -4347,24 +4347,45 @@ serve(async (req) => {
       console.error("Active entities fetch error (non-blocking):", err);
     }
     
+    // 3b. TOPIC CHANGE DETECTION - Check if user query mentions different entities
+    // This prevents context bleeding when user changes subject
+    const queryForTopicDetection = userQuery.toLowerCase();
+    const solutionKeywords = ["collaboria", "datalia", "lexia", "projetia", "dialogue", "iarche", "solution"];
+    const mentionsSolution = solutionKeywords.some(kw => queryForTopicDetection.includes(kw));
+    const infoKeywords = ["info", "infos", "information", "parle", "c'est quoi", "qu'est-ce que", "présente", "décris", "détail"];
+    const asksForInfo = infoKeywords.some(kw => queryForTopicDetection.includes(kw));
+    
+    // If query asks about solutions/info and active entities are leads/partners, this is a topic change
+    const isTopicChange = (mentionsSolution || asksForInfo) && 
+      activeEntities.length > 0 && 
+      !activeEntities.some(e => e.type === "solution" || solutionKeywords.some(kw => e.details.toLowerCase().includes(kw)));
+    
+    if (isTopicChange) {
+      console.log("Topic change detected - clearing active entity context to prevent bleeding");
+      activeEntities = []; // Clear irrelevant context
+    }
+    
     // 4. Build memory context string with active entities
     let memoryContext = "";
     
-    // Priority: Active entities first (most important for context continuity)
+    // Active entities shown ONLY if relevant and not a topic change
     if (activeEntities.length > 0) {
-      memoryContext += "\n\n🎯 ENTITÉS ACTIVES (contexte de la conversation en cours) :";
+      memoryContext += "\n\n📋 CONTEXTE RÉCENT (informations potentiellement utiles, mais analyser d'abord la requête actuelle) :";
       for (const entity of activeEntities) {
         memoryContext += `\n- ${entity.details}`;
       }
     }
     
+    // Add explicit instruction to analyze current query first
+    memoryContext += "\n\n⚠️ RÈGLE CRITIQUE : Analyser le message actuel de l'utilisateur en PREMIER. Si l'utilisateur pose une question sur un sujet différent du contexte récent (ex: demande d'info sur une solution alors que le contexte parle d'un RDV), IGNORER le contexte récent et répondre à la question posée.";
+    
     if (recentMemory.length > 0 || relevantMemory.length > 0) {
-      memoryContext += "\n\nMÉMOIRE AGENT (contexte précédent) :";
+      memoryContext += "\n\nMÉMOIRE AGENT (référence uniquement si pertinent) :";
       if (relevantMemory.length > 0) {
-        memoryContext += "\n--- Mémoire pertinente ---\n" + relevantMemory.join("\n");
+        memoryContext += "\n--- Mémoire sémantiquement proche ---\n" + relevantMemory.slice(0, 3).join("\n");
       }
       if (recentMemory.length > 0) {
-        memoryContext += "\n--- Historique récent session ---\n" + recentMemory.slice(0, 8).join("\n");
+        memoryContext += "\n--- Historique récent ---\n" + recentMemory.slice(0, 5).join("\n");
       }
     }
 
@@ -4426,9 +4447,9 @@ serve(async (req) => {
               category: "active_entity",
               entity_type: "lead",
               entity_id: lead.id,
-              content: `Lead actif dans la conversation : ${lead.name} (${lead.email}) - ${lead.company || 'N/A'}`,
-              importance_score: 0.9,
-              expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours (session context)
+              content: `Lead mentionné : ${lead.name} (${lead.email}) - ${lead.company || 'N/A'}`,
+              importance_score: 0.7, // Reduced from 0.9
+              expires_at: new Date(Date.now() + 20 * 60 * 1000).toISOString(), // 20 min (reduced from 2h to prevent bleeding)
             }, workspace_id, safeUserId ?? undefined, session_id);
           }
           
@@ -4447,9 +4468,9 @@ serve(async (req) => {
                 category: "active_entity",
                 entity_type: "partner",
                 entity_id: partner.id,
-                content: `Partenaire actif dans la conversation : ${partner.name} (${partner.email || 'N/A'}) - Type: ${partner.partner_type}`,
-                importance_score: 0.9,
-                expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours
+                content: `Partenaire mentionné : ${partner.name} (${partner.email || 'N/A'}) - Type: ${partner.partner_type}`,
+                importance_score: 0.7, // Reduced from 0.9
+                expires_at: new Date(Date.now() + 20 * 60 * 1000).toISOString(), // 20 min (reduced from 2h)
               }, workspace_id, safeUserId ?? undefined, session_id);
             }
           }
