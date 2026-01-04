@@ -1,16 +1,30 @@
 # CDC Module Viviers - IArche
 
-**Version:** 2.1.0  
-**Statut:** 📋 SPÉCIFICATION VALIDÉE (AI + CAMPAIGNS)  
-**Date:** 2026-01-04  
+**Version:** 2.2.0 FINAL  
+**Statut:** ✅ SPÉCIFICATION VALIDÉE (AI + INSTANTLY CAMPAIGNS)  
+**Date:** 2026-01-05  
 **Auteur:** Lovable AI
+
+---
+
+## TL;DR
+
+Architecture dual-stack email pour le module /viviers :
+
+- **Instantly API v2** → Envoi massif cold outreach (13 domaines satellites en warm-up J15)
+- **Brevo API v3** → Emails transactionnels leads qualifiés (domaines core iarche.fr/.io)
+
+**Décisions MVP :**
+- ✅ Séquences 3 steps incluses (J0, J+3, J+7)
+- ✅ Génération IA prioritaire (prompt `vivier-campaign`)
+- ✅ Validation 1ère campagne, puis mode autonome
 
 ---
 
 ## 1. Vue d'ensemble
 
 ### 1.1 Objectif
-Module **distinct** de gestion des **leads froids** (viviers) permettant d'importer, stocker et qualifier des prospects issus de sources externes (INSEE, Google Business, listes enrichies, CSV).
+Module **distinct** de gestion des **leads froids** (viviers) permettant d'importer, stocker, qualifier et prospecter des entreprises issues de sources externes (INSEE, Google Business, listes enrichies, CSV).
 
 ### 1.2 Architecture modules IArche
 
@@ -42,6 +56,7 @@ Module **distinct** de gestion des **leads froids** (viviers) permettant d'impor
 /viviers (froid)                    /cockpit
       │                                 │
       │ promotion                       │ auto-sync (formulaires)
+      │ (+ campagne Instantly)          │
       ▼                                 ▼
 ┌────────────────────────────────────────────┐
 │              /cockpit/leads                 │
@@ -63,49 +78,180 @@ Module **distinct** de gestion des **leads froids** (viviers) permettant d'impor
 
 ---
 
-## 2. Architecture technique
+## 2. Architecture Email Dual-Stack
 
-### 2.1 Routes
+### 2.1 Vue globale
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         ARCHITECTURE EMAIL                           │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  /VIVIERS (prospects froids)              /COCKPIT (leads chauds)   │
+│  ┌────────────────────────┐               ┌────────────────────────┐│
+│  │ Envoi massif cold      │               │ Emails transactionnels ││
+│  │                        │               │                        ││
+│  │ Provider: INSTANTLY    │               │ Provider: BREVO        ││
+│  │ API: v2                │               │ API: v3                ││
+│  │                        │               │                        ││
+│  │ Domaines:              │               │ Domaines:              ││
+│  │ • equipe-iarche.fr     │               │ • iarche.fr            ││
+│  │ • solutions-iarche.fr  │               │ • iarche.io            ││
+│  │ • iarche-labs.fr       │               │                        ││
+│  │ • + 10 autres          │               │ (DNS déjà configuré)   ││
+│  │                        │               │                        ││
+│  │ Volume: 30/j/domaine   │               │ Volume: illimité       ││
+│  │ Total: ~390/j actuel   │               │                        ││
+│  │ Cible: 4000-6500/j     │               │                        ││
+│  └────────────────────────┘               └────────────────────────┘│
+│                                                                      │
+│  ⚠️ RÈGLE ABSOLUE : iarche.fr et iarche.io JAMAIS cold outreach    │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 2.2 Stack Instantly (Cold Outreach)
+
+| Paramètre | Valeur |
+|-----------|--------|
+| API Version | V2 |
+| Documentation | https://developer.instantly.ai/api/v2 |
+| Auth | Bearer Token |
+| Plan requis | Growth minimum |
+
+**Endpoints clés :**
+
+| Endpoint | Méthode | Usage |
+|----------|---------|-------|
+| `/api/v2/leads` | POST | Ajouter prospects à campagne |
+| `/api/v2/leads/list` | POST | Lister/rechercher leads |
+| `/api/v2/campaigns` | POST | Créer campagne |
+| `/api/v2/campaigns` | GET | Récupérer liste campagnes |
+| `/api/v2/emails` | GET | Récupérer emails envoyés |
+| Webhooks | — | Réponses, bounces, opens |
+
+**Exemple création lead :**
+
+```javascript
+const response = await fetch('https://api.instantly.ai/api/v2/leads', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${INSTANTLY_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    campaign_id: 'uuid-campaign',
+    email: 'prospect@example.com',
+    first_name: 'Jean',
+    last_name: 'Dupont',
+    company_name: 'ACME SAS',
+    custom_variables: {
+      sector: 'IT',
+      size: 'PME',
+      region: 'Nouvelle-Aquitaine'
+    }
+  })
+});
+```
+
+### 2.3 Stack Brevo (Transactionnel)
+
+| Paramètre | Valeur |
+|-----------|--------|
+| API Version | V3 |
+| Documentation | https://developers.brevo.com/ |
+| Auth | API Key header |
+| Domaines configurés | iarche.fr, iarche.io |
+
+**Usage Cockpit uniquement :**
+- Confirmations RDV
+- Relances leads qualifiés
+- Notifications pipeline
+- Newsletters opt-in
+
+### 2.4 État Infrastructure Domaines
+
+**Domaines Satellites (Instantly) :**
+
+| Domaine | Statut | Volume actuel | Cible S+4 |
+|---------|--------|---------------|-----------|
+| equipe-iarche.fr | 🟢 Warm-up J15 | 30/j | 200/j |
+| solutions-iarche.fr | 🟢 Warm-up J15 | 30/j | 200/j |
+| iarche-labs.* | 🟢 Warm-up J15 | 30/j | 200/j |
+| + 10 autres | 🟢 Warm-up J15 | 30/j | 200/j |
+| **TOTAL** | 13 domaines | ~390/j | ~2600/j |
+
+**Domaines Core (Brevo) :**
+
+| Domaine | Statut | Usage |
+|---------|--------|-------|
+| iarche.fr | 🟢 DNS OK | Transactionnel |
+| iarche.io | 🟢 DNS OK | Transactionnel |
+
+---
+
+## 3. Architecture technique
+
+### 3.1 Routes
 
 | Route | Description | Composant | Layout |
 |-------|-------------|-----------|--------|
 | `/viviers` | Liste des leads froids | `Viviers.tsx` | `VivierLayout` |
 | `/viviers/:id` | Détail d'un lead froid | `VivierDetail.tsx` | `VivierLayout` |
 | `/viviers/import` | Interface d'import | `VivierImport.tsx` | `VivierLayout` |
+| `/viviers/campaigns` | Gestion campagnes | `VivierCampaigns.tsx` | `VivierLayout` |
+| `/viviers/campaigns/:id` | Détail campagne | `VivierCampaignDetail.tsx` | `VivierLayout` |
 
-### 2.2 Composants
+### 3.2 Composants
 
 ```
 src/
 ├── components/
 │   └── viviers/
-│       ├── VivierLayout.tsx         # Layout dédié module
-│       ├── VivierHeader.tsx         # Header minimaliste
-│       ├── VivierTable.tsx          # Table avec pagination serveur
-│       ├── VivierFilters.tsx        # Filtres avancés
-│       ├── VivierDetailSheet.tsx    # Vue détail
-│       ├── VivierImportWizard.tsx   # Wizard import multi-étapes
-│       ├── VivierScoreBadge.tsx     # Affichage score coloré
-│       └── ProtectedVivierRoute.tsx # Auth guard
+│       ├── VivierLayout.tsx            # Layout dédié module
+│       ├── VivierHeader.tsx            # Header minimaliste
+│       ├── VivierTable.tsx             # Table avec pagination serveur
+│       ├── VivierFilters.tsx           # Filtres avancés
+│       ├── VivierDetailSheet.tsx       # Vue détail
+│       ├── VivierImportWizard.tsx      # Wizard import multi-étapes
+│       ├── VivierScoreBadge.tsx        # Affichage score coloré
+│       ├── ProtectedVivierRoute.tsx    # Auth guard
+│       │
+│       ├── campaigns/
+│       │   ├── CampaignComposer.tsx    # Éditeur campagne
+│       │   ├── CampaignPreview.tsx     # Prévisualisation email
+│       │   ├── CampaignSequence.tsx    # Éditeur séquence 3 steps
+│       │   ├── CampaignStats.tsx       # Dashboard statistiques
+│       │   └── DomainSelector.tsx      # Sélection domaine envoi
+│       │
+│       └── ai/
+│           ├── VivierAIChat.tsx        # Chat agent IA
+│           └── VivierAIActions.tsx     # Boutons actions rapides
 │
 ├── hooks/
 │   └── viviers/
-│       ├── useViviers.ts            # CRUD + pagination
-│       ├── useVivierImport.ts       # Import CSV/XLSX/paste
-│       ├── useVivierPromotion.ts    # Promotion → leads
-│       └── useVivierScoring.ts      # Calcul scoring auto
+│       ├── useViviers.ts               # CRUD + pagination
+│       ├── useVivierImport.ts          # Import CSV/XLSX/paste
+│       ├── useVivierPromotion.ts       # Promotion → leads
+│       ├── useVivierScoring.ts         # Calcul scoring auto
+│       ├── useVivierCampaigns.ts       # CRUD campagnes
+│       └── useInstantlySync.ts         # Sync Instantly API
 │
 └── pages/
     └── viviers/
-        ├── Viviers.tsx              # Liste principale
-        ├── VivierDetail.tsx         # Page détail
-        └── VivierImport.tsx         # Page import
+        ├── Viviers.tsx                 # Liste principale
+        ├── VivierDetail.tsx            # Page détail
+        ├── VivierImport.tsx            # Page import
+        ├── VivierCampaigns.tsx         # Liste campagnes
+        └── VivierCampaignDetail.tsx    # Détail campagne
 ```
 
-### 2.3 Schéma de données
+### 3.3 Schéma de données complet
 
 ```sql
--- Table principale des viviers (leads froids)
+-- ============================================
+-- TABLE 1: VIVIERS (leads froids)
+-- ============================================
 CREATE TABLE public.viviers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   
@@ -124,6 +270,8 @@ CREATE TABLE public.viviers (
   
   -- Contact principal
   contact_name TEXT,
+  contact_first_name TEXT,
+  contact_last_name TEXT,
   contact_position TEXT,
   email TEXT,
   phone TEXT,
@@ -154,6 +302,10 @@ CREATE TABLE public.viviers (
   promoted_to_lead_id UUID,            -- FK vers leads si promu
   promoted_at TIMESTAMPTZ,
   
+  -- RGPD
+  consent_marketing BOOLEAN DEFAULT false,
+  unsubscribed_at TIMESTAMPTZ,
+  
   -- Métadonnées
   raw_data JSONB DEFAULT '{}',         -- Données brutes du CSV
   notes TEXT,
@@ -175,8 +327,11 @@ CREATE INDEX idx_viviers_status ON public.viviers(status);
 CREATE INDEX idx_viviers_source ON public.viviers(source);
 CREATE INDEX idx_viviers_score ON public.viviers(cold_score DESC);
 CREATE INDEX idx_viviers_batch ON public.viviers(batch_id);
+CREATE INDEX idx_viviers_consent ON public.viviers(consent_marketing);
 
--- Table des imports (batches)
+-- ============================================
+-- TABLE 2: VIVIER_IMPORTS (lots d'import)
+-- ============================================
 CREATE TABLE public.vivier_imports (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   filename TEXT NOT NULL,
@@ -194,9 +349,159 @@ CREATE TABLE public.vivier_imports (
   workspace_id UUID DEFAULT '00000000-0000-0000-0000-000000000001'::uuid
 );
 
--- RLS
+-- ============================================
+-- TABLE 3: EMAIL_DOMAINS (domaines configurables)
+-- ============================================
+CREATE TABLE public.email_domains (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  domain VARCHAR(255) UNIQUE NOT NULL,
+  
+  -- Type
+  domain_type VARCHAR(50) NOT NULL,    -- 'satellite' | 'core'
+  provider VARCHAR(50) NOT NULL,       -- 'instantly' | 'brevo'
+  
+  -- Identité
+  from_name TEXT NOT NULL,             -- 'IArche' / 'Équipe IArche'
+  from_email TEXT NOT NULL,            -- 'contact@equipe-iarche.fr'
+  reply_to TEXT,
+  
+  -- Warm-up tracking (satellites only)
+  warmup_started_at DATE,
+  warmup_day INTEGER DEFAULT 0,        -- Jour courant du warm-up
+  warmup_daily_limit INTEGER DEFAULT 30,
+  warmup_status VARCHAR(50) DEFAULT 'warming', -- 'warming', 'ready', 'paused'
+  
+  -- DNS status
+  spf_valid BOOLEAN DEFAULT FALSE,
+  dkim_valid BOOLEAN DEFAULT FALSE,
+  dmarc_valid BOOLEAN DEFAULT FALSE,
+  last_dns_check TIMESTAMPTZ,
+  
+  -- Usage
+  is_active BOOLEAN DEFAULT TRUE,
+  daily_sent_count INTEGER DEFAULT 0,
+  last_sent_at TIMESTAMPTZ,
+  last_reset_date DATE,                -- Pour reset quotidien du compteur
+  
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 4: VIVIER_CAMPAIGNS (campagnes cold)
+-- ============================================
+CREATE TABLE public.vivier_campaigns (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  status VARCHAR(50) DEFAULT 'draft',  -- 'draft', 'scheduled', 'active', 'paused', 'completed'
+  
+  -- Instantly sync
+  instantly_campaign_id UUID,
+  instantly_status VARCHAR(50),
+  instantly_account_id TEXT,           -- Compte Instantly utilisé
+  
+  -- Contenu
+  subject VARCHAR(255),
+  body_html TEXT,
+  body_text TEXT,
+  preview_text VARCHAR(150),
+  
+  -- Séquence multi-steps
+  sequence_steps JSONB DEFAULT '[]',   -- [{step: 1, delay_days: 0, subject, body}, ...]
+  
+  -- Ciblage
+  segment_criteria JSONB,              -- Critères de sélection viviers
+  vivier_ids UUID[],                   -- IDs manuellement sélectionnés
+  total_recipients INTEGER DEFAULT 0,
+  
+  -- Config envoi
+  domain_id UUID REFERENCES email_domains(id),
+  send_schedule JSONB,                 -- {days: ['mon','tue'...], hours: {from: '09:00', to: '18:00'}}
+  daily_limit INTEGER DEFAULT 30,
+  
+  -- AI metadata
+  ai_generated BOOLEAN DEFAULT FALSE,
+  ai_prompt_slug TEXT,                 -- 'vivier-campaign'
+  ai_metadata JSONB,
+  
+  -- Stats (sync webhook)
+  sent_count INTEGER DEFAULT 0,
+  delivered_count INTEGER DEFAULT 0,
+  open_count INTEGER DEFAULT 0,
+  open_rate NUMERIC(5,2) DEFAULT 0,
+  reply_count INTEGER DEFAULT 0,
+  reply_rate NUMERIC(5,2) DEFAULT 0,
+  bounce_count INTEGER DEFAULT 0,
+  bounce_rate NUMERIC(5,2) DEFAULT 0,
+  unsubscribe_count INTEGER DEFAULT 0,
+  
+  -- Timestamps
+  scheduled_at TIMESTAMPTZ,
+  started_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  created_by UUID,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  workspace_id UUID DEFAULT '00000000-0000-0000-0000-000000000001'::uuid
+);
+
+-- ============================================
+-- TABLE 5: VIVIER_CAMPAIGN_RECIPIENTS (logs envoi)
+-- ============================================
+CREATE TABLE public.vivier_campaign_recipients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  campaign_id UUID REFERENCES vivier_campaigns(id) ON DELETE CASCADE,
+  vivier_id UUID REFERENCES viviers(id) ON DELETE SET NULL,
+  
+  -- Données envoi (snapshot)
+  email VARCHAR(255) NOT NULL,
+  first_name VARCHAR(100),
+  last_name VARCHAR(100),
+  company_name VARCHAR(255),
+  custom_variables JSONB,
+  
+  -- Instantly sync
+  instantly_lead_id UUID,
+  
+  -- Statut par step
+  current_step INTEGER DEFAULT 1,
+  status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'sent', 'opened', 'replied', 'bounced', 'unsubscribed'
+  
+  -- Timestamps events
+  sent_at TIMESTAMPTZ,
+  delivered_at TIMESTAMPTZ,
+  opened_at TIMESTAMPTZ,
+  replied_at TIMESTAMPTZ,
+  bounced_at TIMESTAMPTZ,
+  bounce_type VARCHAR(20),             -- 'hard', 'soft'
+  bounce_reason TEXT,
+  unsubscribed_at TIMESTAMPTZ,
+  
+  -- Promotion vers leads
+  promoted_to_lead_id UUID REFERENCES leads(id),
+  promoted_at TIMESTAMPTZ,
+  promotion_reason TEXT,               -- 'reply_interested', 'manual'
+  
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Index performance
+CREATE INDEX idx_vcr_campaign ON vivier_campaign_recipients(campaign_id);
+CREATE INDEX idx_vcr_vivier ON vivier_campaign_recipients(vivier_id);
+CREATE INDEX idx_vcr_status ON vivier_campaign_recipients(status);
+CREATE INDEX idx_vcr_email ON vivier_campaign_recipients(email);
+CREATE INDEX idx_campaigns_status ON vivier_campaigns(status);
+CREATE INDEX idx_domains_provider ON email_domains(provider);
+
+-- ============================================
+-- RLS POLICIES
+-- ============================================
 ALTER TABLE public.viviers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vivier_imports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.email_domains ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vivier_campaigns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vivier_campaign_recipients ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Authenticated users can manage viviers"
   ON public.viviers FOR ALL
@@ -209,73 +514,31 @@ CREATE POLICY "Authenticated users can manage vivier_imports"
   TO authenticated
   USING (true)
   WITH CHECK (true);
-```
 
-### 2.4 Hooks
+CREATE POLICY "Authenticated users can manage email_domains"
+  ON public.email_domains FOR ALL
+  TO authenticated
+  USING (true)
+  WITH CHECK (true);
 
-```typescript
-// src/hooks/viviers/useViviers.ts
-export function useViviers() {
-  // CRUD viviers
-  // Filtrage avancé
-  // Pagination serveur (100k lignes)
-  // Stats
-}
+CREATE POLICY "Authenticated users can manage vivier_campaigns"
+  ON public.vivier_campaigns FOR ALL
+  TO authenticated
+  USING (true)
+  WITH CHECK (true);
 
-// src/hooks/viviers/useVivierImport.ts
-export function useVivierImport() {
-  // Upload CSV/XLSX
-  // Paste depuis tableur
-  // Mapping colonnes
-  // Import batch
-  // Détection doublons
-}
-
-// src/hooks/viviers/useVivierPromotion.ts
-export function useVivierPromotion() {
-  // Promotion vivier → lead (suppression après)
-  // Enrichissement si email existe dans leads
-  // Bulk promotion
-}
-
-// src/hooks/viviers/useVivierScoring.ts
-export function useVivierScoring() {
-  // Calcul automatique du score
-  // Règles configurables
-}
-```
-
-### 2.3 Hooks
-
-```typescript
-// src/hooks/cockpit/useCockpitViviers.ts
-export function useCockpitViviers() {
-  // CRUD viviers
-  // Filtrage avancé
-  // Pagination (100k lignes)
-  // Stats
-}
-
-// src/hooks/cockpit/useVivierImport.ts
-export function useVivierImport() {
-  // Upload CSV
-  // Mapping colonnes
-  // Import batch
-  // Détection doublons
-}
-
-// src/hooks/cockpit/useVivierPromotion.ts
-export function useVivierPromotion() {
-  // Promotion vivier → lead
-  // Bulk promotion
-}
+CREATE POLICY "Authenticated users can manage vivier_campaign_recipients"
+  ON public.vivier_campaign_recipients FOR ALL
+  TO authenticated
+  USING (true)
+  WITH CHECK (true);
 ```
 
 ---
 
-## 3. Fonctionnalités
+## 4. Fonctionnalités
 
-### 3.1 Import multi-format
+### 4.1 Import multi-format
 
 **Formats supportés:**
 - CSV (séparateur auto-détecté)
@@ -298,7 +561,7 @@ export function useVivierPromotion() {
 | Essentiels | company_name, siret, email, phone |
 | Adresse | address, postal_code, city, region |
 | Business | industry, company_size, revenue_range, employee_count |
-| Contact | contact_name, contact_position, linkedin_url |
+| Contact | contact_first_name, contact_last_name, contact_position, linkedin_url |
 
 **Détection doublons:**
 - Par email (prioritaire)
@@ -308,7 +571,7 @@ export function useVivierPromotion() {
 **Gestion doublons vivier ↔ leads existants:**
 > Si un email existe déjà dans `leads`, le vivier **enrichit le lead** existant (merge des données manquantes) au lieu de créer un doublon.
 
-### 3.2 Liste des viviers
+### 4.2 Liste des viviers
 
 **Affichage:**
 - Table avec pagination serveur (50/page)
@@ -332,13 +595,15 @@ export function useVivierPromotion() {
 - Changement de statut
 - Attribution de tags
 - Export sélection
+- **Ajouter à campagne**
 
-### 3.3 Détail vivier
+### 4.3 Détail vivier
 
 **Onglets:**
 1. **Informations** - Données entreprise et contact
 2. **Historique** - Actions effectuées
-3. **Notes** - Notes libres
+3. **Campagnes** - Participation aux campagnes
+4. **Notes** - Notes libres
 
 **Actions:**
 - Éditer les informations
@@ -347,7 +612,7 @@ export function useVivierPromotion() {
 - Marquer invalide
 - Supprimer
 
-### 3.4 Promotion vers Leads
+### 4.4 Promotion vers Leads
 
 **Workflow:**
 ```
@@ -366,8 +631,9 @@ Vivier (froid) ──promotion──▶ Lead (qualifié)
 - Tags
 - Notes
 - raw_data (données brutes CSV originales)
+- Historique campagnes (en metadata)
 
-### 3.5 Scoring automatique
+### 4.5 Scoring automatique
 
 **Critères de scoring (0-100):**
 
@@ -391,57 +657,135 @@ Vivier (froid) ──promotion──▶ Lead (qualifié)
 
 ---
 
-## 4. UI/UX
+## 5. Module Campagnes Email
 
-### 4.1 Accès au module /viviers
-
-**Depuis /cockpit:** Badge orange en haut à droite du header Cockpit
+### 5.1 Flow utilisateur
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ COCKPIT                              [🟠 Viviers (12.4k)] ──┼──▶ /viviers
-├─────────────────────────────────────────────────────────────┤
-│ Sidebar                              Content                 │
-│ ├── Dashboard                                               │
-│ ├── Pipeline                                                │
-│ ├── Leads                                                   │
-│ └── ...                                                     │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                    FLOW CAMPAGNE /VIVIERS                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  [1] SEGMENTER                                                       │
+│      │                                                               │
+│      ├── Filtres manuels (secteur, taille, région)                  │
+│      └── IA: "Cible les PME IT en Nouvelle-Aquitaine"               │
+│             → vivier-target tool → 2,340 prospects                  │
+│                                                                      │
+│  [2] COMPOSER CAMPAGNE                                               │
+│      │                                                               │
+│      ├── Éditeur intégré (subject + body)                           │
+│      ├── Variables: {{first_name}}, {{company}}, {{industry}}       │
+│      ├── Séquence multi-step :                                       │
+│      │   • Step 1: J0 - Email initial                               │
+│      │   • Step 2: J+3 - Relance courte                             │
+│      │   • Step 3: J+7 - Break-up email                             │
+│      └── IA: vivier-campaign prompt → génère contenu                │
+│                                                                      │
+│  [3] PRÉVISUALISER                                                   │
+│      │                                                               │
+│      ├── Aperçu email avec variables résolues                       │
+│      ├── Estimation volume (X emails sur Y jours)                   │
+│      └── Alerte si quota domaines dépassé                           │
+│                                                                      │
+│  [4] LANCER                                                          │
+│      │                                                               │
+│      └── POST Instantly API:                                         │
+│          • Créer campagne                                            │
+│          • Ajouter leads avec custom_variables                      │
+│          • Activer envoi                                             │
+│                                                                      │
+│  [5] DASHBOARD STATS                                                 │
+│      │                                                               │
+│      ├── Sync via webhooks Instantly                                │
+│      ├── Métriques: envoyés, ouverts, réponses, bounces             │
+│      └── Action: réponse positive → auto-promote /cockpit           │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-**Module /viviers (layout dédié):**
+### 5.2 Séquence 3 Steps (MVP)
 
+```json
+{
+  "sequence_steps": [
+    {
+      "step": 1,
+      "delay_days": 0,
+      "subject": "{{company}} - Opportunité transformation digitale",
+      "body": "Bonjour {{first_name}},\n\nJ'accompagne les {{industry}} comme {{company}}..."
+    },
+    {
+      "step": 2,
+      "delay_days": 3,
+      "subject": "Re: {{company}}",
+      "body": "{{first_name}},\n\nJe me permets de relancer mon message..."
+    },
+    {
+      "step": 3,
+      "delay_days": 7,
+      "subject": "Dernière tentative - {{company}}",
+      "body": "{{first_name}},\n\nJe comprends que vous êtes probablement très occupé..."
+    }
+  ]
+}
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ VIVIERS                    [Import] [← Retour Cockpit]       │
-│ ─────────────────────────────────────────────────────────── │
-│                                                              │
-│  Filtres: [Source ▼] [Score ▼] [Région ▼] [Recherche...]    │
-│                                                              │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │ Table (pagination serveur)                              │ │
-│  │ Entreprise | Contact | Score | Source | Actions         │ │
-│  └────────────────────────────────────────────────────────┘ │
-│                                                              │
-│  [Précédent] Page 1/2000 [Suivant]                          │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+
+### 5.3 Webhooks Instantly
+
+**Events à écouter :**
+
+| Event | Action |
+|-------|--------|
+| `email.sent` | Update status → 'sent' |
+| `email.opened` | Update status → 'opened', +1 open_count |
+| `email.replied` | Update status → 'replied', +1 reply_count |
+| `email.bounced` | Update status → 'bounced', +1 bounce_count, flag vivier invalid |
+| `lead.interested` | Auto-promote vers /cockpit/leads |
+| `lead.unsubscribed` | Update vivier unsubscribed_at |
+
+**Endpoint webhook :**
+
+```typescript
+// POST /api/webhooks/instantly
+async function handleInstantlyWebhook(req: Request) {
+  const signature = req.headers.get('x-instantly-signature');
+  
+  // Validate signature
+  if (!validateSignature(signature, req.body)) {
+    return new Response('Invalid signature', { status: 401 });
+  }
+  
+  const { event_type, data } = await req.json();
+  
+  switch (event_type) {
+    case 'email.replied':
+      await updateRecipientStatus(data.lead_id, 'replied');
+      await incrementCampaignStat(data.campaign_id, 'reply_count');
+      
+      // Auto-promote si intéressé
+      if (data.interest_status === 'interested') {
+        await promoteToLead(data.lead_id, 'reply_interested');
+      }
+      break;
+      
+    case 'email.bounced':
+      await updateRecipientStatus(data.lead_id, 'bounced');
+      await flagVivierInvalid(data.email);
+      break;
+    
+    // ... autres events
+  }
+  
+  return new Response(JSON.stringify({ received: true }), { status: 200 });
+}
 ```
-
-### 4.2 Design
-
-- **VivierLayout:** Header minimaliste + contenu (pas de sidebar lourde)
-- **Liste:** Table dense avec infos essentielles
-- **Score visuel:** Jauge colorée (🔴 froid → 🟠 tiède → 🟢 chaud)
-- **Statut badges:** Couleurs distinctives par statut
-- **Import:** Wizard multi-étapes
-- **Badge header Cockpit:** Marqueur orange avec compteur cliquable
 
 ---
 
-## 5. Intégration AI Agent
+## 6. Intégration AI Agent
 
-### 5.1 Architecture AI-Powered
+### 6.1 Architecture AI-Powered
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -452,31 +796,37 @@ Vivier (froid) ──promotion──▶ Lead (qualifié)
 │  ┌─────────────────────────────────────────────────────────────────┐│
 │  │ Prompts Viviers (catégorie: vivier)                             ││
 │  │                                                                  ││
-│  │ • vivier-score   : Scoring intelligent multi-critères           ││
-│  │ • vivier-target  : Ciblage/segmentation par profil              ││
-│  │ • vivier-clean   : Détection doublons/invalides                 ││
-│  │ • vivier-enrich  : Enrichissement Pappers/web                   ││
+│  │ • vivier-score    : Scoring intelligent multi-critères          ││
+│  │ • vivier-target   : Ciblage/segmentation par profil             ││
+│  │ • vivier-clean    : Détection doublons/invalides                ││
+│  │ • vivier-enrich   : Enrichissement Pappers/web                  ││
+│  │ • vivier-campaign : Génération séquence email cold              ││
 │  └─────────────────────────────────────────────────────────────────┘│
 │                                                                      │
 │  ai-agent-orchestrator (Tools Viviers)                               │
 │  ┌─────────────────────────────────────────────────────────────────┐│
-│  │ search_viviers     : Recherche sémantique + filtres             ││
-│  │ score_viviers      : Scoring batch (100k lignes)                ││
-│  │ target_viviers     : Sélection par segment                      ││
-│  │ clean_viviers      : Nettoyage doublons/invalides               ││
-│  │ enrich_viviers     : Enrichissement Pappers batch               ││
-│  │ export_viviers     : Export CSV/XLSX segmenté                   ││
-│  │ promote_viviers    : Promotion batch → leads                    ││
-│  │ update_viviers     : Modification batch (tags, notes, status)   ││
-│  │ delete_viviers     : Suppression batch                          ││
-│  │ annotate_viviers   : Ajout notes/tags AI                        ││
-│  │ stats_viviers      : Statistiques agrégées                      ││
+│  │ search_viviers       : Recherche sémantique + filtres           ││
+│  │ score_viviers        : Scoring batch (100k lignes)              ││
+│  │ target_viviers       : Sélection par segment                    ││
+│  │ clean_viviers        : Nettoyage doublons/invalides             ││
+│  │ enrich_viviers       : Enrichissement Pappers batch             ││
+│  │ export_viviers       : Export CSV/XLSX segmenté                 ││
+│  │ promote_viviers      : Promotion batch → leads                  ││
+│  │ update_viviers       : Modification batch (tags, notes, status) ││
+│  │ delete_viviers       : Suppression batch                        ││
+│  │ annotate_viviers     : Ajout notes/tags AI                      ││
+│  │ stats_viviers        : Statistiques agrégées                    ││
+│  │ create_campaign      : Crée campagne Instantly                  ││
+│  │ preview_campaign     : Prévisualise email                       ││
+│  │ launch_campaign      : Lance envoi campagne                     ││
+│  │ stats_campaigns      : Stats des campagnes                      ││
+│  │ promote_recipient    : Promeut répondant → lead                 ││
 │  └─────────────────────────────────────────────────────────────────┘│
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### 5.2 Interface utilisateur hybride
+### 6.2 Interface utilisateur hybride
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -485,7 +835,7 @@ Vivier (froid) ──promotion──▶ Lead (qualifié)
 │                                                                      │
 │  ┌─────────────────────────────────────────────────────────────────┐│
 │  │ 🤖 Actions IA rapides:                                          ││
-│  │ [Score tout] [Cibler PME IT] [Nettoyer] [Enrichir] [Exporter]   ││
+│  │ [Score tout] [Cibler PME IT] [Nettoyer] [Créer Campagne]        ││
 │  └─────────────────────────────────────────────────────────────────┘│
 │                                                                      │
 │  Filtres: [Source ▼] [Score ▼] [Région ▼] [Recherche...]            │
@@ -495,17 +845,17 @@ Vivier (froid) ──promotion──▶ Lead (qualifié)
 │  │ ☑ | Entreprise | Contact | Score | Source | Actions            ││
 │  └─────────────────────────────────────────────────────────────────┘│
 │                                                                      │
-│  [Sélection: 2,340] → [🤖 Traiter avec IA]                          │
+│  [Sélection: 2,340] → [📧 Créer Campagne] [🤖 Traiter avec IA]      │
 │                                                                      │
 │  ┌─────────────────────────────────────────────────────────────────┐│
 │  │ 💬 Agent IA Viviers                                      [−][×] ││
 │  │ ─────────────────────────────────────────────────────────────── ││
-│  │ > Cible les entreprises tech en IDF avec +50 employés          ││
+│  │ > Crée une campagne pour les PME tech en IDF                   ││
 │  │                                                                  ││
-│  │ 🤖 J'ai trouvé 1,234 entreprises correspondantes.               ││
-│  │    Voulez-vous que je les score et exporte ?                    ││
+│  │ 🤖 J'ai préparé une campagne 3 steps pour 1,234 prospects.      ││
+│  │    Voulez-vous prévisualiser avant lancement ?                  ││
 │  │                                                                  ││
-│  │ [Oui, score et exporte] [Afficher dans la liste] [Annuler]      ││
+│  │ [Prévisualiser] [Lancer maintenant] [Modifier ciblage]          ││
 │  │                                                                  ││
 │  │ [Écrire une commande...]                              [Envoyer] ││
 │  └─────────────────────────────────────────────────────────────────┘│
@@ -513,31 +863,34 @@ Vivier (froid) ──promotion──▶ Lead (qualifié)
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### 5.3 Mode autonome
+### 6.3 Mode autonome
 
 **Principe:** L'IA peut exécuter des actions batch sans validation manuelle.
 
 ```typescript
 // Configuration mode autonome
 const AI_VIVIER_CONFIG = {
-  autonomousMode: true,           // Mode pilote auto activé
-  maxBatchSize: 10000,            // Limite par opération
+  autonomousMode: true,
+  maxBatchSize: 10000,
   allowedActions: [
     'score',                      // Scoring illimité
     'target',                     // Ciblage illimité
     'annotate',                   // Tags/notes illimité
     'export',                     // Export illimité
+    'preview_campaign',           // Preview illimité
   ],
   requireConfirmation: [
     'promote',                    // Promotion → leads = confirmation
     'delete',                     // Suppression = confirmation
     'enrich',                     // Enrichissement Pappers = coût API
+    'launch_campaign',            // Lancement campagne = confirmation (sauf après 1ère)
   ],
-  logging: true,                  // Log toutes les actions AI
+  firstCampaignRequiresApproval: true,  // Après 1ère campagne validée → autonome
+  logging: true,
 };
 ```
 
-### 5.4 Prompts IA (ai_prompts table)
+### 6.4 Prompts IA (ai_prompts table)
 
 ```sql
 -- Prompts à insérer dans ai_prompts
@@ -552,14 +905,14 @@ Score chaque vivier de 0 à 100 selon:
 - Localisation (IDF, grandes métropoles): 15 pts
 - Signaux business (site web, LinkedIn): 10 pts
 Retourne un JSON avec score et détails.', 
-'{"model": "google/gemini-2.5-flash", "temperature": 0.1}'),
+'{"model": "google/gemini-2.5-flash", "temperature": 0.1, "max_tokens": 2000}'),
 
 ('vivier-target', 'Ciblage Viviers', 'vivier',
 'Tu es un expert en segmentation commerciale B2B.
 Analyse la requête utilisateur et génère les critères de filtrage SQL.
 Critères disponibles: source, company_size, industry, region, city, cold_score, tags.
 Retourne un JSON avec les filtres et une estimation du nombre de résultats.',
-'{"model": "google/gemini-2.5-flash", "temperature": 0.2}'),
+'{"model": "google/gemini-2.5-flash", "temperature": 0.2, "max_tokens": 2000}'),
 
 ('vivier-clean', 'Nettoyage Viviers', 'vivier',
 'Tu es un expert en qualité de données B2B.
@@ -569,7 +922,7 @@ Identifie les entrées à nettoyer:
 - Données incohérentes (SIRET invalide, téléphone mal formaté)
 - Entreprises fermées ou inactives
 Retourne la liste des IDs à supprimer/merger avec justification.',
-'{"model": "google/gemini-2.5-flash", "temperature": 0.1}'),
+'{"model": "google/gemini-2.5-flash", "temperature": 0.1, "max_tokens": 4000}'),
 
 ('vivier-enrich', 'Enrichissement Viviers', 'vivier',
 'Tu es un expert en enrichissement de données entreprise.
@@ -578,14 +931,39 @@ Pour chaque SIRET, récupère via Pappers:
 - Effectifs, chiffre d''affaires
 - Dirigeants, secteur NAF
 Priorise les viviers avec score > 50 et données incomplètes.',
-'{"model": "google/gemini-2.5-flash", "temperature": 0.1}');
+'{"model": "google/gemini-2.5-flash", "temperature": 0.1, "max_tokens": 4000}'),
+
+('vivier-campaign', 'Génération Campagne Vivier', 'vivier',
+'Tu es un expert en copywriting B2B et cold email marketing.
+Génère une séquence email de prospection personnalisée pour le segment fourni.
+
+Règles:
+- 3 emails: Initial (J0), Relance (J+3), Break-up (J+7)
+- Objet < 50 caractères, accrocheur, sans spam words
+- Corps concis (100-150 mots max par email)
+- Ton professionnel mais humain, pas corporate
+- Personnalisation avec {{first_name}}, {{company}}, {{industry}}
+- CTA clair et unique par email
+- Pas de pièces jointes mentionnées
+- Signature courte: Prénom + IArche
+
+Retourne JSON:
+{
+  "sequence_steps": [
+    {"step": 1, "delay_days": 0, "subject": "...", "body": "..."},
+    {"step": 2, "delay_days": 3, "subject": "...", "body": "..."},
+    {"step": 3, "delay_days": 7, "subject": "...", "body": "..."}
+  ]
+}',
+'{"model": "google/gemini-2.5-flash", "temperature": 0.7, "max_tokens": 4000}');
 ```
 
-### 5.5 Tools Orchestrator
+### 6.5 Tools Orchestrator (complet)
 
 ```typescript
-// Définition des tools pour ai-agent-orchestrator
+// Définition complète des tools pour ai-agent-orchestrator
 const VIVIER_TOOLS = [
+  // === GESTION VIVIERS ===
   {
     name: "search_viviers",
     description: "Recherche sémantique dans les viviers",
@@ -640,7 +1018,8 @@ const VIVIER_TOOLS = [
     name: "promote_viviers",
     description: "Promeut des viviers vers la table leads",
     parameters: {
-      vivier_ids: "string[] - IDs à promouvoir"
+      vivier_ids: "string[] - IDs à promouvoir",
+      source: "string - Raison ('campaign_reply', 'manual', 'scoring')"
     }
   },
   {
@@ -664,252 +1043,56 @@ const VIVIER_TOOLS = [
     parameters: {
       group_by: "string - Champ de regroupement (source, region, score_range)"
     }
-  }
-];
-```
-
----
-
-## 6. Performance
-
-### 6.1 Optimisations pour 100k+ lignes
-
-1. **Pagination serveur** - Jamais charger toutes les données
-2. **Index SQL** - Sur tous les champs de recherche/filtre
-3. **Debounce recherche** - 300ms avant requête
-4. **Virtualisation liste** - Si scroll infini demandé
-5. **Cache React Query** - staleTime: 5min pour les stats
-
-### 6.2 Import gros fichiers
-
-1. **Chunking** - Import par lots de 1000 lignes
-2. **Worker/Edge Function** - Traitement asynchrone
-3. **Progress feedback** - % completion en temps réel
-
-### 6.3 Actions AI batch
-
-1. **Streaming** - Feedback temps réel sur progression
-2. **Chunking** - Traitement par lots de 500 pour scoring
-3. **Queue** - File d'attente pour opérations lourdes
-
----
-
-## 7. Intégration Campagnes Email
-
-### 7.1 Architecture multi-provider
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    EMAIL CAMPAIGNS - VIVIERS                         │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  /viviers                                                            │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │ Segmentation IA (vivier-target)                                 │ │
-│  │ → 2,340 PME IT IDF sélectionnées                               │ │
-│  └────────────────────────────────────────────────────────────────┘ │
-│                          │                                           │
-│                          ▼                                           │
-│  ┌────────────────────────────────────────────────────────────────┐ │
-│  │ Génération contenu (vivier-campaign)                           │ │
-│  │ → Objet + corps personnalisés par segment                      │ │
-│  └────────────────────────────────────────────────────────────────┘ │
-│                          │                                           │
-│                          ▼                                           │
-│  ┌─────────────────────────────────────────────────────────────────┐│
-│  │ PROVIDERS                                                       ││
-│  │ ┌──────────────────────┐  ┌──────────────────────┐             ││
-│  │ │ BREVO (bulk/mktg)    │  │ RESEND (transac)     │             ││
-│  │ │ • Campagnes viviers  │  │ • Confirmations      │             ││
-│  │ │ • Newsletters        │  │ • Alertes            │             ││
-│  │ │ • Séquences nurture  │  │ • Notifications      │             ││
-│  │ └──────────────────────┘  └──────────────────────┘             ││
-│  │                                                                 ││
-│  │ DOMAINES CONFIGURABLES (table: email_domains)                   ││
-│  │ ┌──────────────────────────────────────────────────────────┐   ││
-│  │ │ • iarche.com  (principal)   SPF ✓ DKIM ✓ DMARC ✓        │   ││
-│  │ │ • nlq.fr      (secondaire)  SPF ✓ DKIM ✓ DMARC ✓        │   ││
-│  │ │ • [custom]    (client)      Validation requise           │   ││
-│  │ └──────────────────────────────────────────────────────────┘   ││
-│  └─────────────────────────────────────────────────────────────────┘│
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### 7.2 Schéma de données campagnes
-
-```sql
--- Domaines email configurables
-CREATE TABLE public.email_domains (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  domain TEXT NOT NULL UNIQUE,
-  provider TEXT NOT NULL,              -- 'brevo', 'resend'
-  from_name TEXT NOT NULL,             -- 'IArche' / 'NLQ Consulting'
-  from_email TEXT NOT NULL,            -- 'contact@iarche.com'
-  reply_to TEXT,
+  },
   
-  -- Validation DNS
-  spf_verified BOOLEAN DEFAULT false,
-  dkim_verified BOOLEAN DEFAULT false,
-  dmarc_verified BOOLEAN DEFAULT false,
-  verified_at TIMESTAMPTZ,
-  
-  -- Warm-up & limits
-  daily_limit INTEGER DEFAULT 50,      -- Limite envoi/jour (warm-up)
-  hourly_limit INTEGER DEFAULT 20,
-  is_warmed_up BOOLEAN DEFAULT false,
-  warmup_started_at TIMESTAMPTZ,
-  
-  -- Status
-  is_active BOOLEAN DEFAULT true,
-  is_default BOOLEAN DEFAULT false,
-  
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-
--- Campagnes viviers
-CREATE TABLE public.vivier_campaigns (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  
-  -- Identité
-  name TEXT NOT NULL,
-  subject TEXT NOT NULL,
-  preview_text TEXT,
-  
-  -- Contenu
-  html_content TEXT NOT NULL,
-  text_content TEXT,
-  template_id UUID,                    -- Lien vers email_configurations
-  
-  -- Ciblage
-  segment_query JSONB NOT NULL,        -- Critères de ciblage
-  vivier_ids UUID[],                   -- IDs spécifiques (si sélection manuelle)
-  estimated_recipients INTEGER,
-  
-  -- Configuration envoi
-  domain_id UUID REFERENCES email_domains(id),
-  provider TEXT NOT NULL,              -- 'brevo', 'resend'
-  
-  -- AI metadata
-  ai_generated BOOLEAN DEFAULT false,
-  ai_prompt_slug TEXT,                 -- 'vivier-campaign'
-  ai_metadata JSONB,
-  
-  -- Status
-  status TEXT DEFAULT 'draft',         -- 'draft', 'scheduled', 'sending', 'sent', 'paused', 'failed'
-  scheduled_at TIMESTAMPTZ,
-  sent_at TIMESTAMPTZ,
-  
-  -- Stats
-  total_sent INTEGER DEFAULT 0,
-  total_delivered INTEGER DEFAULT 0,
-  total_opened INTEGER DEFAULT 0,
-  total_clicked INTEGER DEFAULT 0,
-  total_bounced INTEGER DEFAULT 0,
-  total_unsubscribed INTEGER DEFAULT 0,
-  
-  created_by UUID,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now(),
-  workspace_id UUID DEFAULT '00000000-0000-0000-0000-000000000001'::uuid
-);
-
--- Logs d'envoi par destinataire
-CREATE TABLE public.vivier_campaign_sends (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  campaign_id UUID REFERENCES vivier_campaigns(id) ON DELETE CASCADE,
-  vivier_id UUID REFERENCES viviers(id) ON DELETE SET NULL,
-  
-  email TEXT NOT NULL,
-  status TEXT DEFAULT 'pending',       -- 'pending', 'sent', 'delivered', 'opened', 'clicked', 'bounced', 'unsubscribed'
-  
-  sent_at TIMESTAMPTZ,
-  delivered_at TIMESTAMPTZ,
-  opened_at TIMESTAMPTZ,
-  clicked_at TIMESTAMPTZ,
-  bounced_at TIMESTAMPTZ,
-  bounce_type TEXT,                    -- 'hard', 'soft'
-  bounce_reason TEXT,
-  
-  provider_message_id TEXT,            -- ID Brevo/Resend
-  
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- Index performance
-CREATE INDEX idx_campaign_sends_campaign ON vivier_campaign_sends(campaign_id);
-CREATE INDEX idx_campaign_sends_vivier ON vivier_campaign_sends(vivier_id);
-CREATE INDEX idx_campaign_sends_status ON vivier_campaign_sends(status);
-CREATE INDEX idx_campaigns_status ON vivier_campaigns(status);
-```
-
-### 7.3 Prompt IA campagne
-
-```sql
-INSERT INTO ai_prompts (slug, name, category, system_prompt, model_config) VALUES
-('vivier-campaign', 'Génération Campagne Vivier', 'vivier',
-'Tu es un expert en copywriting B2B et email marketing.
-Génère un email de prospection personnalisé pour le segment fourni.
-
-Règles:
-- Objet < 50 caractères, accrocheur, sans spam words
-- Corps concis (150-200 mots max)
-- Ton professionnel mais humain
-- CTA clair et unique
-- Personnalisation avec {company}, {name}, {industry}
-- Pas de pièces jointes mentionnées
-- Signature IArche standard
-
-Retourne JSON: { subject, preview_text, html_content, text_content }',
-'{"model": "google/gemini-2.5-flash", "temperature": 0.7}');
-```
-
-### 7.4 Contraintes techniques
-
-| Contrainte | Limite | Mitigation |
-|------------|--------|------------|
-| **Rate limit Brevo** | 300/h (free), 40k/h (paid) | Queue + throttling adaptatif |
-| **Rate limit Resend** | 100/j (free), 50k/m (paid) | Réservé transactionnel only |
-| **Warm-up domaines** | 50/j → 100 → 500 → illimité | Tracking daily_limit + ramp-up auto |
-| **Hard bounces** | > 5% = blacklist risk | Auto-invalid vivier + alert |
-| **RGPD** | Consentement requis | Filtre consent_marketing = true |
-| **Unsubscribe** | Obligatoire | Link auto + webhook update status |
-| **DNS validation** | SPF + DKIM + DMARC | Vérification async + warning UI |
-
-### 7.5 Tools Orchestrator (campagnes)
-
-```typescript
-const CAMPAIGN_TOOLS = [
+  // === CAMPAGNES EMAIL ===
   {
-    name: "create_vivier_campaign",
-    description: "Crée une campagne email pour un segment de viviers",
+    name: "create_campaign",
+    description: "Crée une campagne email cold via Instantly",
     parameters: {
+      name: "string - Nom de la campagne",
       segment_query: "object - Critères de ciblage",
-      generate_content: "boolean - Générer contenu via vivier-campaign",
-      template_id: "string - Ou utiliser un template existant"
+      vivier_ids: "string[] - Ou IDs spécifiques",
+      generate_content: "boolean - Générer via vivier-campaign prompt",
+      domain_id: "string - ID du domaine d'envoi"
     }
   },
   {
-    name: "preview_vivier_campaign", 
-    description: "Prévisualise une campagne avant envoi",
+    name: "preview_campaign",
+    description: "Prévisualise un email avec variables résolues",
+    parameters: {
+      campaign_id: "string - ID de la campagne",
+      sample_vivier_id: "string - ID vivier pour preview"
+    }
+  },
+  {
+    name: "launch_campaign",
+    description: "Lance l'envoi d'une campagne via Instantly",
+    parameters: {
+      campaign_id: "string - ID de la campagne",
+      schedule: "object - Planning optionnel"
+    }
+  },
+  {
+    name: "pause_campaign",
+    description: "Met en pause une campagne active",
     parameters: {
       campaign_id: "string - ID de la campagne"
     }
   },
   {
-    name: "send_vivier_campaign",
-    description: "Lance l'envoi d'une campagne (mode autonome = auto)",
-    parameters: {
-      campaign_id: "string",
-      send_now: "boolean - Immédiat ou planifié"
-    }
-  },
-  {
-    name: "stats_vivier_campaigns",
+    name: "stats_campaigns",
     description: "Retourne les stats des campagnes",
     parameters: {
       campaign_ids: "string[] - IDs ou 'all'"
+    }
+  },
+  {
+    name: "promote_recipient",
+    description: "Promeut un destinataire de campagne vers leads",
+    parameters: {
+      recipient_id: "string - ID du recipient",
+      reason: "string - Raison de la promotion"
     }
   }
 ];
@@ -917,7 +1100,27 @@ const CAMPAIGN_TOOLS = [
 
 ---
 
-## 8. Sécurité
+## 7. Sécurité & Contraintes
+
+### 7.1 Rate Limits
+
+| Contrainte | Valeur | Gestion |
+|------------|--------|---------|
+| Instantly API | 10 req/s | Queue + throttling |
+| Volume/domaine/jour | 30 (warm-up) → 500 (mature) | Check avant envoi |
+| Bounces max | 5% | Pause auto campagne si dépassé |
+| Brevo API | 300/h (free), 40k/h (paid) | Réservé transactionnel |
+
+### 7.2 RGPD
+
+| Règle | Implémentation |
+|-------|----------------|
+| Consentement | Champ `consent_marketing` vérifié avant envoi cold |
+| Unsubscribe | Link dans chaque email + webhook sync |
+| Droit oubli | Endpoint suppression + propagation Instantly |
+| Données personnelles | Chiffrement at rest (Supabase) |
+
+### 7.3 Sécurité générale
 
 - RLS activé sur toutes les tables
 - Accès authentifié (cockpit_user + step-up MFA)
@@ -926,15 +1129,58 @@ const CAMPAIGN_TOOLS = [
 - Rate limiting sur actions AI batch
 - Rate limiting sur envois email
 - Logging complet des opérations AI
-- Webhook sécurisés (Brevo/Resend)
-- Validation RGPD consent avant envoi
+- Webhooks sécurisés (signature Instantly)
+
+### 7.4 Secrets requis
+
+```env
+# Instantly
+INSTANTLY_API_KEY=xxx
+INSTANTLY_WEBHOOK_SECRET=xxx
+
+# Brevo (existant)
+BREVO_API_KEY=xxx
+
+# Pappers (enrichissement)
+PAPPERS_API_KEY=xxx
+```
 
 ---
 
-## 9. Roadmap
+## 8. Performance
 
-### Phase 1 - MVP Foundation
-- [ ] Table `viviers` + `vivier_imports`
+### 8.1 Optimisations pour 100k+ lignes
+
+1. **Pagination serveur** - Jamais charger toutes les données
+2. **Index SQL** - Sur tous les champs de recherche/filtre
+3. **Debounce recherche** - 300ms avant requête
+4. **Virtualisation liste** - Si scroll infini demandé
+5. **Cache React Query** - staleTime: 5min pour les stats
+
+### 8.2 Import gros fichiers
+
+1. **Chunking** - Import par lots de 1000 lignes
+2. **Worker/Edge Function** - Traitement asynchrone
+3. **Progress feedback** - % completion en temps réel
+
+### 8.3 Actions AI batch
+
+1. **Streaming** - Feedback temps réel sur progression
+2. **Chunking** - Traitement par lots de 500 pour scoring
+3. **Queue** - File d'attente pour opérations lourdes
+
+### 8.4 Campagnes email
+
+1. **Envoi progressif** - Respecte daily_limit par domaine
+2. **Distribution domaines** - Round-robin sur domaines actifs
+3. **Retry logic** - 3 tentatives avec backoff exponentiel
+
+---
+
+## 9. Roadmap Implémentation
+
+### Phase 1 - MVP Foundation (2j)
+- [ ] Tables `viviers` + `vivier_imports` + migration
 - [ ] VivierLayout + routes /viviers/*
 - [ ] Page liste avec pagination serveur
 - [ ] Page détail
@@ -942,32 +1188,50 @@ const CAMPAIGN_TOOLS = [
 - [ ] Promotion unitaire vers leads
 - [ ] Badge accès dans header Cockpit
 
-### Phase 2 - AI Integration
-- [ ] Prompts vivier-* dans ai_prompts (score, target, clean, enrich)
-- [ ] Tools orchestrator (14 tools)
+### Phase 2 - AI Integration (2j)
+- [ ] Prompts vivier-* dans ai_prompts (5 prompts)
+- [ ] Tools orchestrator (16 tools)
 - [ ] Interface hybride (boutons + chat)
 - [ ] Scoring automatique batch
 - [ ] Mode autonome configurable
 
-### Phase 3 - Campaigns & Email
-- [ ] Table `email_domains` + validation DNS
-- [ ] Table `vivier_campaigns` + `vivier_campaign_sends`
-- [ ] Prompt vivier-campaign (génération contenu)
-- [ ] Intégration Brevo (bulk) + Resend (transac)
-- [ ] Multi-domaines configurables
-- [ ] Warm-up tracking + rate limiting
-- [ ] Webhooks bounce/unsubscribe
+### Phase 3 - Email Infrastructure (2j)
+- [ ] Table `email_domains` + seed domaines
+- [ ] Tables `vivier_campaigns` + `vivier_campaign_recipients`
+- [ ] Secret `INSTANTLY_API_KEY` + `INSTANTLY_WEBHOOK_SECRET`
+- [ ] Edge function `send-instantly-campaign`
+- [ ] Edge function `instantly-webhook`
 
-### Phase 4 - Advanced Features
+### Phase 4 - Campaign UI (2j)
+- [ ] Page `/viviers/campaigns` (liste)
+- [ ] Page `/viviers/campaigns/:id` (détail + stats)
+- [ ] Composer campagne + preview
+- [ ] Éditeur séquence 3 steps
+- [ ] Dashboard statistiques
+
+### Phase 5 - Advanced Features (1j)
 - [ ] Enrichissement Pappers batch
 - [ ] Export segmenté CSV/XLSX
-- [ ] Analytics campagnes
 - [ ] Séquences nurture automatisées
 - [ ] Détection doublons cross-leads
+- [ ] Analytics campagnes avancées
+
+**TOTAL: 9 jours**
 
 ---
 
-## 10. Changelog
+## 10. Références
+
+- Instantly API V2: https://developer.instantly.ai/api/v2
+- Instantly Leads: https://developer.instantly.ai/api/v2/lead
+- Instantly Campaigns: https://developer.instantly.ai/api/v2/campaign
+- Instantly Webhooks: https://developer.instantly.ai/webhooks
+- Brevo API: https://developers.brevo.com/
+- Pappers API: https://www.pappers.fr/api
+
+---
+
+## 11. Changelog
 
 | Version | Date | Description |
 |---------|------|-------------|
@@ -976,3 +1240,8 @@ const CAMPAIGN_TOOLS = [
 | 1.2.0 | 2026-01-04 | Module distinct /viviers, VivierLayout dédié, accès header Cockpit |
 | 2.0.0 | 2026-01-04 | **AI-Powered** : intégration ai-prompts, 10 tools orchestrator, mode autonome, interface hybride |
 | 2.1.0 | 2026-01-04 | **Campaigns** : intégration Brevo/Resend, multi-domaines, vivier-campaign, warm-up, RGPD |
+| 2.2.0 | 2026-01-05 | **Instantly** : Dual-stack Instantly (cold) + Brevo (transac), 13 domaines satellites, séquences 3 steps, webhooks, 16 tools orchestrator |
+
+---
+
+**Document généré le 2026-01-05 — IArche**
