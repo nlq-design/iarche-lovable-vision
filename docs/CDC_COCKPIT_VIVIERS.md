@@ -1,7 +1,7 @@
 # CDC Module Viviers - IArche
 
-**Version:** 2.0.0  
-**Statut:** 📋 SPÉCIFICATION VALIDÉE (AI-POWERED)  
+**Version:** 2.1.0  
+**Statut:** 📋 SPÉCIFICATION VALIDÉE (AI + CAMPAIGNS)  
 **Date:** 2026-01-04  
 **Auteur:** Lovable AI
 
@@ -694,18 +694,244 @@ const VIVIER_TOOLS = [
 
 ---
 
-## 7. Sécurité
+## 7. Intégration Campagnes Email
+
+### 7.1 Architecture multi-provider
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    EMAIL CAMPAIGNS - VIVIERS                         │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  /viviers                                                            │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │ Segmentation IA (vivier-target)                                 │ │
+│  │ → 2,340 PME IT IDF sélectionnées                               │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                          │                                           │
+│                          ▼                                           │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │ Génération contenu (vivier-campaign)                           │ │
+│  │ → Objet + corps personnalisés par segment                      │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                          │                                           │
+│                          ▼                                           │
+│  ┌─────────────────────────────────────────────────────────────────┐│
+│  │ PROVIDERS                                                       ││
+│  │ ┌──────────────────────┐  ┌──────────────────────┐             ││
+│  │ │ BREVO (bulk/mktg)    │  │ RESEND (transac)     │             ││
+│  │ │ • Campagnes viviers  │  │ • Confirmations      │             ││
+│  │ │ • Newsletters        │  │ • Alertes            │             ││
+│  │ │ • Séquences nurture  │  │ • Notifications      │             ││
+│  │ └──────────────────────┘  └──────────────────────┘             ││
+│  │                                                                 ││
+│  │ DOMAINES CONFIGURABLES (table: email_domains)                   ││
+│  │ ┌──────────────────────────────────────────────────────────┐   ││
+│  │ │ • iarche.com  (principal)   SPF ✓ DKIM ✓ DMARC ✓        │   ││
+│  │ │ • nlq.fr      (secondaire)  SPF ✓ DKIM ✓ DMARC ✓        │   ││
+│  │ │ • [custom]    (client)      Validation requise           │   ││
+│  │ └──────────────────────────────────────────────────────────┘   ││
+│  └─────────────────────────────────────────────────────────────────┘│
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 7.2 Schéma de données campagnes
+
+```sql
+-- Domaines email configurables
+CREATE TABLE public.email_domains (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  domain TEXT NOT NULL UNIQUE,
+  provider TEXT NOT NULL,              -- 'brevo', 'resend'
+  from_name TEXT NOT NULL,             -- 'IArche' / 'NLQ Consulting'
+  from_email TEXT NOT NULL,            -- 'contact@iarche.com'
+  reply_to TEXT,
+  
+  -- Validation DNS
+  spf_verified BOOLEAN DEFAULT false,
+  dkim_verified BOOLEAN DEFAULT false,
+  dmarc_verified BOOLEAN DEFAULT false,
+  verified_at TIMESTAMPTZ,
+  
+  -- Warm-up & limits
+  daily_limit INTEGER DEFAULT 50,      -- Limite envoi/jour (warm-up)
+  hourly_limit INTEGER DEFAULT 20,
+  is_warmed_up BOOLEAN DEFAULT false,
+  warmup_started_at TIMESTAMPTZ,
+  
+  -- Status
+  is_active BOOLEAN DEFAULT true,
+  is_default BOOLEAN DEFAULT false,
+  
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Campagnes viviers
+CREATE TABLE public.vivier_campaigns (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- Identité
+  name TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  preview_text TEXT,
+  
+  -- Contenu
+  html_content TEXT NOT NULL,
+  text_content TEXT,
+  template_id UUID,                    -- Lien vers email_configurations
+  
+  -- Ciblage
+  segment_query JSONB NOT NULL,        -- Critères de ciblage
+  vivier_ids UUID[],                   -- IDs spécifiques (si sélection manuelle)
+  estimated_recipients INTEGER,
+  
+  -- Configuration envoi
+  domain_id UUID REFERENCES email_domains(id),
+  provider TEXT NOT NULL,              -- 'brevo', 'resend'
+  
+  -- AI metadata
+  ai_generated BOOLEAN DEFAULT false,
+  ai_prompt_slug TEXT,                 -- 'vivier-campaign'
+  ai_metadata JSONB,
+  
+  -- Status
+  status TEXT DEFAULT 'draft',         -- 'draft', 'scheduled', 'sending', 'sent', 'paused', 'failed'
+  scheduled_at TIMESTAMPTZ,
+  sent_at TIMESTAMPTZ,
+  
+  -- Stats
+  total_sent INTEGER DEFAULT 0,
+  total_delivered INTEGER DEFAULT 0,
+  total_opened INTEGER DEFAULT 0,
+  total_clicked INTEGER DEFAULT 0,
+  total_bounced INTEGER DEFAULT 0,
+  total_unsubscribed INTEGER DEFAULT 0,
+  
+  created_by UUID,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  workspace_id UUID DEFAULT '00000000-0000-0000-0000-000000000001'::uuid
+);
+
+-- Logs d'envoi par destinataire
+CREATE TABLE public.vivier_campaign_sends (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  campaign_id UUID REFERENCES vivier_campaigns(id) ON DELETE CASCADE,
+  vivier_id UUID REFERENCES viviers(id) ON DELETE SET NULL,
+  
+  email TEXT NOT NULL,
+  status TEXT DEFAULT 'pending',       -- 'pending', 'sent', 'delivered', 'opened', 'clicked', 'bounced', 'unsubscribed'
+  
+  sent_at TIMESTAMPTZ,
+  delivered_at TIMESTAMPTZ,
+  opened_at TIMESTAMPTZ,
+  clicked_at TIMESTAMPTZ,
+  bounced_at TIMESTAMPTZ,
+  bounce_type TEXT,                    -- 'hard', 'soft'
+  bounce_reason TEXT,
+  
+  provider_message_id TEXT,            -- ID Brevo/Resend
+  
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Index performance
+CREATE INDEX idx_campaign_sends_campaign ON vivier_campaign_sends(campaign_id);
+CREATE INDEX idx_campaign_sends_vivier ON vivier_campaign_sends(vivier_id);
+CREATE INDEX idx_campaign_sends_status ON vivier_campaign_sends(status);
+CREATE INDEX idx_campaigns_status ON vivier_campaigns(status);
+```
+
+### 7.3 Prompt IA campagne
+
+```sql
+INSERT INTO ai_prompts (slug, name, category, system_prompt, model_config) VALUES
+('vivier-campaign', 'Génération Campagne Vivier', 'vivier',
+'Tu es un expert en copywriting B2B et email marketing.
+Génère un email de prospection personnalisé pour le segment fourni.
+
+Règles:
+- Objet < 50 caractères, accrocheur, sans spam words
+- Corps concis (150-200 mots max)
+- Ton professionnel mais humain
+- CTA clair et unique
+- Personnalisation avec {company}, {name}, {industry}
+- Pas de pièces jointes mentionnées
+- Signature IArche standard
+
+Retourne JSON: { subject, preview_text, html_content, text_content }',
+'{"model": "google/gemini-2.5-flash", "temperature": 0.7}');
+```
+
+### 7.4 Contraintes techniques
+
+| Contrainte | Limite | Mitigation |
+|------------|--------|------------|
+| **Rate limit Brevo** | 300/h (free), 40k/h (paid) | Queue + throttling adaptatif |
+| **Rate limit Resend** | 100/j (free), 50k/m (paid) | Réservé transactionnel only |
+| **Warm-up domaines** | 50/j → 100 → 500 → illimité | Tracking daily_limit + ramp-up auto |
+| **Hard bounces** | > 5% = blacklist risk | Auto-invalid vivier + alert |
+| **RGPD** | Consentement requis | Filtre consent_marketing = true |
+| **Unsubscribe** | Obligatoire | Link auto + webhook update status |
+| **DNS validation** | SPF + DKIM + DMARC | Vérification async + warning UI |
+
+### 7.5 Tools Orchestrator (campagnes)
+
+```typescript
+const CAMPAIGN_TOOLS = [
+  {
+    name: "create_vivier_campaign",
+    description: "Crée une campagne email pour un segment de viviers",
+    parameters: {
+      segment_query: "object - Critères de ciblage",
+      generate_content: "boolean - Générer contenu via vivier-campaign",
+      template_id: "string - Ou utiliser un template existant"
+    }
+  },
+  {
+    name: "preview_vivier_campaign", 
+    description: "Prévisualise une campagne avant envoi",
+    parameters: {
+      campaign_id: "string - ID de la campagne"
+    }
+  },
+  {
+    name: "send_vivier_campaign",
+    description: "Lance l'envoi d'une campagne (mode autonome = auto)",
+    parameters: {
+      campaign_id: "string",
+      send_now: "boolean - Immédiat ou planifié"
+    }
+  },
+  {
+    name: "stats_vivier_campaigns",
+    description: "Retourne les stats des campagnes",
+    parameters: {
+      campaign_ids: "string[] - IDs ou 'all'"
+    }
+  }
+];
+```
+
+---
+
+## 8. Sécurité
 
 - RLS activé sur toutes les tables
 - Accès authentifié (cockpit_user + step-up MFA)
 - Validation des fichiers uploadés
 - Sanitization des données CSV
 - Rate limiting sur actions AI batch
+- Rate limiting sur envois email
 - Logging complet des opérations AI
+- Webhook sécurisés (Brevo/Resend)
+- Validation RGPD consent avant envoi
 
 ---
 
-## 8. Roadmap
+## 9. Roadmap
 
 ### Phase 1 - MVP Foundation
 - [ ] Table `viviers` + `vivier_imports`
@@ -717,22 +943,31 @@ const VIVIER_TOOLS = [
 - [ ] Badge accès dans header Cockpit
 
 ### Phase 2 - AI Integration
-- [ ] Prompts vivier-* dans ai_prompts
-- [ ] Tools orchestrator (search, score, target, clean)
+- [ ] Prompts vivier-* dans ai_prompts (score, target, clean, enrich)
+- [ ] Tools orchestrator (14 tools)
 - [ ] Interface hybride (boutons + chat)
 - [ ] Scoring automatique batch
 - [ ] Mode autonome configurable
 
-### Phase 3 - Advanced Features
-- [ ] Enrichissement Pappers batch (vivier-enrich)
+### Phase 3 - Campaigns & Email
+- [ ] Table `email_domains` + validation DNS
+- [ ] Table `vivier_campaigns` + `vivier_campaign_sends`
+- [ ] Prompt vivier-campaign (génération contenu)
+- [ ] Intégration Brevo (bulk) + Resend (transac)
+- [ ] Multi-domaines configurables
+- [ ] Warm-up tracking + rate limiting
+- [ ] Webhooks bounce/unsubscribe
+
+### Phase 4 - Advanced Features
+- [ ] Enrichissement Pappers batch
 - [ ] Export segmenté CSV/XLSX
-- [ ] Actions bulk avec IA
-- [ ] Analytics et rapports
+- [ ] Analytics campagnes
+- [ ] Séquences nurture automatisées
 - [ ] Détection doublons cross-leads
 
 ---
 
-## 9. Changelog
+## 10. Changelog
 
 | Version | Date | Description |
 |---------|------|-------------|
@@ -740,3 +975,4 @@ const VIVIER_TOOLS = [
 | 1.1.0 | 2026-01-04 | Ajout scoring auto, doublons enrichissement, post-promotion suppression |
 | 1.2.0 | 2026-01-04 | Module distinct /viviers, VivierLayout dédié, accès header Cockpit |
 | 2.0.0 | 2026-01-04 | **AI-Powered** : intégration ai-prompts, 10 tools orchestrator, mode autonome, interface hybride |
+| 2.1.0 | 2026-01-04 | **Campaigns** : intégration Brevo/Resend, multi-domaines, vivier-campaign, warm-up, RGPD |
