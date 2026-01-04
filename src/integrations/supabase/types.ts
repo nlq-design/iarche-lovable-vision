@@ -3195,6 +3195,81 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_reminders: {
+        Row: {
+          chat_id: number
+          created_at: string
+          id: string
+          remind_at: string
+          reminder_text: string
+          sent_at: string | null
+          status: string
+          user_id: number
+          user_name: string | null
+        }
+        Insert: {
+          chat_id: number
+          created_at?: string
+          id?: string
+          remind_at: string
+          reminder_text: string
+          sent_at?: string | null
+          status?: string
+          user_id: number
+          user_name?: string | null
+        }
+        Update: {
+          chat_id?: number
+          created_at?: string
+          id?: string
+          remind_at?: string
+          reminder_text?: string
+          sent_at?: string | null
+          status?: string
+          user_id?: number
+          user_name?: string | null
+        }
+        Relationships: []
+      }
+      telegram_stats: {
+        Row: {
+          ai_tokens_used: number | null
+          chat_id: number
+          command_name: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          message_type: string
+          processing_time_ms: number | null
+          status: string
+          user_name: string | null
+        }
+        Insert: {
+          ai_tokens_used?: number | null
+          chat_id: number
+          command_name?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_type: string
+          processing_time_ms?: number | null
+          status?: string
+          user_name?: string | null
+        }
+        Update: {
+          ai_tokens_used?: number | null
+          chat_id?: number
+          command_name?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_type?: string
+          processing_time_ms?: number | null
+          status?: string
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       transcription_partners: {
         Row: {
           created_at: string | null

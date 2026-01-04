@@ -8,6 +8,32 @@
 
 ## MODIFICATIONS MAJEURES
 
+### 0.21 TELEGRAM V3 — 5 NOUVELLES FONCTIONNALITÉS ✅ — V6.22
+
+**Date :** 4 Janvier 2026
+
+Extension majeure du bot Telegram avec 5 nouvelles fonctionnalités.
+
+**Fonctionnalités implémentées :**
+
+| # | Fonctionnalité | Détails |
+|---|---------------|---------|
+| 1 | **🔘 Boutons inline** | Réponses rapides contextuelles après chaque action AI (Voir leads, Créer tâche, Stats, etc.) |
+| 2 | **📊 Stats Telegram** | Table `telegram_stats` pour tracking : messages traités, temps de réponse, erreurs, commandes |
+| 3 | **🖼️ Support images/PDF** | Upload de photos, PDF et documents Word vers `uploaded_files` du Cockpit |
+| 4 | **🔗 Liaison contextuelle** | Détection automatique des noms de leads/projets dans les captions pour liaison |
+| 5 | **⏰ Commande /rappel** | Création de rappels avec parsing flexible : `/rappel 14h Appeler Jean`, `/rappel demain 10h...` |
+
+**Tables créées :**
+- `telegram_stats` — Métriques (chat_id, message_type, processing_time_ms, status)
+- `telegram_reminders` — Rappels (remind_at, reminder_text, status)
+
+**Code modifié :**
+- `supabase/functions/telegram-webhook/index.ts` — +600 lignes, support callback_query, images, documents
+- Nouvelles fonctions : `trackTelegramStat`, `getQuickActionButtons`, `parseReminderCommand`, `createReminder`, `findEntityFromCaption`, `processDocumentInBackground`, `handleCallbackQuery`
+
+---
+
 ### 0.20 TELEGRAM WEBHOOK HARDENING ✅ — V6.21
 
 **Date :** 4 Janvier 2026

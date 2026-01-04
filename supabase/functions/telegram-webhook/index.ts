@@ -24,6 +24,10 @@ const TYPING_INTERVAL_MS = 4000;
 // Supabase client for deduplication
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+// =============================================================================
+// INTERFACES
+// =============================================================================
+
 interface TelegramMessage {
   message_id: number;
   from: {
@@ -37,7 +41,7 @@ interface TelegramMessage {
     type: string;
   };
   text?: string;
-  caption?: string; // Caption for audio/voice/document messages
+  caption?: string;
   voice?: {
     file_id: string;
     file_unique_id: string;
@@ -61,12 +65,36 @@ interface TelegramMessage {
     mime_type?: string;
     file_size?: number;
   };
+  photo?: Array<{
+    file_id: string;
+    file_unique_id: string;
+    width: number;
+    height: number;
+    file_size?: number;
+  }>;
   date: number;
 }
 
 interface TelegramUpdate {
   update_id: number;
   message?: TelegramMessage;
+  callback_query?: {
+    id: string;
+    from: {
+      id: number;
+      first_name: string;
+      last_name?: string;
+      username?: string;
+    };
+    message?: TelegramMessage;
+    data?: string;
+    chat_instance: string;
+  };
+}
+
+interface InlineButton {
+  text: string;
+  callback_data: string;
 }
 
 // =============================================================================
@@ -83,7 +111,7 @@ async function isUpdateAlreadyProcessed(updateId: number): Promise<boolean> {
 
     if (error) {
       console.error("Error checking dedup:", error);
-      return false; // Fail-open: process if we can't check
+      return false;
     }
 
     return data !== null;
@@ -104,7 +132,6 @@ async function markUpdateAsProcessing(updateId: number, chatId: number): Promise
       });
 
     if (error) {
-      // Unique constraint violation = already being processed
       if (error.code === "23505") {
         console.log(`Update ${updateId} already being processed (concurrent request)`);
         return false;
@@ -149,12 +176,44 @@ async function markUpdateAsFailed(updateId: number, error?: string): Promise<voi
 }
 
 // =============================================================================
+// STATS TRACKING
+// =============================================================================
+
+async function trackTelegramStat(
+  chatId: number,
+  userName: string | undefined,
+  messageType: string,
+  commandName: string | null,
+  processingTimeMs: number | null,
+  status: "success" | "failed" | "timeout",
+  errorMessage?: string
+): Promise<void> {
+  try {
+    await supabase.from("telegram_stats").insert({
+      chat_id: chatId,
+      user_name: userName,
+      message_type: messageType,
+      command_name: commandName,
+      processing_time_ms: processingTimeMs,
+      status,
+      error_message: errorMessage?.slice(0, 500),
+    });
+  } catch (err) {
+    console.error("Failed to track Telegram stat:", err);
+  }
+}
+
+// =============================================================================
 // TELEGRAM HELPERS
 // =============================================================================
 
-async function sendTelegramMessage(chatId: number, text: string, parseMode: string = "Markdown"): Promise<void> {
+async function sendTelegramMessage(
+  chatId: number, 
+  text: string, 
+  parseMode: string = "Markdown",
+  replyMarkup?: { inline_keyboard: InlineButton[][] }
+): Promise<void> {
   try {
-    // Truncate long messages (Telegram limit is 4096 chars)
     const maxLength = 4000;
     const truncatedText = text.length > maxLength 
       ? text.slice(0, maxLength) + "\n\n_... (message tronqué)_"
@@ -162,39 +221,56 @@ async function sendTelegramMessage(chatId: number, text: string, parseMode: stri
 
     console.log("Sending message to chat:", chatId, "Text length:", truncatedText.length);
 
+    const body: Record<string, unknown> = {
+      chat_id: chatId,
+      text: truncatedText,
+      parse_mode: parseMode,
+    };
+    
+    if (replyMarkup) {
+      body.reply_markup = replyMarkup;
+    }
+
     const response = await fetch(`${TELEGRAM_API}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: truncatedText,
-        parse_mode: parseMode,
-      }),
+      body: JSON.stringify(body),
     });
 
     const result = await response.json();
     console.log("Telegram API response:", JSON.stringify(result));
     
-    // If Markdown parsing fails, retry without parse_mode
     if (!result.ok && result.description?.includes("parse")) {
       console.log("Markdown parsing failed, retrying as plain text");
+      delete body.parse_mode;
       await fetch(`${TELEGRAM_API}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: truncatedText,
-        }),
+        body: JSON.stringify(body),
       });
     }
     
-    // Log failed sends to database for monitoring
     if (!result.ok) {
       await logTelegramError(chatId, "send_message", result.description || "Unknown error");
     }
   } catch (error) {
     console.error("Error sending Telegram message:", error);
     await logTelegramError(chatId, "send_message", error instanceof Error ? error.message : String(error));
+  }
+}
+
+async function answerCallbackQuery(callbackQueryId: string, text?: string): Promise<void> {
+  try {
+    await fetch(`${TELEGRAM_API}/answerCallbackQuery`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        callback_query_id: callbackQueryId,
+        text: text?.slice(0, 200),
+      }),
+    });
+  } catch (error) {
+    console.error("Error answering callback query:", error);
   }
 }
 
@@ -213,7 +289,6 @@ async function sendTypingAction(chatId: number): Promise<void> {
   }
 }
 
-// Typing loop - maintains "typing" indicator during long operations
 function startTypingLoop(chatId: number): { stop: () => void } {
   let isRunning = true;
   
@@ -231,7 +306,6 @@ function startTypingLoop(chatId: number): { stop: () => void } {
   };
 }
 
-// Log Telegram errors to database for monitoring
 async function logTelegramError(chatId: number, errorType: string, errorMessage: string): Promise<void> {
   try {
     await supabase.from("email_logs").insert({
@@ -248,7 +322,6 @@ async function logTelegramError(chatId: number, errorType: string, errorMessage:
   }
 }
 
-// Cleanup old processed updates (called periodically)
 async function cleanupOldUpdates(): Promise<void> {
   try {
     const { error } = await supabase.rpc("cleanup_old_telegram_updates");
@@ -263,38 +336,206 @@ async function cleanupOldUpdates(): Promise<void> {
 }
 
 // =============================================================================
+// INLINE BUTTONS - Quick actions after AI responses
+// =============================================================================
+
+function getQuickActionButtons(context: string): { inline_keyboard: InlineButton[][] } {
+  const buttons: InlineButton[][] = [];
+  
+  if (context.includes("lead") || context.includes("Lead")) {
+    buttons.push([
+      { text: "📋 Voir leads", callback_data: "action:leads" },
+      { text: "➕ Créer tâche", callback_data: "action:create_task" },
+    ]);
+  } else if (context.includes("projet") || context.includes("Projet")) {
+    buttons.push([
+      { text: "📁 Voir projets", callback_data: "action:projects" },
+      { text: "📝 Notes", callback_data: "action:notes" },
+    ]);
+  } else if (context.includes("rdv") || context.includes("RDV") || context.includes("rendez-vous")) {
+    buttons.push([
+      { text: "📅 Prochains RDV", callback_data: "action:rdv" },
+      { text: "📞 Appeler", callback_data: "action:call" },
+    ]);
+  }
+  
+  // Always add help button if no specific context
+  if (buttons.length === 0) {
+    buttons.push([
+      { text: "📊 Stats", callback_data: "action:stats" },
+      { text: "❓ Aide", callback_data: "action:help" },
+    ]);
+  }
+  
+  return { inline_keyboard: buttons };
+}
+
+// =============================================================================
+// REMINDER PARSING - /rappel command
+// =============================================================================
+
+interface ParsedReminder {
+  text: string;
+  remindAt: Date;
+}
+
+function parseReminderCommand(input: string): ParsedReminder | null {
+  // Format: /rappel 14h Appeler Jean
+  // Format: /rappel demain 10h Envoyer devis
+  // Format: /rappel 30m Vérifier email
+  
+  const parts = input.replace(/^\/rappel\s*/i, "").trim();
+  if (!parts) return null;
+  
+  const now = new Date();
+  let remindAt = new Date(now);
+  let textStart = 0;
+  
+  // Check for "demain"
+  if (parts.toLowerCase().startsWith("demain")) {
+    remindAt.setDate(remindAt.getDate() + 1);
+    textStart = 7;
+  }
+  
+  // Check for time patterns
+  const timeMatch = parts.slice(textStart).match(/^(\d{1,2})h(\d{2})?\s*/i);
+  const minuteMatch = parts.slice(textStart).match(/^(\d+)m\s*/i);
+  
+  if (timeMatch) {
+    remindAt.setHours(parseInt(timeMatch[1]), parseInt(timeMatch[2] || "0"), 0, 0);
+    textStart += timeMatch[0].length;
+  } else if (minuteMatch) {
+    remindAt = new Date(now.getTime() + parseInt(minuteMatch[1]) * 60 * 1000);
+    textStart += minuteMatch[0].length;
+  } else if (textStart === 0) {
+    // No time specified, default to 1 hour from now
+    remindAt = new Date(now.getTime() + 60 * 60 * 1000);
+  }
+  
+  const text = parts.slice(textStart).trim();
+  if (!text) return null;
+  
+  // Ensure reminder is in the future
+  if (remindAt <= now) {
+    remindAt.setDate(remindAt.getDate() + 1);
+  }
+  
+  return { text, remindAt };
+}
+
+async function createReminder(
+  chatId: number, 
+  userId: number, 
+  userName: string, 
+  text: string, 
+  remindAt: Date
+): Promise<{ success: boolean; id?: string; error?: string }> {
+  try {
+    const { data, error } = await supabase
+      .from("telegram_reminders")
+      .insert({
+        chat_id: chatId,
+        user_id: userId,
+        user_name: userName,
+        reminder_text: text,
+        remind_at: remindAt.toISOString(),
+        status: "pending",
+      })
+      .select("id")
+      .single();
+    
+    if (error) {
+      console.error("Error creating reminder:", error);
+      return { success: false, error: error.message };
+    }
+    
+    return { success: true, id: data.id };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { success: false, error: msg };
+  }
+}
+
+// =============================================================================
+// CONTEXTUAL LINKING - Link audio to lead/project from caption
+// =============================================================================
+
+async function findEntityFromCaption(caption: string): Promise<{ 
+  leadId?: string; 
+  projectId?: string; 
+  leadName?: string;
+  projectName?: string;
+}> {
+  const result: { leadId?: string; projectId?: string; leadName?: string; projectName?: string } = {};
+  
+  // Search for leads by name in caption
+  const { data: leads } = await supabase
+    .from("leads")
+    .select("id, name, company")
+    .limit(10);
+  
+  if (leads) {
+    for (const lead of leads) {
+      const searchTerms = [lead.name];
+      if (lead.company) searchTerms.push(lead.company);
+      
+      for (const term of searchTerms) {
+        if (term && caption.toLowerCase().includes(term.toLowerCase())) {
+          result.leadId = lead.id;
+          result.leadName = lead.name;
+          break;
+        }
+      }
+      if (result.leadId) break;
+    }
+  }
+  
+  // Search for projects by name in caption
+  const { data: projects } = await supabase
+    .from("projects")
+    .select("id, name")
+    .limit(10);
+  
+  if (projects) {
+    for (const project of projects) {
+      if (project.name && caption.toLowerCase().includes(project.name.toLowerCase())) {
+        result.projectId = project.id;
+        result.projectName = project.name;
+        break;
+      }
+    }
+  }
+  
+  return result;
+}
+
+// =============================================================================
 // AI AGENT CALL - With timeout and fast mode for Telegram
 // =============================================================================
 
 async function callAIAgent(message: string, userId: number, userName: string): Promise<string> {
   console.log("Calling AI agent with message:", message);
   
-  // Telegram-specific timeout (25s to stay under Edge Function limits)
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 25000);
 
   try {
-    // Format messages array as expected by the orchestrator
     const messagesPayload = [
       { role: "user", content: message }
     ];
 
-    // Call the AI agent orchestrator with telegram-specific settings
     const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-agent-orchestrator`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        // Internal server-to-server auth (avoids JWT requirements)
         "x-internal-token": SUPABASE_SERVICE_ROLE_KEY,
       },
       body: JSON.stringify({
         messages: messagesPayload,
         source: "telegram",
-        // ai_agent_memory.user_id expects UUID; keep null for Telegram
         user_id: null,
         session_id: `telegram_session_${userId}`,
-        workspace_id: null, // Telegram uses global workspace
-        // Telegram-specific: request faster response
+        workspace_id: null,
         telegram_fast_mode: true,
       }),
       signal: controller.signal,
@@ -316,9 +557,7 @@ async function callAIAgent(message: string, userId: number, userName: string): P
 
     const data = await response.json();
     console.log("AI Agent data keys:", Object.keys(data));
-    console.log("AI Agent data:", JSON.stringify(data).slice(0, 500));
     
-    // The orchestrator returns { ok, message, tool_calls, ... }
     const responseText = data.message || data.response || data.text || data.content;
     
     if (!responseText) {
@@ -342,7 +581,7 @@ async function callAIAgent(message: string, userId: number, userName: string): P
 }
 
 // =============================================================================
-// AUDIO FILE HANDLING - Download from Telegram
+// FILE HANDLING - Download from Telegram
 // =============================================================================
 
 async function getTelegramFileUrl(fileId: string): Promise<string | null> {
@@ -370,7 +609,6 @@ async function downloadTelegramFile(fileUrl: string): Promise<ArrayBuffer | null
       return null;
     }
     
-    // Check file size from Content-Length header
     const contentLength = response.headers.get("Content-Length");
     if (contentLength && parseInt(contentLength) > MAX_FILE_SIZE_BYTES) {
       console.error("File too large:", contentLength, "bytes");
@@ -379,7 +617,6 @@ async function downloadTelegramFile(fileUrl: string): Promise<ArrayBuffer | null
     
     const buffer = await response.arrayBuffer();
     
-    // Double-check actual size
     if (buffer.byteLength > MAX_FILE_SIZE_BYTES) {
       console.error("Downloaded file too large:", buffer.byteLength, "bytes");
       return null;
@@ -395,16 +632,16 @@ async function downloadTelegramFile(fileUrl: string): Promise<ArrayBuffer | null
 async function uploadToSupabaseStorage(
   fileBuffer: ArrayBuffer,
   fileName: string,
-  mimeType: string
+  mimeType: string,
+  folder: string = "telegram-audio"
 ): Promise<string | null> {
   try {
-    // Validate file size before upload
     if (fileBuffer.byteLength > MAX_FILE_SIZE_BYTES) {
       console.error("File exceeds size limit:", fileBuffer.byteLength, "bytes");
       return null;
     }
     
-    const filePath = `telegram-audio/${Date.now()}_${fileName}`;
+    const filePath = `${folder}/${Date.now()}_${fileName}`;
     
     const { data, error } = await supabase.storage
       .from("cockpit-uploads")
@@ -430,22 +667,21 @@ async function createTranscriptionJob(
   source: string,
   userId: number,
   userName: string,
-  caption?: string
+  caption?: string,
+  linkedLeadId?: string,
+  linkedProjectId?: string
 ): Promise<{ success: boolean; transcriptionId?: string; error?: string }> {
   try {
-    // Build metadata with optional caption context
     const metadata: Record<string, unknown> = {
       telegram_user_id: userId,
       telegram_username: userName,
       imported_via: "telegram_bot",
     };
     
-    // Add caption as context if provided
     if (caption) {
       metadata.user_context = caption;
     }
     
-    // Create transcription record directly (internal, no auth required)
     const { data, error } = await supabase
       .from("voice_transcriptions")
       .insert({
@@ -453,8 +689,10 @@ async function createTranscriptionJob(
         source: source,
         storage_path: storagePath,
         status: "pending",
-        created_by: null, // No authenticated user for Telegram
+        created_by: null,
         workspace_id: null,
+        lead_id: linkedLeadId || null,
+        project_id: linkedProjectId || null,
         metadata,
       })
       .select("id")
@@ -469,6 +707,64 @@ async function createTranscriptionJob(
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("Error creating transcription job:", msg);
+    return { success: false, error: msg };
+  }
+}
+
+async function createUploadedFile(
+  storagePath: string,
+  originalFilename: string,
+  fileType: string,
+  mimeType: string,
+  fileSize: number,
+  userId: number,
+  userName: string,
+  caption?: string,
+  linkedLeadId?: string,
+  linkedProjectId?: string
+): Promise<{ success: boolean; fileId?: string; error?: string }> {
+  try {
+    const metadata: Record<string, unknown> = {
+      telegram_user_id: userId,
+      telegram_username: userName,
+      imported_via: "telegram_bot",
+    };
+    
+    if (caption) {
+      metadata.user_context = caption;
+    }
+    
+    const leadIds = linkedLeadId ? [linkedLeadId] : null;
+    const projectIds = linkedProjectId ? [linkedProjectId] : null;
+    
+    const { data, error } = await supabase
+      .from("uploaded_files")
+      .insert({
+        original_filename: originalFilename,
+        storage_path: storagePath,
+        file_type: fileType,
+        mime_type: mimeType,
+        file_size_bytes: fileSize,
+        category: "import",
+        processing_status: "uploaded",
+        workspace_id: "00000000-0000-0000-0000-000000000001",
+        created_by: null,
+        lead_ids: leadIds,
+        project_ids: projectIds,
+        metadata,
+      })
+      .select("id")
+      .single();
+    
+    if (error) {
+      console.error("Error creating uploaded file:", error);
+      return { success: false, error: error.message };
+    }
+    
+    return { success: true, fileId: data.id };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("Error creating uploaded file:", msg);
     return { success: false, error: msg };
   }
 }
@@ -489,9 +785,19 @@ Bienvenue ! Je suis votre assistant IA pour gérer le Cockpit IArche.
 • /rdv - Voir les prochains rendez-vous
 • /projets - Voir les projets actifs
 • /stats - Statistiques rapides
+• /rappel - Créer un rappel
 
-*Fichiers audio :*
-📎 Envoyez un message vocal ou un fichier audio pour créer une transcription dans le Cockpit.
+*Commande /rappel :*
+• \`/rappel 14h Appeler Jean\`
+• \`/rappel demain 10h Envoyer devis\`
+• \`/rappel 30m Vérifier email\`
+
+*Fichiers supportés :*
+📎 Audio/Vocal → Transcription automatique
+🖼️ Images → Import dans le Cockpit
+📄 PDF/Documents → Import dans le Cockpit
+
+*Astuce :* Ajoutez une légende avec le nom du lead/projet pour lier automatiquement !
 
 *Exemples de questions :*
 • "Quels sont les leads de cette semaine ?"
@@ -503,7 +809,7 @@ Posez simplement votre question et je vous répondrai !`;
 }
 
 // =============================================================================
-// BACKGROUND PROCESSING TASK
+// BACKGROUND PROCESSING TASKS
 // =============================================================================
 
 async function processMessageInBackground(
@@ -513,23 +819,24 @@ async function processMessageInBackground(
   userName: string,
   text: string
 ): Promise<void> {
-  // Start continuous typing indicator
+  const startTime = Date.now();
   const typing = startTypingLoop(chatId);
   
   try {
-    // Process with AI agent
     const aiResponse = await callAIAgent(text, userId, userName);
     
-    // Stop typing before sending response
     typing.stop();
     
-    // Send response
-    await sendTelegramMessage(chatId, aiResponse);
+    // Send response with inline buttons
+    const buttons = getQuickActionButtons(aiResponse);
+    await sendTelegramMessage(chatId, aiResponse, "Markdown", buttons);
     
-    // Mark as completed
     await markUpdateAsCompleted(updateId, aiResponse);
     
-    // Periodically cleanup old updates (1 in 100 chance)
+    // Track stats
+    const processingTime = Date.now() - startTime;
+    await trackTelegramStat(chatId, userName, "text", null, processingTime, "success");
+    
     if (Math.random() < 0.01) {
       cleanupOldUpdates().catch(err => console.error("Cleanup error:", err));
     }
@@ -541,6 +848,7 @@ async function processMessageInBackground(
     
     await sendTelegramMessage(chatId, "❌ Je n'ai pas pu traiter votre demande. Réessayez.");
     await markUpdateAsFailed(updateId, msg);
+    await trackTelegramStat(chatId, userName, "text", null, Date.now() - startTime, "failed", msg);
   }
 }
 
@@ -555,11 +863,10 @@ async function processAudioInBackground(
   caption?: string,
   fileSize?: number
 ): Promise<void> {
-  // Start continuous typing indicator
+  const startTime = Date.now();
   const typing = startTypingLoop(chatId);
   
   try {
-    // Check file size early if available
     if (fileSize && fileSize > MAX_FILE_SIZE_BYTES) {
       typing.stop();
       await sendTelegramMessage(
@@ -567,19 +874,33 @@ async function processAudioInBackground(
         `❌ Fichier trop volumineux (${(fileSize / 1024 / 1024).toFixed(1)} MB). Maximum: 20 MB.`
       );
       await markUpdateAsFailed(updateId, "File too large");
+      await trackTelegramStat(chatId, userName, "audio", null, null, "failed", "File too large");
       return;
     }
     
-    // Get file URL from Telegram
+    // Find linked entities from caption
+    let linkedLeadId: string | undefined;
+    let linkedProjectId: string | undefined;
+    let linkedLeadName: string | undefined;
+    let linkedProjectName: string | undefined;
+    
+    if (caption) {
+      const entities = await findEntityFromCaption(caption);
+      linkedLeadId = entities.leadId;
+      linkedProjectId = entities.projectId;
+      linkedLeadName = entities.leadName;
+      linkedProjectName = entities.projectName;
+    }
+    
     const fileUrl = await getTelegramFileUrl(fileId);
     if (!fileUrl) {
       typing.stop();
       await sendTelegramMessage(chatId, "❌ Impossible de récupérer le fichier audio.");
       await markUpdateAsFailed(updateId, "Failed to get file URL");
+      await trackTelegramStat(chatId, userName, "audio", null, null, "failed", "Failed to get file URL");
       return;
     }
     
-    // Download file
     const fileBuffer = await downloadTelegramFile(fileUrl);
     if (!fileBuffer) {
       typing.stop();
@@ -587,38 +908,50 @@ async function processAudioInBackground(
         chatId, 
         "❌ Impossible de télécharger le fichier audio. Vérifiez que le fichier fait moins de 20 MB."
       );
-      await markUpdateAsFailed(updateId, "Failed to download file (size limit?)");
+      await markUpdateAsFailed(updateId, "Failed to download file");
+      await trackTelegramStat(chatId, userName, "audio", null, null, "failed", "Download failed");
       return;
     }
     
-    // Upload to Supabase Storage
     const storagePath = await uploadToSupabaseStorage(fileBuffer, fileName, mimeType);
     if (!storagePath) {
       typing.stop();
       await sendTelegramMessage(chatId, "❌ Impossible de sauvegarder le fichier audio.");
       await markUpdateAsFailed(updateId, "Failed to upload to storage");
+      await trackTelegramStat(chatId, userName, "audio", null, null, "failed", "Upload failed");
       return;
     }
     
-    // Create transcription job with caption context
-    const result = await createTranscriptionJob(storagePath, "telegram", userId, userName, caption);
+    const result = await createTranscriptionJob(
+      storagePath, "telegram", userId, userName, caption,
+      linkedLeadId, linkedProjectId
+    );
     
     typing.stop();
     
     if (result.success) {
       let successMsg = `✅ Fichier audio reçu et enregistré !\n\n📝 Transcription créée (ID: \`${result.transcriptionId?.slice(0, 8)}...\`)`;
       
-      if (caption) {
+      if (linkedLeadName) {
+        successMsg += `\n🔗 Lié au lead: *${linkedLeadName}*`;
+      }
+      if (linkedProjectName) {
+        successMsg += `\n📁 Lié au projet: *${linkedProjectName}*`;
+      }
+      if (caption && !linkedLeadName && !linkedProjectName) {
         successMsg += `\n📌 Contexte: "${caption.slice(0, 50)}${caption.length > 50 ? '...' : ''}"`;
       }
       
       successMsg += `\n\n➡️ Accédez au Cockpit pour voir la transcription et lancer l'analyse.`;
       
-      await sendTelegramMessage(chatId, successMsg);
+      const buttons = getQuickActionButtons("transcription audio");
+      await sendTelegramMessage(chatId, successMsg, "Markdown", buttons);
       await markUpdateAsCompleted(updateId, `Transcription created: ${result.transcriptionId}`);
+      await trackTelegramStat(chatId, userName, "audio", null, Date.now() - startTime, "success");
     } else {
       await sendTelegramMessage(chatId, `❌ Erreur lors de la création de la transcription: ${result.error}`);
       await markUpdateAsFailed(updateId, result.error);
+      await trackTelegramStat(chatId, userName, "audio", null, null, "failed", result.error);
     }
     
   } catch (error) {
@@ -628,6 +961,192 @@ async function processAudioInBackground(
     
     await sendTelegramMessage(chatId, "❌ Erreur lors du traitement de l'audio.");
     await markUpdateAsFailed(updateId, msg);
+    await trackTelegramStat(chatId, userName, "audio", null, null, "failed", msg);
+  }
+}
+
+async function processDocumentInBackground(
+  updateId: number,
+  chatId: number,
+  userId: number,
+  userName: string,
+  fileId: string,
+  fileName: string,
+  mimeType: string,
+  fileType: string,
+  caption?: string,
+  fileSize?: number
+): Promise<void> {
+  const startTime = Date.now();
+  const typing = startTypingLoop(chatId);
+  
+  try {
+    if (fileSize && fileSize > MAX_FILE_SIZE_BYTES) {
+      typing.stop();
+      await sendTelegramMessage(
+        chatId, 
+        `❌ Fichier trop volumineux (${(fileSize / 1024 / 1024).toFixed(1)} MB). Maximum: 20 MB.`
+      );
+      await markUpdateAsFailed(updateId, "File too large");
+      await trackTelegramStat(chatId, userName, "document", null, null, "failed", "File too large");
+      return;
+    }
+    
+    // Find linked entities from caption
+    let linkedLeadId: string | undefined;
+    let linkedProjectId: string | undefined;
+    let linkedLeadName: string | undefined;
+    let linkedProjectName: string | undefined;
+    
+    if (caption) {
+      const entities = await findEntityFromCaption(caption);
+      linkedLeadId = entities.leadId;
+      linkedProjectId = entities.projectId;
+      linkedLeadName = entities.leadName;
+      linkedProjectName = entities.projectName;
+    }
+    
+    const fileUrl = await getTelegramFileUrl(fileId);
+    if (!fileUrl) {
+      typing.stop();
+      await sendTelegramMessage(chatId, "❌ Impossible de récupérer le fichier.");
+      await markUpdateAsFailed(updateId, "Failed to get file URL");
+      await trackTelegramStat(chatId, userName, "document", null, null, "failed", "Failed to get file URL");
+      return;
+    }
+    
+    const fileBuffer = await downloadTelegramFile(fileUrl);
+    if (!fileBuffer) {
+      typing.stop();
+      await sendTelegramMessage(chatId, "❌ Impossible de télécharger le fichier.");
+      await markUpdateAsFailed(updateId, "Failed to download file");
+      await trackTelegramStat(chatId, userName, "document", null, null, "failed", "Download failed");
+      return;
+    }
+    
+    const folder = fileType === "image" ? "telegram-images" : "telegram-documents";
+    const storagePath = await uploadToSupabaseStorage(fileBuffer, fileName, mimeType, folder);
+    if (!storagePath) {
+      typing.stop();
+      await sendTelegramMessage(chatId, "❌ Impossible de sauvegarder le fichier.");
+      await markUpdateAsFailed(updateId, "Failed to upload to storage");
+      await trackTelegramStat(chatId, userName, "document", null, null, "failed", "Upload failed");
+      return;
+    }
+    
+    const result = await createUploadedFile(
+      storagePath, fileName, fileType, mimeType, fileBuffer.byteLength,
+      userId, userName, caption, linkedLeadId, linkedProjectId
+    );
+    
+    typing.stop();
+    
+    if (result.success) {
+      const emoji = fileType === "image" ? "🖼️" : "📄";
+      let successMsg = `✅ ${emoji} Fichier reçu et enregistré !\n\nID: \`${result.fileId?.slice(0, 8)}...\``;
+      
+      if (linkedLeadName) {
+        successMsg += `\n🔗 Lié au lead: *${linkedLeadName}*`;
+      }
+      if (linkedProjectName) {
+        successMsg += `\n📁 Lié au projet: *${linkedProjectName}*`;
+      }
+      
+      successMsg += `\n\n➡️ Accédez au Cockpit pour voir le fichier.`;
+      
+      await sendTelegramMessage(chatId, successMsg);
+      await markUpdateAsCompleted(updateId, `File uploaded: ${result.fileId}`);
+      await trackTelegramStat(chatId, userName, fileType === "image" ? "image" : "document", null, Date.now() - startTime, "success");
+    } else {
+      await sendTelegramMessage(chatId, `❌ Erreur lors de l'import: ${result.error}`);
+      await markUpdateAsFailed(updateId, result.error);
+      await trackTelegramStat(chatId, userName, "document", null, null, "failed", result.error);
+    }
+    
+  } catch (error) {
+    typing.stop();
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("Document processing error:", msg);
+    
+    await sendTelegramMessage(chatId, "❌ Erreur lors du traitement du fichier.");
+    await markUpdateAsFailed(updateId, msg);
+    await trackTelegramStat(chatId, userName, "document", null, null, "failed", msg);
+  }
+}
+
+// =============================================================================
+// CALLBACK QUERY HANDLER - Inline button clicks
+// =============================================================================
+
+async function handleCallbackQuery(
+  callbackQueryId: string,
+  chatId: number,
+  userId: number,
+  userName: string,
+  data: string
+): Promise<void> {
+  await answerCallbackQuery(callbackQueryId, "⏳ Traitement...");
+  
+  const [actionType, actionValue] = data.split(":");
+  
+  if (actionType !== "action") {
+    await sendTelegramMessage(chatId, "❌ Action non reconnue.");
+    return;
+  }
+  
+  const startTime = Date.now();
+  const typing = startTypingLoop(chatId);
+  
+  try {
+    let prompt: string;
+    
+    switch (actionValue) {
+      case "leads":
+        prompt = "Liste les 5 derniers leads avec leur statut";
+        break;
+      case "projects":
+        prompt = "Liste les projets actifs avec leur statut";
+        break;
+      case "rdv":
+        prompt = "Quels sont les prochains rendez-vous cette semaine ?";
+        break;
+      case "stats":
+        prompt = "Donne-moi un résumé rapide des statistiques : nombre de leads, opportunités, projets";
+        break;
+      case "create_task":
+        typing.stop();
+        await sendTelegramMessage(chatId, "📝 Pour créer une tâche, dites-moi :\n\n_Crée une tâche [description] pour [date/heure]_\n\nExemple : \"Crée une tâche appeler Jean pour demain 14h\"");
+        return;
+      case "notes":
+        prompt = "Résume les notes de réunion récentes";
+        break;
+      case "call":
+        typing.stop();
+        await sendTelegramMessage(chatId, "📞 Pour planifier un appel, utilisez /rappel :\n\n`/rappel 14h Appeler [nom]`");
+        return;
+      case "help":
+        typing.stop();
+        await sendTelegramMessage(chatId, formatHelpMessage());
+        return;
+      default:
+        typing.stop();
+        await sendTelegramMessage(chatId, "❌ Action non reconnue.");
+        return;
+    }
+    
+    const aiResponse = await callAIAgent(prompt, userId, userName);
+    typing.stop();
+    
+    const buttons = getQuickActionButtons(aiResponse);
+    await sendTelegramMessage(chatId, aiResponse, "Markdown", buttons);
+    
+    await trackTelegramStat(chatId, userName, "command", actionValue, Date.now() - startTime, "success");
+    
+  } catch (error) {
+    typing.stop();
+    const msg = error instanceof Error ? error.message : String(error);
+    await sendTelegramMessage(chatId, "❌ Erreur lors du traitement.");
+    await trackTelegramStat(chatId, userName, "command", actionValue, null, "failed", msg);
   }
 }
 
@@ -636,12 +1155,10 @@ async function processAudioInBackground(
 // =============================================================================
 
 serve(async (req) => {
-  // Handle CORS preflight requests (useful for debugging from a browser)
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Debug / health endpoint
   if (req.method === "GET") {
     const url = new URL(req.url);
     const debug = url.searchParams.get("debug") === "1";
@@ -728,6 +1245,23 @@ serve(async (req) => {
     const update: TelegramUpdate = await req.json();
     console.log("Received Telegram update:", update.update_id);
 
+    // Handle callback queries (inline button clicks)
+    if (update.callback_query) {
+      const cb = update.callback_query;
+      const chatId = cb.message?.chat.id;
+      const userId = cb.from.id;
+      const userName = cb.from.first_name + (cb.from.last_name ? ` ${cb.from.last_name}` : "");
+      
+      if (chatId && cb.data) {
+        handleCallbackQuery(cb.id, chatId, userId, userName, cb.data)
+          .catch(err => console.error("Callback query error:", err));
+      } else {
+        await answerCallbackQuery(cb.id, "❌ Erreur");
+      }
+      
+      return new Response("OK", { status: 200 });
+    }
+
     const message = update.message;
     if (!message) {
       return new Response("OK", { status: 200 });
@@ -738,28 +1272,43 @@ serve(async (req) => {
     const userName = message.from.first_name + (message.from.last_name ? ` ${message.from.last_name}` : "");
     const updateId = update.update_id;
 
-    // =========================================================================
-    // DEDUPLICATION CHECK - Critical to prevent Telegram retry loops
-    // =========================================================================
-    
-    // Check if this update was already processed
+    // Deduplication check
     const alreadyProcessed = await isUpdateAlreadyProcessed(updateId);
     if (alreadyProcessed) {
       console.log(`Update ${updateId} already processed, ignoring duplicate`);
       return new Response("OK", { status: 200 });
     }
 
-    // Try to claim this update for processing
     const claimed = await markUpdateAsProcessing(updateId, chatId);
     if (!claimed) {
       console.log(`Update ${updateId} claimed by another instance, ignoring`);
       return new Response("OK", { status: 200 });
     }
 
-    // Security check: only allow specific users if configured
+    // Security check
     if (ALLOWED_USERS.length > 0 && !ALLOWED_USERS.includes(userId)) {
       await sendTelegramMessage(chatId, "⛔ Accès non autorisé. Contactez l'administrateur.");
       await markUpdateAsCompleted(updateId, "Unauthorized user");
+      return new Response("OK", { status: 200 });
+    }
+
+    // =========================================================================
+    // HANDLE PHOTOS
+    // =========================================================================
+    
+    if (message.photo && message.photo.length > 0) {
+      await sendTelegramMessage(chatId, "🖼️ Image reçue. Import en cours...");
+      
+      // Get the largest photo
+      const largestPhoto = message.photo[message.photo.length - 1];
+      const fileName = `image_${Date.now()}.jpg`;
+      
+      processDocumentInBackground(
+        updateId, chatId, userId, userName,
+        largestPhoto.file_id, fileName, "image/jpeg", "image",
+        message.caption, largestPhoto.file_size
+      ).catch(err => console.error("Background image processing error:", err));
+      
       return new Response("OK", { status: 200 });
     }
 
@@ -768,14 +1317,11 @@ serve(async (req) => {
     // =========================================================================
     
     if (message.voice) {
-      // Quick acknowledgment
       await sendTelegramMessage(chatId, "🎤 Message vocal reçu. Import en cours...");
       
-      // Process in background (fire-and-forget pattern)
       const fileName = `voice_${Date.now()}.ogg`;
       const mimeType = message.voice.mime_type || "audio/ogg";
       
-      // Don't await - let it run in background (with caption and file_size)
       processAudioInBackground(
         updateId, chatId, userId, userName, 
         message.voice.file_id, fileName, mimeType,
@@ -786,13 +1332,11 @@ serve(async (req) => {
     }
     
     if (message.audio) {
-      // Quick acknowledgment
       await sendTelegramMessage(chatId, "🎵 Fichier audio reçu. Import en cours...");
       
       const fileName = message.audio.title || `audio_${Date.now()}.mp3`;
       const mimeType = message.audio.mime_type || "audio/mpeg";
       
-      // Don't await - let it run in background (with caption and file_size)
       processAudioInBackground(
         updateId, chatId, userId, userName,
         message.audio.file_id, fileName, mimeType,
@@ -802,20 +1346,50 @@ serve(async (req) => {
       return new Response("OK", { status: 200 });
     }
     
-    if (message.document && message.document.mime_type?.startsWith("audio/")) {
-      // Quick acknowledgment
-      await sendTelegramMessage(chatId, "📎 Document audio reçu. Import en cours...");
-      
+    // =========================================================================
+    // HANDLE DOCUMENTS
+    // =========================================================================
+    
+    if (message.document) {
+      const mimeType = message.document.mime_type || "application/octet-stream";
       const fileName = message.document.file_name || `document_${Date.now()}`;
-      const mimeType = message.document.mime_type;
       
-      // Don't await - let it run in background (with caption and file_size)
-      processAudioInBackground(
-        updateId, chatId, userId, userName,
-        message.document.file_id, fileName, mimeType,
-        message.caption, message.document.file_size
-      ).catch(err => console.error("Background audio processing error:", err));
+      // Check if it's an audio file
+      if (mimeType.startsWith("audio/")) {
+        await sendTelegramMessage(chatId, "📎 Document audio reçu. Import en cours...");
+        
+        processAudioInBackground(
+          updateId, chatId, userId, userName,
+          message.document.file_id, fileName, mimeType,
+          message.caption, message.document.file_size
+        ).catch(err => console.error("Background audio processing error:", err));
+        
+        return new Response("OK", { status: 200 });
+      }
       
+      // Check if it's a PDF or image
+      const isImage = mimeType.startsWith("image/");
+      const isPdf = mimeType === "application/pdf";
+      const isDoc = mimeType.includes("word") || mimeType.includes("document");
+      
+      if (isImage || isPdf || isDoc) {
+        const emoji = isImage ? "🖼️" : "📄";
+        await sendTelegramMessage(chatId, `${emoji} Document reçu. Import en cours...`);
+        
+        const fileType = isImage ? "image" : "document";
+        
+        processDocumentInBackground(
+          updateId, chatId, userId, userName,
+          message.document.file_id, fileName, mimeType, fileType,
+          message.caption, message.document.file_size
+        ).catch(err => console.error("Background document processing error:", err));
+        
+        return new Response("OK", { status: 200 });
+      }
+      
+      // Unsupported file type
+      await sendTelegramMessage(chatId, `⚠️ Type de fichier non supporté: ${mimeType}\n\nTypes supportés: images, PDF, documents Word, fichiers audio.`);
+      await markUpdateAsCompleted(updateId, "Unsupported file type");
       return new Response("OK", { status: 200 });
     }
 
@@ -829,7 +1403,7 @@ serve(async (req) => {
       return new Response("OK", { status: 200 });
     }
 
-    // Handle commands (fast, no background needed)
+    // Handle commands
     if (text.startsWith("/")) {
       const command = text.split(" ")[0].toLowerCase();
       
@@ -837,12 +1411,40 @@ serve(async (req) => {
         case "/start":
           await sendTelegramMessage(chatId, `Bonjour ${userName} ! 👋\n\n${formatHelpMessage()}`);
           await markUpdateAsCompleted(updateId, "/start command");
+          await trackTelegramStat(chatId, userName, "command", "start", null, "success");
           return new Response("OK", { status: 200 });
           
         case "/help":
           await sendTelegramMessage(chatId, formatHelpMessage());
           await markUpdateAsCompleted(updateId, "/help command");
+          await trackTelegramStat(chatId, userName, "command", "help", null, "success");
           return new Response("OK", { status: 200 });
+          
+        case "/rappel": {
+          const parsed = parseReminderCommand(text);
+          if (!parsed) {
+            await sendTelegramMessage(chatId, "❌ Format invalide.\n\nExemples :\n• `/rappel 14h Appeler Jean`\n• `/rappel demain 10h Envoyer devis`\n• `/rappel 30m Vérifier email`");
+            await markUpdateAsCompleted(updateId, "/rappel - invalid format");
+            return new Response("OK", { status: 200 });
+          }
+          
+          const result = await createReminder(chatId, userId, userName, parsed.text, parsed.remindAt);
+          
+          if (result.success) {
+            const timeStr = parsed.remindAt.toLocaleString("fr-FR", { 
+              weekday: "short", day: "numeric", month: "short", 
+              hour: "2-digit", minute: "2-digit" 
+            });
+            await sendTelegramMessage(chatId, `✅ Rappel créé !\n\n📝 ${parsed.text}\n⏰ ${timeStr}`);
+            await trackTelegramStat(chatId, userName, "command", "rappel", null, "success");
+          } else {
+            await sendTelegramMessage(chatId, `❌ Erreur: ${result.error}`);
+            await trackTelegramStat(chatId, userName, "command", "rappel", null, "failed", result.error);
+          }
+          
+          await markUpdateAsCompleted(updateId, "/rappel command");
+          return new Response("OK", { status: 200 });
+        }
           
         case "/leads":
           await sendTelegramMessage(chatId, "⏳ Récupération des leads...");
@@ -869,23 +1471,16 @@ serve(async (req) => {
           return new Response("OK", { status: 200 });
           
         default:
-          // Unknown command, treat as regular message
           break;
       }
     }
 
-    // =========================================================================
-    // REGULAR MESSAGE - Process in background
-    // =========================================================================
-    
-    // Quick immediate acknowledgment BEFORE processing
+    // Regular message - Process with AI
     await sendTelegramMessage(chatId, "⏳ Reçu. Je traite votre demande…");
 
-    // Process with AI agent in background (fire-and-forget)
     processMessageInBackground(updateId, chatId, userId, userName, text)
       .catch(err => console.error("Background processing error:", err));
 
-    // Return immediately to Telegram (prevents retries)
     return new Response("OK", { status: 200 });
     
   } catch (error) {
