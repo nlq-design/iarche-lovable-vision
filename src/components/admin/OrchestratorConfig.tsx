@@ -16,7 +16,7 @@ import {
   BrainCircuit, Activity, Bell, Shield, Sparkles, Target
 } from "lucide-react";
 
-// Définition des outils de l'orchestrateur - synchronisé avec l'edge function
+// Définition des outils de l'orchestrateur - synchronisé avec l'edge function v5.4
 const ORCHESTRATOR_TOOLS = {
   "Lecture Cockpit": [
     { name: "get_leads", description: "Récupère la liste des leads avec filtrage optionnel", icon: Users },
@@ -45,47 +45,57 @@ const ORCHESTRATOR_TOOLS = {
     { name: "get_brochures", description: "Brochures marketing", icon: FileText },
     { name: "get_atelier_inscriptions", description: "Inscriptions aux ateliers", icon: Calendar },
     { name: "get_bookings", description: "RDV calendrier", icon: Calendar },
-    { name: "get_booking_types", description: "Types de RDV disponibles", icon: Calendar },
-    { name: "get_partners", description: "Partenaires enregistrés", icon: Users },
-    { name: "get_uploaded_files", description: "Fichiers uploadés", icon: FileCode },
+    { name: "get_booking_details", description: "Détails complets d'un RDV", icon: Calendar },
+    { name: "get_agenda_summary", description: "Résumé agenda (today, week, month)", icon: Calendar },
+    { name: "get_comments", description: "Commentaires sur articles", icon: FileText },
+    { name: "get_cta_analytics", description: "Statistiques clics CTA", icon: Activity },
+  ],
+  "Partenaires (v5.4)": [
+    { name: "get_partners", description: "Liste des partenaires (experts IA, indépendants, apporteurs)", icon: Users },
+    { name: "search_partners", description: "Rechercher un partenaire par nom/email", icon: Search },
+    { name: "create_partner", description: "Créer un nouveau partenaire", icon: Users },
+    { name: "update_partner", description: "Mettre à jour un partenaire", icon: Users },
   ],
   "Écriture Cockpit": [
     { name: "create_lead", description: "Créer un nouveau lead", icon: Users },
     { name: "update_lead", description: "Mettre à jour un lead", icon: Users },
+    { name: "update_lead_qualification", description: "Changer qualification lead", icon: Users },
     { name: "create_opportunity", description: "Créer une opportunité", icon: Target },
-    { name: "update_opportunity", description: "Mettre à jour une opportunité", icon: Target },
+    { name: "update_opportunity_stage", description: "Changer stage opportunité", icon: Target },
     { name: "create_project", description: "Créer un projet", icon: ClipboardList },
-    { name: "update_project", description: "Mettre à jour un projet", icon: ClipboardList },
     { name: "create_task", description: "Créer une tâche", icon: ClipboardList },
-    { name: "update_task", description: "Mettre à jour une tâche", icon: ClipboardList },
-    { name: "complete_task", description: "Marquer tâche terminée", icon: ClipboardList },
     { name: "create_meeting_note", description: "Créer un compte-rendu", icon: FileText },
-    { name: "add_activity_log", description: "Ajouter une activité", icon: Activity },
+    { name: "log_activity", description: "Enregistrer une activité", icon: Activity },
     { name: "link_solution_to_lead", description: "Lier solution à lead", icon: Sparkles },
-    { name: "create_specification", description: "Créer un CDC", icon: FileCode },
-    { name: "update_specification", description: "Mettre à jour un CDC", icon: FileCode },
   ],
   "Écriture Admin": [
-    { name: "create_article", description: "Créer un article", icon: FileText },
-    { name: "update_article", description: "Mettre à jour un article", icon: FileText },
-    { name: "publish_article", description: "Publier un article", icon: FileText },
-    { name: "create_booking", description: "Créer un RDV complet", icon: Calendar },
+    { name: "create_booking", description: "Créer un RDV complet (Zoom + calendrier)", icon: Calendar },
     { name: "cancel_booking", description: "Annuler un RDV", icon: Calendar },
-    { name: "send_email", description: "Envoyer un email", icon: FileText },
-    { name: "create_newsletter", description: "Créer une newsletter", icon: FileText },
-    { name: "send_newsletter", description: "Envoyer une newsletter", icon: FileText },
+    { name: "reschedule_booking", description: "Reprogrammer un RDV", icon: Calendar },
+    { name: "send_email", description: "Envoyer un email via Resend", icon: FileText },
+    { name: "draft_followup_email", description: "Générer brouillon email suivi", icon: FileText },
+    { name: "suggest_booking_action", description: "Suggérer action sur RDV", icon: Calendar },
+    { name: "draft_article_content", description: "Générer brouillon article", icon: FileText },
+    { name: "suggest_article_improvements", description: "Suggérer améliorations article", icon: FileText },
+    { name: "draft_newsletter", description: "Générer brouillon newsletter", icon: FileText },
   ],
   "IA & RAG": [
     { name: "search_knowledge_base", description: "Recherche sémantique RAG", icon: Search },
-    { name: "generate_document", description: "Générer un document IA", icon: FileText },
-    { name: "generate_followup_email", description: "Générer email de suivi", icon: FileText },
-    { name: "generate_cdc", description: "Générer un CDC", icon: FileCode },
-    { name: "analyze_transcription", description: "Analyser une transcription", icon: Mic },
-    { name: "suggest_next_actions", description: "Suggérer prochaines actions", icon: Sparkles },
-    { name: "synthesize_entity", description: "Synthétiser une entité", icon: BrainCircuit },
+    { name: "generate_document", description: "Générer un document IA (devis, CDC, proposition)", icon: FileText },
+    { name: "enrich_seo", description: "Enrichir contenu HTML avec balises SEO", icon: Sparkles },
+    { name: "generate_faq", description: "Générer FAQ automatique", icon: FileText },
+    { name: "send_newsletter", description: "Envoyer newsletter pour un article", icon: FileText },
+    { name: "suggest_tags", description: "Suggérer tags pertinents", icon: Sparkles },
+    { name: "suggest_solutions_for_lead", description: "Identifier solutions pour un lead", icon: Sparkles },
+  ],
+  "Mémoire Persistante (v5.2)": [
+    { name: "get_lead_familiarity", description: "Score de familiarité d'un lead", icon: BrainCircuit },
+    { name: "update_lead_familiarity", description: "Recalculer score familiarité", icon: BrainCircuit },
+    { name: "get_entity_references", description: "Références croisées entre entités", icon: BrainCircuit },
+    { name: "create_entity_reference", description: "Créer référence croisée", icon: BrainCircuit },
   ],
   "Orchestration v5.3": [
-    { name: "get_stale_syntheses", description: "Entités nécessitant mise à jour", icon: RefreshCw },
+    { name: "get_stale_syntheses", description: "Entités nécessitant mise à jour synthèse", icon: RefreshCw },
     { name: "get_ai_dashboard_metrics", description: "Métriques système temps réel", icon: Activity },
     { name: "trigger_proactive_notification", description: "Notification Telegram proactive", icon: Bell },
   ],
@@ -96,11 +106,14 @@ const ORCHESTRATOR_CONFIG = {
   endpoint: "ai-agent-orchestrator",
   gateway: "https://ai.gateway.lovable.dev/v1/chat/completions",
   defaultModel: "google/gemini-2.5-flash",
+  fallbackModel: "google/gemini-2.5-flash-lite",
   maxTokens: 4096,
   temperature: 0.7,
   memoryEnabled: true,
+  memoryTTL: "30 jours",
   ragEnabled: true,
   dictionaryEnabled: true,
+  toolLoggingEnabled: true,
 };
 
 function ToolCard({ tool }: { tool: { name: string; description: string; icon: React.ComponentType<{ className?: string }> } }) {
@@ -254,7 +267,7 @@ export function OrchestratorConfig() {
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-amber-500" />
               <div>
-                <p className="text-2xl font-bold">v5.3</p>
+                <p className="text-2xl font-bold">v5.4</p>
                 <p className="text-xs text-muted-foreground">Version orchestrateur</p>
               </div>
             </div>
@@ -323,8 +336,8 @@ export function OrchestratorConfig() {
                 <Settings className="h-5 w-5" />
                 Paramètres de l'Orchestrateur
               </CardTitle>
-              <CardDescription>
-                Configuration technique de l'agent IA IArche v5.3
+            <CardDescription>
+                Configuration technique de l'agent IA IArche v5.4 avec partenaires et logging enrichi
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
