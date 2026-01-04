@@ -81,9 +81,16 @@ serve(async (req) => {
 
   try {
     const body: RequestBody = await req.json();
-    const { title, sections, metadata, theme, documentType } = body;
+    const { title, sections: rawSections, metadata, theme, documentType } = body;
 
-    console.log('Generating DOCX for:', title);
+    // Ensure sections is always an array
+    const sections: DocumentSection[] = Array.isArray(rawSections) ? rawSections : [];
+    
+    console.log('Generating DOCX for:', title, '- Sections:', sections.length);
+
+    if (!title) {
+      throw new Error('Title is required');
+    }
 
     // Convert hex color to DOCX format (remove #)
     const primaryColor = theme?.primaryColor?.replace('#', '') || COLORS.bleuNuit;
