@@ -4347,45 +4347,93 @@ serve(async (req) => {
       console.error("Active entities fetch error (non-blocking):", err);
     }
     
-    // 3b. TOPIC CHANGE DETECTION - Check if user query mentions different entities
-    // This prevents context bleeding when user changes subject
-    const queryForTopicDetection = userQuery.toLowerCase();
-    const solutionKeywords = ["collaboria", "datalia", "lexia", "projetia", "dialogue", "iarche", "solution"];
-    const mentionsSolution = solutionKeywords.some(kw => queryForTopicDetection.includes(kw));
-    const infoKeywords = ["info", "infos", "information", "parle", "c'est quoi", "qu'est-ce que", "présente", "décris", "détail"];
-    const asksForInfo = infoKeywords.some(kw => queryForTopicDetection.includes(kw));
+    // 3b. ADVANCED TOPIC CHANGE DETECTION
+    // Prevents context bleeding when user changes subject
+    const queryForTopicDetection = userQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     
-    // If query asks about solutions/info and active entities are leads/partners, this is a topic change
-    const isTopicChange = (mentionsSolution || asksForInfo) && 
-      activeEntities.length > 0 && 
-      !activeEntities.some(e => e.type === "solution" || solutionKeywords.some(kw => e.details.toLowerCase().includes(kw)));
+    // Extract mentioned entity names from active entities
+    const activeEntityNames = activeEntities.map(e => {
+      // Extract name from content like "Lead mentionné : Cédric Picard (email) - Beerecos"
+      const parts = e.details.toLowerCase().split(/[\s\-:()]+/).filter(p => p.length > 2);
+      return parts;
+    }).flat();
+    
+    // Check if current query mentions ANY of the active entity names
+    const queryMentionsActiveEntity = activeEntityNames.some(name => 
+      name.length > 3 && queryForTopicDetection.includes(name.normalize("NFD").replace(/[\u0300-\u036f]/g, ""))
+    );
+    
+    // Keywords that suggest user is asking about something NEW
+    const newTopicKeywords = [
+      "info", "infos", "information", "parle", "c'est quoi", "qu'est-ce", 
+      "presente", "decris", "detail", "explique", "dis-moi", "donne-moi",
+      "quelles sont", "quelle est", "quel est", "qui est", "prochain", "prochaine"
+    ];
+    const asksForNewInfo = newTopicKeywords.some(kw => queryForTopicDetection.includes(kw));
+    
+    // Detect RDV-related context vs info-request context
+    const isRdvRelatedQuery = /\b(rdv|rendez|booking|prend|planifi|reserver|calendar|agenda)\b/i.test(queryForTopicDetection);
+    const hasActiveRdvContext = activeEntities.some(e => 
+      e.details.toLowerCase().includes("rdv") || 
+      e.details.toLowerCase().includes("booking") ||
+      e.type === "booking"
+    );
+    
+    // TOPIC CHANGE = user asks for info but doesn't mention active entities
+    // OR user asks about different topic (not RDV when context is RDV)
+    const isTopicChange = 
+      (asksForNewInfo && activeEntities.length > 0 && !queryMentionsActiveEntity) ||
+      (!isRdvRelatedQuery && hasActiveRdvContext && activeEntities.length > 0);
     
     if (isTopicChange) {
-      console.log("Topic change detected - clearing active entity context to prevent bleeding");
-      activeEntities = []; // Clear irrelevant context
+      console.log(`Topic change detected - query "${userQuery.slice(0, 50)}..." doesn't relate to active entities:`, 
+        activeEntities.map(e => e.details.slice(0, 50)));
+      
+      // Expire active entities in database to prevent future bleeding
+      try {
+        await supabase
+          .from("ai_agent_memory")
+          .update({ expires_at: new Date().toISOString() })
+          .eq("memory_type", "context")
+          .eq("category", "active_entity")
+          .or(session_id ? `session_id.eq.${session_id}` : `user_id.eq.${safeUserId}`);
+      } catch (err) {
+        console.error("Failed to expire active entities:", err);
+      }
+      
+      activeEntities = []; // Clear for this request
     }
     
-    // 4. Build memory context string with active entities
+    // 4. Build memory context string - ONLY include if truly relevant
     let memoryContext = "";
     
-    // Active entities shown ONLY if relevant and not a topic change
-    if (activeEntities.length > 0) {
-      memoryContext += "\n\n📋 CONTEXTE RÉCENT (informations potentiellement utiles, mais analyser d'abord la requête actuelle) :";
+    // Active entities shown ONLY if query explicitly mentions them
+    if (activeEntities.length > 0 && queryMentionsActiveEntity) {
+      memoryContext += "\n\n📋 CONTEXTE ACTIF (entité mentionnée dans la requête) :";
       for (const entity of activeEntities) {
         memoryContext += `\n- ${entity.details}`;
       }
     }
     
-    // Add explicit instruction to analyze current query first
-    memoryContext += "\n\n⚠️ RÈGLE CRITIQUE : Analyser le message actuel de l'utilisateur en PREMIER. Si l'utilisateur pose une question sur un sujet différent du contexte récent (ex: demande d'info sur une solution alors que le contexte parle d'un RDV), IGNORER le contexte récent et répondre à la question posée.";
+    // Critical instruction ALWAYS included
+    memoryContext += `\n
+⚠️ RÈGLE ABSOLUE - PRIORITÉ MAXIMALE ⚠️
+1. Lire et analyser UNIQUEMENT le dernier message de l'utilisateur
+2. Répondre UNIQUEMENT à ce qui est demandé dans ce message
+3. NE JAMAIS parler d'un RDV, lead ou sujet qui n'est PAS mentionné dans le message actuel
+4. Si le message demande des "infos sur X", parler SEULEMENT de X, pas d'autre chose
+5. IGNORER tout contexte précédent qui ne concerne pas la requête actuelle`;
     
     if (recentMemory.length > 0 || relevantMemory.length > 0) {
-      memoryContext += "\n\nMÉMOIRE AGENT (référence uniquement si pertinent) :";
-      if (relevantMemory.length > 0) {
-        memoryContext += "\n--- Mémoire sémantiquement proche ---\n" + relevantMemory.slice(0, 3).join("\n");
-      }
-      if (recentMemory.length > 0) {
-        memoryContext += "\n--- Historique récent ---\n" + recentMemory.slice(0, 5).join("\n");
+      // Only include memory if it seems related to current query
+      const queryWords = queryForTopicDetection.split(/\s+/).filter((w: string) => w.length > 3);
+      const relevantMemoryForQuery = relevantMemory.filter((m: string) => 
+        queryWords.some((word: string) => m.toLowerCase().includes(word))
+      );
+      
+      if (relevantMemoryForQuery.length > 0) {
+        memoryContext += "\n\nMÉMOIRE PERTINENTE (uniquement si en lien avec la requête) :";
+        memoryContext += "\n" + relevantMemoryForQuery.slice(0, 2).join("\n");
       }
     }
 
