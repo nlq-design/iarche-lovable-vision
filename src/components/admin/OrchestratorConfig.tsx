@@ -99,6 +99,14 @@ const ORCHESTRATOR_TOOLS = {
     { name: "get_ai_dashboard_metrics", description: "Métriques système temps réel", icon: Activity },
     { name: "trigger_proactive_notification", description: "Notification Telegram proactive", icon: Bell },
   ],
+  "Telegram v3 (v6.22)": [
+    { name: "telegram_inline_buttons", description: "Boutons de réponse rapide contextuels après actions", icon: Zap },
+    { name: "telegram_stats", description: "Tracking des messages, temps de réponse, erreurs", icon: Activity },
+    { name: "telegram_image_upload", description: "Import images/photos vers cockpit-uploads", icon: FileText },
+    { name: "telegram_document_upload", description: "Import PDF/documents vers cockpit-uploads", icon: FileText },
+    { name: "telegram_contextual_linking", description: "Liaison auto audio → lead/projet via caption", icon: BrainCircuit },
+    { name: "telegram_reminder", description: "Commande /rappel avec parsing date/heure", icon: Calendar },
+  ],
 };
 
 // Paramètres de configuration de l'orchestrateur
@@ -267,7 +275,7 @@ export function OrchestratorConfig() {
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-amber-500" />
               <div>
-                <p className="text-2xl font-bold">v5.4</p>
+                <p className="text-2xl font-bold">v6.22</p>
                 <p className="text-xs text-muted-foreground">Version orchestrateur</p>
               </div>
             </div>
@@ -337,7 +345,7 @@ export function OrchestratorConfig() {
                 Paramètres de l'Orchestrateur
               </CardTitle>
             <CardDescription>
-                Configuration technique de l'agent IA IArche v5.4 avec partenaires et logging enrichi
+                Configuration technique de l'agent IA IArche v6.22 avec Telegram v3, partenaires et logging enrichi
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
