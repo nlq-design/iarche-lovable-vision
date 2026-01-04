@@ -12,8 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { FileText, Download, Loader2 } from "lucide-react";
+import { FileText, Loader2 } from "lucide-react";
 
 export interface ExportSettings {
   header: {
@@ -44,7 +43,7 @@ const DEFAULT_SETTINGS: ExportSettings = {
 interface ExportSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onExport: (format: 'docx' | 'pdf', settings: ExportSettings) => Promise<void>;
+  onExport: (settings: ExportSettings) => Promise<void>;
   documentTitle: string;
   isExporting?: boolean;
 }
@@ -77,8 +76,8 @@ export function ExportSettingsDialog({
     localStorage.setItem('cockpit-export-settings', JSON.stringify(newSettings));
   };
 
-  const handleExport = async (format: 'docx' | 'pdf') => {
-    await onExport(format, settings);
+  const handleExport = async () => {
+    await onExport(settings);
     onOpenChange(false);
   };
 
@@ -88,7 +87,7 @@ export function ExportSettingsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            Paramètres d'export
+            Export PDF
           </DialogTitle>
           <DialogDescription>
             Personnalisez l'en-tête et le pied de page pour "{documentTitle}"
@@ -178,23 +177,12 @@ export function ExportSettingsDialog({
           </TabsContent>
         </Tabs>
 
-        <Separator className="my-4" />
-
-        <DialogFooter className="flex gap-2 sm:gap-2">
-          <Button
-            variant="outline"
-            onClick={() => handleExport('docx')}
-            disabled={isExporting}
-          >
-            {isExporting ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4 mr-2" />
-            )}
-            Exporter DOCX
+        <DialogFooter className="mt-6">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Annuler
           </Button>
           <Button
-            onClick={() => handleExport('pdf')}
+            onClick={handleExport}
             disabled={isExporting}
           >
             {isExporting ? (
@@ -202,7 +190,7 @@ export function ExportSettingsDialog({
             ) : (
               <FileText className="h-4 w-4 mr-2" />
             )}
-            Exporter PDF
+            Générer PDF
           </Button>
         </DialogFooter>
       </DialogContent>

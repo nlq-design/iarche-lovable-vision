@@ -178,7 +178,7 @@ export default function CockpitDocumentDetail() {
     }
   };
 
-  const handleExport = async (format: 'docx' | 'pdf', settings: ExportSettings) => {
+  const handleExportPDF = async (settings: ExportSettings) => {
     if (!document) return;
     setIsExporting(true);
     try {
@@ -210,47 +210,33 @@ export default function CockpitDocumentDetail() {
       if (docxError) throw docxError;
       if (!docxData?.docxBase64) throw new Error('DOCX generation failed');
 
-      if (format === 'docx') {
-        // Download DOCX directly
-        const blob = new Blob([Uint8Array.from(atob(docxData.docxBase64), c => c.charCodeAt(0))], {
-          type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      // Convert to PDF via iLovePDF
+      const { data, error } = await supabase.functions.invoke('convert-to-pdf', {
+        body: { 
+          docx_base64: docxData.docxBase64,
+          filename: document.title.replace(/[^a-zA-Z0-9]/g, '_'),
+          document_id: document.id,
+          save_to_storage: true
+        }
+      });
+      
+      if (error) throw error;
+      
+      // Download the PDF
+      if (data?.pdf_base64) {
+        const blob = new Blob([Uint8Array.from(atob(data.pdf_base64), c => c.charCodeAt(0))], {
+          type: 'application/pdf',
         });
         const url = URL.createObjectURL(blob);
         const link = window.document.createElement('a');
         link.href = url;
-        link.download = `${document.title.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
+        link.download = `${document.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
         link.click();
         URL.revokeObjectURL(url);
-        toast.success('Document DOCX exporté');
-      } else {
-        // Convert to PDF via iLovePDF
-        const { data, error } = await supabase.functions.invoke('convert-to-pdf', {
-          body: { 
-            docx_base64: docxData.docxBase64,
-            filename: document.title.replace(/[^a-zA-Z0-9]/g, '_'),
-            document_id: document.id,
-            save_to_storage: true
-          }
-        });
-        
-        if (error) throw error;
-        
-        // Download the PDF
-        if (data?.pdf_base64) {
-          const blob = new Blob([Uint8Array.from(atob(data.pdf_base64), c => c.charCodeAt(0))], {
-            type: 'application/pdf',
-          });
-          const url = URL.createObjectURL(blob);
-          const link = window.document.createElement('a');
-          link.href = url;
-          link.download = `${document.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-          link.click();
-          URL.revokeObjectURL(url);
-          toast.success('PDF généré avec succès');
-        } else if (data?.pdf_url) {
-          window.open(data.pdf_url, '_blank');
-          toast.success('PDF généré avec succès');
-        }
+        toast.success('PDF généré avec succès');
+      } else if (data?.pdf_url) {
+        window.open(data.pdf_url, '_blank');
+        toast.success('PDF généré avec succès');
       }
     } catch (error: any) {
       console.error('Export error:', error);
@@ -667,7 +653,7 @@ export default function CockpitDocumentDetail() {
       <ExportSettingsDialog
         open={exportDialogOpen}
         onOpenChange={setExportDialogOpen}
-        onExport={handleExport}
+        onExport={handleExportPDF}
         documentTitle={document.title}
         isExporting={isExporting}
       />
