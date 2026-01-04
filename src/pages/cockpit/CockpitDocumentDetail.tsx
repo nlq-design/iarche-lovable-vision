@@ -179,17 +179,46 @@ export default function CockpitDocumentDetail() {
   const handleExportDOCX = async () => {
     if (!document) return;
     try {
+      // Extract sections from content_json
+      const contentJson = document.content_json as any;
+      const sections = contentJson?.sections || [];
+      const metadata = contentJson?.metadata || {};
+      const theme = contentJson?.theme || {
+        primaryColor: '#1A2B4A',
+        accentColor: '#B04A32',
+        useGradient: true,
+      };
+
       const { data, error } = await supabase.functions.invoke('generate-docx', {
-        body: { document_id: document.id }
+        body: {
+          title: document.title,
+          sections,
+          metadata,
+          theme,
+          documentType: document.document_type,
+        }
       });
       
       if (error) throw error;
       
-      if (data?.download_url) {
+      // Handle base64 response
+      if (data?.docxBase64) {
+        const blob = new Blob([Uint8Array.from(atob(data.docxBase64), c => c.charCodeAt(0))], {
+          type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        });
+        const url = URL.createObjectURL(blob);
+        const link = window.document.createElement('a');
+        link.href = url;
+        link.download = `${document.title.replace(/[^a-zA-Z0-9]/g, '_')}.docx`;
+        link.click();
+        URL.revokeObjectURL(url);
+        toast.success('Document DOCX exporté');
+      } else if (data?.download_url) {
         window.open(data.download_url, '_blank');
         toast.success('Document DOCX généré');
       }
     } catch (error: any) {
+      console.error('DOCX export error:', error);
       toast.error(`Erreur export: ${error.message}`);
     }
   };
@@ -198,9 +227,25 @@ export default function CockpitDocumentDetail() {
     if (!document) return;
     setIsExportingPDF(true);
     try {
-      // First generate DOCX if not already done
+      // Extract sections from content_json
+      const contentJson = document.content_json as any;
+      const sections = contentJson?.sections || [];
+      const metadata = contentJson?.metadata || {};
+      const theme = contentJson?.theme || {
+        primaryColor: '#1A2B4A',
+        accentColor: '#B04A32',
+        useGradient: true,
+      };
+
+      // First generate DOCX
       const { data: docxData, error: docxError } = await supabase.functions.invoke('generate-docx', {
-        body: { document_id: document.id }
+        body: {
+          title: document.title,
+          sections,
+          metadata,
+          theme,
+          documentType: document.document_type,
+        }
       });
       
       if (docxError) throw docxError;
