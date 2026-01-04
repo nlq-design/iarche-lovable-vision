@@ -131,3 +131,6 @@ verify_jwt = true
 
 [functions.serve-transcription-audio]
 verify_jwt = true
+
+[functions.convert-to-pdf]
+verify_jwt = true
