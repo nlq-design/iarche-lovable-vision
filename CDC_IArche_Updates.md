@@ -1,12 +1,36 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.20**  
+**Version mise à jour : V6.21**  
 **Date : 4 Janvier 2026**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.20 TELEGRAM WEBHOOK HARDENING ✅ — V6.21
+
+**Date :** 4 Janvier 2026
+
+Renforcement de la fiabilité et des fonctionnalités du webhook Telegram.
+
+**Améliorations implémentées :**
+
+| # | Amélioration | Détails |
+|---|-------------|---------|
+| 1 | **Nettoyage automatique** | `cleanupOldUpdates()` appelé aléatoirement (1%) pour purger >24h |
+| 2 | **Typing continu** | `startTypingLoop()` maintient l'indicateur pendant le traitement long |
+| 3 | **Limite de taille fichier** | Vérification 20MB avant téléchargement avec message explicite |
+| 4 | **Logging des erreurs** | `logTelegramError()` → table `email_logs` pour monitoring |
+| 5 | **Support des captions** | Légende du message vocal utilisée comme titre/contexte de transcription |
+
+**Code modifié :**
+- `supabase/functions/telegram-webhook/index.ts` — Nouvelles fonctions `startTypingLoop`, `logTelegramError`, `cleanupOldUpdates`
+- Interface `TelegramMessage` — Ajout du champ `caption`
+- `processAudioInBackground` — Paramètres `caption` et `fileSize` ajoutés
+- `createTranscriptionJob` — Utilise caption comme titre si présent
+
+---
 
 ### 0.19 AGENT TELEGRAM V2 — ANTI-RÉPÉTITION + IMPORT AUDIO ✅ — V6.20
 
