@@ -2,17 +2,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useCockpitAuth } from '@/hooks/cockpit/useCockpitAuth';
-import { LogOut, Shield, Clock, Briefcase, Fish } from 'lucide-react';
+import { LogOut, Shield, Clock, Fish, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-export function CockpitHeader() {
+export function VivierHeader() {
   const { user, signOut } = useAuth();
-  const { stepUpExpiresAt, hasCockpitAdminAccess } = useCockpitAuth();
+  const { stepUpExpiresAt } = useCockpitAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -34,36 +33,29 @@ export function CockpitHeader() {
       <div className="h-full px-3 sm:px-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <SidebarTrigger className="lg:hidden" />
-          <Link to="/cockpit" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-              <Briefcase className="w-4 h-4 text-primary-foreground" />
+          
+          {/* Back to Cockpit */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={() => navigate('/cockpit')} className="h-8 w-8">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Retour au Cockpit</TooltipContent>
+          </Tooltip>
+          
+          <Link to="/viviers" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            <div className="w-8 h-8 bg-orange-500 rounded-md flex items-center justify-center">
+              <Fish className="w-4 h-4 text-white" />
             </div>
             <div className="hidden sm:block">
-              <span className="font-semibold text-base text-foreground">Cockpit</span>
-              {hasCockpitAdminAccess && (
-                <Badge variant="secondary" className="ml-2 text-xs font-medium">Admin</Badge>
-              )}
+              <span className="font-semibold text-base text-foreground">Viviers</span>
+              <span className="ml-2 text-xs text-orange-500 font-medium">Cold Leads</span>
             </div>
           </Link>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Viviers Button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => navigate('/viviers')}
-                className="h-8 px-3 border-orange-300 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
-              >
-                <Fish className="w-4 h-4 mr-1.5" />
-                <span className="hidden sm:inline">Viviers</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Gérer les leads froids</TooltipContent>
-          </Tooltip>
-
           {sessionTimeRemaining && (
             <Tooltip>
               <TooltipTrigger asChild>

@@ -111,6 +111,15 @@ const CockpitPartenaires = lazy(() => import("./pages/cockpit/CockpitPartenaires
 const CockpitPartenaireDetail = lazy(() => import("./pages/cockpit/CockpitPartenaireDetail"));
 const CockpitImports = lazy(() => import("./pages/cockpit/CockpitImports"));
 
+// Viviers (Cold Leads)
+const ProtectedVivierRoute = lazy(() => import("./components/viviers/ProtectedVivierRoute"));
+const ViviersDashboard = lazy(() => import("./pages/viviers/ViviersDashboard"));
+const ViviersLeads = lazy(() => import("./pages/viviers/ViviersLeads"));
+const ViviersImport = lazy(() => import("./pages/viviers/ViviersImport"));
+const ViviersScoring = lazy(() => import("./pages/viviers/ViviersScoring"));
+const ViviersCampaigns = lazy(() => import("./pages/viviers/ViviersCampaigns"));
+const ViviersSettings = lazy(() => import("./pages/viviers/ViviersSettings"));
+
 // QueryClient avec cache optimisé
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -657,6 +666,38 @@ const App = () => (
           <Route path="/cockpit/imports" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedCockpitRoute><CockpitImports /></ProtectedCockpitRoute>
+            </Suspense>
+          } />
+
+          {/* Viviers (Cold Leads) */}
+          <Route path="/viviers" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>}>
+              <ProtectedVivierRoute><ViviersDashboard /></ProtectedVivierRoute>
+            </Suspense>
+          } />
+          <Route path="/viviers/leads" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>}>
+              <ProtectedVivierRoute><ViviersLeads /></ProtectedVivierRoute>
+            </Suspense>
+          } />
+          <Route path="/viviers/import" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>}>
+              <ProtectedVivierRoute><ViviersImport /></ProtectedVivierRoute>
+            </Suspense>
+          } />
+          <Route path="/viviers/scoring" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>}>
+              <ProtectedVivierRoute><ViviersScoring /></ProtectedVivierRoute>
+            </Suspense>
+          } />
+          <Route path="/viviers/campaigns" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>}>
+              <ProtectedVivierRoute><ViviersCampaigns /></ProtectedVivierRoute>
+            </Suspense>
+          } />
+          <Route path="/viviers/settings" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>}>
+              <ProtectedVivierRoute><ViviersSettings /></ProtectedVivierRoute>
             </Suspense>
           } />
           
