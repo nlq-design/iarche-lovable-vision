@@ -15,6 +15,9 @@ const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 // Allowed Telegram user IDs (configure these for security)
 const ALLOWED_USERS: number[] = []; // Empty = allow all, or add specific user IDs
 
+// Supabase client for deduplication
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
 interface TelegramMessage {
   message_id: number;
   from: {
@@ -28,6 +31,29 @@ interface TelegramMessage {
     type: string;
   };
   text?: string;
+  voice?: {
+    file_id: string;
+    file_unique_id: string;
+    duration: number;
+    mime_type?: string;
+    file_size?: number;
+  };
+  audio?: {
+    file_id: string;
+    file_unique_id: string;
+    duration: number;
+    performer?: string;
+    title?: string;
+    mime_type?: string;
+    file_size?: number;
+  };
+  document?: {
+    file_id: string;
+    file_unique_id: string;
+    file_name?: string;
+    mime_type?: string;
+    file_size?: number;
+  };
   date: number;
 }
 
@@ -35,6 +61,89 @@ interface TelegramUpdate {
   update_id: number;
   message?: TelegramMessage;
 }
+
+// =============================================================================
+// DEDUPLICATION - Prevents Telegram retries from causing duplicate actions
+// =============================================================================
+
+async function isUpdateAlreadyProcessed(updateId: number): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from("telegram_processed_updates")
+      .select("update_id, status")
+      .eq("update_id", updateId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error checking dedup:", error);
+      return false; // Fail-open: process if we can't check
+    }
+
+    return data !== null;
+  } catch (err) {
+    console.error("Dedup check failed:", err);
+    return false;
+  }
+}
+
+async function markUpdateAsProcessing(updateId: number, chatId: number): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from("telegram_processed_updates")
+      .insert({
+        update_id: updateId,
+        chat_id: chatId,
+        status: "processing",
+      });
+
+    if (error) {
+      // Unique constraint violation = already being processed
+      if (error.code === "23505") {
+        console.log(`Update ${updateId} already being processed (concurrent request)`);
+        return false;
+      }
+      console.error("Error marking as processing:", error);
+    }
+    return !error;
+  } catch (err) {
+    console.error("Mark processing failed:", err);
+    return false;
+  }
+}
+
+async function markUpdateAsCompleted(updateId: number, responsePreview?: string): Promise<void> {
+  try {
+    await supabase
+      .from("telegram_processed_updates")
+      .update({
+        status: "completed",
+        response_preview: responsePreview?.slice(0, 200),
+        processed_at: new Date().toISOString(),
+      })
+      .eq("update_id", updateId);
+  } catch (err) {
+    console.error("Mark completed failed:", err);
+  }
+}
+
+async function markUpdateAsFailed(updateId: number, error?: string): Promise<void> {
+  try {
+    await supabase
+      .from("telegram_processed_updates")
+      .update({
+        status: "failed",
+        response_preview: error?.slice(0, 200),
+        processed_at: new Date().toISOString(),
+      })
+      .eq("update_id", updateId);
+  } catch (err) {
+    console.error("Mark failed failed:", err);
+  }
+}
+
+// =============================================================================
+// TELEGRAM HELPERS
+// =============================================================================
 
 async function sendTelegramMessage(chatId: number, text: string, parseMode: string = "Markdown"): Promise<void> {
   try {
@@ -91,8 +200,16 @@ async function sendTypingAction(chatId: number): Promise<void> {
   }
 }
 
+// =============================================================================
+// AI AGENT CALL - With timeout and fast mode for Telegram
+// =============================================================================
+
 async function callAIAgent(message: string, userId: number, userName: string): Promise<string> {
   console.log("Calling AI agent with message:", message);
+  
+  // Telegram-specific timeout (25s to stay under Edge Function limits)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25000);
 
   try {
     // Format messages array as expected by the orchestrator
@@ -100,7 +217,7 @@ async function callAIAgent(message: string, userId: number, userName: string): P
       { role: "user", content: message }
     ];
 
-    // Call the AI agent orchestrator
+    // Call the AI agent orchestrator with telegram-specific settings
     const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-agent-orchestrator`, {
       method: "POST",
       headers: {
@@ -115,14 +232,23 @@ async function callAIAgent(message: string, userId: number, userName: string): P
         user_id: null,
         session_id: `telegram_session_${userId}`,
         workspace_id: null, // Telegram uses global workspace
+        // Telegram-specific: request faster response
+        telegram_fast_mode: true,
       }),
+      signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
     console.log("AI Agent response status:", response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error("AI Agent error:", response.status, errorText);
+      
+      if (response.status === 504) {
+        return "⚠️ La demande a pris trop de temps. Je l'ai traitée en arrière-plan. Réessayez dans quelques secondes ou reformulez votre demande plus simplement.";
+      }
+      
       return `❌ Erreur (${response.status}): ${errorText.slice(0, 200)}`;
     }
 
@@ -140,11 +266,123 @@ async function callAIAgent(message: string, userId: number, userName: string): P
     
     return responseText;
   } catch (error: unknown) {
+    clearTimeout(timeoutId);
+    
+    if (error instanceof Error && error.name === "AbortError") {
+      console.log("AI Agent call timed out after 25s");
+      return "⚠️ La demande prend plus de temps que prévu. Je continue le traitement. Réessayez dans quelques secondes.";
+    }
+    
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("Error calling AI agent:", errorMessage);
     return `❌ Erreur: ${errorMessage}`;
   }
 }
+
+// =============================================================================
+// AUDIO FILE HANDLING - Download from Telegram
+// =============================================================================
+
+async function getTelegramFileUrl(fileId: string): Promise<string | null> {
+  try {
+    const response = await fetch(`${TELEGRAM_API}/getFile?file_id=${fileId}`);
+    const data = await response.json();
+    
+    if (!data.ok || !data.result?.file_path) {
+      console.error("Failed to get file path:", data);
+      return null;
+    }
+    
+    return `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${data.result.file_path}`;
+  } catch (error) {
+    console.error("Error getting file URL:", error);
+    return null;
+  }
+}
+
+async function downloadTelegramFile(fileUrl: string): Promise<ArrayBuffer | null> {
+  try {
+    const response = await fetch(fileUrl);
+    if (!response.ok) {
+      console.error("Failed to download file:", response.status);
+      return null;
+    }
+    return await response.arrayBuffer();
+  } catch (error) {
+    console.error("Error downloading file:", error);
+    return null;
+  }
+}
+
+async function uploadToSupabaseStorage(
+  fileBuffer: ArrayBuffer,
+  fileName: string,
+  mimeType: string
+): Promise<string | null> {
+  try {
+    const filePath = `telegram-audio/${Date.now()}_${fileName}`;
+    
+    const { data, error } = await supabase.storage
+      .from("cockpit-uploads")
+      .upload(filePath, fileBuffer, {
+        contentType: mimeType,
+        upsert: false,
+      });
+    
+    if (error) {
+      console.error("Storage upload error:", error);
+      return null;
+    }
+    
+    return data.path;
+  } catch (error) {
+    console.error("Error uploading to storage:", error);
+    return null;
+  }
+}
+
+async function createTranscriptionJob(
+  storagePath: string,
+  source: string,
+  userId: number,
+  userName: string
+): Promise<{ success: boolean; transcriptionId?: string; error?: string }> {
+  try {
+    // Create transcription record directly (internal, no auth required)
+    const { data, error } = await supabase
+      .from("voice_transcriptions")
+      .insert({
+        title: `Transcription Telegram - ${userName}`,
+        source: source,
+        storage_path: storagePath,
+        status: "pending",
+        created_by: null, // No authenticated user for Telegram
+        workspace_id: null,
+        metadata: {
+          telegram_user_id: userId,
+          telegram_username: userName,
+          imported_via: "telegram_bot",
+        },
+      })
+      .select("id")
+      .single();
+    
+    if (error) {
+      console.error("Error creating transcription:", error);
+      return { success: false, error: error.message };
+    }
+    
+    return { success: true, transcriptionId: data.id };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("Error creating transcription job:", msg);
+    return { success: false, error: msg };
+  }
+}
+
+// =============================================================================
+// HELP MESSAGE
+// =============================================================================
 
 function formatHelpMessage(): string {
   return `🤖 *Agent IA IArche - Telegram*
@@ -159,6 +397,9 @@ Bienvenue ! Je suis votre assistant IA pour gérer le Cockpit IArche.
 • /projets - Voir les projets actifs
 • /stats - Statistiques rapides
 
+*Fichiers audio :*
+📎 Envoyez un message vocal ou un fichier audio pour créer une transcription dans le Cockpit.
+
 *Exemples de questions :*
 • "Quels sont les leads de cette semaine ?"
 • "Crée une tâche pour rappeler Jean demain"
@@ -168,6 +409,102 @@ Bienvenue ! Je suis votre assistant IA pour gérer le Cockpit IArche.
 Posez simplement votre question et je vous répondrai !`;
 }
 
+// =============================================================================
+// BACKGROUND PROCESSING TASK
+// =============================================================================
+
+async function processMessageInBackground(
+  updateId: number,
+  chatId: number,
+  userId: number,
+  userName: string,
+  text: string
+): Promise<void> {
+  try {
+    // Send typing indicator
+    await sendTypingAction(chatId);
+    
+    // Process with AI agent
+    const aiResponse = await callAIAgent(text, userId, userName);
+    
+    // Send response
+    await sendTelegramMessage(chatId, aiResponse);
+    
+    // Mark as completed
+    await markUpdateAsCompleted(updateId, aiResponse);
+    
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("Background processing error:", msg);
+    
+    await sendTelegramMessage(chatId, "Je n'ai pas pu traiter votre demande. Réessayez.");
+    await markUpdateAsFailed(updateId, msg);
+  }
+}
+
+async function processAudioInBackground(
+  updateId: number,
+  chatId: number,
+  userId: number,
+  userName: string,
+  fileId: string,
+  fileName: string,
+  mimeType: string
+): Promise<void> {
+  try {
+    await sendTypingAction(chatId);
+    
+    // Get file URL from Telegram
+    const fileUrl = await getTelegramFileUrl(fileId);
+    if (!fileUrl) {
+      await sendTelegramMessage(chatId, "❌ Impossible de récupérer le fichier audio.");
+      await markUpdateAsFailed(updateId, "Failed to get file URL");
+      return;
+    }
+    
+    // Download file
+    const fileBuffer = await downloadTelegramFile(fileUrl);
+    if (!fileBuffer) {
+      await sendTelegramMessage(chatId, "❌ Impossible de télécharger le fichier audio.");
+      await markUpdateAsFailed(updateId, "Failed to download file");
+      return;
+    }
+    
+    // Upload to Supabase Storage
+    const storagePath = await uploadToSupabaseStorage(fileBuffer, fileName, mimeType);
+    if (!storagePath) {
+      await sendTelegramMessage(chatId, "❌ Impossible de sauvegarder le fichier audio.");
+      await markUpdateAsFailed(updateId, "Failed to upload to storage");
+      return;
+    }
+    
+    // Create transcription job
+    const result = await createTranscriptionJob(storagePath, "telegram", userId, userName);
+    
+    if (result.success) {
+      await sendTelegramMessage(
+        chatId,
+        `✅ Fichier audio reçu et enregistré !\n\n📝 Transcription créée (ID: \`${result.transcriptionId?.slice(0, 8)}...\`)\n\n➡️ Accédez au Cockpit pour voir la transcription et lancer l'analyse.`
+      );
+      await markUpdateAsCompleted(updateId, `Transcription created: ${result.transcriptionId}`);
+    } else {
+      await sendTelegramMessage(chatId, `❌ Erreur lors de la création de la transcription: ${result.error}`);
+      await markUpdateAsFailed(updateId, result.error);
+    }
+    
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("Audio processing error:", msg);
+    
+    await sendTelegramMessage(chatId, "❌ Erreur lors du traitement de l'audio.");
+    await markUpdateAsFailed(updateId, msg);
+  }
+}
+
+// =============================================================================
+// MAIN HANDLER
+// =============================================================================
+
 serve(async (req) => {
   // Handle CORS preflight requests (useful for debugging from a browser)
   if (req.method === "OPTIONS") {
@@ -175,10 +512,6 @@ serve(async (req) => {
   }
 
   // Debug / health endpoint
-  // - GET /telegram-webhook                 -> simple text health
-  // - GET /telegram-webhook?debug=1         -> bot + webhook status (no secrets)
-  // - GET /telegram-webhook?setup=1         -> set webhook to THIS endpoint (safe, no custom URL)
-  // - GET /telegram-webhook?setup=1&debug=1 -> set + return status
   if (req.method === "GET") {
     const url = new URL(req.url);
     const debug = url.searchParams.get("debug") === "1";
@@ -263,59 +596,137 @@ serve(async (req) => {
 
   try {
     const update: TelegramUpdate = await req.json();
-    console.log("Received Telegram update:", JSON.stringify(update, null, 2));
+    console.log("Received Telegram update:", update.update_id);
 
     const message = update.message;
-    if (!message || !message.text) {
+    if (!message) {
       return new Response("OK", { status: 200 });
     }
 
     const chatId = message.chat.id;
     const userId = message.from.id;
     const userName = message.from.first_name + (message.from.last_name ? ` ${message.from.last_name}` : "");
-    const text = message.text.trim();
+    const updateId = update.update_id;
+
+    // =========================================================================
+    // DEDUPLICATION CHECK - Critical to prevent Telegram retry loops
+    // =========================================================================
+    
+    // Check if this update was already processed
+    const alreadyProcessed = await isUpdateAlreadyProcessed(updateId);
+    if (alreadyProcessed) {
+      console.log(`Update ${updateId} already processed, ignoring duplicate`);
+      return new Response("OK", { status: 200 });
+    }
+
+    // Try to claim this update for processing
+    const claimed = await markUpdateAsProcessing(updateId, chatId);
+    if (!claimed) {
+      console.log(`Update ${updateId} claimed by another instance, ignoring`);
+      return new Response("OK", { status: 200 });
+    }
 
     // Security check: only allow specific users if configured
     if (ALLOWED_USERS.length > 0 && !ALLOWED_USERS.includes(userId)) {
       await sendTelegramMessage(chatId, "⛔ Accès non autorisé. Contactez l'administrateur.");
+      await markUpdateAsCompleted(updateId, "Unauthorized user");
       return new Response("OK", { status: 200 });
     }
 
-    // Handle commands
+    // =========================================================================
+    // HANDLE AUDIO/VOICE MESSAGES
+    // =========================================================================
+    
+    if (message.voice) {
+      // Quick acknowledgment
+      await sendTelegramMessage(chatId, "🎤 Message vocal reçu. Import en cours...");
+      
+      // Process in background (fire-and-forget pattern)
+      const fileName = `voice_${Date.now()}.ogg`;
+      const mimeType = message.voice.mime_type || "audio/ogg";
+      
+      // Don't await - let it run in background
+      processAudioInBackground(updateId, chatId, userId, userName, message.voice.file_id, fileName, mimeType)
+        .catch(err => console.error("Background audio processing error:", err));
+      
+      return new Response("OK", { status: 200 });
+    }
+    
+    if (message.audio) {
+      // Quick acknowledgment
+      await sendTelegramMessage(chatId, "🎵 Fichier audio reçu. Import en cours...");
+      
+      const fileName = message.audio.title || `audio_${Date.now()}.mp3`;
+      const mimeType = message.audio.mime_type || "audio/mpeg";
+      
+      // Don't await - let it run in background
+      processAudioInBackground(updateId, chatId, userId, userName, message.audio.file_id, fileName, mimeType)
+        .catch(err => console.error("Background audio processing error:", err));
+      
+      return new Response("OK", { status: 200 });
+    }
+    
+    if (message.document && message.document.mime_type?.startsWith("audio/")) {
+      // Quick acknowledgment
+      await sendTelegramMessage(chatId, "📎 Document audio reçu. Import en cours...");
+      
+      const fileName = message.document.file_name || `document_${Date.now()}`;
+      const mimeType = message.document.mime_type;
+      
+      // Don't await - let it run in background
+      processAudioInBackground(updateId, chatId, userId, userName, message.document.file_id, fileName, mimeType)
+        .catch(err => console.error("Background audio processing error:", err));
+      
+      return new Response("OK", { status: 200 });
+    }
+
+    // =========================================================================
+    // HANDLE TEXT MESSAGES
+    // =========================================================================
+    
+    const text = message.text?.trim();
+    if (!text) {
+      await markUpdateAsCompleted(updateId, "No text content");
+      return new Response("OK", { status: 200 });
+    }
+
+    // Handle commands (fast, no background needed)
     if (text.startsWith("/")) {
       const command = text.split(" ")[0].toLowerCase();
       
       switch (command) {
         case "/start":
           await sendTelegramMessage(chatId, `Bonjour ${userName} ! 👋\n\n${formatHelpMessage()}`);
+          await markUpdateAsCompleted(updateId, "/start command");
           return new Response("OK", { status: 200 });
           
         case "/help":
           await sendTelegramMessage(chatId, formatHelpMessage());
+          await markUpdateAsCompleted(updateId, "/help command");
           return new Response("OK", { status: 200 });
           
         case "/leads":
-          await sendTypingAction(chatId);
-          const leadsResponse = await callAIAgent("Liste les 5 derniers leads avec leur statut", userId, userName);
-          await sendTelegramMessage(chatId, leadsResponse);
+          await sendTelegramMessage(chatId, "⏳ Récupération des leads...");
+          processMessageInBackground(updateId, chatId, userId, userName, "Liste les 5 derniers leads avec leur statut")
+            .catch(err => console.error("Background processing error:", err));
           return new Response("OK", { status: 200 });
           
         case "/rdv":
-          await sendTypingAction(chatId);
-          const rdvResponse = await callAIAgent("Quels sont les prochains rendez-vous cette semaine ?", userId, userName);
-          await sendTelegramMessage(chatId, rdvResponse);
+          await sendTelegramMessage(chatId, "⏳ Récupération des rendez-vous...");
+          processMessageInBackground(updateId, chatId, userId, userName, "Quels sont les prochains rendez-vous cette semaine ?")
+            .catch(err => console.error("Background processing error:", err));
           return new Response("OK", { status: 200 });
           
         case "/projets":
-          await sendTypingAction(chatId);
-          const projetsResponse = await callAIAgent("Liste les projets actifs avec leur statut", userId, userName);
-          await sendTelegramMessage(chatId, projetsResponse);
+          await sendTelegramMessage(chatId, "⏳ Récupération des projets...");
+          processMessageInBackground(updateId, chatId, userId, userName, "Liste les projets actifs avec leur statut")
+            .catch(err => console.error("Background processing error:", err));
           return new Response("OK", { status: 200 });
           
         case "/stats":
-          await sendTypingAction(chatId);
-          const statsResponse = await callAIAgent("Donne-moi un résumé rapide des statistiques : nombre de leads, opportunités, projets", userId, userName);
-          await sendTelegramMessage(chatId, statsResponse);
+          await sendTelegramMessage(chatId, "⏳ Calcul des statistiques...");
+          processMessageInBackground(updateId, chatId, userId, userName, "Donne-moi un résumé rapide des statistiques : nombre de leads, opportunités, projets")
+            .catch(err => console.error("Background processing error:", err));
           return new Response("OK", { status: 200 });
           
         default:
@@ -324,17 +735,20 @@ serve(async (req) => {
       }
     }
 
-    // Send typing indicator
-    await sendTypingAction(chatId);
+    // =========================================================================
+    // REGULAR MESSAGE - Process in background
+    // =========================================================================
+    
+    // Quick immediate acknowledgment BEFORE processing
+    await sendTelegramMessage(chatId, "⏳ Reçu. Je traite votre demande…");
 
-    // Quick immediate acknowledgment (helps confirm Telegram sendMessage works)
-    await sendTelegramMessage(chatId, "⏳ Reçu. Je traite votre demande…", "Markdown");
+    // Process with AI agent in background (fire-and-forget)
+    processMessageInBackground(updateId, chatId, userId, userName, text)
+      .catch(err => console.error("Background processing error:", err));
 
-    // Process with AI agent
-    const aiResponse = await callAIAgent(text, userId, userName);
-    await sendTelegramMessage(chatId, aiResponse);
-
+    // Return immediately to Telegram (prevents retries)
     return new Response("OK", { status: 200 });
+    
   } catch (error) {
     console.error("Telegram webhook error:", error);
     return new Response("Internal error", { status: 500 });

@@ -1,12 +1,58 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.19**  
-**Date : 1er Janvier 2026**  
+**Version mise à jour : V6.20**  
+**Date : 4 Janvier 2026**  
 **Basé sur : CDC_IArche_V3.docx**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.19 AGENT TELEGRAM V2 — ANTI-RÉPÉTITION + IMPORT AUDIO ✅ — V6.20
+
+**Date :** 4 Janvier 2026
+
+Refonte majeure du webhook Telegram pour résoudre les problèmes de répétition et ajouter le support audio.
+
+**Problèmes résolus :**
+
+| Problème | Cause | Solution |
+|----------|-------|----------|
+| Répétition de tâches | Telegram retry quand réponse > 30s | Dédoublonnage par `update_id` + acquittement immédiat |
+| Erreurs 504 | Timeout orchestrateur 55s > webhook | Timeout réduit 25s + mode fast + traitement background |
+| Import audio impossible | Messages voice/audio ignorés | Support complet avec upload Supabase + création transcription |
+
+**Nouvelles fonctionnalités :**
+
+1. **Table `telegram_processed_updates`** — Stocke les `update_id` traités avec statut (processing/completed/failed)
+2. **Dédoublonnage idempotent** — Vérifie avant traitement, ignore les doublons
+3. **Acquittement immédiat** — Répond "⏳ Reçu..." puis `200 OK` avant traitement IA
+4. **Traitement background** — Fire-and-forget pattern pour éviter timeout Telegram
+5. **Timeout 25s** — Limite stricte pour rester sous les seuils Edge Functions
+6. **Support audio complet** :
+   - `message.voice` (messages vocaux)
+   - `message.audio` (fichiers audio)
+   - `message.document` (documents audio)
+   - Téléchargement via Telegram API → Upload Supabase Storage → Création job transcription
+
+**Architecture modifiée :**
+
+```
+Telegram Update → Webhook
+    ↓
+1. Vérifier update_id (déjà traité ?)
+2. Marquer comme "processing" (claim)
+3. Envoyer "⏳ Reçu..." (ack rapide)
+4. Retourner 200 OK immédiatement
+5. Traiter en background (fire-and-forget)
+6. Marquer comme "completed" ou "failed"
+```
+
+**Fichiers modifiés :**
+- `supabase/functions/telegram-webhook/index.ts` — Refonte complète
+- Migration : table `telegram_processed_updates` + fonction `cleanup_old_telegram_updates()`
+
+---
 
 ### 0.18 AGENT IA V3.1 — VALIDATION V1 PRODUCTION ✅ — V6.19
 

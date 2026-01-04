@@ -3168,6 +3168,33 @@ export type Database = {
           },
         ]
       }
+      telegram_processed_updates: {
+        Row: {
+          chat_id: number
+          created_at: string
+          processed_at: string
+          response_preview: string | null
+          status: string
+          update_id: number
+        }
+        Insert: {
+          chat_id: number
+          created_at?: string
+          processed_at?: string
+          response_preview?: string | null
+          status?: string
+          update_id: number
+        }
+        Update: {
+          chat_id?: number
+          created_at?: string
+          processed_at?: string
+          response_preview?: string | null
+          status?: string
+          update_id?: number
+        }
+        Relationships: []
+      }
       transcription_partners: {
         Row: {
           created_at: string | null
@@ -3692,6 +3719,7 @@ export type Database = {
       cleanup_expired_ai_memory: { Args: never; Returns: number }
       cleanup_expired_cockpit_data: { Args: never; Returns: undefined }
       cleanup_login_attempts: { Args: never; Returns: undefined }
+      cleanup_old_telegram_updates: { Args: never; Returns: undefined }
       cleanup_orphan_data: {
         Args: never
         Returns: {
