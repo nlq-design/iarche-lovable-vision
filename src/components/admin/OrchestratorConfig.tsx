@@ -16,7 +16,7 @@ import {
   BrainCircuit, Activity, Bell, Shield, Sparkles, Target
 } from "lucide-react";
 
-// Définition des outils de l'orchestrateur - synchronisé avec l'edge function v5.4
+// Définition des outils de l'orchestrateur - synchronisé avec l'edge function v6.22
 const ORCHESTRATOR_TOOLS = {
   "Lecture Cockpit": [
     { name: "get_leads", description: "Récupère la liste des leads avec filtrage optionnel", icon: Users },
