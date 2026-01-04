@@ -1818,6 +1818,200 @@ const AGENT_TOOLS = [
       },
     },
   },
+  // ============ CRUD COMPLÉMENTAIRE COCKPIT (v5.6) ============
+  {
+    type: "function",
+    function: {
+      name: "create_lead_contact",
+      description: "Ajoute un contact secondaire à un lead (plusieurs interlocuteurs possibles par entreprise).",
+      parameters: {
+        type: "object",
+        properties: {
+          lead_id: { type: "string", description: "ID du lead parent" },
+          name: { type: "string", description: "Nom du contact" },
+          email: { type: "string", description: "Email du contact" },
+          phone: { type: "string", description: "Téléphone" },
+          position: { type: "string", description: "Poste/fonction" },
+          is_primary: { type: "boolean", description: "Contact principal (défaut: false)" },
+          notes: { type: "string", description: "Notes sur ce contact" },
+        },
+        required: ["lead_id", "name"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_lead_contact",
+      description: "Met à jour un contact de lead.",
+      parameters: {
+        type: "object",
+        properties: {
+          contact_id: { type: "string", description: "ID du contact" },
+          name: { type: "string", description: "Nouveau nom" },
+          email: { type: "string", description: "Nouvel email" },
+          phone: { type: "string", description: "Nouveau téléphone" },
+          position: { type: "string", description: "Nouveau poste" },
+          notes: { type: "string", description: "Nouvelles notes" },
+        },
+        required: ["contact_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_lead_contact",
+      description: "Supprime un contact de lead.",
+      parameters: {
+        type: "object",
+        properties: {
+          contact_id: { type: "string", description: "ID du contact" },
+        },
+        required: ["contact_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "set_primary_lead_contact",
+      description: "Définit un contact comme contact principal du lead.",
+      parameters: {
+        type: "object",
+        properties: {
+          contact_id: { type: "string", description: "ID du contact à définir comme principal" },
+          lead_id: { type: "string", description: "ID du lead" },
+        },
+        required: ["contact_id", "lead_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_project_note",
+      description: "Ajoute une synthèse/note à un projet. Différent du journal d'activité : ces notes sont des documents de travail.",
+      parameters: {
+        type: "object",
+        properties: {
+          project_id: { type: "string", description: "ID du projet" },
+          title: { type: "string", description: "Titre de la note" },
+          content: { type: "string", description: "Contenu de la note (Markdown)" },
+          note_type: { type: "string", enum: ["general", "technical", "meeting", "decision", "risk"], description: "Type de note (défaut: general)" },
+          tags: { type: "array", items: { type: "string" }, description: "Tags" },
+        },
+        required: ["project_id", "title"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_project_note",
+      description: "Met à jour une note de projet.",
+      parameters: {
+        type: "object",
+        properties: {
+          note_id: { type: "string", description: "ID de la note" },
+          title: { type: "string", description: "Nouveau titre" },
+          content: { type: "string", description: "Nouveau contenu" },
+          note_type: { type: "string", enum: ["general", "technical", "meeting", "decision", "risk"], description: "Nouveau type" },
+          tags: { type: "array", items: { type: "string" }, description: "Nouveaux tags" },
+        },
+        required: ["note_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_project_note",
+      description: "Supprime une note de projet.",
+      parameters: {
+        type: "object",
+        properties: {
+          note_id: { type: "string", description: "ID de la note" },
+        },
+        required: ["note_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_context_note",
+      description: "Crée une note de contexte pour une entité (lead, projet, solution, partenaire). Ces notes enrichissent la synthèse IA Consulte.",
+      parameters: {
+        type: "object",
+        properties: {
+          entity_type: { type: "string", enum: ["lead", "project", "solution", "partner", "document", "transcription"], description: "Type d'entité" },
+          entity_id: { type: "string", description: "ID de l'entité" },
+          content: { type: "string", description: "Contenu de la note de contexte" },
+        },
+        required: ["entity_type", "entity_id", "content"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_context_note",
+      description: "Met à jour une note de contexte.",
+      parameters: {
+        type: "object",
+        properties: {
+          note_id: { type: "string", description: "ID de la note de contexte" },
+          content: { type: "string", description: "Nouveau contenu" },
+        },
+        required: ["note_id", "content"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_context_note",
+      description: "Supprime une note de contexte.",
+      parameters: {
+        type: "object",
+        properties: {
+          note_id: { type: "string", description: "ID de la note de contexte" },
+        },
+        required: ["note_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_partner",
+      description: "Supprime un partenaire (soft-delete, déplacé vers la corbeille).",
+      parameters: {
+        type: "object",
+        properties: {
+          partner_id: { type: "string", description: "ID du partenaire" },
+        },
+        required: ["partner_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_lead_score",
+      description: "Met à jour manuellement le score d'un lead avec détails justificatifs.",
+      parameters: {
+        type: "object",
+        properties: {
+          lead_id: { type: "string", description: "ID du lead" },
+          score: { type: "number", description: "Nouveau score (0-100)" },
+          details: { type: "object", description: "Détails du scoring (ex: { engagement: 20, budget: 30, timing: 25 })" },
+        },
+        required: ["lead_id", "score"],
+      },
+    },
+  },
 ];
 
 // =============================================================================
@@ -5622,6 +5816,259 @@ Génère un contenu HTML pour email avec:
       
       if (error) throw error;
       return { success: true, message: `✅ Commentaire de "${comment?.author_name || "inconnu"}" supprimé` };
+    }
+
+    // ============ CRUD COMPLÉMENTAIRE COCKPIT (v5.6) ============
+    
+    case "create_lead_contact": {
+      if (!args.lead_id || !args.name) {
+        return { success: false, error: "lead_id et name obligatoires" };
+      }
+      
+      const { data, error } = await supabase
+        .from("lead_contacts")
+        .insert({
+          lead_id: args.lead_id,
+          name: args.name,
+          email: args.email || null,
+          phone: args.phone || null,
+          position: args.position || null,
+          is_primary: args.is_primary || false,
+          notes: args.notes || null,
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, contact: data, message: `✅ Contact "${data.name}" ajouté au lead` };
+    }
+
+    case "update_lead_contact": {
+      if (!args.contact_id) {
+        return { success: false, error: "contact_id obligatoire" };
+      }
+      
+      const updates: Record<string, unknown> = {};
+      if (args.name) updates.name = args.name;
+      if (args.email) updates.email = args.email;
+      if (args.phone) updates.phone = args.phone;
+      if (args.position) updates.position = args.position;
+      if (args.notes) updates.notes = args.notes;
+      
+      const { data, error } = await supabase
+        .from("lead_contacts")
+        .update(updates)
+        .eq("id", args.contact_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, contact: data, message: `✅ Contact "${data.name}" mis à jour` };
+    }
+
+    case "delete_lead_contact": {
+      if (!args.contact_id) {
+        return { success: false, error: "contact_id obligatoire" };
+      }
+      
+      const { data: contact } = await supabase.from("lead_contacts").select("name").eq("id", args.contact_id).single();
+      const { error } = await supabase.from("lead_contacts").delete().eq("id", args.contact_id);
+      
+      if (error) throw error;
+      return { success: true, message: `✅ Contact "${contact?.name || args.contact_id}" supprimé` };
+    }
+
+    case "set_primary_lead_contact": {
+      if (!args.contact_id || !args.lead_id) {
+        return { success: false, error: "contact_id et lead_id obligatoires" };
+      }
+      
+      // D'abord, retirer le statut primary de tous les contacts du lead
+      await supabase
+        .from("lead_contacts")
+        .update({ is_primary: false })
+        .eq("lead_id", args.lead_id);
+      
+      // Puis définir le nouveau primary
+      const { data, error } = await supabase
+        .from("lead_contacts")
+        .update({ is_primary: true })
+        .eq("id", args.contact_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, contact: data, message: `✅ "${data.name}" défini comme contact principal` };
+    }
+
+    case "create_project_note": {
+      if (!args.project_id || !args.title) {
+        return { success: false, error: "project_id et title obligatoires" };
+      }
+      
+      const { data, error } = await supabase
+        .from("project_notes")
+        .insert({
+          project_id: args.project_id,
+          workspace_id: "00000000-0000-0000-0000-000000000001",
+          title: args.title,
+          content: args.content || null,
+          note_type: args.note_type || "general",
+          tags: args.tags || [],
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, note: data, message: `✅ Note "${data.title}" ajoutée au projet` };
+    }
+
+    case "update_project_note": {
+      if (!args.note_id) {
+        return { success: false, error: "note_id obligatoire" };
+      }
+      
+      const updates: Record<string, unknown> = {};
+      if (args.title) updates.title = args.title;
+      if (args.content) updates.content = args.content;
+      if (args.note_type) updates.note_type = args.note_type;
+      if (args.tags) updates.tags = args.tags;
+      
+      const { data, error } = await supabase
+        .from("project_notes")
+        .update(updates)
+        .eq("id", args.note_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return { success: true, note: data, message: `✅ Note "${data.title}" mise à jour` };
+    }
+
+    case "delete_project_note": {
+      if (!args.note_id) {
+        return { success: false, error: "note_id obligatoire" };
+      }
+      
+      const { data: note } = await supabase.from("project_notes").select("title").eq("id", args.note_id).single();
+      const { error } = await supabase.from("project_notes").delete().eq("id", args.note_id);
+      
+      if (error) throw error;
+      return { success: true, message: `✅ Note "${note?.title || args.note_id}" supprimée` };
+    }
+
+    case "create_context_note": {
+      if (!args.entity_type || !args.entity_id || !args.content) {
+        return { success: false, error: "entity_type, entity_id et content obligatoires" };
+      }
+      
+      const { data, error } = await supabase
+        .from("entity_context_notes")
+        .insert({
+          entity_type: args.entity_type,
+          entity_id: args.entity_id,
+          content: args.content,
+          workspace_id: "00000000-0000-0000-0000-000000000001",
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Marquer l'entité comme synthesis_stale pour recalcul
+      const tableMap: Record<string, string> = {
+        lead: "leads",
+        project: "projects",
+        partner: "partners",
+        document: "generated_documents",
+        transcription: "voice_transcriptions",
+        solution: "articles",
+      };
+      const table = tableMap[args.entity_type as string];
+      if (table) {
+        await supabase.from(table).update({ synthesis_stale: true }).eq("id", args.entity_id);
+      }
+      
+      return { success: true, note: data, message: `✅ Note de contexte ajoutée à ${args.entity_type} (synthèse marquée obsolète)` };
+    }
+
+    case "update_context_note": {
+      if (!args.note_id || !args.content) {
+        return { success: false, error: "note_id et content obligatoires" };
+      }
+      
+      const { data, error } = await supabase
+        .from("entity_context_notes")
+        .update({ content: args.content })
+        .eq("id", args.note_id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Marquer l'entité comme synthesis_stale
+      const tableMap: Record<string, string> = {
+        lead: "leads",
+        project: "projects",
+        partner: "partners",
+        document: "generated_documents",
+        transcription: "voice_transcriptions",
+        solution: "articles",
+      };
+      const table = tableMap[data.entity_type as string];
+      if (table) {
+        await supabase.from(table).update({ synthesis_stale: true }).eq("id", data.entity_id);
+      }
+      
+      return { success: true, note: data, message: `✅ Note de contexte mise à jour` };
+    }
+
+    case "delete_context_note": {
+      if (!args.note_id) {
+        return { success: false, error: "note_id obligatoire" };
+      }
+      
+      const { data: note } = await supabase.from("entity_context_notes").select("entity_type, entity_id").eq("id", args.note_id).single();
+      const { error } = await supabase.from("entity_context_notes").delete().eq("id", args.note_id);
+      
+      if (error) throw error;
+      return { success: true, message: `✅ Note de contexte supprimée` };
+    }
+
+    case "delete_partner": {
+      if (!args.partner_id) {
+        return { success: false, error: "partner_id obligatoire" };
+      }
+      
+      const { data: partner } = await supabase.from("partners").select("name").eq("id", args.partner_id).single();
+      
+      // Soft delete
+      const { error } = await supabase
+        .from("partners")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", args.partner_id);
+      
+      if (error) throw error;
+      return { success: true, message: `✅ Partenaire "${partner?.name || args.partner_id}" mis à la corbeille` };
+    }
+
+    case "update_lead_score": {
+      if (!args.lead_id || args.score === undefined) {
+        return { success: false, error: "lead_id et score obligatoires" };
+      }
+      
+      const { data, error } = await supabase
+        .from("leads")
+        .update({
+          lead_score: args.score,
+          lead_score_details: args.details || {},
+        })
+        .eq("id", args.lead_id)
+        .select("id, name, lead_score")
+        .single();
+      
+      if (error) throw error;
+      return { success: true, lead: data, message: `✅ Score de "${data.name}" mis à jour : ${data.lead_score}/100` };
     }
 
     default:
