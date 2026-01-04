@@ -74,9 +74,9 @@ export const leadNotificationSchema = z.object({
 export const bookingDataSchema = z.object({
   name: nameValidator,
   email: emailValidator,
-  phone: phoneValidator,
-  company: companyValidator,
-  message: messageValidator,
+  phone: z.string().max(20).nullish(), // Accepts null, undefined, or string
+  company: z.string().max(200).nullish(),
+  message: z.string().max(5000).nullish(),
   startTime: z.string().datetime(),
   bookingTypeId: uuidValidator,
   meetingType: z.enum(['visio', 'telephone', 'presentiel']).optional(),
