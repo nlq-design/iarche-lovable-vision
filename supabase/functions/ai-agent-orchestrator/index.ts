@@ -1330,6 +1330,51 @@ const AGENT_TOOLS = [
       },
     },
   },
+  // ============ CREATE SOLUTION & TRANSCRIPTION ============
+  {
+    type: "function",
+    function: {
+      name: "create_solution",
+      description: "Crée une nouvelle solution IArche (offre SaaS/service). Une solution est un article avec resource_type='solution'.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Titre de la solution (ex: Collaboria, Datalia)" },
+          slug: { type: "string", description: "Slug URL unique (ex: collaboria, datalia)" },
+          excerpt: { type: "string", description: "Description courte (< 160 caractères)" },
+          content: { type: "string", description: "Contenu HTML de la solution" },
+          meta_title: { type: "string", description: "Titre SEO" },
+          meta_description: { type: "string", description: "Description SEO" },
+          published: { type: "boolean", description: "Publier immédiatement (défaut: false)" },
+          thematiques: { type: "array", items: { type: "string" }, description: "Thématiques associées" },
+          tags: { type: "array", items: { type: "string" }, description: "Tags de la solution" },
+        },
+        required: ["title", "slug"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_transcription",
+      description: "Crée une transcription vocale manuellement (sans upload audio). Utile pour importer des notes de réunion textuelles.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Titre de la transcription" },
+          transcript_text: { type: "string", description: "Texte de la transcription" },
+          transcript_summary: { type: "string", description: "Résumé de la transcription" },
+          lead_id: { type: "string", description: "ID du lead associé" },
+          project_id: { type: "string", description: "ID du projet associé" },
+          transcription_date: { type: "string", description: "Date de la transcription (YYYY-MM-DD)" },
+          detected_needs: { type: "array", items: { type: "string" }, description: "Besoins détectés" },
+          action_items: { type: "array", items: { type: "string" }, description: "Actions à mener" },
+          speakers: { type: "array", items: { type: "string" }, description: "Liste des intervenants" },
+        },
+        required: ["title"],
+      },
+    },
+  },
 ];
 
 // =============================================================================
@@ -3601,6 +3646,146 @@ Génère un contenu HTML pour email avec:
         success: true,
         document: newDoc,
         message: `✅ ${typeLabels[rawDocType] || "Document"} créé : "${docData.title}"`,
+        autonomy_level: "execution_directe",
+      };
+    }
+
+    case "create_solution": {
+      const rawTitle = args.title as string | undefined;
+      const rawSlug = args.slug as string | undefined;
+      
+      if (!rawTitle || rawTitle.trim() === "") {
+        return {
+          success: false,
+          error: "Le titre de la solution est obligatoire",
+          message: "⚠️ Je ne peux pas créer la solution. Merci de préciser un titre.",
+          autonomy_level: "execution_directe",
+        };
+      }
+      
+      if (!rawSlug || rawSlug.trim() === "") {
+        return {
+          success: false,
+          error: "Le slug de la solution est obligatoire",
+          message: "⚠️ Précisez un slug URL unique (ex: collaboria, datalia).",
+          autonomy_level: "execution_directe",
+        };
+      }
+
+      // Normalize slug
+      const slug = rawSlug.toLowerCase().trim()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+
+      // Check for existing solution with same slug
+      const { data: existingBySlug } = await supabase
+        .from("articles")
+        .select("id, title")
+        .eq("resource_type", "solution")
+        .eq("slug", slug)
+        .maybeSingle();
+
+      if (existingBySlug) {
+        return {
+          success: false,
+          error: "Une solution avec ce slug existe déjà",
+          existing_solution: existingBySlug,
+          message: `⚠️ La solution "${existingBySlug.title}" utilise déjà le slug "${slug}".`,
+          autonomy_level: "execution_directe",
+        };
+      }
+
+      const solutionData = {
+        title: rawTitle.trim(),
+        slug: slug,
+        resource_type: "solution",
+        excerpt: (args.excerpt as string || "").trim() || null,
+        content: args.content as string || "<p>Contenu à compléter.</p>",
+        meta_title: (args.meta_title as string || rawTitle).trim(),
+        meta_description: (args.meta_description as string || args.excerpt as string || "").trim() || null,
+        published: args.published === true,
+        published_at: args.published === true ? new Date().toISOString() : null,
+        thematiques: args.thematiques as string[] || [],
+        tags: args.tags as string[] || [],
+      };
+
+      const { data: newSolution, error } = await supabase
+        .from("articles")
+        .insert(solutionData)
+        .select("id, title, slug, published")
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        solution: newSolution,
+        message: `✅ Solution créée : "${solutionData.title}" (slug: ${slug}, ${solutionData.published ? "publiée" : "brouillon"})`,
+        autonomy_level: "execution_directe",
+      };
+    }
+
+    case "create_transcription": {
+      const rawTitle = args.title as string | undefined;
+      
+      if (!rawTitle || rawTitle.trim() === "") {
+        return {
+          success: false,
+          error: "Le titre de la transcription est obligatoire",
+          message: "⚠️ Je ne peux pas créer la transcription. Merci de préciser un titre.",
+          autonomy_level: "execution_directe",
+        };
+      }
+
+      // Generate slug from title
+      const baseSlug = rawTitle
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 50);
+      
+      const transcriptionData = {
+        title: rawTitle.trim(),
+        slug: `${baseSlug}-${Date.now()}`,
+        transcript_text: args.transcript_text as string || null,
+        transcript_summary: args.transcript_summary as string || null,
+        lead_id: args.lead_id as string || null,
+        project_id: args.project_id as string || null,
+        transcription_date: args.transcription_date as string || new Date().toISOString().split("T")[0],
+        detected_needs: args.detected_needs as string[] || [],
+        action_items: args.action_items as string[] || [],
+        speakers: args.speakers as string[] || [],
+        status: "done",
+        workspace_id: "00000000-0000-0000-0000-000000000001",
+      };
+
+      const { data: newTranscription, error } = await supabase
+        .from("voice_transcriptions")
+        .insert(transcriptionData)
+        .select("id, title, slug, status, lead_id, project_id")
+        .single();
+
+      if (error) throw error;
+
+      if (transcriptionData.lead_id) {
+        await supabase.from("activity_log").insert({
+          workspace_id: transcriptionData.workspace_id,
+          entity_type: "voice_transcription",
+          entity_id: newTranscription.id,
+          activity_type: "new_transcription",
+          title: `Transcription créée : ${transcriptionData.title}`,
+          content: transcriptionData.transcript_summary || "Transcription manuelle ajoutée",
+          lead_id: transcriptionData.lead_id,
+          project_id: transcriptionData.project_id,
+        });
+      }
+
+      return {
+        success: true,
+        transcription: newTranscription,
+        message: `✅ Transcription créée : "${transcriptionData.title}"${transcriptionData.lead_id ? " (liée au lead)" : ""}`,
         autonomy_level: "execution_directe",
       };
     }
