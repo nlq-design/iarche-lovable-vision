@@ -153,10 +153,25 @@ const AGENT_TOOLS = [
       parameters: {
         type: "object",
         properties: {
+          query: { type: "string", description: "Rechercher par nom ou entreprise (insensible à la casse)" },
           status: { type: "string", description: "Filtrer par statut (new, contacted, qualified, converted, lost)" },
           source: { type: "string", description: "Filtrer par source (contact, newsletter, livre-blanc, atelier-webinaire, formulaire, booking)" },
           limit: { type: "number", description: "Nombre max de résultats (défaut: 10)" },
         },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_leads",
+      description: "Recherche un lead par nom, email ou entreprise. À utiliser pour trouver un lead spécifique.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Terme de recherche (nom, email, entreprise)" },
+        },
+        required: ["query"],
       },
     },
   },
@@ -183,10 +198,25 @@ const AGENT_TOOLS = [
       parameters: {
         type: "object",
         properties: {
+          query: { type: "string", description: "Rechercher par nom de projet (insensible à la casse)" },
           status: { type: "string", description: "Filtrer par statut (scoping, in_progress, on_hold, completed, cancelled)" },
           health_status: { type: "string", description: "Filtrer par santé (on_track, at_risk, blocked)" },
           limit: { type: "number", description: "Nombre max de résultats (défaut: 10)" },
         },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_projects",
+      description: "Recherche un projet par nom. À utiliser pour trouver un projet spécifique comme 'Beeliopi', 'Beerecos', etc.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Terme de recherche (nom du projet)" },
+        },
+        required: ["query"],
       },
     },
   },
@@ -1244,12 +1274,46 @@ async function executeTool(
         .order("created_at", { ascending: false })
         .limit(args.limit as number || 10);
 
+      // Support recherche par nom/company
+      if (args.query) {
+        const searchQuery = (args.query as string).trim();
+        query = query.or(`name.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+      }
       if (args.status) query = query.eq("qualification_status", args.status);
       if (args.source) query = query.eq("source", args.source);
 
       const { data, error } = await query;
       if (error) throw error;
       return { leads: data, count: data?.length || 0 };
+    }
+
+    case "search_leads": {
+      const searchQuery = (args.query as string || "").trim();
+      if (!searchQuery) {
+        return { leads: [], count: 0, message: "Terme de recherche requis" };
+      }
+
+      const { data, error } = await supabase
+        .from("leads")
+        .select(`
+          id, name, email, company, phone, source, source_context, 
+          lead_score, qualification_status, created_at, last_contacted_at,
+          position, website, linkedin_url, city, industry, company_size
+        `)
+        .or(`name.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`)
+        .order("lead_score", { ascending: false, nullsFirst: false })
+        .limit(10);
+
+      if (error) throw error;
+      
+      return { 
+        leads: data,
+        count: data?.length || 0,
+        query: searchQuery,
+        message: (data?.length || 0) > 0 
+          ? `${data?.length} lead(s) trouvé(s) pour "${searchQuery}"`
+          : `Aucun lead trouvé pour "${searchQuery}"`
+      };
     }
 
     // ============ PARTENAIRES (v5.4) ============
@@ -1483,12 +1547,62 @@ async function executeTool(
         .order("created_at", { ascending: false })
         .limit(args.limit as number || 10);
 
+      // Support recherche par nom
+      if (args.query) {
+        query = query.ilike("name", `%${args.query}%`);
+      }
       if (args.status) query = query.eq("status", args.status);
       if (args.health_status) query = query.eq("health_status", args.health_status);
 
       const { data, error } = await query;
       if (error) throw error;
       return { projects: data, count: data?.length || 0 };
+    }
+
+    case "search_projects": {
+      const searchQuery = (args.query as string || "").trim();
+      if (!searchQuery) {
+        return { projects: [], count: 0, message: "Terme de recherche requis" };
+      }
+
+      const { data, error } = await supabase
+        .from("projects")
+        .select(`
+          id, name, description, status, health_status, 
+          budget_amount, start_date, target_end_date, created_at,
+          lead:leads(id, name, company, email),
+          opportunity:opportunities(id, title, stage, value_amount)
+        `)
+        .ilike("name", `%${searchQuery}%`)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      
+      // Also search in lead names linked to projects
+      const { data: projectsByLead, error: leadError } = await supabase
+        .from("projects")
+        .select(`
+          id, name, description, status, health_status,
+          lead:leads!inner(id, name, company)
+        `)
+        .ilike("leads.name", `%${searchQuery}%`)
+        .limit(5);
+      
+      // Merge results without duplicates
+      const allProjects = data || [];
+      const leadMatches = (projectsByLead || []).filter(
+        (p: { id: string }) => !allProjects.some((ap: { id: string }) => ap.id === p.id)
+      );
+
+      return { 
+        projects: [...allProjects, ...leadMatches],
+        count: allProjects.length + leadMatches.length,
+        query: searchQuery,
+        message: allProjects.length > 0 
+          ? `${allProjects.length} projet(s) trouvé(s) pour "${searchQuery}"`
+          : `Aucun projet trouvé pour "${searchQuery}"`
+      };
     }
 
     case "get_tasks": {
