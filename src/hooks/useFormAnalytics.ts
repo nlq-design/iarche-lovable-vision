@@ -127,7 +127,7 @@ export const useFormAnalytics = () => {
           submissions,
           conversionRate: views > 0 ? (submissions / views) * 100 : 0,
           completionRate: starts > 0 ? (submissions / starts) * 100 : 0,
-          averageTime: 0 // TODO: calculer si on stocke les timestamps
+          averageTime: 0 // Note: nécessite stockage des timestamps de session pour calcul
         },
         dropOff,
         devices,

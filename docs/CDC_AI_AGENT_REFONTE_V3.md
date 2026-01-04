@@ -1,8 +1,8 @@
 # Cahier des Charges - Agent IA IArche v3.2
 
-> **Date**: 2026-01-01  
-> **Version**: 3.2.0 - Production Ready  
-> **Statut**: ✅ VALIDÉ — Control Plane unifié opérationnel
+> **Date**: 2026-01-04  
+> **Version**: 3.2.1 - Production Stable  
+> **Statut**: ✅ VALIDÉ — Control Plane unifié opérationnel + Telegram V3
 
 ---
 

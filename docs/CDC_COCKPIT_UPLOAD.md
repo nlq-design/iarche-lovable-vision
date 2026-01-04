@@ -1,9 +1,11 @@
 # Cahier des Charges — Module Upload Cockpit
 
-**Version** : 1.2.0  
-**Date** : 2026-01-01  
-**Statut** : 🔵 À IMPLÉMENTER  
+**Version** : 1.3.0  
+**Date** : 2026-01-04  
+**Statut** : ✅ IMPLÉMENTÉ (V1)  
 **Priorité** : Haute
+
+> **Note V1.3.0 (04/01/2026)** : Module implémenté avec table `uploaded_files`, bucket `cockpit-uploads`, hook `useCockpitUploads`, edge function `process-uploaded-file`, et intégration complète Agent IA. Routes `/cockpit/uploads` et `/cockpit/documents` actives.
 
 ---
 

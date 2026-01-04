@@ -1,18 +1,20 @@
-# CDC Améliorations IA IArche v2.0
+# CDC Améliorations IA IArche v2.1
 
 > Document de spécifications fonctionnelles pour l'amélioration du système AI (Dictionnaire, Mémoire, Prompts, RAG)
+> **Date de mise à jour** : 4 Janvier 2026
+> **Statut** : ✅ IMPLÉMENTÉ (Phases 1-5)
 
 ---
 
 ## 📋 Résumé Exécutif
 
-| Métrique | V1 (Actuel) | V2 (Cible) |
+| Métrique | V1 (Initial) | V2 (Actuel) |
 |----------|-------------|------------|
-| Alias dictionnaire | ✅ Utilisé | + Auto-suggestion |
-| Mémoire session | ✅ 7 jours | + Persistance entité |
-| Sélection prompt | ✅ Projet/Lead | + Partenaire/Solution |
-| Cross-référencement | ❌ Manuel | ✅ Automatique |
-| Dashboard santé | ❌ Absent | ✅ Diagnostic complet |
+| Alias dictionnaire | ✅ Utilisé | ✅ Auto-suggestion + enrichissement |
+| Mémoire session | ✅ 7 jours | ✅ Persistance entité + 14 jours TTL |
+| Sélection prompt | ✅ Projet/Lead | ✅ Partenaire/Solution + contexte |
+| Cross-référencement | ❌ Manuel | ✅ Automatique via `entity_name_references` |
+| Dashboard santé | ❌ Absent | ✅ AIHealthDashboard v6.22 opérationnel |
 
 ---
 

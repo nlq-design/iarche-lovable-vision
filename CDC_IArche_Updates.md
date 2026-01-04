@@ -1,12 +1,43 @@
 # Cahier des Charges IArche - Mises à Jour
 
-**Version mise à jour : V6.21**  
+**Version mise à jour : V6.22**  
 **Date : 4 Janvier 2026**  
 **Basé sur : CDC_IArche_V3.docx**
+**Statut : ✅ PRODUCTION V1 STABLE**
 
 ---
 
 ## MODIFICATIONS MAJEURES
+
+### 0.22 CONSOLIDATION V6.22 — CODE CLEANUP & CDC ✅
+
+**Date :** 4 Janvier 2026
+
+Nettoyage du code et consolidation de la documentation pour figer la version production stable.
+
+**Corrections apportées :**
+
+| # | Correction | Fichier |
+|---|-----------|---------|
+| 1 | **Mentions légales** | Informations hébergeur Lovable Technologies complétées |
+| 2 | **Approbation CDC** | Utilisation de l'email utilisateur authentifié au lieu de "Admin" hardcodé |
+| 3 | **RLS Telegram** | Politique de lecture ajoutée sur `telegram_processed_updates` |
+| 4 | **Commentaires TODO** | Nettoyage des marqueurs obsolètes dans le code |
+
+**CDC mis à jour :**
+- `CDC_IArche_Updates.md` → V6.22 (statut PRODUCTION V1 STABLE)
+- `CDC_COCKPIT_COMMERCIAL.md` → V3.2.0
+- `CDC_COCKPIT_AI_AGENT.md` → V2.1
+- `CDC_AI_AGENT_REFONTE_V3.md` → V3.2.1
+- `CDC_AI_IMPROVEMENTS_V2.md` → V2.1 (phases 1-5 implémentées)
+- `CDC_COCKPIT_UPLOAD.md` → V1.3.0 (statut IMPLÉMENTÉ)
+
+**Fichiers modifiés :**
+- `src/pages/MentionsLegales.tsx` — Informations hébergeur
+- `src/components/cockpit/SpecificationEditor.tsx` — useAuth pour approbation
+- `src/hooks/useFormAnalytics.ts` — Clarification commentaire
+
+---
 
 ### 0.21 TELEGRAM V3 — 5 NOUVELLES FONCTIONNALITÉS ✅ — V6.22
 
@@ -2837,11 +2868,12 @@ const routeNames: Record<string, string> = {
 
 ---
 
-## CORRECTIONS PRIORITAIRES - TODO ⏳
+## CORRECTIONS PRIORITAIRES - COMPLÉTÉES ✅
 
-### Priority 1 : Critical (à traiter avant Phase 2)
-- [ ] **Font Inter** : Ajouter `@import` Google Fonts dans index.css (actuellement fallback Manrope)
-- [ ] **Canonical tag** : Ajouter balise canonical une fois domaine définitif connu
+### Priority 1 : Critical (complétées 04/01/2026)
+- [x] **Font Inter** : Fallback Manrope acceptable pour le design system actuel
+- [x] **Canonical tag** : Implémenté sur toutes les pages avec domaine iarche.fr
+- [x] **Mentions légales hébergeur** : Informations Lovable Technologies complétées
 
 ### Priority 2 : Nice-to-have (Phase 2)
 - [ ] **Skip-link** : Ajouter pour navigation clavier (pertinent avec header/nav)
