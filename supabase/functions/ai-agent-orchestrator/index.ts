@@ -3453,44 +3453,91 @@ Génère un contenu HTML pour email avec:
           autonomy_level: "N1",
         };
       }
-      
-      // Call the existing generate-document edge function
-      const docResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-document`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          document_type: args.document_type,
-          project_id: args.project_id || null,
-          opportunity_id: args.opportunity_id || null,
-          lead_id: args.lead_id || null,
-          custom_instructions: args.custom_instructions || null,
-        }),
-      });
-
-      if (!docResponse.ok) {
-        const errorText = await docResponse.text();
-        console.error("Document generation failed:", errorText);
-        throw new Error(`Erreur génération document: ${errorText}`);
-      }
-
-      const docResult = await docResponse.json();
 
       const typeLabels: Record<string, string> = {
         quote: "Devis",
         spec: "Cahier des charges",
         proposal: "Proposition commerciale",
       };
+      
+      // Create AbortController with 55s timeout (edge functions have 60s max)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 55000);
+      
+      try {
+        // Call the existing generate-document edge function with timeout
+        const docResponse = await fetch(`${SUPABASE_URL}/functions/v1/generate-document`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            document_type: args.document_type,
+            project_id: args.project_id || null,
+            opportunity_id: args.opportunity_id || null,
+            lead_id: args.lead_id || null,
+            custom_instructions: args.custom_instructions || null,
+          }),
+          signal: controller.signal,
+        });
 
-      return {
-        success: true,
-        document: docResult,
-        message: `✅ ${typeLabels[args.document_type as string] || "Document"} généré : "${docResult.title || "Nouveau document"}"`,
-        autonomy_level: "N1",
-        action_required: "Relisez et validez dans le module Documents.",
-      };
+        clearTimeout(timeoutId);
+
+        if (!docResponse.ok) {
+          const errorText = await docResponse.text();
+          console.error("Document generation failed:", errorText);
+          
+          // Specific error handling
+          if (docResponse.status === 429) {
+            return {
+              success: false,
+              error: "rate_limited",
+              message: "⚠️ Trop de requêtes en cours. Réessayez dans quelques secondes.",
+              autonomy_level: "N1",
+            };
+          }
+          if (docResponse.status === 402) {
+            return {
+              success: false,
+              error: "credits_exhausted",
+              message: "⚠️ Crédits IA épuisés. Contactez l'administrateur.",
+              autonomy_level: "N1",
+            };
+          }
+          
+          throw new Error(`Erreur génération document: ${errorText}`);
+        }
+
+        const docResult = await docResponse.json();
+
+        return {
+          success: true,
+          document: docResult.document || docResult,
+          message: `✅ ${typeLabels[args.document_type as string] || "Document"} généré : "${docResult.document?.title || docResult.title || "Nouveau document"}"`,
+          autonomy_level: "N1",
+          action_required: "Relisez et validez dans le module Documents.",
+          document_id: docResult.document?.id || docResult.id,
+        };
+        
+      } catch (fetchError: unknown) {
+        clearTimeout(timeoutId);
+        
+        // Handle timeout specifically
+        if (fetchError instanceof Error && fetchError.name === "AbortError") {
+          console.error("Document generation timeout after 55s");
+          return {
+            success: false,
+            error: "timeout",
+            message: `⚠️ La génération du ${typeLabels[args.document_type as string]?.toLowerCase() || "document"} a pris trop de temps. Le système était peut-être surchargé. Veuillez réessayer.`,
+            autonomy_level: "N1",
+            retry_suggested: true,
+          };
+        }
+        
+        // Re-throw other errors
+        throw fetchError;
+      }
     }
 
     case "enrich_seo": {
@@ -4275,10 +4322,44 @@ serve(async (req) => {
     // 2. Search relevant memory semantically
     const relevantMemory = userQuery ? await searchMemory(supabase, userQuery, workspace_id, safeUserId ?? undefined, 5) : [];
     
-    // 3. Build memory context string
+    // 3. Fetch active entities from recent context (leads/partners mentioned recently)
+    let activeEntities: { type: string; id: string; name: string; details: string }[] = [];
+    try {
+      const { data: contextMemory } = await supabase
+        .from("ai_agent_memory")
+        .select("entity_type, entity_id, content")
+        .eq("memory_type", "context")
+        .eq("category", "active_entity")
+        .or(session_id ? `session_id.eq.${session_id}` : `user_id.eq.${safeUserId}`)
+        .gte("expires_at", new Date().toISOString())
+        .order("created_at", { ascending: false })
+        .limit(5);
+      
+      if (contextMemory && contextMemory.length > 0) {
+        activeEntities = contextMemory.map((m: { entity_type: string | null; entity_id: string | null; content: string }) => ({
+          type: m.entity_type || "unknown",
+          id: m.entity_id || "",
+          name: m.content.split(":")[0] || "",
+          details: m.content,
+        }));
+      }
+    } catch (err) {
+      console.error("Active entities fetch error (non-blocking):", err);
+    }
+    
+    // 4. Build memory context string with active entities
     let memoryContext = "";
+    
+    // Priority: Active entities first (most important for context continuity)
+    if (activeEntities.length > 0) {
+      memoryContext += "\n\n🎯 ENTITÉS ACTIVES (contexte de la conversation en cours) :";
+      for (const entity of activeEntities) {
+        memoryContext += `\n- ${entity.details}`;
+      }
+    }
+    
     if (recentMemory.length > 0 || relevantMemory.length > 0) {
-      memoryContext = "\n\nMÉMOIRE AGENT (contexte précédent) :";
+      memoryContext += "\n\nMÉMOIRE AGENT (contexte précédent) :";
       if (relevantMemory.length > 0) {
         memoryContext += "\n--- Mémoire pertinente ---\n" + relevantMemory.join("\n");
       }
@@ -4295,23 +4376,87 @@ serve(async (req) => {
 - Fuseau horaire : Europe/Paris
 - Semaine : ${getWeekNumber(now)}`;
 
-    // 5. Save the user query to memory with higher importance
+    // 5. Save the user query to memory with entity detection
     if (userQuery) {
-      // Detect if message contains key info (email, name, date, etc.)
+      // Detect if message contains key info (email, name, date, company, etc.)
       const hasEmail = /@/.test(userQuery);
       const hasDate = /\d{1,2}[\/\-]\d{1,2}|\d{1,2}h|\d{2}:\d{2}|demain|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche/i.test(userQuery);
       const hasName = /avec\s+[A-Z][a-zé]+|M\.\s*[A-Z]|Mme\s*[A-Z]|[A-Z][a-z]+\s+[A-Z][a-z]+/i.test(userQuery);
+      const hasCompany = /\b(entreprise|société|client|partenaire)\s+[A-Z]/i.test(userQuery);
       
-      const importanceScore = hasEmail || hasDate || hasName ? 0.8 : 0.4;
-      const category = hasEmail ? "contact_info" : hasDate ? "scheduling" : hasName ? "person" : "user_query";
+      // Extract potential entity names for better context retention
+      const emailMatch = userQuery.match(/[\w.+-]+@[\w.-]+\.\w+/);
+      const nameMatch = userQuery.match(/(?:avec|pour|de|chez)\s+([A-ZÉÀ][a-zéèà]+(?:\s+[A-ZÉÀ][a-zéèà]+)?)/i);
+      const companyMatch = userQuery.match(/(?:entreprise|société|client|partenaire|chez)\s+([A-ZÉÀ][A-Za-zéèàùç\s&-]+)/i);
+      
+      const importanceScore = hasEmail || hasDate || hasName || hasCompany ? 0.85 : 0.4;
+      const category = hasEmail ? "contact_info" : hasDate ? "scheduling" : hasName || hasCompany ? "entity_mention" : "user_query";
+      
+      // Build metadata with extracted entities for better context recall
+      const entityMetadata: Record<string, unknown> = {};
+      if (emailMatch) entityMetadata.mentioned_email = emailMatch[0];
+      if (nameMatch) entityMetadata.mentioned_name = nameMatch[1];
+      if (companyMatch) entityMetadata.mentioned_company = companyMatch[1].trim();
       
       await saveMemory(supabase, {
         memory_type: "conversation",
         category: category,
         content: userQuery.slice(0, 500),
+        metadata: Object.keys(entityMetadata).length > 0 ? entityMetadata : undefined,
         importance_score: importanceScore,
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+        expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days (extended from 7)
       }, workspace_id, safeUserId ?? undefined, session_id);
+      
+      // If entities were mentioned, try to resolve them from DB and save as context
+      if (emailMatch || companyMatch) {
+        try {
+          // Try to find lead by email or company
+          let entityQuery = supabase.from("leads").select("id, name, email, company").limit(1);
+          if (emailMatch) {
+            entityQuery = entityQuery.eq("email", emailMatch[0]);
+          } else if (companyMatch) {
+            entityQuery = entityQuery.ilike("company", `%${companyMatch[1].trim()}%`);
+          }
+          
+          const { data: leadMatch } = await entityQuery;
+          if (leadMatch && leadMatch.length > 0) {
+            const lead = leadMatch[0];
+            await saveMemory(supabase, {
+              memory_type: "context",
+              category: "active_entity",
+              entity_type: "lead",
+              entity_id: lead.id,
+              content: `Lead actif dans la conversation : ${lead.name} (${lead.email}) - ${lead.company || 'N/A'}`,
+              importance_score: 0.9,
+              expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours (session context)
+            }, workspace_id, safeUserId ?? undefined, session_id);
+          }
+          
+          // Also check partners
+          if (companyMatch) {
+            const { data: partnerMatch } = await supabase
+              .from("partners")
+              .select("id, name, email, partner_type")
+              .ilike("name", `%${companyMatch[1].trim()}%`)
+              .limit(1);
+            
+            if (partnerMatch && partnerMatch.length > 0) {
+              const partner = partnerMatch[0];
+              await saveMemory(supabase, {
+                memory_type: "context",
+                category: "active_entity",
+                entity_type: "partner",
+                entity_id: partner.id,
+                content: `Partenaire actif dans la conversation : ${partner.name} (${partner.email || 'N/A'}) - Type: ${partner.partner_type}`,
+                importance_score: 0.9,
+                expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours
+              }, workspace_id, safeUserId ?? undefined, session_id);
+            }
+          }
+        } catch (entityErr) {
+          console.error("Entity resolution error (non-blocking):", entityErr);
+        }
+      }
     }
 
     // =============================================================================
