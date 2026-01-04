@@ -1255,6 +1255,78 @@ export type Database = {
         }
         Relationships: []
       }
+      email_domains: {
+        Row: {
+          created_at: string | null
+          daily_sent_count: number | null
+          dkim_valid: boolean | null
+          dmarc_valid: boolean | null
+          domain: string
+          domain_type: string
+          from_email: string
+          from_name: string
+          id: string
+          is_active: boolean | null
+          last_dns_check: string | null
+          last_reset_date: string | null
+          last_sent_at: string | null
+          provider: string
+          reply_to: string | null
+          spf_valid: boolean | null
+          updated_at: string | null
+          warmup_daily_limit: number | null
+          warmup_day: number | null
+          warmup_started_at: string | null
+          warmup_status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          daily_sent_count?: number | null
+          dkim_valid?: boolean | null
+          dmarc_valid?: boolean | null
+          domain: string
+          domain_type: string
+          from_email: string
+          from_name: string
+          id?: string
+          is_active?: boolean | null
+          last_dns_check?: string | null
+          last_reset_date?: string | null
+          last_sent_at?: string | null
+          provider: string
+          reply_to?: string | null
+          spf_valid?: boolean | null
+          updated_at?: string | null
+          warmup_daily_limit?: number | null
+          warmup_day?: number | null
+          warmup_started_at?: string | null
+          warmup_status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          daily_sent_count?: number | null
+          dkim_valid?: boolean | null
+          dmarc_valid?: boolean | null
+          domain?: string
+          domain_type?: string
+          from_email?: string
+          from_name?: string
+          id?: string
+          is_active?: boolean | null
+          last_dns_check?: string | null
+          last_reset_date?: string | null
+          last_sent_at?: string | null
+          provider?: string
+          reply_to?: string | null
+          spf_valid?: boolean | null
+          updated_at?: string | null
+          warmup_daily_limit?: number | null
+          warmup_day?: number | null
+          warmup_started_at?: string | null
+          warmup_status?: string | null
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           created_at: string
@@ -3499,6 +3571,414 @@ export type Database = {
           total_chunks?: number | null
           total_resources?: number
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      vivier_campaign_recipients: {
+        Row: {
+          bounce_reason: string | null
+          bounce_type: string | null
+          bounced_at: string | null
+          campaign_id: string | null
+          company_name: string | null
+          created_at: string | null
+          current_step: number | null
+          custom_variables: Json | null
+          delivered_at: string | null
+          email: string
+          first_name: string | null
+          id: string
+          instantly_lead_id: string | null
+          last_name: string | null
+          opened_at: string | null
+          promoted_at: string | null
+          promoted_to_lead_id: string | null
+          promotion_reason: string | null
+          replied_at: string | null
+          sent_at: string | null
+          status: string | null
+          unsubscribed_at: string | null
+          vivier_id: string | null
+        }
+        Insert: {
+          bounce_reason?: string | null
+          bounce_type?: string | null
+          bounced_at?: string | null
+          campaign_id?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          current_step?: number | null
+          custom_variables?: Json | null
+          delivered_at?: string | null
+          email: string
+          first_name?: string | null
+          id?: string
+          instantly_lead_id?: string | null
+          last_name?: string | null
+          opened_at?: string | null
+          promoted_at?: string | null
+          promoted_to_lead_id?: string | null
+          promotion_reason?: string | null
+          replied_at?: string | null
+          sent_at?: string | null
+          status?: string | null
+          unsubscribed_at?: string | null
+          vivier_id?: string | null
+        }
+        Update: {
+          bounce_reason?: string | null
+          bounce_type?: string | null
+          bounced_at?: string | null
+          campaign_id?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          current_step?: number | null
+          custom_variables?: Json | null
+          delivered_at?: string | null
+          email?: string
+          first_name?: string | null
+          id?: string
+          instantly_lead_id?: string | null
+          last_name?: string | null
+          opened_at?: string | null
+          promoted_at?: string | null
+          promoted_to_lead_id?: string | null
+          promotion_reason?: string | null
+          replied_at?: string | null
+          sent_at?: string | null
+          status?: string | null
+          unsubscribed_at?: string | null
+          vivier_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vivier_campaign_recipients_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "vivier_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vivier_campaign_recipients_promoted_to_lead_id_fkey"
+            columns: ["promoted_to_lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vivier_campaign_recipients_vivier_id_fkey"
+            columns: ["vivier_id"]
+            isOneToOne: false
+            referencedRelation: "viviers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vivier_campaigns: {
+        Row: {
+          ai_generated: boolean | null
+          ai_metadata: Json | null
+          ai_prompt_slug: string | null
+          body_html: string | null
+          body_text: string | null
+          bounce_count: number | null
+          bounce_rate: number | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          daily_limit: number | null
+          delivered_count: number | null
+          domain_id: string | null
+          id: string
+          instantly_account_id: string | null
+          instantly_campaign_id: string | null
+          instantly_status: string | null
+          name: string
+          open_count: number | null
+          open_rate: number | null
+          preview_text: string | null
+          reply_count: number | null
+          reply_rate: number | null
+          scheduled_at: string | null
+          segment_criteria: Json | null
+          send_schedule: Json | null
+          sent_count: number | null
+          sequence_steps: Json | null
+          started_at: string | null
+          status: string | null
+          subject: string | null
+          total_recipients: number | null
+          unsubscribe_count: number | null
+          updated_at: string | null
+          vivier_ids: string[] | null
+          workspace_id: string | null
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          ai_metadata?: Json | null
+          ai_prompt_slug?: string | null
+          body_html?: string | null
+          body_text?: string | null
+          bounce_count?: number | null
+          bounce_rate?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          daily_limit?: number | null
+          delivered_count?: number | null
+          domain_id?: string | null
+          id?: string
+          instantly_account_id?: string | null
+          instantly_campaign_id?: string | null
+          instantly_status?: string | null
+          name: string
+          open_count?: number | null
+          open_rate?: number | null
+          preview_text?: string | null
+          reply_count?: number | null
+          reply_rate?: number | null
+          scheduled_at?: string | null
+          segment_criteria?: Json | null
+          send_schedule?: Json | null
+          sent_count?: number | null
+          sequence_steps?: Json | null
+          started_at?: string | null
+          status?: string | null
+          subject?: string | null
+          total_recipients?: number | null
+          unsubscribe_count?: number | null
+          updated_at?: string | null
+          vivier_ids?: string[] | null
+          workspace_id?: string | null
+        }
+        Update: {
+          ai_generated?: boolean | null
+          ai_metadata?: Json | null
+          ai_prompt_slug?: string | null
+          body_html?: string | null
+          body_text?: string | null
+          bounce_count?: number | null
+          bounce_rate?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          daily_limit?: number | null
+          delivered_count?: number | null
+          domain_id?: string | null
+          id?: string
+          instantly_account_id?: string | null
+          instantly_campaign_id?: string | null
+          instantly_status?: string | null
+          name?: string
+          open_count?: number | null
+          open_rate?: number | null
+          preview_text?: string | null
+          reply_count?: number | null
+          reply_rate?: number | null
+          scheduled_at?: string | null
+          segment_criteria?: Json | null
+          send_schedule?: Json | null
+          sent_count?: number | null
+          sequence_steps?: Json | null
+          started_at?: string | null
+          status?: string | null
+          subject?: string | null
+          total_recipients?: number | null
+          unsubscribe_count?: number | null
+          updated_at?: string | null
+          vivier_ids?: string[] | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vivier_campaigns_domain_id_fkey"
+            columns: ["domain_id"]
+            isOneToOne: false
+            referencedRelation: "email_domains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vivier_imports: {
+        Row: {
+          column_mapping: Json | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          duplicate_rows: number | null
+          error_log: Json | null
+          error_rows: number | null
+          filename: string
+          id: string
+          imported_rows: number | null
+          source: string
+          status: string | null
+          total_rows: number | null
+          workspace_id: string | null
+        }
+        Insert: {
+          column_mapping?: Json | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          duplicate_rows?: number | null
+          error_log?: Json | null
+          error_rows?: number | null
+          filename: string
+          id?: string
+          imported_rows?: number | null
+          source: string
+          status?: string | null
+          total_rows?: number | null
+          workspace_id?: string | null
+        }
+        Update: {
+          column_mapping?: Json | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          duplicate_rows?: number | null
+          error_log?: Json | null
+          error_rows?: number | null
+          filename?: string
+          id?: string
+          imported_rows?: number | null
+          source?: string
+          status?: string | null
+          total_rows?: number | null
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
+      viviers: {
+        Row: {
+          address: string | null
+          batch_id: string | null
+          city: string | null
+          cold_score: number | null
+          company_name: string | null
+          company_size: string | null
+          consent_marketing: boolean | null
+          contact_first_name: string | null
+          contact_last_name: string | null
+          contact_name: string | null
+          contact_position: string | null
+          country: string | null
+          created_at: string | null
+          creation_date: string | null
+          email: string | null
+          employee_count: number | null
+          external_id: string | null
+          id: string
+          industry: string | null
+          legal_form: string | null
+          linkedin_url: string | null
+          naf_code: string | null
+          notes: string | null
+          phone: string | null
+          postal_code: string | null
+          promoted_at: string | null
+          promoted_to_lead_id: string | null
+          raw_data: Json | null
+          region: string | null
+          revenue_range: string | null
+          scoring_criteria: Json | null
+          siren: string | null
+          siret: string | null
+          source: string
+          source_file: string | null
+          status: string | null
+          tags: string[] | null
+          unsubscribed_at: string | null
+          updated_at: string | null
+          website: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          batch_id?: string | null
+          city?: string | null
+          cold_score?: number | null
+          company_name?: string | null
+          company_size?: string | null
+          consent_marketing?: boolean | null
+          contact_first_name?: string | null
+          contact_last_name?: string | null
+          contact_name?: string | null
+          contact_position?: string | null
+          country?: string | null
+          created_at?: string | null
+          creation_date?: string | null
+          email?: string | null
+          employee_count?: number | null
+          external_id?: string | null
+          id?: string
+          industry?: string | null
+          legal_form?: string | null
+          linkedin_url?: string | null
+          naf_code?: string | null
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          promoted_at?: string | null
+          promoted_to_lead_id?: string | null
+          raw_data?: Json | null
+          region?: string | null
+          revenue_range?: string | null
+          scoring_criteria?: Json | null
+          siren?: string | null
+          siret?: string | null
+          source: string
+          source_file?: string | null
+          status?: string | null
+          tags?: string[] | null
+          unsubscribed_at?: string | null
+          updated_at?: string | null
+          website?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          batch_id?: string | null
+          city?: string | null
+          cold_score?: number | null
+          company_name?: string | null
+          company_size?: string | null
+          consent_marketing?: boolean | null
+          contact_first_name?: string | null
+          contact_last_name?: string | null
+          contact_name?: string | null
+          contact_position?: string | null
+          country?: string | null
+          created_at?: string | null
+          creation_date?: string | null
+          email?: string | null
+          employee_count?: number | null
+          external_id?: string | null
+          id?: string
+          industry?: string | null
+          legal_form?: string | null
+          linkedin_url?: string | null
+          naf_code?: string | null
+          notes?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          promoted_at?: string | null
+          promoted_to_lead_id?: string | null
+          raw_data?: Json | null
+          region?: string | null
+          revenue_range?: string | null
+          scoring_criteria?: Json | null
+          siren?: string | null
+          siret?: string | null
+          source?: string
+          source_file?: string | null
+          status?: string | null
+          tags?: string[] | null
+          unsubscribed_at?: string | null
+          updated_at?: string | null
+          website?: string | null
+          workspace_id?: string | null
         }
         Relationships: []
       }
