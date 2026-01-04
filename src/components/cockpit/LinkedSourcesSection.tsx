@@ -175,12 +175,17 @@ export function LinkedSourcesSection({
           </CardTitle>
           <Popover open={linkOpen} onOpenChange={setLinkOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-7 text-xs" disabled={linking}>
+              <Button variant="outline" size="sm" className="h-7 text-xs" disabled={linking} type="button">
                 {linking ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Plus className="h-3 w-3 mr-1" />}
                 Ajouter
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-0" align="end">
+            <PopoverContent
+              className="w-80 p-0"
+              align="end"
+              onOpenAutoFocus={(e) => e.preventDefault()}
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
               <Command>
                 <CommandInput placeholder="Rechercher une source..." className="h-9" />
                 <CommandList>

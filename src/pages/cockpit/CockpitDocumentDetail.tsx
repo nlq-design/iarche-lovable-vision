@@ -498,7 +498,9 @@ export default function CockpitDocumentDetail() {
                       <SelectTrigger className="h-9">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent
+                        onCloseAutoFocus={(e) => e.preventDefault()}
+                      >
                         {Object.entries(DOCUMENT_STATUS_CONFIG).map(([key, config]) => (
                           <SelectItem key={key} value={key}>{config.label}</SelectItem>
                         ))}
@@ -525,7 +527,9 @@ export default function CockpitDocumentDetail() {
                       <SelectTrigger className="h-9">
                         <SelectValue placeholder="Sélectionner..." />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent
+                        onCloseAutoFocus={(e) => e.preventDefault()}
+                      >
                         <SelectItem value="none">Aucun</SelectItem>
                         {projects?.map(p => (
                           <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
@@ -556,7 +560,9 @@ export default function CockpitDocumentDetail() {
                       <SelectTrigger className="h-9">
                         <SelectValue placeholder="Sélectionner..." />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent
+                        onCloseAutoFocus={(e) => e.preventDefault()}
+                      >
                         <SelectItem value="none">Aucun</SelectItem>
                         {leads?.map(l => (
                           <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>

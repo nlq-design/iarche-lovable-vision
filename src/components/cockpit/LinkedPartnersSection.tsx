@@ -69,8 +69,12 @@ export function LinkedPartnersSection({ entityType, entityId, compact = false }:
           linkedPartners?.slice(0, 3).map((lp: any) => (
             <Badge key={lp.id} variant="secondary" className="text-xs h-5 gap-1 pr-1">
               {lp.partner?.name || 'Partenaire'}
-              <button 
-                onClick={(e) => { e.stopPropagation(); handleUnlink(lp.partner_id); }}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleUnlink(lp.partner_id);
+                }}
                 className="hover:text-destructive ml-1"
               >
                 <X className="h-3 w-3" />
@@ -85,11 +89,16 @@ export function LinkedPartnersSection({ entityType, entityId, compact = false }:
         )}
         <Popover open={linkOpen} onOpenChange={setLinkOpen}>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-5 w-5 p-0">
+            <Button variant="ghost" size="sm" className="h-5 w-5 p-0" type="button">
               <Plus className="h-3 w-3" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-64 p-0" align="start">
+          <PopoverContent
+            className="w-64 p-0"
+            align="start"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            onCloseAutoFocus={(e) => e.preventDefault()}
+          >
             <Command>
               <CommandInput placeholder="Rechercher..." className="h-8 text-sm" />
               <CommandList>
@@ -129,12 +138,17 @@ export function LinkedPartnersSection({ entityType, entityId, compact = false }:
         </h3>
         <Popover open={linkOpen} onOpenChange={setLinkOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="h-7 text-xs" disabled={loadingAll}>
+            <Button variant="outline" size="sm" className="h-7 text-xs" disabled={loadingAll} type="button">
               <Plus className="h-3 w-3 mr-1" />
               Ajouter
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-72 p-0" align="end">
+          <PopoverContent
+            className="w-72 p-0"
+            align="end"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            onCloseAutoFocus={(e) => e.preventDefault()}
+          >
             <Command>
               <CommandInput placeholder="Rechercher un partenaire..." className="h-9" />
               <CommandList>
