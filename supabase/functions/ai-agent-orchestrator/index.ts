@@ -6347,7 +6347,7 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const body = await req.json();
-    const { messages, stream = false, workspace_id, user_id, session_id } = body;
+    const { messages, stream = false, workspace_id, user_id, session_id, telegram_fast_mode = false } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "messages array required" }), {
@@ -6359,7 +6359,15 @@ serve(async (req) => {
     console.log("Agent orchestrator called with", messages.length, "messages");
 
     // Fetch system prompt from ai_prompts table
-    const { prompt: systemPrompt, model: selectedModel } = await getSystemPrompt(supabase);
+    const { prompt: systemPrompt, model: configuredModel } = await getSystemPrompt(supabase);
+    
+    // TELEGRAM FAST MODE: Use faster model and limit iterations for Telegram requests
+    const selectedModel = telegram_fast_mode ? "google/gemini-2.5-flash-lite" : configuredModel;
+    const maxIterations = telegram_fast_mode ? 3 : 5; // Fewer iterations for Telegram
+    
+    if (telegram_fast_mode) {
+      console.log("[TELEGRAM_FAST_MODE] Using faster model and reduced iterations");
+    }
 
     // Get the user's last message
     const lastUserMessage = messages.filter((m: { role: string }) => m.role === "user").pop();
@@ -6640,9 +6648,9 @@ serve(async (req) => {
     let assistantMessage = result.choices?.[0]?.message;
     const allToolCalls: { name: string; result?: unknown; error?: string; duration_ms?: number }[] = [];
 
-    // Tool calling loop (max 5 iterations to prevent infinite loops)
+    // Tool calling loop (max iterations depends on mode)
     let iterations = 0;
-    while (assistantMessage?.tool_calls && iterations < 5) {
+    while (assistantMessage?.tool_calls && iterations < maxIterations) {
       iterations++;
       console.log(`Tool calling iteration ${iterations}:`, assistantMessage.tool_calls.length, "calls");
 
