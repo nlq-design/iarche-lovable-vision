@@ -56,6 +56,7 @@ import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSectio
 import { LinkedSourcesSection } from '@/components/cockpit/LinkedSourcesSection';
 import { DevisCDCPreview } from '@/components/cockpit/DevisCDCPreview';
 import { DevisCDCEditor } from '@/components/cockpit/DevisCDCEditor';
+import { ExportSettingsDialog, ExportSettings } from '@/components/cockpit/ExportSettingsDialog';
 import { supabase } from '@/integrations/supabase/client';
 
 const DOCUMENT_TYPE_ICONS: Record<string, React.ElementType> = {
@@ -89,7 +90,8 @@ export default function CockpitDocumentDetail() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   // Determine if this is a new document
   const isNewDocument = slug?.startsWith('nouveau-');
@@ -176,8 +178,9 @@ export default function CockpitDocumentDetail() {
     }
   };
 
-  const handleExportDOCX = async () => {
+  const handleExport = async (format: 'docx' | 'pdf', settings: ExportSettings) => {
     if (!document) return;
+    setIsExporting(true);
     try {
       // Extract sections from content_json
       const contentJson = document.content_json as any;
@@ -189,21 +192,27 @@ export default function CockpitDocumentDetail() {
         useGradient: true,
       };
 
-      const { data, error } = await supabase.functions.invoke('generate-docx', {
+      // Generate DOCX with custom export settings
+      const { data: docxData, error: docxError } = await supabase.functions.invoke('generate-docx', {
         body: {
           title: document.title,
           sections,
           metadata,
           theme,
           documentType: document.document_type,
+          exportSettings: {
+            header: settings.header,
+            footer: settings.footer,
+          },
         }
       });
       
-      if (error) throw error;
-      
-      // Handle base64 response
-      if (data?.docxBase64) {
-        const blob = new Blob([Uint8Array.from(atob(data.docxBase64), c => c.charCodeAt(0))], {
+      if (docxError) throw docxError;
+      if (!docxData?.docxBase64) throw new Error('DOCX generation failed');
+
+      if (format === 'docx') {
+        // Download DOCX directly
+        const blob = new Blob([Uint8Array.from(atob(docxData.docxBase64), c => c.charCodeAt(0))], {
           type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         });
         const url = URL.createObjectURL(blob);
@@ -213,77 +222,41 @@ export default function CockpitDocumentDetail() {
         link.click();
         URL.revokeObjectURL(url);
         toast.success('Document DOCX exporté');
-      } else if (data?.download_url) {
-        window.open(data.download_url, '_blank');
-        toast.success('Document DOCX généré');
-      }
-    } catch (error: any) {
-      console.error('DOCX export error:', error);
-      toast.error(`Erreur export: ${error.message}`);
-    }
-  };
-
-  const handleExportPDF = async () => {
-    if (!document) return;
-    setIsExportingPDF(true);
-    try {
-      // Extract sections from content_json
-      const contentJson = document.content_json as any;
-      const sections = contentJson?.sections || [];
-      const metadata = contentJson?.metadata || {};
-      const theme = contentJson?.theme || {
-        primaryColor: '#1A2B4A',
-        accentColor: '#B04A32',
-        useGradient: true,
-      };
-
-      // First generate DOCX
-      const { data: docxData, error: docxError } = await supabase.functions.invoke('generate-docx', {
-        body: {
-          title: document.title,
-          sections,
-          metadata,
-          theme,
-          documentType: document.document_type,
-        }
-      });
-      
-      if (docxError) throw docxError;
-      if (!docxData?.docxBase64) throw new Error('DOCX generation failed');
-      
-      // Then convert to PDF via iLovePDF
-      const { data, error } = await supabase.functions.invoke('convert-to-pdf', {
-        body: { 
-          docx_base64: docxData.docxBase64,
-          filename: document.title.replace(/[^a-zA-Z0-9]/g, '_'),
-          document_id: document.id,
-          save_to_storage: true
-        }
-      });
-      
-      if (error) throw error;
-      
-      // Download the PDF
-      if (data?.pdf_base64) {
-        const blob = new Blob([Uint8Array.from(atob(data.pdf_base64), c => c.charCodeAt(0))], {
-          type: 'application/pdf',
+      } else {
+        // Convert to PDF via iLovePDF
+        const { data, error } = await supabase.functions.invoke('convert-to-pdf', {
+          body: { 
+            docx_base64: docxData.docxBase64,
+            filename: document.title.replace(/[^a-zA-Z0-9]/g, '_'),
+            document_id: document.id,
+            save_to_storage: true
+          }
         });
-        const url = URL.createObjectURL(blob);
-        const link = window.document.createElement('a');
-        link.href = url;
-        link.download = `${document.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-        link.click();
-        URL.revokeObjectURL(url);
-        toast.success('PDF généré avec succès');
-      } else if (data?.pdf_url) {
-        window.open(data.pdf_url, '_blank');
-        toast.success('PDF généré avec succès');
+        
+        if (error) throw error;
+        
+        // Download the PDF
+        if (data?.pdf_base64) {
+          const blob = new Blob([Uint8Array.from(atob(data.pdf_base64), c => c.charCodeAt(0))], {
+            type: 'application/pdf',
+          });
+          const url = URL.createObjectURL(blob);
+          const link = window.document.createElement('a');
+          link.href = url;
+          link.download = `${document.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+          link.click();
+          URL.revokeObjectURL(url);
+          toast.success('PDF généré avec succès');
+        } else if (data?.pdf_url) {
+          window.open(data.pdf_url, '_blank');
+          toast.success('PDF généré avec succès');
+        }
       }
     } catch (error: any) {
-      console.error('PDF export error:', error);
-      toast.error(`Erreur export PDF: ${error.message}`);
+      console.error('Export error:', error);
+      toast.error(`Erreur export: ${error.message}`);
     } finally {
-      setIsExportingPDF(false);
+      setIsExporting(false);
     }
   };
 
@@ -412,22 +385,18 @@ export default function CockpitDocumentDetail() {
                   <Edit2 className="h-4 w-4 mr-1" />
                   Modifier
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleExportDOCX}>
-                  <Download className="h-4 w-4 mr-1" />
-                  DOCX
-                </Button>
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={handleExportPDF}
-                  disabled={isExportingPDF}
+                  onClick={() => setExportDialogOpen(true)}
+                  disabled={isExporting}
                 >
-                  {isExportingPDF ? (
+                  {isExporting ? (
                     <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                   ) : (
-                    <FileText className="h-4 w-4 mr-1" />
+                    <Download className="h-4 w-4 mr-1" />
                   )}
-                  PDF
+                  Exporter
                 </Button>
                 <Button 
                   variant="outline" 
@@ -693,6 +662,15 @@ export default function CockpitDocumentDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Export Settings Dialog */}
+      <ExportSettingsDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        onExport={handleExport}
+        documentTitle={document.title}
+        isExporting={isExporting}
+      />
     </CockpitLayout>
   );
 }

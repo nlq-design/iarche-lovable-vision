@@ -66,12 +66,26 @@ interface DocumentTheme {
   useGradient: boolean;
 }
 
+interface ExportSettings {
+  header?: {
+    companyName?: string;
+    tagline?: string;
+    showLogo?: boolean;
+  };
+  footer?: {
+    line1?: string;
+    line2?: string;
+    showPageNumbers?: boolean;
+  };
+}
+
 interface RequestBody {
   title: string;
   sections: DocumentSection[];
   metadata: DocumentMetadata;
   theme: DocumentTheme;
   documentType: 'quote' | 'spec' | 'proposal';
+  exportSettings?: ExportSettings;
 }
 
 serve(async (req) => {
@@ -81,7 +95,7 @@ serve(async (req) => {
 
   try {
     const body: RequestBody = await req.json();
-    const { title, sections: rawSections, metadata, theme, documentType } = body;
+    const { title, sections: rawSections, metadata, theme, documentType, exportSettings } = body;
 
     // Ensure sections is always an array
     const sections: DocumentSection[] = Array.isArray(rawSections) ? rawSections : [];
@@ -91,6 +105,18 @@ serve(async (req) => {
     if (!title) {
       throw new Error('Title is required');
     }
+
+    // Export settings with defaults
+    const headerSettings = {
+      companyName: exportSettings?.header?.companyName ?? 'IArche',
+      tagline: exportSettings?.header?.tagline ?? 'Architecture de Solutions IA',
+      showLogo: exportSettings?.header?.showLogo ?? true,
+    };
+    const footerSettings = {
+      line1: exportSettings?.footer?.line1 ?? 'IArche - Conseil en Architecture IA & Transformation Digitale',
+      line2: exportSettings?.footer?.line2 ?? 'contact@iarche.fr  •  www.iarche.fr',
+      showPageNumbers: exportSettings?.footer?.showPageNumbers ?? true,
+    };
 
     // Convert hex color to DOCX format (remove #)
     const primaryColor = theme?.primaryColor?.replace('#', '') || COLORS.bleuNuit;
@@ -555,13 +581,13 @@ serve(async (req) => {
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: 'IArche',
+                    text: headerSettings.companyName,
                     bold: true,
                     size: TYPOGRAPHY.small.size,
                     color: primaryColor,
                   }),
                   new TextRun({
-                    text: '  •  Architecture de Solutions IA',
+                    text: `  •  ${headerSettings.tagline}`,
                     size: TYPOGRAPHY.caption.size,
                     color: COLORS.muted,
                   }),
@@ -597,7 +623,7 @@ serve(async (req) => {
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: 'IArche - Conseil en Architecture IA & Transformation Digitale',
+                    text: footerSettings.line1,
                     size: TYPOGRAPHY.caption.size,
                     color: COLORS.muted,
                   }),
@@ -607,39 +633,41 @@ serve(async (req) => {
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: 'contact@iarche.fr  •  www.iarche.fr',
+                    text: footerSettings.line2,
                     size: TYPOGRAPHY.caption.size,
                     color: COLORS.muted,
                   }),
                 ],
                 alignment: AlignmentType.CENTER,
               }),
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: 'Page ',
-                    size: TYPOGRAPHY.caption.size,
-                    color: COLORS.muted,
-                  }),
-                  new TextRun({
-                    children: [PageNumber.CURRENT],
-                    size: TYPOGRAPHY.caption.size,
-                    color: COLORS.muted,
-                  }),
-                  new TextRun({
-                    text: ' / ',
-                    size: TYPOGRAPHY.caption.size,
-                    color: COLORS.muted,
-                  }),
-                  new TextRun({
-                    children: [PageNumber.TOTAL_PAGES],
-                    size: TYPOGRAPHY.caption.size,
-                    color: COLORS.muted,
-                  }),
-                ],
-                alignment: AlignmentType.CENTER,
-                spacing: { before: 100 },
-              }),
+              ...(footerSettings.showPageNumbers ? [
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: 'Page ',
+                      size: TYPOGRAPHY.caption.size,
+                      color: COLORS.muted,
+                    }),
+                    new TextRun({
+                      children: [PageNumber.CURRENT],
+                      size: TYPOGRAPHY.caption.size,
+                      color: COLORS.muted,
+                    }),
+                    new TextRun({
+                      text: ' / ',
+                      size: TYPOGRAPHY.caption.size,
+                      color: COLORS.muted,
+                    }),
+                    new TextRun({
+                      children: [PageNumber.TOTAL_PAGES],
+                      size: TYPOGRAPHY.caption.size,
+                      color: COLORS.muted,
+                    }),
+                  ],
+                  alignment: AlignmentType.CENTER,
+                  spacing: { before: 100 },
+                }),
+              ] : []),
             ],
           }),
         },
