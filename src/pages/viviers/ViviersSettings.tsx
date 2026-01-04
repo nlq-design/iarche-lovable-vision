@@ -9,11 +9,10 @@ import {
   Settings, 
   Key, 
   Mail,
-  Shield,
   CheckCircle2,
-  AlertCircle,
   RefreshCw
 } from 'lucide-react';
+import LogoArc from '@/components/ui/LogoArc';
 
 export default function ViviersSettings() {
   return (
@@ -22,7 +21,8 @@ export default function ViviersSettings() {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-foreground">Paramètres Viviers</h1>
-          <p className="text-muted-foreground">
+          <LogoArc size="sm" className="mt-2" />
+          <p className="text-muted-foreground mt-2">
             Configuration des intégrations et options du module
           </p>
         </div>
@@ -31,7 +31,7 @@ export default function ViviersSettings() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Key className="h-5 w-5 text-orange-500" />
+              <Key className="h-5 w-5 text-primary" />
               Clés API
             </CardTitle>
             <CardDescription>
@@ -42,7 +42,7 @@ export default function ViviersSettings() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label htmlFor="instantly-key">Instantly API Key</Label>
-                <Badge variant="outline" className="text-emerald-600">
+                <Badge variant="outline" className="text-success border-success/30">
                   <CheckCircle2 className="w-3 h-3 mr-1" />
                   Configurée
                 </Badge>
@@ -59,7 +59,7 @@ export default function ViviersSettings() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label htmlFor="brevo-key">Brevo API Key</Label>
-                <Badge variant="outline" className="text-emerald-600">
+                <Badge variant="outline" className="text-success border-success/30">
                   <CheckCircle2 className="w-3 h-3 mr-1" />
                   Configurée
                 </Badge>
@@ -79,7 +79,7 @@ export default function ViviersSettings() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5 text-orange-500" />
+              <Mail className="h-5 w-5 text-primary" />
               Domaines email
             </CardTitle>
             <CardDescription>
@@ -90,23 +90,23 @@ export default function ViviersSettings() {
             <div className="space-y-3">
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
-                  <p className="font-medium">contact-iarche.fr</p>
+                  <p className="font-medium">iarche.fr / iarche.io</p>
                   <p className="text-sm text-muted-foreground">Brevo - Transactionnel</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-emerald-100 text-emerald-700">SPF ✓</Badge>
-                  <Badge className="bg-emerald-100 text-emerald-700">DKIM ✓</Badge>
-                  <Badge className="bg-emerald-100 text-emerald-700">DMARC ✓</Badge>
+                  <Badge className="bg-success/10 text-success border-0">SPF ✓</Badge>
+                  <Badge className="bg-success/10 text-success border-0">DKIM ✓</Badge>
+                  <Badge className="bg-success/10 text-success border-0">DMARC ✓</Badge>
                 </div>
               </div>
               
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
-                  <p className="font-medium">13 domaines satellites</p>
-                  <p className="text-sm text-muted-foreground">Instantly - Cold email</p>
+                  <p className="font-medium">15 domaines satellites</p>
+                  <p className="text-sm text-muted-foreground">Instantly - Cold email (IONOS)</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-amber-600">
+                  <Badge variant="outline" className="text-amber-600 border-amber-300">
                     Warm-up J15
                   </Badge>
                   <Button variant="ghost" size="sm">
@@ -122,7 +122,7 @@ export default function ViviersSettings() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5 text-orange-500" />
+              <Settings className="h-5 w-5 text-primary" />
               Options
             </CardTitle>
           </CardHeader>

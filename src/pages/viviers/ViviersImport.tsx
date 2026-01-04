@@ -12,6 +12,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useState } from 'react';
+import LogoArc from '@/components/ui/LogoArc';
 
 export default function ViviersImport() {
   const [pastedData, setPastedData] = useState('');
@@ -22,7 +23,8 @@ export default function ViviersImport() {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-foreground">Import de Leads</h1>
-          <p className="text-muted-foreground">
+          <LogoArc size="sm" className="mt-2" />
+          <p className="text-muted-foreground mt-2">
             Importez vos leads froids depuis un fichier ou par copier-coller
           </p>
         </div>
@@ -48,8 +50,8 @@ export default function ViviersImport() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="border-2 border-dashed border-orange-300 rounded-lg p-12 text-center bg-orange-50/30 hover:bg-orange-50/50 transition-colors cursor-pointer">
-                  <Upload className="w-12 h-12 text-orange-400 mx-auto mb-4" />
+                <div className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-primary/50 hover:bg-muted/30 transition-colors cursor-pointer">
+                  <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">
                     Glissez-déposez votre fichier ici
                   </h3>
@@ -65,7 +67,7 @@ export default function ViviersImport() {
                   <h4 className="font-medium mb-2">Colonnes requises :</h4>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
                     <span className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-success" />
                       email
                     </span>
                     <span className="flex items-center gap-1.5 text-muted-foreground">
@@ -110,7 +112,6 @@ export default function ViviersImport() {
                     {pastedData ? `${pastedData.split('\n').length - 1} lignes détectées` : 'Aucune donnée'}
                   </p>
                   <Button 
-                    className="bg-orange-500 hover:bg-orange-600"
                     disabled={!pastedData.trim()}
                   >
                     Analyser les données

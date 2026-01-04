@@ -55,7 +55,7 @@ export function CockpitHeader() {
                 variant="outline" 
                 size="sm" 
                 onClick={() => navigate('/viviers')}
-                className="h-8 px-3 border-orange-300 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                className="h-8 px-3 border-accent/50 text-accent hover:bg-accent/10 hover:text-accent"
               >
                 <Fish className="w-4 h-4 mr-1.5" />
                 <span className="hidden sm:inline">Viviers</span>
