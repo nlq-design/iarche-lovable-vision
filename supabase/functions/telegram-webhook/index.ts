@@ -15,6 +15,12 @@ const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 // Allowed Telegram user IDs (configure these for security)
 const ALLOWED_USERS: number[] = []; // Empty = allow all, or add specific user IDs
 
+// Max file size for Telegram files (20MB)
+const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+
+// Typing action interval (Telegram resets after ~5 seconds)
+const TYPING_INTERVAL_MS = 4000;
+
 // Supabase client for deduplication
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -31,6 +37,7 @@ interface TelegramMessage {
     type: string;
   };
   text?: string;
+  caption?: string; // Caption for audio/voice/document messages
   voice?: {
     file_id: string;
     file_unique_id: string;
@@ -180,8 +187,14 @@ async function sendTelegramMessage(chatId: number, text: string, parseMode: stri
         }),
       });
     }
+    
+    // Log failed sends to database for monitoring
+    if (!result.ok) {
+      await logTelegramError(chatId, "send_message", result.description || "Unknown error");
+    }
   } catch (error) {
     console.error("Error sending Telegram message:", error);
+    await logTelegramError(chatId, "send_message", error instanceof Error ? error.message : String(error));
   }
 }
 
@@ -197,6 +210,55 @@ async function sendTypingAction(chatId: number): Promise<void> {
     });
   } catch (error) {
     console.error("Error sending typing action:", error);
+  }
+}
+
+// Typing loop - maintains "typing" indicator during long operations
+function startTypingLoop(chatId: number): { stop: () => void } {
+  let isRunning = true;
+  
+  const loop = async () => {
+    while (isRunning) {
+      await sendTypingAction(chatId);
+      await new Promise(resolve => setTimeout(resolve, TYPING_INTERVAL_MS));
+    }
+  };
+  
+  loop().catch(err => console.error("Typing loop error:", err));
+  
+  return {
+    stop: () => { isRunning = false; }
+  };
+}
+
+// Log Telegram errors to database for monitoring
+async function logTelegramError(chatId: number, errorType: string, errorMessage: string): Promise<void> {
+  try {
+    await supabase.from("email_logs").insert({
+      email_type: "telegram_error",
+      recipient_email: `telegram_${chatId}`,
+      subject: errorType,
+      status: "failed",
+      error_message: errorMessage.slice(0, 500),
+      source_type: "telegram",
+      metadata: { chat_id: chatId, error_type: errorType }
+    });
+  } catch (err) {
+    console.error("Failed to log Telegram error:", err);
+  }
+}
+
+// Cleanup old processed updates (called periodically)
+async function cleanupOldUpdates(): Promise<void> {
+  try {
+    const { error } = await supabase.rpc("cleanup_old_telegram_updates");
+    if (error) {
+      console.error("Cleanup error:", error);
+    } else {
+      console.log("Old Telegram updates cleaned up");
+    }
+  } catch (err) {
+    console.error("Cleanup failed:", err);
   }
 }
 
@@ -307,7 +369,23 @@ async function downloadTelegramFile(fileUrl: string): Promise<ArrayBuffer | null
       console.error("Failed to download file:", response.status);
       return null;
     }
-    return await response.arrayBuffer();
+    
+    // Check file size from Content-Length header
+    const contentLength = response.headers.get("Content-Length");
+    if (contentLength && parseInt(contentLength) > MAX_FILE_SIZE_BYTES) {
+      console.error("File too large:", contentLength, "bytes");
+      return null;
+    }
+    
+    const buffer = await response.arrayBuffer();
+    
+    // Double-check actual size
+    if (buffer.byteLength > MAX_FILE_SIZE_BYTES) {
+      console.error("Downloaded file too large:", buffer.byteLength, "bytes");
+      return null;
+    }
+    
+    return buffer;
   } catch (error) {
     console.error("Error downloading file:", error);
     return null;
@@ -320,6 +398,12 @@ async function uploadToSupabaseStorage(
   mimeType: string
 ): Promise<string | null> {
   try {
+    // Validate file size before upload
+    if (fileBuffer.byteLength > MAX_FILE_SIZE_BYTES) {
+      console.error("File exceeds size limit:", fileBuffer.byteLength, "bytes");
+      return null;
+    }
+    
     const filePath = `telegram-audio/${Date.now()}_${fileName}`;
     
     const { data, error } = await supabase.storage
@@ -345,24 +429,33 @@ async function createTranscriptionJob(
   storagePath: string,
   source: string,
   userId: number,
-  userName: string
+  userName: string,
+  caption?: string
 ): Promise<{ success: boolean; transcriptionId?: string; error?: string }> {
   try {
+    // Build metadata with optional caption context
+    const metadata: Record<string, unknown> = {
+      telegram_user_id: userId,
+      telegram_username: userName,
+      imported_via: "telegram_bot",
+    };
+    
+    // Add caption as context if provided
+    if (caption) {
+      metadata.user_context = caption;
+    }
+    
     // Create transcription record directly (internal, no auth required)
     const { data, error } = await supabase
       .from("voice_transcriptions")
       .insert({
-        title: `Transcription Telegram - ${userName}`,
+        title: caption ? `Telegram: ${caption.slice(0, 50)}` : `Transcription Telegram - ${userName}`,
         source: source,
         storage_path: storagePath,
         status: "pending",
         created_by: null, // No authenticated user for Telegram
         workspace_id: null,
-        metadata: {
-          telegram_user_id: userId,
-          telegram_username: userName,
-          imported_via: "telegram_bot",
-        },
+        metadata,
       })
       .select("id")
       .single();
@@ -420,12 +513,15 @@ async function processMessageInBackground(
   userName: string,
   text: string
 ): Promise<void> {
+  // Start continuous typing indicator
+  const typing = startTypingLoop(chatId);
+  
   try {
-    // Send typing indicator
-    await sendTypingAction(chatId);
-    
     // Process with AI agent
     const aiResponse = await callAIAgent(text, userId, userName);
+    
+    // Stop typing before sending response
+    typing.stop();
     
     // Send response
     await sendTelegramMessage(chatId, aiResponse);
@@ -433,11 +529,17 @@ async function processMessageInBackground(
     // Mark as completed
     await markUpdateAsCompleted(updateId, aiResponse);
     
+    // Periodically cleanup old updates (1 in 100 chance)
+    if (Math.random() < 0.01) {
+      cleanupOldUpdates().catch(err => console.error("Cleanup error:", err));
+    }
+    
   } catch (error) {
+    typing.stop();
     const msg = error instanceof Error ? error.message : String(error);
     console.error("Background processing error:", msg);
     
-    await sendTelegramMessage(chatId, "Je n'ai pas pu traiter votre demande. Réessayez.");
+    await sendTelegramMessage(chatId, "❌ Je n'ai pas pu traiter votre demande. Réessayez.");
     await markUpdateAsFailed(updateId, msg);
   }
 }
@@ -449,14 +551,29 @@ async function processAudioInBackground(
   userName: string,
   fileId: string,
   fileName: string,
-  mimeType: string
+  mimeType: string,
+  caption?: string,
+  fileSize?: number
 ): Promise<void> {
+  // Start continuous typing indicator
+  const typing = startTypingLoop(chatId);
+  
   try {
-    await sendTypingAction(chatId);
+    // Check file size early if available
+    if (fileSize && fileSize > MAX_FILE_SIZE_BYTES) {
+      typing.stop();
+      await sendTelegramMessage(
+        chatId, 
+        `❌ Fichier trop volumineux (${(fileSize / 1024 / 1024).toFixed(1)} MB). Maximum: 20 MB.`
+      );
+      await markUpdateAsFailed(updateId, "File too large");
+      return;
+    }
     
     // Get file URL from Telegram
     const fileUrl = await getTelegramFileUrl(fileId);
     if (!fileUrl) {
+      typing.stop();
       await sendTelegramMessage(chatId, "❌ Impossible de récupérer le fichier audio.");
       await markUpdateAsFailed(updateId, "Failed to get file URL");
       return;
@@ -465,27 +582,39 @@ async function processAudioInBackground(
     // Download file
     const fileBuffer = await downloadTelegramFile(fileUrl);
     if (!fileBuffer) {
-      await sendTelegramMessage(chatId, "❌ Impossible de télécharger le fichier audio.");
-      await markUpdateAsFailed(updateId, "Failed to download file");
+      typing.stop();
+      await sendTelegramMessage(
+        chatId, 
+        "❌ Impossible de télécharger le fichier audio. Vérifiez que le fichier fait moins de 20 MB."
+      );
+      await markUpdateAsFailed(updateId, "Failed to download file (size limit?)");
       return;
     }
     
     // Upload to Supabase Storage
     const storagePath = await uploadToSupabaseStorage(fileBuffer, fileName, mimeType);
     if (!storagePath) {
+      typing.stop();
       await sendTelegramMessage(chatId, "❌ Impossible de sauvegarder le fichier audio.");
       await markUpdateAsFailed(updateId, "Failed to upload to storage");
       return;
     }
     
-    // Create transcription job
-    const result = await createTranscriptionJob(storagePath, "telegram", userId, userName);
+    // Create transcription job with caption context
+    const result = await createTranscriptionJob(storagePath, "telegram", userId, userName, caption);
+    
+    typing.stop();
     
     if (result.success) {
-      await sendTelegramMessage(
-        chatId,
-        `✅ Fichier audio reçu et enregistré !\n\n📝 Transcription créée (ID: \`${result.transcriptionId?.slice(0, 8)}...\`)\n\n➡️ Accédez au Cockpit pour voir la transcription et lancer l'analyse.`
-      );
+      let successMsg = `✅ Fichier audio reçu et enregistré !\n\n📝 Transcription créée (ID: \`${result.transcriptionId?.slice(0, 8)}...\`)`;
+      
+      if (caption) {
+        successMsg += `\n📌 Contexte: "${caption.slice(0, 50)}${caption.length > 50 ? '...' : ''}"`;
+      }
+      
+      successMsg += `\n\n➡️ Accédez au Cockpit pour voir la transcription et lancer l'analyse.`;
+      
+      await sendTelegramMessage(chatId, successMsg);
       await markUpdateAsCompleted(updateId, `Transcription created: ${result.transcriptionId}`);
     } else {
       await sendTelegramMessage(chatId, `❌ Erreur lors de la création de la transcription: ${result.error}`);
@@ -493,6 +622,7 @@ async function processAudioInBackground(
     }
     
   } catch (error) {
+    typing.stop();
     const msg = error instanceof Error ? error.message : String(error);
     console.error("Audio processing error:", msg);
     
@@ -645,9 +775,12 @@ serve(async (req) => {
       const fileName = `voice_${Date.now()}.ogg`;
       const mimeType = message.voice.mime_type || "audio/ogg";
       
-      // Don't await - let it run in background
-      processAudioInBackground(updateId, chatId, userId, userName, message.voice.file_id, fileName, mimeType)
-        .catch(err => console.error("Background audio processing error:", err));
+      // Don't await - let it run in background (with caption and file_size)
+      processAudioInBackground(
+        updateId, chatId, userId, userName, 
+        message.voice.file_id, fileName, mimeType,
+        message.caption, message.voice.file_size
+      ).catch(err => console.error("Background audio processing error:", err));
       
       return new Response("OK", { status: 200 });
     }
@@ -659,9 +792,12 @@ serve(async (req) => {
       const fileName = message.audio.title || `audio_${Date.now()}.mp3`;
       const mimeType = message.audio.mime_type || "audio/mpeg";
       
-      // Don't await - let it run in background
-      processAudioInBackground(updateId, chatId, userId, userName, message.audio.file_id, fileName, mimeType)
-        .catch(err => console.error("Background audio processing error:", err));
+      // Don't await - let it run in background (with caption and file_size)
+      processAudioInBackground(
+        updateId, chatId, userId, userName,
+        message.audio.file_id, fileName, mimeType,
+        message.caption, message.audio.file_size
+      ).catch(err => console.error("Background audio processing error:", err));
       
       return new Response("OK", { status: 200 });
     }
@@ -673,9 +809,12 @@ serve(async (req) => {
       const fileName = message.document.file_name || `document_${Date.now()}`;
       const mimeType = message.document.mime_type;
       
-      // Don't await - let it run in background
-      processAudioInBackground(updateId, chatId, userId, userName, message.document.file_id, fileName, mimeType)
-        .catch(err => console.error("Background audio processing error:", err));
+      // Don't await - let it run in background (with caption and file_size)
+      processAudioInBackground(
+        updateId, chatId, userId, userName,
+        message.document.file_id, fileName, mimeType,
+        message.caption, message.document.file_size
+      ).catch(err => console.error("Background audio processing error:", err));
       
       return new Response("OK", { status: 200 });
     }
