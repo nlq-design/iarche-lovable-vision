@@ -4511,7 +4511,7 @@ serve(async (req) => {
 
     let result = await response.json();
     let assistantMessage = result.choices?.[0]?.message;
-    const allToolCalls: { name: string; result: unknown }[] = [];
+    const allToolCalls: { name: string; result?: unknown; error?: string; duration_ms?: number }[] = [];
 
     // Tool calling loop (max 5 iterations to prevent infinite loops)
     let iterations = 0;
@@ -4524,28 +4524,43 @@ serve(async (req) => {
       for (const toolCall of assistantMessage.tool_calls) {
         const toolName = toolCall.function.name;
         const toolArgs = JSON.parse(toolCall.function.arguments || "{}");
+        const toolStartTime = Date.now();
 
         try {
           const toolResult = await executeTool(supabase, toolName, toolArgs);
-          allToolCalls.push({ name: toolName, result: toolResult });
+          const toolDuration = Date.now() - toolStartTime;
+          
+          allToolCalls.push({ name: toolName, result: toolResult, duration_ms: toolDuration });
           toolResults.push({
             role: "tool",
             tool_call_id: toolCall.id,
             content: JSON.stringify(toolResult),
           });
           
-          // Save tool call to memory
+          // Enhanced logging with execution time
+          console.log(`Tool ${toolName} completed in ${toolDuration}ms`);
+          
+          // Save tool call to memory with timing data
           await saveMemory(supabase, {
             memory_type: "tool_call",
             category: toolName,
             content: `Tool ${toolName} appelé avec ${JSON.stringify(toolArgs).slice(0, 200)}`,
-            metadata: { tool: toolName, args: toolArgs, success: true },
+            metadata: { 
+              tool: toolName, 
+              args: toolArgs, 
+              success: true,
+              duration_ms: toolDuration,
+              timestamp: new Date().toISOString(),
+            },
             importance_score: 0.6,
             expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
           }, workspace_id, user_id, session_id);
           
         } catch (toolError) {
-          console.error(`Tool ${toolName} error:`, toolError);
+          const toolDuration = Date.now() - toolStartTime;
+          console.error(`Tool ${toolName} error after ${toolDuration}ms:`, toolError);
+          
+          allToolCalls.push({ name: toolName, error: (toolError as Error).message, duration_ms: toolDuration });
           toolResults.push({
             role: "tool",
             tool_call_id: toolCall.id,
@@ -4600,7 +4615,8 @@ serve(async (req) => {
       }, workspace_id, user_id, session_id);
     }
 
-    console.log("Agent response generated, tools called:", allToolCalls.map(t => t.name));
+    const totalToolDuration = allToolCalls.reduce((sum, t) => sum + (t.duration_ms || 0), 0);
+    console.log(`Agent response generated, tools called: ${allToolCalls.map(t => t.name).join(", ")}, total tool time: ${totalToolDuration}ms`);
 
     return new Response(JSON.stringify({
       ok: true,
@@ -4608,6 +4624,12 @@ serve(async (req) => {
       tool_calls: allToolCalls,
       usage: result.usage,
       memory_used: recentMemory.length + relevantMemory.length > 0,
+      active_entities_count: activeEntities.length,
+      performance: {
+        tool_count: allToolCalls.length,
+        total_tool_duration_ms: totalToolDuration,
+        iterations: iterations,
+      },
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
