@@ -982,6 +982,48 @@ const AGENT_TOOLS = [
   {
     type: "function",
     function: {
+      name: "create_specification",
+      description: "Crée un cahier des charges (CDC/Spécification) pour un projet.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Titre du CDC" },
+          description: { type: "string", description: "Description générale" },
+          project_id: { type: "string", description: "ID du projet associé" },
+          lead_id: { type: "string", description: "ID du lead client" },
+          functional_requirements: { type: "array", items: { type: "string" }, description: "Exigences fonctionnelles" },
+          technical_requirements: { type: "array", items: { type: "string" }, description: "Exigences techniques" },
+          constraints: { type: "array", items: { type: "string" }, description: "Contraintes projet" },
+          content: { type: "string", description: "Contenu détaillé du CDC (Markdown)" },
+          status: { type: "string", enum: ["draft", "review", "approved"], description: "Statut initial (défaut: draft)" },
+        },
+        required: ["title"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_document",
+      description: "Crée manuellement un document généré (devis, proposition, email type) sans IA.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Titre du document" },
+          document_type: { type: "string", enum: ["quote", "cdc", "proposal", "email"], description: "Type de document" },
+          content_json: { type: "object", description: "Contenu structuré du document" },
+          project_id: { type: "string", description: "ID du projet associé" },
+          lead_id: { type: "string", description: "ID du lead client" },
+          opportunity_id: { type: "string", description: "ID de l'opportunité associée" },
+          status: { type: "string", enum: ["draft", "pending_review", "approved"], description: "Statut initial (défaut: draft)" },
+        },
+        required: ["title", "document_type"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "generate_document",
       description: "Génère un document commercial (devis, CDC, proposition) via IA.",
       parameters: {
@@ -3459,6 +3501,106 @@ Génère un contenu HTML pour email avec:
         lead: updatedLead,
         updated_fields: updatedFields,
         message: `✅ Lead "${updatedLead.name}" mis à jour : ${updatedFields.join(", ")}`,
+        autonomy_level: "execution_directe",
+      };
+    }
+
+    case "create_specification": {
+      const rawTitle = args.title as string | undefined;
+      
+      if (!rawTitle || rawTitle.trim() === "") {
+        return {
+          success: false,
+          error: "Le titre du CDC est obligatoire",
+          message: "⚠️ Je ne peux pas créer le CDC. Merci de préciser un titre.",
+          autonomy_level: "execution_directe",
+        };
+      }
+
+      const specData = {
+        title: rawTitle.trim(),
+        description: (args.description as string || "").trim() || null,
+        project_id: args.project_id as string || null,
+        lead_id: args.lead_id as string || null,
+        functional_requirements: args.functional_requirements as string[] || [],
+        technical_requirements: args.technical_requirements as string[] || [],
+        constraints: args.constraints as string[] || [],
+        content: args.content as string || null,
+        status: args.status as string || "draft",
+        version: "1.0",
+        workspace_id: "00000000-0000-0000-0000-000000000001",
+      };
+
+      const { data: newSpec, error } = await supabase
+        .from("specifications")
+        .insert(specData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        specification: newSpec,
+        message: `✅ CDC créé : "${specData.title}" (statut: ${specData.status})`,
+        autonomy_level: "execution_directe",
+      };
+    }
+
+    case "create_document": {
+      const rawDocTitle = args.title as string | undefined;
+      const rawDocType = args.document_type as string | undefined;
+      
+      if (!rawDocTitle || rawDocTitle.trim() === "") {
+        return {
+          success: false,
+          error: "Le titre du document est obligatoire",
+          message: "⚠️ Je ne peux pas créer le document. Merci de préciser un titre.",
+          autonomy_level: "execution_directe",
+        };
+      }
+      
+      if (!rawDocType) {
+        return {
+          success: false,
+          error: "Le type de document est obligatoire",
+          message: "⚠️ Précisez le type de document : quote (devis), cdc, proposal ou email.",
+          autonomy_level: "execution_directe",
+        };
+      }
+
+      const docData = {
+        title: rawDocTitle.trim(),
+        document_type: rawDocType,
+        content_json: args.content_json as Record<string, unknown> || {},
+        project_id: args.project_id as string || null,
+        lead_id: args.lead_id as string || null,
+        opportunity_id: args.opportunity_id as string || null,
+        status: args.status as string || "draft",
+        ai_generated: false,
+        version: "1.0",
+        workspace_id: "00000000-0000-0000-0000-000000000001",
+      };
+
+      const { data: newDoc, error } = await supabase
+        .from("generated_documents")
+        .insert(docData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const typeLabels: Record<string, string> = {
+        quote: "Devis",
+        cdc: "CDC",
+        proposal: "Proposition",
+        email: "Email type",
+      };
+
+      return {
+        success: true,
+        document: newDoc,
+        message: `✅ ${typeLabels[rawDocType] || "Document"} créé : "${docData.title}"`,
         autonomy_level: "execution_directe",
       };
     }
