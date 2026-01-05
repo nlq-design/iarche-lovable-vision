@@ -267,19 +267,17 @@ export function CreateTranscriptionModal({
               const transcriptText = await transcribeLargeAudio(
                 audioBlob,
                 'fr',
-                (progress) => setChunkingProgress(progress)
+              (progress) => setChunkingProgress(progress)
               );
               
-              // Upload original file to storage (for reference)
-              const { error: uploadError } = await supabase.storage
-                .from('voice-transcriptions')
-                .upload(storagePath, audioBlob);
-
-              if (uploadError) throw uploadError;
+              // For large files, skip storage upload (exceeds bucket limit)
+              // We already have the transcript from client-side chunking
+              // Use a placeholder path to indicate no file stored
+              const finalStoragePath = `${DEFAULT_WORKSPACE_ID}/${userId}/chunked_${fileName}_no_file`;
 
               // Create job with pre-transcribed text and metadata
               const job = await createTranscription.mutateAsync({
-                storage_path: storagePath,
+                storage_path: finalStoragePath,
                 source: activeTab === 'upload' ? 'upload' : 'recording',
                 lead_id: entityType === 'lead' ? selectedEntityId : null,
                 project_id: entityType === 'project' ? selectedEntityId : null,
