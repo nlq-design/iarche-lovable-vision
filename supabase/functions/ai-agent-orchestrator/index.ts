@@ -2540,20 +2540,28 @@ async function executeTool(
       if (error) throw error;
       
       // Also search in lead names linked to projects
+      // NOTE: Use left join (no !inner) and filter in application to avoid ambiguity errors
       const { data: projectsByLead, error: leadError } = await supabase
         .from("projects")
         .select(`
           id, name, description, status, health_status, ai_documents_summary,
-          lead:leads!inner(id, name, company)
+          lead:leads(id, name, company)
         `)
-        .ilike("leads.name", `%${searchQuery}%`)
+        .not("lead_id", "is", null)
         .limit(5);
       
-      // Merge results without duplicates
+      // Merge results without duplicates, filtering lead matches in application layer
       const allProjects = data || [];
-      const leadMatches = (projectsByLead || []).filter(
-        (p: { id: string }) => !allProjects.some((ap: { id: string }) => ap.id === p.id)
-      );
+      
+      // Filter projectsByLead to those where lead name matches search query
+      const searchLower = searchQuery.toLowerCase();
+      const leadMatches = (projectsByLead || []).filter((p: any) => {
+        const leadName = p.lead?.name?.toLowerCase() || "";
+        const leadCompany = p.lead?.company?.toLowerCase() || "";
+        const matchesSearch = leadName.includes(searchLower) || leadCompany.includes(searchLower);
+        const notAlreadyIncluded = !allProjects.some((ap: { id: string }) => ap.id === p.id);
+        return matchesSearch && notAlreadyIncluded;
+      });
 
       return { 
         projects: [...allProjects, ...leadMatches],
