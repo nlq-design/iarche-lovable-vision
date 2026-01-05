@@ -15,8 +15,8 @@ const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 // Allowed Telegram user IDs (configure these for security)
 const ALLOWED_USERS: number[] = []; // Empty = allow all, or add specific user IDs
 
-// Max file size for Telegram files (20MB)
-const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+// Max file size for Telegram files (50MB - Supabase storage limit)
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 
 // Typing action interval (Telegram resets after ~5 seconds)
 const TYPING_INTERVAL_MS = 4000;
@@ -564,7 +564,8 @@ async function callAIAgent(message: string, userId: number, userName: string): P
   console.log("Calling AI agent with message:", message);
   
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 25000);
+  // Increased timeout for complex multi-tool requests (booking creation, etc.)
+  const timeoutId = setTimeout(() => controller.abort(), 45000);
 
   try {
     const messagesPayload = [
