@@ -9,6 +9,11 @@
 import { supabase } from '@/integrations/supabase/client';
 
 const WHISPER_MAX_SIZE_BYTES = 24 * 1024 * 1024; // 24MB (safety margin)
+// Edge functions have a stricter request body limit than Whisper itself.
+// Keep chunks well under that limit to avoid "The object exceeded the maximum allowed size".
+const EDGE_FUNCTION_MAX_BODY_BYTES = 9 * 1024 * 1024; // ~9MB
+const CHUNK_UPLOAD_MAX_BYTES = Math.min(WHISPER_MAX_SIZE_BYTES, EDGE_FUNCTION_MAX_BODY_BYTES);
+
 const OVERLAP_SECONDS = 8; // 8 second overlap between chunks (increased for better merge accuracy)
 const MIN_OVERLAP_WORDS = 2; // Minimum words to consider for overlap detection
 const MAX_OVERLAP_WORDS = 25; // Maximum words to scan for overlap
@@ -97,10 +102,11 @@ export async function splitAudioIntoChunks(
     const pcmBytesPerSecond = sampleRate * numberOfChannels * 2;
 
     // Safety margin: 90% of allowed size
-    const maxChunkDuration = (WHISPER_MAX_SIZE_BYTES / pcmBytesPerSecond) * 0.9;
+    // NOTE: We cap by edge-function request body size (CHUNK_UPLOAD_MAX_BYTES), not Whisper's 25MB.
+    const maxChunkDuration = (CHUNK_UPLOAD_MAX_BYTES / pcmBytesPerSecond) * 0.9;
 
-    // Ensure chunkDuration is always larger than overlap
-    const chunkDuration = Math.max(OVERLAP_SECONDS + 10, maxChunkDuration);
+    // Keep chunk duration within the computed max to avoid oversized WAV chunks.
+    const chunkDuration = Math.max(1, maxChunkDuration);
 
     // Step between chunk starts
     const step = Math.max(1, chunkDuration - OVERLAP_SECONDS);
@@ -264,6 +270,12 @@ export async function transcribeChunk(
   formData.append('file', chunk.blob, `chunk_${chunk.index}.wav`);
   formData.append('language', language);
   formData.append('chunk_index', String(chunk.index));
+
+  // Defensive check: make sure we don't exceed edge-function body limits.
+  if (chunk.blob.size > CHUNK_UPLOAD_MAX_BYTES) {
+    const mb = (chunk.blob.size / (1024 * 1024)).toFixed(2);
+    throw new Error(`Chunk ${chunk.index} trop volumineux pour l'envoi (${mb} MB).`);
+  }
 
   const { data, error } = await supabase.functions.invoke('transcribe-audio-chunk', {
     body: formData,
