@@ -41,25 +41,39 @@ serve(async (req) => {
     }
 
     const body = await req.json();
+    // Helper to convert empty strings to null for UUID fields
+    const toUuidOrNull = (val: unknown): string | null => {
+      if (val === null || val === undefined || val === '') return null;
+      return String(val);
+    };
+
     const {
       workspace_id,
       storage_path,
       source,
-      lead_id = null,
-      project_id = null,
-      solution_id = null,
-      meeting_note_id = null,
+      lead_id: rawLeadId,
+      project_id: rawProjectId,
+      solution_id: rawSolutionId,
+      meeting_note_id: rawMeetingNoteId,
       auto_create_tasks = false,
-      prompt_profile_id = null,
-      llm_model_id = null,
-      pre_transcribed_text = null, // For client-side chunked transcription
+      prompt_profile_id: rawPromptProfileId,
+      llm_model_id: rawLlmModelId,
+      pre_transcribed_text = null,
       transcription_date = null,
       original_filename = null,
       file_size_bytes = null,
       duration_seconds = null,
       audio_format = null,
-      analysis_context = null, // Context to guide AI analysis
+      analysis_context = null,
     } = body;
+
+    // Convert empty strings to null for UUID fields
+    const lead_id = toUuidOrNull(rawLeadId);
+    const project_id = toUuidOrNull(rawProjectId);
+    const solution_id = toUuidOrNull(rawSolutionId);
+    const meeting_note_id = toUuidOrNull(rawMeetingNoteId);
+    const prompt_profile_id = toUuidOrNull(rawPromptProfileId);
+    const llm_model_id = toUuidOrNull(rawLlmModelId);
 
     console.log(`Creating voice transcription job for workspace: ${workspace_id}`);
 
