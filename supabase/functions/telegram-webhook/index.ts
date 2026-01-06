@@ -557,10 +557,73 @@ async function findEntityFromCaption(caption: string): Promise<{
 }
 
 // =============================================================================
-// AI AGENT CALL - With timeout and fast mode for Telegram
+// CONVERSATION CONTEXT - Persistent memory for multi-message conversations
 // =============================================================================
 
-async function callAIAgent(message: string, userId: number, userName: string): Promise<string> {
+interface ConversationMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+async function getConversationHistory(chatId: number): Promise<ConversationMessage[]> {
+  try {
+    // Clean up expired context first (occasionally)
+    if (Math.random() < 0.05) {
+      supabase.rpc("cleanup_old_telegram_context").then(() => {}, () => {});
+    }
+
+    const { data, error } = await supabase
+      .from("telegram_conversation_context")
+      .select("role, content")
+      .eq("chat_id", chatId)
+      .gt("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: true })
+      .limit(10); // Last 10 messages for context
+
+    if (error) {
+      console.error("Error fetching conversation history:", error);
+      return [];
+    }
+
+    return (data || []).map((m: { role: string; content: string }) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    }));
+  } catch (err) {
+    console.error("Conversation history fetch failed:", err);
+    return [];
+  }
+}
+
+async function saveConversationMessage(
+  chatId: number,
+  userId: number,
+  role: "user" | "assistant",
+  content: string
+): Promise<void> {
+  try {
+    await supabase.from("telegram_conversation_context").insert({
+      chat_id: chatId,
+      user_id: userId,
+      role,
+      content: content.slice(0, 2000), // Limit content size
+      expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 min TTL
+    });
+  } catch (err) {
+    console.error("Failed to save conversation message:", err);
+  }
+}
+
+// =============================================================================
+// AI AGENT CALL - With timeout, fast mode, and conversation context
+// =============================================================================
+
+async function callAIAgent(
+  message: string, 
+  userId: number, 
+  userName: string,
+  chatId: number
+): Promise<string> {
   console.log("Calling AI agent with message:", message);
   
   const controller = new AbortController();
@@ -568,7 +631,13 @@ async function callAIAgent(message: string, userId: number, userName: string): P
   const timeoutId = setTimeout(() => controller.abort(), 45000);
 
   try {
+    // Get conversation history for context
+    const history = await getConversationHistory(chatId);
+    console.log(`Found ${history.length} previous messages in conversation context`);
+
+    // Build messages payload with history
     const messagesPayload = [
+      ...history,
       { role: "user", content: message }
     ];
 
@@ -582,9 +651,10 @@ async function callAIAgent(message: string, userId: number, userName: string): P
         messages: messagesPayload,
         source: "telegram",
         user_id: null,
-        session_id: `telegram_session_${userId}`,
+        session_id: `telegram_chat_${chatId}`,
         workspace_id: null,
         telegram_fast_mode: true,
+        telegram_chat_id: chatId,
       }),
       signal: controller.signal,
     });
@@ -600,6 +670,11 @@ async function callAIAgent(message: string, userId: number, userName: string): P
         return "⚠️ La demande a pris trop de temps. Je l'ai traitée en arrière-plan. Réessayez dans quelques secondes ou reformulez votre demande plus simplement.";
       }
       
+      // Provide more detailed error messages
+      if (response.status === 500 && errorText.includes("tool")) {
+        return "⚠️ Une erreur s'est produite lors de l'exécution d'une action. Pouvez-vous reformuler votre demande ?";
+      }
+      
       return `❌ Erreur (${response.status}): ${errorText.slice(0, 200)}`;
     }
 
@@ -613,12 +688,16 @@ async function callAIAgent(message: string, userId: number, userName: string): P
       return "⚠️ Réponse reçue mais format inattendu: " + JSON.stringify(data).slice(0, 200);
     }
     
+    // Save both user message and assistant response to context
+    await saveConversationMessage(chatId, userId, "user", message);
+    await saveConversationMessage(chatId, userId, "assistant", responseText);
+    
     return responseText;
   } catch (error: unknown) {
     clearTimeout(timeoutId);
     
     if (error instanceof Error && error.name === "AbortError") {
-      console.log("AI Agent call timed out after 25s");
+      console.log("AI Agent call timed out after 45s");
       return "⚠️ La demande prend plus de temps que prévu. Je continue le traitement. Réessayez dans quelques secondes.";
     }
     
@@ -875,7 +954,7 @@ async function processMessageInBackground(
   const typing = startTypingLoop(chatId);
   
   try {
-    const aiResponse = await callAIAgent(text, userId, userName);
+    const aiResponse = await callAIAgent(text, userId, userName, chatId);
     
     typing.stop();
     
@@ -1186,7 +1265,7 @@ async function handleCallbackQuery(
         return;
     }
     
-    const aiResponse = await callAIAgent(prompt, userId, userName);
+    const aiResponse = await callAIAgent(prompt, userId, userName, chatId);
     typing.stop();
     
     const buttons = getQuickActionButtons(aiResponse);
