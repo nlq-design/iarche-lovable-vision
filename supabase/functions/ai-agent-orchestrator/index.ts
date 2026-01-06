@@ -819,7 +819,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "create_booking",
-      description: "Crée un rendez-vous COMPLET avec génération Zoom (si visio), ajout calendrier Google et envoi emails de confirmation.",
+      description: "Crée un rendez-vous COMPLET avec génération Zoom (si visio), ajout calendrier Google et envoi emails de confirmation. IMPORTANT: Pour la date, consulte TOUJOURS le CALENDRIER DE RÉFÉRENCE dans le contexte temporel et utilise la date ISO exacte (YYYY-MM-DD) correspondant au jour mentionné par l'utilisateur.",
       parameters: {
         type: "object",
         properties: {
@@ -827,8 +827,8 @@ const AGENT_TOOLS = [
           email: { type: "string", description: "Email du contact" },
           company: { type: "string", description: "Entreprise (optionnel)" },
           phone: { type: "string", description: "Téléphone (requis si type=telephone)" },
-          date: { type: "string", description: "Date du RDV au format YYYY-MM-DD" },
-          time: { type: "string", description: "Heure du RDV au format HH:mm (ex: 14:00)" },
+          date: { type: "string", description: "Date du RDV au format YYYY-MM-DD. CRITIQUE: Consulte le CALENDRIER DE RÉFÉRENCE pour trouver la date exacte. Ex: si l'utilisateur dit 'vendredi', trouve la ligne 'vendredi DD/MM/YYYY = YYYY-MM-DD' et utilise cette date ISO." },
+          time: { type: "string", description: "Heure du RDV au format HH:mm (ex: 14:00 ou 14:30)" },
           duration_minutes: { type: "number", description: "Durée en minutes (défaut: 60)" },
           meeting_type: { type: "string", enum: ["visio", "telephone", "presentiel"], description: "Type de rendez-vous" },
           booking_type_slug: { type: "string", description: "Slug du type de RDV (decouverte, suivi, demo)" },
@@ -8812,12 +8812,36 @@ serve(async (req) => {
     }
 
     // 4. Inject current date/time context - CRITICAL for agent temporal awareness
+    // Build explicit calendar reference to prevent day calculation errors
     const now = new Date();
-    const dateContext = `\n\nCONTEXTE TEMPOREL :
-- Date du jour : ${now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+    const dayNames = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+    
+    // Build explicit week calendar with dates
+    const calendarRef: string[] = [];
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() + i);
+      const dayName = dayNames[d.getDay()];
+      const dateStr = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const isoDate = d.toISOString().split('T')[0];
+      const label = i === 0 ? " (AUJOURD'HUI)" : i === 1 ? " (demain)" : "";
+      calendarRef.push(`  ${dayName} ${dateStr} = ${isoDate}${label}`);
+    }
+    
+    const dateContext = `\n\nCONTEXTE TEMPOREL (RÉFÉRENCE OBLIGATOIRE) :
+- Date du jour : ${now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} (${now.toISOString().split('T')[0]})
+- Jour de la semaine actuel : ${dayNames[now.getDay()].toUpperCase()}
 - Heure actuelle : ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
 - Fuseau horaire : Europe/Paris
-- Semaine : ${getWeekNumber(now)}`;
+- Semaine : ${getWeekNumber(now)}
+
+📅 CALENDRIER DE RÉFÉRENCE (utiliser ces dates EXACTES pour les RDV) :
+${calendarRef.join('\n')}
+
+⚠️ RÈGLE CRITIQUE CALCUL DE DATES :
+- Quand l'utilisateur dit "vendredi", trouve la ligne contenant "vendredi" ci-dessus et utilise la date ISO (YYYY-MM-DD)
+- NE JAMAIS calculer les dates mentalement - TOUJOURS consulter le calendrier ci-dessus
+- Si aujourd'hui est lundi 06/01/2026, alors vendredi = 10/01/2026 SEULEMENT si le calendrier le confirme`;
 
     // 5. Save the user query to memory with entity detection
     if (userQuery) {
