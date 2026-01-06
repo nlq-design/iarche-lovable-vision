@@ -2366,6 +2366,23 @@ const AGENT_TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "convert_lead_to_partner",
+      description: "Convertit un lead existant en partenaire. Crée le partenaire avec les infos du lead et marque le lead comme converti.",
+      parameters: {
+        type: "object",
+        properties: {
+          lead_id: { type: "string", description: "ID du lead à convertir" },
+          partner_type: { type: "string", enum: ["expert_ia", "independant", "apporteur"], description: "Type de partenaire (défaut: apporteur)" },
+          specialties: { type: "array", items: { type: "string" }, description: "Spécialités du partenaire" },
+          commission_rate: { type: "number", description: "Taux de commission en % (défaut: 10)" },
+        },
+        required: ["lead_id"],
+      },
+    },
+  },
   // ============ OUTILS v8.0 - NOUVELLES FONCTIONNALITÉS ============
   {
     type: "function",
@@ -4962,6 +4979,133 @@ Génère un contenu HTML pour email avec:
         lead: newLead,
         message: `✅ Lead créé : ${leadData.name} (${leadData.email}) - ${leadData.company || "Entreprise non spécifiée"}`,
         autonomy_level: "N1",
+      };
+    }
+
+    case "convert_lead_to_partner": {
+      const leadId = args.lead_id as string;
+      
+      if (!leadId) {
+        return {
+          success: false,
+          error: "lead_id est obligatoire",
+          message: "⚠️ Précisez l'ID du lead à convertir en partenaire.",
+          autonomy_level: "execution_directe",
+        };
+      }
+
+      // Fetch lead data
+      const { data: lead, error: leadErr } = await supabase
+        .from("leads")
+        .select("*")
+        .eq("id", leadId)
+        .single();
+
+      if (leadErr || !lead) {
+        return {
+          success: false,
+          error: "Lead non trouvé",
+          message: `⚠️ Aucun lead trouvé avec l'ID ${leadId}.`,
+          autonomy_level: "execution_directe",
+        };
+      }
+
+      // Check if partner already exists with same email
+      const { data: existingPartner } = await supabase
+        .from("partners")
+        .select("id, name, slug")
+        .eq("email", lead.email)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      if (existingPartner) {
+        // Mark lead as converted to existing partner
+        await supabase
+          .from("leads")
+          .update({
+            source_context: `${lead.source_context || ""}\n[CONVERTI EN PARTENAIRE: ${existingPartner.slug}]`.trim(),
+            qualification_status: "converted_to_partner",
+          })
+          .eq("id", leadId);
+
+        return {
+          success: true,
+          message: `⚠️ Un partenaire existe déjà avec cet email : ${existingPartner.name} (${existingPartner.slug}). Lead marqué comme converti.`,
+          partner: existingPartner,
+          lead_marked_converted: true,
+          autonomy_level: "execution_directe",
+        };
+      }
+
+      // Generate slug from name
+      const baseSlug = lead.name
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 40);
+
+      const partnerData = {
+        name: lead.name,
+        slug: `${baseSlug}-${Date.now().toString(36)}`,
+        email: lead.email,
+        phone: lead.phone,
+        company: lead.company,
+        partner_type: (args.partner_type as string) || "apporteur",
+        specialties: (args.specialties as string[]) || [],
+        commission_rate: (args.commission_rate as number) || 10,
+        website: lead.website,
+        linkedin_url: lead.linkedin_url,
+        bio: lead.message || null,
+        is_active: true,
+        workspace_id: "00000000-0000-0000-0000-000000000001",
+      };
+
+      const { data: newPartner, error: partnerErr } = await supabase
+        .from("partners")
+        .insert(partnerData)
+        .select("id, name, slug, partner_type")
+        .single();
+
+      if (partnerErr) throw partnerErr;
+
+      // Update lead to mark as converted
+      await supabase
+        .from("leads")
+        .update({
+          source_context: `${lead.source_context || ""}\n[CONVERTI EN PARTENAIRE: ${newPartner.slug}]`.trim(),
+          qualification_status: "converted_to_partner",
+        })
+        .eq("id", leadId);
+
+      // Log activity
+      await supabase.from("activity_log").insert({
+        workspace_id: "00000000-0000-0000-0000-000000000001",
+        entity_type: "partner",
+        entity_id: newPartner.id,
+        activity_type: "conversion",
+        title: `Lead converti en partenaire`,
+        content: `${lead.name} (lead) → ${newPartner.name} (${partnerData.partner_type})`,
+        lead_id: leadId,
+        ai_metadata: {
+          conversion_source: "ai_agent",
+          original_lead_id: leadId,
+          original_qualification: lead.qualification_status,
+        },
+      });
+
+      const typeLabels: Record<string, string> = {
+        expert_ia: "Expert IA",
+        independant: "Indépendant",
+        apporteur: "Apporteur d'affaires",
+      };
+
+      return {
+        success: true,
+        partner: newPartner,
+        lead_id: leadId,
+        message: `✅ Lead converti en partenaire : ${newPartner.name} (${typeLabels[partnerData.partner_type] || partnerData.partner_type})`,
+        autonomy_level: "execution_directe",
       };
     }
 
