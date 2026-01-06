@@ -663,6 +663,113 @@ export type Database = {
           },
         ]
       }
+      billing_entities: {
+        Row: {
+          address: string | null
+          capital_amount: number | null
+          cgv_template_id: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          created_by: string | null
+          current_quote_sequence: number | null
+          default_payment_terms: Json | null
+          default_tva_rate: number | null
+          default_validity_days: number | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          legal_form: string | null
+          logo_url: string | null
+          name: string
+          phone: string | null
+          postal_code: string | null
+          primary_color: string | null
+          quote_format: string | null
+          quote_prefix: string | null
+          quote_sequence_start: number | null
+          rcs_city: string | null
+          siren: string | null
+          tva_number: string | null
+          updated_at: string | null
+          website: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          capital_amount?: number | null
+          cgv_template_id?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          current_quote_sequence?: number | null
+          default_payment_terms?: Json | null
+          default_tva_rate?: number | null
+          default_validity_days?: number | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          legal_form?: string | null
+          logo_url?: string | null
+          name: string
+          phone?: string | null
+          postal_code?: string | null
+          primary_color?: string | null
+          quote_format?: string | null
+          quote_prefix?: string | null
+          quote_sequence_start?: number | null
+          rcs_city?: string | null
+          siren?: string | null
+          tva_number?: string | null
+          updated_at?: string | null
+          website?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          capital_amount?: number | null
+          cgv_template_id?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          current_quote_sequence?: number | null
+          default_payment_terms?: Json | null
+          default_tva_rate?: number | null
+          default_validity_days?: number | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          legal_form?: string | null
+          logo_url?: string | null
+          name?: string
+          phone?: string | null
+          postal_code?: string | null
+          primary_color?: string | null
+          quote_format?: string | null
+          quote_prefix?: string | null
+          quote_sequence_start?: number | null
+          rcs_city?: string | null
+          siren?: string | null
+          tva_number?: string | null
+          updated_at?: string | null
+          website?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_entities_cgv_template_fkey"
+            columns: ["cgv_template_id"]
+            isOneToOne: false
+            referencedRelation: "cgv_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_availability: {
         Row: {
           booking_type_id: string | null
@@ -935,6 +1042,51 @@ export type Database = {
           id?: string
           name?: string
           slug?: string
+        }
+        Relationships: []
+      }
+      cgv_templates: {
+        Row: {
+          content_html: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          name: string
+          slug: string
+          updated_at: string | null
+          version: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          content_html: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name: string
+          slug: string
+          updated_at?: string | null
+          version?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          content_html?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name?: string
+          slug?: string
+          updated_at?: string | null
+          version?: string | null
+          workspace_id?: string | null
         }
         Relationships: []
       }
@@ -1618,6 +1770,7 @@ export type Database = {
           ai_metadata: Json | null
           approved_at: string | null
           approved_by: string | null
+          billing_entity_id: string | null
           content_json: Json
           created_at: string | null
           created_by: string | null
@@ -1628,6 +1781,8 @@ export type Database = {
           output_format: string | null
           output_storage_path: string | null
           project_id: string | null
+          quote_metadata: Json | null
+          quote_number: string | null
           sent_at: string | null
           sent_to: string | null
           specification_id: string | null
@@ -1645,6 +1800,7 @@ export type Database = {
           ai_metadata?: Json | null
           approved_at?: string | null
           approved_by?: string | null
+          billing_entity_id?: string | null
           content_json?: Json
           created_at?: string | null
           created_by?: string | null
@@ -1655,6 +1811,8 @@ export type Database = {
           output_format?: string | null
           output_storage_path?: string | null
           project_id?: string | null
+          quote_metadata?: Json | null
+          quote_number?: string | null
           sent_at?: string | null
           sent_to?: string | null
           specification_id?: string | null
@@ -1672,6 +1830,7 @@ export type Database = {
           ai_metadata?: Json | null
           approved_at?: string | null
           approved_by?: string | null
+          billing_entity_id?: string | null
           content_json?: Json
           created_at?: string | null
           created_by?: string | null
@@ -1682,6 +1841,8 @@ export type Database = {
           output_format?: string | null
           output_storage_path?: string | null
           project_id?: string | null
+          quote_metadata?: Json | null
+          quote_number?: string | null
           sent_at?: string | null
           sent_to?: string | null
           specification_id?: string | null
@@ -1694,6 +1855,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "generated_documents_billing_entity_id_fkey"
+            columns: ["billing_entity_id"]
+            isOneToOne: false
+            referencedRelation: "billing_entities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "generated_documents_lead_id_fkey"
             columns: ["lead_id"]
@@ -2755,6 +2923,54 @@ export type Database = {
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_numbers: {
+        Row: {
+          billing_entity_id: string
+          created_at: string | null
+          document_id: string | null
+          id: string
+          month: number | null
+          quote_number: string
+          sequence: number
+          year: number
+        }
+        Insert: {
+          billing_entity_id: string
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          month?: number | null
+          quote_number: string
+          sequence: number
+          year: number
+        }
+        Update: {
+          billing_entity_id?: string
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          month?: number | null
+          quote_number?: string
+          sequence?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_numbers_billing_entity_id_fkey"
+            columns: ["billing_entity_id"]
+            isOneToOne: false
+            referencedRelation: "billing_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_numbers_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "generated_documents"
             referencedColumns: ["id"]
           },
         ]
@@ -4429,6 +4645,10 @@ export type Database = {
           p_file_id: string
           p_password?: string
         }
+        Returns: string
+      }
+      generate_next_quote_number: {
+        Args: { p_billing_entity_id: string }
         Returns: string
       }
       generate_phonetic_key: { Args: { input_text: string }; Returns: string }
