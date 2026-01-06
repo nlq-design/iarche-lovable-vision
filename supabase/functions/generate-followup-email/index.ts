@@ -238,7 +238,7 @@ Réponds UNIQUEMENT avec le JSON, sans markdown.`;
       });
     }
 
-    // Log activity only if we have a lead
+    // Log activity WITH FULL EMAIL CONTENT so it can be viewed/sent later
     if (lead_id) {
       await supabase.from("activity_log").insert({
         entity_type: "lead",
@@ -246,7 +246,7 @@ Réponds UNIQUEMENT avec le JSON, sans markdown.`;
         lead_id: lead_id,
         activity_type: "email_draft_generated",
         title: `Brouillon email "${email_type}" généré`,
-        content: emailData.subject,
+        content: JSON.stringify(emailData), // Store FULL email content as JSON
         is_ai_generated: true,
         ai_metadata: {
           autonomy_level: "N1",
@@ -257,6 +257,22 @@ Réponds UNIQUEMENT avec le JSON, sans markdown.`;
           transcription_id: transcription_id || null,
           model: "google/gemini-2.5-flash",
           generated_at: new Date().toISOString(),
+          // Store email data in ai_metadata for easy access
+          email_data: {
+            subject: emailData.subject,
+            greeting: emailData.greeting,
+            body: emailData.body,
+            cta: emailData.cta,
+            cta_url: emailData.cta_url,
+            signature: emailData.signature,
+          },
+          recipient_email: lead?.email || null,
+          recipient_name: lead?.name || null,
+        },
+        metadata: {
+          draft_status: "pending_review",
+          can_send: true,
+          email_subject: emailData.subject,
         },
         visibility: "internal",
         workspace_id: "00000000-0000-0000-0000-000000000001",

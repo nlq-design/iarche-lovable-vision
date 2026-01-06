@@ -2337,6 +2337,35 @@ const AGENT_TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "get_email_drafts",
+      description: "Récupère les brouillons d'emails générés par l'IA en attente d'envoi. Affiche le contenu complet pour relecture.",
+      parameters: {
+        type: "object",
+        properties: {
+          lead_id: { type: "string", description: "Filtrer par lead spécifique" },
+          status: { type: "string", enum: ["pending_review", "sent", "all"], description: "Filtrer par statut (défaut: pending_review)" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 20)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "send_email_draft",
+      description: "Envoie un brouillon d'email préalablement généré. L'email est envoyé au destinataire indiqué dans le brouillon.",
+      parameters: {
+        type: "object",
+        properties: {
+          draft_id: { type: "string", description: "ID du brouillon (activity_log ID)" },
+        },
+        required: ["draft_id"],
+      },
+    },
+  },
   // ============ OUTILS v8.0 - NOUVELLES FONCTIONNALITÉS ============
   {
     type: "function",
@@ -4087,6 +4116,164 @@ async function executeTool(
       };
     }
 
+    case "get_email_drafts": {
+      const limit = Math.min(args.limit as number || 20, 50);
+      const statusFilter = args.status as string || "pending_review";
+      
+      let query = supabase
+        .from("activity_log")
+        .select(`
+          id, title, content, created_at, ai_metadata, metadata,
+          lead:leads(id, name, email, company)
+        `)
+        .eq("activity_type", "email_draft_generated")
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+      if (args.lead_id) {
+        query = query.eq("lead_id", args.lead_id);
+      }
+      
+      // Filter by status if not "all"
+      if (statusFilter !== "all") {
+        query = query.eq("metadata->>draft_status", statusFilter);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const drafts = (data || []).map((d: any) => ({
+        id: d.id,
+        created_at: d.created_at,
+        lead_name: d.lead?.name || d.ai_metadata?.recipient_name,
+        lead_email: d.lead?.email || d.ai_metadata?.recipient_email,
+        company: d.lead?.company,
+        email_type: d.ai_metadata?.email_type,
+        subject: d.ai_metadata?.email_data?.subject || d.metadata?.email_subject,
+        status: d.metadata?.draft_status || "pending_review",
+        preview: d.ai_metadata?.email_data?.body?.substring(0, 200) + "...",
+      }));
+
+      const pendingCount = drafts.filter((d: any) => d.status === "pending_review").length;
+      const sentCount = drafts.filter((d: any) => d.status === "sent").length;
+
+      return {
+        drafts,
+        count: drafts.length,
+        pending_count: pendingCount,
+        sent_count: sentCount,
+        message: `${drafts.length} brouillon(s) d'email trouvé(s) (${pendingCount} en attente, ${sentCount} envoyé(s))`,
+        hint: pendingCount > 0 
+          ? "💡 Utilisez send_email_draft(draft_id) pour envoyer un brouillon, ou indiquez à l'utilisateur de consulter la section 'Brouillons emails' dans le cockpit."
+          : null,
+      };
+    }
+
+    case "send_email_draft": {
+      const draftId = args.draft_id as string;
+      
+      if (!draftId) {
+        return {
+          success: false,
+          error: "draft_id est obligatoire",
+          message: "⚠️ Précisez l'ID du brouillon à envoyer.",
+        };
+      }
+
+      // Fetch the draft
+      const { data: draft, error: draftError } = await supabase
+        .from("activity_log")
+        .select(`
+          id, content, ai_metadata, metadata,
+          lead:leads(id, name, email)
+        `)
+        .eq("id", draftId)
+        .eq("activity_type", "email_draft_generated")
+        .single();
+
+      if (draftError || !draft) {
+        return {
+          success: false,
+          error: "Brouillon non trouvé",
+          message: `⚠️ Aucun brouillon trouvé avec l'ID "${draftId}".`,
+        };
+      }
+
+      const draftData = draft as any;
+      const emailData = draftData.ai_metadata?.email_data;
+      const recipientEmail = draftData.ai_metadata?.recipient_email || draftData.lead?.email;
+
+      if (!emailData || !recipientEmail) {
+        return {
+          success: false,
+          error: "Données email incomplètes",
+          message: "⚠️ Ce brouillon ne contient pas assez d'informations pour être envoyé.",
+        };
+      }
+
+      // Send via transactional email function
+      const emailResponse = await fetch(`${SUPABASE_URL}/functions/v1/send-transactional-email`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          to: recipientEmail,
+          subject: emailData.subject,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <p>${emailData.greeting}</p>
+              <div>${emailData.body}</div>
+              ${emailData.cta ? `
+                <p style="margin: 24px 0;">
+                  <a href="${emailData.cta_url}" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+                    ${emailData.cta}
+                  </a>
+                </p>
+              ` : ""}
+              <p>${(emailData.signature || "").replace(/\n/g, "<br>")}</p>
+            </div>
+          `,
+          source_type: "email_draft",
+          source_id: draftId,
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        const errorText = await emailResponse.text();
+        return {
+          success: false,
+          error: "Échec de l'envoi",
+          message: `⚠️ L'email n'a pas pu être envoyé: ${errorText}`,
+        };
+      }
+
+      // Update draft status to sent
+      await supabase
+        .from("activity_log")
+        .update({
+          metadata: {
+            ...draftData.metadata,
+            draft_status: "sent",
+            sent_at: new Date().toISOString(),
+          },
+          ai_metadata: {
+            ...draftData.ai_metadata,
+            validated_by_human: true,
+          },
+        })
+        .eq("id", draftId);
+
+      return {
+        success: true,
+        message: `✅ Email envoyé à ${recipientEmail} avec le sujet "${emailData.subject}"`,
+        recipient: recipientEmail,
+        subject: emailData.subject,
+        autonomy_level: "execution_directe",
+      };
+    }
+
     case "suggest_solutions_for_lead": {
       // Get lead info
       const { data: lead, error: leadError } = await supabase
@@ -4640,24 +4827,41 @@ Génère un contenu HTML pour email avec:
 
       const bookingResult = await bookingResponse.json();
 
-      // Create lead if requested and not exists
+      // Create lead if requested - BUT CHECK IF PARTNER EXISTS FIRST
       if (args.create_lead_if_missing !== false) {
-        const { data: existingLead } = await supabase
-          .from("leads")
-          .select("id")
-          .eq("email", bookingPayload.email)
+        const normalizedEmail = bookingPayload.email.toLowerCase().trim();
+        
+        // Check if this email belongs to an existing partner
+        const { data: existingPartner } = await supabase
+          .from("partners")
+          .select("id, name, partner_type")
+          .eq("email", normalizedEmail)
+          .is("deleted_at", null)
           .maybeSingle();
 
-        if (!existingLead) {
-          await supabase.from("leads").insert({
-            name: bookingPayload.name,
-            email: bookingPayload.email,
-            company: bookingPayload.company,
-            phone: bookingPayload.phone,
-            source: "agent",
-            source_context: `RDV créé via Agent IA le ${bookingPayload.date}`,
-            qualification_status: "contacted",
-          });
+        if (existingPartner) {
+          console.log(`[create_booking] Email ${normalizedEmail} belongs to PARTNER "${existingPartner.name}" (${existingPartner.partner_type}) - NOT creating lead`);
+          // Don't create lead, just log the association
+        } else {
+          // Check if lead already exists
+          const { data: existingLead } = await supabase
+            .from("leads")
+            .select("id")
+            .eq("email", normalizedEmail)
+            .maybeSingle();
+
+          if (!existingLead) {
+            await supabase.from("leads").insert({
+              name: bookingPayload.name,
+              email: normalizedEmail,
+              company: bookingPayload.company,
+              phone: bookingPayload.phone,
+              source: "agent",
+              source_context: `RDV créé via Agent IA le ${bookingPayload.date}`,
+              qualification_status: "contacted",
+            });
+            console.log(`[create_booking] Created new lead for ${normalizedEmail}`);
+          }
         }
       }
 
@@ -4710,6 +4914,24 @@ Génère un contenu HTML pour email avec:
         industry: args.industry as string || null,
         company_size: args.company_size as string || null,
       };
+
+      // IMPORTANT: Check if this email belongs to a PARTNER first
+      const { data: existingPartner } = await supabase
+        .from("partners")
+        .select("id, name, partner_type, email")
+        .eq("email", leadData.email)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      if (existingPartner) {
+        return {
+          success: false,
+          is_partner: true,
+          partner: existingPartner,
+          message: `⚠️ Cette personne est un PARTENAIRE existant : ${existingPartner.name} (${existingPartner.partner_type}). Utilisez les outils partenaire (search_partners, update_partner) au lieu de créer un lead.`,
+          autonomy_level: "N1",
+        };
+      }
 
       // Check if lead already exists
       const { data: existingLead } = await supabase
