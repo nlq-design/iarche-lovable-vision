@@ -1,16 +1,19 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useCockpitAuth } from '@/hooks/cockpit/useCockpitAuth';
-import { LogOut, Shield, Clock, Briefcase, Fish } from 'lucide-react';
+import { LogOut, Shield, Clock, Briefcase, Fish, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { EmailDraftsSheet } from './EmailDraftsSheet';
 
 export function CockpitHeader() {
+  const [emailDraftsOpen, setEmailDraftsOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { stepUpExpiresAt, hasCockpitAdminAccess } = useCockpitAuth();
   const navigate = useNavigate();
@@ -48,6 +51,22 @@ export function CockpitHeader() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Email Drafts Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setEmailDraftsOpen(true)}
+                className="h-8 px-3 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
+              >
+                <Mail className="w-4 h-4 mr-1.5" />
+                <span className="hidden sm:inline">Brouillons</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Brouillons d'emails IA</TooltipContent>
+          </Tooltip>
+
           {/* Viviers Button */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -63,6 +82,8 @@ export function CockpitHeader() {
             </TooltipTrigger>
             <TooltipContent>Gérer les leads froids</TooltipContent>
           </Tooltip>
+
+          <EmailDraftsSheet open={emailDraftsOpen} onOpenChange={setEmailDraftsOpen} />
 
           {sessionTimeRemaining && (
             <Tooltip>
