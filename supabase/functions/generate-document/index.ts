@@ -629,7 +629,20 @@ serve(async (req) => {
 
     // User prompts optimized by document type
     const USER_PROMPTS: Record<DocumentType, string> = {
-      quote: `Génère un DEVIS COMMERCIAL professionnel.
+    quote: `Génère un DEVIS COMMERCIAL professionnel.
+
+## DONNÉES CLIENT (À UTILISER DIRECTEMENT - NE PAS METTRE DE PLACEHOLDERS)
+- Nom du contact : ${lead?.name || inputContext?.lead?.name || "Non renseigné"}
+- Entreprise : ${lead?.company || inputContext?.lead?.company || "Non renseigné"}
+- Secteur : ${lead?.industry || inputContext?.lead?.industry || "Non renseigné"}
+- Taille entreprise : ${lead?.company_size || inputContext?.lead?.company_size || "Non renseigné"}
+- Email : ${lead?.email || inputContext?.lead?.email || "Non renseigné"}
+- Poste : ${lead?.position || inputContext?.lead?.position || "Non renseigné"}
+
+## DONNÉES PROJET
+- Nom du projet : ${project?.name || inputContext?.project?.name || "Non renseigné"}
+- Description : ${project?.description || inputContext?.project?.description || "Non renseigné"}
+- Budget indicatif : ${project?.budget_amount ? project.budget_amount.toLocaleString('fr-FR') + ' €' : "Non renseigné"}
 
 ## SOURCES (par ordre de priorité)
 1. Instructions personnalisées : ${custom_instructions || "Aucune"}
@@ -637,7 +650,11 @@ serve(async (req) => {
 3. Notes de contexte : ${contextNotes.length > 0 ? contextNotes.map(n => n.content).join('\n---\n') : "Non disponible"}
 4. Synthèse IA du lead : ${lead?.ai_documents_summary || "Non disponible"}
 5. Contenu collé : ${inputContext?.pastedContent || "Non disponible"}
-6. Contexte métier : ${JSON.stringify(llmContext, null, 2)}
+
+## CONSIGNES CRITIQUES
+⚠️ INTERDICTION ABSOLUE d'utiliser des placeholders comme {{...}} ou [...]
+⚠️ Utilise les VRAIES DONNÉES ci-dessus. Si une donnée n'est pas disponible, adapte le texte sans placeholder.
+⚠️ Le titre du devis doit contenir le vrai nom de l'entreprise, pas un placeholder.
 
 ## CONSIGNES SPÉCIFIQUES
 - Calcule un montant réaliste basé sur la complexité perçue
@@ -650,13 +667,25 @@ Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
 
       spec: `Génère un CAHIER DES CHARGES (CDC) de niveau professionnel.
 
+## DONNÉES CLIENT (À UTILISER DIRECTEMENT - NE PAS METTRE DE PLACEHOLDERS)
+- Nom du contact : ${lead?.name || inputContext?.lead?.name || "Non renseigné"}
+- Entreprise : ${lead?.company || inputContext?.lead?.company || "Non renseigné"}
+- Secteur : ${lead?.industry || inputContext?.lead?.industry || "Non renseigné"}
+
+## DONNÉES PROJET
+- Nom du projet : ${project?.name || inputContext?.project?.name || "Non renseigné"}
+- Description : ${project?.description || inputContext?.project?.description || "Non renseigné"}
+
 ## SOURCES (par ordre de priorité)
 1. Instructions personnalisées : ${custom_instructions || "Aucune"}
 2. Transcriptions/Notes récentes : ${inputContext?.transcription ? JSON.stringify(inputContext.transcription) : (inputContext?.notes || "Non disponible")}
 3. Notes de contexte : ${contextNotes.length > 0 ? contextNotes.map(n => n.content).join('\n---\n') : "Non disponible"}
 4. Synthèse IA du lead : ${lead?.ai_documents_summary || "Non disponible"}
 5. Contenu collé : ${inputContext?.pastedContent || "Non disponible"}
-6. Contexte projet/client : ${JSON.stringify(llmContext, null, 2)}
+
+## CONSIGNES CRITIQUES
+⚠️ INTERDICTION ABSOLUE d'utiliser des placeholders comme {{...}} ou [...]
+⚠️ Utilise les VRAIES DONNÉES ci-dessus. Si une donnée n'est pas disponible, adapte le texte sans placeholder.
 
 ## CONSIGNES SPÉCIFIQUES
 - Structure CHAQUE fonctionnalité avec : Description + Exemple d'usage
@@ -670,13 +699,25 @@ Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
 
       proposal: `Génère une PROPOSITION COMMERCIALE engageante et persuasive.
 
+## DONNÉES CLIENT (À UTILISER DIRECTEMENT - NE PAS METTRE DE PLACEHOLDERS)
+- Prénom/Nom du contact : ${lead?.name || inputContext?.lead?.name || "Non renseigné"}
+- Entreprise : ${lead?.company || inputContext?.lead?.company || "Non renseigné"}
+- Secteur : ${lead?.industry || inputContext?.lead?.industry || "Non renseigné"}
+
+## DONNÉES PROJET
+- Nom du projet : ${project?.name || inputContext?.project?.name || "Non renseigné"}
+- Description : ${project?.description || inputContext?.project?.description || "Non renseigné"}
+
 ## SOURCES (par ordre de priorité)  
 1. Instructions personnalisées : ${custom_instructions || "Aucune"}
 2. Échanges récents (transcriptions) : ${inputContext?.transcription ? JSON.stringify(inputContext.transcription) : "Non disponible"}
 3. Notes de contexte : ${contextNotes.length > 0 ? contextNotes.map(n => n.content).join('\n---\n') : "Non disponible"}
 4. Synthèse IA du lead : ${lead?.ai_documents_summary || "Non disponible"}
 5. Contenu collé : ${inputContext?.pastedContent || "Non disponible"}
-6. Contexte client : ${JSON.stringify(llmContext, null, 2)}
+
+## CONSIGNES CRITIQUES
+⚠️ INTERDICTION ABSOLUE d'utiliser des placeholders comme {{...}} ou [...]
+⚠️ Utilise les VRAIES DONNÉES ci-dessus. Si une donnée n'est pas disponible, adapte le texte sans placeholder.
 
 ## CONSIGNES SPÉCIFIQUES
 - Personnalise l'accroche avec un élément spécifique du contexte
