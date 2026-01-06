@@ -781,12 +781,79 @@ Réponds UNIQUEMENT en JSON valide, sans balises markdown.`,
     // Parse JSON from AI response
     let documentContent;
     try {
-      const cleanContent = aiResult.content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      // 1) Remove markdown fences (the model sometimes wraps JSON)
+      let candidate = aiResult.content
+        .replace(/```\s*json\s*/gi, "")
+        .replace(/```/g, "")
+        .trim();
+
+      // 2) If there's any extra text around the JSON, keep only the outermost object
+      const firstBrace = candidate.indexOf("{");
+      const lastBrace = candidate.lastIndexOf("}");
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        candidate = candidate.slice(firstBrace, lastBrace + 1);
+      }
+
+      // 3) Repair common invalid JSON issue: raw newlines inside quoted strings
+      const sanitizeJsonString = (input: string) => {
+        let out = "";
+        let inString = false;
+        let escaped = false;
+
+        for (let i = 0; i < input.length; i++) {
+          const ch = input[i];
+
+          if (inString) {
+            if (escaped) {
+              out += ch;
+              escaped = false;
+              continue;
+            }
+
+            if (ch === "\\") {
+              out += ch;
+              escaped = true;
+              continue;
+            }
+
+            if (ch === '"') {
+              out += ch;
+              inString = false;
+              continue;
+            }
+
+            if (ch === "\n") {
+              out += "\\n";
+              continue;
+            }
+
+            if (ch === "\r") {
+              // Drop CR to avoid invalid characters in JSON strings
+              continue;
+            }
+
+            out += ch;
+            continue;
+          }
+
+          if (ch === '"') {
+            out += ch;
+            inString = true;
+            continue;
+          }
+
+          out += ch;
+        }
+
+        return out;
+      };
+
+      const cleanContent = sanitizeJsonString(candidate);
       documentContent = JSON.parse(cleanContent);
-      
+
       // Validate that no placeholders remain in the response
       const jsonString = JSON.stringify(documentContent);
-      const placeholderPatterns = [/\{\{[^}]+\}\}/g, /\[\[[^\]]+\]\]/g, /\[Non renseigné\]/gi];
+      const placeholderPatterns = [/(\{\{[^}]+\}\})/g, /(\[\[[^\]]+\]\])/g, /\[Non renseigné\]/gi];
       for (const pattern of placeholderPatterns) {
         if (pattern.test(jsonString)) {
           console.error("AI response contains placeholders:", jsonString.match(pattern));
