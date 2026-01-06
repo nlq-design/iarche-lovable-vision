@@ -7,7 +7,8 @@ import { TableHeader } from '@tiptap/extension-table-header';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Placeholder } from '@tiptap/extension-placeholder';
 import { TextStyle } from '@tiptap/extension-text-style';
-import { useEffect } from 'react';
+import Image from '@tiptap/extension-image';
+import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Bold,
@@ -25,12 +26,18 @@ import {
   Trash2,
   Plus,
   Type,
+  Image as ImageIcon,
+  Minus,
+  PenLine,
+  Quote,
+  Code,
 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { FontSize, FONT_SIZES } from './FontSizeExtension';
@@ -44,6 +51,8 @@ interface RichTextEditorProps {
 }
 
 export function RichTextEditor({ content, onChange, placeholder = 'Commencez à écrire...', className }: RichTextEditorProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -53,6 +62,13 @@ export function RichTextEditor({ content, onChange, placeholder = 'Commencez à 
       }),
       TextStyle,
       FontSize,
+      Image.configure({
+        inline: false,
+        allowBase64: true,
+        HTMLAttributes: {
+          class: 'rich-editor-image',
+        },
+      }),
       Table.configure({
         resizable: true,
         HTMLAttributes: {
@@ -95,8 +111,8 @@ export function RichTextEditor({ content, onChange, placeholder = 'Commencez à 
 
   const insertColumns = (count: 2 | 3) => {
     const columnClass = count === 2 ? 'columns-2' : 'columns-3';
-    const placeholder = Array(count).fill('<div class="column"><p>Colonne</p></div>').join('');
-    editor.chain().focus().insertContent(`<div class="${columnClass}">${placeholder}</div>`).run();
+    const placeholderContent = Array(count).fill('<div class="column"><p>Colonne</p></div>').join('');
+    editor.chain().focus().insertContent(`<div class="${columnClass}">${placeholderContent}</div>`).run();
   };
 
   const insertAlertBlock = (type: 'info' | 'warning' | 'success') => {
@@ -112,8 +128,96 @@ export function RichTextEditor({ content, onChange, placeholder = 'Commencez à 
     `).run();
   };
 
+  const insertSeparator = (type: 'line' | 'dots' | 'space') => {
+    const separators = {
+      line: '<hr class="separator-line" />',
+      dots: '<div class="separator-dots">• • •</div>',
+      space: '<div class="separator-space"></div>',
+    };
+    editor.chain().focus().insertContent(separators[type]).run();
+  };
+
+  const insertSignature = (type: 'simple' | 'full' | 'minimal') => {
+    const signatures = {
+      simple: `
+        <div class="signature-block signature-simple">
+          <p><strong>[Votre nom]</strong></p>
+          <p>[Votre fonction]</p>
+          <p>[Email] | [Téléphone]</p>
+        </div>
+      `,
+      full: `
+        <div class="signature-block signature-full">
+          <div class="signature-logo">[Logo]</div>
+          <p><strong>[Votre nom]</strong></p>
+          <p>[Votre fonction]</p>
+          <p>[Entreprise]</p>
+          <p>[Adresse]</p>
+          <p>📧 [Email] | 📞 [Téléphone]</p>
+          <p>🌐 [Site web]</p>
+        </div>
+      `,
+      minimal: `
+        <div class="signature-block signature-minimal">
+          <p>— <strong>[Votre nom]</strong>, [Fonction]</p>
+        </div>
+      `,
+    };
+    editor.chain().focus().insertContent(signatures[type]).run();
+  };
+
+  const insertQuote = () => {
+    editor.chain().focus().insertContent(`
+      <blockquote class="quote-block">
+        <p>"Votre citation ici..."</p>
+        <cite>— Auteur</cite>
+      </blockquote>
+    `).run();
+  };
+
+  const insertCodeBlock = () => {
+    editor.chain().focus().insertContent(`
+      <pre class="code-block"><code>// Votre code ici...</code></pre>
+    `).run();
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      if (result) {
+        editor.chain().focus().setImage({ src: result, alt: file.name }).run();
+      }
+    };
+    reader.readAsDataURL(file);
+    
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const insertImageFromUrl = () => {
+    const url = prompt('URL de l\'image:');
+    if (url) {
+      editor.chain().focus().setImage({ src: url, alt: 'Image' }).run();
+    }
+  };
+
   return (
     <div className={cn('rich-editor-wrapper border rounded-lg bg-background', className)}>
+      {/* Hidden file input for image upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageUpload}
+      />
+
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-muted/30">
         {/* Text formatting */}
@@ -155,7 +259,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Commencez à 
                 <span className="text-xs text-muted-foreground ml-2">{size.value}</span>
               </DropdownMenuItem>
             ))}
-            <div className="h-px bg-border my-1" />
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => editor.chain().focus().unsetFontSize().run()}>
               Réinitialiser
             </DropdownMenuItem>
@@ -239,6 +343,26 @@ export function RichTextEditor({ content, onChange, placeholder = 'Commencez à 
 
         <div className="w-px h-6 bg-border mx-1" />
 
+        {/* Image dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="ghost" size="sm" className="h-8 px-2 gap-1">
+              <ImageIcon className="h-4 w-4" />
+              <span className="text-xs">Image</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+              <Plus className="h-4 w-4 mr-2" />
+              Importer une image
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={insertImageFromUrl}>
+              <ImageIcon className="h-4 w-4 mr-2" />
+              Image depuis URL
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {/* Table dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -262,7 +386,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Commencez à 
             </DropdownMenuItem>
             {editor.isActive('table') && (
               <>
-                <div className="h-px bg-border my-1" />
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => editor.chain().focus().addRowAfter().run()}>
                   Ajouter ligne après
                 </DropdownMenuItem>
@@ -299,6 +423,51 @@ export function RichTextEditor({ content, onChange, placeholder = 'Commencez à 
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* Separator dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="ghost" size="sm" className="h-8 px-2 gap-1">
+              <Minus className="h-4 w-4" />
+              <span className="text-xs">Séparateur</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => insertSeparator('line')}>
+              <div className="w-12 h-px bg-current mr-2" />
+              Ligne
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => insertSeparator('dots')}>
+              <span className="mr-2">• • •</span>
+              Points
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => insertSeparator('space')}>
+              <div className="w-4 h-4 border border-dashed mr-2" />
+              Espace
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Signature dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="ghost" size="sm" className="h-8 px-2 gap-1">
+              <PenLine className="h-4 w-4" />
+              <span className="text-xs">Signature</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => insertSignature('simple')}>
+              Signature simple
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => insertSignature('full')}>
+              Signature complète
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => insertSignature('minimal')}>
+              Signature minimale
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {/* Alert blocks dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -322,6 +491,30 @@ export function RichTextEditor({ content, onChange, placeholder = 'Commencez à 
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Quote button */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={insertQuote}
+          className="h-8 w-8 p-0"
+          title="Citation"
+        >
+          <Quote className="h-4 w-4" />
+        </Button>
+
+        {/* Code block button */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={insertCodeBlock}
+          className="h-8 w-8 p-0"
+          title="Bloc de code"
+        >
+          <Code className="h-4 w-4" />
+        </Button>
 
         <div className="flex-1" />
 

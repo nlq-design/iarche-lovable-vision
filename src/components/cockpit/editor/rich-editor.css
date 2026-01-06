@@ -201,6 +201,122 @@
   text-align: left;
 }
 
+/* Images */
+.rich-editor-wrapper .ProseMirror .rich-editor-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  display: block;
+}
+
+.rich-editor-wrapper .ProseMirror img.ProseMirror-selectednode {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* Separators */
+.rich-editor-wrapper .ProseMirror .separator-line {
+  border: none;
+  height: 1px;
+  background-color: hsl(var(--border));
+  margin: 1.5rem 0;
+}
+
+.rich-editor-wrapper .ProseMirror .separator-dots {
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+  font-size: 1.25rem;
+  letter-spacing: 0.5rem;
+  margin: 1.5rem 0;
+}
+
+.rich-editor-wrapper .ProseMirror .separator-space {
+  height: 2rem;
+  margin: 1rem 0;
+}
+
+/* Signature blocks */
+.rich-editor-wrapper .ProseMirror .signature-block {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border-top: 2px solid hsl(var(--border));
+}
+
+.rich-editor-wrapper .ProseMirror .signature-block p {
+  margin: 0.25rem 0;
+  line-height: 1.4;
+}
+
+.rich-editor-wrapper .ProseMirror .signature-simple {
+  padding-top: 1rem;
+}
+
+.rich-editor-wrapper .ProseMirror .signature-full {
+  padding-top: 1rem;
+  background-color: hsl(var(--muted) / 0.3);
+  border-radius: 0.5rem;
+  border: 1px solid hsl(var(--border));
+}
+
+.rich-editor-wrapper .ProseMirror .signature-full .signature-logo {
+  width: 80px;
+  height: 40px;
+  background-color: hsl(var(--muted));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.rich-editor-wrapper .ProseMirror .signature-minimal {
+  border-top: none;
+  padding: 0;
+  font-style: italic;
+}
+
+/* Quote blocks */
+.rich-editor-wrapper .ProseMirror .quote-block {
+  border-left: 4px solid hsl(var(--primary));
+  padding: 1rem 1.5rem;
+  margin: 1rem 0;
+  background-color: hsl(var(--muted) / 0.3);
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.rich-editor-wrapper .ProseMirror .quote-block p {
+  font-size: 1.1rem;
+  font-style: italic;
+  margin-bottom: 0.5rem;
+}
+
+.rich-editor-wrapper .ProseMirror .quote-block cite {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  font-style: normal;
+}
+
+/* Code blocks */
+.rich-editor-wrapper .ProseMirror .code-block {
+  background-color: hsl(220 20% 14%);
+  color: hsl(210 20% 90%);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.875rem;
+  overflow-x: auto;
+}
+
+.rich-editor-wrapper .ProseMirror .code-block code {
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+
 /* Blockquote */
 .rich-editor-wrapper .ProseMirror blockquote {
   border-left: 3px solid hsl(var(--border));
