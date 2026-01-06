@@ -178,6 +178,25 @@ const AGENT_TOOLS = [
   {
     type: "function",
     function: {
+      name: "search_fuzzy",
+      description: "Recherche floue/approximative d'entités (leads, projets, partenaires). Utilise quand l'utilisateur orthographie mal un nom ou quand search_leads ne trouve rien.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Terme de recherche (peut être approximatif/mal orthographié)" },
+          entity_types: { 
+            type: "array", 
+            items: { type: "string", enum: ["lead", "project", "partner"] },
+            description: "Types d'entités à rechercher (défaut: tous)" 
+          },
+        },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "get_opportunities",
       description: "Récupère les opportunités du pipeline commercial. Données : titre, valeur, probabilité, stage, lead associé.",
       parameters: {
@@ -2246,14 +2265,94 @@ async function executeTool(
 
       if (error) throw error;
       
+      // If no results found with exact search, try fuzzy search
+      if ((!data || data.length === 0) && searchQuery.length >= 3) {
+        console.log(`No exact matches for "${searchQuery}", trying fuzzy search...`);
+        
+        const { data: fuzzyData, error: fuzzyError } = await supabase
+          .rpc("search_entities_fuzzy", {
+            search_term: searchQuery,
+            entity_types: ["lead"]
+          });
+        
+        if (!fuzzyError && fuzzyData && fuzzyData.length > 0) {
+          // Fetch full lead data for fuzzy matches
+          const leadIds = fuzzyData.map((f: { entity_id: string }) => f.entity_id);
+          const { data: leadsData } = await supabase
+            .from("leads")
+            .select(`
+              id, name, email, company, phone, source, source_context, 
+              lead_score, qualification_status, created_at, last_contacted_at,
+              position, website, linkedin_url, city, industry, company_size,
+              ai_documents_summary, synthesis_stale
+            `)
+            .in("id", leadIds);
+          
+          if (leadsData && leadsData.length > 0) {
+            return { 
+              leads: leadsData,
+              count: leadsData.length,
+              query: searchQuery,
+              search_type: "fuzzy",
+              consulte_available: leadsData.some((l: any) => l.ai_documents_summary),
+              message: `${leadsData.length} lead(s) trouvé(s) par recherche approximative pour "${searchQuery}"`
+            };
+          }
+        }
+      }
+      
       return { 
         leads: data,
         count: data?.length || 0,
         query: searchQuery,
+        search_type: "exact",
         consulte_available: (data || []).some((l: any) => l.ai_documents_summary),
         message: (data?.length || 0) > 0 
           ? `${data?.length} lead(s) trouvé(s) pour "${searchQuery}"`
-          : `Aucun lead trouvé pour "${searchQuery}"`
+          : `Aucun lead trouvé pour "${searchQuery}". Essayez search_fuzzy pour une recherche approximative.`
+      };
+    }
+
+    case "search_fuzzy": {
+      const searchQuery = (args.query as string || "").trim();
+      if (!searchQuery || searchQuery.length < 2) {
+        return { results: [], count: 0, message: "Terme de recherche trop court (min 2 caractères)" };
+      }
+
+      const entityTypes = (args.entity_types as string[]) || ["lead", "project", "partner"];
+
+      const { data, error } = await supabase.rpc("search_entities_fuzzy", {
+        search_term: searchQuery,
+        entity_types: entityTypes
+      });
+
+      if (error) {
+        console.error("Fuzzy search error:", error);
+        return { results: [], count: 0, error: error.message };
+      }
+
+      // Group results by entity type for better readability
+      const grouped: Record<string, unknown[]> = {};
+      for (const result of (data || [])) {
+        const type = result.entity_type;
+        if (!grouped[type]) grouped[type] = [];
+        grouped[type].push({
+          id: result.entity_id,
+          name: result.entity_name,
+          company: result.entity_company,
+          similarity: Math.round(result.similarity_score * 100) + "%"
+        });
+      }
+
+      return { 
+        results: data || [],
+        grouped,
+        count: data?.length || 0,
+        query: searchQuery,
+        entity_types: entityTypes,
+        message: (data?.length || 0) > 0 
+          ? `${data?.length} résultat(s) trouvé(s) par recherche approximative pour "${searchQuery}"`
+          : `Aucun résultat trouvé pour "${searchQuery}" même avec recherche approximative`
       };
     }
 
