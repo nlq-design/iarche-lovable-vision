@@ -153,6 +153,121 @@
   font-style: italic;
 }
 
+/* Images */
+.preview-rich-content img,
+.preview-rich-content .rich-editor-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  display: block;
+}
+
+/* Separators */
+.preview-rich-content hr,
+.preview-rich-content .separator-line {
+  border: none;
+  height: 1px;
+  background-color: #E8E4DD;
+  margin: 1.5rem 0;
+}
+
+.preview-rich-content .separator-dots {
+  text-align: center;
+  color: #6B7280;
+  font-size: 1.25rem;
+  letter-spacing: 0.5rem;
+  margin: 1.5rem 0;
+}
+
+.preview-rich-content .separator-space {
+  height: 2rem;
+  margin: 1rem 0;
+}
+
+/* Signature blocks */
+.preview-rich-content .signature-block {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border-top: 2px solid #E8E4DD;
+}
+
+.preview-rich-content .signature-block p {
+  margin: 0.25rem 0;
+  line-height: 1.4;
+}
+
+.preview-rich-content .signature-simple {
+  padding-top: 1rem;
+}
+
+.preview-rich-content .signature-full {
+  padding-top: 1rem;
+  background-color: rgba(26, 43, 74, 0.03);
+  border-radius: 0.5rem;
+  border: 1px solid #E8E4DD;
+}
+
+.preview-rich-content .signature-full .signature-logo {
+  width: 80px;
+  height: 40px;
+  background-color: #E8E4DD;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  color: #6B7280;
+}
+
+.preview-rich-content .signature-minimal {
+  border-top: none;
+  padding: 0;
+  font-style: italic;
+}
+
+/* Quote blocks */
+.preview-rich-content .quote-block {
+  border-left: 4px solid #1A2B4A;
+  padding: 1rem 1.5rem;
+  margin: 1rem 0;
+  background-color: rgba(26, 43, 74, 0.03);
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.preview-rich-content .quote-block p {
+  font-size: 1.1rem;
+  font-style: italic;
+  margin-bottom: 0.5rem;
+}
+
+.preview-rich-content .quote-block cite {
+  font-size: 0.875rem;
+  color: #6B7280;
+  font-style: normal;
+}
+
+/* Code blocks */
+.preview-rich-content .code-block,
+.preview-rich-content pre {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.875rem;
+  overflow-x: auto;
+}
+
+.preview-rich-content .code-block code,
+.preview-rich-content pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+
 /* Print styles - essential for PDF consistency */
 @media print {
   .preview-rich-content {
@@ -191,5 +306,24 @@
   .preview-rich-content .columns-3 {
     border: 1px solid #E8E4DD;
     background-color: rgba(26, 43, 74, 0.02);
+  }
+  
+  .preview-rich-content img {
+    max-width: 100% !important;
+  }
+  
+  .preview-rich-content .signature-block {
+    border-top-color: #E8E4DD !important;
+  }
+  
+  .preview-rich-content .quote-block {
+    border-left-color: #1A2B4A !important;
+    background-color: rgba(26, 43, 74, 0.03) !important;
+  }
+  
+  .preview-rich-content .code-block,
+  .preview-rich-content pre {
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
   }
 }
