@@ -82,9 +82,10 @@ export function useCockpitGeneratedDocuments(projectId?: string, opportunityId?:
     mutationFn: async (input: {
       project_id?: string;
       opportunity_id?: string;
-      leadId?: string;
+      lead_id?: string;
       document_type: 'quote' | 'spec' | 'proposal';
       custom_instructions?: string;
+      context?: Record<string, unknown>;
     }) => {
       const { data, error } = await supabase.functions.invoke('generate-document', {
         body: input,
