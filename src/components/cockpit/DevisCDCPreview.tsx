@@ -191,8 +191,9 @@ export const DevisCDCPreview = forwardRef<HTMLDivElement, DevisCDCPreviewProps>(
 
         {/* Document Preview */}
         <Card 
-          className={`${isEmbedded ? '' : 'max-w-4xl mx-auto'} shadow-lg overflow-hidden document-preview-card`}
-          style={{ 
+          className={`${isEmbedded ? '' : 'w-full max-w-5xl mx-auto'} shadow-lg overflow-hidden document-preview-card`}
+          style={{
+            minWidth: isEmbedded ? 'auto' : '794px', // A4 width for PDF consistency
             backgroundColor: IARCHE_COLORS.blancCasse,
             fontFamily: "'Manrope', -apple-system, BlinkMacSystemFont, sans-serif",
           }}
@@ -272,8 +273,8 @@ export const DevisCDCPreview = forwardRef<HTMLDivElement, DevisCDCPreviewProps>(
           </div>
 
           {/* Content */}
-          <CardContent className="p-8 space-y-8">
-            {/* Table of Contents */}
+          <CardContent className="p-8 md:p-10 space-y-8">
+            {/* Table of Contents - marked as PDF section */}
             {sections.length > 3 && (
               <div 
                 className="p-5 rounded-xl"
@@ -302,11 +303,15 @@ export const DevisCDCPreview = forwardRef<HTMLDivElement, DevisCDCPreviewProps>(
               </div>
             )}
 
-            {/* Sections */}
+            {/* Sections - Each marked for PDF page break */}
             {sections.map((section, index) => (
-              <div key={section.id} className="space-y-4">
+              <div 
+                key={section.id} 
+                className="space-y-4 pdf-document-section"
+                data-pdf-section={`section-${index}`}
+              >
                 <h2 
-                  className="text-xl font-bold"
+                  className="text-xl md:text-2xl font-bold"
                   style={{ 
                     color: theme.primaryColor,
                     letterSpacing: '-0.01em',
@@ -320,7 +325,7 @@ export const DevisCDCPreview = forwardRef<HTMLDivElement, DevisCDCPreviewProps>(
                   style={{ background: GRADIENTS.arc.css }}
                 />
                 <div 
-                  className="prose prose-sm max-w-none preview-rich-content"
+                  className="prose prose-sm md:prose-base max-w-none preview-rich-content"
                   style={{ 
                     color: '#4A5568',
                     lineHeight: 1.75,
