@@ -1,12 +1,14 @@
-# 🔬 Audit Modules & Edge Functions - Agent IA v7.0
+# 🔬 Audit Modules & Edge Functions - Agent IA v8.0
 
 **Date**: 06/01/2026  
 **Objectif**: Couverture 100% des modules par l'orchestrateur IA  
-**Status**: ✅ Phase 3A Implémentée
+**Status**: ✅ Phase 3A + v8.0 Implémentées
 
 ---
 
-## 🎯 RÉSUMÉ DES NOUVEAUX OUTILS v7.0
+## 🎯 RÉSUMÉ DES NOUVEAUX OUTILS v8.0
+
+### Outils v7.0 (Phase 3A)
 
 | Outil | Edge Function | Status |
 |-------|---------------|--------|
@@ -20,6 +22,21 @@
 | `get_rag_status` | (direct DB) | ✅ Implémenté |
 | `trigger_embedding_refresh` | generate-embeddings | ✅ Implémenté |
 | `send_followup_email` | generate-followup-email | ✅ Implémenté |
+
+### Outils v8.0 (Nouvelles fonctionnalités)
+
+| Outil | Edge Function | Status |
+|-------|---------------|--------|
+| `sync_google_calendar` | sync-google-calendar | ✅ Implémenté |
+| `generate_article_ai` | generate-article-gpt | ✅ Implémenté |
+| `create_backup` | create-database-backup | ✅ Implémenté |
+| `get_telegram_stats` | (direct DB) | ✅ Implémenté |
+| `get_calendar_availability` | (direct DB) | ✅ Implémenté |
+| `detect_security_anomalies` | detect-anomalies | ✅ Implémenté |
+| `get_security_logs` | (direct DB) | ✅ Implémenté |
+| `get_performance_metrics` | (direct DB) | ✅ Implémenté |
+| `get_stale_entities` | (direct DB) | ✅ Implémenté |
+| `bulk_refresh_syntheses` | synthesize-entity-documents | ✅ Implémenté |
 
 ---
 
