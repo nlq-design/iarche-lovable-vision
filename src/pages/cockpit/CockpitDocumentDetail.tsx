@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { exportCockpitDocumentToPdf } from '@/lib/cockpitPdfExport';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -103,6 +104,9 @@ export default function CockpitDocumentDetail() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  
+  // Ref for PDF capture
+  const previewRef = useRef<HTMLDivElement>(null);
   
   // Export settings state
   const [exportSettings, setExportSettings] = useState<ExportSettings>(() => {
@@ -213,64 +217,32 @@ export default function CockpitDocumentDetail() {
 
   const handleExportPDF = async () => {
     if (!document) return;
+    
+    // Ensure we're on the preview tab
+    if (activeTab !== 'apercu') {
+      setActiveTab('apercu');
+      // Wait for tab change to render
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    
     setIsExporting(true);
     try {
-      // Extract sections from content_json
-      const contentJson = document.content_json as any;
-      const sections = contentJson?.sections || [];
-      const metadata = contentJson?.metadata || {};
-      const theme = contentJson?.theme || {
-        primaryColor: '#1A2B4A',
-        accentColor: '#B04A32',
-        useGradient: true,
-      };
-
-      // Generate DOCX with custom export settings
-      const { data: docxData, error: docxError } = await supabase.functions.invoke('generate-docx', {
-        body: {
-          title: document.title,
-          sections,
-          metadata,
-          theme,
-          documentType: document.document_type,
-          exportSettings: {
-            header: exportSettings.header,
-            footer: exportSettings.footer,
-          },
-        }
-      });
+      // Find the preview card element to capture
+      const previewElement = previewRef.current?.querySelector('.document-preview-card') as HTMLElement 
+        || previewRef.current as HTMLElement;
       
-      if (docxError) throw docxError;
-      if (!docxData?.docxBase64) throw new Error('DOCX generation failed');
-
-      // Convert to PDF via iLovePDF
-      const { data, error } = await supabase.functions.invoke('convert-to-pdf', {
-        body: { 
-          docx_base64: docxData.docxBase64,
-          filename: document.title.replace(/[^a-zA-Z0-9]/g, '_'),
-          document_id: document.id,
-          save_to_storage: true
-        }
-      });
-      
-      if (error) throw error;
-      
-      // Download the PDF
-      if (data?.pdf_base64) {
-        const blob = new Blob([Uint8Array.from(atob(data.pdf_base64), c => c.charCodeAt(0))], {
-          type: 'application/pdf',
-        });
-        const url = URL.createObjectURL(blob);
-        const link = window.document.createElement('a');
-        link.href = url;
-        link.download = `${document.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-        link.click();
-        URL.revokeObjectURL(url);
-        toast.success('PDF généré avec succès');
-      } else if (data?.pdf_url) {
-        window.open(data.pdf_url, '_blank');
-        toast.success('PDF généré avec succès');
+      if (!previewElement) {
+        throw new Error('Preview element not found');
       }
+
+      await exportCockpitDocumentToPdf(previewElement, {
+        filename: document.title,
+        onProgress: (progress) => {
+          console.log(`Export progress: ${progress}%`);
+        },
+      });
+      
+      toast.success('PDF exporté avec succès');
     } catch (error: any) {
       console.error('Export error:', error);
       toast.error(`Erreur export: ${error.message}`);
@@ -450,11 +422,13 @@ export default function CockpitDocumentDetail() {
               </TabsList>
 
               <TabsContent value="apercu" className="mt-4">
-                <DevisCDCPreview
-                  document={document}
-                  onBack={() => {}}
-                  onEdit={() => setActiveTab('edition')}
-                />
+                <div ref={previewRef}>
+                  <DevisCDCPreview
+                    document={document}
+                    onBack={() => {}}
+                    onEdit={() => setActiveTab('edition')}
+                  />
+                </div>
               </TabsContent>
 
               <TabsContent value="edition" className="mt-4">
