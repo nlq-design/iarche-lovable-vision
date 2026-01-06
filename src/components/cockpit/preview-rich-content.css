@@ -269,61 +269,133 @@
 }
 
 /* Print styles - essential for PDF consistency */
+/* ===============================================
+   PRINT STYLES - PDF Export Optimization
+   =============================================== */
 @media print {
   .preview-rich-content {
-    color: #4A5568 !important;
+    font-size: 11pt !important;
+    line-height: 1.6 !important;
+  }
+
+  /* Tables */
+  .preview-rich-content table {
+    border-color: #1A2B4A !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  
-  .preview-rich-content table,
-  .preview-rich-content th,
-  .preview-rich-content td {
-    border-color: #E8E4DD !important;
-  }
-  
+
   .preview-rich-content th {
     background-color: #1A2B4A !important;
     color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  
-  .preview-rich-content .alert-info {
-    background-color: #E0F2FE !important;
-    border-left-color: #0EA5E9 !important;
+
+  .preview-rich-content td,
+  .preview-rich-content th {
+    border-color: #E8E5E0 !important;
   }
-  
-  .preview-rich-content .alert-warning {
-    background-color: #FEF3C7 !important;
-    border-left-color: #F59E0B !important;
-  }
-  
+
+  /* Alerts */
+  .preview-rich-content .alert-info,
+  .preview-rich-content .alert-warning,
   .preview-rich-content .alert-success {
-    background-color: #DCFCE7 !important;
-    border-left-color: #22C55E !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  
+
+  /* Columns */
   .preview-rich-content .columns-2,
   .preview-rich-content .columns-3 {
-    border: 1px solid #E8E4DD;
-    background-color: rgba(26, 43, 74, 0.02);
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 1rem !important;
   }
-  
+
+  /* Images */
   .preview-rich-content img {
     max-width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid !important;
   }
-  
+
+  /* Signature block */
   .preview-rich-content .signature-block {
-    border-top-color: #E8E4DD !important;
-  }
-  
-  .preview-rich-content .quote-block {
-    border-left-color: #1A2B4A !important;
     background-color: rgba(26, 43, 74, 0.03) !important;
+    border-color: #1A2B4A !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  
-  .preview-rich-content .code-block,
-  .preview-rich-content pre {
-    background-color: #1e293b !important;
-    color: #e2e8f0 !important;
+
+  /* Quote block */
+  .preview-rich-content blockquote {
+    border-left-color: #1A2B4A !important;
+    background-color: #FAF9F7 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
+
+  /* Code block */
+  .preview-rich-content pre,
+  .preview-rich-content code {
+    background-color: #f5f5f5 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* ===============================================
+   PDF SECTION STYLES - Page Break Rules
+   =============================================== */
+
+/* Each document section should avoid breaking inside */
+.pdf-document-section {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+/* Force new page before each major section */
+.pdf-section-page-break {
+  page-break-before: always !important;
+  break-before: page !important;
+}
+
+/* Prevent orphan headers/titles */
+.preview-rich-content h2,
+.preview-rich-content h3 {
+  page-break-after: avoid !important;
+  break-after: avoid !important;
+}
+
+/* Keep list items together */
+.preview-rich-content li {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+/* Keep table rows together */
+.preview-rich-content tr {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+/* Keep alert blocks together */
+.preview-rich-content .alert-info,
+.preview-rich-content .alert-warning,
+.preview-rich-content .alert-success {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+/* Keep blockquotes together */
+.preview-rich-content blockquote {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
+}
+
+/* Signature block should never break */
+.preview-rich-content .signature-block {
+  page-break-inside: avoid !important;
+  break-inside: avoid !important;
 }
