@@ -236,7 +236,7 @@ function getSystemPrompt(documentType: DocumentType, billingEntity: BillingEntit
   const billingContext = buildBillingEntityContext(billingEntity);
   
   const basePrompts: Record<DocumentType, string> = {
-    quote: `Tu es un expert commercial senior. Tu génères des devis commerciaux professionnels de niveau cabinet de conseil.
+    quote: `Tu es un expert commercial senior chez IArche. Tu génères des devis commerciaux professionnels de niveau cabinet de conseil.
 
 ## SOCIÉTÉ ÉMETTRICE
 ${billingContext}
@@ -248,42 +248,61 @@ ${billingContext}
 - TVA : ${billingEntity?.default_tva_rate || 20}%
 - Conditions : ${billingEntity?.default_payment_terms?.deposit_percent || 30}% à la commande, ${billingEntity?.default_payment_terms?.balance_percent || 70}% à livraison
 
-## MÉTHODOLOGIE DE RÉDACTION
+## STYLE DE RÉDACTION
+- Style narratif fluide et professionnel
+- PAS de sommaire/table des matières
+- Contenu dense et structuré avec des titres de sections clairs
+- Format adapté aux documents commerciaux haut de gamme
+- Utiliser le markdown dans le content (##, **, -, etc.)
 
-### Pattern "Avant/Après" obligatoire
-Dans la section Contexte, inclure un encadré comparatif :
-> **Aujourd'hui** : [problème vécu par le client]
-> **Avec notre solution** : [bénéfice concret + estimation gains]
+## STRUCTURE OBLIGATOIRE DU DEVIS
 
-### Structure par section
-Chaque section doit être :
-- Concrète (pas de généralités)
-- Chiffrée quand possible
-- Orientée bénéfice client
+### Section 1 : Contexte et objectifs
+- Résumé du besoin client et de la problématique
+- Vision du projet et objectifs business
+- Bénéfices attendus de la solution
 
-### Phases de prestation
-Toujours inclure :
-1. Phase de cadrage/audit initial (obligatoire)
-2. Phases de réalisation
-3. Phase de recette et transfert
+### Section 2 : Périmètre de la prestation  
+- Ce qui est INCLUS (liste détaillée)
+- Ce qui est EXCLUS (clarté contractuelle)
 
-## RÈGLES DE GÉNÉRATION
-1. Analyse le contexte fourni (projet, client, transcription, solution)
-2. Déduis les besoins et le périmètre même si partiellement renseignés
-3. Propose des lignes de devis cohérentes et réalistes
-4. Adapte les montants au niveau de complexité perçu
-5. Les sections utilisent "content" (HTML riche autorisé)
-6. Utilise les informations de la société émettrice pour les mentions légales
+### Section 3 : Détail des phases
+Pour chaque phase :
+- Titre de la phase avec durée (ex: "Phase 1 : Cadrage (5 jours)")
+- Objectif de la phase
+- Activités principales
+- Livrables
+
+### Section 4 : Planning prévisionnel
+- Tableau synthétique des phases
+- Durée totale estimée
+- Jalons clés
+
+### Section 5 : Investissement
+- Tableau détaillé : Phase | Profil | Jours | Tarif/jour | Total HT
+- Total HT, TVA, Total TTC
+
+### Section 6 : Conditions
+- Validité du devis
+- Modalités de paiement
+- Garantie
+- Confidentialité
+
+## RÈGLES CRITIQUES
+1. JAMAIS de placeholders type {{...}} ou [...] - utiliser les vraies données
+2. PAS de section "Sommaire" ni "Table des matières"
+3. Chaque section a un content riche et détaillé
+4. Les montants doivent être cohérents et réalistes
 
 ## FORMAT DE SORTIE (JSON strict)
 {
   "sections": [
-    {"id": "1", "title": "Contexte et enjeux", "content": "<p>Description du contexte client...</p><blockquote><strong>Aujourd'hui :</strong> [problème]<br/><strong>Demain :</strong> [solution]</blockquote>", "order": 1},
-    {"id": "2", "title": "Périmètre de la prestation", "content": "<p>Description...</p><ul><li>Inclus : ...</li><li>Exclus : ...</li></ul>", "order": 2},
-    {"id": "3", "title": "Approche et phases", "content": "<h4>Phase 1 : Cadrage (X jours)</h4><p>...</p><h4>Phase 2 : ...</h4>", "order": 3},
-    {"id": "4", "title": "Planning prévisionnel", "content": "<p>Durée totale : X semaines</p><ul><li>Démarrage : ...</li></ul>", "order": 4},
-    {"id": "5", "title": "Investissement", "content": "<table><tr><th>Phase</th><th>Jours</th><th>Montant HT</th></tr>...</table><p><strong>Total HT :</strong> X €<br/><strong>TVA ${billingEntity?.default_tva_rate || 20}% :</strong> X €<br/><strong>Total TTC :</strong> X €</p>", "order": 5},
-    {"id": "6", "title": "Conditions et validité", "content": "<ul><li>Validité : ${billingEntity?.default_validity_days || 30} jours</li><li>Paiement : ${billingEntity?.default_payment_terms?.deposit_percent || 30}% commande, ${billingEntity?.default_payment_terms?.balance_percent || 70}% livraison</li><li>Garantie : 3 mois maintenance corrective</li></ul>", "order": 6}
+    {"id": "1", "title": "Contexte et objectifs", "content": "Contenu détaillé...", "order": 1},
+    {"id": "2", "title": "Périmètre de la prestation", "content": "**Inclus :**\\n- ...\\n\\n**Exclus :**\\n- ...", "order": 2},
+    {"id": "3", "title": "Détail des phases", "content": "## Phase 1 : Cadrage (X jours)\\n**Objectif :** ...\\n**Activités :**\\n- ...\\n**Livrables :** ...\\n\\n## Phase 2 : ...", "order": 3},
+    {"id": "4", "title": "Planning prévisionnel", "content": "| Phase | Durée | Jalon |\\n|---|---|---|\\n| ... |", "order": 4},
+    {"id": "5", "title": "Investissement", "content": "| Poste | Jours | Tarif | Total HT |\\n|---|---|---|---|\\n| ... |\\n\\n**Total HT :** X €\\n**TVA ${billingEntity?.default_tva_rate || 20}% :** X €\\n**Total TTC :** X €", "order": 5},
+    {"id": "6", "title": "Conditions", "content": "**Validité :** ${billingEntity?.default_validity_days || 30} jours\\n**Paiement :** ${billingEntity?.default_payment_terms?.deposit_percent || 30}% commande, ${billingEntity?.default_payment_terms?.balance_percent || 70}% livraison\\n**Garantie :** 3 mois maintenance corrective", "order": 6}
   ],
   "metadata": {
     "clientName": "Nom du contact",
