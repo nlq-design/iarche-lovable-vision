@@ -468,7 +468,9 @@ serve(async (req) => {
 
 ## SOURCES (par ordre de priorité)
 1. Instructions personnalisées : ${custom_instructions || "Aucune"}
-2. Contexte métier : ${JSON.stringify(llmContext, null, 2)}
+2. Transcriptions/Notes : ${inputContext?.transcription ? JSON.stringify(inputContext.transcription) : "Non disponible"}
+3. Contenu collé : ${inputContext?.pastedContent || "Non disponible"}
+4. Contexte métier : ${JSON.stringify(llmContext, null, 2)}
 
 ## CONSIGNES SPÉCIFIQUES
 - Calcule un montant réaliste basé sur la complexité perçue
@@ -482,8 +484,9 @@ Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
 
 ## SOURCES (par ordre de priorité)
 1. Instructions personnalisées : ${custom_instructions || "Aucune"}
-2. Transcriptions/Notes récentes : ${inputContext?.transcription || inputContext?.notes || "Non disponible"}
-3. Contexte projet/client : ${JSON.stringify(llmContext, null, 2)}
+2. Transcriptions/Notes récentes : ${inputContext?.transcription ? JSON.stringify(inputContext.transcription) : (inputContext?.notes || "Non disponible")}
+3. Contenu collé : ${inputContext?.pastedContent || "Non disponible"}
+4. Contexte projet/client : ${JSON.stringify(llmContext, null, 2)}
 
 ## CONSIGNES SPÉCIFIQUES
 - Structure CHAQUE fonctionnalité avec : Description + Exemple d'usage
@@ -499,8 +502,9 @@ Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
 
 ## SOURCES (par ordre de priorité)  
 1. Instructions personnalisées : ${custom_instructions || "Aucune"}
-2. Échanges récents (transcriptions) : ${inputContext?.transcription || "Non disponible"}
-3. Contexte client : ${JSON.stringify(llmContext, null, 2)}
+2. Échanges récents (transcriptions) : ${inputContext?.transcription ? JSON.stringify(inputContext.transcription) : "Non disponible"}
+3. Contenu collé : ${inputContext?.pastedContent || "Non disponible"}
+4. Contexte client : ${JSON.stringify(llmContext, null, 2)}
 
 ## CONSIGNES SPÉCIFIQUES
 - Personnalise l'accroche avec un élément spécifique du contexte
