@@ -2383,6 +2383,20 @@ const AGENT_TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "cleanup_old_drafts",
+      description: "Nettoie les brouillons d'emails expirés (non envoyés depuis X jours). Retourne le nombre supprimé.",
+      parameters: {
+        type: "object",
+        properties: {
+          days_old: { type: "number", description: "Âge minimum en jours pour supprimer (défaut: 30)" },
+          dry_run: { type: "boolean", description: "Si true, compte sans supprimer (défaut: false)" },
+        },
+      },
+    },
+  },
   // ============ OUTILS v8.0 - NOUVELLES FONCTIONNALITÉS ============
   {
     type: "function",
@@ -4287,6 +4301,65 @@ async function executeTool(
         message: `✅ Email envoyé à ${recipientEmail} avec le sujet "${emailData.subject}"`,
         recipient: recipientEmail,
         subject: emailData.subject,
+        autonomy_level: "execution_directe",
+      };
+    }
+
+    case "cleanup_old_drafts": {
+      const daysOld = (args.days_old as number) || 30;
+      const dryRun = args.dry_run === true;
+
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+      const cutoffISO = cutoffDate.toISOString();
+
+      // Find old drafts that were never sent
+      const { data: oldDrafts, error: findError } = await supabase
+        .from("activity_log")
+        .select("id, created_at, ai_metadata, metadata")
+        .eq("activity_type", "email_draft_generated")
+        .lt("created_at", cutoffISO);
+
+      if (findError) throw findError;
+
+      // Filter to only pending_review (not sent)
+      const draftsToDelete = (oldDrafts || []).filter((d: any) => {
+        const status = d.metadata?.draft_status;
+        return !status || status === "pending_review";
+      });
+
+      if (dryRun) {
+        return {
+          success: true,
+          dry_run: true,
+          count: draftsToDelete.length,
+          message: `🔍 ${draftsToDelete.length} brouillon(s) de plus de ${daysOld} jours seraient supprimés.`,
+          autonomy_level: "informational",
+        };
+      }
+
+      if (draftsToDelete.length === 0) {
+        return {
+          success: true,
+          count: 0,
+          message: `✅ Aucun brouillon expiré à nettoyer (seuil: ${daysOld} jours).`,
+          autonomy_level: "execution_directe",
+        };
+      }
+
+      const idsToDelete = draftsToDelete.map((d: any) => d.id);
+
+      const { error: deleteError } = await supabase
+        .from("activity_log")
+        .delete()
+        .in("id", idsToDelete);
+
+      if (deleteError) throw deleteError;
+
+      return {
+        success: true,
+        count: idsToDelete.length,
+        message: `🧹 ${idsToDelete.length} brouillon(s) expiré(s) supprimé(s) (> ${daysOld} jours).`,
         autonomy_level: "execution_directe",
       };
     }
