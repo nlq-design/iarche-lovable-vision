@@ -1,7 +1,7 @@
-# 🔬 AUDIT COMPLET - Agent IA IArche v8.0
+# 🔬 AUDIT COMPLET - Agent IA IArche v8.2
 
-**Date**: 06/01/2026 - Vérifié à 01:26 UTC  
-**Status**: ✅ **AUDIT VALIDÉ - 110+ OUTILS OPÉRATIONNELS**
+**Date**: 06/01/2026 - Mis à jour 13:30 UTC  
+**Status**: ✅ **AUDIT VALIDÉ - 115+ OUTILS OPÉRATIONNELS**
 
 ---
 
@@ -9,9 +9,9 @@
 
 | Métrique | Valeur | Target |
 |----------|--------|--------|
-| **Outils implémentés** | 110+ | 100+ ✅ |
+| **Outils implémentés** | 115+ | 100+ ✅ |
 | **Tables couvertes** | 77/81 | 95% ✅ |
-| **Edge Functions callables** | 35/48 | 73% ✅ |
+| **Edge Functions callables** | 37/48 | 77% ✅ |
 | **Prompts synchronisés** | 37 | 32+ ✅ |
 | **Gouverneur Expert v8.0** | ✅ Actif | - |
 
@@ -49,9 +49,21 @@
 | `get_stale_entities` | (direct DB) | ✅ Vérifié L.7735 |
 | `bulk_refresh_syntheses` | synthesize-entity-documents | ✅ Vérifié L.7789 |
 
+### Phase v8.2 (5 outils - CORRECTIONS CRITIQUES)
+
+| Outil | Description | Status |
+|-------|-------------|--------|
+| `get_email_drafts` | Liste brouillons emails IA générés | ✅ NOUVEAU |
+| `send_email_draft` | Envoie un brouillon par son ID | ✅ NOUVEAU |
+| `create_booking` | Vérifie partenaires avant création lead | ✅ CORRIGÉ |
+| `create_lead` | Vérifie partenaires avant création | ✅ CORRIGÉ |
+| `generate-followup-email` | Stocke contenu complet dans activity_log | ✅ CORRIGÉ |
+
 ---
 
-## ✅ CORRECTIONS v8.1 - ACCÈS COMPLET AUX DONNÉES
+## ✅ CORRECTIONS v8.1/v8.2 - ACCÈS COMPLET AUX DONNÉES
+
+### Limites de données
 
 | Outil | Limite avant | Limite après | Status |
 |-------|-------------|--------------|--------|
@@ -59,6 +71,15 @@
 | `get_leads` | 10 | 50 (max 100) | ✅ Corrigé |
 | `get_opportunities` | 10 | 50 (max 100) | ✅ Corrigé |
 | `search_projects` | 10 | 50 + recherche lead | ✅ Amélioré |
+
+### Bug fixes v8.2 (06/01/2026)
+
+| Bug | Description | Correction |
+|-----|-------------|------------|
+| **Brouillons invisibles** | Emails générés mais non accessibles | ✅ Stockage complet dans activity_log + interface EmailDraftsSheet |
+| **Aleksander = Lead** | Partenaire créé comme lead | ✅ Vérification partenaire avant create_lead/create_booking |
+| **Projets non trouvés** | "Beeliopi" non trouvé | ✅ Limites augmentées + recherche améliorée |
+| **Stéphane non trouvé** | Recherche échoue | ✅ search_fuzzy + limites corrigées |
 
 **Note**: L'orchestrateur utilise `SUPABASE_SERVICE_ROLE_KEY` qui bypass RLS, garantissant un accès complet à toutes les données.
 
