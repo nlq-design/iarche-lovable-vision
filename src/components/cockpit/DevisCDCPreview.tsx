@@ -6,6 +6,8 @@ import { ArrowLeft, Download, FileText, Sparkles, Clock, CheckCircle, Edit } fro
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { COLORS, GRADIENTS } from '@/components/admin/medias/shared/tokens';
+import DOMPurify from 'dompurify';
+import './preview-rich-content.css';
 
 // IArche colors for inline styles
 const IARCHE_COLORS = {
@@ -331,17 +333,16 @@ export const DevisCDCPreview = forwardRef<HTMLDivElement, DevisCDCPreviewProps>(
                   style={{ background: GRADIENTS.arc.css }}
                 />
                 <div 
-                  className="ml-[52px] prose prose-sm max-w-none"
+                  className="ml-[52px] prose prose-sm max-w-none preview-rich-content"
                   style={{ 
                     color: '#4A5568',
                     lineHeight: 1.75,
                   }}
                   dangerouslySetInnerHTML={{ 
-                    __html: (section.content || (section as any).contenu || '')
-                      .replace(/\n/g, '<br>')
-                      .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1A2B4A">$1</strong>')
-                      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                      .replace(/^- (.*)/gm, '<li style="margin-left: 1rem">$1</li>')
+                    __html: DOMPurify.sanitize(section.content || (section as any).contenu || '', {
+                      ADD_TAGS: ['div'],
+                      ADD_ATTR: ['class', 'style'],
+                    })
                   }}
                 />
                 {index < sections.length - 1 && (

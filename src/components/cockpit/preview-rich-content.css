@@ -1,0 +1,195 @@
+/* Preview Rich Content Styles - Matches TipTap Editor Output */
+
+.preview-rich-content {
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Headings */
+.preview-rich-content h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: #1A2B4A;
+}
+
+.preview-rich-content h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+  color: #1A2B4A;
+}
+
+/* Paragraphs */
+.preview-rich-content p {
+  margin-bottom: 0.5rem;
+  line-height: 1.75;
+}
+
+/* Strong text */
+.preview-rich-content strong {
+  font-weight: 600;
+  color: #1A2B4A;
+}
+
+/* Lists */
+.preview-rich-content ul,
+.preview-rich-content ol {
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.preview-rich-content ul {
+  list-style-type: disc;
+}
+
+.preview-rich-content ol {
+  list-style-type: decimal;
+}
+
+.preview-rich-content li {
+  margin: 0.25rem 0;
+  line-height: 1.6;
+}
+
+.preview-rich-content li p {
+  margin: 0;
+}
+
+/* Tables - matching IArche design */
+.preview-rich-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  border: 1px solid #E8E4DD;
+  font-size: 0.875rem;
+}
+
+.preview-rich-content th,
+.preview-rich-content td {
+  border: 1px solid #E8E4DD;
+  padding: 0.625rem 0.875rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.preview-rich-content th {
+  background-color: #1A2B4A;
+  color: white;
+  font-weight: 600;
+}
+
+.preview-rich-content td {
+  background-color: #FAF9F7;
+}
+
+.preview-rich-content tr:nth-child(even) td {
+  background-color: rgba(26, 43, 74, 0.03);
+}
+
+/* Multi-column layouts */
+.preview-rich-content .columns-2,
+.preview-rich-content .columns-3 {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid #E8E4DD;
+  border-radius: 0.5rem;
+  background-color: rgba(26, 43, 74, 0.02);
+}
+
+.preview-rich-content .columns-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.preview-rich-content .columns-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.preview-rich-content .column {
+  padding: 0.75rem;
+  background-color: #FAF9F7;
+  border-radius: 0.375rem;
+  border: 1px solid #E8E4DD;
+}
+
+/* Alert blocks - matching IArche design system */
+.preview-rich-content .alert-block {
+  padding: 0.875rem 1rem;
+  margin: 0.75rem 0;
+  border-radius: 0.5rem;
+  border-left: 4px solid;
+  font-size: 0.875rem;
+}
+
+.preview-rich-content .alert-info {
+  background-color: #E0F2FE;
+  border-left-color: #0EA5E9;
+  color: #0C4A6E;
+}
+
+.preview-rich-content .alert-warning {
+  background-color: #FEF3C7;
+  border-left-color: #F59E0B;
+  color: #78350F;
+}
+
+.preview-rich-content .alert-success {
+  background-color: #DCFCE7;
+  border-left-color: #22C55E;
+  color: #14532D;
+}
+
+/* Blockquote */
+.preview-rich-content blockquote {
+  border-left: 3px solid #E8E4DD;
+  padding-left: 1rem;
+  margin: 0.75rem 0;
+  color: #6B7280;
+  font-style: italic;
+}
+
+/* Print styles - essential for PDF consistency */
+@media print {
+  .preview-rich-content {
+    color: #4A5568 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .preview-rich-content table,
+  .preview-rich-content th,
+  .preview-rich-content td {
+    border-color: #E8E4DD !important;
+  }
+  
+  .preview-rich-content th {
+    background-color: #1A2B4A !important;
+    color: white !important;
+  }
+  
+  .preview-rich-content .alert-info {
+    background-color: #E0F2FE !important;
+    border-left-color: #0EA5E9 !important;
+  }
+  
+  .preview-rich-content .alert-warning {
+    background-color: #FEF3C7 !important;
+    border-left-color: #F59E0B !important;
+  }
+  
+  .preview-rich-content .alert-success {
+    background-color: #DCFCE7 !important;
+    border-left-color: #22C55E !important;
+  }
+  
+  .preview-rich-content .columns-2,
+  .preview-rich-content .columns-3 {
+    border: 1px solid #E8E4DD;
+    background-color: rgba(26, 43, 74, 0.02);
+  }
+}

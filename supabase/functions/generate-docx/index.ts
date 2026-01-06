@@ -44,6 +44,13 @@ const TYPOGRAPHY = {
   caption: { size: 16 }, // 8pt
 };
 
+// Alert block colors
+const ALERT_COLORS = {
+  info: { bg: 'E0F2FE', border: '0EA5E9', text: '0C4A6E' },
+  warning: { bg: 'FEF3C7', border: 'F59E0B', text: '78350F' },
+  success: { bg: 'DCFCE7', border: '22C55E', text: '14532D' },
+};
+
 interface DocumentSection {
   id: string;
   title: string;
@@ -86,6 +93,361 @@ interface RequestBody {
   theme: DocumentTheme;
   documentType: 'quote' | 'spec' | 'proposal';
   exportSettings?: ExportSettings;
+}
+
+// ============ HTML CONTENT PARSER ============
+// Parses TipTap HTML output and converts to DOCX elements
+
+function parseHtmlContent(html: string, primaryColor: string, accentColor: string): Paragraph[] {
+  const paragraphs: Paragraph[] = [];
+  
+  // If content is empty or just whitespace
+  if (!html || !html.trim()) {
+    return paragraphs;
+  }
+  
+  // Simple HTML tag regex patterns
+  const tableRegex = /<table[^>]*>([\s\S]*?)<\/table>/gi;
+  const alertRegex = /<div class="alert-block alert-(\w+)"[^>]*>([\s\S]*?)<\/div>/gi;
+  const columnsRegex = /<div class="columns-(\d)"[^>]*>([\s\S]*?)<\/div>/gi;
+  const ulRegex = /<ul[^>]*>([\s\S]*?)<\/ul>/gi;
+  const olRegex = /<ol[^>]*>([\s\S]*?)<\/ol>/gi;
+  const h2Regex = /<h2[^>]*>([\s\S]*?)<\/h2>/gi;
+  const h3Regex = /<h3[^>]*>([\s\S]*?)<\/h3>/gi;
+  const pRegex = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+  
+  // Strip tags helper
+  const stripTags = (text: string): string => {
+    return text
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .trim();
+  };
+  
+  // Parse inline formatting (bold, italic)
+  const parseInlineFormatting = (text: string): TextRun[] => {
+    const runs: TextRun[] = [];
+    const cleanText = text
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/&nbsp;/g, ' ');
+    
+    // Pattern to match <strong>...</strong> and <em>...</em>
+    let remaining = cleanText;
+    const strongRegex = /<strong[^>]*>([\s\S]*?)<\/strong>/gi;
+    const emRegex = /<em[^>]*>([\s\S]*?)<\/em>/gi;
+    
+    // Simple parsing - find strong tags first
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = strongRegex.exec(cleanText)) !== null) {
+      // Add text before this match
+      if (match.index > lastIndex) {
+        const beforeText = stripTags(cleanText.substring(lastIndex, match.index));
+        if (beforeText) {
+          runs.push(new TextRun({
+            text: beforeText,
+            size: TYPOGRAPHY.body.size,
+            color: COLORS.grisTexte,
+          }));
+        }
+      }
+      // Add bold text
+      runs.push(new TextRun({
+        text: stripTags(match[1]),
+        bold: true,
+        size: TYPOGRAPHY.body.size,
+        color: primaryColor,
+      }));
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add remaining text
+    if (lastIndex < cleanText.length) {
+      const afterText = stripTags(cleanText.substring(lastIndex));
+      if (afterText) {
+        runs.push(new TextRun({
+          text: afterText,
+          size: TYPOGRAPHY.body.size,
+          color: COLORS.grisTexte,
+        }));
+      }
+    }
+    
+    // If no formatting found, just return plain text
+    if (runs.length === 0) {
+      const plainText = stripTags(text);
+      if (plainText) {
+        runs.push(new TextRun({
+          text: plainText,
+          size: TYPOGRAPHY.body.size,
+          color: COLORS.grisTexte,
+        }));
+      }
+    }
+    
+    return runs;
+  };
+  
+  // Process content sequentially
+  let workingHtml = html;
+  
+  // Process tables
+  let tableMatch;
+  while ((tableMatch = tableRegex.exec(html)) !== null) {
+    const tableHtml = tableMatch[0];
+    const tableContent = tableMatch[1];
+    
+    // Extract rows
+    const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+    const rows: TableRow[] = [];
+    let rowMatch;
+    let isFirstRow = true;
+    
+    while ((rowMatch = rowRegex.exec(tableContent)) !== null) {
+      const rowContent = rowMatch[1];
+      const cellRegex = /<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/gi;
+      const cells: TableCell[] = [];
+      let cellMatch;
+      
+      while ((cellMatch = cellRegex.exec(rowContent)) !== null) {
+        const cellText = stripTags(cellMatch[1]);
+        cells.push(
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: cellText,
+                    size: TYPOGRAPHY.body.size,
+                    color: isFirstRow ? COLORS.white : COLORS.grisTexte,
+                    bold: isFirstRow,
+                  }),
+                ],
+              }),
+            ],
+            shading: isFirstRow ? { fill: primaryColor } : undefined,
+          })
+        );
+      }
+      
+      if (cells.length > 0) {
+        rows.push(new TableRow({ children: cells }));
+      }
+      isFirstRow = false;
+    }
+    
+    if (rows.length > 0) {
+      paragraphs.push(new Paragraph({ children: [], spacing: { before: 200 } }));
+      // @ts-ignore - Table is imported but types may mismatch
+      paragraphs.push(new Table({
+        rows,
+        width: { size: 100, type: WidthType.PERCENTAGE },
+      }) as unknown as Paragraph);
+      paragraphs.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+    }
+    
+    workingHtml = workingHtml.replace(tableHtml, '{{TABLE_PLACEHOLDER}}');
+  }
+  
+  // Process alert blocks
+  let alertMatch;
+  while ((alertMatch = alertRegex.exec(html)) !== null) {
+    const alertType = alertMatch[1] as keyof typeof ALERT_COLORS;
+    const alertContent = stripTags(alertMatch[2]);
+    const colors = ALERT_COLORS[alertType] || ALERT_COLORS.info;
+    
+    paragraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: alertContent,
+            size: TYPOGRAPHY.body.size,
+            color: colors.text,
+          }),
+        ],
+        shading: { fill: colors.bg },
+        border: {
+          left: {
+            color: colors.border,
+            size: 24,
+            style: BorderStyle.SINGLE,
+            space: 8,
+          },
+        },
+        spacing: { before: 200, after: 200 },
+        indent: { left: 200, right: 200 },
+      })
+    );
+    
+    workingHtml = workingHtml.replace(alertMatch[0], '{{ALERT_PLACEHOLDER}}');
+  }
+  
+  // Process headings
+  let h2Match;
+  while ((h2Match = h2Regex.exec(html)) !== null) {
+    const headingText = stripTags(h2Match[1]);
+    if (headingText) {
+      paragraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: headingText,
+              bold: true,
+              size: TYPOGRAPHY.heading2.size,
+              color: primaryColor,
+            }),
+          ],
+          spacing: { before: 300, after: 150 },
+        })
+      );
+    }
+    workingHtml = workingHtml.replace(h2Match[0], '{{H2_PLACEHOLDER}}');
+  }
+  
+  let h3Match;
+  while ((h3Match = h3Regex.exec(html)) !== null) {
+    const headingText = stripTags(h3Match[1]);
+    if (headingText) {
+      paragraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: headingText,
+              bold: true,
+              size: 26, // Between body and heading2
+              color: primaryColor,
+            }),
+          ],
+          spacing: { before: 250, after: 100 },
+        })
+      );
+    }
+    workingHtml = workingHtml.replace(h3Match[0], '{{H3_PLACEHOLDER}}');
+  }
+  
+  // Process unordered lists
+  let ulMatch;
+  while ((ulMatch = ulRegex.exec(html)) !== null) {
+    const listContent = ulMatch[1];
+    const liRegex = /<li[^>]*>([\s\S]*?)<\/li>/gi;
+    let liMatch;
+    
+    while ((liMatch = liRegex.exec(listContent)) !== null) {
+      const itemText = stripTags(liMatch[1]);
+      if (itemText) {
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: itemText,
+                size: TYPOGRAPHY.body.size,
+                color: COLORS.grisTexte,
+              }),
+            ],
+            bullet: { level: 0 },
+            spacing: { after: 80 },
+          })
+        );
+      }
+    }
+    workingHtml = workingHtml.replace(ulMatch[0], '{{UL_PLACEHOLDER}}');
+  }
+  
+  // Process ordered lists
+  let olMatch;
+  let olIndex = 1;
+  while ((olMatch = olRegex.exec(html)) !== null) {
+    const listContent = olMatch[1];
+    const liRegex = /<li[^>]*>([\s\S]*?)<\/li>/gi;
+    let liMatch;
+    olIndex = 1;
+    
+    while ((liMatch = liRegex.exec(listContent)) !== null) {
+      const itemText = stripTags(liMatch[1]);
+      if (itemText) {
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `${olIndex}. ${itemText}`,
+                size: TYPOGRAPHY.body.size,
+                color: COLORS.grisTexte,
+              }),
+            ],
+            spacing: { after: 80 },
+            indent: { left: 400 },
+          })
+        );
+        olIndex++;
+      }
+    }
+    workingHtml = workingHtml.replace(olMatch[0], '{{OL_PLACEHOLDER}}');
+  }
+  
+  // Process remaining paragraphs
+  let pMatch;
+  while ((pMatch = pRegex.exec(html)) !== null) {
+    // Skip if already processed as part of other structures
+    if (workingHtml.includes(pMatch[0])) {
+      const runs = parseInlineFormatting(pMatch[1]);
+      if (runs.length > 0) {
+        paragraphs.push(
+          new Paragraph({
+            children: runs,
+            spacing: { after: 120, line: 276 },
+          })
+        );
+      }
+    }
+  }
+  
+  // If no structured content found, treat as plain text with line breaks
+  if (paragraphs.length === 0) {
+    const plainText = stripTags(html);
+    const lines = plainText.split('\n');
+    
+    lines.forEach(line => {
+      if (line.trim()) {
+        // Check for markdown-style bullets (backwards compatibility)
+        if (line.trim().startsWith('- ') || line.trim().startsWith('• ')) {
+          paragraphs.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: line.trim().substring(2),
+                  size: TYPOGRAPHY.body.size,
+                  color: COLORS.grisTexte,
+                }),
+              ],
+              bullet: { level: 0 },
+              spacing: { after: 80 },
+            })
+          );
+        } else {
+          paragraphs.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: line.trim(),
+                  size: TYPOGRAPHY.body.size,
+                  color: COLORS.grisTexte,
+                }),
+              ],
+              spacing: { after: 120, line: 276 },
+            })
+          );
+        }
+      }
+    });
+  }
+  
+  return paragraphs;
 }
 
 serve(async (req) => {
@@ -359,99 +721,9 @@ serve(async (req) => {
         })
       );
 
-      // Section content - parse markdown-like formatting
-      const contentLines = section.content.split('\n');
-      contentLines.forEach(line => {
-        if (line.trim() === '') {
-          documentSections.push(new Paragraph({ children: [], spacing: { after: 100 } }));
-          return;
-        }
-
-        // Handle bullet points
-        if (line.startsWith('- ') || line.startsWith('• ')) {
-          documentSections.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: line.substring(2),
-                  size: TYPOGRAPHY.body.size,
-                  color: COLORS.grisTexte,
-                }),
-              ],
-              bullet: { level: 0 },
-              spacing: { after: 80 },
-            })
-          );
-          return;
-        }
-
-        // Handle sub-bullets
-        if (line.startsWith('  - ') || line.startsWith('  • ')) {
-          documentSections.push(
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: line.substring(4),
-                  size: TYPOGRAPHY.body.size,
-                  color: COLORS.grisTexte,
-                }),
-              ],
-              bullet: { level: 1 },
-              spacing: { after: 60 },
-            })
-          );
-          return;
-        }
-
-        // Regular paragraph with bold handling
-        const textRuns: TextRun[] = [];
-        let currentText = line;
-        
-        // Bold handling (**text**)
-        const boldRegex = /\*\*(.*?)\*\*/g;
-        let lastIndex = 0;
-        let match;
-        
-        while ((match = boldRegex.exec(currentText)) !== null) {
-          if (match.index > lastIndex) {
-            textRuns.push(new TextRun({
-              text: currentText.substring(lastIndex, match.index),
-              size: TYPOGRAPHY.body.size,
-              color: COLORS.grisTexte,
-            }));
-          }
-          textRuns.push(new TextRun({
-            text: match[1],
-            bold: true,
-            size: TYPOGRAPHY.body.size,
-            color: primaryColor,
-          }));
-          lastIndex = match.index + match[0].length;
-        }
-        
-        if (lastIndex < currentText.length) {
-          textRuns.push(new TextRun({
-            text: currentText.substring(lastIndex),
-            size: TYPOGRAPHY.body.size,
-            color: COLORS.grisTexte,
-          }));
-        }
-        
-        if (textRuns.length === 0) {
-          textRuns.push(new TextRun({
-            text: line,
-            size: TYPOGRAPHY.body.size,
-            color: COLORS.grisTexte,
-          }));
-        }
-
-        documentSections.push(
-          new Paragraph({
-            children: textRuns,
-            spacing: { after: 120, line: 276 }, // 1.15 line spacing
-          })
-        );
-      });
+      // Parse HTML content from TipTap editor
+      const contentElements = parseHtmlContent(section.content, primaryColor, accentColor);
+      documentSections.push(...contentElements);
 
       // Section separator (except last)
       if (index < sections.length - 1) {
