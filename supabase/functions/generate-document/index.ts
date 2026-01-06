@@ -30,6 +30,38 @@ interface ModelConfig {
   temperature?: number;
 }
 
+interface BillingEntity {
+  id: string;
+  name: string;
+  legal_form: string | null;
+  siren: string | null;
+  tva_number: string | null;
+  rcs_city: string | null;
+  capital_amount: number | null;
+  address: string | null;
+  postal_code: string | null;
+  city: string | null;
+  country: string | null;
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+  logo_url: string | null;
+  primary_color: string | null;
+  default_tva_rate: number | null;
+  default_validity_days: number | null;
+  default_payment_terms: any;
+  quote_prefix: string | null;
+  quote_format: string | null;
+  current_quote_sequence: number | null;
+  cgv_template_id: string | null;
+}
+
+interface CgvTemplate {
+  id: string;
+  name: string;
+  content_html: string;
+}
+
 interface GenerateDocumentRequest {
   project_id?: string;
   opportunity_id?: string;
@@ -39,6 +71,7 @@ interface GenerateDocumentRequest {
   context?: Record<string, any>;
   existing_sections?: Array<{ title: string; content: string }>;
   metadata?: Record<string, any>;
+  billing_entity_id?: string;
 }
 
 // Call AI based on provider
@@ -172,16 +205,48 @@ async function callAI(
   }
 }
 
-// Enhanced default prompts with proper JSON output format - Optimized v2
-const DEFAULT_SYSTEM_PROMPTS: Record<DocumentType, string> = {
-  quote: `Tu es un expert commercial senior IArche (agence conseil IA à Bayonne). Tu génères des devis commerciaux professionnels de niveau cabinet de conseil.
+// Build billing entity context for prompts
+function buildBillingEntityContext(entity: BillingEntity | null): string {
+  if (!entity) return "Aucune société émettrice sélectionnée";
+  
+  const parts = [];
+  parts.push(`**Société émettrice:** ${entity.name}`);
+  if (entity.legal_form) parts.push(`Forme juridique: ${entity.legal_form}`);
+  if (entity.siren) parts.push(`SIREN: ${entity.siren}`);
+  if (entity.tva_number) parts.push(`N° TVA: ${entity.tva_number}`);
+  if (entity.rcs_city) parts.push(`RCS: ${entity.rcs_city}`);
+  if (entity.capital_amount) parts.push(`Capital: ${entity.capital_amount.toLocaleString('fr-FR')} €`);
+  if (entity.address) parts.push(`Adresse: ${entity.address}, ${entity.postal_code} ${entity.city}`);
+  if (entity.email) parts.push(`Email: ${entity.email}`);
+  if (entity.phone) parts.push(`Tél: ${entity.phone}`);
+  if (entity.website) parts.push(`Site: ${entity.website}`);
+  if (entity.default_tva_rate) parts.push(`Taux TVA par défaut: ${entity.default_tva_rate}%`);
+  if (entity.default_validity_days) parts.push(`Validité devis: ${entity.default_validity_days} jours`);
+  if (entity.default_payment_terms) {
+    const terms = entity.default_payment_terms;
+    if (terms.deposit_percent) parts.push(`Acompte: ${terms.deposit_percent}%`);
+    if (terms.balance_percent) parts.push(`Solde: ${terms.balance_percent}%`);
+  }
+  
+  return parts.join('\n');
+}
 
-## CONTEXTE IArche
+// Enhanced default prompts with billing entity support
+function getSystemPrompt(documentType: DocumentType, billingEntity: BillingEntity | null, cgvTemplate: CgvTemplate | null): string {
+  const billingContext = buildBillingEntityContext(billingEntity);
+  
+  const basePrompts: Record<DocumentType, string> = {
+    quote: `Tu es un expert commercial senior. Tu génères des devis commerciaux professionnels de niveau cabinet de conseil.
+
+## SOCIÉTÉ ÉMETTRICE
+${billingContext}
+
+## CONTEXTE MÉTIER
 - Agence spécialisée en solutions IA pour entreprises (TPE/PME/ETI)
 - Tarifs journaliers : 700€ (junior) à 1200€ (expert/fondateur)
 - Garantie : 3 mois maintenance corrective incluse
-- TVA : 20%
-- Conditions : 30% à la commande, 70% à livraison
+- TVA : ${billingEntity?.default_tva_rate || 20}%
+- Conditions : ${billingEntity?.default_payment_terms?.deposit_percent || 30}% à la commande, ${billingEntity?.default_payment_terms?.balance_percent || 70}% à livraison
 
 ## MÉTHODOLOGIE DE RÉDACTION
 
@@ -208,6 +273,7 @@ Toujours inclure :
 3. Propose des lignes de devis cohérentes et réalistes
 4. Adapte les montants au niveau de complexité perçu
 5. Les sections utilisent "content" (HTML riche autorisé)
+6. Utilise les informations de la société émettrice pour les mentions légales
 
 ## FORMAT DE SORTIE (JSON strict)
 {
@@ -216,19 +282,26 @@ Toujours inclure :
     {"id": "2", "title": "Périmètre de la prestation", "content": "<p>Description...</p><ul><li>Inclus : ...</li><li>Exclus : ...</li></ul>", "order": 2},
     {"id": "3", "title": "Approche et phases", "content": "<h4>Phase 1 : Cadrage (X jours)</h4><p>...</p><h4>Phase 2 : ...</h4>", "order": 3},
     {"id": "4", "title": "Planning prévisionnel", "content": "<p>Durée totale : X semaines</p><ul><li>Démarrage : ...</li></ul>", "order": 4},
-    {"id": "5", "title": "Investissement", "content": "<table><tr><th>Phase</th><th>Jours</th><th>Montant HT</th></tr>...</table><p><strong>Total HT :</strong> X €<br/><strong>TVA 20% :</strong> X €<br/><strong>Total TTC :</strong> X €</p>", "order": 5},
-    {"id": "6", "title": "Conditions et validité", "content": "<ul><li>Validité : 30 jours</li><li>Paiement : 30% commande, 70% livraison</li><li>Garantie : 3 mois maintenance corrective</li></ul>", "order": 6}
+    {"id": "5", "title": "Investissement", "content": "<table><tr><th>Phase</th><th>Jours</th><th>Montant HT</th></tr>...</table><p><strong>Total HT :</strong> X €<br/><strong>TVA ${billingEntity?.default_tva_rate || 20}% :</strong> X €<br/><strong>Total TTC :</strong> X €</p>", "order": 5},
+    {"id": "6", "title": "Conditions et validité", "content": "<ul><li>Validité : ${billingEntity?.default_validity_days || 30} jours</li><li>Paiement : ${billingEntity?.default_payment_terms?.deposit_percent || 30}% commande, ${billingEntity?.default_payment_terms?.balance_percent || 70}% livraison</li><li>Garantie : 3 mois maintenance corrective</li></ul>", "order": 6}
   ],
   "metadata": {
     "clientName": "Nom du contact",
     "clientCompany": "Nom entreprise",
     "projectName": "Nom du projet",
     "totalAmount": 0,
-    "currency": "EUR"
+    "currency": "EUR",
+    "billingEntityId": "${billingEntity?.id || ''}",
+    "billingEntityName": "${billingEntity?.name || ''}",
+    "tvaRate": ${billingEntity?.default_tva_rate || 20},
+    "validityDays": ${billingEntity?.default_validity_days || 30}
   }
 }`,
 
-  spec: `Tu es un architecte solution senior IArche. Tu génères des Cahiers des Charges (CDC) de niveau professionnel, inspirés des meilleures pratiques des cabinets de conseil.
+    spec: `Tu es un architecte solution senior. Tu génères des Cahiers des Charges (CDC) de niveau professionnel.
+
+## SOCIÉTÉ ÉMETTRICE
+${billingContext}
 
 ## MÉTHODOLOGIE DE RÉDACTION
 
@@ -296,11 +369,16 @@ KPIs mesurables par profil utilisateur :
     "clientName": "",
     "clientCompany": "",
     "projectName": "",
-    "version": "1.0"
+    "version": "1.0",
+    "billingEntityId": "${billingEntity?.id || ''}",
+    "billingEntityName": "${billingEntity?.name || ''}"
   }
 }`,
 
-  proposal: `Tu es un expert commercial senior IArche. Tu génères des propositions commerciales engageantes et persuasives de niveau cabinet de conseil.
+    proposal: `Tu es un expert commercial senior. Tu génères des propositions commerciales engageantes et persuasives de niveau cabinet de conseil.
+
+## SOCIÉTÉ ÉMETTRICE
+${billingContext}
 
 ## TON ET STYLE
 - Professionnel mais chaleureux et humain
@@ -325,7 +403,7 @@ KPIs mesurables par profil utilisateur :
 - Chiffrer les gains attendus quand possible
 - Pattern "Avant/Après" avec impact business
 
-### 4. DIFFÉRENCIATEURS IArche
+### 4. DIFFÉRENCIATEURS
 - Expertise IA appliquée au métier
 - Accompagnement humain (pas que technique)
 - Approche itérative et collaborative
@@ -348,19 +426,24 @@ KPIs mesurables par profil utilisateur :
     {"id": "2", "title": "Votre contexte, nos observations", "content": "<p>Vous nous avez partagé que...</p><blockquote><strong>Vos enjeux :</strong><ul><li>...</li></ul></blockquote><p>Nous comprenons parfaitement ces défis car...</p>", "order": 2},
     {"id": "3", "title": "Notre proposition", "content": "<p>Pour répondre à vos enjeux, nous proposons...</p><h4>Bénéfices attendus</h4><ul><li>👉 ...</li></ul><blockquote><strong>Avant :</strong> ...<br/><strong>Après :</strong> ...</blockquote>", "order": 3},
     {"id": "4", "title": "Notre approche", "content": "<h4>Méthodologie</h4><p>...</p><h4>Phases clés</h4><ol><li>...</li></ol>", "order": 4},
-    {"id": "5", "title": "Pourquoi IArche", "content": "<ul><li><strong>Expertise :</strong> ...</li><li><strong>Accompagnement :</strong> ...</li><li><strong>Garanties :</strong> ...</li></ul>", "order": 5},
-    {"id": "6", "title": "Investissement", "content": "<p>Pour cet accompagnement complet, l'investissement s'élève à :</p><p><strong>X € HT</strong></p><p>Incluant : ...</p><p>Conditions : 30% à la commande, 70% à livraison</p>", "order": 6},
-    {"id": "7", "title": "Prochaines étapes", "content": "<ol><li>Validation de cette proposition</li><li>Cadrage détaillé (semaine X)</li><li>Démarrage opérationnel</li></ol><p>Nous restons à votre disposition pour échanger.</p><p>Cordialement,</p><p><strong>Nicolas Lara</strong><br/>Fondateur IArche<br/>nicolas@iarche.fr</p>", "order": 7}
+    {"id": "5", "title": "Pourquoi nous", "content": "<ul><li><strong>Expertise :</strong> ...</li><li><strong>Accompagnement :</strong> ...</li><li><strong>Garanties :</strong> ...</li></ul>", "order": 5},
+    {"id": "6", "title": "Investissement", "content": "<p>Pour cet accompagnement complet, l'investissement s'élève à :</p><p><strong>X € HT</strong></p><p>Incluant : ...</p><p>Conditions : ${billingEntity?.default_payment_terms?.deposit_percent || 30}% à la commande, ${billingEntity?.default_payment_terms?.balance_percent || 70}% à livraison</p>", "order": 6},
+    {"id": "7", "title": "Prochaines étapes", "content": "<ol><li>Validation de cette proposition</li><li>Cadrage détaillé (semaine X)</li><li>Démarrage opérationnel</li></ol><p>Nous restons à votre disposition pour échanger.</p><p>Cordialement,</p>", "order": 7}
   ],
   "metadata": {
     "clientName": "Prénom du contact",
     "clientCompany": "Nom entreprise",
     "projectName": "Nom du projet",
     "totalAmount": 0,
-    "currency": "EUR"
+    "currency": "EUR",
+    "billingEntityId": "${billingEntity?.id || ''}",
+    "billingEntityName": "${billingEntity?.name || ''}"
   }
 }`
-};
+  };
+
+  return basePrompts[documentType];
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -378,7 +461,7 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body: GenerateDocumentRequest = await req.json();
-    const { project_id, opportunity_id, lead_id, document_type, custom_instructions, context: inputContext, existing_sections } = body;
+    const { project_id, opportunity_id, lead_id, document_type, custom_instructions, context: inputContext, existing_sections, billing_entity_id } = body;
 
     if (!document_type) {
       return new Response(JSON.stringify({ error: "document_type required" }), {
@@ -387,7 +470,41 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Generating ${document_type} document - project: ${project_id || 'N/A'}, opportunity: ${opportunity_id || 'N/A'}, lead: ${lead_id || 'N/A'}, hasContext: ${!!(inputContext && Object.keys(inputContext).length > 0)}`);
+    console.log(`Generating ${document_type} document - project: ${project_id || 'N/A'}, opportunity: ${opportunity_id || 'N/A'}, lead: ${lead_id || 'N/A'}, billing_entity: ${billing_entity_id || 'N/A'}`);
+
+    // Fetch billing entity if provided, or get default
+    let billingEntity: BillingEntity | null = null;
+    let cgvTemplate: CgvTemplate | null = null;
+
+    if (billing_entity_id) {
+      const { data: entityData } = await supabase
+        .from("billing_entities")
+        .select("*")
+        .eq("id", billing_entity_id)
+        .single();
+      billingEntity = entityData as BillingEntity | null;
+    } else {
+      // Get default billing entity
+      const { data: defaultEntity } = await supabase
+        .from("billing_entities")
+        .select("*")
+        .eq("is_default", true)
+        .eq("is_active", true)
+        .single();
+      billingEntity = defaultEntity as BillingEntity | null;
+    }
+
+    // Fetch CGV template if billing entity has one
+    if (billingEntity?.cgv_template_id) {
+      const { data: cgvData } = await supabase
+        .from("cgv_templates")
+        .select("*")
+        .eq("id", billingEntity.cgv_template_id)
+        .single();
+      cgvTemplate = cgvData as CgvTemplate | null;
+    }
+
+    console.log(`Using billing entity: ${billingEntity?.name || 'None'}, CGV template: ${cgvTemplate?.name || 'None'}`);
 
     // Fetch AI prompt from ai_prompts table
     const promptSlug = `document_generation_${document_type}`;
@@ -407,6 +524,7 @@ serve(async (req) => {
     // Fetch related data
     let project = null, lead = null, opportunity = null, solution = null;
     let specifications: any[] = [];
+    let contextNotes: any[] = [];
 
     if (project_id) {
       const { data: projectData } = await supabase.from("projects").select("*").eq("id", project_id).single();
@@ -434,6 +552,16 @@ serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(3);
       specifications = specsData || [];
+
+      // Fetch context notes for project
+      const { data: notesData } = await supabase
+        .from("entity_context_notes")
+        .select("content, created_at")
+        .eq("entity_type", "project")
+        .eq("entity_id", project_id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      contextNotes = notesData || [];
     }
 
     if (opportunity_id && !opportunity) {
@@ -450,17 +578,54 @@ serve(async (req) => {
       lead = leadData;
     }
 
-    // Build context with prioritization
+    // Fetch lead context notes if we have a lead
+    if (lead?.id && contextNotes.length === 0) {
+      const { data: leadNotes } = await supabase
+        .from("entity_context_notes")
+        .select("content, created_at")
+        .eq("entity_type", "lead")
+        .eq("entity_id", lead.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      contextNotes = leadNotes || [];
+    }
+
+    // Build context with prioritization and enhanced sourcing
     const llmContext = {
       ...(inputContext || {}),
+      billingEntity: billingEntity ? {
+        name: billingEntity.name,
+        legalForm: billingEntity.legal_form,
+        siren: billingEntity.siren,
+        tvaNumber: billingEntity.tva_number,
+        address: `${billingEntity.address || ''}, ${billingEntity.postal_code || ''} ${billingEntity.city || ''}`.trim(),
+        email: billingEntity.email,
+        phone: billingEntity.phone,
+        tvaRate: billingEntity.default_tva_rate,
+        validityDays: billingEntity.default_validity_days,
+        paymentTerms: billingEntity.default_payment_terms,
+      } : null,
       project: project ? { name: project.name, description: project.description, budget_amount: project.budget_amount, status: project.status } : inputContext?.project || null,
-      client: lead ? { name: lead.name, company: lead.company, industry: lead.industry, company_size: lead.company_size, email: lead.email, position: lead.position } : inputContext?.lead || null,
+      client: lead ? { 
+        name: lead.name, 
+        company: lead.company, 
+        industry: lead.industry, 
+        company_size: lead.company_size, 
+        email: lead.email, 
+        position: lead.position,
+        ai_summary: lead.ai_documents_summary
+      } : inputContext?.lead || null,
       opportunity: opportunity ? { title: opportunity.title, value_amount: opportunity.value_amount, stage: opportunity.stage, description: opportunity.description } : inputContext?.opportunity || null,
       solution: solution ? { title: solution.title, excerpt: solution.excerpt } : inputContext?.solution || null,
       specifications: specifications.map(s => ({ title: s.title, content: typeof s.content === 'object' ? s.content.text || JSON.stringify(s.content) : s.content })),
+      contextNotes: contextNotes.map(n => n.content),
       existing_sections: existing_sections || [],
       custom_instructions,
+      cgv_available: !!cgvTemplate,
     };
+
+    // Use dynamic system prompt with billing entity
+    const systemPrompt = aiPromptData?.system_prompt || getSystemPrompt(document_type, billingEntity, cgvTemplate);
 
     // User prompts optimized by document type
     const USER_PROMPTS: Record<DocumentType, string> = {
@@ -469,14 +634,17 @@ serve(async (req) => {
 ## SOURCES (par ordre de priorité)
 1. Instructions personnalisées : ${custom_instructions || "Aucune"}
 2. Transcriptions/Notes : ${inputContext?.transcription ? JSON.stringify(inputContext.transcription) : "Non disponible"}
-3. Contenu collé : ${inputContext?.pastedContent || "Non disponible"}
-4. Contexte métier : ${JSON.stringify(llmContext, null, 2)}
+3. Notes de contexte : ${contextNotes.length > 0 ? contextNotes.map(n => n.content).join('\n---\n') : "Non disponible"}
+4. Synthèse IA du lead : ${lead?.ai_documents_summary || "Non disponible"}
+5. Contenu collé : ${inputContext?.pastedContent || "Non disponible"}
+6. Contexte métier : ${JSON.stringify(llmContext, null, 2)}
 
 ## CONSIGNES SPÉCIFIQUES
 - Calcule un montant réaliste basé sur la complexité perçue
 - Inclus TOUJOURS une phase de cadrage initiale
 - Utilise le pattern Avant/Après dans le contexte
 - Adapte le vocabulaire au secteur d'activité du client
+- Utilise les infos de la société émettrice pour les mentions légales
 
 Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
 
@@ -485,8 +653,10 @@ Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
 ## SOURCES (par ordre de priorité)
 1. Instructions personnalisées : ${custom_instructions || "Aucune"}
 2. Transcriptions/Notes récentes : ${inputContext?.transcription ? JSON.stringify(inputContext.transcription) : (inputContext?.notes || "Non disponible")}
-3. Contenu collé : ${inputContext?.pastedContent || "Non disponible"}
-4. Contexte projet/client : ${JSON.stringify(llmContext, null, 2)}
+3. Notes de contexte : ${contextNotes.length > 0 ? contextNotes.map(n => n.content).join('\n---\n') : "Non disponible"}
+4. Synthèse IA du lead : ${lead?.ai_documents_summary || "Non disponible"}
+5. Contenu collé : ${inputContext?.pastedContent || "Non disponible"}
+6. Contexte projet/client : ${JSON.stringify(llmContext, null, 2)}
 
 ## CONSIGNES SPÉCIFIQUES
 - Structure CHAQUE fonctionnalité avec : Description + Exemple d'usage
@@ -503,8 +673,10 @@ Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
 ## SOURCES (par ordre de priorité)  
 1. Instructions personnalisées : ${custom_instructions || "Aucune"}
 2. Échanges récents (transcriptions) : ${inputContext?.transcription ? JSON.stringify(inputContext.transcription) : "Non disponible"}
-3. Contenu collé : ${inputContext?.pastedContent || "Non disponible"}
-4. Contexte client : ${JSON.stringify(llmContext, null, 2)}
+3. Notes de contexte : ${contextNotes.length > 0 ? contextNotes.map(n => n.content).join('\n---\n') : "Non disponible"}
+4. Synthèse IA du lead : ${lead?.ai_documents_summary || "Non disponible"}
+5. Contenu collé : ${inputContext?.pastedContent || "Non disponible"}
+6. Contexte client : ${JSON.stringify(llmContext, null, 2)}
 
 ## CONSIGNES SPÉCIFIQUES
 - Personnalise l'accroche avec un élément spécifique du contexte
@@ -517,7 +689,6 @@ Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
 Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
     };
 
-    const systemPrompt = aiPromptData?.system_prompt || DEFAULT_SYSTEM_PROMPTS[document_type];
     const userPrompt = aiPromptData?.user_prompt || USER_PROMPTS[document_type];
 
     // Call AI with appropriate provider
@@ -557,15 +728,27 @@ Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
       return new Response(JSON.stringify({ error: "invalid_ai_response", raw_content: aiResult.content }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Generate quote number if this is a quote and we have a billing entity
+    let quoteNumber: string | null = null;
+    if (document_type === "quote" && billingEntity?.id) {
+      const { data: quoteNumberData, error: quoteError } = await supabase
+        .rpc("generate_next_quote_number", { p_billing_entity_id: billingEntity.id });
+      
+      if (!quoteError && quoteNumberData) {
+        quoteNumber = quoteNumberData;
+        console.log(`Generated quote number: ${quoteNumber}`);
+      }
+    }
+
     // Generate title
     const clientName = documentContent.metadata?.clientCompany || lead?.company || project?.name || opportunity?.title || "Nouveau";
     const documentTitles: Record<DocumentType, string> = {
-      quote: `Devis - ${clientName}`,
+      quote: quoteNumber ? `Devis ${quoteNumber} - ${clientName}` : `Devis - ${clientName}`,
       spec: `CDC - ${clientName}`,
       proposal: `Proposition - ${clientName}`,
     };
 
-    // Save to database
+    // Save to database with billing entity reference
     const { data: savedDoc, error: saveError } = await supabase
       .from("generated_documents")
       .insert({
@@ -575,9 +758,17 @@ Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
         project_id: project_id || null,
         opportunity_id: opportunity_id || null,
         lead_id: lead_id || null,
+        billing_entity_id: billingEntity?.id || null,
+        quote_number: quoteNumber,
         content_json: documentContent,
         status: "draft",
         ai_generated: true,
+        quote_metadata: document_type === "quote" ? {
+          tva_rate: billingEntity?.default_tva_rate || 20,
+          validity_days: billingEntity?.default_validity_days || 30,
+          payment_terms: billingEntity?.default_payment_terms,
+          cgv_template_id: cgvTemplate?.id || null,
+        } : null,
         ai_metadata: {
           autonomy_level: "N1",
           confidence: 0.85,
@@ -586,6 +777,7 @@ Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
           model: aiResult.model,
           provider: aiResult.provider,
           generated_at: new Date().toISOString(),
+          billing_entity_used: billingEntity?.name || null,
         },
       })
       .select()
@@ -601,6 +793,8 @@ Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
     return new Response(JSON.stringify({
       ok: true,
       document: savedDoc,
+      quote_number: quoteNumber,
+      billing_entity: billingEntity ? { id: billingEntity.id, name: billingEntity.name } : null,
       ai_metadata: {
         autonomy_level: "N1",
         model: aiResult.model,

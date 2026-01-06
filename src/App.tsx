@@ -110,6 +110,7 @@ const CockpitChatbot = lazy(() => import("./pages/cockpit/CockpitChatbot"));
 const CockpitPartenaires = lazy(() => import("./pages/cockpit/CockpitPartenaires"));
 const CockpitPartenaireDetail = lazy(() => import("./pages/cockpit/CockpitPartenaireDetail"));
 const CockpitImports = lazy(() => import("./pages/cockpit/CockpitImports"));
+const CockpitSettings = lazy(() => import("./pages/cockpit/CockpitSettings"));
 
 // Viviers (Cold Leads)
 const ProtectedVivierRoute = lazy(() => import("./components/viviers/ProtectedVivierRoute"));
@@ -666,6 +667,11 @@ const App = () => (
           <Route path="/cockpit/imports" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedCockpitRoute><CockpitImports /></ProtectedCockpitRoute>
+            </Suspense>
+          } />
+          <Route path="/cockpit/settings" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedCockpitRoute><CockpitSettings /></ProtectedCockpitRoute>
             </Suspense>
           } />
 
