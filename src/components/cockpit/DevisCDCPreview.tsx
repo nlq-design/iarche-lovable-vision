@@ -285,55 +285,42 @@ export const DevisCDCPreview = forwardRef<HTMLDivElement, DevisCDCPreviewProps>(
                 >
                   Sommaire
                 </h2>
-                <ol className="space-y-2 list-none">
-                  {sections.map((section, i) => (
+                <ul className="space-y-2 list-none">
+                  {sections.map((section) => (
                     <li 
                       key={section.id} 
-                      className="flex items-center gap-3 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                     >
                       <span 
-                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white"
+                        className="w-1.5 h-1.5 rounded-full"
                         style={{ backgroundColor: theme.accentColor }}
-                      >
-                        {i + 1}
-                      </span>
+                      />
                       {section.title}
                     </li>
                   ))}
-                </ol>
+                </ul>
               </div>
             )}
 
             {/* Sections */}
             {sections.map((section, index) => (
               <div key={section.id} className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span 
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shadow-md"
-                    style={{ 
-                      backgroundColor: theme.accentColor,
-                      boxShadow: `0 4px 12px ${theme.accentColor}40`,
-                    }}
-                  >
-                    {index + 1}
-                  </span>
-                  <h2 
-                    className="text-xl font-bold"
-                    style={{ 
-                      color: theme.primaryColor,
-                      letterSpacing: '-0.01em',
-                    }}
-                  >
-                    {section.title}
-                  </h2>
-                </div>
+                <h2 
+                  className="text-xl font-bold"
+                  style={{ 
+                    color: theme.primaryColor,
+                    letterSpacing: '-0.01em',
+                  }}
+                >
+                  {section.title}
+                </h2>
                 {/* Gradient bar under title */}
                 <div 
-                  className="ml-[52px] h-0.5 w-16 rounded-full"
+                  className="h-0.5 w-16 rounded-full"
                   style={{ background: GRADIENTS.arc.css }}
                 />
                 <div 
-                  className="ml-[52px] prose prose-sm max-w-none preview-rich-content"
+                  className="prose prose-sm max-w-none preview-rich-content"
                   style={{ 
                     color: '#4A5568',
                     lineHeight: 1.75,
