@@ -26,11 +26,13 @@ import {
   Building2, 
   User, 
   Lightbulb,
-  Loader2
+  Loader2,
+  Receipt
 } from "lucide-react";
 import { useCockpitProjects } from '@/hooks/cockpit/useCockpitProjects';
 import { useCockpitLeads } from '@/hooks/cockpit/useCockpitLeads';
 import { useCockpitVoiceTranscriptions } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
+import { useBillingEntities } from '@/hooks/cockpit/useBillingEntities';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -58,6 +60,7 @@ export function AIGenerationModal({
   const [selectedLeadId, setSelectedLeadId] = useState<string>('');
   const [useSolution, setUseSolution] = useState(false);
   const [selectedSolutionId, setSelectedSolutionId] = useState<string>('');
+  const [selectedBillingEntityId, setSelectedBillingEntityId] = useState<string>('');
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [solutions, setSolutions] = useState<Array<{ id: string; title: string; slug: string }>>([]);
@@ -65,8 +68,19 @@ export function AIGenerationModal({
   const { projects } = useCockpitProjects();
   const { leads } = useCockpitLeads();
   const { transcriptions } = useCockpitVoiceTranscriptions();
+  const { entities: billingEntities, isLoading: loadingEntities } = useBillingEntities();
 
   const doneTranscriptions = transcriptions.filter(t => t.status === 'done');
+
+  // Auto-select default billing entity
+  useEffect(() => {
+    if (billingEntities && billingEntities.length > 0 && !selectedBillingEntityId) {
+      const defaultEntity = billingEntities.find(e => e.is_default) || billingEntities[0];
+      if (defaultEntity) {
+        setSelectedBillingEntityId(defaultEntity.id);
+      }
+    }
+  }, [billingEntities, selectedBillingEntityId]);
 
   // Fetch solutions
   useEffect(() => {
@@ -153,6 +167,7 @@ export function AIGenerationModal({
           context: contextData,
           project_id: useProject && selectedProjectId ? selectedProjectId : undefined,
           lead_id: useLead && selectedLeadId ? selectedLeadId : undefined,
+          billing_entity_id: selectedBillingEntityId || undefined,
         },
       });
 
@@ -201,6 +216,44 @@ export function AIGenerationModal({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Billing Entity Selector - Always visible for quotes */}
+          {documentType === 'quote' && (
+            <div className="p-3 rounded-lg bg-muted/50 border space-y-2">
+              <Label className="flex items-center gap-2 text-sm font-medium">
+                <Receipt className="h-4 w-4" />
+                Société émettrice
+              </Label>
+              {loadingEntities ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Chargement...
+                </div>
+              ) : billingEntities && billingEntities.length > 0 ? (
+                <Select value={selectedBillingEntityId} onValueChange={setSelectedBillingEntityId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une société" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {billingEntities.map(entity => (
+                      <SelectItem key={entity.id} value={entity.id}>
+                        <span className="flex items-center gap-2">
+                          {entity.name}
+                          {entity.is_default && (
+                            <Badge variant="secondary" className="text-xs">Par défaut</Badge>
+                          )}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Aucune société configurée. <a href="/cockpit/documents/settings" className="text-primary underline">Configurer</a>
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Paste Content */}
           <div className="space-y-2">
             <div className="flex items-center space-x-2">

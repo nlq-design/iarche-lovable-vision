@@ -22,7 +22,8 @@ import {
   Loader2,
   Brain,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Settings
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCockpitGeneratedDocuments, DOCUMENT_TYPE_LABELS, DOCUMENT_STATUS_CONFIG } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
@@ -139,6 +140,15 @@ const CockpitDocuments = () => {
             <p className="text-sm text-muted-foreground">Génération et gestion des documents commerciaux</p>
           </div>
           <div className="flex gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 text-sm"
+              onClick={() => navigate('/cockpit/documents/settings')}
+            >
+              <Settings className="h-3.5 w-3.5 mr-1.5" />
+              Paramètres
+            </Button>
             <Button 
               variant="outline" 
               size="sm" 
