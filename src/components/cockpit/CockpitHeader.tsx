@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useCockpitAuth } from '@/hooks/cockpit/useCockpitAuth';
@@ -10,10 +11,27 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
 import { EmailDraftsSheet } from './EmailDraftsSheet';
 
 export function CockpitHeader() {
   const [emailDraftsOpen, setEmailDraftsOpen] = useState(false);
+
+  // Fetch pending email drafts count
+  const { data: pendingDraftsCount = 0 } = useQuery({
+    queryKey: ['email-drafts-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('activity_log')
+        .select('id', { count: 'exact', head: true })
+        .eq('activity_type', 'email_draft_generated')
+        .or('metadata->>draft_status.is.null,metadata->>draft_status.eq.pending_review');
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    refetchInterval: 60000, // Refresh every minute
+  });
   const { user, signOut } = useAuth();
   const { stepUpExpiresAt, hasCockpitAdminAccess } = useCockpitAuth();
   const navigate = useNavigate();
@@ -58,13 +76,23 @@ export function CockpitHeader() {
                 variant="outline" 
                 size="sm" 
                 onClick={() => setEmailDraftsOpen(true)}
-                className="h-8 px-3 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
+                className="h-8 px-3 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary relative"
               >
                 <Mail className="w-4 h-4 mr-1.5" />
                 <span className="hidden sm:inline">Brouillons</span>
+                {pendingDraftsCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {pendingDraftsCount > 9 ? '9+' : pendingDraftsCount}
+                  </span>
+                )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Brouillons d'emails IA</TooltipContent>
+            <TooltipContent>
+              {pendingDraftsCount > 0 
+                ? `${pendingDraftsCount} brouillon${pendingDraftsCount > 1 ? 's' : ''} en attente`
+                : "Brouillons d'emails IA"
+              }
+            </TooltipContent>
           </Tooltip>
 
           {/* Viviers Button */}
