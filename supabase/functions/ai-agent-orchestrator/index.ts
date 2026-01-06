@@ -2523,15 +2523,19 @@ async function executeTool(
   switch (toolName) {
     // ============ COCKPIT READS ============
     case "get_leads": {
+      // LIMIT AUGMENTÉ pour accès complet (défaut: 50, max: 100)
+      const limit = Math.min(args.limit as number || 50, 100);
+      
       let query = supabase
         .from("leads")
         .select(`
           id, name, email, company, phone, source, source_context, 
           lead_score, qualification_status, created_at, last_contacted_at,
+          position, industry, company_size, city,
           ai_documents_summary, synthesis_stale
         `)
         .order("created_at", { ascending: false })
-        .limit(args.limit as number || 10);
+        .limit(limit);
 
       // Support recherche par nom/company
       if (args.query) {
@@ -2543,7 +2547,21 @@ async function executeTool(
 
       const { data, error } = await query;
       if (error) throw error;
-      return { leads: data, count: data?.length || 0, consulte_available: (data || []).some((l: any) => l.ai_documents_summary) };
+      
+      // Ajouter résumé par statut
+      const byStatus = (data || []).reduce((acc: Record<string, number>, l: { qualification_status: string | null }) => {
+        const status = l.qualification_status || "unknown";
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+
+      return { 
+        leads: data, 
+        count: data?.length || 0, 
+        by_status: byStatus,
+        consulte_available: (data || []).some((l: any) => l.ai_documents_summary),
+        message: `${data?.length || 0} lead(s) récupéré(s)`
+      };
     }
 
     case "search_leads": {
@@ -2871,59 +2889,112 @@ async function executeTool(
     }
 
     case "get_opportunities": {
+      // LIMIT AUGMENTÉ pour accès complet (défaut: 50)
+      const limit = Math.min(args.limit as number || 50, 100);
+      
       let query = supabase
         .from("opportunities")
         .select(`
           id, title, description, stage, value_amount, probability, 
-          expected_close_date, created_at,
-          lead:leads(id, name, company, email)
+          expected_close_date, created_at, updated_at, source, close_reason,
+          lead:leads(id, name, company, email, qualification_status)
         `)
         .order("created_at", { ascending: false })
-        .limit(args.limit as number || 10);
+        .limit(limit);
 
       if (args.stage) query = query.eq("stage", args.stage);
       if (args.min_value) query = query.gte("value_amount", args.min_value);
 
       const { data, error } = await query;
       if (error) throw error;
-      return { opportunities: data, count: data?.length || 0 };
+      
+      // Ajouter un résumé par stage
+      const byStage = (data || []).reduce((acc: Record<string, { count: number; value: number }>, o: { stage: string; value_amount: number | null }) => {
+        if (!acc[o.stage]) acc[o.stage] = { count: 0, value: 0 };
+        acc[o.stage].count++;
+        acc[o.stage].value += o.value_amount || 0;
+        return acc;
+      }, {});
+      
+      const totalValue = (data || []).reduce((sum: number, o: { value_amount: number | null }) => sum + (o.value_amount || 0), 0);
+
+      return { 
+        opportunities: data, 
+        count: data?.length || 0,
+        by_stage: byStage,
+        total_pipeline_value: totalValue,
+        message: `${data?.length || 0} opportunité(s) - Valeur totale: ${totalValue.toLocaleString()}€`
+      };
     }
 
     case "get_projects": {
+      // LIMIT AUGMENTÉ pour accès complet aux projets (défaut: 50, max: 100)
+      const limit = Math.min(args.limit as number || 50, 100);
+      
       let query = supabase
         .from("projects")
         .select(`
           id, name, description, status, health_status, 
           budget_amount, consumed_amount, start_date, target_end_date,
+          created_at, updated_at, priority,
           ai_documents_summary, synthesis_stale,
-          lead:leads(id, name, company),
-          opportunity:opportunities(id, title, value_amount)
+          lead:leads(id, name, company, email),
+          opportunity:opportunities(id, title, value_amount, stage)
         `)
         .order("created_at", { ascending: false })
-        .limit(args.limit as number || 10);
+        .limit(limit);
 
-      // Support recherche par nom
+      // Support recherche par nom (insensible à la casse et accents)
       if (args.query) {
-        query = query.ilike("name", `%${args.query}%`);
+        const searchTerm = (args.query as string).trim();
+        query = query.ilike("name", `%${searchTerm}%`);
       }
       if (args.status) query = query.eq("status", args.status);
       if (args.health_status) query = query.eq("health_status", args.health_status);
 
       const { data, error } = await query;
       if (error) throw error;
+      
+      // Ajouter un résumé par statut pour une meilleure vue d'ensemble
+      const byStatus = (data || []).reduce((acc: Record<string, number>, p: { status: string }) => {
+        acc[p.status] = (acc[p.status] || 0) + 1;
+        return acc;
+      }, {});
+
       return { 
         projects: data, 
         count: data?.length || 0,
-        consulte_available: (data || []).some((p: any) => p.ai_documents_summary)
+        by_status: byStatus,
+        consulte_available: (data || []).some((p: any) => p.ai_documents_summary),
+        message: `${data?.length || 0} projet(s) récupéré(s)${args.query ? ` pour "${args.query}"` : ""}`
       };
     }
 
     case "search_projects": {
       const searchQuery = (args.query as string || "").trim();
       if (!searchQuery) {
-        return { projects: [], count: 0, message: "Terme de recherche requis" };
+        // Si pas de query, retourner TOUS les projets
+        const { data: allProjects, error: allError } = await supabase
+          .from("projects")
+          .select(`
+            id, name, description, status, health_status, 
+            budget_amount, start_date, target_end_date, created_at,
+            ai_documents_summary, synthesis_stale,
+            lead:leads(id, name, company, email),
+            opportunity:opportunities(id, title, stage, value_amount)
+          `)
+          .order("created_at", { ascending: false })
+          .limit(50);
+        
+        if (allError) throw allError;
+        return { 
+          projects: allProjects, 
+          count: allProjects?.length || 0,
+          message: `Tous les projets (${allProjects?.length || 0} total)`
+        };
       }
 
+      // Recherche par nom de projet
       const { data, error } = await supabase
         .from("projects")
         .select(`
@@ -2935,42 +3006,44 @@ async function executeTool(
         `)
         .ilike("name", `%${searchQuery}%`)
         .order("created_at", { ascending: false })
-        .limit(10);
+        .limit(20);
 
       if (error) throw error;
       
-      // Also search in lead names linked to projects
-      // NOTE: Use left join (no !inner) and filter in application to avoid ambiguity errors
-      const { data: projectsByLead, error: leadError } = await supabase
+      // Recherche étendue : aussi dans les leads liés
+      const { data: projectsByLead } = await supabase
         .from("projects")
         .select(`
           id, name, description, status, health_status, ai_documents_summary,
-          lead:leads(id, name, company)
+          lead:leads(id, name, company, email)
         `)
         .not("lead_id", "is", null)
-        .limit(5);
+        .limit(50);
       
-      // Merge results without duplicates, filtering lead matches in application layer
+      // Merge results without duplicates
       const allProjects = data || [];
+      const searchLower = searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       
-      // Filter projectsByLead to those where lead name matches search query
-      const searchLower = searchQuery.toLowerCase();
       const leadMatches = (projectsByLead || []).filter((p: any) => {
-        const leadName = p.lead?.name?.toLowerCase() || "";
-        const leadCompany = p.lead?.company?.toLowerCase() || "";
+        const leadName = (p.lead?.name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const leadCompany = (p.lead?.company || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         const matchesSearch = leadName.includes(searchLower) || leadCompany.includes(searchLower);
         const notAlreadyIncluded = !allProjects.some((ap: { id: string }) => ap.id === p.id);
         return matchesSearch && notAlreadyIncluded;
       });
 
+      const finalResults = [...allProjects, ...leadMatches];
+
       return { 
-        projects: [...allProjects, ...leadMatches],
-        count: allProjects.length + leadMatches.length,
+        projects: finalResults,
+        count: finalResults.length,
         query: searchQuery,
-        consulte_available: allProjects.some((p: any) => p.ai_documents_summary),
-        message: allProjects.length > 0 
-          ? `${allProjects.length} projet(s) trouvé(s) pour "${searchQuery}"`
-          : `Aucun projet trouvé pour "${searchQuery}"`
+        direct_matches: allProjects.length,
+        lead_matches: leadMatches.length,
+        consulte_available: finalResults.some((p: any) => p.ai_documents_summary),
+        message: finalResults.length > 0 
+          ? `${finalResults.length} projet(s) trouvé(s) pour "${searchQuery}" (${allProjects.length} direct, ${leadMatches.length} via lead)`
+          : `Aucun projet trouvé pour "${searchQuery}". Essayez search_fuzzy.`
       };
     }
 

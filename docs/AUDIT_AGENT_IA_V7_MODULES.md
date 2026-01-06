@@ -51,6 +51,19 @@
 
 ---
 
+## ✅ CORRECTIONS v8.1 - ACCÈS COMPLET AUX DONNÉES
+
+| Outil | Limite avant | Limite après | Status |
+|-------|-------------|--------------|--------|
+| `get_projects` | 10 | 50 (max 100) | ✅ Corrigé |
+| `get_leads` | 10 | 50 (max 100) | ✅ Corrigé |
+| `get_opportunities` | 10 | 50 (max 100) | ✅ Corrigé |
+| `search_projects` | 10 | 50 + recherche lead | ✅ Amélioré |
+
+**Note**: L'orchestrateur utilise `SUPABASE_SERVICE_ROLE_KEY` qui bypass RLS, garantissant un accès complet à toutes les données.
+
+---
+
 ### Tables Base de Données (81 tables)
 
 | Catégorie | Tables | Couverture Agent |
