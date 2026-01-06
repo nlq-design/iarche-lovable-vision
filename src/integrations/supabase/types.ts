@@ -3279,6 +3279,54 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_notification_preferences: {
+        Row: {
+          briefing_time: string | null
+          briefing_timezone: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          notify_morning_briefing: boolean | null
+          notify_new_bookings: boolean | null
+          notify_new_leads: boolean | null
+          notify_task_reminders: boolean | null
+          task_reminder_minutes: number | null
+          telegram_chat_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          briefing_time?: string | null
+          briefing_timezone?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          notify_morning_briefing?: boolean | null
+          notify_new_bookings?: boolean | null
+          notify_new_leads?: boolean | null
+          notify_task_reminders?: boolean | null
+          task_reminder_minutes?: number | null
+          telegram_chat_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          briefing_time?: string | null
+          briefing_timezone?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          notify_morning_briefing?: boolean | null
+          notify_new_bookings?: boolean | null
+          notify_new_leads?: boolean | null
+          notify_task_reminders?: boolean | null
+          task_reminder_minutes?: number | null
+          telegram_chat_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       telegram_processed_updates: {
         Row: {
           chat_id: number
@@ -3339,6 +3387,36 @@ export type Database = {
           status?: string
           user_id?: number
           user_name?: string | null
+        }
+        Relationships: []
+      }
+      telegram_sent_notifications: {
+        Row: {
+          chat_id: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          message_id: string | null
+          notification_type: string
+          sent_at: string | null
+        }
+        Insert: {
+          chat_id: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          message_id?: string | null
+          notification_type: string
+          sent_at?: string | null
+        }
+        Update: {
+          chat_id?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          message_id?: string | null
+          notification_type?: string
+          sent_at?: string | null
         }
         Relationships: []
       }
