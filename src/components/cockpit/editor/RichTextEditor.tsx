@@ -6,6 +6,7 @@ import { TableCell } from '@tiptap/extension-table-cell';
 import { TableHeader } from '@tiptap/extension-table-header';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Placeholder } from '@tiptap/extension-placeholder';
+import { TextStyle } from '@tiptap/extension-text-style';
 import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +24,7 @@ import {
   Redo,
   Trash2,
   Plus,
+  Type,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -31,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { FontSize, FONT_SIZES } from './FontSizeExtension';
 import './rich-editor.css';
 
 interface RichTextEditorProps {
@@ -48,6 +51,8 @@ export function RichTextEditor({ content, onChange, placeholder = 'Commencez à 
           levels: [2, 3],
         },
       }),
+      TextStyle,
+      FontSize,
       Table.configure({
         resizable: true,
         HTMLAttributes: {
@@ -130,6 +135,32 @@ export function RichTextEditor({ content, onChange, placeholder = 'Commencez à 
         >
           <Italic className="h-4 w-4" />
         </Button>
+
+        {/* Font size dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="ghost" size="sm" className="h-8 px-2 gap-1">
+              <Type className="h-4 w-4" />
+              <span className="text-xs">Taille</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {FONT_SIZES.map((size) => (
+              <DropdownMenuItem
+                key={size.value}
+                onClick={() => editor.chain().focus().setFontSize(size.value).run()}
+                className="flex items-center justify-between"
+              >
+                <span style={{ fontSize: size.value }}>{size.label}</span>
+                <span className="text-xs text-muted-foreground ml-2">{size.value}</span>
+              </DropdownMenuItem>
+            ))}
+            <div className="h-px bg-border my-1" />
+            <DropdownMenuItem onClick={() => editor.chain().focus().unsetFontSize().run()}>
+              Réinitialiser
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <div className="w-px h-6 bg-border mx-1" />
 
