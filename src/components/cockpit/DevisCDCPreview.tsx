@@ -191,7 +191,7 @@ export const DevisCDCPreview = forwardRef<HTMLDivElement, DevisCDCPreviewProps>(
 
         {/* Document Preview */}
         <Card 
-          className={`${isEmbedded ? '' : 'max-w-4xl mx-auto'} shadow-lg overflow-hidden`}
+          className={`${isEmbedded ? '' : 'max-w-4xl mx-auto'} shadow-lg overflow-hidden document-preview-card`}
           style={{ 
             backgroundColor: IARCHE_COLORS.blancCasse,
             fontFamily: "'Manrope', -apple-system, BlinkMacSystemFont, sans-serif",
