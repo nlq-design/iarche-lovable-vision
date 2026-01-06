@@ -699,25 +699,39 @@ CONSIGNES:
         candidate = candidate.slice(firstBrace, lastBrace + 1);
       }
 
-      // 3) Repair common invalid JSON issue: raw newlines inside quoted strings
+      // 3) Repair common invalid JSON issues coming from LLM outputs:
+      // - raw newlines inside quoted strings
+      // - invalid escape sequences like \' (JSON does not allow it)
       const sanitizeJsonString = (input: string) => {
         let out = "";
         let inString = false;
-        let escaped = false;
+        let escapePending = false;
+
+        const isValidEscape = (ch: string) =>
+          ch === '"' || ch === "\\" || ch === "/" || ch === "b" || ch === "f" || ch === "n" || ch === "r" || ch === "t" || ch === "u";
 
         for (let i = 0; i < input.length; i++) {
           const ch = input[i];
 
           if (inString) {
-            if (escaped) {
-              out += ch;
-              escaped = false;
+            if (escapePending) {
+              // We just saw a backslash inside a JSON string.
+              // Keep only valid JSON escapes, otherwise drop the backslash (fixes: \' -> ')
+              if (isValidEscape(ch)) {
+                out += "\\" + ch;
+              } else if (ch === "\n") {
+                out += "\\n";
+              } else if (ch === "\r") {
+                // drop
+              } else {
+                out += ch;
+              }
+              escapePending = false;
               continue;
             }
 
             if (ch === "\\") {
-              out += ch;
-              escaped = true;
+              escapePending = true;
               continue;
             }
 
@@ -733,7 +747,6 @@ CONSIGNES:
             }
 
             if (ch === "\r") {
-              // Drop CR to avoid invalid characters in JSON strings
               continue;
             }
 
