@@ -2185,6 +2185,158 @@ const AGENT_TOOLS = [
       },
     },
   },
+  // ============ OUTILS EDGE FUNCTIONS (v7.0) ============
+  {
+    type: "function",
+    function: {
+      name: "lookup_company",
+      description: "Recherche une entreprise française par SIRET, SIREN ou nom via l'API Pappers. Enrichit automatiquement les données entreprise.",
+      parameters: {
+        type: "object",
+        properties: {
+          siret: { type: "string", description: "Numéro SIRET (14 chiffres)" },
+          siren: { type: "string", description: "Numéro SIREN (9 chiffres)" },
+          company_name: { type: "string", description: "Nom de l'entreprise (recherche approximative)" },
+          lead_id: { type: "string", description: "ID du lead à enrichir avec les données trouvées (optionnel)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "generate_article_faq",
+      description: "Génère automatiquement une FAQ empathique pour un article. Questions du point de vue du lecteur.",
+      parameters: {
+        type: "object",
+        properties: {
+          article_id: { type: "string", description: "ID de l'article" },
+          mode: { type: "string", enum: ["new", "add"], description: "new = remplacer, add = ajouter aux existantes" },
+        },
+        required: ["article_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "enrich_content_seo",
+      description: "Enrichit le contenu HTML d'un article avec des balises <strong> sur les mots-clés importants pour le SEO.",
+      parameters: {
+        type: "object",
+        properties: {
+          article_id: { type: "string", description: "ID de l'article à enrichir" },
+        },
+        required: ["article_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "suggest_article_tags",
+      description: "Suggère des tags pertinents pour un article basé sur son contenu.",
+      parameters: {
+        type: "object",
+        properties: {
+          article_id: { type: "string", description: "ID de l'article" },
+        },
+        required: ["article_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "refresh_entity_synthesis",
+      description: "Régénère la synthèse IA (Consulte 360°) d'une entité. Utilise pour les entités marquées 'stale'.",
+      parameters: {
+        type: "object",
+        properties: {
+          entity_type: { type: "string", enum: ["lead", "project", "partner", "solution"], description: "Type d'entité" },
+          entity_id: { type: "string", description: "ID de l'entité" },
+        },
+        required: ["entity_type", "entity_id"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_email_logs",
+      description: "Récupère les logs d'envoi d'emails (notifications, newsletters, campagnes).",
+      parameters: {
+        type: "object",
+        properties: {
+          email_type: { type: "string", description: "Filtrer par type (notification, newsletter, campaign)" },
+          status: { type: "string", enum: ["pending", "sent", "failed"], description: "Filtrer par statut" },
+          recipient_email: { type: "string", description: "Filtrer par destinataire" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 20)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_audit_logs",
+      description: "Récupère les logs d'audit admin (actions utilisateurs, modifications, connexions).",
+      parameters: {
+        type: "object",
+        properties: {
+          action_type: { type: "string", description: "Filtrer par action (create, update, delete, login)" },
+          resource_type: { type: "string", description: "Filtrer par type de ressource" },
+          user_email: { type: "string", description: "Filtrer par utilisateur" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 50)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_rag_status",
+      description: "Récupère le statut de l'indexation RAG (embeddings) pour toutes les ressources.",
+      parameters: {
+        type: "object",
+        properties: {
+          resource_type: { type: "string", description: "Filtrer par type de ressource" },
+          stale_only: { type: "boolean", description: "Ne montrer que les ressources non indexées ou obsolètes" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "trigger_embedding_refresh",
+      description: "Déclenche la réindexation RAG d'une ou plusieurs ressources.",
+      parameters: {
+        type: "object",
+        properties: {
+          resource_type: { type: "string", description: "Type de ressource (article, solution, cas-client)" },
+          resource_id: { type: "string", description: "ID spécifique (optionnel, sinon tout le type)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "send_followup_email",
+      description: "Génère et envoie un email de relance commerciale à un lead. Utilise le contexte du lead et ses interactions.",
+      parameters: {
+        type: "object",
+        properties: {
+          lead_id: { type: "string", description: "ID du lead" },
+          email_type: { type: "string", enum: ["first_contact", "followup", "proposal", "reminder"], description: "Type d'email" },
+          custom_message: { type: "string", description: "Message personnalisé à inclure (optionnel)" },
+          preview_only: { type: "boolean", description: "Prévisualiser sans envoyer (défaut: true)" },
+        },
+        required: ["lead_id", "email_type"],
+      },
+    },
+  },
 ];
 
 // =============================================================================
@@ -6696,6 +6848,406 @@ Génère un contenu HTML pour email avec:
           ? `📊 Analyse: ${summary.duplicates_found} doublons, ${summary.generic_emails} emails génériques`
           : `🧹 Nettoyage effectué: ${summary.duplicates_deleted || 0} doublons supprimés`
       };
+    }
+
+    // ============ NOUVEAUX OUTILS EDGE FUNCTIONS (v7.0) ============
+    
+    case "lookup_company": {
+      const siret = args.siret as string;
+      const siren = args.siren as string;
+      const companyName = args.company_name as string;
+      const leadId = args.lead_id as string;
+
+      if (!siret && !siren && !companyName) {
+        return { success: false, error: "siret, siren ou company_name requis" };
+      }
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/pappers-lookup`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ siret, siren, company_name: companyName }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          return { success: false, error: `Pappers lookup failed: ${errorText}` };
+        }
+
+        const result = await response.json();
+
+        // If lead_id provided, enrich the lead with company data
+        if (leadId && result.company) {
+          const company = result.company;
+          await supabase.from("leads").update({
+            company: company.denomination || company.nom_entreprise,
+            siret: company.siret,
+            industry: company.libelle_code_naf,
+            company_size: company.tranche_effectif,
+            city: company.siege?.ville,
+            address: company.siege?.adresse_ligne_1,
+            postal_code: company.siege?.code_postal,
+          }).eq("id", leadId);
+          
+          result.lead_enriched = true;
+          result.message = `✅ Entreprise trouvée et lead enrichi : ${company.denomination || company.nom_entreprise}`;
+        } else if (result.company) {
+          result.message = `✅ Entreprise trouvée : ${result.company.denomination || result.company.nom_entreprise}`;
+        }
+
+        return result;
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Pappers lookup error" };
+      }
+    }
+
+    case "generate_article_faq": {
+      const articleId = args.article_id as string;
+      const mode = (args.mode as string) || "new";
+
+      if (!articleId) {
+        return { success: false, error: "article_id requis" };
+      }
+
+      // Get article
+      const { data: article, error: articleError } = await supabase
+        .from("articles")
+        .select("id, title, content, resource_type, faq")
+        .eq("id", articleId)
+        .single();
+
+      if (articleError || !article) {
+        return { success: false, error: "Article non trouvé" };
+      }
+
+      const existingQuestions = article.faq ? (article.faq as Array<{question: string}>).map(f => f.question) : [];
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-faq`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            article_id: articleId,
+            title: article.title,
+            content: article.content,
+            resource_type: article.resource_type,
+            mode,
+            existing_questions: existingQuestions,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          return { success: false, error: `FAQ generation failed: ${errorText}` };
+        }
+
+        const result = await response.json();
+        return {
+          success: true,
+          faq_count: result.questions?.length || 0,
+          message: `✅ FAQ générée : ${result.questions?.length || 0} questions pour "${article.title}"`
+        };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "FAQ generation error" };
+      }
+    }
+
+    case "enrich_content_seo": {
+      const articleId = args.article_id as string;
+
+      if (!articleId) {
+        return { success: false, error: "article_id requis" };
+      }
+
+      const { data: article } = await supabase
+        .from("articles")
+        .select("id, title, content, resource_type")
+        .eq("id", articleId)
+        .single();
+
+      if (!article) {
+        return { success: false, error: "Article non trouvé" };
+      }
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/enrich-content-seo`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            content: article.content,
+            resourceType: article.resource_type,
+          }),
+        });
+
+        if (!response.ok) {
+          return { success: false, error: "SEO enrichment failed" };
+        }
+
+        const result = await response.json();
+        
+        // Update article with enriched content
+        if (result.enrichedContent) {
+          await supabase.from("articles").update({ content: result.enrichedContent }).eq("id", articleId);
+        }
+
+        return {
+          success: true,
+          message: `✅ Contenu SEO enrichi pour "${article.title}"`
+        };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "SEO enrichment error" };
+      }
+    }
+
+    case "suggest_article_tags": {
+      const articleId = args.article_id as string;
+
+      if (!articleId) {
+        return { success: false, error: "article_id requis" };
+      }
+
+      const { data: article } = await supabase
+        .from("articles")
+        .select("id, title, content, excerpt")
+        .eq("id", articleId)
+        .single();
+
+      if (!article) {
+        return { success: false, error: "Article non trouvé" };
+      }
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/suggest-tags`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title: article.title,
+            content: article.content || article.excerpt,
+          }),
+        });
+
+        if (!response.ok) {
+          return { success: false, error: "Tag suggestion failed" };
+        }
+
+        const result = await response.json();
+        return {
+          success: true,
+          suggested_tags: result.tags || [],
+          message: `✅ ${result.tags?.length || 0} tags suggérés pour "${article.title}"`
+        };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Tag suggestion error" };
+      }
+    }
+
+    case "refresh_entity_synthesis": {
+      const entityType = args.entity_type as string;
+      const entityId = args.entity_id as string;
+
+      if (!entityType || !entityId) {
+        return { success: false, error: "entity_type et entity_id requis" };
+      }
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/synthesize-entity-documents`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ entity_type: entityType, entity_id: entityId }),
+        });
+
+        if (!response.ok) {
+          return { success: false, error: "Synthesis refresh failed" };
+        }
+
+        const result = await response.json();
+        return {
+          success: true,
+          synthesis_updated: true,
+          message: `✅ Synthèse 360° rafraîchie pour ${entityType} ${entityId.slice(0, 8)}...`
+        };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Synthesis error" };
+      }
+    }
+
+    case "get_email_logs": {
+      let query = supabase
+        .from("email_logs")
+        .select("id, email_type, recipient_email, subject, status, sent_at, error_message, source_type, created_at")
+        .order("created_at", { ascending: false })
+        .limit(args.limit as number || 20);
+
+      if (args.email_type) query = query.eq("email_type", args.email_type);
+      if (args.status) query = query.eq("status", args.status);
+      if (args.recipient_email) query = query.eq("recipient_email", args.recipient_email);
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      return { 
+        logs: data, 
+        count: data?.length || 0,
+        message: `📧 ${data?.length || 0} logs d'emails trouvés`
+      };
+    }
+
+    case "get_audit_logs": {
+      let query = supabase
+        .from("admin_audit_logs")
+        .select("id, action_type, resource_type, resource_name, user_email, created_at, ip_address")
+        .order("created_at", { ascending: false })
+        .limit(args.limit as number || 50);
+
+      if (args.action_type) query = query.eq("action_type", args.action_type);
+      if (args.resource_type) query = query.eq("resource_type", args.resource_type);
+      if (args.user_email) query = query.eq("user_email", args.user_email);
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      return { 
+        logs: data, 
+        count: data?.length || 0,
+        message: `📋 ${data?.length || 0} logs d'audit trouvés`
+      };
+    }
+
+    case "get_rag_status": {
+      let query = supabase
+        .from("vectorization_status")
+        .select("resource_type, resource_id, status, last_vectorized_at, error_message, chunks_count")
+        .order("last_vectorized_at", { ascending: false, nullsFirst: true })
+        .limit(50);
+
+      if (args.resource_type) query = query.eq("resource_type", args.resource_type);
+      if (args.stale_only) query = query.neq("status", "completed");
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Count by status
+      const statusCounts: Record<string, number> = {};
+      for (const item of data || []) {
+        statusCounts[item.status] = (statusCounts[item.status] || 0) + 1;
+      }
+
+      return { 
+        items: data, 
+        count: data?.length || 0,
+        status_summary: statusCounts,
+        message: `🔍 Statut RAG : ${statusCounts.completed || 0} indexés, ${statusCounts.pending || 0} en attente, ${statusCounts.failed || 0} en erreur`
+      };
+    }
+
+    case "trigger_embedding_refresh": {
+      const resourceType = args.resource_type as string;
+      const resourceId = args.resource_id as string;
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-embeddings`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ 
+            resource_type: resourceType,
+            resource_id: resourceId,
+            force_refresh: true 
+          }),
+        });
+
+        if (!response.ok) {
+          return { success: false, error: "Embedding refresh failed" };
+        }
+
+        const result = await response.json();
+        return {
+          success: true,
+          refreshed: result.processed || 1,
+          message: resourceId 
+            ? `🔄 Embeddings rafraîchis pour ${resourceType} ${resourceId.slice(0, 8)}...`
+            : `🔄 Embeddings rafraîchis pour tous les ${resourceType}`
+        };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Embedding refresh error" };
+      }
+    }
+
+    case "send_followup_email": {
+      const leadId = args.lead_id as string;
+      const emailType = args.email_type as string;
+      const customMessage = args.custom_message as string;
+      const previewOnly = args.preview_only !== false;
+
+      if (!leadId || !emailType) {
+        return { success: false, error: "lead_id et email_type requis" };
+      }
+
+      // Get lead info
+      const { data: lead } = await supabase
+        .from("leads")
+        .select("id, name, email, company, source_context, ai_documents_summary")
+        .eq("id", leadId)
+        .single();
+
+      if (!lead) {
+        return { success: false, error: "Lead non trouvé" };
+      }
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-followup-email`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            lead_id: leadId,
+            lead_name: lead.name,
+            lead_email: lead.email,
+            company: lead.company,
+            context: lead.ai_documents_summary || lead.source_context,
+            email_type: emailType,
+            custom_message: customMessage,
+            send_now: !previewOnly,
+          }),
+        });
+
+        if (!response.ok) {
+          return { success: false, error: "Email generation failed" };
+        }
+
+        const result = await response.json();
+        return {
+          success: true,
+          preview: previewOnly,
+          email_subject: result.subject,
+          email_content: result.content?.slice(0, 500) + (result.content?.length > 500 ? "..." : ""),
+          sent: !previewOnly && result.sent,
+          message: previewOnly 
+            ? `📧 Email de ${emailType} préparé pour ${lead.name}. Confirmez l'envoi.`
+            : `✅ Email de ${emailType} envoyé à ${lead.email}`
+        };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Email error" };
+      }
     }
 
     default:
