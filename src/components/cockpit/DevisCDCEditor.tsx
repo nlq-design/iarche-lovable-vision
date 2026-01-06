@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { 
@@ -20,6 +19,7 @@ import {
   Code,
   ChevronDown
 } from "lucide-react";
+import { RichTextEditor } from './editor';
 import {
   Select,
   SelectContent,
@@ -515,10 +515,9 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                      <Textarea
-                        value={section.content}
-                        onChange={(e) => updateSection(section.id, 'content', e.target.value)}
-                        rows={4}
+                      <RichTextEditor
+                        content={section.content}
+                        onChange={(value) => updateSection(section.id, 'content', value)}
                         placeholder="Contenu de la section..."
                         className="text-sm"
                       />
