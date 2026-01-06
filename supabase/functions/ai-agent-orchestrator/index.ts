@@ -2337,6 +2337,155 @@ const AGENT_TOOLS = [
       },
     },
   },
+  // ============ OUTILS v8.0 - NOUVELLES FONCTIONNALITÉS ============
+  {
+    type: "function",
+    function: {
+      name: "sync_google_calendar",
+      description: "Synchronise l'agenda avec Google Calendar. Récupère les événements Google et les met à jour dans le CRM.",
+      parameters: {
+        type: "object",
+        properties: {
+          direction: { type: "string", enum: ["pull", "push", "both"], description: "Direction de sync (défaut: both)" },
+          days_range: { type: "number", description: "Nombre de jours à synchroniser (défaut: 30)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "generate_article_ai",
+      description: "Génère un article IA complet (blog, actualité, cas client) avec titre, contenu et meta SEO.",
+      parameters: {
+        type: "object",
+        properties: {
+          topic: { type: "string", description: "Sujet de l'article" },
+          resource_type: { type: "string", enum: ["article", "actualite", "cas-client"], description: "Type de contenu" },
+          keywords: { type: "array", items: { type: "string" }, description: "Mots-clés à inclure" },
+          tone: { type: "string", enum: ["professionnel", "accessible", "technique", "inspirant"], description: "Ton souhaité" },
+          length: { type: "string", enum: ["court", "moyen", "long"], description: "Longueur (court ~500, moyen ~1000, long ~2000 mots)" },
+        },
+        required: ["topic", "resource_type"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_backup",
+      description: "Crée un backup complet de la base de données. Utile avant des migrations ou opérations critiques.",
+      parameters: {
+        type: "object",
+        properties: {
+          backup_type: { type: "string", enum: ["full", "incremental"], description: "Type de backup (défaut: full)" },
+          tables: { type: "array", items: { type: "string" }, description: "Tables spécifiques à backup (optionnel, sinon toutes)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_telegram_stats",
+      description: "Récupère les statistiques du bot Telegram (messages traités, erreurs, temps de réponse).",
+      parameters: {
+        type: "object",
+        properties: {
+          period: { type: "string", enum: ["today", "week", "month", "all"], description: "Période d'analyse (défaut: week)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_calendar_availability",
+      description: "Récupère les créneaux disponibles pour planifier un RDV.",
+      parameters: {
+        type: "object",
+        properties: {
+          start_date: { type: "string", description: "Date de début (YYYY-MM-DD)" },
+          end_date: { type: "string", description: "Date de fin (YYYY-MM-DD)" },
+          duration_minutes: { type: "number", description: "Durée souhaitée en minutes (défaut: 60)" },
+          booking_type_slug: { type: "string", description: "Type de RDV (decouverte, suivi, demo)" },
+        },
+        required: ["start_date"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "detect_security_anomalies",
+      description: "Lance une détection d'anomalies sécurité (tentatives connexion suspectes, comportements anormaux).",
+      parameters: {
+        type: "object",
+        properties: {
+          period_hours: { type: "number", description: "Période d'analyse en heures (défaut: 24)" },
+          include_resolved: { type: "boolean", description: "Inclure les anomalies déjà résolues" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_security_logs",
+      description: "Récupère les logs de connexion et tentatives d'authentification.",
+      parameters: {
+        type: "object",
+        properties: {
+          email: { type: "string", description: "Filtrer par email" },
+          success_only: { type: "boolean", description: "Ne montrer que les connexions réussies" },
+          failed_only: { type: "boolean", description: "Ne montrer que les échecs" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 50)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_performance_metrics",
+      description: "Récupère les métriques de performance du site (Lighthouse scores, Core Web Vitals).",
+      parameters: {
+        type: "object",
+        properties: {
+          environment: { type: "string", enum: ["production", "staging"], description: "Environnement (défaut: production)" },
+          limit: { type: "number", description: "Nombre de mesures (défaut: 10)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_stale_entities",
+      description: "Liste les entités dont la synthèse IA (Consulte 360°) est obsolète et doit être régénérée.",
+      parameters: {
+        type: "object",
+        properties: {
+          entity_type: { type: "string", enum: ["lead", "project", "partner", "all"], description: "Type d'entité (défaut: all)" },
+          limit: { type: "number", description: "Nombre max de résultats (défaut: 20)" },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "bulk_refresh_syntheses",
+      description: "Régénère en batch les synthèses IA de toutes les entités marquées 'stale'. Opération longue.",
+      parameters: {
+        type: "object",
+        properties: {
+          entity_type: { type: "string", enum: ["lead", "project", "partner", "all"], description: "Type d'entité (défaut: all)" },
+          max_count: { type: "number", description: "Nombre max à traiter (défaut: 10)" },
+        },
+      },
+    },
+  },
 ];
 
 // =============================================================================
@@ -7248,6 +7397,474 @@ Génère un contenu HTML pour email avec:
       } catch (err) {
         return { success: false, error: err instanceof Error ? err.message : "Email error" };
       }
+    }
+
+    // ============ NOUVEAUX OUTILS v8.0 ============
+
+    case "sync_google_calendar": {
+      const direction = (args.direction as string) || "both";
+      const daysRange = (args.days_range as number) || 30;
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/sync-google-calendar`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ direction, days_range: daysRange }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          return { success: false, error: `Sync failed: ${errorText}` };
+        }
+
+        const result = await response.json();
+        return {
+          success: true,
+          synced: result.synced || 0,
+          created: result.created || 0,
+          updated: result.updated || 0,
+          message: `📅 Calendrier synchronisé : ${result.synced || 0} événements (${result.created || 0} créés, ${result.updated || 0} mis à jour)`
+        };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Sync error" };
+      }
+    }
+
+    case "generate_article_ai": {
+      const topic = args.topic as string;
+      const resourceType = args.resource_type as string;
+      const keywords = args.keywords as string[] || [];
+      const tone = (args.tone as string) || "professionnel";
+      const length = (args.length as string) || "moyen";
+
+      if (!topic || !resourceType) {
+        return { success: false, error: "topic et resource_type requis" };
+      }
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-article-gpt`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            topic,
+            resource_type: resourceType,
+            keywords,
+            tone,
+            length,
+            save_draft: true,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          return { success: false, error: `Article generation failed: ${errorText}` };
+        }
+
+        const result = await response.json();
+        return {
+          success: true,
+          article_id: result.article?.id || result.id,
+          title: result.article?.title || result.title,
+          slug: result.article?.slug || result.slug,
+          word_count: result.word_count,
+          message: `✍️ Article généré : "${result.article?.title || result.title}" (${result.word_count || "~1000"} mots)`
+        };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Article generation error" };
+      }
+    }
+
+    case "create_backup": {
+      const backupType = (args.backup_type as string) || "full";
+      const tables = args.tables as string[] || [];
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/create-database-backup`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ backup_type: backupType, tables }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          return { success: false, error: `Backup failed: ${errorText}` };
+        }
+
+        const result = await response.json();
+        return {
+          success: true,
+          backup_id: result.backup_id || result.id,
+          status: result.status,
+          tables_count: result.tables_backed_up?.length || 0,
+          message: `💾 Backup ${backupType} créé : ${result.tables_backed_up?.length || 0} tables sauvegardées`
+        };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Backup error" };
+      }
+    }
+
+    case "get_telegram_stats": {
+      const period = (args.period as string) || "week";
+      
+      // Calculate date range based on period
+      const now = new Date();
+      let startDate: Date;
+      switch (period) {
+        case "today":
+          startDate = new Date(now.setHours(0, 0, 0, 0));
+          break;
+        case "week":
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case "month":
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          startDate = new Date(0);
+      }
+
+      const { data: stats, error } = await supabase
+        .from("telegram_stats")
+        .select("message_count, error_count, avg_response_time_ms, date")
+        .gte("date", startDate.toISOString().split("T")[0])
+        .order("date", { ascending: false });
+
+      if (error) throw error;
+
+      // Aggregate stats
+      const totalMessages = (stats || []).reduce((sum: number, s: { message_count?: number }) => sum + (s.message_count || 0), 0);
+      const totalErrors = (stats || []).reduce((sum: number, s: { error_count?: number }) => sum + (s.error_count || 0), 0);
+      const avgResponseTime = (stats || []).length > 0 
+        ? Math.round((stats || []).reduce((sum: number, s: { avg_response_time_ms?: number }) => sum + (s.avg_response_time_ms || 0), 0) / stats!.length)
+        : 0;
+      const successRate = totalMessages > 0 ? Math.round((1 - totalErrors / totalMessages) * 100) : 100;
+
+      return {
+        period,
+        total_messages: totalMessages,
+        total_errors: totalErrors,
+        success_rate: `${successRate}%`,
+        avg_response_time_ms: avgResponseTime,
+        days_analyzed: (stats || []).length,
+        message: `📊 Stats Telegram (${period}): ${totalMessages} messages, ${successRate}% succès, ${avgResponseTime}ms moyenne`
+      };
+    }
+
+    case "get_calendar_availability": {
+      const startDate = args.start_date as string;
+      const endDate = args.end_date as string || startDate;
+      const durationMinutes = (args.duration_minutes as number) || 60;
+      const bookingTypeSlug = args.booking_type_slug as string;
+
+      if (!startDate) {
+        return { success: false, error: "start_date requis (YYYY-MM-DD)" };
+      }
+
+      // Get existing bookings in range
+      const { data: existingBookings } = await supabase
+        .from("bookings")
+        .select("start_time, end_time")
+        .gte("start_time", startDate)
+        .lte("start_time", endDate + "T23:59:59")
+        .neq("status", "cancelled");
+
+      // Get availability rules
+      const { data: availabilityRules } = await supabase
+        .from("booking_availability")
+        .select("day_of_week, start_time, end_time, is_active")
+        .eq("is_active", true);
+
+      // Calculate available slots (simplified)
+      const slots: { date: string; time: string; available: boolean }[] = [];
+      const startDateObj = new Date(startDate);
+      const endDateObj = new Date(endDate);
+      
+      for (let d = new Date(startDateObj); d <= endDateObj; d.setDate(d.getDate() + 1)) {
+        const dayOfWeek = d.getDay();
+        const dateStr = d.toISOString().split("T")[0];
+        
+        // Check availability rules for this day
+        const dayRules = (availabilityRules || []).filter((r: { day_of_week: number }) => r.day_of_week === dayOfWeek);
+        
+        for (const rule of dayRules) {
+          // Generate slots from rule.start_time to rule.end_time
+          const [startH, startM] = rule.start_time.split(":").map(Number);
+          const [endH, endM] = rule.end_time.split(":").map(Number);
+          
+          for (let h = startH; h < endH; h++) {
+            for (const m of [0, 30]) {
+              if (h === startH && m < startM) continue;
+              if (h === endH - 1 && m + durationMinutes / 60 > 60) continue;
+              
+              const timeStr = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+              const slotStart = new Date(`${dateStr}T${timeStr}:00`);
+              const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60000);
+              
+              // Check if slot overlaps with existing bookings
+              const isOverlapping = (existingBookings || []).some((b: { start_time: string; end_time: string }) => {
+                const bStart = new Date(b.start_time);
+                const bEnd = new Date(b.end_time);
+                return slotStart < bEnd && slotEnd > bStart;
+              });
+              
+              if (!isOverlapping) {
+                slots.push({ date: dateStr, time: timeStr, available: true });
+              }
+            }
+          }
+        }
+      }
+
+      return {
+        start_date: startDate,
+        end_date: endDate,
+        duration_minutes: durationMinutes,
+        available_slots: slots.slice(0, 20),
+        total_available: slots.length,
+        message: `📅 ${slots.length} créneaux disponibles entre le ${startDate} et le ${endDate}`
+      };
+    }
+
+    case "detect_security_anomalies": {
+      const periodHours = (args.period_hours as number) || 24;
+      const includeResolved = args.include_resolved === true;
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/detect-anomalies`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ period_hours: periodHours, include_resolved: includeResolved }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          return { success: false, error: `Anomaly detection failed: ${errorText}` };
+        }
+
+        const result = await response.json();
+        return {
+          success: true,
+          anomalies_found: result.anomalies?.length || 0,
+          anomalies: result.anomalies?.slice(0, 10) || [],
+          period_hours: periodHours,
+          message: result.anomalies?.length > 0 
+            ? `⚠️ ${result.anomalies.length} anomalies détectées dans les dernières ${periodHours}h`
+            : `✅ Aucune anomalie détectée dans les dernières ${periodHours}h`
+        };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Anomaly detection error" };
+      }
+    }
+
+    case "get_security_logs": {
+      let query = supabase
+        .from("login_attempts")
+        .select("id, email, success, failure_reason, attempted_at, ip_address, user_agent")
+        .order("attempted_at", { ascending: false })
+        .limit(args.limit as number || 50);
+
+      if (args.email) query = query.eq("email", args.email);
+      if (args.success_only === true) query = query.eq("success", true);
+      if (args.failed_only === true) query = query.eq("success", false);
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Calculate summary
+      const successCount = (data || []).filter((l: { success: boolean }) => l.success).length;
+      const failedCount = (data || []).filter((l: { success: boolean }) => !l.success).length;
+
+      return {
+        logs: data,
+        count: data?.length || 0,
+        summary: {
+          successful: successCount,
+          failed: failedCount,
+          success_rate: data?.length ? `${Math.round(successCount / data.length * 100)}%` : "N/A"
+        },
+        message: `🔐 ${data?.length || 0} tentatives de connexion (${successCount} réussies, ${failedCount} échouées)`
+      };
+    }
+
+    case "get_performance_metrics": {
+      const environment = (args.environment as string) || "production";
+      const limit = (args.limit as number) || 10;
+
+      const { data, error } = await supabase
+        .from("performance_metrics")
+        .select("performance_score, accessibility_score, best_practices_score, seo_score, lcp, fcp, cls, recorded_at, environment")
+        .eq("environment", environment)
+        .order("recorded_at", { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+
+      // Calculate averages
+      const avgPerformance = data?.length 
+        ? Math.round((data.reduce((sum: number, m: { performance_score?: number }) => sum + (m.performance_score || 0), 0) / data.length))
+        : 0;
+      const avgSeo = data?.length 
+        ? Math.round((data.reduce((sum: number, m: { seo_score?: number }) => sum + (m.seo_score || 0), 0) / data.length))
+        : 0;
+
+      return {
+        metrics: data,
+        count: data?.length || 0,
+        averages: {
+          performance: avgPerformance,
+          seo: avgSeo,
+          accessibility: data?.length ? Math.round(data.reduce((sum: number, m: { accessibility_score?: number }) => sum + (m.accessibility_score || 0), 0) / data.length) : 0,
+        },
+        environment,
+        message: `📈 Performance ${environment}: ${avgPerformance}/100 (SEO: ${avgSeo}/100)`
+      };
+    }
+
+    case "get_stale_entities": {
+      const entityType = (args.entity_type as string) || "all";
+      const limit = (args.limit as number) || 20;
+
+      const results: { type: string; id: string; name: string; stale_since?: string }[] = [];
+
+      if (entityType === "all" || entityType === "lead") {
+        const { data: leads } = await supabase
+          .from("leads")
+          .select("id, name, updated_at")
+          .eq("synthesis_stale", true)
+          .limit(limit);
+        for (const l of leads || []) {
+          results.push({ type: "lead", id: l.id, name: l.name, stale_since: l.updated_at });
+        }
+      }
+
+      if (entityType === "all" || entityType === "project") {
+        const { data: projects } = await supabase
+          .from("projects")
+          .select("id, name, updated_at")
+          .eq("synthesis_stale", true)
+          .limit(limit);
+        for (const p of projects || []) {
+          results.push({ type: "project", id: p.id, name: p.name, stale_since: p.updated_at });
+        }
+      }
+
+      if (entityType === "all" || entityType === "partner") {
+        const { data: partners } = await supabase
+          .from("partners")
+          .select("id, name, updated_at")
+          .eq("synthesis_stale", true)
+          .is("deleted_at", null)
+          .limit(limit);
+        for (const p of partners || []) {
+          results.push({ type: "partner", id: p.id, name: p.name, stale_since: p.updated_at });
+        }
+      }
+
+      return {
+        stale_entities: results.slice(0, limit),
+        count: results.length,
+        by_type: {
+          leads: results.filter(r => r.type === "lead").length,
+          projects: results.filter(r => r.type === "project").length,
+          partners: results.filter(r => r.type === "partner").length,
+        },
+        message: results.length > 0
+          ? `⚠️ ${results.length} entités ont une synthèse obsolète`
+          : `✅ Toutes les synthèses sont à jour`
+      };
+    }
+
+    case "bulk_refresh_syntheses": {
+      const entityType = (args.entity_type as string) || "all";
+      const maxCount = (args.max_count as number) || 10;
+
+      // Get stale entities
+      const staleEntities: { type: string; id: string }[] = [];
+
+      if (entityType === "all" || entityType === "lead") {
+        const { data } = await supabase
+          .from("leads")
+          .select("id")
+          .eq("synthesis_stale", true)
+          .limit(maxCount);
+        for (const l of data || []) {
+          staleEntities.push({ type: "lead", id: l.id });
+        }
+      }
+
+      if (entityType === "all" || entityType === "project") {
+        const remaining = maxCount - staleEntities.length;
+        if (remaining > 0) {
+          const { data } = await supabase
+            .from("projects")
+            .select("id")
+            .eq("synthesis_stale", true)
+            .limit(remaining);
+          for (const p of data || []) {
+            staleEntities.push({ type: "project", id: p.id });
+          }
+        }
+      }
+
+      if (entityType === "all" || entityType === "partner") {
+        const remaining = maxCount - staleEntities.length;
+        if (remaining > 0) {
+          const { data } = await supabase
+            .from("partners")
+            .select("id")
+            .eq("synthesis_stale", true)
+            .is("deleted_at", null)
+            .limit(remaining);
+          for (const p of data || []) {
+            staleEntities.push({ type: "partner", id: p.id });
+          }
+        }
+      }
+
+      if (staleEntities.length === 0) {
+        return {
+          success: true,
+          refreshed: 0,
+          message: "✅ Aucune synthèse obsolète à régénérer"
+        };
+      }
+
+      // Trigger refresh for each (fire and forget)
+      let refreshedCount = 0;
+      for (const entity of staleEntities.slice(0, maxCount)) {
+        try {
+          await fetch(`${SUPABASE_URL}/functions/v1/synthesize-entity-documents`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ entity_type: entity.type, entity_id: entity.id }),
+          });
+          refreshedCount++;
+        } catch {
+          // Continue on error
+        }
+      }
+
+      return {
+        success: true,
+        refreshed: refreshedCount,
+        total_stale: staleEntities.length,
+        message: `🔄 ${refreshedCount} synthèses en cours de régénération`
+      };
     }
 
     default:
