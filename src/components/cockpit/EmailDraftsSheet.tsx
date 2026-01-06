@@ -91,6 +91,22 @@ export function EmailDraftsSheet({ open, onOpenChange, leadId }: EmailDraftsShee
         throw new Error("Données email incomplètes");
       }
 
+      // Check email domain warmup status before sending
+      const { data: domains } = await supabase
+        .from("email_domains")
+        .select("domain, warmup_status, is_active, domain_type")
+        .eq("is_active", true)
+        .in("domain_type", ["transactional", "primary"]);
+
+      const readyDomain = domains?.find(d => d.warmup_status === "ready");
+      
+      if (!readyDomain && domains && domains.length > 0) {
+        const warmingDomains = domains.filter(d => d.warmup_status === "warming");
+        if (warmingDomains.length > 0) {
+          throw new Error(`Domaines en cours de warmup (${warmingDomains.map(d => d.domain).join(", ")}). Attendez que le warmup soit terminé ou utilisez un domaine prêt.`);
+        }
+      }
+
       // Call the send-email edge function
       const response = await supabase.functions.invoke("send-transactional-email", {
         body: {
