@@ -3240,6 +3240,45 @@ export type Database = {
           },
         ]
       }
+      telegram_conversation_context: {
+        Row: {
+          active_entity_id: string | null
+          active_entity_type: string | null
+          chat_id: number
+          collected_info: Json | null
+          content: string
+          created_at: string
+          expires_at: string
+          id: string
+          role: string
+          user_id: number
+        }
+        Insert: {
+          active_entity_id?: string | null
+          active_entity_type?: string | null
+          chat_id: number
+          collected_info?: Json | null
+          content: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          role: string
+          user_id: number
+        }
+        Update: {
+          active_entity_id?: string | null
+          active_entity_type?: string | null
+          chat_id?: number
+          collected_info?: Json | null
+          content?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          role?: string
+          user_id?: number
+        }
+        Relationships: []
+      }
       telegram_processed_updates: {
         Row: {
           chat_id: number
@@ -4274,6 +4313,7 @@ export type Database = {
       cleanup_expired_ai_memory: { Args: never; Returns: number }
       cleanup_expired_cockpit_data: { Args: never; Returns: undefined }
       cleanup_login_attempts: { Args: never; Returns: undefined }
+      cleanup_old_telegram_context: { Args: never; Returns: number }
       cleanup_old_telegram_updates: { Args: never; Returns: undefined }
       cleanup_orphan_data: {
         Args: never
@@ -4403,6 +4443,16 @@ export type Database = {
           similarity: number
         }[]
       }
+      search_entities_fuzzy: {
+        Args: { entity_types?: string[]; search_term: string }
+        Returns: {
+          entity_company: string
+          entity_id: string
+          entity_name: string
+          entity_type: string
+          similarity_score: number
+        }[]
+      }
       search_similar_resources: {
         Args: {
           filter_types?: string[]
@@ -4420,6 +4470,8 @@ export type Database = {
           similarity: number
         }[]
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       unlock_expired_accounts: { Args: never; Returns: undefined }
       update_lead_familiarity: {
         Args: { p_lead_id: string }
