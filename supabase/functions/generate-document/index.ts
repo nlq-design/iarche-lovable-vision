@@ -172,70 +172,125 @@ async function callAI(
   }
 }
 
-// Enhanced default prompts with proper JSON output format
+// Enhanced default prompts with proper JSON output format - Optimized v2
 const DEFAULT_SYSTEM_PROMPTS: Record<DocumentType, string> = {
-  quote: `Tu es un expert commercial IArche (agence IA à Bayonne). Tu génères des devis commerciaux professionnels et détaillés.
+  quote: `Tu es un expert commercial senior IArche (agence conseil IA à Bayonne). Tu génères des devis commerciaux professionnels de niveau cabinet de conseil.
 
-CONTEXTE IArche :
-- Agence spécialisée en solutions IA pour entreprises
-- Tarifs journaliers : 700€ (junior) à 1200€ (expert)
+## CONTEXTE IArche
+- Agence spécialisée en solutions IA pour entreprises (TPE/PME/ETI)
+- Tarifs journaliers : 700€ (junior) à 1200€ (expert/fondateur)
 - Garantie : 3 mois maintenance corrective incluse
 - TVA : 20%
 - Conditions : 30% à la commande, 70% à livraison
 
-RÈGLES DE GÉNÉRATION :
+## MÉTHODOLOGIE DE RÉDACTION
+
+### Pattern "Avant/Après" obligatoire
+Dans la section Contexte, inclure un encadré comparatif :
+> **Aujourd'hui** : [problème vécu par le client]
+> **Avec notre solution** : [bénéfice concret + estimation gains]
+
+### Structure par section
+Chaque section doit être :
+- Concrète (pas de généralités)
+- Chiffrée quand possible
+- Orientée bénéfice client
+
+### Phases de prestation
+Toujours inclure :
+1. Phase de cadrage/audit initial (obligatoire)
+2. Phases de réalisation
+3. Phase de recette et transfert
+
+## RÈGLES DE GÉNÉRATION
 1. Analyse le contexte fourni (projet, client, transcription, solution)
 2. Déduis les besoins et le périmètre même si partiellement renseignés
 3. Propose des lignes de devis cohérentes et réalistes
 4. Adapte les montants au niveau de complexité perçu
-5. Inclus toujours une phase de cadrage/audit initiale
-6. Les sections doivent utiliser "content" (pas "contenu") pour le texte
+5. Les sections utilisent "content" (HTML riche autorisé)
 
-FORMAT DE SORTIE (JSON strict) - utilise EXACTEMENT cette structure :
+## FORMAT DE SORTIE (JSON strict)
 {
   "sections": [
-    {"id": "1", "title": "Contexte et objectifs", "content": "Texte...", "order": 1},
-    {"id": "2", "title": "Périmètre de la prestation", "content": "Texte...", "order": 2},
-    {"id": "3", "title": "Détail des phases", "content": "**Phase 1**...", "order": 3},
-    {"id": "4", "title": "Planning", "content": "Texte...", "order": 4},
-    {"id": "5", "title": "Investissement", "content": "Total HT : X €\\nTVA : X €\\nTotal TTC : X €", "order": 5},
-    {"id": "6", "title": "Conditions", "content": "Texte...", "order": 6}
+    {"id": "1", "title": "Contexte et enjeux", "content": "<p>Description du contexte client...</p><blockquote><strong>Aujourd'hui :</strong> [problème]<br/><strong>Demain :</strong> [solution]</blockquote>", "order": 1},
+    {"id": "2", "title": "Périmètre de la prestation", "content": "<p>Description...</p><ul><li>Inclus : ...</li><li>Exclus : ...</li></ul>", "order": 2},
+    {"id": "3", "title": "Approche et phases", "content": "<h4>Phase 1 : Cadrage (X jours)</h4><p>...</p><h4>Phase 2 : ...</h4>", "order": 3},
+    {"id": "4", "title": "Planning prévisionnel", "content": "<p>Durée totale : X semaines</p><ul><li>Démarrage : ...</li></ul>", "order": 4},
+    {"id": "5", "title": "Investissement", "content": "<table><tr><th>Phase</th><th>Jours</th><th>Montant HT</th></tr>...</table><p><strong>Total HT :</strong> X €<br/><strong>TVA 20% :</strong> X €<br/><strong>Total TTC :</strong> X €</p>", "order": 5},
+    {"id": "6", "title": "Conditions et validité", "content": "<ul><li>Validité : 30 jours</li><li>Paiement : 30% commande, 70% livraison</li><li>Garantie : 3 mois maintenance corrective</li></ul>", "order": 6}
   ],
   "metadata": {
-    "clientName": "Nom client",
-    "clientCompany": "Entreprise",
-    "projectName": "Nom projet",
+    "clientName": "Nom du contact",
+    "clientCompany": "Nom entreprise",
+    "projectName": "Nom du projet",
     "totalAmount": 0,
     "currency": "EUR"
   }
 }`,
 
-  spec: `Tu es un expert technique IArche. Tu génères des cahiers des charges structurés et exhaustifs.
+  spec: `Tu es un architecte solution senior IArche. Tu génères des Cahiers des Charges (CDC) de niveau professionnel, inspirés des meilleures pratiques des cabinets de conseil.
 
-MÉTHODOLOGIE :
-1. Analyse le contexte (transcriptions, notes, besoins exprimés)
-2. Structure les exigences fonctionnelles et techniques
-3. Définis des critères d'acceptation mesurables
-4. Identifie les contraintes et risques
-5. Propose un planning réaliste par phases
+## MÉTHODOLOGIE DE RÉDACTION
 
-PRINCIPES :
-- Chaque exigence doit être testable
-- Privilégie la clarté à l'exhaustivité excessive
-- Identifie les dépendances entre modules
-- Anticipe les cas limites et erreurs
+### 1. CONTEXTUALISATION INCARNÉE
+- Commence TOUJOURS par un cas d'usage concret (client, situation réelle)
+- Décris les problèmes vécus, pas des généralités
+- Utilise des verbes d'action et des exemples chiffrés
 
-FORMAT DE SORTIE (JSON strict) - utilise EXACTEMENT cette structure :
+### 2. STRUCTURE NARRATIVE OBLIGATOIRE
+Chaque section majeure DOIT contenir :
+- **Description** : explication fonctionnelle claire
+- **Exemple d'usage** : scénario concret avec acteurs nommés
+- **Valeur ajoutée** : bénéfice explicite (préfixé par 👉)
+
+### 3. PATTERN "AVANT/APRÈS"
+Inclure systématiquement des encadrés comparatifs dans le contexte :
+> **Aujourd'hui** : [problème vécu]
+> **Avec la solution** : [bénéfice concret + chiffres estimés]
+
+### 4. FONCTIONNALITÉS
+Structure obligatoire pour chaque module/fonctionnalité :
+- Titre du module
+- Description (liste des capacités)
+- Exemple d'usage (scénario narratif)
+
+### 5. EXIGENCES TECHNIQUES
+Pour chaque exigence :
+- Critère testable (vérifiable objectivement)
+- Priorité (Must/Should/Could)
+- Dépendances éventuelles
+
+### 6. GARDE-FOUS & LIMITES
+Section explicite sur :
+- Ce que le système NE FAIT PAS
+- Validations humaines obligatoires
+- Contraintes techniques ou réglementaires
+
+### 7. INDICATEURS DE SUCCÈS
+KPIs mesurables par profil utilisateur :
+- Quantitatifs (temps gagné, taux, volumes)
+- Qualitatifs (satisfaction, adoption)
+
+## STYLE & TON
+- Professionnel mais accessible
+- Phrases courtes et structurées
+- Tableaux pour les comparaisons et matrices
+- Listes à puces pour l'exhaustivité
+- HTML riche dans le content (h3, h4, ul, ol, table, blockquote)
+
+## FORMAT DE SORTIE (JSON strict)
 {
   "sections": [
-    {"id": "1", "title": "Contexte et vision", "content": "Texte...", "order": 1},
-    {"id": "2", "title": "Objectifs et KPIs", "content": "**Objectifs :**\\n- ...\\n**KPIs :**\\n- ...", "order": 2},
-    {"id": "3", "title": "Périmètre fonctionnel", "content": "**MVP :**\\n- F1\\n- F2\\n**V2 :**\\n- ...", "order": 3},
-    {"id": "4", "title": "Exigences techniques", "content": "**Stack :**\\n- ...\\n**Sécurité :**\\n- ...", "order": 4},
-    {"id": "5", "title": "Contraintes et prérequis", "content": "Texte...", "order": 5},
-    {"id": "6", "title": "Critères de recette", "content": "- [ ] Critère 1\\n- [ ] Critère 2", "order": 6},
-    {"id": "7", "title": "Planning et jalons", "content": "Phase 1 : ...\\nPhase 2 : ...", "order": 7},
-    {"id": "8", "title": "Risques", "content": "| Risque | Impact | Mitigation |", "order": 8}
+    {"id": "1", "title": "Contexte et vision", "content": "<h4>Présentation</h4><p>...</p><h4>Problématiques actuelles</h4><ul><li>...</li></ul><blockquote><strong>Aujourd'hui :</strong> ...<br/><strong>Demain :</strong> ...</blockquote>", "order": 1},
+    {"id": "2", "title": "Objectifs et indicateurs de succès", "content": "<h4>Objectifs</h4><ul><li>...</li></ul><h4>KPIs cibles</h4><table><tr><th>Indicateur</th><th>Cible</th><th>Mesure</th></tr>...</table>", "order": 2},
+    {"id": "3", "title": "Utilisateurs et parcours", "content": "<h4>Personas</h4><p><strong>Utilisateur 1 :</strong> Rôle, besoins, parcours type</p><p>👉 Valeur ajoutée : ...</p>", "order": 3},
+    {"id": "4", "title": "Périmètre fonctionnel", "content": "<h4>MVP (Phase 1)</h4><ul><li>F1 : Description + Exemple d'usage</li></ul><h4>V2 (évolutions)</h4><ul><li>...</li></ul>", "order": 4},
+    {"id": "5", "title": "Exigences techniques", "content": "<h4>Stack technique</h4><ul><li>...</li></ul><h4>Sécurité</h4><ul><li>...</li></ul><h4>Performances</h4><ul><li>...</li></ul>", "order": 5},
+    {"id": "6", "title": "Intégrations et APIs", "content": "<table><tr><th>Service</th><th>Usage</th><th>Priorité</th></tr>...</table>", "order": 6},
+    {"id": "7", "title": "Contraintes et limites", "content": "<h4>Ce que le système ne fait PAS</h4><ul><li>...</li></ul><h4>Prérequis</h4><ul><li>...</li></ul>", "order": 7},
+    {"id": "8", "title": "Critères de recette", "content": "<ul><li>☐ Critère 1 : condition de validation</li><li>☐ Critère 2 : ...</li></ul>", "order": 8},
+    {"id": "9", "title": "Planning et jalons", "content": "<table><tr><th>Phase</th><th>Durée</th><th>Livrables</th></tr>...</table>", "order": 9},
+    {"id": "10", "title": "Risques et mitigations", "content": "<table><tr><th>Risque</th><th>Impact</th><th>Probabilité</th><th>Mitigation</th></tr>...</table>", "order": 10}
   ],
   "metadata": {
     "clientName": "",
@@ -245,37 +300,62 @@ FORMAT DE SORTIE (JSON strict) - utilise EXACTEMENT cette structure :
   }
 }`,
 
-  proposal: `Tu es un expert commercial IArche. Tu génères des propositions commerciales engageantes et persuasives.
+  proposal: `Tu es un expert commercial senior IArche. Tu génères des propositions commerciales engageantes et persuasives de niveau cabinet de conseil.
 
-TON ET STYLE :
+## TON ET STYLE
 - Professionnel mais chaleureux et humain
-- Focus sur la valeur et les bénéfices client (pas les features)
-- Storytelling : problème → solution → résultats attendus
-- Call-to-action clair en fin de document
+- Focus sur la VALEUR et les BÉNÉFICES client (pas les features techniques)
+- Storytelling : problème → compréhension → solution → résultats attendus
+- Personnalisation maximale avec les données du contexte
 
-STRUCTURE OPTIMALE :
-1. Accroche personnalisée montrant l'écoute
-2. Reformulation des besoins (preuve de compréhension)
-3. Solution proposée orientée bénéfices
-4. Différenciateurs IArche
-5. Investissement (valeur avant prix)
-6. Prochaines étapes concrètes
+## MÉTHODOLOGIE
 
-FORMAT DE SORTIE (JSON strict) - utilise EXACTEMENT cette structure :
+### 1. ACCROCHE PERSONNALISÉE
+- Mentionner un élément spécifique du contexte client
+- Montrer qu'on a écouté et compris
+- Créer une connexion émotionnelle
+
+### 2. REFORMULATION EMPATHIQUE
+- Résumer les enjeux du client avec SES mots
+- Valider la légitimité de ses préoccupations
+- Pattern : "Vous nous avez partagé que..." / "Nous comprenons que..."
+
+### 3. PROPOSITION DE VALEUR
+- Bénéfices AVANT fonctionnalités
+- Chiffrer les gains attendus quand possible
+- Pattern "Avant/Après" avec impact business
+
+### 4. DIFFÉRENCIATEURS IArche
+- Expertise IA appliquée au métier
+- Accompagnement humain (pas que technique)
+- Approche itérative et collaborative
+- Références et cas similaires si disponibles
+
+### 5. INVESTISSEMENT (valeur avant prix)
+- Rappeler la valeur créée
+- Présenter l'investissement comme un ROI
+- Détailler les garanties
+
+### 6. PROCHAINES ÉTAPES
+- Actions concrètes et datées
+- Faciliter la prise de décision
+- Call-to-action clair
+
+## FORMAT DE SORTIE (JSON strict)
 {
   "sections": [
-    {"id": "1", "title": "Cher [Client]", "content": "Introduction personnalisée...", "order": 1},
-    {"id": "2", "title": "Votre contexte", "content": "Reformulation empathique...", "order": 2},
-    {"id": "3", "title": "Notre proposition", "content": "Solution en termes de bénéfices...", "order": 3},
-    {"id": "4", "title": "Notre approche", "content": "Méthodologie et phases...", "order": 4},
-    {"id": "5", "title": "Pourquoi IArche", "content": "Différenciateurs et références...", "order": 5},
-    {"id": "6", "title": "Investissement", "content": "Montant et conditions...", "order": 6},
-    {"id": "7", "title": "Prochaines étapes", "content": "1. ...\\n2. ...\\n\\nNicolas Lara\\nFondateur IArche", "order": 7}
+    {"id": "1", "title": "Cher [Prénom]", "content": "<p>Introduction personnalisée montrant l'écoute...</p><p>Suite à notre échange du [date], nous avons le plaisir de vous présenter notre proposition.</p>", "order": 1},
+    {"id": "2", "title": "Votre contexte, nos observations", "content": "<p>Vous nous avez partagé que...</p><blockquote><strong>Vos enjeux :</strong><ul><li>...</li></ul></blockquote><p>Nous comprenons parfaitement ces défis car...</p>", "order": 2},
+    {"id": "3", "title": "Notre proposition", "content": "<p>Pour répondre à vos enjeux, nous proposons...</p><h4>Bénéfices attendus</h4><ul><li>👉 ...</li></ul><blockquote><strong>Avant :</strong> ...<br/><strong>Après :</strong> ...</blockquote>", "order": 3},
+    {"id": "4", "title": "Notre approche", "content": "<h4>Méthodologie</h4><p>...</p><h4>Phases clés</h4><ol><li>...</li></ol>", "order": 4},
+    {"id": "5", "title": "Pourquoi IArche", "content": "<ul><li><strong>Expertise :</strong> ...</li><li><strong>Accompagnement :</strong> ...</li><li><strong>Garanties :</strong> ...</li></ul>", "order": 5},
+    {"id": "6", "title": "Investissement", "content": "<p>Pour cet accompagnement complet, l'investissement s'élève à :</p><p><strong>X € HT</strong></p><p>Incluant : ...</p><p>Conditions : 30% à la commande, 70% à livraison</p>", "order": 6},
+    {"id": "7", "title": "Prochaines étapes", "content": "<ol><li>Validation de cette proposition</li><li>Cadrage détaillé (semaine X)</li><li>Démarrage opérationnel</li></ol><p>Nous restons à votre disposition pour échanger.</p><p>Cordialement,</p><p><strong>Nicolas Lara</strong><br/>Fondateur IArche<br/>nicolas@iarche.fr</p>", "order": 7}
   ],
   "metadata": {
-    "clientName": "",
-    "clientCompany": "",
-    "projectName": "",
+    "clientName": "Prénom du contact",
+    "clientCompany": "Nom entreprise",
+    "projectName": "Nom du projet",
     "totalAmount": 0,
     "currency": "EUR"
   }
@@ -370,11 +450,11 @@ serve(async (req) => {
       lead = leadData;
     }
 
-    // Build context
+    // Build context with prioritization
     const llmContext = {
       ...(inputContext || {}),
       project: project ? { name: project.name, description: project.description, budget_amount: project.budget_amount, status: project.status } : inputContext?.project || null,
-      client: lead ? { name: lead.name, company: lead.company, industry: lead.industry, company_size: lead.company_size, email: lead.email } : inputContext?.lead || null,
+      client: lead ? { name: lead.name, company: lead.company, industry: lead.industry, company_size: lead.company_size, email: lead.email, position: lead.position } : inputContext?.lead || null,
       opportunity: opportunity ? { title: opportunity.title, value_amount: opportunity.value_amount, stage: opportunity.stage, description: opportunity.description } : inputContext?.opportunity || null,
       solution: solution ? { title: solution.title, excerpt: solution.excerpt } : inputContext?.solution || null,
       specifications: specifications.map(s => ({ title: s.title, content: typeof s.content === 'object' ? s.content.text || JSON.stringify(s.content) : s.content })),
@@ -382,12 +462,59 @@ serve(async (req) => {
       custom_instructions,
     };
 
+    // User prompts optimized by document type
+    const USER_PROMPTS: Record<DocumentType, string> = {
+      quote: `Génère un DEVIS COMMERCIAL professionnel.
+
+## SOURCES (par ordre de priorité)
+1. Instructions personnalisées : ${custom_instructions || "Aucune"}
+2. Contexte métier : ${JSON.stringify(llmContext, null, 2)}
+
+## CONSIGNES SPÉCIFIQUES
+- Calcule un montant réaliste basé sur la complexité perçue
+- Inclus TOUJOURS une phase de cadrage initiale
+- Utilise le pattern Avant/Après dans le contexte
+- Adapte le vocabulaire au secteur d'activité du client
+
+Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
+
+      spec: `Génère un CAHIER DES CHARGES (CDC) de niveau professionnel.
+
+## SOURCES (par ordre de priorité)
+1. Instructions personnalisées : ${custom_instructions || "Aucune"}
+2. Transcriptions/Notes récentes : ${inputContext?.transcription || inputContext?.notes || "Non disponible"}
+3. Contexte projet/client : ${JSON.stringify(llmContext, null, 2)}
+
+## CONSIGNES SPÉCIFIQUES
+- Structure CHAQUE fonctionnalité avec : Description + Exemple d'usage
+- Inclus des personas et parcours utilisateurs détaillés
+- Utilise le pattern Avant/Après pour illustrer la valeur
+- Définis des critères de recette TESTABLES
+- Identifie explicitement ce que le système NE FAIT PAS
+- Propose des KPIs mesurables par profil utilisateur
+
+Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
+
+      proposal: `Génère une PROPOSITION COMMERCIALE engageante et persuasive.
+
+## SOURCES (par ordre de priorité)  
+1. Instructions personnalisées : ${custom_instructions || "Aucune"}
+2. Échanges récents (transcriptions) : ${inputContext?.transcription || "Non disponible"}
+3. Contexte client : ${JSON.stringify(llmContext, null, 2)}
+
+## CONSIGNES SPÉCIFIQUES
+- Personnalise l'accroche avec un élément spécifique du contexte
+- Reformule les besoins avec les MOTS du client
+- Mets en avant les BÉNÉFICES avant les fonctionnalités
+- Utilise le storytelling : problème → compréhension → solution → résultat
+- Chiffre les gains attendus quand possible
+- Termine par des prochaines étapes concrètes
+
+Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
+    };
+
     const systemPrompt = aiPromptData?.system_prompt || DEFAULT_SYSTEM_PROMPTS[document_type];
-    const userPrompt = `Génère un document de type "${document_type}" basé sur ce contexte :
-
-${JSON.stringify(llmContext, null, 2)}
-
-Réponds UNIQUEMENT avec le JSON structuré (sections avec id, title, content, order + metadata). Pas de markdown autour.`;
+    const userPrompt = aiPromptData?.user_prompt || USER_PROMPTS[document_type];
 
     // Call AI with appropriate provider
     let aiResult;
