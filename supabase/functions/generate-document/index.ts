@@ -238,6 +238,8 @@ function getSystemPrompt(documentType: DocumentType, billingEntity: BillingEntit
   const basePrompts: Record<DocumentType, string> = {
     quote: `Tu es un expert commercial senior chez IArche. Tu génères des devis commerciaux professionnels de niveau cabinet de conseil.
 
+INSTRUCTION CRITIQUE : Tu DOIS générer IMMÉDIATEMENT le JSON du devis. Ne pose JAMAIS de questions. Ne demande JAMAIS de données supplémentaires. Utilise les données fournies dans le user prompt ou invente des valeurs réalistes.
+
 ## SOCIÉTÉ ÉMETTRICE
 ${billingContext}
 
@@ -288,13 +290,14 @@ Pour chaque phase :
 - Garantie
 - Confidentialité
 
-## RÈGLES CRITIQUES
-1. JAMAIS de placeholders type {{...}} ou [...] - utiliser les vraies données
-2. PAS de section "Sommaire" ni "Table des matières"
-3. Chaque section a un content riche et détaillé
-4. Les montants doivent être cohérents et réalistes
+## RÈGLES ABSOLUES
+1. RÉPONDRE UNIQUEMENT avec le JSON - jamais de texte d'accompagnement ni de questions
+2. JAMAIS de placeholders type {{...}} ou [...] - utiliser les vraies données du user prompt
+3. PAS de section "Sommaire" ni "Table des matières"
+4. Chaque section a un content riche et détaillé
+5. Les montants doivent être cohérents et réalistes
 
-## FORMAT DE SORTIE (JSON strict)
+## FORMAT DE SORTIE (JSON strict uniquement)
 {
   "sections": [
     {"id": "1", "title": "Contexte et objectifs", "content": "Contenu détaillé...", "order": 1},
@@ -319,70 +322,30 @@ Pour chaque phase :
 
     spec: `Tu es un architecte solution senior. Tu génères des Cahiers des Charges (CDC) de niveau professionnel.
 
+INSTRUCTION CRITIQUE : Tu DOIS générer IMMÉDIATEMENT le JSON du CDC. Ne pose JAMAIS de questions. Utilise les données fournies ou invente des valeurs réalistes.
+
 ## SOCIÉTÉ ÉMETTRICE
 ${billingContext}
-
-## MÉTHODOLOGIE DE RÉDACTION
-
-### 1. CONTEXTUALISATION INCARNÉE
-- Commence TOUJOURS par un cas d'usage concret (client, situation réelle)
-- Décris les problèmes vécus, pas des généralités
-- Utilise des verbes d'action et des exemples chiffrés
-
-### 2. STRUCTURE NARRATIVE OBLIGATOIRE
-Chaque section majeure DOIT contenir :
-- **Description** : explication fonctionnelle claire
-- **Exemple d'usage** : scénario concret avec acteurs nommés
-- **Valeur ajoutée** : bénéfice explicite (préfixé par 👉)
-
-### 3. PATTERN "AVANT/APRÈS"
-Inclure systématiquement des encadrés comparatifs dans le contexte :
-> **Aujourd'hui** : [problème vécu]
-> **Avec la solution** : [bénéfice concret + chiffres estimés]
-
-### 4. FONCTIONNALITÉS
-Structure obligatoire pour chaque module/fonctionnalité :
-- Titre du module
-- Description (liste des capacités)
-- Exemple d'usage (scénario narratif)
-
-### 5. EXIGENCES TECHNIQUES
-Pour chaque exigence :
-- Critère testable (vérifiable objectivement)
-- Priorité (Must/Should/Could)
-- Dépendances éventuelles
-
-### 6. GARDE-FOUS & LIMITES
-Section explicite sur :
-- Ce que le système NE FAIT PAS
-- Validations humaines obligatoires
-- Contraintes techniques ou réglementaires
-
-### 7. INDICATEURS DE SUCCÈS
-KPIs mesurables par profil utilisateur :
-- Quantitatifs (temps gagné, taux, volumes)
-- Qualitatifs (satisfaction, adoption)
 
 ## STYLE & TON
 - Professionnel mais accessible
 - Phrases courtes et structurées
-- Tableaux pour les comparaisons et matrices
-- Listes à puces pour l'exhaustivité
-- HTML riche dans le content (h3, h4, ul, ol, table, blockquote)
+- Tableaux pour les comparaisons
+- HTML riche dans le content
 
 ## FORMAT DE SORTIE (JSON strict)
 {
   "sections": [
-    {"id": "1", "title": "Contexte et vision", "content": "<h4>Présentation</h4><p>...</p><h4>Problématiques actuelles</h4><ul><li>...</li></ul><blockquote><strong>Aujourd'hui :</strong> ...<br/><strong>Demain :</strong> ...</blockquote>", "order": 1},
-    {"id": "2", "title": "Objectifs et indicateurs de succès", "content": "<h4>Objectifs</h4><ul><li>...</li></ul><h4>KPIs cibles</h4><table><tr><th>Indicateur</th><th>Cible</th><th>Mesure</th></tr>...</table>", "order": 2},
-    {"id": "3", "title": "Utilisateurs et parcours", "content": "<h4>Personas</h4><p><strong>Utilisateur 1 :</strong> Rôle, besoins, parcours type</p><p>👉 Valeur ajoutée : ...</p>", "order": 3},
-    {"id": "4", "title": "Périmètre fonctionnel", "content": "<h4>MVP (Phase 1)</h4><ul><li>F1 : Description + Exemple d'usage</li></ul><h4>V2 (évolutions)</h4><ul><li>...</li></ul>", "order": 4},
-    {"id": "5", "title": "Exigences techniques", "content": "<h4>Stack technique</h4><ul><li>...</li></ul><h4>Sécurité</h4><ul><li>...</li></ul><h4>Performances</h4><ul><li>...</li></ul>", "order": 5},
-    {"id": "6", "title": "Intégrations et APIs", "content": "<table><tr><th>Service</th><th>Usage</th><th>Priorité</th></tr>...</table>", "order": 6},
-    {"id": "7", "title": "Contraintes et limites", "content": "<h4>Ce que le système ne fait PAS</h4><ul><li>...</li></ul><h4>Prérequis</h4><ul><li>...</li></ul>", "order": 7},
-    {"id": "8", "title": "Critères de recette", "content": "<ul><li>☐ Critère 1 : condition de validation</li><li>☐ Critère 2 : ...</li></ul>", "order": 8},
-    {"id": "9", "title": "Planning et jalons", "content": "<table><tr><th>Phase</th><th>Durée</th><th>Livrables</th></tr>...</table>", "order": 9},
-    {"id": "10", "title": "Risques et mitigations", "content": "<table><tr><th>Risque</th><th>Impact</th><th>Probabilité</th><th>Mitigation</th></tr>...</table>", "order": 10}
+    {"id": "1", "title": "Contexte et vision", "content": "<h4>Présentation</h4><p>...</p>", "order": 1},
+    {"id": "2", "title": "Objectifs et KPIs", "content": "<h4>Objectifs</h4><ul><li>...</li></ul>", "order": 2},
+    {"id": "3", "title": "Utilisateurs et parcours", "content": "<h4>Personas</h4><p>...</p>", "order": 3},
+    {"id": "4", "title": "Périmètre fonctionnel", "content": "<h4>MVP</h4><ul><li>...</li></ul>", "order": 4},
+    {"id": "5", "title": "Exigences techniques", "content": "<h4>Stack</h4><ul><li>...</li></ul>", "order": 5},
+    {"id": "6", "title": "Intégrations et APIs", "content": "<table>...</table>", "order": 6},
+    {"id": "7", "title": "Contraintes et limites", "content": "<ul><li>...</li></ul>", "order": 7},
+    {"id": "8", "title": "Critères de recette", "content": "<ul><li>...</li></ul>", "order": 8},
+    {"id": "9", "title": "Planning et jalons", "content": "<table>...</table>", "order": 9},
+    {"id": "10", "title": "Risques et mitigations", "content": "<table>...</table>", "order": 10}
   ],
   "metadata": {
     "clientName": "",
@@ -394,65 +357,33 @@ KPIs mesurables par profil utilisateur :
   }
 }`,
 
-    proposal: `Tu es un expert commercial senior. Tu génères des propositions commerciales engageantes et persuasives de niveau cabinet de conseil.
+    proposal: `Tu es un expert commercial senior. Tu génères des propositions commerciales engageantes et persuasives.
+
+INSTRUCTION CRITIQUE : Tu DOIS générer IMMÉDIATEMENT le JSON de la proposition. Ne pose JAMAIS de questions.
 
 ## SOCIÉTÉ ÉMETTRICE
 ${billingContext}
 
-## TON ET STYLE
-- Professionnel mais chaleureux et humain
-- Focus sur la VALEUR et les BÉNÉFICES client (pas les features techniques)
-- Storytelling : problème → compréhension → solution → résultats attendus
-- Personnalisation maximale avec les données du contexte
-
-## MÉTHODOLOGIE
-
-### 1. ACCROCHE PERSONNALISÉE
-- Mentionner un élément spécifique du contexte client
-- Montrer qu'on a écouté et compris
-- Créer une connexion émotionnelle
-
-### 2. REFORMULATION EMPATHIQUE
-- Résumer les enjeux du client avec SES mots
-- Valider la légitimité de ses préoccupations
-- Pattern : "Vous nous avez partagé que..." / "Nous comprenons que..."
-
-### 3. PROPOSITION DE VALEUR
-- Bénéfices AVANT fonctionnalités
-- Chiffrer les gains attendus quand possible
-- Pattern "Avant/Après" avec impact business
-
-### 4. DIFFÉRENCIATEURS
-- Expertise IA appliquée au métier
-- Accompagnement humain (pas que technique)
-- Approche itérative et collaborative
-- Références et cas similaires si disponibles
-
-### 5. INVESTISSEMENT (valeur avant prix)
-- Rappeler la valeur créée
-- Présenter l'investissement comme un ROI
-- Détailler les garanties
-
-### 6. PROCHAINES ÉTAPES
-- Actions concrètes et datées
-- Faciliter la prise de décision
-- Call-to-action clair
+## STYLE
+- Professionnel mais chaleureux
+- Focus sur la VALEUR et les BÉNÉFICES client
+- Storytelling : problème → solution → résultats
 
 ## FORMAT DE SORTIE (JSON strict)
 {
   "sections": [
-    {"id": "1", "title": "Cher [Prénom]", "content": "<p>Introduction personnalisée montrant l'écoute...</p><p>Suite à notre échange du [date], nous avons le plaisir de vous présenter notre proposition.</p>", "order": 1},
-    {"id": "2", "title": "Votre contexte, nos observations", "content": "<p>Vous nous avez partagé que...</p><blockquote><strong>Vos enjeux :</strong><ul><li>...</li></ul></blockquote><p>Nous comprenons parfaitement ces défis car...</p>", "order": 2},
-    {"id": "3", "title": "Notre proposition", "content": "<p>Pour répondre à vos enjeux, nous proposons...</p><h4>Bénéfices attendus</h4><ul><li>👉 ...</li></ul><blockquote><strong>Avant :</strong> ...<br/><strong>Après :</strong> ...</blockquote>", "order": 3},
-    {"id": "4", "title": "Notre approche", "content": "<h4>Méthodologie</h4><p>...</p><h4>Phases clés</h4><ol><li>...</li></ol>", "order": 4},
-    {"id": "5", "title": "Pourquoi nous", "content": "<ul><li><strong>Expertise :</strong> ...</li><li><strong>Accompagnement :</strong> ...</li><li><strong>Garanties :</strong> ...</li></ul>", "order": 5},
-    {"id": "6", "title": "Investissement", "content": "<p>Pour cet accompagnement complet, l'investissement s'élève à :</p><p><strong>X € HT</strong></p><p>Incluant : ...</p><p>Conditions : ${billingEntity?.default_payment_terms?.deposit_percent || 30}% à la commande, ${billingEntity?.default_payment_terms?.balance_percent || 70}% à livraison</p>", "order": 6},
-    {"id": "7", "title": "Prochaines étapes", "content": "<ol><li>Validation de cette proposition</li><li>Cadrage détaillé (semaine X)</li><li>Démarrage opérationnel</li></ol><p>Nous restons à votre disposition pour échanger.</p><p>Cordialement,</p>", "order": 7}
+    {"id": "1", "title": "Introduction", "content": "<p>...</p>", "order": 1},
+    {"id": "2", "title": "Votre contexte", "content": "<p>...</p>", "order": 2},
+    {"id": "3", "title": "Notre proposition", "content": "<p>...</p>", "order": 3},
+    {"id": "4", "title": "Notre approche", "content": "<p>...</p>", "order": 4},
+    {"id": "5", "title": "Pourquoi nous", "content": "<ul><li>...</li></ul>", "order": 5},
+    {"id": "6", "title": "Investissement", "content": "<p><strong>X € HT</strong></p>", "order": 6},
+    {"id": "7", "title": "Prochaines étapes", "content": "<ol><li>...</li></ol>", "order": 7}
   ],
   "metadata": {
-    "clientName": "Prénom du contact",
-    "clientCompany": "Nom entreprise",
-    "projectName": "Nom du projet",
+    "clientName": "",
+    "clientCompany": "",
+    "projectName": "",
     "totalAmount": 0,
     "currency": "EUR",
     "billingEntityId": "${billingEntity?.id || ''}",
@@ -659,95 +590,69 @@ serve(async (req) => {
 
     // User prompts optimized by document type - with REAL DATA INJECTED
     const USER_PROMPTS: Record<DocumentType, string> = {
-    quote: `Génère un DEVIS COMMERCIAL professionnel pour le client suivant.
+    quote: `GÉNÈRE MAINTENANT LE JSON DU DEVIS COMMERCIAL. Ne pose aucune question.
 
-## ⚠️ RÈGLE ABSOLUE - LECTURE OBLIGATOIRE ⚠️
-Tu dois utiliser les VRAIES VALEURS ci-dessous. 
-INTERDICTION TOTALE d'écrire {{...}}, [...], ou "Non renseigné" dans ta réponse.
-Si une info manque, invente un texte générique adapté au contexte métier.
-
-## DONNÉES RÉELLES À UTILISER
-CLIENT:
-- Nom: ${clientName}
+DONNÉES CLIENT:
+- Nom contact: ${clientName}
 - Entreprise: ${clientCompany}
 - Secteur: ${clientIndustry}
 - Taille: ${clientSize || "PME"}
-- Email: ${clientEmail || "contact@" + clientCompany.toLowerCase().replace(/\s+/g, '') + ".fr"}
 - Poste: ${clientPosition || "Responsable projet"}
 
-PROJET:
+DONNÉES PROJET:
 - Nom: ${projectName}
 - Description: ${projectDescription}
-- Budget indicatif: ${projectBudget || "À définir selon périmètre"}
+${projectBudget ? `- Budget: ${projectBudget}` : ""}
 
-## SOURCES CONTEXTUELLES
-${custom_instructions ? `Instructions client: ${custom_instructions}` : ""}
-${inputContext?.transcription ? `Transcription: ${JSON.stringify(inputContext.transcription)}` : ""}
-${contextNotes.length > 0 ? `Notes: ${contextNotes.map(n => n.content).join(' | ')}` : ""}
-${lead?.ai_documents_summary ? `Synthèse lead: ${lead.ai_documents_summary}` : ""}
+${custom_instructions ? `INSTRUCTIONS SPÉCIFIQUES: ${custom_instructions}` : ""}
+${inputContext?.transcription ? `CONTEXTE ÉCHANGE: ${JSON.stringify(inputContext.transcription)}` : ""}
+${contextNotes.length > 0 ? `NOTES: ${contextNotes.map(n => n.content).join(' | ')}` : ""}
+${lead?.ai_documents_summary ? `RÉSUMÉ: ${lead.ai_documents_summary}` : ""}
 
-## RAPPEL FINAL
-Dans le JSON de sortie:
-- metadata.clientName = "${clientName}"
-- metadata.clientCompany = "${clientCompany}" 
-- metadata.projectName = "${projectName}"
-- Le titre de la première section NE DOIT PAS contenir de placeholder
+CONSIGNES FINALES:
+1. Réponds UNIQUEMENT avec le JSON complet du devis
+2. metadata.clientName = "${clientName}"
+3. metadata.clientCompany = "${clientCompany}"
+4. metadata.projectName = "${projectName}"
+5. AUCUN placeholder {{...}} - utilise les vraies valeurs ci-dessus`,
 
-Réponds UNIQUEMENT en JSON valide, sans balises markdown.`,
+      spec: `GÉNÈRE MAINTENANT LE JSON DU CAHIER DES CHARGES. Ne pose aucune question.
 
-      spec: `Génère un CAHIER DES CHARGES professionnel.
-
-## ⚠️ RÈGLE ABSOLUE - LECTURE OBLIGATOIRE ⚠️
-Tu dois utiliser les VRAIES VALEURS ci-dessous.
-INTERDICTION TOTALE d'écrire {{...}}, [...], ou "Non renseigné" dans ta réponse.
-
-## DONNÉES RÉELLES À UTILISER
-CLIENT:
+DONNÉES CLIENT:
 - Nom: ${clientName}
 - Entreprise: ${clientCompany}
 - Secteur: ${clientIndustry}
 
-PROJET:
+DONNÉES PROJET:
 - Nom: ${projectName}
 - Description: ${projectDescription}
 
-## SOURCES CONTEXTUELLES
-${custom_instructions ? `Instructions: ${custom_instructions}` : ""}
-${inputContext?.transcription ? `Transcription: ${JSON.stringify(inputContext.transcription)}` : ""}
-${contextNotes.length > 0 ? `Notes: ${contextNotes.map(n => n.content).join(' | ')}` : ""}
+${custom_instructions ? `INSTRUCTIONS: ${custom_instructions}` : ""}
+${inputContext?.transcription ? `CONTEXTE: ${JSON.stringify(inputContext.transcription)}` : ""}
+${contextNotes.length > 0 ? `NOTES: ${contextNotes.map(n => n.content).join(' | ')}` : ""}
 
-## RAPPEL FINAL
-metadata.clientCompany = "${clientCompany}"
-metadata.projectName = "${projectName}"
+CONSIGNES:
+1. Réponds UNIQUEMENT avec le JSON complet
+2. AUCUN placeholder {{...}} - utilise les vraies valeurs ci-dessus`,
 
-Réponds UNIQUEMENT en JSON valide, sans balises markdown.`,
+      proposal: `GÉNÈRE MAINTENANT LE JSON DE LA PROPOSITION COMMERCIALE. Ne pose aucune question.
 
-      proposal: `Génère une PROPOSITION COMMERCIALE engageante.
-
-## ⚠️ RÈGLE ABSOLUE - LECTURE OBLIGATOIRE ⚠️
-Tu dois utiliser les VRAIES VALEURS ci-dessous.
-INTERDICTION TOTALE d'écrire {{...}}, [...], ou "Non renseigné" dans ta réponse.
-
-## DONNÉES RÉELLES À UTILISER
-CLIENT:
-- Prénom/Nom: ${clientName}
+DONNÉES CLIENT:
+- Nom: ${clientName}
 - Entreprise: ${clientCompany}
 - Secteur: ${clientIndustry}
 
-PROJET:
+DONNÉES PROJET:
 - Nom: ${projectName}
 - Description: ${projectDescription}
 
-## SOURCES CONTEXTUELLES
-${custom_instructions ? `Instructions: ${custom_instructions}` : ""}
-${inputContext?.transcription ? `Échanges: ${JSON.stringify(inputContext.transcription)}` : ""}
-${contextNotes.length > 0 ? `Notes: ${contextNotes.map(n => n.content).join(' | ')}` : ""}
+${custom_instructions ? `INSTRUCTIONS: ${custom_instructions}` : ""}
+${inputContext?.transcription ? `CONTEXTE: ${JSON.stringify(inputContext.transcription)}` : ""}
+${contextNotes.length > 0 ? `NOTES: ${contextNotes.map(n => n.content).join(' | ')}` : ""}
 
-## RAPPEL FINAL
-metadata.clientName = "${clientName}"
-metadata.clientCompany = "${clientCompany}"
-
-Réponds UNIQUEMENT en JSON valide, sans balises markdown.`,
+CONSIGNES:
+1. Réponds UNIQUEMENT avec le JSON complet
+2. AUCUN placeholder {{...}} - utilise les vraies valeurs ci-dessus`,
     };
     const userPrompt = aiPromptData?.user_prompt || USER_PROMPTS[document_type];
 
