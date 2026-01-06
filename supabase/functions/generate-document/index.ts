@@ -627,109 +627,109 @@ serve(async (req) => {
     // Use dynamic system prompt with billing entity
     const systemPrompt = aiPromptData?.system_prompt || getSystemPrompt(document_type, billingEntity, cgvTemplate);
 
-    // User prompts optimized by document type
+    // Build real data strings for injection
+    const clientName = lead?.name || inputContext?.lead?.name || "Client";
+    const clientCompany = lead?.company || inputContext?.lead?.company || "Entreprise";
+    const clientIndustry = lead?.industry || inputContext?.lead?.industry || "Secteur non précisé";
+    const clientSize = lead?.company_size || inputContext?.lead?.company_size || "";
+    const clientEmail = lead?.email || inputContext?.lead?.email || "";
+    const clientPosition = lead?.position || inputContext?.lead?.position || "";
+    const projectName = project?.name || inputContext?.project?.name || "Projet IA";
+    const projectDescription = project?.description || inputContext?.project?.description || "Solution d'intelligence artificielle sur mesure";
+    const projectBudget = project?.budget_amount ? `${project.budget_amount.toLocaleString('fr-FR')} €` : "";
+
+    // User prompts optimized by document type - with REAL DATA INJECTED
     const USER_PROMPTS: Record<DocumentType, string> = {
-    quote: `Génère un DEVIS COMMERCIAL professionnel.
+    quote: `Génère un DEVIS COMMERCIAL professionnel pour le client suivant.
 
-## DONNÉES CLIENT (À UTILISER DIRECTEMENT - NE PAS METTRE DE PLACEHOLDERS)
-- Nom du contact : ${lead?.name || inputContext?.lead?.name || "Non renseigné"}
-- Entreprise : ${lead?.company || inputContext?.lead?.company || "Non renseigné"}
-- Secteur : ${lead?.industry || inputContext?.lead?.industry || "Non renseigné"}
-- Taille entreprise : ${lead?.company_size || inputContext?.lead?.company_size || "Non renseigné"}
-- Email : ${lead?.email || inputContext?.lead?.email || "Non renseigné"}
-- Poste : ${lead?.position || inputContext?.lead?.position || "Non renseigné"}
+## ⚠️ RÈGLE ABSOLUE - LECTURE OBLIGATOIRE ⚠️
+Tu dois utiliser les VRAIES VALEURS ci-dessous. 
+INTERDICTION TOTALE d'écrire {{...}}, [...], ou "Non renseigné" dans ta réponse.
+Si une info manque, invente un texte générique adapté au contexte métier.
 
-## DONNÉES PROJET
-- Nom du projet : ${project?.name || inputContext?.project?.name || "Non renseigné"}
-- Description : ${project?.description || inputContext?.project?.description || "Non renseigné"}
-- Budget indicatif : ${project?.budget_amount ? project.budget_amount.toLocaleString('fr-FR') + ' €' : "Non renseigné"}
+## DONNÉES RÉELLES À UTILISER
+CLIENT:
+- Nom: ${clientName}
+- Entreprise: ${clientCompany}
+- Secteur: ${clientIndustry}
+- Taille: ${clientSize || "PME"}
+- Email: ${clientEmail || "contact@" + clientCompany.toLowerCase().replace(/\s+/g, '') + ".fr"}
+- Poste: ${clientPosition || "Responsable projet"}
 
-## SOURCES (par ordre de priorité)
-1. Instructions personnalisées : ${custom_instructions || "Aucune"}
-2. Transcriptions/Notes : ${inputContext?.transcription ? JSON.stringify(inputContext.transcription) : "Non disponible"}
-3. Notes de contexte : ${contextNotes.length > 0 ? contextNotes.map(n => n.content).join('\n---\n') : "Non disponible"}
-4. Synthèse IA du lead : ${lead?.ai_documents_summary || "Non disponible"}
-5. Contenu collé : ${inputContext?.pastedContent || "Non disponible"}
+PROJET:
+- Nom: ${projectName}
+- Description: ${projectDescription}
+- Budget indicatif: ${projectBudget || "À définir selon périmètre"}
 
-## CONSIGNES CRITIQUES
-⚠️ INTERDICTION ABSOLUE d'utiliser des placeholders comme {{...}} ou [...]
-⚠️ Utilise les VRAIES DONNÉES ci-dessus. Si une donnée n'est pas disponible, adapte le texte sans placeholder.
-⚠️ Le titre du devis doit contenir le vrai nom de l'entreprise, pas un placeholder.
+## SOURCES CONTEXTUELLES
+${custom_instructions ? `Instructions client: ${custom_instructions}` : ""}
+${inputContext?.transcription ? `Transcription: ${JSON.stringify(inputContext.transcription)}` : ""}
+${contextNotes.length > 0 ? `Notes: ${contextNotes.map(n => n.content).join(' | ')}` : ""}
+${lead?.ai_documents_summary ? `Synthèse lead: ${lead.ai_documents_summary}` : ""}
 
-## CONSIGNES SPÉCIFIQUES
-- Calcule un montant réaliste basé sur la complexité perçue
-- Inclus TOUJOURS une phase de cadrage initiale
-- Utilise le pattern Avant/Après dans le contexte
-- Adapte le vocabulaire au secteur d'activité du client
-- Utilise les infos de la société émettrice pour les mentions légales
+## RAPPEL FINAL
+Dans le JSON de sortie:
+- metadata.clientName = "${clientName}"
+- metadata.clientCompany = "${clientCompany}" 
+- metadata.projectName = "${projectName}"
+- Le titre de la première section NE DOIT PAS contenir de placeholder
 
-Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
+Réponds UNIQUEMENT en JSON valide, sans balises markdown.`,
 
-      spec: `Génère un CAHIER DES CHARGES (CDC) de niveau professionnel.
+      spec: `Génère un CAHIER DES CHARGES professionnel.
 
-## DONNÉES CLIENT (À UTILISER DIRECTEMENT - NE PAS METTRE DE PLACEHOLDERS)
-- Nom du contact : ${lead?.name || inputContext?.lead?.name || "Non renseigné"}
-- Entreprise : ${lead?.company || inputContext?.lead?.company || "Non renseigné"}
-- Secteur : ${lead?.industry || inputContext?.lead?.industry || "Non renseigné"}
+## ⚠️ RÈGLE ABSOLUE - LECTURE OBLIGATOIRE ⚠️
+Tu dois utiliser les VRAIES VALEURS ci-dessous.
+INTERDICTION TOTALE d'écrire {{...}}, [...], ou "Non renseigné" dans ta réponse.
 
-## DONNÉES PROJET
-- Nom du projet : ${project?.name || inputContext?.project?.name || "Non renseigné"}
-- Description : ${project?.description || inputContext?.project?.description || "Non renseigné"}
+## DONNÉES RÉELLES À UTILISER
+CLIENT:
+- Nom: ${clientName}
+- Entreprise: ${clientCompany}
+- Secteur: ${clientIndustry}
 
-## SOURCES (par ordre de priorité)
-1. Instructions personnalisées : ${custom_instructions || "Aucune"}
-2. Transcriptions/Notes récentes : ${inputContext?.transcription ? JSON.stringify(inputContext.transcription) : (inputContext?.notes || "Non disponible")}
-3. Notes de contexte : ${contextNotes.length > 0 ? contextNotes.map(n => n.content).join('\n---\n') : "Non disponible"}
-4. Synthèse IA du lead : ${lead?.ai_documents_summary || "Non disponible"}
-5. Contenu collé : ${inputContext?.pastedContent || "Non disponible"}
+PROJET:
+- Nom: ${projectName}
+- Description: ${projectDescription}
 
-## CONSIGNES CRITIQUES
-⚠️ INTERDICTION ABSOLUE d'utiliser des placeholders comme {{...}} ou [...]
-⚠️ Utilise les VRAIES DONNÉES ci-dessus. Si une donnée n'est pas disponible, adapte le texte sans placeholder.
+## SOURCES CONTEXTUELLES
+${custom_instructions ? `Instructions: ${custom_instructions}` : ""}
+${inputContext?.transcription ? `Transcription: ${JSON.stringify(inputContext.transcription)}` : ""}
+${contextNotes.length > 0 ? `Notes: ${contextNotes.map(n => n.content).join(' | ')}` : ""}
 
-## CONSIGNES SPÉCIFIQUES
-- Structure CHAQUE fonctionnalité avec : Description + Exemple d'usage
-- Inclus des personas et parcours utilisateurs détaillés
-- Utilise le pattern Avant/Après pour illustrer la valeur
-- Définis des critères de recette TESTABLES
-- Identifie explicitement ce que le système NE FAIT PAS
-- Propose des KPIs mesurables par profil utilisateur
+## RAPPEL FINAL
+metadata.clientCompany = "${clientCompany}"
+metadata.projectName = "${projectName}"
 
-Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
+Réponds UNIQUEMENT en JSON valide, sans balises markdown.`,
 
-      proposal: `Génère une PROPOSITION COMMERCIALE engageante et persuasive.
+      proposal: `Génère une PROPOSITION COMMERCIALE engageante.
 
-## DONNÉES CLIENT (À UTILISER DIRECTEMENT - NE PAS METTRE DE PLACEHOLDERS)
-- Prénom/Nom du contact : ${lead?.name || inputContext?.lead?.name || "Non renseigné"}
-- Entreprise : ${lead?.company || inputContext?.lead?.company || "Non renseigné"}
-- Secteur : ${lead?.industry || inputContext?.lead?.industry || "Non renseigné"}
+## ⚠️ RÈGLE ABSOLUE - LECTURE OBLIGATOIRE ⚠️
+Tu dois utiliser les VRAIES VALEURS ci-dessous.
+INTERDICTION TOTALE d'écrire {{...}}, [...], ou "Non renseigné" dans ta réponse.
 
-## DONNÉES PROJET
-- Nom du projet : ${project?.name || inputContext?.project?.name || "Non renseigné"}
-- Description : ${project?.description || inputContext?.project?.description || "Non renseigné"}
+## DONNÉES RÉELLES À UTILISER
+CLIENT:
+- Prénom/Nom: ${clientName}
+- Entreprise: ${clientCompany}
+- Secteur: ${clientIndustry}
 
-## SOURCES (par ordre de priorité)  
-1. Instructions personnalisées : ${custom_instructions || "Aucune"}
-2. Échanges récents (transcriptions) : ${inputContext?.transcription ? JSON.stringify(inputContext.transcription) : "Non disponible"}
-3. Notes de contexte : ${contextNotes.length > 0 ? contextNotes.map(n => n.content).join('\n---\n') : "Non disponible"}
-4. Synthèse IA du lead : ${lead?.ai_documents_summary || "Non disponible"}
-5. Contenu collé : ${inputContext?.pastedContent || "Non disponible"}
+PROJET:
+- Nom: ${projectName}
+- Description: ${projectDescription}
 
-## CONSIGNES CRITIQUES
-⚠️ INTERDICTION ABSOLUE d'utiliser des placeholders comme {{...}} ou [...]
-⚠️ Utilise les VRAIES DONNÉES ci-dessus. Si une donnée n'est pas disponible, adapte le texte sans placeholder.
+## SOURCES CONTEXTUELLES
+${custom_instructions ? `Instructions: ${custom_instructions}` : ""}
+${inputContext?.transcription ? `Échanges: ${JSON.stringify(inputContext.transcription)}` : ""}
+${contextNotes.length > 0 ? `Notes: ${contextNotes.map(n => n.content).join(' | ')}` : ""}
 
-## CONSIGNES SPÉCIFIQUES
-- Personnalise l'accroche avec un élément spécifique du contexte
-- Reformule les besoins avec les MOTS du client
-- Mets en avant les BÉNÉFICES avant les fonctionnalités
-- Utilise le storytelling : problème → compréhension → solution → résultat
-- Chiffre les gains attendus quand possible
-- Termine par des prochaines étapes concrètes
+## RAPPEL FINAL
+metadata.clientName = "${clientName}"
+metadata.clientCompany = "${clientCompany}"
 
-Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
+Réponds UNIQUEMENT en JSON valide, sans balises markdown.`,
     };
-
     const userPrompt = aiPromptData?.user_prompt || USER_PROMPTS[document_type];
 
     // Call AI with appropriate provider
@@ -764,6 +764,27 @@ Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
     try {
       const cleanContent = aiResult.content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       documentContent = JSON.parse(cleanContent);
+      
+      // Validate that no placeholders remain in the response
+      const jsonString = JSON.stringify(documentContent);
+      const placeholderPatterns = [/\{\{[^}]+\}\}/g, /\[\[[^\]]+\]\]/g, /\[Non renseigné\]/gi];
+      for (const pattern of placeholderPatterns) {
+        if (pattern.test(jsonString)) {
+          console.error("AI response contains placeholders:", jsonString.match(pattern));
+          // Fix common placeholders with real data
+          const fixedJson = jsonString
+            .replace(/\{\{lead_info\.company\}\}/gi, clientCompany)
+            .replace(/\{\{lead_info\.name\}\}/gi, clientName)
+            .replace(/\{\{project_info\.name\}\}/gi, projectName)
+            .replace(/\{\{project_info\.description\}\}/gi, projectDescription)
+            .replace(/\{\{transcription_summary[^}]*\}\}/gi, "vos besoins exprimés")
+            .replace(/\{\{specification_content[^}]*\}\}/gi, "les spécifications techniques")
+            .replace(/\{\{additional_context[^}]*\}\}/gi, "le contexte projet")
+            .replace(/\{\{[^}]+\}\}/g, "") // Remove any remaining placeholders
+            .replace(/\[\[|\]\]/g, "");
+          documentContent = JSON.parse(fixedJson);
+        }
+      }
     } catch (parseError) {
       console.error("Failed to parse AI response:", aiResult.content);
       return new Response(JSON.stringify({ error: "invalid_ai_response", raw_content: aiResult.content }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -782,11 +803,11 @@ Réponds UNIQUEMENT avec le JSON structuré. Pas de markdown autour.`,
     }
 
     // Generate title
-    const clientName = documentContent.metadata?.clientCompany || lead?.company || project?.name || opportunity?.title || "Nouveau";
+    const titleClientName = documentContent.metadata?.clientCompany || lead?.company || project?.name || opportunity?.title || "Nouveau";
     const documentTitles: Record<DocumentType, string> = {
-      quote: quoteNumber ? `Devis ${quoteNumber} - ${clientName}` : `Devis - ${clientName}`,
-      spec: `CDC - ${clientName}`,
-      proposal: `Proposition - ${clientName}`,
+      quote: quoteNumber ? `Devis ${quoteNumber} - ${titleClientName}` : `Devis - ${titleClientName}`,
+      spec: `CDC - ${titleClientName}`,
+      proposal: `Proposition - ${titleClientName}`,
     };
 
     // Save to database with billing entity reference
