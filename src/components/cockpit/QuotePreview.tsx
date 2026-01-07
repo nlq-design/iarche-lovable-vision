@@ -205,8 +205,10 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
     // Get sections
     const headerSection = sections.find(s => s.id === 'header');
     const objectSection = sections.find(s => s.id === 'object');
+    const contextSection = sections.find(s => s.id === 'context');
     const servicesSection = sections.find(s => s.id === 'services');
     const totalsSection = sections.find(s => s.id === 'totals');
+    const planningSection = sections.find(s => s.id === 'planning');
     const paymentSection = sections.find(s => s.id === 'payment');
 
     const hasNewFormat = headerSection || servicesSection;
@@ -412,6 +414,21 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
               </div>
             )}
 
+            {/* Context Section (v10) */}
+            {contextSection && (
+              <div className="quote-context">
+                <h4>Contexte du projet</h4>
+                <div 
+                  dangerouslySetInnerHTML={{ 
+                    __html: DOMPurify.sanitize(parseBasicMarkdown(contextSection.content), {
+                      ADD_TAGS: ['div', 'h3', 'h4', 'p', 'strong', 'em', 'ul', 'li', 'br'],
+                      ADD_ATTR: ['class', 'style'],
+                    })
+                  }}
+                />
+              </div>
+            )}
+
             {/* Services Table */}
             {servicesSection && (
               <div className="quote-services">
@@ -445,6 +462,21 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                   <span>Total TTC</span>
                   <span>{formatCurrency(metadata.totalTTC, metadata.currency)}</span>
                 </div>
+              </div>
+            )}
+
+            {/* Planning Section (v10) */}
+            {planningSection && (
+              <div className="quote-planning">
+                <h4>Planning prévisionnel</h4>
+                <div 
+                  dangerouslySetInnerHTML={{ 
+                    __html: DOMPurify.sanitize(parseMarkdownTable(planningSection.content), {
+                      ADD_TAGS: ['table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'h3', 'h4', 'p', 'strong', 'em', 'ul', 'li', 'br'],
+                      ADD_ATTR: ['class', 'style', 'colspan'],
+                    })
+                  }}
+                />
               </div>
             )}
 
