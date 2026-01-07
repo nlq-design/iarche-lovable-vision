@@ -236,7 +236,7 @@ function getSystemPrompt(documentType: DocumentType, billingEntity: BillingEntit
   const billingContext = buildBillingEntityContext(billingEntity);
   
   const basePrompts: Record<DocumentType, string> = {
-    quote: `Tu es un générateur de JSON pour devis commerciaux. Tu génères UNIQUEMENT du JSON valide, rien d'autre.
+    quote: `Tu es un générateur de JSON pour devis commerciaux professionnels. Tu génères UNIQUEMENT du JSON valide, rien d'autre.
 
 ## SOCIÉTÉ ÉMETTRICE
 ${billingContext}
@@ -245,48 +245,50 @@ ${billingContext}
 
 Tu DOIS produire un JSON avec EXACTEMENT cette structure. Les sections DOIVENT avoir les IDs: "header", "object", "services", "totals", "payment".
 
+IMPORTANT: La table des services DOIT avoir 5 colonnes: Description | Qté | Unité | P.U. HT | Total HT
+
 {
   "sections": [
     {
       "id": "header",
       "title": "En-tête",
-      "content": "<div class='quote-header-info'><div class='quote-number'>Devis N° DEV-2026-001</div><div class='quote-dates'><span>Date : 07/01/2026</span><span>Validité : 06/02/2026</span></div></div><div class='quote-parties'><div class='quote-emitter'><h3>ÉMETTEUR</h3><p><strong>NOM SOCIÉTÉ</strong></p><p>Email: contact@societe.fr</p><p>SIREN: 123 456 789</p><p>TVA: FR12345678901</p></div><div class='quote-receiver'><h3>DESTINATAIRE</h3><p><strong>NOM CLIENT</strong></p><p>Entreprise cliente</p><p>Adresse</p></div></div>",
+      "content": "<div class='quote-parties'><div class='quote-emitter'><h3>ÉMETTEUR</h3><p><strong>NOM SOCIÉTÉ</strong></p><p>Adresse complète</p><p>Email: contact@societe.fr</p><p>Tél: +33 X XX XX XX XX</p><p>SIREN: XXX XXX XXX | TVA: FRXXXXXXXXXX</p></div><div class='quote-receiver'><h3>DESTINATAIRE</h3><p><strong>NOM CLIENT</strong></p><p>Entreprise</p><p>Adresse</p><p>Email client</p></div></div>",
       "order": 1
     },
     {
       "id": "object",
       "title": "Objet",
-      "content": "<div class='quote-object'><h3>Objet : Titre du projet</h3><p>Description courte de la prestation (2-3 lignes max).</p></div>",
+      "content": "<h3>Objet : Titre du projet</h3><p>Description concise de la prestation (2-3 lignes max).</p>",
       "order": 2
     },
     {
       "id": "services",
       "title": "Prestations",
-      "content": "<table class='services-table'><thead><tr><th>Description</th><th>Qté</th><th>P.U. HT</th><th>Total HT</th></tr></thead><tbody><tr><td><strong>Prestation 1</strong><br/><small>Détails de la prestation</small></td><td>1</td><td>1 500,00 €</td><td>1 500,00 €</td></tr><tr><td><strong>Prestation 2</strong><br/><small>Détails</small></td><td>2</td><td>750,00 €</td><td>1 500,00 €</td></tr></tbody></table>",
+      "content": "<table class='services-table'><thead><tr><th>Description</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th></tr></thead><tbody><tr><td><strong>Phase 1 - Conception</strong><br/><small>Analyse, maquettes, architecture</small></td><td>5</td><td>jours</td><td>800,00 €</td><td>4 000,00 €</td></tr><tr><td><strong>Phase 2 - Développement</strong><br/><small>Intégration, tests, déploiement</small></td><td>10</td><td>jours</td><td>800,00 €</td><td>8 000,00 €</td></tr><tr><td><strong>Formation utilisateurs</strong></td><td>1</td><td>forfait</td><td>1 500,00 €</td><td>1 500,00 €</td></tr></tbody></table>",
       "order": 3
     },
     {
       "id": "totals",
       "title": "Totaux",
-      "content": "<div class='quote-totals'><div class='totals-row'><span>Total HT</span><span>3 000,00 €</span></div><div class='totals-row'><span>TVA 20%</span><span>600,00 €</span></div><div class='totals-row total-final'><span>Total TTC</span><span>3 600,00 €</span></div></div>",
+      "content": "<div class='quote-totals-wrapper'><table class='quote-totals-table'><tr><td>Total HT</td><td>13 500,00 €</td></tr><tr><td>TVA 20%</td><td>2 700,00 €</td></tr><tr class='total-row'><td>Total TTC</td><td>16 200,00 €</td></tr></table></div>",
       "order": 4
     },
     {
       "id": "payment",
       "title": "Conditions",
-      "content": "<div class='quote-payment'><h4>Conditions de paiement</h4><p>50% à la commande (1 800,00 € TTC)</p><p>50% à la livraison (1 800,00 € TTC)</p></div><div class='quote-signature'><h4>Bon pour accord</h4><p>Date : ____/____/________</p><p>Signature :</p></div>",
+      "content": "<p><strong>Conditions de règlement :</strong> 50% à la commande, 50% à la livraison</p><p><strong>Délai de réalisation :</strong> 4 semaines après validation</p><div class='signature-block'><h4>Bon pour accord</h4><p>Date : ____/____/________</p><p>Signature précédée de \"Bon pour accord\" :</p><br/><br/><br/></div>",
       "order": 5
     }
   ],
   "metadata": {
     "clientName": "Nom contact",
-    "clientCompany": "Entreprise",
-    "projectName": "Nom projet",
+    "clientCompany": "Entreprise cliente",
+    "projectName": "Nom du projet",
     "quoteDate": "${new Date().toLocaleDateString('fr-FR')}",
-    "totalHT": 3000,
+    "totalHT": 13500,
     "tvaRate": ${billingEntity?.default_tva_rate || 20},
-    "tvaAmount": 600,
-    "totalTTC": 3600,
+    "tvaAmount": 2700,
+    "totalTTC": 16200,
     "currency": "EUR",
     "validityDays": ${billingEntity?.default_validity_days || 30}
   }
@@ -295,10 +297,12 @@ Tu DOIS produire un JSON avec EXACTEMENT cette structure. Les sections DOIVENT a
 ## RÈGLES CRITIQUES
 1. Retourne UNIQUEMENT le JSON, sans texte avant/après
 2. Les IDs des sections DOIVENT être: "header", "object", "services", "totals", "payment"
-3. AUCUN placeholder comme {{...}} - utilise les vraies valeurs fournies
-4. Les montants doivent être cohérents (Total = Qté × Prix)
-5. TVA calculée sur le total HT
-6. Format monétaire français : X XXX,XX €`,
+3. La table services a TOUJOURS 5 colonnes: Description | Qté | Unité | P.U. HT | Total HT
+4. L'unité peut être: jours, heures, forfait, mois, unité
+5. AUCUN placeholder comme {{...}} - utilise les vraies valeurs fournies
+6. Les montants doivent être cohérents (Total = Qté × P.U. HT)
+7. TVA calculée sur le total HT
+8. Format monétaire français avec espace : X XXX,XX €`,
 
     spec: `Tu es un architecte solution senior. Tu génères des Cahiers des Charges (CDC) de niveau professionnel.
 
