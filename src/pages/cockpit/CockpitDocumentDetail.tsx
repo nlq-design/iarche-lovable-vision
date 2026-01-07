@@ -56,6 +56,7 @@ import { ConsulteTab } from '@/components/cockpit/ConsulteTab';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
 import { LinkedSourcesSection } from '@/components/cockpit/LinkedSourcesSection';
 import { DevisCDCPreview } from '@/components/cockpit/DevisCDCPreview';
+import { QuotePreview } from '@/components/cockpit/QuotePreview';
 import { DevisCDCEditor } from '@/components/cockpit/DevisCDCEditor';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -423,11 +424,21 @@ export default function CockpitDocumentDetail() {
 
               <TabsContent value="apercu" className="mt-4">
                 <div ref={previewRef}>
-                  <DevisCDCPreview
-                    document={document}
-                    onBack={() => {}}
-                    onEdit={() => setActiveTab('edition')}
-                  />
+                  {document.document_type === 'quote' ? (
+                    <QuotePreview
+                      document={document}
+                      onBack={() => {}}
+                      onEdit={() => setActiveTab('edition')}
+                      isEmbedded
+                    />
+                  ) : (
+                    <DevisCDCPreview
+                      document={document}
+                      onBack={() => {}}
+                      onEdit={() => setActiveTab('edition')}
+                      isEmbedded
+                    />
+                  )}
                 </div>
               </TabsContent>
 
