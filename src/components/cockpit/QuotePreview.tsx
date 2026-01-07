@@ -6,6 +6,7 @@ import { ArrowLeft, Download, FileText, Sparkles, Edit } from "lucide-react";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import DOMPurify from 'dompurify';
+import QRCode from 'react-qr-code';
 import './quote-preview.css';
 
 import { DOCUMENT_STATUS_CONFIG, type GeneratedDocument } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
@@ -42,6 +43,7 @@ interface QuoteMetadata {
   billingEntityName?: string;
   tvaRate?: number;
   validityDays?: number;
+  paymentLink?: string;
 }
 
 interface DocumentContent {
@@ -510,6 +512,37 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                 {renderPaymentContent()}
               </div>
             )}
+
+            {/* Legal Mentions - French B2B Regulatory Compliance */}
+            <div className="quote-legal-mentions">
+              <div className="legal-mentions-content">
+                <p>
+                  <strong>Pénalités de retard :</strong> En cas de retard de paiement, une pénalité égale à 3 fois le taux d'intérêt légal sera exigible (Art. L441-10 du Code de commerce).
+                </p>
+                <p>
+                  <strong>Indemnité forfaitaire de recouvrement :</strong> 40 € (Art. D441-5 du Code de commerce).
+                </p>
+                <p>
+                  <strong>Escompte :</strong> Pas d'escompte pour paiement anticipé.
+                </p>
+              </div>
+              
+              {/* QR Code Payment - Conditional */}
+              {metadata.paymentLink && (
+                <div className="quote-payment-qr">
+                  <div className="qr-code-wrapper">
+                    <QRCode 
+                      value={metadata.paymentLink} 
+                      size={80}
+                      level="M"
+                      bgColor="#FFFFFF"
+                      fgColor="#1A2B4A"
+                    />
+                  </div>
+                  <p className="qr-label">Payer maintenant</p>
+                </div>
+              )}
+            </div>
 
             {/* Footer */}
             <div className="quote-footer">
