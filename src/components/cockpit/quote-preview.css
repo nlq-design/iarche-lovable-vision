@@ -839,6 +839,65 @@
 }
 
 /* ========================================
+   LEGAL MENTIONS - French B2B Compliance
+   ======================================== */
+.quote-legal-mentions {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 20px 32px;
+  background: #F5F3EF;
+  border-top: 1px solid #E8E4DD;
+  gap: 32px;
+}
+
+.legal-mentions-content {
+  flex: 1;
+}
+
+.legal-mentions-content p {
+  margin: 0 0 8px 0;
+  font-size: 10px;
+  color: #6B7280;
+  line-height: 1.5;
+}
+
+.legal-mentions-content p:last-child {
+  margin-bottom: 0;
+}
+
+.legal-mentions-content strong {
+  color: #1A2B4A;
+  font-weight: 600;
+}
+
+/* QR Code Payment Block */
+.quote-payment-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.qr-code-wrapper {
+  padding: 8px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(26, 43, 74, 0.1);
+  border: 1px solid #E8E4DD;
+}
+
+.qr-label {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: #1A2B4A;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ========================================
    FOOTER
    ======================================== */
 .quote-footer {

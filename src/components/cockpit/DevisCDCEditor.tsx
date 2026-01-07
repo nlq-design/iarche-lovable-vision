@@ -66,6 +66,7 @@ export interface DocumentContent {
     validityDate?: string;
     totalAmount?: number;
     currency?: string;
+    paymentLink?: string;
   };
   theme: {
     primaryColor: string;
@@ -637,6 +638,20 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
                           onChange={(e) => setMetadata({ ...metadata, validityDate: e.target.value })}
                           className="mt-1"
                         />
+                      </div>
+                      <div>
+                        <Label htmlFor="paymentLink">Lien de paiement (optionnel)</Label>
+                        <Input
+                          id="paymentLink"
+                          type="url"
+                          placeholder="https://pay.stripe.com/..."
+                          value={metadata.paymentLink || ''}
+                          onChange={(e) => setMetadata({ ...metadata, paymentLink: e.target.value })}
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Si rempli, un QR code de paiement sera affiché sur le devis
+                        </p>
                       </div>
                     </>
                   )}
