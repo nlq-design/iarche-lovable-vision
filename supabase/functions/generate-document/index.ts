@@ -236,127 +236,69 @@ function getSystemPrompt(documentType: DocumentType, billingEntity: BillingEntit
   const billingContext = buildBillingEntityContext(billingEntity);
   
   const basePrompts: Record<DocumentType, string> = {
-    quote: `Tu es un expert en création de devis commerciaux professionnels style FACTURE.
-
-INSTRUCTION CRITIQUE : Génère IMMÉDIATEMENT le JSON du devis. AUCUNE question. Utilise les données fournies ou invente des valeurs réalistes.
+    quote: `Tu es un générateur de JSON pour devis commerciaux. Tu génères UNIQUEMENT du JSON valide, rien d'autre.
 
 ## SOCIÉTÉ ÉMETTRICE
 ${billingContext}
 
-## FORMAT ATTENDU = DEVIS PROFESSIONNEL TYPE FACTURE
+## FORMAT DE SORTIE OBLIGATOIRE
 
-Le devis doit avoir cette structure EXACTE (style SAVOIRIA 64) :
+Tu DOIS produire un JSON avec EXACTEMENT cette structure. Les sections DOIVENT avoir les IDs: "header", "object", "services", "totals", "payment".
 
-1. **BANDEAU SUPÉRIEUR**
-   - N° de devis (ex: "Devis N° 6420250262")
-   - Date d'émission
-   - Date limite de validité
-
-2. **BLOC ÉMETTEUR** (gauche)
-   - Nom société + forme juridique
-   - Email société
-   - SIREN
-   - N° de TVA intracommunautaire
-   - RCS + ville
-   - Capital social
-
-3. **BLOC DESTINATAIRE** (droite)
-   - Nom entreprise cliente
-   - Nom du contact si dispo
-   - Adresse complète
-   - SIREN client si dispo
-
-4. **OBJET DU DEVIS**
-   - Titre court (ex: "Site vitrine évolutif")
-   - Description en 2-3 lignes max
-
-5. **TABLEAU DES PRESTATIONS** (obligatoire)
-   Structure : Description | Qté | TVA % | Total HT
-   Chaque ligne = une prestation distincte
-   Sous chaque ligne, description détaillée en petits caractères si nécessaire
-
-6. **RÉCAPITULATIF TVA**
-   Base HT | TVA | Montant TVA
-
-7. **TOTAUX**
-   - Total HT : X,XX €
-   - TVA XX% : X,XX €
-   - Total TTC : X,XX €
-
-8. **CONDITIONS DE PAIEMENT**
-   Ex: "50% à la commande (XXX € TTC), 50% à la livraison (XXX € TTC)."
-   + Mentions "Non inclus" si applicable
-
-9. **BLOC SIGNATURE**
-   "Bon pour accord"
-   Date : ____/____/________
-   Signature et cachet :
-
-## TARIFS DE RÉFÉRENCE
-- Consultant junior : 700 €/jour
-- Consultant senior : 950 €/jour
-- Expert / Architecte : 1 200 €/jour
-- Direction de projet : 1 400 €/jour
-- Site vitrine 5 pages : 1 500 - 2 500 € HT
-- Application web MVP : 8 000 - 15 000 € HT
-
-## RÈGLES ABSOLUES
-1. Format JSON valide uniquement
-2. Tableau HTML propre : <table>, <thead>, <tbody>, <tr>, <th>, <td>
-3. Les montants DOIVENT être cohérents (Total = Qté × Prix unitaire)
-4. TVA calculée correctement
-5. AUCUN placeholder {{...}}
-
-## FORMAT DE SORTIE JSON
 {
   "sections": [
     {
       "id": "header",
       "title": "En-tête",
-      "content": "<div class='quote-emitter'><h2>SOCIÉTÉ (forme juridique)</h2><p class='email'>email@societe.fr</p><p>SIREN : XXX XXX XXX</p><p>N° de TVA : FRXXXXXXXXXX</p><p>RCS : XXX XXX XXX R.C.S. Ville</p><p>Capital social : X XXX,XX €</p></div><div class='quote-receiver'><h2>CLIENT</h2><p>Nom contact</p><p>Adresse</p><p>Code postal VILLE</p></div>",
+      "content": "<div class='quote-header-info'><div class='quote-number'>Devis N° DEV-2026-001</div><div class='quote-dates'><span>Date : 07/01/2026</span><span>Validité : 06/02/2026</span></div></div><div class='quote-parties'><div class='quote-emitter'><h3>ÉMETTEUR</h3><p><strong>NOM SOCIÉTÉ</strong></p><p>Email: contact@societe.fr</p><p>SIREN: 123 456 789</p><p>TVA: FR12345678901</p></div><div class='quote-receiver'><h3>DESTINATAIRE</h3><p><strong>NOM CLIENT</strong></p><p>Entreprise cliente</p><p>Adresse</p></div></div>",
       "order": 1
     },
     {
       "id": "object",
       "title": "Objet",
-      "content": "<h3>Titre du projet</h3><p>Description courte de la prestation proposée en 2-3 lignes maximum.</p>",
+      "content": "<div class='quote-object'><h3>Objet : Titre du projet</h3><p>Description courte de la prestation (2-3 lignes max).</p></div>",
       "order": 2
     },
     {
       "id": "services",
-      "title": "Détail des prestations",
-      "content": "<table class='services-table'><thead><tr><th>Détails</th><th>Qté</th><th>TVA %</th><th>Total HT</th></tr></thead><tbody><tr><td><strong>Nom prestation 1</strong></td><td>1</td><td>20 %</td><td>X XXX,XX €</td></tr><tr><td colspan='4' class='description'>Description détaillée de la prestation...</td></tr><tr><td><strong>Nom prestation 2</strong></td><td>1</td><td>20 %</td><td>X XXX,XX €</td></tr></tbody></table>",
+      "title": "Prestations",
+      "content": "<table class='services-table'><thead><tr><th>Description</th><th>Qté</th><th>P.U. HT</th><th>Total HT</th></tr></thead><tbody><tr><td><strong>Prestation 1</strong><br/><small>Détails de la prestation</small></td><td>1</td><td>1 500,00 €</td><td>1 500,00 €</td></tr><tr><td><strong>Prestation 2</strong><br/><small>Détails</small></td><td>2</td><td>750,00 €</td><td>1 500,00 €</td></tr></tbody></table>",
       "order": 3
     },
     {
       "id": "totals",
       "title": "Totaux",
-      "content": "<div class='quote-summary'><table class='tva-table'><thead><tr><th>Base HT</th><th>TVA</th><th>Montant TVA</th></tr></thead><tbody><tr><td>X XXX,XX €</td><td>${billingEntity?.default_tva_rate || 20} %</td><td>XXX,XX €</td></tr></tbody></table><div class='quote-totals-final'><p><strong>Total HT :</strong> X XXX,XX €</p><p><strong>TVA ${billingEntity?.default_tva_rate || 20}% :</strong> XXX,XX €</p><p class='total-ttc'><strong>Total TTC :</strong> X XXX,XX €</p></div></div>",
+      "content": "<div class='quote-totals'><div class='totals-row'><span>Total HT</span><span>3 000,00 €</span></div><div class='totals-row'><span>TVA 20%</span><span>600,00 €</span></div><div class='totals-row total-final'><span>Total TTC</span><span>3 600,00 €</span></div></div>",
       "order": 4
     },
     {
       "id": "payment",
       "title": "Conditions",
-      "content": "<div class='payment-terms'><p><strong>Conditions de paiement :</strong> ${billingEntity?.default_payment_terms?.deposit_percent || 50}% à la commande (XXX,XX € TTC), ${billingEntity?.default_payment_terms?.balance_percent || 50}% à la livraison (XXX,XX € TTC).</p><p class='notes'><em>Non inclus : mentions spécifiques si applicable</em></p></div><div class='signature-block'><h4>Bon pour accord</h4><p>Date : ____/____/________</p><p>Signature et cachet :</p></div>",
+      "content": "<div class='quote-payment'><h4>Conditions de paiement</h4><p>50% à la commande (1 800,00 € TTC)</p><p>50% à la livraison (1 800,00 € TTC)</p></div><div class='quote-signature'><h4>Bon pour accord</h4><p>Date : ____/____/________</p><p>Signature :</p></div>",
       "order": 5
     }
   ],
   "metadata": {
-    "clientName": "Nom du contact",
-    "clientCompany": "Entreprise cliente",
-    "clientAddress": "Adresse client",
-    "projectName": "Nom du projet",
+    "clientName": "Nom contact",
+    "clientCompany": "Entreprise",
+    "projectName": "Nom projet",
     "quoteDate": "${new Date().toLocaleDateString('fr-FR')}",
-    "totalHT": 0,
-    "tvaAmount": 0,
-    "totalTTC": 0,
-    "currency": "EUR",
-    "billingEntityId": "${billingEntity?.id || ''}",
-    "billingEntityName": "${billingEntity?.name || ''}",
+    "totalHT": 3000,
     "tvaRate": ${billingEntity?.default_tva_rate || 20},
+    "tvaAmount": 600,
+    "totalTTC": 3600,
+    "currency": "EUR",
     "validityDays": ${billingEntity?.default_validity_days || 30}
   }
-}`,
+}
+
+## RÈGLES CRITIQUES
+1. Retourne UNIQUEMENT le JSON, sans texte avant/après
+2. Les IDs des sections DOIVENT être: "header", "object", "services", "totals", "payment"
+3. AUCUN placeholder comme {{...}} - utilise les vraies valeurs fournies
+4. Les montants doivent être cohérents (Total = Qté × Prix)
+5. TVA calculée sur le total HT
+6. Format monétaire français : X XXX,XX €`,
 
     spec: `Tu es un architecte solution senior. Tu génères des Cahiers des Charges (CDC) de niveau professionnel.
 
@@ -628,31 +570,23 @@ serve(async (req) => {
 
     // User prompts optimized by document type - with REAL DATA INJECTED
     const USER_PROMPTS: Record<DocumentType, string> = {
-    quote: `GÉNÈRE MAINTENANT LE JSON DU DEVIS COMMERCIAL. Ne pose aucune question.
+    quote: `Génère le JSON du devis avec les données suivantes :
 
-DONNÉES CLIENT:
-- Nom contact: ${clientName}
-- Entreprise: ${clientCompany}
-- Secteur: ${clientIndustry}
-- Taille: ${clientSize || "PME"}
-- Poste: ${clientPosition || "Responsable projet"}
+CLIENT: ${clientName} - ${clientCompany} (${clientIndustry})
+PROJET: ${projectName}
+DESCRIPTION: ${projectDescription}
+${projectBudget ? `BUDGET INDICATIF: ${projectBudget}` : ""}
+${custom_instructions ? `INSTRUCTIONS: ${custom_instructions}` : ""}
+${lead?.ai_documents_summary ? `CONTEXTE: ${lead.ai_documents_summary}` : ""}
 
-DONNÉES PROJET:
-- Nom: ${projectName}
-- Description: ${projectDescription}
-${projectBudget ? `- Budget: ${projectBudget}` : ""}
+RAPPEL STRUCTURE OBLIGATOIRE:
+- Section "header" avec émetteur/destinataire
+- Section "object" avec titre et description courte
+- Section "services" avec tableau HTML des prestations
+- Section "totals" avec Total HT, TVA, Total TTC
+- Section "payment" avec conditions et signature
 
-${custom_instructions ? `INSTRUCTIONS SPÉCIFIQUES: ${custom_instructions}` : ""}
-${inputContext?.transcription ? `CONTEXTE ÉCHANGE: ${JSON.stringify(inputContext.transcription)}` : ""}
-${contextNotes.length > 0 ? `NOTES: ${contextNotes.map(n => n.content).join(' | ')}` : ""}
-${lead?.ai_documents_summary ? `RÉSUMÉ: ${lead.ai_documents_summary}` : ""}
-
-CONSIGNES FINALES:
-1. Réponds UNIQUEMENT avec le JSON complet du devis
-2. metadata.clientName = "${clientName}"
-3. metadata.clientCompany = "${clientCompany}"
-4. metadata.projectName = "${projectName}"
-5. AUCUN placeholder {{...}} - utilise les vraies valeurs ci-dessus`,
+Utilise les vraies valeurs ci-dessus, PAS de {{placeholders}}.`,
 
       spec: `GÉNÈRE MAINTENANT LE JSON DU CAHIER DES CHARGES. Ne pose aucune question.
 
@@ -830,6 +764,72 @@ CONSIGNES:
     } catch (parseError) {
       console.error("Failed to parse AI response:", aiResult.content);
       return new Response(JSON.stringify({ error: "invalid_ai_response", raw_content: aiResult.content }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Validate quote format - ensure it has the correct section IDs
+    if (document_type === "quote") {
+      const sections = documentContent.sections || [];
+      const hasNewFormat = sections.some((s: any) => s.id === "header" || s.id === "services");
+      
+      if (!hasNewFormat) {
+        console.log("Quote generated with old format, transforming to new format...");
+        // Transform old format to new format
+        const oldSections = sections;
+        const metadata = documentContent.metadata || {};
+        
+        // Extract relevant info from old sections
+        const contextSection = oldSections.find((s: any) => s.title?.includes("Contexte") || s.id === "1");
+        const investSection = oldSections.find((s: any) => s.title?.includes("Investissement") || s.id === "5");
+        const conditionsSection = oldSections.find((s: any) => s.title?.includes("Conditions") || s.id === "6");
+        
+        const totalHT = metadata.totalHT || metadata.totalAmount || 10000;
+        const tvaRate = billingEntity?.default_tva_rate || 20;
+        const tvaAmount = Math.round(totalHT * tvaRate / 100);
+        const totalTTC = totalHT + tvaAmount;
+        
+        documentContent = {
+          sections: [
+            {
+              id: "header",
+              title: "En-tête",
+              content: `<div class='quote-header-info'><div class='quote-number'>Devis</div><div class='quote-dates'><span>Date : ${new Date().toLocaleDateString('fr-FR')}</span><span>Validité : 30 jours</span></div></div><div class='quote-parties'><div class='quote-emitter'><h3>${billingEntity?.name || 'IArche'}</h3><p>Email: ${billingEntity?.email || 'contact@iarche.fr'}</p>${billingEntity?.siren ? `<p>SIREN: ${billingEntity.siren}</p>` : ''}${billingEntity?.tva_number ? `<p>TVA: ${billingEntity.tva_number}</p>` : ''}</div><div class='quote-receiver'><h3>DESTINATAIRE</h3><p><strong>${metadata.clientCompany || clientCompany}</strong></p><p>${metadata.clientName || clientName}</p></div></div>`,
+              order: 1
+            },
+            {
+              id: "object",
+              title: "Objet",
+              content: `<div class='quote-object'><h3>Objet : ${metadata.projectName || projectName}</h3><p>${projectDescription}</p></div>`,
+              order: 2
+            },
+            {
+              id: "services",
+              title: "Prestations",
+              content: investSection?.content || `<table class='services-table'><thead><tr><th>Description</th><th>Qté</th><th>P.U. HT</th><th>Total HT</th></tr></thead><tbody><tr><td><strong>Prestation globale</strong></td><td>1</td><td>${totalHT.toLocaleString('fr-FR')} €</td><td>${totalHT.toLocaleString('fr-FR')} €</td></tr></tbody></table>`,
+              order: 3
+            },
+            {
+              id: "totals",
+              title: "Totaux",
+              content: `<div class='quote-totals'><div class='totals-row'><span>Total HT</span><span>${totalHT.toLocaleString('fr-FR')} €</span></div><div class='totals-row'><span>TVA ${tvaRate}%</span><span>${tvaAmount.toLocaleString('fr-FR')} €</span></div><div class='totals-row total-final'><span>Total TTC</span><span>${totalTTC.toLocaleString('fr-FR')} €</span></div></div>`,
+              order: 4
+            },
+            {
+              id: "payment",
+              title: "Conditions",
+              content: conditionsSection?.content || `<div class='quote-payment'><h4>Conditions de paiement</h4><p>50% à la commande</p><p>50% à la livraison</p></div><div class='quote-signature'><h4>Bon pour accord</h4><p>Date : ____/____/________</p><p>Signature :</p></div>`,
+              order: 5
+            }
+          ],
+          metadata: {
+            ...metadata,
+            totalHT,
+            tvaRate,
+            tvaAmount,
+            totalTTC
+          }
+        };
+        console.log("Quote transformed to new format");
+      }
     }
 
     // Generate quote number if this is a quote and we have a billing entity
