@@ -48,6 +48,101 @@ interface DocumentContent {
   metadata?: QuoteMetadata;
 }
 
+// Parse Markdown table to HTML table
+function parseMarkdownTable(content: string): string {
+  const lines = content.trim().split('\n');
+  const tableLines: string[] = [];
+  const otherContent: string[] = [];
+  
+  let inTable = false;
+  
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+      inTable = true;
+      tableLines.push(trimmed);
+    } else if (inTable && trimmed === '') {
+      inTable = false;
+    } else {
+      otherContent.push(line);
+    }
+  }
+  
+  if (tableLines.length < 2) {
+    // No valid table, return original with basic markdown parsing
+    return parseBasicMarkdown(content);
+  }
+  
+  // Parse table
+  const headerRow = tableLines[0];
+  const headerCells = headerRow.split('|').filter(c => c.trim()).map(c => c.trim());
+  
+  // Skip separator row (line with |---|---|)
+  const dataRows = tableLines.slice(2);
+  
+  let html = '<table class="services-table"><thead><tr>';
+  headerCells.forEach(cell => {
+    html += `<th>${escapeHtml(cell)}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+  
+  dataRows.forEach(row => {
+    const cells = row.split('|').filter(c => c.trim() !== '' && !c.match(/^-+$/)).map(c => c.trim());
+    if (cells.length > 0) {
+      html += '<tr>';
+      cells.forEach(cell => {
+        html += `<td>${escapeHtml(cell)}</td>`;
+      });
+      html += '</tr>';
+    }
+  });
+  
+  html += '</tbody></table>';
+  
+  // Add other content after table
+  if (otherContent.length > 0) {
+    html += '<div class="services-notes">' + parseBasicMarkdown(otherContent.join('\n')) + '</div>';
+  }
+  
+  return html;
+}
+
+function parseBasicMarkdown(content: string): string {
+  return content
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/^(.+)$/gm, (match) => {
+      if (match.startsWith('<')) return match;
+      return `<p>${match}</p>`;
+    });
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Format currency
+function formatCurrency(amount: number | undefined, currency: string = 'EUR'): string {
+  if (amount === undefined || isNaN(amount)) return '—';
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
+
 export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
   ({ document, onBack, onEdit, isEmbedded = false, onExportWithCGV }, ref) => {
     const content = document.content_json as DocumentContent;
@@ -66,7 +161,7 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
     // Check for new format
     const hasNewFormat = headerSection || servicesSection;
 
-    // Calculate validity date
+    // Calculate dates
     const createdDate = new Date(document.created_at || Date.now());
     const validityDays = metadata.validityDays || 30;
     const validityDate = new Date(createdDate);
@@ -100,6 +195,74 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
         console.error('Error exporting DOCX:', error);
         toast.error('Erreur lors de l\'export DOCX');
       }
+    };
+
+    // Render services content - handle both HTML and Markdown
+    const renderServicesContent = () => {
+      if (!servicesSection) return null;
+      
+      const content = servicesSection.content;
+      // Check if content is already HTML or Markdown table
+      if (content.includes('<table') || content.includes('<div')) {
+        return (
+          <div 
+            className="quote-services-table"
+            dangerouslySetInnerHTML={{ 
+              __html: DOMPurify.sanitize(content, {
+                ADD_TAGS: ['table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'strong', 'em', 'p', 'ul', 'li'],
+                ADD_ATTR: ['class', 'style', 'colspan', 'rowspan'],
+              })
+            }}
+          />
+        );
+      }
+      
+      // Parse Markdown table
+      const htmlContent = parseMarkdownTable(content);
+      return (
+        <div 
+          className="quote-services-table"
+          dangerouslySetInnerHTML={{ 
+            __html: DOMPurify.sanitize(htmlContent, {
+              ADD_TAGS: ['table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'strong', 'em', 'p', 'ul', 'li', 'h3', 'h4', 'br'],
+              ADD_ATTR: ['class', 'style', 'colspan', 'rowspan'],
+            })
+          }}
+        />
+      );
+    };
+
+    // Render payment content - handle Markdown
+    const renderPaymentContent = () => {
+      if (!paymentSection) return null;
+      
+      const content = paymentSection.content;
+      // Check if content is already HTML
+      if (content.includes('<div') || content.includes('<p>')) {
+        return (
+          <div 
+            dangerouslySetInnerHTML={{ 
+              __html: DOMPurify.sanitize(content, {
+                ADD_TAGS: ['div', 'p', 'h4', 'strong', 'em', 'ul', 'li', 'br'],
+                ADD_ATTR: ['class', 'style'],
+              })
+            }}
+          />
+        );
+      }
+      
+      // Parse basic Markdown
+      const htmlContent = parseBasicMarkdown(content);
+      return (
+        <div 
+          dangerouslySetInnerHTML={{ 
+            __html: DOMPurify.sanitize(htmlContent, {
+              ADD_TAGS: ['div', 'p', 'h4', 'h3', 'h2', 'strong', 'em', 'ul', 'li', 'br'],
+              ADD_ATTR: ['class', 'style'],
+            })
+          }}
+        />
+      );
     };
 
     // If old format, show fallback message
@@ -167,8 +330,8 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                 {document.quote_number || `Devis N° ${document.id.slice(0, 8).toUpperCase()}`}
               </div>
               <div className="quote-dates">
-                <span>Date d'émission : {format(createdDate, 'dd/MM/yyyy', { locale: fr })}</span>
-                <span>Date limite de validité : {format(validityDate, 'dd/MM/yyyy', { locale: fr })}</span>
+                <span>Date d'émission : {format(createdDate, 'dd MMMM yyyy', { locale: fr })}</span>
+                <span>Validité : {format(validityDate, 'dd MMMM yyyy', { locale: fr })}</span>
               </div>
             </div>
 
@@ -178,8 +341,8 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                 className="quote-header-content"
                 dangerouslySetInnerHTML={{ 
                   __html: DOMPurify.sanitize(headerSection.content, {
-                    ADD_TAGS: ['div', 'h2', 'h3', 'p', 'span'],
-                    ADD_ATTR: ['class', 'style'],
+                    ADD_TAGS: ['div', 'h2', 'h3', 'p', 'span', 'strong', 'img'],
+                    ADD_ATTR: ['class', 'style', 'src', 'alt'],
                   })
                 }}
               />
@@ -202,20 +365,12 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
             {/* Services Table */}
             {servicesSection && (
               <div className="quote-services">
-                <div 
-                  className="quote-services-table"
-                  dangerouslySetInnerHTML={{ 
-                    __html: DOMPurify.sanitize(servicesSection.content, {
-                      ADD_TAGS: ['table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'strong', 'em', 'p'],
-                      ADD_ATTR: ['class', 'style', 'colspan', 'rowspan'],
-                    })
-                  }}
-                />
+                {renderServicesContent()}
               </div>
             )}
 
             {/* Totals */}
-            {totalsSection && (
+            {totalsSection ? (
               <div className="quote-totals">
                 <div 
                   dangerouslySetInnerHTML={{ 
@@ -226,26 +381,35 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                   }}
                 />
               </div>
+            ) : metadata.totalHT !== undefined && (
+              <div className="quote-totals">
+                <div className="totals-row">
+                  <span>Total HT</span>
+                  <span>{formatCurrency(metadata.totalHT, metadata.currency)}</span>
+                </div>
+                <div className="totals-row">
+                  <span>TVA {metadata.tvaRate || 20}%</span>
+                  <span>{formatCurrency(metadata.tvaAmount, metadata.currency)}</span>
+                </div>
+                <div className="totals-row total-final">
+                  <span>Total TTC</span>
+                  <span>{formatCurrency(metadata.totalTTC, metadata.currency)}</span>
+                </div>
+              </div>
             )}
 
-            {/* Payment Terms & Signature */}
+            {/* Payment Terms */}
             {paymentSection && (
               <div className="quote-payment">
-                <div 
-                  dangerouslySetInnerHTML={{ 
-                    __html: DOMPurify.sanitize(paymentSection.content, {
-                      ADD_TAGS: ['div', 'p', 'h4', 'strong', 'em'],
-                      ADD_ATTR: ['class', 'style'],
-                    })
-                  }}
-                />
+                <h4>Conditions</h4>
+                {renderPaymentContent()}
               </div>
             )}
 
             {/* Footer */}
             <div className="quote-footer">
               <p>
-                {document.quote_number || `Devis n°${document.id.slice(0, 8).toUpperCase()}`} — {metadata.billingEntityName || 'Société'} — Page 1/1
+                {document.quote_number || `Devis n°${document.id.slice(0, 8).toUpperCase()}`} — IArche — {format(createdDate, 'yyyy')}
               </p>
             </div>
           </CardContent>
