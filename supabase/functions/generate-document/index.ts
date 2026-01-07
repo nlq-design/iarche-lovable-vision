@@ -364,19 +364,22 @@ Format :
 </div>
 
 ═══════════════════════════════════════════════════════════════════════════════
-                    SECTION 4 : SERVICES (TABLEAU STRUCTURÉ)
+                    SECTION 4 : SERVICES (TABLEAU PRESTATIONS & SERVICES)
 ═══════════════════════════════════════════════════════════════════════════════
+
+IMPORTANT : Ce tableau concerne des PRESTATIONS DE SERVICES en solution et intégration IA.
+La première colonne s'appelle "Description" (et NON "Poste").
 
 Format du tableau de prestations avec PHASES et SOUS-TOTAUX :
 
 <table class="services-table">
   <thead>
     <tr>
-      <th style="width:50%">Description</th>
-      <th style="width:10%">Qté</th>
+      <th style="width:48%">Description</th>
+      <th style="width:8%">Qté</th>
       <th style="width:12%">Unité</th>
-      <th style="width:14%">P.U. HT</th>
-      <th style="width:14%">Total HT</th>
+      <th style="width:16%">P.U. HT</th>
+      <th style="width:16%">Total HT</th>
     </tr>
   </thead>
   <tbody>
@@ -387,8 +390,8 @@ Format du tableau de prestations avec PHASES et SOUS-TOTAUX :
     <tr>
       <td>
         <strong>Atelier de cadrage stratégique</strong><br/>
-        <small>Analyse des besoins, définition des objectifs et KPIs, 
-        identification des cas d'usage prioritaires</small>
+        <small>Analyse des besoins métiers, définition des objectifs et KPIs, 
+        identification des cas d'usage prioritaires pour l'IA</small>
       </td>
       <td>1</td>
       <td>forfait</td>
@@ -397,27 +400,27 @@ Format du tableau de prestations avec PHASES et SOUS-TOTAUX :
     </tr>
     <tr>
       <td>
-        <strong>Conception fonctionnelle</strong><br/>
-        <small>Maquettes UX/UI, parcours utilisateurs, spécifications 
-        fonctionnelles détaillées</small>
+        <strong>Conception de la solution IA</strong><br/>
+        <small>Architecture technique, choix des modèles, parcours utilisateurs, 
+        spécifications fonctionnelles et techniques détaillées</small>
       </td>
       <td>5</td>
       <td>jours</td>
-      <td>900,00 €</td>
-      <td>4 500,00 €</td>
+      <td>950,00 €</td>
+      <td>4 750,00 €</td>
     </tr>
     <tr class="subtotal-row">
-      <td colspan="4"><em>Sous-total Phase 1</em></td>
-      <td><strong>7 000,00 €</strong></td>
+      <td colspan="4"><em>Sous-total Phase 1 — Cadrage</em></td>
+      <td><strong>7 250,00 €</strong></td>
     </tr>
     
     <!-- PHASE 2 -->
     <tr class="phase-header">
-      <td colspan="5"><strong>PHASE 2 — DÉVELOPPEMENT</strong></td>
+      <td colspan="5"><strong>PHASE 2 — DÉVELOPPEMENT & INTÉGRATION</strong></td>
     </tr>
-    <!-- ... lignes de prestations ... -->
+    <!-- ... lignes de prestations de développement IA ... -->
     <tr class="subtotal-row">
-      <td colspan="4"><em>Sous-total Phase 2</em></td>
+      <td colspan="4"><em>Sous-total Phase 2 — Développement</em></td>
       <td><strong>X XXX,XX €</strong></td>
     </tr>
     
@@ -427,12 +430,12 @@ Format du tableau de prestations avec PHASES et SOUS-TOTAUX :
 
 RÈGLES DU TABLEAU :
 1. Minimum 2 phases, maximum 5 phases
-2. 2-4 lignes de prestations par phase
-3. Chaque ligne a un TITRE en gras + DESCRIPTION en small
-4. La description explique le LIVRABLE et la VALEUR, pas la technique
-5. Sous-total après chaque phase
+2. 2-4 lignes de services par phase
+3. Chaque ligne a un TITRE en <strong> + DESCRIPTION en <small>
+4. La description explique le LIVRABLE et la VALEUR métier, pas la technique pure
+5. Sous-total après chaque phase avec classe "subtotal-row"
 6. Unités : jours | forfait | heures | mois | unité
-7. TJM réalistes : Junior 500-700€, Confirmé 700-900€, Senior 900-1200€
+7. TJM réalistes pour prestations IA : Senior 900-1200€, Expert 1200-1500€
 
 ═══════════════════════════════════════════════════════════════════════════════
                     SECTION 5 : TOTAUX (RÉCAPITULATIF FINANCIER)

@@ -18,6 +18,7 @@ interface QuotePreviewProps {
   onEdit: () => void;
   isEmbedded?: boolean;
   onExportWithCGV?: () => void;
+  onExportCGVOnly?: () => void;
 }
 
 interface DocumentSection {
@@ -195,7 +196,7 @@ function formatCurrency(amount: number | undefined, currency: string = 'EUR'): s
 }
 
 export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
-  ({ document, onBack, onEdit, isEmbedded = false, onExportWithCGV }, ref) => {
+  ({ document, onBack, onEdit, isEmbedded = false, onExportWithCGV, onExportCGVOnly }, ref) => {
     const content = document.content_json as DocumentContent;
     const sections = content?.sections || [];
     const metadata = content?.metadata || {};
@@ -359,7 +360,13 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
               {onExportWithCGV && (
                 <Button variant="outline" size="sm" onClick={onExportWithCGV}>
                   <FileText className="h-4 w-4 mr-1.5" />
-                  PDF + CGV
+                  PDF Devis
+                </Button>
+              )}
+              {onExportCGVOnly && (
+                <Button variant="ghost" size="sm" onClick={onExportCGVOnly}>
+                  <FileText className="h-4 w-4 mr-1.5" />
+                  CGV
                 </Button>
               )}
               <Button size="sm" onClick={onEdit}>
@@ -376,15 +383,31 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
           ref={isEmbedded ? undefined : ref}
         >
           <CardContent className="p-0">
-            {/* Header Bar */}
+            {/* Header Bar - Logo + Dates */}
             <div className="quote-header-bar">
-              <div className="quote-number">
-                {document.quote_number || `Devis N° ${document.id.slice(0, 8).toUpperCase()}`}
+              <div className="quote-header-logo">
+                <img 
+                  src="/logos/iarche-white.svg" 
+                  alt="IArche" 
+                  className="h-8"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
               </div>
               <div className="quote-dates">
-                <span className="quote-date">Date d'émission : {format(createdDate, 'dd/MM/yyyy', { locale: fr })}</span>
-                <span className="quote-date">Date limite de validité : {format(validityDate, 'dd/MM/yyyy', { locale: fr })}</span>
+                <span className="quote-date">Émis le {format(createdDate, 'dd MMMM yyyy', { locale: fr })}</span>
+                <span className="quote-date">Valide jusqu'au {format(validityDate, 'dd MMMM yyyy', { locale: fr })}</span>
               </div>
+            </div>
+
+            {/* Title Bar - Proposition Commerciale */}
+            <div className="quote-title-bar">
+              <h2 className="quote-title-main">Proposition Commerciale</h2>
+              <p className="quote-title-ref">
+                Réf. {document.quote_number || `IA-${format(createdDate, 'yyyyMMdd')}-${document.id.slice(0, 4).toUpperCase()}`}
+              </p>
+              <div className="quote-section-arc" />
             </div>
 
             {/* Emitter / Receiver */}
