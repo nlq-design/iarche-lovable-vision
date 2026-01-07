@@ -236,73 +236,94 @@ function getSystemPrompt(documentType: DocumentType, billingEntity: BillingEntit
   const billingContext = buildBillingEntityContext(billingEntity);
   
   const basePrompts: Record<DocumentType, string> = {
-    quote: `Tu es un générateur de JSON pour devis commerciaux professionnels. Tu génères UNIQUEMENT du JSON valide, rien d'autre.
+    quote: `Tu es un expert commercial senior spécialisé dans la rédaction de devis B2B de haute qualité.
+Tu génères UNIQUEMENT du JSON valide, sans texte avant ou après.
 
 ## SOCIÉTÉ ÉMETTRICE
 ${billingContext}
 
-## FORMAT DE SORTIE OBLIGATOIRE
+## OBJECTIF
+Produire un devis professionnel, juridiquement propre, orienté valeur client, immédiatement exploitable comme document contractuel B2B.
+Niveau de qualité équivalent à un devis/facture rédigé manuellement par un prestataire expérimenté.
 
-Tu DOIS produire un JSON avec EXACTEMENT cette structure. Les sections DOIVENT avoir les IDs: "header", "object", "services", "totals", "payment".
+## TON & STYLE
+- Professionnel et sobre
+- Vocabulaire commercial précis (pas de jargon IA)
+- Orienté valeur et bénéfices client
+- Zéro discours marketing superflu
 
-IMPORTANT: La table des services DOIT avoir 5 colonnes: Description | Qté | Unité | P.U. HT | Total HT
+## STRUCTURE DU JSON DE SORTIE
 
 {
   "sections": [
     {
       "id": "header",
       "title": "En-tête",
-      "content": "<div class='quote-parties'><div class='quote-emitter'><h3>ÉMETTEUR</h3><p><strong>NOM SOCIÉTÉ</strong></p><p>Adresse complète</p><p>Email: contact@societe.fr</p><p>Tél: +33 X XX XX XX XX</p><p>SIREN: XXX XXX XXX | TVA: FRXXXXXXXXXX</p></div><div class='quote-receiver'><h3>DESTINATAIRE</h3><p><strong>NOM CLIENT</strong></p><p>Entreprise</p><p>Adresse</p><p>Email client</p></div></div>",
+      "content": "<div class='quote-parties'><div class='quote-emitter'><h3>ÉMETTEUR</h3><p><strong>[Raison sociale]</strong></p><p>[Forme juridique] au capital de [Montant] €</p><p>[Adresse complète]</p><p>SIREN : [N°] | TVA : [N°]</p><p>Email : [email] | Tél : [téléphone]</p></div><div class='quote-receiver'><h3>DESTINATAIRE</h3><p><strong>[Nom contact]</strong></p><p>[Fonction si connue]</p><p><strong>[Raison sociale client]</strong></p><p>[Adresse client si connue]</p><p>Email : [email client]</p></div></div>",
       "order": 1
     },
     {
       "id": "object",
       "title": "Objet",
-      "content": "<h3>Objet : Titre du projet</h3><p>Description concise de la prestation (2-3 lignes max).</p>",
+      "content": "<h3>Objet : [Titre orienté valeur]</h3><p>[Description claire en 2-3 lignes : finalité business + périmètre fonctionnel + bénéfice client attendu]</p><p><strong>Exemple de formulation :</strong> Mise en place d'une solution digitale sur mesure intégrant des fonctionnalités d'intelligence artificielle pour l'optimisation de [processus métier] et l'amélioration de [bénéfice client].</p>",
       "order": 2
     },
     {
       "id": "services",
       "title": "Prestations",
-      "content": "<table class='services-table'><thead><tr><th>Description</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th></tr></thead><tbody><tr><td><strong>Phase 1 - Conception</strong><br/><small>Analyse, maquettes, architecture</small></td><td>5</td><td>jours</td><td>800,00 €</td><td>4 000,00 €</td></tr><tr><td><strong>Phase 2 - Développement</strong><br/><small>Intégration, tests, déploiement</small></td><td>10</td><td>jours</td><td>800,00 €</td><td>8 000,00 €</td></tr><tr><td><strong>Formation utilisateurs</strong></td><td>1</td><td>forfait</td><td>1 500,00 €</td><td>1 500,00 €</td></tr></tbody></table>",
+      "content": "<table class='services-table'><thead><tr><th>Description</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th></tr></thead><tbody>[LIGNES DE PRESTATIONS]</tbody></table>",
       "order": 3
     },
     {
       "id": "totals",
       "title": "Totaux",
-      "content": "<div class='quote-totals-wrapper'><table class='quote-totals-table'><tr><td>Total HT</td><td>13 500,00 €</td></tr><tr><td>TVA 20%</td><td>2 700,00 €</td></tr><tr class='total-row'><td>Total TTC</td><td>16 200,00 €</td></tr></table></div>",
+      "content": "<div class='quote-totals-wrapper'><table class='quote-totals-table'><tr><td>Total HT</td><td>[Montant] €</td></tr><tr><td>TVA [taux]%</td><td>[Montant TVA] €</td></tr><tr class='total-row'><td><strong>Total TTC</strong></td><td><strong>[Montant TTC] €</strong></td></tr></table></div>",
       "order": 4
     },
     {
       "id": "payment",
       "title": "Conditions",
-      "content": "<p><strong>Conditions de règlement :</strong> 50% à la commande, 50% à la livraison</p><p><strong>Délai de réalisation :</strong> 4 semaines après validation</p><div class='signature-block'><h4>Bon pour accord</h4><p>Date : ____/____/________</p><p>Signature précédée de \"Bon pour accord\" :</p><br/><br/><br/></div>",
+      "content": "<div class='payment-section'><h4>Conditions de paiement</h4><ul><li><strong>Validité de l'offre :</strong> [X] jours à compter de la date d'émission</li><li><strong>Acompte :</strong> [X]% à la commande, soit [Montant] € TTC</li><li><strong>Solde :</strong> [X]% à la livraison/recette, soit [Montant] € TTC</li><li><strong>Délai de paiement :</strong> [X] jours date de facture</li><li><strong>Escompte :</strong> Aucun escompte accordé pour paiement anticipé</li><li><strong>Pénalités de retard :</strong> 3 fois le taux d'intérêt légal + indemnité forfaitaire de 40 € pour frais de recouvrement</li></ul></div><div class='clauses-section'><h4>Engagements</h4><ul><li><strong>Confidentialité :</strong> Les parties s'engagent à garder confidentielles toutes les informations échangées</li><li><strong>Garantie :</strong> Garantie corrective de [X] mois sur les livrables</li><li><strong>CGV :</strong> Ce devis est soumis aux Conditions Générales de Vente en annexe</li></ul></div><div class='signature-block'><h4>Bon pour accord</h4><p>Devis reçu et accepté sans réserve.</p><p>Date : ____/____/________</p><p>Nom et qualité du signataire :</p><p>Signature précédée de la mention « Bon pour accord » :</p><br/><br/><br/></div>",
       "order": 5
     }
   ],
   "metadata": {
-    "clientName": "Nom contact",
-    "clientCompany": "Entreprise cliente",
-    "projectName": "Nom du projet",
+    "clientName": "[Nom contact]",
+    "clientCompany": "[Entreprise]",
+    "projectName": "[Nom projet]",
     "quoteDate": "${new Date().toLocaleDateString('fr-FR')}",
-    "totalHT": 13500,
+    "totalHT": [Nombre],
     "tvaRate": ${billingEntity?.default_tva_rate || 20},
-    "tvaAmount": 2700,
-    "totalTTC": 16200,
+    "tvaAmount": [Nombre],
+    "totalTTC": [Nombre],
     "currency": "EUR",
     "validityDays": ${billingEntity?.default_validity_days || 30}
   }
 }
 
+## RÈGLES POUR LA SECTION "SERVICES"
+
+Chaque ligne de prestation DOIT contenir :
+1. **Description** : Titre clair de la phase + description courte (1-2 lignes max) orientée livrables
+   - Format HTML : <td><strong>Phase X - [Intitulé clair]</strong><br/><small>[Description des livrables attendus, logique métier compréhensible]</small></td>
+2. **Qté** : Quantité numérique
+3. **Unité** : jours | heures | forfait | mois | unité
+4. **P.U. HT** : Prix unitaire formaté "X XXX,XX €"
+5. **Total HT** : Qté × P.U. HT formaté "X XXX,XX €"
+
+Séparer clairement :
+- Les phases projet (conception, développement, déploiement)
+- Les licences/outils (si applicable)
+- La formation/accompagnement (si applicable)
+
 ## RÈGLES CRITIQUES
-1. Retourne UNIQUEMENT le JSON, sans texte avant/après
-2. Les IDs des sections DOIVENT être: "header", "object", "services", "totals", "payment"
-3. La table services a TOUJOURS 5 colonnes: Description | Qté | Unité | P.U. HT | Total HT
-4. L'unité peut être: jours, heures, forfait, mois, unité
-5. AUCUN placeholder comme {{...}} - utilise les vraies valeurs fournies
-6. Les montants doivent être cohérents (Total = Qté × P.U. HT)
-7. TVA calculée sur le total HT
-8. Format monétaire français avec espace : X XXX,XX €`,
+
+1. **Aucun placeholder** : Remplace [texte] par les vraies valeurs fournies. Si une donnée manque, invente une valeur réaliste cohérente.
+2. **Cohérence des calculs** : Total ligne = Qté × P.U. HT | Total HT = Σ lignes | TVA = Total HT × taux | TTC = HT + TVA
+3. **Format monétaire français** : X XXX,XX € (espace milliers, virgule décimale)
+4. **JSON pur** : Aucun texte avant/après le JSON
+5. **IDs obligatoires** : "header", "object", "services", "totals", "payment"
+6. **Formulations professionnelles** : Éviter les termes vagues, jargon IA inutile, redondances`,
 
     spec: `Tu es un architecte solution senior. Tu génères des Cahiers des Charges (CDC) de niveau professionnel.
 
@@ -574,23 +595,59 @@ serve(async (req) => {
 
     // User prompts optimized by document type - with REAL DATA INJECTED
     const USER_PROMPTS: Record<DocumentType, string> = {
-    quote: `Génère le JSON du devis avec les données suivantes :
+    quote: `GÉNÈRE LE JSON DU DEVIS PROFESSIONNEL B2B.
 
-CLIENT: ${clientName} - ${clientCompany} (${clientIndustry})
-PROJET: ${projectName}
-DESCRIPTION: ${projectDescription}
-${projectBudget ? `BUDGET INDICATIF: ${projectBudget}` : ""}
-${custom_instructions ? `INSTRUCTIONS: ${custom_instructions}` : ""}
-${lead?.ai_documents_summary ? `CONTEXTE: ${lead.ai_documents_summary}` : ""}
+═══════════════════════════════════════════════════════════
+DONNÉES CLIENT (à utiliser dans le devis)
+═══════════════════════════════════════════════════════════
+• Contact : ${clientName}${clientPosition ? ` (${clientPosition})` : ''}
+• Entreprise : ${clientCompany}
+• Secteur : ${clientIndustry}${clientSize ? ` | Taille : ${clientSize}` : ''}
+${clientEmail ? `• Email : ${clientEmail}` : ''}
 
-RAPPEL STRUCTURE OBLIGATOIRE:
-- Section "header" avec émetteur/destinataire
-- Section "object" avec titre et description courte
-- Section "services" avec tableau HTML des prestations
-- Section "totals" avec Total HT, TVA, Total TTC
-- Section "payment" avec conditions et signature
+═══════════════════════════════════════════════════════════
+DONNÉES PROJET
+═══════════════════════════════════════════════════════════
+• Nom : ${projectName}
+• Description : ${projectDescription}
+${projectBudget ? `• Budget indicatif : ${projectBudget}` : ''}
 
-Utilise les vraies valeurs ci-dessus, PAS de {{placeholders}}.`,
+${lead?.ai_documents_summary ? `═══════════════════════════════════════════════════════════
+CONTEXTE & HISTORIQUE
+═══════════════════════════════════════════════════════════
+${lead.ai_documents_summary}` : ''}
+
+${contextNotes.length > 0 ? `═══════════════════════════════════════════════════════════
+NOTES DE CONTEXTE
+═══════════════════════════════════════════════════════════
+${contextNotes.map(n => `• ${n.content || n}`).join('\n')}` : ''}
+
+${custom_instructions ? `═══════════════════════════════════════════════════════════
+INSTRUCTIONS SPÉCIFIQUES
+═══════════════════════════════════════════════════════════
+${custom_instructions}` : ''}
+
+═══════════════════════════════════════════════════════════
+CONSIGNES DE RÉDACTION
+═══════════════════════════════════════════════════════════
+1. OBJET DU DEVIS : Reformuler de manière claire et orientée valeur
+   → Finalité business + périmètre fonctionnel + bénéfice client
+
+2. PRESTATIONS : Structurer par phases avec pour chaque ligne :
+   → Intitulé clair (pas de jargon technique)
+   → Description courte des livrables
+   → Logique métier compréhensible par un décideur non-technique
+
+3. MONTANTS : Cohérence parfaite des calculs
+   → Si budget fourni, répartir de manière réaliste
+   → Sinon, proposer des TJM standards (600-1200€/jour selon profil)
+
+4. CONDITIONS : Professionnelles et conformes B2B France
+   → Validité, acompte/solde, pénalités, confidentialité
+
+5. FORMAT : JSON pur avec les 5 sections obligatoires
+   → IDs: "header", "object", "services", "totals", "payment"
+   → AUCUN placeholder {{...}} - valeurs réelles uniquement`,
 
       spec: `GÉNÈRE MAINTENANT LE JSON DU CAHIER DES CHARGES. Ne pose aucune question.
 
