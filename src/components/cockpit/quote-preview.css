@@ -532,8 +532,143 @@
 }
 
 /* ========================================
-   FOOTER
+   CONTEXT SECTION - Client Understanding
    ======================================== */
+.quote-context {
+  padding: 20px 32px;
+  background: linear-gradient(135deg, hsl(218, 47%, 98%), hsl(218, 30%, 96%));
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.quote-context h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: hsl(218, 47%, 20%);
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.quote-context p {
+  font-size: 13px;
+  color: #444;
+  line-height: 1.6;
+  margin: 0 0 16px 0;
+}
+
+.quote-context ul.context-points {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quote-context ul.context-points li {
+  padding: 8px 12px;
+  margin: 6px 0;
+  background: white;
+  border-left: 3px solid hsl(12, 60%, 44%);
+  font-size: 12px;
+  color: #333;
+  border-radius: 0 4px 4px 0;
+}
+
+.quote-context ul.context-points li strong {
+  color: hsl(218, 47%, 25%);
+}
+
+/* ========================================
+   PLANNING SECTION - Project Timeline
+   ======================================== */
+.quote-planning {
+  padding: 20px 32px;
+  background: #fff;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.quote-planning h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: hsl(218, 47%, 20%);
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.planning-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.planning-table thead tr {
+  background: hsl(218, 47%, 95%);
+}
+
+.planning-table th {
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: hsl(218, 47%, 25%);
+  border-bottom: 2px solid hsl(218, 47%, 20%);
+}
+
+.planning-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e5e5;
+  color: #333;
+}
+
+.planning-table tbody tr:hover {
+  background: hsl(218, 47%, 98%);
+}
+
+.planning-note {
+  margin: 12px 0 0 0;
+  font-size: 11px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Payment Schedule Table */
+.quote-payment-schedule {
+  margin-top: 20px;
+  padding: 16px;
+  background: hsl(218, 47%, 97%);
+  border-radius: 6px;
+}
+
+.quote-payment-schedule h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: hsl(218, 47%, 25%);
+  margin: 0 0 10px 0;
+}
+
+.payment-schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.payment-schedule-table td {
+  padding: 8px 0;
+  font-size: 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.payment-schedule-table td:last-child {
+  text-align: right;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Consolas', monospace;
+}
+
+/* Signature Space */
+.signature-space {
+  height: 80px;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+  margin-top: 12px;
+  background: white;
+}
 .quote-footer {
   padding: 14px 32px;
   background: hsl(218, 47%, 20%);

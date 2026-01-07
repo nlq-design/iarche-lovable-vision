@@ -236,158 +236,315 @@ function getSystemPrompt(documentType: DocumentType, billingEntity: BillingEntit
   const billingContext = buildBillingEntityContext(billingEntity);
   
   const basePrompts: Record<DocumentType, string> = {
-    quote: `## INSTRUCTION CRITIQUE - À SUIVRE IMPÉRATIVEMENT
+    quote: `## INSTRUCTION ABSOLUE - EXÉCUTION IMMÉDIATE
 
-Tu DOIS générer IMMÉDIATEMENT le JSON complet du devis. 
-NE POSE JAMAIS DE QUESTIONS. NE DEMANDE JAMAIS DE DONNÉES SUPPLÉMENTAIRES.
-Les données client et projet sont DÉJÀ FOURNIES dans le message utilisateur qui suit.
-Si une donnée spécifique manque, INVENTE une valeur réaliste et cohérente.
+GÉNÈRE LE JSON DU DEVIS MAINTENANT. Commence directement par { et termine par }.
+AUCUNE question. AUCUN texte explicatif. Les données sont déjà dans le message suivant.
+Si une donnée manque, invente une valeur réaliste et professionnelle.
 
-COMMENCE DIRECTEMENT PAR { et termine par }. Aucun texte avant ou après.
+═══════════════════════════════════════════════════════════════════════════════
+                    SYSTÈME DE DEVIS PROFESSIONNEL B2B v10
+                       QUALITÉ ENTREPRISE HAUT DE GAMME
+═══════════════════════════════════════════════════════════════════════════════
 
----
-
-Tu es un expert commercial senior spécialisé dans la rédaction de devis B2B de haute qualité.
+Tu es un directeur commercial senior spécialisé en prestations intellectuelles B2B.
+Tu rédiges des devis de niveau exécutif : clairs, structurés, juridiquement irréprochables.
 
 ## SOCIÉTÉ ÉMETTRICE
 ${billingContext}
 
-## OBJECTIF
-Produire un devis professionnel, juridiquement propre, orienté valeur client, immédiatement exploitable comme document contractuel B2B.
-Niveau de qualité équivalent à un devis/facture rédigé manuellement par un prestataire expérimenté.
+═══════════════════════════════════════════════════════════════════════════════
+                           PHILOSOPHIE DU DEVIS
+═══════════════════════════════════════════════════════════════════════════════
 
-## TON & STYLE
-- Professionnel et sobre
-- Vocabulaire commercial précis (pas de jargon IA)
-- Orienté valeur et bénéfices client
-- Zéro discours marketing superflu
+Un devis professionnel n'est pas une simple liste de prix.
+C'est un document de vente qui :
+- Reformule le besoin client pour démontrer la compréhension
+- Structure la solution en phases logiques et progressives
+- Justifie chaque investissement par sa valeur métier
+- Inspire confiance par sa rigueur et sa clarté
+- Facilite la décision par sa lisibilité
 
-## STRUCTURE DU JSON DE SORTIE
+═══════════════════════════════════════════════════════════════════════════════
+                        STRUCTURE JSON OBLIGATOIRE
+═══════════════════════════════════════════════════════════════════════════════
 
 {
   "sections": [
-    {
-      "id": "header",
-      "title": "En-tête",
-      "content": "<div class='quote-parties'>...</div>",
-      "order": 1
-    },
-    {
-      "id": "object",
-      "title": "Objet",
-      "content": "<h3>Objet : [titre clair orienté valeur]</h3><p>[description]</p>",
-      "order": 2
-    },
-    {
-      "id": "services",
-      "title": "Prestations",
-      "content": "<table class='services-table'><thead><tr><th>Description</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th></tr></thead><tbody>...</tbody></table>",
-      "order": 3
-    },
-    {
-      "id": "totals",
-      "title": "Totaux",
-      "content": "<div class='quote-totals-wrapper'>...</div>",
-      "order": 4
-    },
-    {
-      "id": "payment",
-      "title": "Conditions",
-      "content": "<div class='payment-section'>...</div>",
-      "order": 5
-    }
+    { "id": "header", "title": "En-tête", "content": "...", "order": 1 },
+    { "id": "object", "title": "Objet", "content": "...", "order": 2 },
+    { "id": "context", "title": "Contexte", "content": "...", "order": 3 },
+    { "id": "services", "title": "Prestations", "content": "...", "order": 4 },
+    { "id": "totals", "title": "Totaux", "content": "...", "order": 5 },
+    { "id": "planning", "title": "Planning", "content": "...", "order": 6 },
+    { "id": "payment", "title": "Conditions", "content": "...", "order": 7 }
   ],
   "metadata": {
-    "clientName": "Nom du contact",
+    "clientName": "Contact principal",
     "clientCompany": "Nom entreprise",
     "projectName": "Nom du projet",
     "quoteDate": "${new Date().toLocaleDateString('fr-FR')}",
-    "totalHT": 15000,
+    "totalHT": 0,
     "tvaRate": ${billingEntity?.default_tva_rate || 20},
-    "tvaAmount": 3000,
-    "totalTTC": 18000,
+    "tvaAmount": 0,
+    "totalTTC": 0,
     "currency": "EUR",
-    "validityDays": ${billingEntity?.default_validity_days || 30}
+    "validityDays": ${billingEntity?.default_validity_days || 30},
+    "phases": []
   }
 }
 
-## SECTION HEADER - Format exact attendu
+═══════════════════════════════════════════════════════════════════════════════
+                    SECTION 1 : HEADER (EN-TÊTE BIPARTITE)
+═══════════════════════════════════════════════════════════════════════════════
 
-<div class='quote-parties'>
-  <div class='quote-emitter'>
+Format HTML exact :
+
+<div class="quote-parties">
+  <div class="quote-emitter">
     <h3>ÉMETTEUR</h3>
-    <p><strong>[Raison sociale de la billing entity]</strong></p>
-    <p>[Forme juridique] au capital de [Montant] €</p>
-    <p>[Adresse complète]</p>
-    <p>SIREN : [N°] | TVA : [N°]</p>
-    <p>Email : [email] | Tél : [téléphone]</p>
+    <p><strong>${billingEntity?.name || 'IArche'}</strong></p>
+    ${billingEntity?.legal_form ? `<p>${billingEntity.legal_form}${billingEntity?.capital_amount ? ` au capital de ${billingEntity.capital_amount.toLocaleString('fr-FR')} €` : ''}</p>` : ''}
+    ${billingEntity?.address ? `<p>${billingEntity.address}</p>` : ''}
+    ${billingEntity?.postal_code || billingEntity?.city ? `<p>${billingEntity?.postal_code || ''} ${billingEntity?.city || ''}</p>` : ''}
+    ${billingEntity?.siren ? `<p>SIREN : ${billingEntity.siren}</p>` : ''}
+    ${billingEntity?.tva_number ? `<p>N° TVA : ${billingEntity.tva_number}</p>` : ''}
+    ${billingEntity?.email ? `<p>Email : ${billingEntity.email}</p>` : ''}
+    ${billingEntity?.phone ? `<p>Tél : ${billingEntity.phone}</p>` : ''}
   </div>
-  <div class='quote-receiver'>
+  <div class="quote-receiver">
     <h3>DESTINATAIRE</h3>
-    <p><strong>[Nom contact client - depuis les données fournies]</strong></p>
-    <p>[Fonction si connue]</p>
-    <p><strong>[Entreprise client - depuis les données fournies]</strong></p>
-    <p>Email : [email client si fourni]</p>
+    <p><strong>[NOM_CONTACT - depuis données fournies]</strong></p>
+    <p>[FONCTION si connue]</p>
+    <p><strong>[ENTREPRISE_CLIENT]</strong></p>
+    <p>[EMAIL_CLIENT si fourni]</p>
   </div>
 </div>
 
-## SECTION SERVICES - Format de chaque ligne
+═══════════════════════════════════════════════════════════════════════════════
+                    SECTION 2 : OBJET (ACCROCHE EXECUTIVE)
+═══════════════════════════════════════════════════════════════════════════════
 
-<tr>
-  <td><strong>Phase X - Intitulé clair</strong><br/><small>Description des livrables, logique métier compréhensible par un décideur non-technique</small></td>
-  <td>5</td>
-  <td>jours</td>
-  <td>900,00 €</td>
-  <td>4 500,00 €</td>
-</tr>
+Format :
 
-Unités valides : jours | heures | forfait | mois | unité
+<div class="quote-object">
+  <h3>Objet : [TITRE ORIENTÉ VALEUR - pas juste le nom technique]</h3>
+  <p class="object-description">
+    [1-2 phrases reformulant le BÉNÉFICE MÉTIER, pas la technique.
+    Ex: "Mise en place d'une solution d'intelligence artificielle permettant 
+    d'automatiser le traitement de vos demandes clients et de réduire 
+    significativement vos délais de réponse."]
+  </p>
+</div>
 
-## SECTION TOTALS - Format exact
+EXEMPLES D'OBJETS PROFESSIONNELS :
+- ❌ "Développement application IA" → Trop vague
+- ✅ "Solution IA d'automatisation du service client permettant une réduction 
+     de 40% des temps de traitement"
+- ❌ "Création site web" → Générique
+- ✅ "Plateforme digitale de génération de leads qualifiés avec CRM intégré"
 
-<div class='quote-totals-wrapper'>
-  <table class='quote-totals-table'>
-    <tr><td>Total HT</td><td>15 000,00 €</td></tr>
-    <tr><td>TVA 20%</td><td>3 000,00 €</td></tr>
-    <tr class='total-row'><td><strong>Total TTC</strong></td><td><strong>18 000,00 €</strong></td></tr>
+═══════════════════════════════════════════════════════════════════════════════
+                    SECTION 3 : CONTEXTE (COMPRÉHENSION CLIENT)
+═══════════════════════════════════════════════════════════════════════════════
+
+Format :
+
+<div class="quote-context">
+  <h4>Votre contexte</h4>
+  <p>[2-3 phrases reformulant la situation actuelle du client, ses enjeux, 
+  et ce qui motive ce projet. Montre que tu as COMPRIS le besoin.]</p>
+  
+  <h4>Notre compréhension de vos enjeux</h4>
+  <ul class="context-points">
+    <li><strong>Enjeu 1 :</strong> [Description courte]</li>
+    <li><strong>Enjeu 2 :</strong> [Description courte]</li>
+    <li><strong>Enjeu 3 :</strong> [Description courte]</li>
+  </ul>
+</div>
+
+═══════════════════════════════════════════════════════════════════════════════
+                    SECTION 4 : SERVICES (TABLEAU STRUCTURÉ)
+═══════════════════════════════════════════════════════════════════════════════
+
+Format du tableau de prestations avec PHASES et SOUS-TOTAUX :
+
+<table class="services-table">
+  <thead>
+    <tr>
+      <th style="width:50%">Description</th>
+      <th style="width:10%">Qté</th>
+      <th style="width:12%">Unité</th>
+      <th style="width:14%">P.U. HT</th>
+      <th style="width:14%">Total HT</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- PHASE 1 -->
+    <tr class="phase-header">
+      <td colspan="5"><strong>PHASE 1 — CADRAGE & CONCEPTION</strong></td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Atelier de cadrage stratégique</strong><br/>
+        <small>Analyse des besoins, définition des objectifs et KPIs, 
+        identification des cas d'usage prioritaires</small>
+      </td>
+      <td>1</td>
+      <td>forfait</td>
+      <td>2 500,00 €</td>
+      <td>2 500,00 €</td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Conception fonctionnelle</strong><br/>
+        <small>Maquettes UX/UI, parcours utilisateurs, spécifications 
+        fonctionnelles détaillées</small>
+      </td>
+      <td>5</td>
+      <td>jours</td>
+      <td>900,00 €</td>
+      <td>4 500,00 €</td>
+    </tr>
+    <tr class="subtotal-row">
+      <td colspan="4"><em>Sous-total Phase 1</em></td>
+      <td><strong>7 000,00 €</strong></td>
+    </tr>
+    
+    <!-- PHASE 2 -->
+    <tr class="phase-header">
+      <td colspan="5"><strong>PHASE 2 — DÉVELOPPEMENT</strong></td>
+    </tr>
+    <!-- ... lignes de prestations ... -->
+    <tr class="subtotal-row">
+      <td colspan="4"><em>Sous-total Phase 2</em></td>
+      <td><strong>X XXX,XX €</strong></td>
+    </tr>
+    
+    <!-- Continuer pour chaque phase... -->
+  </tbody>
+</table>
+
+RÈGLES DU TABLEAU :
+1. Minimum 2 phases, maximum 5 phases
+2. 2-4 lignes de prestations par phase
+3. Chaque ligne a un TITRE en gras + DESCRIPTION en small
+4. La description explique le LIVRABLE et la VALEUR, pas la technique
+5. Sous-total après chaque phase
+6. Unités : jours | forfait | heures | mois | unité
+7. TJM réalistes : Junior 500-700€, Confirmé 700-900€, Senior 900-1200€
+
+═══════════════════════════════════════════════════════════════════════════════
+                    SECTION 5 : TOTAUX (RÉCAPITULATIF FINANCIER)
+═══════════════════════════════════════════════════════════════════════════════
+
+Format exact :
+
+<div class="quote-totals-wrapper">
+  <table class="quote-totals-table">
+    <tr><td>Total HT</td><td>XX XXX,XX €</td></tr>
+    <tr><td>TVA ${billingEntity?.default_tva_rate || 20}%</td><td>X XXX,XX €</td></tr>
+    <tr class="total-row"><td><strong>Total TTC</strong></td><td><strong>XX XXX,XX €</strong></td></tr>
   </table>
 </div>
 
-## SECTION PAYMENT - Contenu type
+<div class="quote-payment-schedule">
+  <h4>Échéancier indicatif</h4>
+  <table class="payment-schedule-table">
+    <tr><td>Acompte à la commande (30%)</td><td>X XXX,XX € HT</td></tr>
+    <tr><td>Jalons intermédiaires (40%)</td><td>X XXX,XX € HT</td></tr>
+    <tr><td>Solde à la recette (30%)</td><td>X XXX,XX € HT</td></tr>
+  </table>
+</div>
 
-<div class='payment-section'>
+═══════════════════════════════════════════════════════════════════════════════
+                    SECTION 6 : PLANNING (JALONS PROJET)
+═══════════════════════════════════════════════════════════════════════════════
+
+Format :
+
+<div class="quote-planning">
+  <h4>Planning prévisionnel</h4>
+  <table class="planning-table">
+    <thead>
+      <tr><th>Phase</th><th>Durée</th><th>Livrable</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Phase 1 — Cadrage</td><td>2 semaines</td><td>Cahier de spécifications validé</td></tr>
+      <tr><td>Phase 2 — Développement</td><td>6 semaines</td><td>Version bêta fonctionnelle</td></tr>
+      <tr><td>Phase 3 — Recette</td><td>2 semaines</td><td>Mise en production</td></tr>
+    </tbody>
+  </table>
+  <p class="planning-note"><em>Ce planning est indicatif et sera affiné lors du cadrage.</em></p>
+</div>
+
+═══════════════════════════════════════════════════════════════════════════════
+                    SECTION 7 : CONDITIONS (JURIDIQUE B2B)
+═══════════════════════════════════════════════════════════════════════════════
+
+Format exact :
+
+<div class="payment-section">
   <h4>Conditions de paiement</h4>
   <ul>
-    <li><strong>Validité :</strong> 30 jours à compter de la date d'émission</li>
-    <li><strong>Acompte :</strong> 30% à la commande</li>
-    <li><strong>Solde :</strong> 70% à la livraison</li>
-    <li><strong>Délai de paiement :</strong> 30 jours date de facture</li>
-    <li><strong>Pénalités de retard :</strong> 3× le taux légal + 40 € forfaitaires</li>
+    <li><strong>Validité du devis :</strong> ${billingEntity?.default_validity_days || 30} jours à compter de la date d'émission</li>
+    <li><strong>Acompte :</strong> 30% à la signature du bon de commande</li>
+    <li><strong>Jalons :</strong> 40% aux étapes intermédiaires définies</li>
+    <li><strong>Solde :</strong> 30% à la recette définitive</li>
+    <li><strong>Délai de règlement :</strong> 30 jours date de facture</li>
+    <li><strong>Pénalités de retard :</strong> Taux BCE majoré de 10 points + indemnité forfaitaire de 40 €</li>
+    <li><strong>Escompte :</strong> Aucun escompte accordé pour paiement anticipé</li>
   </ul>
 </div>
-<div class='clauses-section'>
-  <h4>Engagements</h4>
+
+<div class="clauses-section">
+  <h4>Engagements contractuels</h4>
   <ul>
-    <li><strong>Confidentialité :</strong> Les parties s'engagent à la confidentialité</li>
-    <li><strong>Garantie :</strong> Garantie corrective de 3 mois</li>
-    <li><strong>CGV :</strong> Devis soumis aux CGV en annexe</li>
+    <li><strong>Confidentialité :</strong> Les parties s'engagent mutuellement à préserver la confidentialité des informations échangées</li>
+    <li><strong>Propriété intellectuelle :</strong> Transfert de propriété des livrables au solde du paiement</li>
+    <li><strong>Garantie :</strong> Maintenance corrective incluse pendant 3 mois après livraison</li>
+    <li><strong>Assurance :</strong> Responsabilité civile professionnelle en vigueur</li>
+    <li><strong>CGV :</strong> Le présent devis est soumis à nos Conditions Générales de Vente en annexe</li>
   </ul>
 </div>
-<div class='signature-block'>
+
+<div class="signature-block">
   <h4>Bon pour accord</h4>
   <p>Date : ____/____/________</p>
-  <p>Signature :</p>
-  <br/><br/>
+  <p>Nom et fonction du signataire : _________________________________</p>
+  <p>Signature et cachet :</p>
+  <div class="signature-space"></div>
 </div>
 
-## RÈGLES CRITIQUES - À RESPECTER ABSOLUMENT
+═══════════════════════════════════════════════════════════════════════════════
+                         RÈGLES CRITIQUES ABSOLUES
+═══════════════════════════════════════════════════════════════════════════════
 
-1. **JSON IMMÉDIAT** : Commence par { et termine par }. AUCUN texte explicatif.
-2. **DONNÉES RÉELLES** : Utilise les données client/projet fournies dans le message suivant.
-3. **CALCULS EXACTS** : Total ligne = Qté × P.U. | Total HT = Σ lignes | TTC = HT + TVA
-4. **FORMAT FRANÇAIS** : Montants avec espace milliers et virgule (1 500,00 €)
-5. **5 SECTIONS OBLIGATOIRES** : header, object, services, totals, payment
-6. **SI DONNÉES MANQUANTES** : Invente des valeurs réalistes, NE POSE PAS DE QUESTIONS`,
+1. **JSON IMMÉDIAT** : Commence par { termine par }. AUCUN texte avant/après.
+
+2. **DONNÉES RÉELLES** : Utilise TOUTES les données client/projet fournies.
+
+3. **CALCULS RIGOUREUX** :
+   - Total ligne = Quantité × Prix unitaire
+   - Sous-total phase = Σ lignes de la phase
+   - Total HT = Σ sous-totaux
+   - TVA = Total HT × ${billingEntity?.default_tva_rate || 20}%
+   - TTC = HT + TVA
+
+4. **FORMAT MONÉTAIRE FRANÇAIS** :
+   - Séparateur milliers : espace (15 000)
+   - Séparateur décimales : virgule (15 000,00 €)
+   - Toujours 2 décimales
+
+5. **7 SECTIONS OBLIGATOIRES** : header, object, context, services, totals, planning, payment
+
+6. **AUCUN PLACEHOLDER** : Pas de {{...}}, [[...]], [À COMPLÉTER], etc.
+   Si donnée manquante → invente une valeur réaliste et cohérente.
+
+7. **DESCRIPTIONS PROFESSIONNELLES** :
+   - Chaque prestation a un titre ET une description
+   - La description explique le LIVRABLE et sa VALEUR
+   - Vocabulaire accessible à un décideur non-technique`,
 
     spec: `Tu es un architecte solution senior. Tu génères des Cahiers des Charges (CDC) de niveau professionnel.
 
@@ -659,59 +816,91 @@ serve(async (req) => {
 
     // User prompts optimized by document type - with REAL DATA INJECTED
     const USER_PROMPTS: Record<DocumentType, string> = {
-    quote: `GÉNÈRE LE JSON DU DEVIS PROFESSIONNEL B2B.
+    quote: `GÉNÈRE MAINTENANT LE JSON DU DEVIS PROFESSIONNEL HAUT DE GAMME.
 
-═══════════════════════════════════════════════════════════
-DONNÉES CLIENT (à utiliser dans le devis)
-═══════════════════════════════════════════════════════════
-• Contact : ${clientName}${clientPosition ? ` (${clientPosition})` : ''}
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           DONNÉES CLIENT                                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+• Contact principal : ${clientName}${clientPosition ? ` — ${clientPosition}` : ''}
 • Entreprise : ${clientCompany}
-• Secteur : ${clientIndustry}${clientSize ? ` | Taille : ${clientSize}` : ''}
+• Secteur d'activité : ${clientIndustry}
+${clientSize ? `• Taille entreprise : ${clientSize}` : ''}
 ${clientEmail ? `• Email : ${clientEmail}` : ''}
 
-═══════════════════════════════════════════════════════════
-DONNÉES PROJET
-═══════════════════════════════════════════════════════════
-• Nom : ${projectName}
-• Description : ${projectDescription}
-${projectBudget ? `• Budget indicatif : ${projectBudget}` : ''}
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           DONNÉES PROJET                                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
 
-${lead?.ai_documents_summary ? `═══════════════════════════════════════════════════════════
-CONTEXTE & HISTORIQUE
-═══════════════════════════════════════════════════════════
+• Intitulé : ${projectName}
+• Description : ${projectDescription}
+${projectBudget ? `• Enveloppe budgétaire : ${projectBudget}` : '• Budget : À définir selon périmètre'}
+${opportunity?.value_amount ? `• Montant opportunité : ${opportunity.value_amount.toLocaleString('fr-FR')} €` : ''}
+
+${solution ? `╔══════════════════════════════════════════════════════════════════════════════╗
+║                         SOLUTION DE RÉFÉRENCE                                 ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+• Solution : ${solution.title}
+• Description : ${solution.excerpt || ''}` : ''}
+
+${lead?.ai_documents_summary ? `╔══════════════════════════════════════════════════════════════════════════════╗
+║                     SYNTHÈSE INTELLIGENCE CLIENT                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
 ${lead.ai_documents_summary}` : ''}
 
-${contextNotes.length > 0 ? `═══════════════════════════════════════════════════════════
-NOTES DE CONTEXTE
-═══════════════════════════════════════════════════════════
-${contextNotes.map(n => `• ${n.content || n}`).join('\n')}` : ''}
+${contextNotes.length > 0 ? `╔══════════════════════════════════════════════════════════════════════════════╗
+║                         NOTES DE CONTEXTE                                     ║
+╚══════════════════════════════════════════════════════════════════════════════╝
 
-${custom_instructions ? `═══════════════════════════════════════════════════════════
-INSTRUCTIONS SPÉCIFIQUES
-═══════════════════════════════════════════════════════════
+${contextNotes.map(n => `• ${typeof n === 'string' ? n : n.content}`).join('\n')}` : ''}
+
+${specifications.length > 0 ? `╔══════════════════════════════════════════════════════════════════════════════╗
+║                    CAHIER DES CHARGES EXISTANT                                ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+${specifications.map(s => `• ${s.title}: ${typeof s.content === 'string' ? s.content.substring(0, 300) : '...'}`).join('\n')}` : ''}
+
+${custom_instructions ? `╔══════════════════════════════════════════════════════════════════════════════╗
+║                      INSTRUCTIONS SPÉCIFIQUES                                 ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
 ${custom_instructions}` : ''}
 
-═══════════════════════════════════════════════════════════
-CONSIGNES DE RÉDACTION
-═══════════════════════════════════════════════════════════
-1. OBJET DU DEVIS : Reformuler de manière claire et orientée valeur
-   → Finalité business + périmètre fonctionnel + bénéfice client
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    CONSIGNES DE RÉDACTION PREMIUM                             ║
+╚══════════════════════════════════════════════════════════════════════════════╝
 
-2. PRESTATIONS : Structurer par phases avec pour chaque ligne :
-   → Intitulé clair (pas de jargon technique)
-   → Description courte des livrables
-   → Logique métier compréhensible par un décideur non-technique
+1. SECTION CONTEXT : Reformuler les enjeux du client pour montrer la compréhension
+   → Identifier 3 enjeux clés (business, technique, organisationnel)
 
-3. MONTANTS : Cohérence parfaite des calculs
-   → Si budget fourni, répartir de manière réaliste
-   → Sinon, proposer des TJM standards (600-1200€/jour selon profil)
+2. SECTION OBJECT : Titre orienté VALEUR MÉTIER, pas technique
+   → Ex: "Solution d'automatisation permettant +40% de productivité"
 
-4. CONDITIONS : Professionnelles et conformes B2B France
-   → Validité, acompte/solde, pénalités, confidentialité
+3. SECTION SERVICES : Structure par PHASES avec sous-totaux
+   → Phase 1: Cadrage (10-15% du budget)
+   → Phase 2: Conception/Design (15-20%)
+   → Phase 3: Développement (40-50%)
+   → Phase 4: Tests & Recette (15-20%)
+   → Phase 5: Accompagnement (5-10%)
 
-5. FORMAT : JSON pur avec les 5 sections obligatoires
-   → IDs: "header", "object", "services", "totals", "payment"
-   → AUCUN placeholder {{...}} - valeurs réelles uniquement`,
+4. CHAQUE PRESTATION : Titre en gras + description en <small>
+   → La description explique le LIVRABLE et sa VALEUR
+   → Éviter le jargon technique incompréhensible
+
+5. SECTION PLANNING : Planning réaliste avec livrables
+   → Durées cohérentes avec la charge de travail
+
+6. SECTION PAYMENT : Clauses B2B France complètes
+   → Échéancier 30/40/30 ou adapté
+   → Pénalités, escompte, confidentialité, CGV
+
+7. MONTANTS : Si budget fourni, le respecter. Sinon, proposer fourchette réaliste
+   → TJM: Junior 550-700€, Confirmé 750-950€, Senior/Expert 950-1300€
+
+8. FORMAT : JSON avec 7 sections obligatoires
+   → IDs: header, object, context, services, totals, planning, payment`,
 
       spec: `GÉNÈRE MAINTENANT LE JSON DU CAHIER DES CHARGES. Ne pose aucune question.
 
