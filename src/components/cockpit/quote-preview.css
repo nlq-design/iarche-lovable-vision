@@ -133,7 +133,7 @@
 }
 
 /* ========================================
-   SERVICES TABLE - Professional Grid
+   SERVICES TABLE - Excel-Style Professional Grid
    ======================================== */
 .quote-services {
   padding: 24px 32px 32px;
@@ -167,36 +167,56 @@
   width: 100%;
   border-collapse: collapse;
   margin: 0;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #d0d0d0;
+  font-size: 12px;
 }
 
 .quote-services-table thead tr,
 .services-table thead tr {
-  background: #f5f5f5;
+  background: #f0f0f0;
 }
 
 .quote-services-table th,
 .services-table th {
-  padding: 12px 16px;
+  padding: 10px 12px;
   text-align: left;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #555;
-  border-bottom: 2px solid #ddd;
+  letter-spacing: 0.4px;
+  color: #333;
+  border: 1px solid #d0d0d0;
+  background: #f0f0f0;
 }
 
+/* Column: Description (wider) */
+.quote-services-table th:first-child,
+.services-table th:first-child {
+  width: 45%;
+}
+
+/* Column: Quantité */
 .quote-services-table th:nth-child(2),
+.services-table th:nth-child(2) {
+  text-align: center;
+  width: 70px;
+}
+
+/* Column: Unité (jours/heures/forfait) */
 .quote-services-table th:nth-child(3),
-.quote-services-table th:nth-child(4),
-.services-table th:nth-child(2),
-.services-table th:nth-child(3),
-.services-table th:nth-child(4) {
+.services-table th:nth-child(3) {
   text-align: center;
   width: 80px;
 }
 
+/* Column: P.U. HT */
+.quote-services-table th:nth-child(4),
+.services-table th:nth-child(4) {
+  text-align: right;
+  width: 90px;
+}
+
+/* Column: Montant HT */
 .quote-services-table th:last-child,
 .services-table th:last-child {
   text-align: right;
@@ -205,7 +225,12 @@
 
 .quote-services-table tbody tr,
 .services-table tbody tr {
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.quote-services-table tbody tr:nth-child(even),
+.services-table tbody tr:nth-child(even) {
+  background: #fafafa;
 }
 
 .quote-services-table tbody tr:last-child,
@@ -215,27 +240,47 @@
 
 .quote-services-table td,
 .services-table td {
-  padding: 14px 16px;
+  padding: 10px 12px;
   vertical-align: top;
-  font-size: 13px;
+  font-size: 12px;
   color: #333;
+  border: 1px solid #e0e0e0;
+  line-height: 1.4;
 }
 
+/* Cell: Description - Excel-like compact */
 .quote-services-table td:first-child,
 .services-table td:first-child {
   font-weight: 500;
+  color: #1a1a1a;
 }
 
+/* Cell: Quantité */
 .quote-services-table td:nth-child(2),
-.quote-services-table td:nth-child(3),
-.quote-services-table td:nth-child(4),
-.services-table td:nth-child(2),
-.services-table td:nth-child(3),
-.services-table td:nth-child(4) {
+.services-table td:nth-child(2) {
   text-align: center;
   white-space: nowrap;
+  font-weight: 500;
 }
 
+/* Cell: Unité */
+.quote-services-table td:nth-child(3),
+.services-table td:nth-child(3) {
+  text-align: center;
+  white-space: nowrap;
+  color: #666;
+  font-size: 11px;
+}
+
+/* Cell: P.U. HT */
+.quote-services-table td:nth-child(4),
+.services-table td:nth-child(4) {
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+/* Cell: Montant HT */
 .quote-services-table td:last-child,
 .services-table td:last-child {
   text-align: right;
