@@ -298,7 +298,10 @@ C'est un document de vente qui :
                     SECTION 1 : HEADER (EN-TÊTE BIPARTITE)
 ═══════════════════════════════════════════════════════════════════════════════
 
-Format HTML exact :
+RÈGLE CRITIQUE : dans la partie DESTINATAIRE, écris des VALEURS RÉELLES (nom, entreprise, email). 
+N'écris jamais de texte entre crochets, ni "Veuillez fournir...".
+
+Format HTML exact (classes obligatoires) :
 
 <div class="quote-parties">
   <div class="quote-emitter">
@@ -314,10 +317,10 @@ Format HTML exact :
   </div>
   <div class="quote-receiver">
     <h3>DESTINATAIRE</h3>
-    <p><strong>[NOM_CONTACT - depuis données fournies]</strong></p>
-    <p>[FONCTION si connue]</p>
-    <p><strong>[ENTREPRISE_CLIENT]</strong></p>
-    <p>[EMAIL_CLIENT si fourni]</p>
+    <p><strong>Jean Dupont</strong></p>
+    <p>Directeur des opérations</p>
+    <p><strong>Entreprise Cliente</strong></p>
+    <p>jean.dupont@entreprise.fr</p>
   </div>
 </div>
 
@@ -325,41 +328,30 @@ Format HTML exact :
                     SECTION 2 : OBJET (ACCROCHE EXECUTIVE)
 ═══════════════════════════════════════════════════════════════════════════════
 
-Format :
+Format (adapte le texte au projet, mais conserve les classes) :
 
 <div class="quote-object">
-  <h3>Objet : [TITRE ORIENTÉ VALEUR - pas juste le nom technique]</h3>
+  <h3>Objet : Plateforme digitale & intégration IA</h3>
   <p class="object-description">
-    [1-2 phrases reformulant le BÉNÉFICE MÉTIER, pas la technique.
-    Ex: "Mise en place d'une solution d'intelligence artificielle permettant 
-    d'automatiser le traitement de vos demandes clients et de réduire 
-    significativement vos délais de réponse."]
+    Mise en place d'une solution combinant site web, CRM et intégrations IA afin d'améliorer la génération de leads, automatiser le traitement des demandes et accélérer le cycle commercial.
   </p>
 </div>
-
-EXEMPLES D'OBJETS PROFESSIONNELS :
-- ❌ "Développement application IA" → Trop vague
-- ✅ "Solution IA d'automatisation du service client permettant une réduction 
-     de 40% des temps de traitement"
-- ❌ "Création site web" → Générique
-- ✅ "Plateforme digitale de génération de leads qualifiés avec CRM intégré"
 
 ═══════════════════════════════════════════════════════════════════════════════
                     SECTION 3 : CONTEXTE (COMPRÉHENSION CLIENT)
 ═══════════════════════════════════════════════════════════════════════════════
 
-Format :
+Format (contenu rédigé, sans placeholders) :
 
 <div class="quote-context">
   <h4>Votre contexte</h4>
-  <p>[2-3 phrases reformulant la situation actuelle du client, ses enjeux, 
-  et ce qui motive ce projet. Montre que tu as COMPRIS le besoin.]</p>
-  
+  <p>Vous souhaitez structurer votre acquisition et votre suivi client, tout en industrialisant certains processus via l'IA (qualification, réponses, routage), afin de gagner en efficacité et en qualité de service.</p>
+
   <h4>Notre compréhension de vos enjeux</h4>
   <ul class="context-points">
-    <li><strong>Enjeu 1 :</strong> [Description courte]</li>
-    <li><strong>Enjeu 2 :</strong> [Description courte]</li>
-    <li><strong>Enjeu 3 :</strong> [Description courte]</li>
+    <li><strong>Performance commerciale :</strong> augmenter le volume de leads qualifiés et améliorer le taux de conversion</li>
+    <li><strong>Productivité :</strong> réduire le temps passé sur des tâches répétitives grâce à l'automatisation et à l'IA</li>
+    <li><strong>Traçabilité :</strong> centraliser les données et piloter l'activité via un CRM fiable</li>
   </ul>
 </div>
 
@@ -922,7 +914,7 @@ ${contextNotes.length > 0 ? `NOTES: ${contextNotes.map(n => n.content).join(' | 
 
 CONSIGNES:
 1. Réponds UNIQUEMENT avec le JSON complet
-2. AUCUN placeholder {{...}} - utilise les vraies valeurs ci-dessus`,
+2. AUCUN placeholder (ni {{...}} ni [...]) : utilise les vraies valeurs ci-dessus ou invente une valeur réaliste`,
 
       proposal: `GÉNÈRE MAINTENANT LE JSON DE LA PROPOSITION COMMERCIALE. Ne pose aucune question.
 
@@ -941,7 +933,7 @@ ${contextNotes.length > 0 ? `NOTES: ${contextNotes.map(n => n.content).join(' | 
 
 CONSIGNES:
 1. Réponds UNIQUEMENT avec le JSON complet
-2. AUCUN placeholder {{...}} - utilise les vraies valeurs ci-dessus`,
+2. AUCUN placeholder (ni {{...}} ni [...]) : utilise les vraies valeurs ci-dessus ou invente une valeur réaliste`,
     };
     const userPrompt = aiPromptData?.user_prompt || USER_PROMPTS[document_type];
 
