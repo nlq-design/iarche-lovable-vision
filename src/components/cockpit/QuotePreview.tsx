@@ -63,8 +63,14 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
     const totalsSection = sections.find(s => s.id === 'totals');
     const paymentSection = sections.find(s => s.id === 'payment');
 
-    // Fallback for old format
+    // Check for new format
     const hasNewFormat = headerSection || servicesSection;
+
+    // Calculate validity date
+    const createdDate = new Date(document.created_at || Date.now());
+    const validityDays = metadata.validityDays || 30;
+    const validityDate = new Date(createdDate);
+    validityDate.setDate(validityDate.getDate() + validityDays);
 
     const handleExportDOCX = async () => {
       try {
@@ -96,7 +102,7 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
       }
     };
 
-    // If old format, fall back to regular preview
+    // If old format, show fallback message
     if (!hasNewFormat) {
       return (
         <div className={isEmbedded ? "" : "p-5 space-y-4"} ref={ref}>
@@ -149,19 +155,20 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
           </div>
         )}
 
-        {/* Quote Document */}
+        {/* Quote Document - Professional Invoice Style */}
         <Card 
           className={`quote-document-card ${isEmbedded ? '' : 'max-w-4xl mx-auto'}`}
           ref={isEmbedded ? undefined : ref}
         >
           <CardContent className="p-0">
-            {/* Document Header - Quote Number & Date */}
+            {/* Top Bar - Quote Number & Dates */}
             <div className="quote-header-bar">
               <div className="quote-number">
-                {document.quote_number || 'DEVIS'}
+                {document.quote_number || `Devis N° ${document.id.slice(0, 8).toUpperCase()}`}
               </div>
-              <div className="quote-date">
-                {format(new Date(document.created_at || Date.now()), 'dd MMMM yyyy', { locale: fr })}
+              <div className="quote-dates">
+                <span>Date d'émission : {format(createdDate, 'dd/MM/yyyy', { locale: fr })}</span>
+                <span>Date limite de validité : {format(validityDate, 'dd/MM/yyyy', { locale: fr })}</span>
               </div>
             </div>
 
@@ -171,7 +178,7 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                 className="quote-header-content"
                 dangerouslySetInnerHTML={{ 
                   __html: DOMPurify.sanitize(headerSection.content, {
-                    ADD_TAGS: ['div'],
+                    ADD_TAGS: ['div', 'h2', 'h3', 'p', 'span'],
                     ADD_ATTR: ['class', 'style'],
                   })
                 }}
@@ -184,7 +191,7 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                 <div 
                   dangerouslySetInnerHTML={{ 
                     __html: DOMPurify.sanitize(objectSection.content, {
-                      ADD_TAGS: ['div'],
+                      ADD_TAGS: ['div', 'h3', 'p', 'strong'],
                       ADD_ATTR: ['class', 'style'],
                     })
                   }}
@@ -195,12 +202,11 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
             {/* Services Table */}
             {servicesSection && (
               <div className="quote-services">
-                <h3 className="quote-section-title">{servicesSection.title}</h3>
                 <div 
                   className="quote-services-table"
                   dangerouslySetInnerHTML={{ 
                     __html: DOMPurify.sanitize(servicesSection.content, {
-                      ADD_TAGS: ['table', 'thead', 'tbody', 'tr', 'th', 'td', 'div'],
+                      ADD_TAGS: ['table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'strong', 'em', 'p'],
                       ADD_ATTR: ['class', 'style', 'colspan', 'rowspan'],
                     })
                   }}
@@ -214,7 +220,7 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                 <div 
                   dangerouslySetInnerHTML={{ 
                     __html: DOMPurify.sanitize(totalsSection.content, {
-                      ADD_TAGS: ['div', 'span'],
+                      ADD_TAGS: ['div', 'span', 'p', 'strong', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
                       ADD_ATTR: ['class', 'style'],
                     })
                   }}
@@ -222,14 +228,13 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
               </div>
             )}
 
-            {/* Payment Terms */}
+            {/* Payment Terms & Signature */}
             {paymentSection && (
               <div className="quote-payment">
-                <h3 className="quote-section-title">{paymentSection.title}</h3>
                 <div 
                   dangerouslySetInnerHTML={{ 
                     __html: DOMPurify.sanitize(paymentSection.content, {
-                      ADD_TAGS: ['div', 'p'],
+                      ADD_TAGS: ['div', 'p', 'h4', 'strong', 'em'],
                       ADD_ATTR: ['class', 'style'],
                     })
                   }}
@@ -240,12 +245,8 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
             {/* Footer */}
             <div className="quote-footer">
               <p>
-                Document généré le {format(new Date(document.created_at || Date.now()), 'dd/MM/yyyy à HH:mm', { locale: fr })}
-                {document.ai_generated && ' • Assisté par IA'}
+                {document.quote_number || `Devis n°${document.id.slice(0, 8).toUpperCase()}`} — {metadata.billingEntityName || 'Société'} — Page 1/1
               </p>
-              {metadata.billingEntityName && (
-                <p className="text-xs opacity-70">{metadata.billingEntityName}</p>
-              )}
             </div>
           </CardContent>
         </Card>
