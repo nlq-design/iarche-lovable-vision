@@ -48,7 +48,7 @@ interface DocumentContent {
   metadata?: QuoteMetadata;
 }
 
-// Parse Markdown table to proper HTML table
+// Parse Markdown table to proper HTML table with phase support
 function parseMarkdownTable(content: string): string {
   const lines = content.trim().split('\n');
   const tableLines: string[] = [];
@@ -88,10 +88,40 @@ function parseMarkdownTable(content: string): string {
   
   dataRows.forEach(row => {
     const cells = row.split('|').slice(1, -1).map(c => c.trim());
-    if (cells.length > 0 && cells.some(c => c && !c.match(/^-+$/))) {
+    if (cells.length === 0 || cells.every(c => !c || c.match(/^-+$/))) {
+      return; // Skip empty/separator rows
+    }
+    
+    const firstCell = cells[0] || '';
+    const isPhaseRow = firstCell.startsWith('**PHASE') || 
+                       firstCell.startsWith('PHASE') ||
+                       firstCell.startsWith('**Phase') ||
+                       firstCell.match(/^\*\*\d+\.\s/) ||
+                       (firstCell.startsWith('**') && cells.slice(1).every(c => !c || c === '-' || c === '—'));
+    
+    const isSubtotalRow = firstCell.toLowerCase().includes('sous-total') || 
+                          firstCell.toLowerCase().includes('subtotal');
+    
+    if (isPhaseRow) {
+      html += '<tr class="phase-header">';
+      html += `<td colspan="${headerCells.length}">${parseInlineMarkdown(firstCell)}</td>`;
+      html += '</tr>';
+    } else if (isSubtotalRow) {
+      html += '<tr class="subtotal-row">';
+      cells.forEach((cell, idx) => {
+        html += `<td>${parseInlineMarkdown(cell)}</td>`;
+      });
+      html += '</tr>';
+    } else {
       html += '<tr>';
-      cells.forEach(cell => {
-        html += `<td>${escapeHtml(cell)}</td>`;
+      cells.forEach((cell, idx) => {
+        // First column: handle multi-line descriptions with <br> or (...)
+        if (idx === 0) {
+          const formattedDesc = formatDescriptionCell(cell);
+          html += `<td>${formattedDesc}</td>`;
+        } else {
+          html += `<td>${parseInlineMarkdown(cell)}</td>`;
+        }
       });
       html += '</tr>';
     }
@@ -108,6 +138,32 @@ function parseMarkdownTable(content: string): string {
   }
   
   return html;
+}
+
+// Format description cell with sub-details
+function formatDescriptionCell(cell: string): string {
+  // Check for parenthetical details
+  const match = cell.match(/^(.+?)\s*\((.+?)\)$/);
+  if (match) {
+    return `<strong>${escapeHtml(match[1].trim())}</strong><small>${escapeHtml(match[2])}</small>`;
+  }
+  
+  // Check for ":" separator (title: description)
+  const colonMatch = cell.match(/^(.+?):\s*(.+)$/);
+  if (colonMatch && colonMatch[1].length < 40) {
+    return `<strong>${escapeHtml(colonMatch[1].trim())}</strong><small>${escapeHtml(colonMatch[2].trim())}</small>`;
+  }
+  
+  return parseInlineMarkdown(cell);
+}
+
+// Parse inline markdown (bold, italic)
+function parseInlineMarkdown(text: string): string {
+  return escapeHtml(text)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/—/g, '—')
+    .replace(/-/g, '–');
 }
 
 function parseBasicMarkdown(content: string): string {
