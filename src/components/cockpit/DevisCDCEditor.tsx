@@ -372,7 +372,7 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
     ai_generated: false,
     created_at: new Date().toISOString(),
     workspace_id: '',
-    ai_metadata: null,
+    ai_metadata: null as any,
     ai_documents_summary: null,
     approved_at: null,
     approved_by: null,
@@ -384,8 +384,11 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
     sent_to: null,
     specification_id: null,
     supersedes_document_id: null,
-    updated_at: null,
-    version: null,
+    updated_at: null as any,
+    version: null as any,
+    billing_entity_id: null,
+    quote_number: null,
+    quote_metadata: null,
   };
 
   return (

@@ -1,0 +1,309 @@
+/* Quote Preview Styles - Professional Invoice Format */
+
+.quote-document-card {
+  background: #fff;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  min-width: 794px; /* A4 width */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Header Bar */
+.quote-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, #1A2B4A 0%, #2D4A6B 100%);
+  color: white;
+}
+
+.quote-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.quote-date {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* Header Content - Emitter/Receiver */
+.quote-header-content {
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.quote-header-content .emitter,
+.quote-header-content .quote-emitter {
+  padding-right: 1.5rem;
+}
+
+.quote-header-content .receiver,
+.quote-header-content .quote-receiver {
+  padding-left: 1.5rem;
+  border-left: 2px solid #1A2B4A;
+}
+
+.quote-header-content h4,
+.quote-header-content strong:first-child {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.quote-header-content p {
+  margin: 0.25rem 0;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.quote-header-content .company-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1A2B4A;
+  margin-bottom: 0.5rem;
+}
+
+/* Object Section */
+.quote-object {
+  padding: 1.5rem 2rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.quote-object p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.quote-object strong {
+  color: #1A2B4A;
+}
+
+/* Section Title */
+.quote-section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1A2B4A;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #B04A32;
+  display: inline-block;
+}
+
+/* Services Table */
+.quote-services {
+  padding: 2rem;
+}
+
+.quote-services-table table,
+.quote-services table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.quote-services-table th,
+.quote-services th {
+  background: #1A2B4A;
+  color: white;
+  padding: 0.875rem 1rem;
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.quote-services-table th:last-child,
+.quote-services th:last-child {
+  text-align: right;
+}
+
+.quote-services-table td,
+.quote-services td {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.9rem;
+  color: #374151;
+  vertical-align: top;
+}
+
+.quote-services-table td:last-child,
+.quote-services td:last-child {
+  text-align: right;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.quote-services-table td:nth-child(2),
+.quote-services-table td:nth-child(3),
+.quote-services td:nth-child(2),
+.quote-services td:nth-child(3) {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.quote-services-table tbody tr:hover,
+.quote-services tbody tr:hover {
+  background: #f9fafb;
+}
+
+.quote-services-table .services-table,
+.services-table {
+  width: 100%;
+}
+
+/* Totals Section */
+.quote-totals {
+  padding: 1.5rem 2rem;
+  background: #f9fafb;
+  border-top: 2px solid #e5e7eb;
+}
+
+.quote-totals .totals,
+.quote-totals > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.quote-totals .total-line,
+.quote-totals > div > div {
+  display: flex;
+  justify-content: space-between;
+  width: 280px;
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.quote-totals .total-line span:first-child,
+.quote-totals > div > div > span:first-child {
+  color: #6b7280;
+}
+
+.quote-totals .total-line span:last-child,
+.quote-totals > div > div > span:last-child {
+  font-weight: 500;
+  color: #1A2B4A;
+}
+
+.quote-totals .total-ttc,
+.quote-totals .total-line:last-child,
+.quote-totals > div > div:last-child {
+  border-top: 2px solid #1A2B4A;
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.quote-totals .total-ttc span:last-child,
+.quote-totals .total-line:last-child span:last-child,
+.quote-totals > div > div:last-child span:last-child {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #B04A32;
+}
+
+/* Payment Section */
+.quote-payment {
+  padding: 2rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.quote-payment .payment-terms,
+.quote-payment > div {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.quote-payment p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.quote-payment strong {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+/* Footer */
+.quote-footer {
+  padding: 1rem 2rem;
+  background: #1A2B4A;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.quote-footer p {
+  margin: 0.25rem 0;
+}
+
+/* Print Styles */
+@media print {
+  .quote-document-card {
+    box-shadow: none;
+    min-width: auto;
+  }
+  
+  .quote-header-bar {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .quote-services-table th,
+  .quote-services th {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .quote-footer {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .quote-document-card {
+    min-width: auto;
+  }
+  
+  .quote-header-content {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .quote-header-content .receiver,
+  .quote-header-content .quote-receiver {
+    border-left: none;
+    padding-left: 0;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+  }
+  
+  .quote-payment .payment-terms,
+  .quote-payment > div {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}

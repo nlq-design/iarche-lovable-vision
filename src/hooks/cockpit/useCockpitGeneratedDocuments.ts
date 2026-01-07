@@ -16,6 +16,9 @@ export interface GeneratedDocument {
   opportunity_id: string | null;
   lead_id: string | null;
   specification_id: string | null;
+  billing_entity_id: string | null;
+  quote_number: string | null;
+  quote_metadata: Record<string, unknown> | null;
   content_json: Record<string, unknown>;
   version: string;
   status: DocumentStatus;
