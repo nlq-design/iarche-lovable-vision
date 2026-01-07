@@ -17,7 +17,10 @@ import {
   Lightbulb,
   Eye,
   Code,
-  ChevronDown
+  ChevronDown,
+  Mail,
+  Phone,
+  MapPin
 } from "lucide-react";
 import { RichTextEditor } from './editor';
 import {
@@ -42,6 +45,7 @@ import { toast } from 'sonner';
 import { COLORS } from '@/components/admin/medias/shared/tokens';
 import { toPng } from 'html-to-image';
 import { DevisCDCPreview } from './DevisCDCPreview';
+import { QuoteRIBEditor, QuoteQRCodeSelector, type RIBData } from './quote-editor';
 
 interface DevisCDCEditorProps {
   documentId: string | null;
@@ -62,11 +66,20 @@ export interface DocumentContent {
   metadata: {
     clientName?: string;
     clientCompany?: string;
+    clientAddress?: string;
+    clientEmail?: string;
+    clientPhone?: string;
     projectName?: string;
     validityDate?: string;
     totalAmount?: number;
     currency?: string;
     paymentLink?: string;
+    rib?: {
+      iban: string;
+      bic: string;
+      titulaire: string;
+      banque: string;
+    };
   };
   theme: {
     primaryColor: string;
@@ -593,39 +606,101 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
                 </CardContent>
               </Card>
 
-              {/* Metadata */}
+              {/* Client Information - Granular Fields */}
               <Card>
                 <CardHeader className="py-3">
-                  <CardTitle className="text-sm font-medium">Informations</CardTitle>
+                  <CardTitle className="text-sm font-medium">Informations client</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div>
-                    <Label htmlFor="clientName">Nom du client</Label>
+                    <Label htmlFor="clientName" className="flex items-center gap-1.5">
+                      <User className="h-3.5 w-3.5" />
+                      Nom du contact
+                    </Label>
                     <Input
                       id="clientName"
                       value={metadata.clientName || ''}
                       onChange={(e) => setMetadata({ ...metadata, clientName: e.target.value })}
+                      placeholder="Jean Dupont"
                       className="mt-1"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="clientCompany">Société</Label>
+                    <Label htmlFor="clientCompany" className="flex items-center gap-1.5">
+                      <Building2 className="h-3.5 w-3.5" />
+                      Société
+                    </Label>
                     <Input
                       id="clientCompany"
                       value={metadata.clientCompany || ''}
                       onChange={(e) => setMetadata({ ...metadata, clientCompany: e.target.value })}
+                      placeholder="ACME SAS"
                       className="mt-1"
                     />
                   </div>
-                  {documentType === 'quote' && (
-                    <>
+                  <div>
+                    <Label htmlFor="clientAddress" className="flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5" />
+                      Adresse
+                    </Label>
+                    <Input
+                      id="clientAddress"
+                      value={metadata.clientAddress || ''}
+                      onChange={(e) => setMetadata({ ...metadata, clientAddress: e.target.value })}
+                      placeholder="123 rue de Paris, 75001 Paris"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="clientEmail" className="flex items-center gap-1.5 text-xs">
+                        <Mail className="h-3 w-3" />
+                        Email
+                      </Label>
+                      <Input
+                        id="clientEmail"
+                        type="email"
+                        value={metadata.clientEmail || ''}
+                        onChange={(e) => setMetadata({ ...metadata, clientEmail: e.target.value })}
+                        placeholder="contact@acme.fr"
+                        className="mt-1 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="clientPhone" className="flex items-center gap-1.5 text-xs">
+                        <Phone className="h-3 w-3" />
+                        Téléphone
+                      </Label>
+                      <Input
+                        id="clientPhone"
+                        type="tel"
+                        value={metadata.clientPhone || ''}
+                        onChange={(e) => setMetadata({ ...metadata, clientPhone: e.target.value })}
+                        placeholder="01 23 45 67 89"
+                        className="mt-1 text-sm"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Quote-specific fields */}
+              {documentType === 'quote' && (
+                <>
+                  {/* Devis Metadata */}
+                  <Card>
+                    <CardHeader className="py-3">
+                      <CardTitle className="text-sm font-medium">Détails du devis</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
                       <div>
-                        <Label htmlFor="totalAmount">Montant total (€)</Label>
+                        <Label htmlFor="totalAmount">Montant total HT (€)</Label>
                         <Input
                           id="totalAmount"
                           type="number"
                           value={metadata.totalAmount || ''}
                           onChange={(e) => setMetadata({ ...metadata, totalAmount: parseFloat(e.target.value) })}
+                          placeholder="10000"
                           className="mt-1"
                         />
                       </div>
@@ -639,24 +714,22 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
                           className="mt-1"
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="paymentLink">Lien de paiement (optionnel)</Label>
-                        <Input
-                          id="paymentLink"
-                          type="url"
-                          placeholder="https://pay.stripe.com/..."
-                          value={metadata.paymentLink || ''}
-                          onChange={(e) => setMetadata({ ...metadata, paymentLink: e.target.value })}
-                          className="mt-1"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Si rempli, un QR code de paiement sera affiché sur le devis
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+
+                  {/* RIB / Bank Details */}
+                  <QuoteRIBEditor
+                    rib={metadata.rib || { iban: '', bic: '', titulaire: '', banque: '' }}
+                    onChange={(rib: RIBData) => setMetadata({ ...metadata, rib })}
+                  />
+
+                  {/* QR Code Payment */}
+                  <QuoteQRCodeSelector
+                    paymentLink={metadata.paymentLink || ''}
+                    onPaymentLinkChange={(paymentLink) => setMetadata({ ...metadata, paymentLink })}
+                  />
+                </>
+              )}
 
               {/* Theme */}
               <Card>

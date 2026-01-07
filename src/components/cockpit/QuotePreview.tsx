@@ -44,6 +44,12 @@ interface QuoteMetadata {
   tvaRate?: number;
   validityDays?: number;
   paymentLink?: string;
+  rib?: {
+    iban: string;
+    bic: string;
+    titulaire: string;
+    banque: string;
+  };
 }
 
 interface DocumentContent {
@@ -385,29 +391,29 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
           ref={isEmbedded ? undefined : ref}
         >
           <CardContent className="p-0">
-            {/* Header Bar - Logo + Dates */}
-            <div className="quote-header-bar">
-              <div className="quote-header-logo">
+            {/* Header Bar - Gradient IArche v4 */}
+            <div className="quote-header-gradient">
+              <div className="quote-header-gradient-inner">
                 <img 
                   src="/logos/iarche-white.svg" 
                   alt="IArche" 
-                  className="h-8"
+                  className="quote-header-logo-img"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />
-              </div>
-              <div className="quote-dates">
-                <span className="quote-date">Émis le {format(createdDate, 'dd MMMM yyyy', { locale: fr })}</span>
-                <span className="quote-date">Valide jusqu'au {format(validityDate, 'dd MMMM yyyy', { locale: fr })}</span>
+                <div className="quote-header-meta">
+                  <span className="quote-date-badge">Émis le {format(createdDate, 'dd MMMM yyyy', { locale: fr })}</span>
+                  <span className="quote-date-badge">Valide jusqu'au {format(validityDate, 'dd MMMM yyyy', { locale: fr })}</span>
+                </div>
               </div>
             </div>
 
-            {/* Title Bar - Proposition Commerciale */}
+            {/* Title Bar - DEVIS (not Proposition Commerciale) */}
             <div className="quote-title-bar">
-              <h2 className="quote-title-main">Proposition Commerciale</h2>
+              <h2 className="quote-title-main">Devis</h2>
               <p className="quote-title-ref">
-                Réf. {document.quote_number || `IA-${format(createdDate, 'yyyyMMdd')}-${document.id.slice(0, 4).toUpperCase()}`}
+                Réf. {document.quote_number || `DEV-${format(createdDate, 'yyyyMMdd')}-${document.id.slice(0, 4).toUpperCase()}`}
               </p>
               <div className="quote-section-arc" />
             </div>
@@ -510,6 +516,31 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
               <div className="quote-payment">
                 <h4>Conditions de paiement</h4>
                 {renderPaymentContent()}
+              </div>
+            )}
+
+            {/* RIB Section - Bank Details */}
+            {metadata.rib && metadata.rib.iban && (
+              <div className="quote-rib-section">
+                <h4>Coordonnées bancaires</h4>
+                <div className="rib-details">
+                  <div className="rib-row">
+                    <span className="rib-label">Titulaire</span>
+                    <span className="rib-value">{metadata.rib.titulaire}</span>
+                  </div>
+                  <div className="rib-row">
+                    <span className="rib-label">Banque</span>
+                    <span className="rib-value">{metadata.rib.banque}</span>
+                  </div>
+                  <div className="rib-row">
+                    <span className="rib-label">IBAN</span>
+                    <span className="rib-value rib-iban">{metadata.rib.iban.replace(/(.{4})/g, '$1 ').trim()}</span>
+                  </div>
+                  <div className="rib-row">
+                    <span className="rib-label">BIC</span>
+                    <span className="rib-value">{metadata.rib.bic}</span>
+                  </div>
+                </div>
               </div>
             )}
 
