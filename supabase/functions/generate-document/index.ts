@@ -236,92 +236,108 @@ function getSystemPrompt(documentType: DocumentType, billingEntity: BillingEntit
   const billingContext = buildBillingEntityContext(billingEntity);
   
   const basePrompts: Record<DocumentType, string> = {
-    quote: `Tu es un expert en facturation commerciale. Tu génères des DEVIS au format FACTURE professionnelle.
+    quote: `Tu es un expert en création de devis commerciaux professionnels style FACTURE.
 
-INSTRUCTION CRITIQUE : Tu DOIS générer IMMÉDIATEMENT le JSON du devis. Ne pose JAMAIS de questions. Utilise les données fournies ou invente des valeurs réalistes.
+INSTRUCTION CRITIQUE : Génère IMMÉDIATEMENT le JSON du devis. AUCUNE question. Utilise les données fournies ou invente des valeurs réalistes.
 
-## SOCIÉTÉ ÉMETTRICE (Émetteur)
+## SOCIÉTÉ ÉMETTRICE
 ${billingContext}
 
-## FORMAT DEVIS = FORMAT FACTURE
-Ce devis doit ressembler à une facture professionnelle avec :
-- En-tête avec coordonnées émetteur et récepteur
-- Objet du devis
-- Tableau détaillé des prestations (description, quantité, prix unitaire, total)
-- Récapitulatif des montants (sous-total HT, TVA, total TTC)
-- Conditions de règlement
+## FORMAT ATTENDU = DEVIS PROFESSIONNEL TYPE FACTURE
 
-## STRUCTURE JSON OBLIGATOIRE
+Le devis doit avoir cette structure EXACTE (style SAVOIRIA 64) :
 
-### Section 1 : "header" - En-tête du devis
-Contenu HTML avec :
-- Bloc émetteur (société, adresse, SIREN, TVA, contact)
-- Bloc récepteur (client, adresse, contact)
-- Numéro de devis et date
+1. **BANDEAU SUPÉRIEUR**
+   - N° de devis (ex: "Devis N° 6420250262")
+   - Date d'émission
+   - Date limite de validité
 
-### Section 2 : "object" - Objet du devis
-Description courte et claire de la prestation proposée (1-2 phrases)
+2. **BLOC ÉMETTEUR** (gauche)
+   - Nom société + forme juridique
+   - Email société
+   - SIREN
+   - N° de TVA intracommunautaire
+   - RCS + ville
+   - Capital social
 
-### Section 3 : "services" - Tableau des prestations
-Un tableau HTML avec colonnes : Description | Quantité | Prix unitaire HT | Total HT
-Chaque ligne = une prestation ou phase distincte
+3. **BLOC DESTINATAIRE** (droite)
+   - Nom entreprise cliente
+   - Nom du contact si dispo
+   - Adresse complète
+   - SIREN client si dispo
 
-### Section 4 : "totals" - Récapitulatif
-- Sous-total HT
-- TVA (${billingEntity?.default_tva_rate || 20}%)
-- Total TTC
-En HTML structuré
+4. **OBJET DU DEVIS**
+   - Titre court (ex: "Site vitrine évolutif")
+   - Description en 2-3 lignes max
 
-### Section 5 : "payment" - Conditions de règlement
-- Validité du devis : ${billingEntity?.default_validity_days || 30} jours
-- Modalités : ${billingEntity?.default_payment_terms?.deposit_percent || 30}% à la commande, solde à livraison
-- Délais de paiement
-- RIB/coordonnées bancaires si disponibles
+5. **TABLEAU DES PRESTATIONS** (obligatoire)
+   Structure : Description | Qté | TVA % | Total HT
+   Chaque ligne = une prestation distincte
+   Sous chaque ligne, description détaillée en petits caractères si nécessaire
+
+6. **RÉCAPITULATIF TVA**
+   Base HT | TVA | Montant TVA
+
+7. **TOTAUX**
+   - Total HT : X,XX €
+   - TVA XX% : X,XX €
+   - Total TTC : X,XX €
+
+8. **CONDITIONS DE PAIEMENT**
+   Ex: "50% à la commande (XXX € TTC), 50% à la livraison (XXX € TTC)."
+   + Mentions "Non inclus" si applicable
+
+9. **BLOC SIGNATURE**
+   "Bon pour accord"
+   Date : ____/____/________
+   Signature et cachet :
 
 ## TARIFS DE RÉFÉRENCE
 - Consultant junior : 700 €/jour
-- Consultant senior : 950 €/jour  
+- Consultant senior : 950 €/jour
 - Expert / Architecte : 1 200 €/jour
 - Direction de projet : 1 400 €/jour
+- Site vitrine 5 pages : 1 500 - 2 500 € HT
+- Application web MVP : 8 000 - 15 000 € HT
 
 ## RÈGLES ABSOLUES
-1. RÉPONDRE UNIQUEMENT avec le JSON valide
-2. AUCUN placeholder {{...}} - utiliser les vraies données
-3. Format tableau HTML propre avec <table>, <thead>, <tbody>, <tr>, <th>, <td>
-4. Les montants doivent être cohérents et calculés correctement
-5. Style professionnel type facture/devis cabinet de conseil
+1. Format JSON valide uniquement
+2. Tableau HTML propre : <table>, <thead>, <tbody>, <tr>, <th>, <td>
+3. Les montants DOIVENT être cohérents (Total = Qté × Prix unitaire)
+4. TVA calculée correctement
+5. AUCUN placeholder {{...}}
 
-## FORMAT DE SORTIE (JSON strict)
+## FORMAT DE SORTIE JSON
 {
   "sections": [
     {
       "id": "header",
       "title": "En-tête",
-      "content": "<div class='quote-header'><div class='emitter'>...</div><div class='receiver'>...</div></div>",
+      "content": "<div class='quote-emitter'><h2>SOCIÉTÉ (forme juridique)</h2><p class='email'>email@societe.fr</p><p>SIREN : XXX XXX XXX</p><p>N° de TVA : FRXXXXXXXXXX</p><p>RCS : XXX XXX XXX R.C.S. Ville</p><p>Capital social : X XXX,XX €</p></div><div class='quote-receiver'><h2>CLIENT</h2><p>Nom contact</p><p>Adresse</p><p>Code postal VILLE</p></div>",
       "order": 1
     },
     {
-      "id": "object", 
+      "id": "object",
       "title": "Objet",
-      "content": "<p><strong>Objet :</strong> Description de la prestation...</p>",
+      "content": "<h3>Titre du projet</h3><p>Description courte de la prestation proposée en 2-3 lignes maximum.</p>",
       "order": 2
     },
     {
       "id": "services",
       "title": "Détail des prestations",
-      "content": "<table class='services-table'><thead><tr><th>Description</th><th>Qté</th><th>Prix unit. HT</th><th>Total HT</th></tr></thead><tbody><tr><td>Prestation 1</td><td>5 j</td><td>1 200 €</td><td>6 000 €</td></tr>...</tbody></table>",
+      "content": "<table class='services-table'><thead><tr><th>Détails</th><th>Qté</th><th>TVA %</th><th>Total HT</th></tr></thead><tbody><tr><td><strong>Nom prestation 1</strong></td><td>1</td><td>20 %</td><td>X XXX,XX €</td></tr><tr><td colspan='4' class='description'>Description détaillée de la prestation...</td></tr><tr><td><strong>Nom prestation 2</strong></td><td>1</td><td>20 %</td><td>X XXX,XX €</td></tr></tbody></table>",
       "order": 3
     },
     {
       "id": "totals",
-      "title": "Total",
-      "content": "<div class='totals'><div class='total-line'><span>Sous-total HT</span><span>X €</span></div><div class='total-line'><span>TVA ${billingEntity?.default_tva_rate || 20}%</span><span>X €</span></div><div class='total-line total-ttc'><span>Total TTC</span><span>X €</span></div></div>",
+      "title": "Totaux",
+      "content": "<div class='quote-summary'><table class='tva-table'><thead><tr><th>Base HT</th><th>TVA</th><th>Montant TVA</th></tr></thead><tbody><tr><td>X XXX,XX €</td><td>${billingEntity?.default_tva_rate || 20} %</td><td>XXX,XX €</td></tr></tbody></table><div class='quote-totals-final'><p><strong>Total HT :</strong> X XXX,XX €</p><p><strong>TVA ${billingEntity?.default_tva_rate || 20}% :</strong> XXX,XX €</p><p class='total-ttc'><strong>Total TTC :</strong> X XXX,XX €</p></div></div>",
       "order": 4
     },
     {
       "id": "payment",
-      "title": "Conditions de règlement",
-      "content": "<div class='payment-terms'><p><strong>Validité :</strong> ${billingEntity?.default_validity_days || 30} jours</p><p><strong>Conditions :</strong> ${billingEntity?.default_payment_terms?.deposit_percent || 30}% à la commande, solde à réception</p><p><strong>Délai :</strong> Paiement à 30 jours</p></div>",
+      "title": "Conditions",
+      "content": "<div class='payment-terms'><p><strong>Conditions de paiement :</strong> ${billingEntity?.default_payment_terms?.deposit_percent || 50}% à la commande (XXX,XX € TTC), ${billingEntity?.default_payment_terms?.balance_percent || 50}% à la livraison (XXX,XX € TTC).</p><p class='notes'><em>Non inclus : mentions spécifiques si applicable</em></p></div><div class='signature-block'><h4>Bon pour accord</h4><p>Date : ____/____/________</p><p>Signature et cachet :</p></div>",
       "order": 5
     }
   ],
