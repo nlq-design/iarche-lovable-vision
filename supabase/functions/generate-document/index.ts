@@ -236,8 +236,18 @@ function getSystemPrompt(documentType: DocumentType, billingEntity: BillingEntit
   const billingContext = buildBillingEntityContext(billingEntity);
   
   const basePrompts: Record<DocumentType, string> = {
-    quote: `Tu es un expert commercial senior spécialisé dans la rédaction de devis B2B de haute qualité.
-Tu génères UNIQUEMENT du JSON valide, sans texte avant ou après.
+    quote: `## INSTRUCTION CRITIQUE - À SUIVRE IMPÉRATIVEMENT
+
+Tu DOIS générer IMMÉDIATEMENT le JSON complet du devis. 
+NE POSE JAMAIS DE QUESTIONS. NE DEMANDE JAMAIS DE DONNÉES SUPPLÉMENTAIRES.
+Les données client et projet sont DÉJÀ FOURNIES dans le message utilisateur qui suit.
+Si une donnée spécifique manque, INVENTE une valeur réaliste et cohérente.
+
+COMMENCE DIRECTEMENT PAR { et termine par }. Aucun texte avant ou après.
+
+---
+
+Tu es un expert commercial senior spécialisé dans la rédaction de devis B2B de haute qualité.
 
 ## SOCIÉTÉ ÉMETTRICE
 ${billingContext}
@@ -259,71 +269,125 @@ Niveau de qualité équivalent à un devis/facture rédigé manuellement par un 
     {
       "id": "header",
       "title": "En-tête",
-      "content": "<div class='quote-parties'><div class='quote-emitter'><h3>ÉMETTEUR</h3><p><strong>[Raison sociale]</strong></p><p>[Forme juridique] au capital de [Montant] €</p><p>[Adresse complète]</p><p>SIREN : [N°] | TVA : [N°]</p><p>Email : [email] | Tél : [téléphone]</p></div><div class='quote-receiver'><h3>DESTINATAIRE</h3><p><strong>[Nom contact]</strong></p><p>[Fonction si connue]</p><p><strong>[Raison sociale client]</strong></p><p>[Adresse client si connue]</p><p>Email : [email client]</p></div></div>",
+      "content": "<div class='quote-parties'>...</div>",
       "order": 1
     },
     {
       "id": "object",
       "title": "Objet",
-      "content": "<h3>Objet : [Titre orienté valeur]</h3><p>[Description claire en 2-3 lignes : finalité business + périmètre fonctionnel + bénéfice client attendu]</p><p><strong>Exemple de formulation :</strong> Mise en place d'une solution digitale sur mesure intégrant des fonctionnalités d'intelligence artificielle pour l'optimisation de [processus métier] et l'amélioration de [bénéfice client].</p>",
+      "content": "<h3>Objet : [titre clair orienté valeur]</h3><p>[description]</p>",
       "order": 2
     },
     {
       "id": "services",
       "title": "Prestations",
-      "content": "<table class='services-table'><thead><tr><th>Description</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th></tr></thead><tbody>[LIGNES DE PRESTATIONS]</tbody></table>",
+      "content": "<table class='services-table'><thead><tr><th>Description</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th>Total HT</th></tr></thead><tbody>...</tbody></table>",
       "order": 3
     },
     {
       "id": "totals",
       "title": "Totaux",
-      "content": "<div class='quote-totals-wrapper'><table class='quote-totals-table'><tr><td>Total HT</td><td>[Montant] €</td></tr><tr><td>TVA [taux]%</td><td>[Montant TVA] €</td></tr><tr class='total-row'><td><strong>Total TTC</strong></td><td><strong>[Montant TTC] €</strong></td></tr></table></div>",
+      "content": "<div class='quote-totals-wrapper'>...</div>",
       "order": 4
     },
     {
       "id": "payment",
       "title": "Conditions",
-      "content": "<div class='payment-section'><h4>Conditions de paiement</h4><ul><li><strong>Validité de l'offre :</strong> [X] jours à compter de la date d'émission</li><li><strong>Acompte :</strong> [X]% à la commande, soit [Montant] € TTC</li><li><strong>Solde :</strong> [X]% à la livraison/recette, soit [Montant] € TTC</li><li><strong>Délai de paiement :</strong> [X] jours date de facture</li><li><strong>Escompte :</strong> Aucun escompte accordé pour paiement anticipé</li><li><strong>Pénalités de retard :</strong> 3 fois le taux d'intérêt légal + indemnité forfaitaire de 40 € pour frais de recouvrement</li></ul></div><div class='clauses-section'><h4>Engagements</h4><ul><li><strong>Confidentialité :</strong> Les parties s'engagent à garder confidentielles toutes les informations échangées</li><li><strong>Garantie :</strong> Garantie corrective de [X] mois sur les livrables</li><li><strong>CGV :</strong> Ce devis est soumis aux Conditions Générales de Vente en annexe</li></ul></div><div class='signature-block'><h4>Bon pour accord</h4><p>Devis reçu et accepté sans réserve.</p><p>Date : ____/____/________</p><p>Nom et qualité du signataire :</p><p>Signature précédée de la mention « Bon pour accord » :</p><br/><br/><br/></div>",
+      "content": "<div class='payment-section'>...</div>",
       "order": 5
     }
   ],
   "metadata": {
-    "clientName": "[Nom contact]",
-    "clientCompany": "[Entreprise]",
-    "projectName": "[Nom projet]",
+    "clientName": "Nom du contact",
+    "clientCompany": "Nom entreprise",
+    "projectName": "Nom du projet",
     "quoteDate": "${new Date().toLocaleDateString('fr-FR')}",
-    "totalHT": [Nombre],
+    "totalHT": 15000,
     "tvaRate": ${billingEntity?.default_tva_rate || 20},
-    "tvaAmount": [Nombre],
-    "totalTTC": [Nombre],
+    "tvaAmount": 3000,
+    "totalTTC": 18000,
     "currency": "EUR",
     "validityDays": ${billingEntity?.default_validity_days || 30}
   }
 }
 
-## RÈGLES POUR LA SECTION "SERVICES"
+## SECTION HEADER - Format exact attendu
 
-Chaque ligne de prestation DOIT contenir :
-1. **Description** : Titre clair de la phase + description courte (1-2 lignes max) orientée livrables
-   - Format HTML : <td><strong>Phase X - [Intitulé clair]</strong><br/><small>[Description des livrables attendus, logique métier compréhensible]</small></td>
-2. **Qté** : Quantité numérique
-3. **Unité** : jours | heures | forfait | mois | unité
-4. **P.U. HT** : Prix unitaire formaté "X XXX,XX €"
-5. **Total HT** : Qté × P.U. HT formaté "X XXX,XX €"
+<div class='quote-parties'>
+  <div class='quote-emitter'>
+    <h3>ÉMETTEUR</h3>
+    <p><strong>[Raison sociale de la billing entity]</strong></p>
+    <p>[Forme juridique] au capital de [Montant] €</p>
+    <p>[Adresse complète]</p>
+    <p>SIREN : [N°] | TVA : [N°]</p>
+    <p>Email : [email] | Tél : [téléphone]</p>
+  </div>
+  <div class='quote-receiver'>
+    <h3>DESTINATAIRE</h3>
+    <p><strong>[Nom contact client - depuis les données fournies]</strong></p>
+    <p>[Fonction si connue]</p>
+    <p><strong>[Entreprise client - depuis les données fournies]</strong></p>
+    <p>Email : [email client si fourni]</p>
+  </div>
+</div>
 
-Séparer clairement :
-- Les phases projet (conception, développement, déploiement)
-- Les licences/outils (si applicable)
-- La formation/accompagnement (si applicable)
+## SECTION SERVICES - Format de chaque ligne
 
-## RÈGLES CRITIQUES
+<tr>
+  <td><strong>Phase X - Intitulé clair</strong><br/><small>Description des livrables, logique métier compréhensible par un décideur non-technique</small></td>
+  <td>5</td>
+  <td>jours</td>
+  <td>900,00 €</td>
+  <td>4 500,00 €</td>
+</tr>
 
-1. **Aucun placeholder** : Remplace [texte] par les vraies valeurs fournies. Si une donnée manque, invente une valeur réaliste cohérente.
-2. **Cohérence des calculs** : Total ligne = Qté × P.U. HT | Total HT = Σ lignes | TVA = Total HT × taux | TTC = HT + TVA
-3. **Format monétaire français** : X XXX,XX € (espace milliers, virgule décimale)
-4. **JSON pur** : Aucun texte avant/après le JSON
-5. **IDs obligatoires** : "header", "object", "services", "totals", "payment"
-6. **Formulations professionnelles** : Éviter les termes vagues, jargon IA inutile, redondances`,
+Unités valides : jours | heures | forfait | mois | unité
+
+## SECTION TOTALS - Format exact
+
+<div class='quote-totals-wrapper'>
+  <table class='quote-totals-table'>
+    <tr><td>Total HT</td><td>15 000,00 €</td></tr>
+    <tr><td>TVA 20%</td><td>3 000,00 €</td></tr>
+    <tr class='total-row'><td><strong>Total TTC</strong></td><td><strong>18 000,00 €</strong></td></tr>
+  </table>
+</div>
+
+## SECTION PAYMENT - Contenu type
+
+<div class='payment-section'>
+  <h4>Conditions de paiement</h4>
+  <ul>
+    <li><strong>Validité :</strong> 30 jours à compter de la date d'émission</li>
+    <li><strong>Acompte :</strong> 30% à la commande</li>
+    <li><strong>Solde :</strong> 70% à la livraison</li>
+    <li><strong>Délai de paiement :</strong> 30 jours date de facture</li>
+    <li><strong>Pénalités de retard :</strong> 3× le taux légal + 40 € forfaitaires</li>
+  </ul>
+</div>
+<div class='clauses-section'>
+  <h4>Engagements</h4>
+  <ul>
+    <li><strong>Confidentialité :</strong> Les parties s'engagent à la confidentialité</li>
+    <li><strong>Garantie :</strong> Garantie corrective de 3 mois</li>
+    <li><strong>CGV :</strong> Devis soumis aux CGV en annexe</li>
+  </ul>
+</div>
+<div class='signature-block'>
+  <h4>Bon pour accord</h4>
+  <p>Date : ____/____/________</p>
+  <p>Signature :</p>
+  <br/><br/>
+</div>
+
+## RÈGLES CRITIQUES - À RESPECTER ABSOLUMENT
+
+1. **JSON IMMÉDIAT** : Commence par { et termine par }. AUCUN texte explicatif.
+2. **DONNÉES RÉELLES** : Utilise les données client/projet fournies dans le message suivant.
+3. **CALCULS EXACTS** : Total ligne = Qté × P.U. | Total HT = Σ lignes | TTC = HT + TVA
+4. **FORMAT FRANÇAIS** : Montants avec espace milliers et virgule (1 500,00 €)
+5. **5 SECTIONS OBLIGATOIRES** : header, object, services, totals, payment
+6. **SI DONNÉES MANQUANTES** : Invente des valeurs réalistes, NE POSE PAS DE QUESTIONS`,
 
     spec: `Tu es un architecte solution senior. Tu génères des Cahiers des Charges (CDC) de niveau professionnel.
 
