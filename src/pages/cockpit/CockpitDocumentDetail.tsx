@@ -94,6 +94,13 @@ const SLUG_PREFIX_MAP: Record<DocumentType, string> = {
   contract: 'contrat',
 };
 
+// Check if quote document has new invoice-style format
+const hasNewQuoteFormat = (doc: any): boolean => {
+  const content = doc?.content_json;
+  const sections = content?.sections || [];
+  return sections.some((s: any) => s.id === 'header' || s.id === 'services');
+};
+
 export default function CockpitDocumentDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -424,7 +431,7 @@ export default function CockpitDocumentDetail() {
 
               <TabsContent value="apercu" className="mt-4">
                 <div ref={previewRef}>
-                  {document.document_type === 'quote' ? (
+                  {document.document_type === 'quote' && hasNewQuoteFormat(document) ? (
                     <QuotePreview
                       document={document}
                       onBack={() => {}}
