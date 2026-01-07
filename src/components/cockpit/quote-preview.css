@@ -1,31 +1,34 @@
-/* Professional Invoice-Style Quote Preview - IArche Graphic Charter v4 */
+/* Professional Invoice-Style Quote Preview - IArche v4 Style */
+/* Inspired by SAVOIRIA 64 professional invoice template */
 
 .quote-document-card {
-  background: hsl(var(--background));
-  font-family: 'Manrope', 'Inter', system-ui, sans-serif;
-  font-size: 14px;
-  line-height: 1.6;
-  color: hsl(var(--foreground));
-  box-shadow: 0 4px 24px rgba(26, 43, 74, 0.08);
-  border-radius: 8px;
+  background: #ffffff;
+  font-family: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #1a1a1a;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
   overflow: hidden;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid #e0e0e0;
 }
 
-/* Top Header Bar - Quote Number & Dates */
+/* ========================================
+   TOP HEADER BAR - Quote Number & Dates
+   ======================================== */
 .quote-header-bar {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 20px 32px;
-  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(218, 47%, 28%) 100%);
+  align-items: flex-start;
+  padding: 24px 32px;
+  background: hsl(218, 47%, 20%); /* IArche Bleu Nuit */
   color: white;
 }
 
 .quote-number {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: -0.3px;
 }
 
 .quote-dates {
@@ -34,28 +37,28 @@
   align-items: flex-end;
   gap: 4px;
   font-size: 13px;
-  opacity: 0.95;
 }
 
 .quote-date {
   font-size: 13px;
-  opacity: 0.95;
 }
 
-/* Emitter / Receiver Header */
+/* ========================================
+   EMITTER / RECEIVER BLOCK
+   ======================================== */
 .quote-header-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  padding: 32px;
-  border-bottom: 1px solid hsl(var(--border));
-  background: hsl(var(--background));
+  gap: 48px;
+  padding: 28px 32px;
+  border-bottom: 1px solid #e5e5e5;
+  background: #fafafa;
 }
 
 .quote-parties {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 40px;
+  gap: 48px;
 }
 
 .quote-emitter,
@@ -65,26 +68,27 @@
 }
 
 .quote-emitter h3,
-.quote-header-content h3:first-child {
-  font-size: 18px;
+.quote-header-content h3:first-of-type {
+  font-size: 16px;
   font-weight: 700;
-  color: hsl(var(--primary));
-  margin: 0 0 16px 0;
+  color: hsl(218, 47%, 20%);
+  margin: 0 0 12px 0;
+  letter-spacing: -0.2px;
 }
 
 .quote-receiver,
 .quote-header-content > div:last-child,
 .quote-parties > div:last-child {
   padding-left: 24px;
-  border-left: 3px solid hsl(var(--accent));
+  border-left: 3px solid hsl(12, 60%, 44%); /* IArche Terracotta */
 }
 
 .quote-receiver h3,
 .quote-header-content h3:last-of-type {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
-  color: hsl(var(--muted-foreground));
-  margin: 0 0 12px 0;
+  color: #666;
+  margin: 0 0 10px 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -93,58 +97,69 @@
 .quote-receiver p,
 .quote-header-content p,
 .quote-parties p {
-  margin: 6px 0;
-  font-size: 14px;
-  color: hsl(var(--muted-foreground));
+  margin: 4px 0;
+  font-size: 13px;
+  color: #444;
+  line-height: 1.5;
 }
 
 .quote-emitter strong,
 .quote-receiver strong,
 .quote-parties strong {
-  color: hsl(var(--foreground));
+  color: #1a1a1a;
   font-weight: 600;
 }
 
-/* Object Section */
+/* ========================================
+   OBJECT / REFERENCE SECTION
+   ======================================== */
 .quote-object {
-  padding: 24px 32px;
-  background: hsl(var(--muted) / 0.3);
-  border-bottom: 1px solid hsl(var(--border));
+  padding: 20px 32px;
+  background: #fff;
+  border-bottom: 1px solid #e5e5e5;
 }
 
 .quote-object h3 {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  color: hsl(var(--primary));
-  margin: 0 0 8px 0;
+  color: hsl(218, 47%, 20%);
+  margin: 0 0 6px 0;
 }
 
 .quote-object p {
   margin: 0;
-  color: hsl(var(--muted-foreground));
-  font-size: 14px;
+  color: #555;
+  font-size: 13px;
 }
 
-/* Section Title with IArche Arc */
-.quote-section-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: hsl(var(--primary));
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 3px solid hsl(var(--accent));
-  display: inline-block;
-}
-
-/* Services Table */
+/* ========================================
+   SERVICES TABLE - Professional Grid
+   ======================================== */
 .quote-services {
-  padding: 32px;
+  padding: 24px 32px 32px;
+  background: #fff;
 }
 
 .quote-services-table {
   width: 100%;
+}
+
+/* Notes section after table */
+.quote-services-table .services-notes {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #555;
+}
+
+.quote-services-table .services-notes p {
+  margin: 6px 0;
+}
+
+.quote-services-table .services-notes strong {
+  color: #1a1a1a;
 }
 
 .quote-services-table table,
@@ -152,29 +167,24 @@
   width: 100%;
   border-collapse: collapse;
   margin: 0;
-  border-radius: 8px;
-  overflow: hidden;
+  border: 1px solid #e0e0e0;
 }
 
 .quote-services-table thead tr,
 .services-table thead tr {
-  background: hsl(var(--primary));
-  color: white;
+  background: #f5f5f5;
 }
 
 .quote-services-table th,
 .services-table th {
-  padding: 14px 16px;
+  padding: 12px 16px;
   text-align: left;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-
-.quote-services-table th:last-child,
-.services-table th:last-child {
-  text-align: right;
+  color: #555;
+  border-bottom: 2px solid #ddd;
 }
 
 .quote-services-table th:nth-child(2),
@@ -184,37 +194,36 @@
 .services-table th:nth-child(3),
 .services-table th:nth-child(4) {
   text-align: center;
+  width: 80px;
+}
+
+.quote-services-table th:last-child,
+.services-table th:last-child {
+  text-align: right;
+  width: 100px;
 }
 
 .quote-services-table tbody tr,
 .services-table tbody tr {
-  border-bottom: 1px solid hsl(var(--border));
+  border-bottom: 1px solid #eee;
 }
 
-.quote-services-table tbody tr:nth-child(even),
-.services-table tbody tr:nth-child(even) {
-  background: hsl(var(--muted) / 0.2);
-}
-
-.quote-services-table tbody tr:hover,
-.services-table tbody tr:hover {
-  background: hsl(var(--muted) / 0.4);
+.quote-services-table tbody tr:last-child,
+.services-table tbody tr:last-child {
+  border-bottom: none;
 }
 
 .quote-services-table td,
 .services-table td {
   padding: 14px 16px;
-  vertical-align: middle;
-  font-size: 14px;
-  color: hsl(var(--foreground));
+  vertical-align: top;
+  font-size: 13px;
+  color: #333;
 }
 
-.quote-services-table td:last-child,
-.services-table td:last-child {
-  text-align: right;
-  font-weight: 600;
-  white-space: nowrap;
-  color: hsl(var(--primary));
+.quote-services-table td:first-child,
+.services-table td:first-child {
+  font-weight: 500;
 }
 
 .quote-services-table td:nth-child(2),
@@ -227,150 +236,209 @@
   white-space: nowrap;
 }
 
+.quote-services-table td:last-child,
+.services-table td:last-child {
+  text-align: right;
+  font-weight: 600;
+  white-space: nowrap;
+  color: hsl(218, 47%, 20%);
+}
+
 .quote-services-table td strong,
 .services-table td strong {
   font-weight: 600;
-  color: hsl(var(--foreground));
+  color: #1a1a1a;
 }
 
-/* Totals Section */
+/* ========================================
+   TOTALS SECTION - Right-aligned Summary
+   ======================================== */
 .quote-totals {
-  padding: 24px 32px;
-  background: hsl(var(--muted) / 0.3);
-  border-top: 1px solid hsl(var(--border));
+  padding: 20px 32px 24px;
+  background: #fafafa;
+  border-top: 1px solid #e5e5e5;
 }
 
+.quote-totals-wrapper {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.quote-totals-table {
+  width: 280px;
+  border-collapse: collapse;
+}
+
+.quote-totals-table tr {
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.quote-totals-table tr:last-child {
+  border-bottom: none;
+}
+
+.quote-totals-table td {
+  padding: 8px 0;
+  font-size: 13px;
+}
+
+.quote-totals-table td:first-child {
+  color: #666;
+  text-align: left;
+}
+
+.quote-totals-table td:last-child {
+  text-align: right;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.quote-totals-table tr.total-row {
+  border-top: 2px solid hsl(218, 47%, 20%);
+  background: transparent;
+}
+
+.quote-totals-table tr.total-row td {
+  padding-top: 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.quote-totals-table tr.total-row td:last-child {
+  color: hsl(12, 60%, 44%);
+  font-size: 18px;
+}
+
+/* Legacy totals structure */
 .quote-totals .totals-row {
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
-  width: 320px;
+  width: 280px;
   margin-left: auto;
-  font-size: 14px;
+  font-size: 13px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.quote-totals .totals-row:last-child {
+  border-bottom: none;
 }
 
 .quote-totals .totals-row span:first-child {
-  color: hsl(var(--muted-foreground));
+  color: #666;
 }
 
 .quote-totals .totals-row span:last-child {
   font-weight: 600;
-  color: hsl(var(--primary));
+  color: #1a1a1a;
 }
 
-.quote-totals .totals-row.total-final,
-.quote-totals .total-line.total-final {
-  font-size: 18px;
+.quote-totals .totals-row.total-final {
+  font-size: 16px;
   font-weight: 700;
-  border-top: 3px solid hsl(var(--primary));
+  border-top: 2px solid hsl(218, 47%, 20%);
+  border-bottom: none;
   padding-top: 12px;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
-.quote-totals .totals-row.total-final span:last-child,
-.quote-totals .total-line.total-final span:last-child {
-  color: hsl(var(--accent));
-  font-size: 20px;
+.quote-totals .totals-row.total-final span:last-child {
+  color: hsl(12, 60%, 44%);
+  font-size: 18px;
 }
 
-/* TVA Table */
-.tva-table {
-  width: 50%;
-  margin-left: auto;
-  border-collapse: collapse;
-  margin-bottom: 16px;
-}
-
-.tva-table thead tr {
-  background: hsl(var(--muted));
-}
-
-.tva-table th {
-  padding: 10px 12px;
-  text-align: left;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: hsl(var(--muted-foreground));
-}
-
-.tva-table td {
-  padding: 10px 12px;
-  font-size: 13px;
-  border-bottom: 1px solid hsl(var(--border));
-}
-
-/* Backward compat: old totals div structure */
+/* Backward compat */
 .quote-totals > div {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 6px;
+  gap: 0;
 }
 
-/* Payment Terms */
+/* ========================================
+   PAYMENT TERMS & CONDITIONS
+   ======================================== */
 .quote-payment {
-  padding: 32px;
-  border-top: 1px solid hsl(var(--border));
+  padding: 24px 32px;
+  border-top: 1px solid #e5e5e5;
+  background: #fff;
 }
 
 .quote-payment h4 {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  color: hsl(var(--primary));
+  color: hsl(218, 47%, 20%);
   margin: 0 0 16px 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .quote-payment p {
-  margin: 12px 0;
-  font-size: 13px;
-  color: hsl(var(--muted-foreground));
-  line-height: 1.7;
+  margin: 10px 0;
+  font-size: 12px;
+  color: #555;
+  line-height: 1.6;
 }
 
 .quote-payment strong {
-  color: hsl(var(--foreground));
+  color: #1a1a1a;
   font-weight: 600;
 }
 
+.quote-payment ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.quote-payment li {
+  margin: 6px 0;
+  font-size: 12px;
+  color: #555;
+}
+
+/* Signature Block */
 .signature-block {
-  margin-top: 32px;
-  padding: 24px;
-  background: hsl(var(--muted) / 0.3);
-  border: 2px dashed hsl(var(--border));
-  border-radius: 8px;
+  margin-top: 28px;
+  padding: 20px;
+  background: #fafafa;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
 }
 
 .signature-block h4 {
-  font-size: 14px;
-  font-weight: 700;
-  color: hsl(var(--primary));
-  margin: 0 0 16px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: hsl(218, 47%, 20%);
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
 }
 
 .signature-block p {
-  margin: 8px 0;
-  font-size: 13px;
-  color: hsl(var(--muted-foreground));
+  margin: 6px 0;
+  font-size: 12px;
+  color: #666;
 }
 
-/* Footer */
+/* ========================================
+   FOOTER
+   ======================================== */
 .quote-footer {
-  padding: 16px 32px;
-  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
-  color: rgba(255, 255, 255, 0.95);
+  padding: 14px 32px;
+  background: hsl(218, 47%, 20%);
+  color: rgba(255, 255, 255, 0.9);
   text-align: center;
 }
 
 .quote-footer p {
   margin: 0;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
+  letter-spacing: 0.3px;
 }
 
-/* Print Styles */
+/* ========================================
+   PRINT STYLES
+   ======================================== */
 @media print {
   .quote-document-card {
     box-shadow: none;
@@ -379,25 +447,25 @@
   }
 
   .quote-header-bar,
-  .quote-footer,
-  .quote-services-table thead tr,
-  .services-table thead tr {
+  .quote-footer {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 }
 
-/* Responsive */
+/* ========================================
+   RESPONSIVE
+   ======================================== */
 @media (max-width: 768px) {
   .quote-document-card {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .quote-header-bar {
     flex-direction: column;
     gap: 12px;
     text-align: center;
-    padding: 16px;
+    padding: 20px;
   }
 
   .quote-number {
@@ -411,8 +479,8 @@
   .quote-header-content,
   .quote-parties {
     grid-template-columns: 1fr;
-    gap: 24px;
-    padding: 24px;
+    gap: 20px;
+    padding: 20px;
   }
 
   .quote-receiver,
@@ -420,8 +488,8 @@
   .quote-parties > div:last-child {
     padding-left: 0;
     border-left: none;
-    border-top: 3px solid hsl(var(--accent));
-    padding-top: 24px;
+    border-top: 3px solid hsl(12, 60%, 44%);
+    padding-top: 20px;
   }
 
   .quote-emitter,
@@ -434,19 +502,18 @@
   .quote-object,
   .quote-payment,
   .quote-totals {
-    padding: 20px;
+    padding: 16px 20px;
   }
 
-  .tva-table {
-    width: 100%;
+  .quote-services-table {
+    overflow-x: auto;
   }
 
   .quote-totals .totals-row {
-    max-width: none;
     width: 100%;
   }
 
   .quote-footer {
-    padding: 14px 16px;
+    padding: 12px 16px;
   }
 }

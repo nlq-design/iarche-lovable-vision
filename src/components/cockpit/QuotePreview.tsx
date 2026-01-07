@@ -8,7 +8,7 @@ import { fr } from 'date-fns/locale';
 import DOMPurify from 'dompurify';
 import './quote-preview.css';
 
-import { DOCUMENT_TYPE_LABELS, DOCUMENT_STATUS_CONFIG, type GeneratedDocument } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
+import { DOCUMENT_STATUS_CONFIG, type GeneratedDocument } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -48,11 +48,11 @@ interface DocumentContent {
   metadata?: QuoteMetadata;
 }
 
-// Parse Markdown table to HTML table
+// Parse Markdown table to proper HTML table
 function parseMarkdownTable(content: string): string {
   const lines = content.trim().split('\n');
   const tableLines: string[] = [];
-  const otherContent: string[] = [];
+  const otherLines: string[] = [];
   
   let inTable = false;
   
@@ -61,23 +61,23 @@ function parseMarkdownTable(content: string): string {
     if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
       inTable = true;
       tableLines.push(trimmed);
-    } else if (inTable && trimmed === '') {
+    } else if (inTable && (trimmed === '' || !trimmed.startsWith('|'))) {
       inTable = false;
-    } else {
-      otherContent.push(line);
+      if (trimmed) otherLines.push(line);
+    } else if (!inTable) {
+      otherLines.push(line);
     }
   }
   
   if (tableLines.length < 2) {
-    // No valid table, return original with basic markdown parsing
     return parseBasicMarkdown(content);
   }
   
-  // Parse table
+  // Parse header row
   const headerRow = tableLines[0];
-  const headerCells = headerRow.split('|').filter(c => c.trim()).map(c => c.trim());
+  const headerCells = headerRow.split('|').slice(1, -1).map(c => c.trim());
   
-  // Skip separator row (line with |---|---|)
+  // Skip separator row, get data rows
   const dataRows = tableLines.slice(2);
   
   let html = '<table class="services-table"><thead><tr>';
@@ -87,8 +87,8 @@ function parseMarkdownTable(content: string): string {
   html += '</tr></thead><tbody>';
   
   dataRows.forEach(row => {
-    const cells = row.split('|').filter(c => c.trim() !== '' && !c.match(/^-+$/)).map(c => c.trim());
-    if (cells.length > 0) {
+    const cells = row.split('|').slice(1, -1).map(c => c.trim());
+    if (cells.length > 0 && cells.some(c => c && !c.match(/^-+$/))) {
       html += '<tr>';
       cells.forEach(cell => {
         html += `<td>${escapeHtml(cell)}</td>`;
@@ -99,9 +99,12 @@ function parseMarkdownTable(content: string): string {
   
   html += '</tbody></table>';
   
-  // Add other content after table
-  if (otherContent.length > 0) {
-    html += '<div class="services-notes">' + parseBasicMarkdown(otherContent.join('\n')) + '</div>';
+  // Add notes after table
+  if (otherLines.length > 0) {
+    const notes = otherLines.join('\n').trim();
+    if (notes) {
+      html += '<div class="services-notes">' + parseBasicMarkdown(notes) + '</div>';
+    }
   }
   
   return html;
@@ -113,15 +116,9 @@ function parseBasicMarkdown(content: string): string {
     .replace(/\*([^*]+)\*/g, '<em>$1</em>')
     .replace(/^### (.+)$/gm, '<h4>$1</h4>')
     .replace(/^## (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^# (.+)$/gm, '<h2>$1</h2>')
     .replace(/^- (.+)$/gm, '<li>$1</li>')
-    .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>')
-    .replace(/^(.+)$/gm, (match) => {
-      if (match.startsWith('<')) return match;
-      return `<p>${match}</p>`;
-    });
+    .replace(/\n\n+/g, '</p><p>')
+    .replace(/\n/g, '<br>');
 }
 
 function escapeHtml(text: string): string {
@@ -129,11 +126,9 @@ function escapeHtml(text: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/"/g, '&quot;');
 }
 
-// Format currency
 function formatCurrency(amount: number | undefined, currency: string = 'EUR'): string {
   if (amount === undefined || isNaN(amount)) return '—';
   return new Intl.NumberFormat('fr-FR', {
@@ -151,17 +146,16 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
 
     const statusConfig = DOCUMENT_STATUS_CONFIG[document.status as keyof typeof DOCUMENT_STATUS_CONFIG];
 
-    // Get specific sections
+    // Get sections
     const headerSection = sections.find(s => s.id === 'header');
     const objectSection = sections.find(s => s.id === 'object');
     const servicesSection = sections.find(s => s.id === 'services');
     const totalsSection = sections.find(s => s.id === 'totals');
     const paymentSection = sections.find(s => s.id === 'payment');
 
-    // Check for new format
     const hasNewFormat = headerSection || servicesSection;
 
-    // Calculate dates
+    // Dates
     const createdDate = new Date(document.created_at || Date.now());
     const validityDays = metadata.validityDays || 30;
     const validityDate = new Date(createdDate);
@@ -197,19 +191,20 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
       }
     };
 
-    // Render services content - handle both HTML and Markdown
+    // Render services - handle Markdown tables
     const renderServicesContent = () => {
       if (!servicesSection) return null;
       
-      const content = servicesSection.content;
-      // Check if content is already HTML or Markdown table
-      if (content.includes('<table') || content.includes('<div')) {
+      const raw = servicesSection.content;
+      
+      // Already HTML?
+      if (raw.includes('<table') || raw.includes('<div')) {
         return (
           <div 
             className="quote-services-table"
             dangerouslySetInnerHTML={{ 
-              __html: DOMPurify.sanitize(content, {
-                ADD_TAGS: ['table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'strong', 'em', 'p', 'ul', 'li'],
+              __html: DOMPurify.sanitize(raw, {
+                ADD_TAGS: ['table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'strong', 'em', 'p', 'ul', 'li', 'br'],
                 ADD_ATTR: ['class', 'style', 'colspan', 'rowspan'],
               })
             }}
@@ -217,32 +212,32 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
         );
       }
       
-      // Parse Markdown table
-      const htmlContent = parseMarkdownTable(content);
+      // Parse Markdown
+      const htmlContent = parseMarkdownTable(raw);
       return (
         <div 
           className="quote-services-table"
           dangerouslySetInnerHTML={{ 
             __html: DOMPurify.sanitize(htmlContent, {
               ADD_TAGS: ['table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'strong', 'em', 'p', 'ul', 'li', 'h3', 'h4', 'br'],
-              ADD_ATTR: ['class', 'style', 'colspan', 'rowspan'],
+              ADD_ATTR: ['class', 'style'],
             })
           }}
         />
       );
     };
 
-    // Render payment content - handle Markdown
+    // Render payment - handle Markdown
     const renderPaymentContent = () => {
       if (!paymentSection) return null;
       
-      const content = paymentSection.content;
-      // Check if content is already HTML
-      if (content.includes('<div') || content.includes('<p>')) {
+      const raw = paymentSection.content;
+      
+      if (raw.includes('<div') || raw.includes('<p>')) {
         return (
           <div 
             dangerouslySetInnerHTML={{ 
-              __html: DOMPurify.sanitize(content, {
+              __html: DOMPurify.sanitize(raw, {
                 ADD_TAGS: ['div', 'p', 'h4', 'strong', 'em', 'ul', 'li', 'br'],
                 ADD_ATTR: ['class', 'style'],
               })
@@ -251,13 +246,12 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
         );
       }
       
-      // Parse basic Markdown
-      const htmlContent = parseBasicMarkdown(content);
+      const htmlContent = parseBasicMarkdown(raw);
       return (
         <div 
           dangerouslySetInnerHTML={{ 
             __html: DOMPurify.sanitize(htmlContent, {
-              ADD_TAGS: ['div', 'p', 'h4', 'h3', 'h2', 'strong', 'em', 'ul', 'li', 'br'],
+              ADD_TAGS: ['div', 'p', 'h4', 'h3', 'strong', 'em', 'ul', 'li', 'br'],
               ADD_ATTR: ['class', 'style'],
             })
           }}
@@ -265,7 +259,7 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
       );
     };
 
-    // If old format, show fallback message
+    // Fallback for old format
     if (!hasNewFormat) {
       return (
         <div className={isEmbedded ? "" : "p-5 space-y-4"} ref={ref}>
@@ -280,7 +274,7 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
 
     return (
       <div className={isEmbedded ? "" : "p-5 space-y-4"} ref={ref}>
-        {/* Header - only show when not embedded */}
+        {/* Actions Header */}
         {!isEmbedded && (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -318,30 +312,30 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
           </div>
         )}
 
-        {/* Quote Document - Professional Invoice Style */}
+        {/* Quote Document */}
         <Card 
           className={`quote-document-card ${isEmbedded ? '' : 'max-w-4xl mx-auto'}`}
           ref={isEmbedded ? undefined : ref}
         >
           <CardContent className="p-0">
-            {/* Top Bar - Quote Number & Dates */}
+            {/* Header Bar */}
             <div className="quote-header-bar">
               <div className="quote-number">
                 {document.quote_number || `Devis N° ${document.id.slice(0, 8).toUpperCase()}`}
               </div>
               <div className="quote-dates">
-                <span>Date d'émission : {format(createdDate, 'dd MMMM yyyy', { locale: fr })}</span>
-                <span>Validité : {format(validityDate, 'dd MMMM yyyy', { locale: fr })}</span>
+                <span className="quote-date">Date d'émission : {format(createdDate, 'dd/MM/yyyy', { locale: fr })}</span>
+                <span className="quote-date">Date limite de validité : {format(validityDate, 'dd/MM/yyyy', { locale: fr })}</span>
               </div>
             </div>
 
-            {/* Emitter / Receiver Block */}
+            {/* Emitter / Receiver */}
             {headerSection && (
               <div 
                 className="quote-header-content"
                 dangerouslySetInnerHTML={{ 
                   __html: DOMPurify.sanitize(headerSection.content, {
-                    ADD_TAGS: ['div', 'h2', 'h3', 'p', 'span', 'strong', 'img'],
+                    ADD_TAGS: ['div', 'h2', 'h3', 'p', 'span', 'strong', 'img', 'br'],
                     ADD_ATTR: ['class', 'style', 'src', 'alt'],
                   })
                 }}
@@ -354,7 +348,7 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                 <div 
                   dangerouslySetInnerHTML={{ 
                     __html: DOMPurify.sanitize(objectSection.content, {
-                      ADD_TAGS: ['div', 'h3', 'p', 'strong'],
+                      ADD_TAGS: ['div', 'h3', 'p', 'strong', 'br'],
                       ADD_ATTR: ['class', 'style'],
                     })
                   }}
@@ -375,7 +369,7 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                 <div 
                   dangerouslySetInnerHTML={{ 
                     __html: DOMPurify.sanitize(totalsSection.content, {
-                      ADD_TAGS: ['div', 'span', 'p', 'strong', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
+                      ADD_TAGS: ['div', 'span', 'p', 'strong', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'br'],
                       ADD_ATTR: ['class', 'style'],
                     })
                   }}
@@ -401,7 +395,7 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
             {/* Payment Terms */}
             {paymentSection && (
               <div className="quote-payment">
-                <h4>Conditions</h4>
+                <h4>Conditions de paiement</h4>
                 {renderPaymentContent()}
               </div>
             )}
@@ -409,7 +403,7 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
             {/* Footer */}
             <div className="quote-footer">
               <p>
-                {document.quote_number || `Devis n°${document.id.slice(0, 8).toUpperCase()}`} — IArche — {format(createdDate, 'yyyy')}
+                {document.quote_number || `Devis n°${document.id.slice(0, 8).toUpperCase()}`} — IArche — Page 1/1
               </p>
             </div>
           </CardContent>
