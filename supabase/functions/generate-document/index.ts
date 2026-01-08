@@ -677,11 +677,11 @@ serve(async (req) => {
 
     console.log(`Using billing entity: ${billingEntity?.name || 'None'}, CGV template: ${cgvTemplate?.name || 'None'}`);
 
-    // Fetch AI prompt from ai_prompts table
+    // Fetch AI model config from ai_prompts table (ignore system/user prompts - use hardcoded ones)
     const promptSlug = `document_generation_${document_type}`;
     const { data: aiPromptData } = await supabase
       .from("ai_prompts")
-      .select("system_prompt, user_prompt, model_config")
+      .select("model_config")
       .eq("slug", promptSlug)
       .single();
 
@@ -796,7 +796,7 @@ serve(async (req) => {
     };
 
     // Use dynamic system prompt with billing entity
-    const systemPrompt = aiPromptData?.system_prompt || getSystemPrompt(document_type, billingEntity, cgvTemplate);
+    const systemPrompt = getSystemPrompt(document_type, billingEntity, cgvTemplate);
 
     // Build real data strings for injection
     const clientName = lead?.name || inputContext?.lead?.name || "Client";
@@ -935,7 +935,7 @@ CONSIGNES:
 1. Réponds UNIQUEMENT avec le JSON complet
 2. AUCUN placeholder (ni {{...}} ni [...]) : utilise les vraies valeurs ci-dessus ou invente une valeur réaliste`,
     };
-    const userPrompt = aiPromptData?.user_prompt || USER_PROMPTS[document_type];
+    const userPrompt = USER_PROMPTS[document_type];
 
     // Call AI with appropriate provider
     let aiResult;
