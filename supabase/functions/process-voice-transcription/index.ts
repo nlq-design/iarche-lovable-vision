@@ -2229,9 +2229,16 @@ serve(async (req) => {
         }
       : { rag_used: false };
 
+    // Extract title from LLM summary if available (fixes missing title bug)
+    const extractedTitle = (summary as Record<string, unknown>).summary as string | undefined;
+    const titleUpdate = extractedTitle && typeof extractedTitle === 'string' && extractedTitle.trim()
+      ? { title: extractedTitle.trim().slice(0, 255) }  // Limit to 255 chars
+      : {};
+
     await supabase
       .from("voice_transcriptions")
       .update({
+        ...titleUpdate,
         summary,
         status: "done",
         llm_model_id: resolvedLLMModelId,
