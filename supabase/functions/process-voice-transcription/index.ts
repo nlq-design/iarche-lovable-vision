@@ -960,12 +960,33 @@ async function loadPromptProfile(supabase: any, prompt_profile_id: string | null
     .filter(Boolean)
     .join("\n\n");
 
+  // MERGE output schemas: base schema + v7.0 mandatory fields (detected_entities, financial_data, dates_mentioned)
+  const baseSchema = secondary?.output_schema ?? {};
+  const v7Schema = getDefaultTranscriptionOutputSchema();
+  
+  // Deep merge properties - ensure v7.0 critical fields are always present
+  const mergedSchema = {
+    type: "object",
+    properties: {
+      ...(baseSchema as any).properties,
+      // Force v7.0 critical fields
+      detected_entities: (v7Schema as any).properties.detected_entities,
+      financial_data: (v7Schema as any).properties.financial_data,
+      dates_mentioned: (v7Schema as any).properties.dates_mentioned,
+      participants: (v7Schema as any).properties.participants,
+    },
+    required: [
+      ...((baseSchema as any).required ?? []),
+      "detected_entities", // Always require detected_entities for post-processing
+    ],
+  };
+
   // Keep user_prompt/output_schema/model_config from secondary (the specialized one)
   const out = {
     ...(secondary ?? master),
     system_prompt: combinedSystem,
     user_prompt: secondary?.user_prompt ?? getDefaultTranscriptionUserPrompt(),
-    output_schema: secondary?.output_schema ?? getDefaultTranscriptionOutputSchema(),
+    output_schema: mergedSchema,
     model_config: (secondary?.model_config ?? master?.model_config) ?? { model: 'google/gemini-2.5-flash' },
   };
 
@@ -1502,15 +1523,21 @@ async function processDetectedEntities(
 
   const staleEntityIds: Set<string> = new Set();
 
+  // UUID validation regex
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   for (const entity of detectedEntities) {
     if (!entity.name || !entity.type) continue;
 
-    // HIGH CONFIDENCE LINKS (>=0.85)
-    if (entity.action === 'link' && entity.existing_id && entity.confidence >= 0.85) {
+    // Validate existing_id is a real UUID (ignore "Non spécifié", null, undefined)
+    const hasValidUUID = entity.existing_id && UUID_REGEX.test(entity.existing_id);
+
+    // HIGH CONFIDENCE LINKS (>=0.85) - only if we have a valid UUID
+    if (entity.action === 'link' && hasValidUUID && entity.confidence >= 0.85) {
       entitiesToLink.push({
         source_entity_id: transcriptionId,
         source_entity_type: 'voice_transcription',
-        target_entity_id: entity.existing_id,
+        target_entity_id: entity.existing_id!,
         target_entity_type: entity.type,
         confidence_score: entity.confidence,
         detected_by: 'llm_auto',
@@ -1518,8 +1545,12 @@ async function processDetectedEntities(
       });
 
       // Mark target entity as stale for re-synthesis
-      staleEntityIds.add(entity.existing_id);
+      staleEntityIds.add(entity.existing_id!);
       stats.linked++;
+    }
+    // If action is 'link' but no valid UUID, treat as 'verify'
+    else if (entity.action === 'link' && !hasValidUUID) {
+      console.log(`[PostProcess] Entity "${entity.name}" has action=link but invalid existing_id, treating as verify`);
     }
 
     // NEW ENTITIES or LOW CONFIDENCE → Add to aliases for review
