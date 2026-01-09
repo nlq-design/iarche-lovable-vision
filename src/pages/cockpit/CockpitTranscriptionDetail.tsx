@@ -500,7 +500,14 @@ export default function CockpitTranscriptionDetail() {
   }
 
   const statusConfig = TRANSCRIPTION_STATUSES.find(s => s.value === transcription.status);
-  const summary = transcription.summary;
+  const rawSummary = transcription.summary;
+  // Normalize: LLM returns 'tasks' but frontend uses 'action_items'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tasksFromRaw = (rawSummary as any)?.tasks;
+  const summary = rawSummary ? {
+    ...rawSummary,
+    action_items: rawSummary.action_items?.length ? rawSummary.action_items : (Array.isArray(tasksFromRaw) ? tasksFromRaw : []),
+  } : null;
   const displayTitle = transcription.title || (summary?.title ? (typeof summary.title === 'string' ? summary.title : JSON.stringify(summary.title)) : 'Transcription');
 
   return (
