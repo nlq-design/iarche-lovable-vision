@@ -314,6 +314,77 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_usage_metrics: {
+        Row: {
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          error_message: string | null
+          estimated_cost_cents: number | null
+          id: string
+          input_tokens: number
+          latency_ms: number | null
+          metadata: Json | null
+          model_id: string
+          model_provider: string
+          operation_type: string
+          output_tokens: number
+          prompt_slug: string | null
+          success: boolean | null
+          total_tokens: number | null
+          user_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          estimated_cost_cents?: number | null
+          id?: string
+          input_tokens?: number
+          latency_ms?: number | null
+          metadata?: Json | null
+          model_id: string
+          model_provider: string
+          operation_type: string
+          output_tokens?: number
+          prompt_slug?: string | null
+          success?: boolean | null
+          total_tokens?: number | null
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          error_message?: string | null
+          estimated_cost_cents?: number | null
+          id?: string
+          input_tokens?: number
+          latency_ms?: number | null
+          metadata?: Json | null
+          model_id?: string
+          model_provider?: string
+          operation_type?: string
+          output_tokens?: number
+          prompt_slug?: string | null
+          success?: boolean | null
+          total_tokens?: number | null
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_metrics_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       article_categories: {
         Row: {
           article_id: string
@@ -1899,6 +1970,65 @@ export type Database = {
           },
         ]
       }
+      keyword_alias_suggestions: {
+        Row: {
+          confidence_score: number | null
+          context_snippet: string | null
+          context_type: string | null
+          created_alias_id: string | null
+          created_at: string | null
+          id: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_id: string | null
+          source_type: string
+          status: string | null
+          suggested_alias: string
+          suggested_canonical: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          context_snippet?: string | null
+          context_type?: string | null
+          created_alias_id?: string | null
+          created_at?: string | null
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_id?: string | null
+          source_type: string
+          status?: string | null
+          suggested_alias: string
+          suggested_canonical?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          context_snippet?: string | null
+          context_type?: string | null
+          created_alias_id?: string | null
+          created_at?: string | null
+          id?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_id?: string | null
+          source_type?: string
+          status?: string | null
+          suggested_alias?: string
+          suggested_canonical?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "keyword_alias_suggestions_created_alias_id_fkey"
+            columns: ["created_alias_id"]
+            isOneToOne: false
+            referencedRelation: "keyword_aliases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       keyword_aliases: {
         Row: {
           alias: string
@@ -1947,6 +2077,54 @@ export type Database = {
           phonetic_key?: string | null
           source_examples?: Json | null
           status?: string
+          updated_at?: string | null
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Relationships: []
+      }
+      keyword_synonyms: {
+        Row: {
+          canonical_term: string
+          confidence: number | null
+          context_type: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          phonetic_key: string | null
+          relation_type: string
+          synonym: string
+          updated_at: string | null
+          validated_at: string | null
+          validated_by: string | null
+        }
+        Insert: {
+          canonical_term: string
+          confidence?: number | null
+          context_type?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          phonetic_key?: string | null
+          relation_type?: string
+          synonym: string
+          updated_at?: string | null
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Update: {
+          canonical_term?: string
+          confidence?: number | null
+          context_type?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          phonetic_key?: string | null
+          relation_type?: string
+          synonym?: string
           updated_at?: string | null
           validated_at?: string | null
           validated_by?: string | null
@@ -4319,6 +4497,7 @@ export type Database = {
         Row: {
           ai_documents_summary: string | null
           ai_metadata: Json
+          ai_usage_id: string | null
           analysis_context: string | null
           audio_format: string | null
           auto_create_tasks: boolean
@@ -4351,6 +4530,7 @@ export type Database = {
         Insert: {
           ai_documents_summary?: string | null
           ai_metadata?: Json
+          ai_usage_id?: string | null
           analysis_context?: string | null
           audio_format?: string | null
           auto_create_tasks?: boolean
@@ -4383,6 +4563,7 @@ export type Database = {
         Update: {
           ai_documents_summary?: string | null
           ai_metadata?: Json
+          ai_usage_id?: string | null
           analysis_context?: string | null
           audio_format?: string | null
           auto_create_tasks?: boolean
@@ -4439,6 +4620,13 @@ export type Database = {
             columns: ["solution_id"]
             isOneToOne: false
             referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_transcriptions_ai_usage_id_fkey"
+            columns: ["ai_usage_id"]
+            isOneToOne: false
+            referencedRelation: "ai_usage_metrics"
             referencedColumns: ["id"]
           },
           {
