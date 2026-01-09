@@ -22,11 +22,14 @@ const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
 // Limits - Whisper max is 25MB, but we can stream larger files
 const WHISPER_MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25MB - OpenAI Whisper per-request limit
 const EDGE_FUNCTION_MAX_FILE_SIZE = 250 * 1024 * 1024; // 250MB - streaming allows larger files
-const MAX_TRANSCRIPTION_CHARS = 15000; // Limit text sent to LLM
+const MAX_TRANSCRIPTION_CHARS = 20000; // Limit text sent to LLM (increased for better coverage)
+const CHUNK_SIZE_CHARS = 12000; // Size of each chunk for chunked analysis
+const MAX_CHUNKS = 5; // Maximum chunks to process (prevents runaway costs)
 
 // LLM timeout must be BELOW the Edge Function platform timeout (~60-150s) to fail gracefully.
 // If LLM takes too long, we catch the error and persist status before platform kills us.
-const LLM_TIMEOUT_MS = 50_000; // 50s - fail fast before platform timeout
+const LLM_TIMEOUT_MS = 55_000; // 55s - slightly increased for complex analysis
+const COMPRESSION_TIMEOUT_MS = 60_000; // 60s for compression of long transcripts
 
 // Whisper can take longer on long audio even if file size is small.
 // FIXED: Increase default timeout for files near the 25MB limit (often 20-40min audio).
@@ -2116,9 +2119,11 @@ serve(async (req) => {
     const isLongTranscript = rawText.length > MAX_TRANSCRIPTION_CHARS;
     let analysisText = rawText;
     let fastPipelineUsed = false;
+    let chunkedProcessing = false;
 
     if (isLongTranscript) {
       fastPipelineUsed = true;
+      console.log(`[LongTranscript] Detected: ${rawText.length} chars (>${MAX_TRANSCRIPTION_CHARS}). Using chunked compression.`);
 
       // Force Lovable gateway + Gemini Flash for reliability on long inputs
       provider = "lovable";
@@ -2126,54 +2131,142 @@ serve(async (req) => {
       supportsTools = true;
       resolvedLLMModelId = null;
 
-      const compressionSchema: Record<string, unknown> = {
-        type: "object",
-        properties: {
-          compressed_transcript: { type: "string", description: "Condensé structuré et fidèle du transcript" },
-        },
-        required: ["compressed_transcript"],
-        additionalProperties: false,
-      };
-
-      const compressionSys =
-        "Tu es un expert en prise de notes et synthèse de réunions. Ta tâche est de compresser un verbatim long en notes structurées et fidèles. Réponds UNIQUEMENT via l'outil fourni, sans texte hors JSON.";
-
-      const compressionUsr =
-        `## CONTEXTE D'ANALYSE (fourni par l'utilisateur)\n${analysisContext ?? "(aucun contexte spécifique)"}\n\n` +
-        "## TÂCHE\n" +
-        "Compresse fidèlement ce transcript très long en notes structurées en français.\n\n" +
-        "## FORMAT ATTENDU (texte structuré)\n" +
-        "**Titre suggéré:** [Résume le sujet en une phrase courte]\n\n" +
-        "**Participants:** [Liste des personnes identifiées]\n\n" +
-        "**Contexte:** [De quoi parle cette réunion/échange]\n\n" +
-        "**Points clés:**\n- [Point 1]\n- [Point 2]\n...\n\n" +
-        "**Décisions prises:**\n- [Décision 1]\n- [Décision 2]\n...\n\n" +
-        "**Actions à mener:**\n- [Action] - Responsable: [Nom] - Échéance: [Date si mentionnée]\n...\n\n" +
-        "**Questions ouvertes / À clarifier:**\n- [Question ou incertitude]\n\n" +
-        "## CONTRAINTES CRITIQUES\n" +
-        "- ZÉRO invention : ne note que ce qui est explicitement dit\n" +
-        "- Préserve les noms propres, entreprises, dates mentionnées\n" +
-        "- Si une échéance est mentionnée (\"demain\", \"la semaine prochaine\"), note-la telle quelle\n\n" +
-        `## TRANSCRIPT À COMPRESSER\n${rawText}`;
-
-      try {
-        const compressed = await callLLM(
-          "lovable",
-          "google/gemini-2.5-flash-lite",
-          compressionSys,
-          compressionUsr,
-          compressionSchema,
-          true
-        );
-
-        const c = (compressed as any)?.compressed_transcript;
-        if (typeof c === "string" && c.trim().length > 0) {
-          analysisText = c.trim();
+      // Strategy: Chunk the transcript, compress each chunk, then merge
+      const chunks: string[] = [];
+      let remaining = rawText;
+      while (remaining.length > 0 && chunks.length < MAX_CHUNKS) {
+        // Try to split at sentence boundary near CHUNK_SIZE_CHARS
+        let splitPoint = Math.min(CHUNK_SIZE_CHARS, remaining.length);
+        if (remaining.length > CHUNK_SIZE_CHARS) {
+          // Look for sentence end (. ! ?) within last 500 chars of chunk
+          const searchStart = Math.max(0, CHUNK_SIZE_CHARS - 500);
+          const searchArea = remaining.slice(searchStart, CHUNK_SIZE_CHARS);
+          const lastSentenceEnd = Math.max(
+            searchArea.lastIndexOf('. '),
+            searchArea.lastIndexOf('! '),
+            searchArea.lastIndexOf('? '),
+            searchArea.lastIndexOf('.\n'),
+            searchArea.lastIndexOf('!\n'),
+            searchArea.lastIndexOf('?\n')
+          );
+          if (lastSentenceEnd > 0) {
+            splitPoint = searchStart + lastSentenceEnd + 2;
+          }
         }
-      } catch (compressErr) {
-        // If compression fails, fall back to default (truncated) transcript
-        logError("Compress", compressErr);
-        analysisText = rawText;
+        chunks.push(remaining.slice(0, splitPoint));
+        remaining = remaining.slice(splitPoint).trim();
+      }
+
+      console.log(`[LongTranscript] Split into ${chunks.length} chunks`);
+
+      if (chunks.length > 1) {
+        chunkedProcessing = true;
+        const chunkSummaries: string[] = [];
+
+        const compressionSchema: Record<string, unknown> = {
+          type: "object",
+          properties: {
+            chunk_summary: { type: "string", description: "Résumé détaillé et fidèle de cette partie du transcript" },
+            participants_mentioned: { type: "array", items: { type: "string" }, description: "Noms propres mentionnés" },
+            key_facts: { type: "array", items: { type: "string" }, description: "Faits clés, montants, dates" },
+          },
+          required: ["chunk_summary", "participants_mentioned", "key_facts"],
+          additionalProperties: false,
+        };
+
+        const compressionSys = `Tu es un expert en prise de notes. Ta tâche est de résumer fidèlement UN SEGMENT d'une conversation plus longue.
+
+RÈGLES CRITIQUES:
+- ZÉRO invention : ne note que ce qui est explicitement dit
+- Préserve TOUS les noms propres, entreprises, montants, dates
+- Si une date relative est mentionnée ("demain", "vendredi"), note-la telle quelle
+- Garde les nuances et le contexte des discussions
+- Ce segment fait partie d'une conversation plus longue (partie ${chunks.length} au total)`;
+
+        for (let i = 0; i < chunks.length; i++) {
+          const chunkUsr = `## Contexte utilisateur\n${analysisContext ?? "(aucun)"}\n\n## Segment ${i + 1}/${chunks.length}\n${chunks[i]}`;
+
+          try {
+            console.log(`[LongTranscript] Processing chunk ${i + 1}/${chunks.length} (${chunks[i].length} chars)`);
+            const compressed = await callLLM(
+              "lovable",
+              "google/gemini-2.5-flash", // Use flash, not flash-lite, for better quality
+              compressionSys,
+              chunkUsr,
+              compressionSchema,
+              true
+            );
+
+            const chunkResult = compressed as { chunk_summary?: string; participants_mentioned?: string[]; key_facts?: string[] };
+            if (chunkResult.chunk_summary) {
+              let summary = `### Segment ${i + 1}\n${chunkResult.chunk_summary}`;
+              if (chunkResult.participants_mentioned?.length) {
+                summary += `\n**Personnes:** ${chunkResult.participants_mentioned.join(', ')}`;
+              }
+              if (chunkResult.key_facts?.length) {
+                summary += `\n**Faits clés:** ${chunkResult.key_facts.join(' | ')}`;
+              }
+              chunkSummaries.push(summary);
+            }
+          } catch (chunkErr) {
+            logError(`Chunk_${i}`, chunkErr);
+            // Include raw chunk excerpt as fallback
+            chunkSummaries.push(`### Segment ${i + 1} (non compressé)\n${chunks[i].slice(0, 2000)}...`);
+          }
+        }
+
+        // Merge all chunk summaries
+        analysisText = chunkSummaries.join('\n\n---\n\n');
+        console.log(`[LongTranscript] Merged ${chunkSummaries.length} chunk summaries (${analysisText.length} chars)`);
+      } else {
+        // Single chunk but still long - use improved compression
+        const compressionSchema: Record<string, unknown> = {
+          type: "object",
+          properties: {
+            compressed_transcript: { type: "string", description: "Condensé structuré et fidèle du transcript" },
+          },
+          required: ["compressed_transcript"],
+          additionalProperties: false,
+        };
+
+        const compressionSys =
+          "Tu es un expert en prise de notes et synthèse de réunions. Ta tâche est de compresser un verbatim long en notes structurées et fidèles. Réponds UNIQUEMENT via l'outil fourni, sans texte hors JSON.";
+
+        const compressionUsr =
+          `## CONTEXTE D'ANALYSE (fourni par l'utilisateur)\n${analysisContext ?? "(aucun contexte spécifique)"}\n\n` +
+          "## TÂCHE\n" +
+          "Compresse fidèlement ce transcript en notes structurées en français.\n\n" +
+          "## FORMAT ATTENDU\n" +
+          "**Titre suggéré:** [Résume le sujet]\n" +
+          "**Participants:** [Liste]\n" +
+          "**Contexte:** [De quoi parle cette réunion]\n" +
+          "**Points clés:** (liste détaillée)\n" +
+          "**Décisions:** (liste)\n" +
+          "**Actions:** [Action] - Responsable - Échéance\n" +
+          "**Questions ouvertes:**\n\n" +
+          "## CONTRAINTES\n" +
+          "- ZÉRO invention\n" +
+          "- Préserve noms, entreprises, dates, montants\n\n" +
+          `## TRANSCRIPT\n${rawText}`;
+
+        try {
+          const compressed = await callLLM(
+            "lovable",
+            "google/gemini-2.5-flash", // Use flash instead of flash-lite
+            compressionSys,
+            compressionUsr,
+            compressionSchema,
+            true
+          );
+
+          const c = (compressed as any)?.compressed_transcript;
+          if (typeof c === "string" && c.trim().length > 0) {
+            analysisText = c.trim();
+          }
+        } catch (compressErr) {
+          logError("Compress", compressErr);
+          analysisText = rawText;
+        }
       }
     }
 
@@ -2195,6 +2288,9 @@ serve(async (req) => {
           llm_call_started_at: new Date().toISOString(),
           llm_model: `${provider}/${modelId}`,
           fast_pipeline: fastPipelineUsed,
+          chunked_processing: chunkedProcessing,
+          original_transcript_length: rawText.length,
+          compressed_text_length: analysisText.length,
           analysis_context_used: !!(analysisContext && analysisContext.trim()),
         },
       })
