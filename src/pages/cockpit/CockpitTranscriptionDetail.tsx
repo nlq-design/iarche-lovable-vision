@@ -501,12 +501,33 @@ export default function CockpitTranscriptionDetail() {
 
   const statusConfig = TRANSCRIPTION_STATUSES.find(s => s.value === transcription.status);
   const rawSummary = transcription.summary;
-  // Normalize: LLM returns 'tasks' but frontend uses 'action_items'
+  
+  // Normalize LLM output fields to frontend expected fields
+  // LLM may return different field names depending on prompt version
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tasksFromRaw = (rawSummary as any)?.tasks;
+  const raw = rawSummary as any;
   const summary = rawSummary ? {
     ...rawSummary,
-    action_items: rawSummary.action_items?.length ? rawSummary.action_items : (Array.isArray(tasksFromRaw) ? tasksFromRaw : []),
+    // executive_summary: prioritize explicit field, fallback to 'summary' text
+    executive_summary: raw?.executive_summary || raw?.summary || '',
+    // key_points: can come from key_points, highlights, or technical_recommendations
+    key_points: raw?.key_points?.length ? raw.key_points : 
+                (raw?.highlights?.length ? raw.highlights : 
+                (raw?.technical_recommendations?.length ? raw.technical_recommendations : [])),
+    // decisions: can come from decisions or next_steps
+    decisions: raw?.decisions?.length ? raw.decisions : 
+               (raw?.next_steps?.length ? raw.next_steps.map((s: { action?: string } | string) => 
+                 typeof s === 'string' ? s : s.action
+               ) : []),
+    // action_items: from action_items, tasks, or next_steps
+    action_items: raw?.action_items?.length ? raw.action_items : 
+                  (raw?.tasks?.length ? raw.tasks : 
+                  (raw?.next_steps?.length ? raw.next_steps : [])),
+    // risks_blockers: from risks_blockers or risks_limitations
+    risks_blockers: raw?.risks_blockers?.length ? raw.risks_blockers : 
+                    (raw?.risks_limitations?.length ? raw.risks_limitations : []),
+    // questions_open: keep as is
+    questions_open: raw?.questions_open || [],
   } : null;
   const displayTitle = transcription.title || (summary?.title ? (typeof summary.title === 'string' ? summary.title : JSON.stringify(summary.title)) : 'Transcription');
 
