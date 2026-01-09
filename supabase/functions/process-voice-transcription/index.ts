@@ -1633,8 +1633,12 @@ async function processDetectedEntities(
     // Validate existing_id is a real UUID (ignore "Non spécifié", null, undefined)
     const hasValidUUID = entity.existing_id && UUID_REGEX.test(entity.existing_id);
 
-    // HIGH CONFIDENCE LINKS (>=0.85) - only if we have a valid UUID
-    if (entity.action === 'link' && hasValidUUID && entity.confidence >= 0.85) {
+    // HIGH CONFIDENCE LINKS (>=0.85) - accept both 'link' and 'verify' with valid UUID
+    // This handles LLMs that use 'verify' conservatively even when they provide a valid UUID
+    const shouldLink = hasValidUUID && entity.confidence >= 0.85 && 
+      (entity.action === 'link' || entity.action === 'verify');
+    
+    if (shouldLink) {
       entitiesToLink.push({
         source_entity_id: transcriptionId,
         source_entity_type: 'voice_transcription',
@@ -1654,8 +1658,13 @@ async function processDetectedEntities(
       console.log(`[PostProcess] Entity "${entity.name}" has action=link but invalid existing_id, treating as verify`);
     }
 
-    // NEW ENTITIES or LOW CONFIDENCE → Add to aliases for review
-    if (entity.action === 'create' || (entity.action === 'verify' && entity.confidence < 0.85)) {
+    // NEW ENTITIES or LOW CONFIDENCE (without valid link) → Add to aliases for review
+    // Skip if already linked (shouldLink was true)
+    const shouldAddToAliases = !shouldLink && (
+      entity.action === 'create' || 
+      (entity.action === 'verify' && (!hasValidUUID || entity.confidence < 0.85))
+    );
+    if (shouldAddToAliases) {
       // Check if alias already exists
       const existingAlias = await supabase
         .from('keyword_aliases')
