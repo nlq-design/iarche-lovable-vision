@@ -2230,10 +2230,27 @@ serve(async (req) => {
       : { rag_used: false };
 
     // Extract title from LLM summary if available (fixes missing title bug)
-    const extractedTitle = (summary as Record<string, unknown>).summary as string | undefined;
-    const titleUpdate = extractedTitle && typeof extractedTitle === 'string' && extractedTitle.trim()
-      ? { title: extractedTitle.trim().slice(0, 255) }  // Limit to 255 chars
-      : {};
+    // Priority: explicit title field > truncated summary (first sentence, max 100 chars)
+    const summaryObj = summary as Record<string, unknown>;
+    let extractedTitle: string | undefined;
+    
+    // Check if there's an explicit 'title' field in the summary
+    if (summaryObj.title && typeof summaryObj.title === 'string' && summaryObj.title.trim()) {
+      extractedTitle = summaryObj.title.trim().slice(0, 100);
+    } 
+    // Otherwise, extract first sentence from summary text (max 100 chars)
+    else if (summaryObj.summary && typeof summaryObj.summary === 'string' && summaryObj.summary.trim()) {
+      const fullSummary = summaryObj.summary.trim();
+      // Get first sentence (up to first period, question mark, or exclamation)
+      const firstSentenceMatch = fullSummary.match(/^[^.!?]+[.!?]?/);
+      const firstSentence = firstSentenceMatch ? firstSentenceMatch[0].trim() : fullSummary;
+      // Truncate to 100 chars, adding ellipsis if needed
+      extractedTitle = firstSentence.length > 100 
+        ? firstSentence.slice(0, 97) + '...' 
+        : firstSentence;
+    }
+    
+    const titleUpdate = extractedTitle ? { title: extractedTitle } : {};
 
     await supabase
       .from("voice_transcriptions")
