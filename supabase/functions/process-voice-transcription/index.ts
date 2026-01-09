@@ -694,12 +694,19 @@ Tu DOIS capturer et préserver :
 Utilise le dictionnaire fourni (dictionary_context) pour normaliser les variations.
 Exemple : "bérécos" → "Beerecos", "stéfane" → "Stéphane"
 
-### 3. MATCHING ENTITÉS CRM
-Consulte crm_context pour identifier les entités existantes.
-Pour chaque mention, détermine :
-- Si c'est une entité EXISTANTE → action: "link" avec existing_id
-- Si c'est NOUVELLE → action: "create"
-- Si INCERTAIN → action: "verify"
+### 3. MATCHING ENTITÉS CRM (OBLIGATOIRE)
+Tu DOIS utiliser le champ **existing_entities** fourni dans l'input pour matcher les mentions.
+Pour CHAQUE nom de personne/entreprise mentionné dans la transcription :
+1. Cherche une correspondance dans existing_entities.leads (par name ou company)
+2. Cherche une correspondance dans existing_entities.partners (par name ou company)
+3. Cherche une correspondance dans existing_entities.projects (par name ou slug)
+4. Cherche une correspondance dans existing_entities.solutions (par title ou slug)
+
+Si MATCH trouvé (même partiel/fuzzy) → action: "link" + **existing_id = l'UUID exact de l'entité**
+Si NOUVEAU → action: "create"
+Si INCERTAIN → action: "verify"
+
+IMPORTANT: Le champ detected_entities ne doit JAMAIS être vide si des noms propres sont mentionnés.
 
 ### 4. DATES RELATIVES → ABSOLUES
 Convertis toutes les dates relatives en dates absolues :
