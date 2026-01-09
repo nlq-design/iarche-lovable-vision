@@ -1445,6 +1445,175 @@ function parseDueTime(timeStr: string | null | undefined): string | null {
   return null;
 }
 
+// ============= POST-PROCESSING: ENTITY LINKING & CASCADE =============
+
+interface DetectedEntity {
+  name: string;
+  type: 'lead' | 'project' | 'solution' | 'partner' | 'company' | 'person';
+  confidence: number;
+  existing_id?: string;
+  action: 'link' | 'create' | 'verify';
+}
+
+/**
+ * Process detected entities from LLM output:
+ * 1. Create entity_name_references for high-confidence matches
+ * 2. Add new aliases to keyword_aliases with 'pending' status
+ * 3. Mark linked parent entities as 'stale' for re-synthesis
+ */
+// deno-lint-ignore no-explicit-any
+async function processDetectedEntities(
+  supabase: any,
+  transcriptionId: string,
+  detectedEntities: DetectedEntity[],
+  existingEntities: any
+): Promise<{
+  linked: number;
+  pending_aliases: number;
+  stale_marked: number;
+}> {
+  const stats = { linked: 0, pending_aliases: 0, stale_marked: 0 };
+  
+  if (!detectedEntities?.length) {
+    console.log("[PostProcess] No detected_entities to process");
+    return stats;
+  }
+
+  console.log(`[PostProcess] Processing ${detectedEntities.length} detected entities`);
+
+  const entitiesToLink: Array<{
+    source_entity_id: string;
+    source_entity_type: string;
+    target_entity_id: string;
+    target_entity_type: string;
+    confidence_score: number;
+    detected_by: string;
+    context: string;
+  }> = [];
+
+  const aliasesToCreate: Array<{
+    alias: string;
+    canonical_name: string;
+    context_type: string;
+    status: string;
+    detected_count: number;
+    first_detected_at: string;
+  }> = [];
+
+  const staleEntityIds: Set<string> = new Set();
+
+  for (const entity of detectedEntities) {
+    if (!entity.name || !entity.type) continue;
+
+    // HIGH CONFIDENCE LINKS (>=0.85)
+    if (entity.action === 'link' && entity.existing_id && entity.confidence >= 0.85) {
+      entitiesToLink.push({
+        source_entity_id: transcriptionId,
+        source_entity_type: 'voice_transcription',
+        target_entity_id: entity.existing_id,
+        target_entity_type: entity.type,
+        confidence_score: entity.confidence,
+        detected_by: 'llm_auto',
+        context: `Détecté: "${entity.name}"`,
+      });
+
+      // Mark target entity as stale for re-synthesis
+      staleEntityIds.add(entity.existing_id);
+      stats.linked++;
+    }
+
+    // NEW ENTITIES or LOW CONFIDENCE → Add to aliases for review
+    if (entity.action === 'create' || (entity.action === 'verify' && entity.confidence < 0.85)) {
+      // Check if alias already exists
+      const existingAlias = await supabase
+        .from('keyword_aliases')
+        .select('id, detected_count')
+        .eq('alias', entity.name.toLowerCase())
+        .maybeSingle();
+
+      if (existingAlias.data) {
+        // Increment detected_count
+        await supabase
+          .from('keyword_aliases')
+          .update({ 
+            detected_count: (existingAlias.data.detected_count || 0) + 1,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingAlias.data.id);
+      } else {
+        aliasesToCreate.push({
+          alias: entity.name,
+          canonical_name: entity.name, // Will be confirmed/corrected by user
+          context_type: entity.type === 'company' ? 'client' : entity.type,
+          status: 'pending',
+          detected_count: 1,
+          first_detected_at: new Date().toISOString(),
+        });
+        stats.pending_aliases++;
+      }
+    }
+  }
+
+  // Batch insert entity references
+  if (entitiesToLink.length > 0) {
+    const { error: refError } = await supabase
+      .from('entity_name_references')
+      .upsert(entitiesToLink, { 
+        onConflict: 'source_entity_id,source_entity_type,target_entity_id,target_entity_type',
+        ignoreDuplicates: true 
+      });
+
+    if (refError) {
+      console.warn(`[PostProcess] Failed to insert entity_name_references: ${refError.message?.slice(0, 100)}`);
+    } else {
+      console.log(`[PostProcess] Created ${entitiesToLink.length} entity references`);
+    }
+  }
+
+  // Batch insert new aliases
+  if (aliasesToCreate.length > 0) {
+    const { error: aliasError } = await supabase
+      .from('keyword_aliases')
+      .insert(aliasesToCreate);
+
+    if (aliasError) {
+      console.warn(`[PostProcess] Failed to insert keyword_aliases: ${aliasError.message?.slice(0, 100)}`);
+    } else {
+      console.log(`[PostProcess] Created ${aliasesToCreate.length} pending aliases`);
+    }
+  }
+
+  // Mark linked entities as stale for re-synthesis
+  if (staleEntityIds.size > 0) {
+    const staleIds = Array.from(staleEntityIds);
+    
+    // Mark leads as stale
+    const leadIds = entitiesToLink.filter(e => e.target_entity_type === 'lead').map(e => e.target_entity_id);
+    if (leadIds.length > 0) {
+      await supabase.from('leads').update({ synthesis_stale: true }).in('id', leadIds);
+      stats.stale_marked += leadIds.length;
+    }
+
+    // Mark projects as stale
+    const projectIds = entitiesToLink.filter(e => e.target_entity_type === 'project').map(e => e.target_entity_id);
+    if (projectIds.length > 0) {
+      await supabase.from('projects').update({ synthesis_stale: true }).in('id', projectIds);
+      stats.stale_marked += projectIds.length;
+    }
+
+    // Mark partners as stale
+    const partnerIds = entitiesToLink.filter(e => e.target_entity_type === 'partner').map(e => e.target_entity_id);
+    if (partnerIds.length > 0) {
+      await supabase.from('partners').update({ synthesis_stale: true }).in('id', partnerIds);
+      stats.stale_marked += partnerIds.length;
+    }
+
+    console.log(`[PostProcess] Marked ${stats.stale_marked} entities as stale`);
+  }
+
+  return stats;
+}
+
 // ============= TASK CREATION =============
 
 // deno-lint-ignore no-explicit-any
@@ -1870,6 +2039,24 @@ serve(async (req) => {
     // Tasks
     const createdTasks = await createTasksFromActions(supabase, vjob, summary, ctx.leadId);
 
+    // POST-PROCESSING: Entity linking & cascade (Phase 2/3)
+    let entityProcessingStats = { linked: 0, pending_aliases: 0, stale_marked: 0 };
+    try {
+      const detectedEntities = summary.detected_entities as DetectedEntity[] | undefined;
+      if (detectedEntities?.length) {
+        entityProcessingStats = await processDetectedEntities(
+          supabase,
+          jobId!,
+          detectedEntities,
+          ctx.existingEntities
+        );
+        console.log(`[PostProcess] Entity processing: linked=${entityProcessingStats.linked}, pending=${entityProcessingStats.pending_aliases}, stale=${entityProcessingStats.stale_marked}`);
+      }
+    } catch (postErr) {
+      // Non-blocking - don't fail transcription if post-processing fails
+      console.warn(`[PostProcess] Entity processing failed: ${(postErr as Error)?.message?.slice(0, 200)}`);
+    }
+
     // Activity log
     const llmModelFullName = `${provider}/${modelId}`;
     await supabase.from("activity_log").insert({
@@ -1877,7 +2064,7 @@ serve(async (req) => {
       entity_type: "voice_transcription",
       entity_id: vjob.id,
       activity_type: "transcription_completed",
-      content: `Transcription générée (${createdTasks.length} tâche(s))`,
+      content: `Transcription générée (${createdTasks.length} tâche(s), ${entityProcessingStats.linked} entités liées)`,
       lead_id: ctx.leadId,
       project_id: vjob.project_id,
       created_by: vjob.created_by,
@@ -1885,6 +2072,7 @@ serve(async (req) => {
         stt_model: "whisper-1",
         llm_model: llmModelFullName,
         llm_provider: provider,
+        entity_linking: entityProcessingStats,
       },
     });
 
@@ -1911,6 +2099,8 @@ serve(async (req) => {
           llm_model: llmModelFullName,
           llm_provider: provider,
           ...ragMetadata,
+          entity_linking: entityProcessingStats,
+          completed_at: new Date().toISOString(),
         },
       })
       .eq("id", jobId);
