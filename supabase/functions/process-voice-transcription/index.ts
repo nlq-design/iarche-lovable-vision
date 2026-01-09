@@ -752,8 +752,19 @@ function getDefaultTranscriptionOutputSchema(): Record<string, unknown> {
   return {
     type: "object",
     properties: {
-      title: { type: "string", description: "Titre court de la transcription" },
-      executive_summary: { type: "string", description: "Résumé en 3-5 phrases" },
+      title: { 
+        type: "string", 
+        description: "Titre COURT de la transcription (max 80 caractères). Exemple: 'RDV commercial Biroko - Stratégie WhatsApp'. NE PAS mettre le résumé complet ici." 
+      },
+      executive_summary: { 
+        type: "string", 
+        description: "Résumé exécutif en 3-5 phrases. Synthèse complète du contenu discuté." 
+      },
+      topics: {
+        type: "array",
+        items: { type: "string" },
+        description: "Liste des sujets/thèmes évoqués dans la conversation (ex: 'Stratégie WhatsApp', 'Organisation événements')"
+      },
       participants: {
         type: "array",
         items: {
@@ -777,7 +788,7 @@ function getDefaultTranscriptionOutputSchema(): Record<string, unknown> {
       key_points: {
         type: "array",
         items: { type: "string" },
-        description: "Points clés abordés"
+        description: "Points clés abordés - les informations importantes à retenir"
       },
       decisions: {
         type: "array",
@@ -789,7 +800,31 @@ function getDefaultTranscriptionOutputSchema(): Record<string, unknown> {
             date_mentioned: { type: "string" }
           },
           required: ["content"]
-        }
+        },
+        description: "Décisions prises durant la réunion"
+      },
+      risks_blockers: {
+        type: "array",
+        items: { type: "string" },
+        description: "Risques identifiés, blocages, points de vigilance"
+      },
+      questions_open: {
+        type: "array",
+        items: { type: "string" },
+        description: "Questions restées en suspens, points à clarifier"
+      },
+      next_steps: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            action: { type: "string" },
+            owner: { type: "string" },
+            deadline: { type: "string", description: "Format YYYY-MM-DD si mentionné" }
+          },
+          required: ["action"]
+        },
+        description: "Prochaines étapes concrètes à réaliser"
       },
       action_items: {
         type: "array",
@@ -852,7 +887,6 @@ function getDefaultTranscriptionOutputSchema(): Record<string, unknown> {
         }
       },
       sentiment: { type: "string", enum: ["positive", "neutral", "negative"] },
-      next_steps: { type: "string", description: "Prochaines étapes résumées" },
       quality_score: { 
         type: "number", 
         minimum: 0, 
@@ -860,7 +894,20 @@ function getDefaultTranscriptionOutputSchema(): Record<string, unknown> {
         description: "Score qualité audio/contenu"
       }
     },
-    required: ["title", "executive_summary", "participants", "key_points", "action_items", "detected_entities", "sentiment"]
+    required: [
+      "title", 
+      "executive_summary", 
+      "topics",
+      "participants", 
+      "key_points", 
+      "decisions",
+      "risks_blockers",
+      "questions_open",
+      "next_steps",
+      "action_items", 
+      "detected_entities", 
+      "sentiment"
+    ]
   };
 }
 
