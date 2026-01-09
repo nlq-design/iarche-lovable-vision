@@ -935,7 +935,7 @@ function selectTranscriptionPromptSlug(
 async function loadLinkedPartners(supabase: any, transcriptionId: string): Promise<LinkedPartner[]> {
   try {
     const { data, error } = await supabase
-      .from("voice_transcription_partners")
+      .from("transcription_partners")
       .select("partner_id, partners(id, name, partner_type)")
       .eq("transcription_id", transcriptionId);
     
