@@ -1336,14 +1336,14 @@ async function fetchExistingEntitiesIndex(supabase: any): Promise<{
       supabase.from("leads").select("id, name, company").order("created_at", { ascending: false }).limit(100),
       supabase.from("projects").select("id, name, slug").order("created_at", { ascending: false }).limit(50),
       supabase.from("articles").select("id, title, slug").eq("resource_type", "solution").eq("published", true),
-      supabase.from("partners").select("id, name, company, type").eq("status", "active").limit(50),
+      supabase.from("partners").select("id, name, company, partner_type").is("deleted_at", null).limit(50),
     ]);
 
     const result = {
       leads: (leadsRes.data || []).map((l: any) => ({ id: l.id, name: l.name, company: l.company })),
       projects: (projectsRes.data || []).map((p: any) => ({ id: p.id, name: p.name, slug: p.slug })),
       solutions: (solutionsRes.data || []).map((s: any) => ({ id: s.id, title: s.title, slug: s.slug })),
-      partners: (partnersRes.data || []).map((p: any) => ({ id: p.id, name: p.name, company: p.company, type: p.type })),
+      partners: (partnersRes.data || []).map((p: any) => ({ id: p.id, name: p.name, company: p.company, type: p.partner_type })),
     };
 
     console.log(`[Entities] Loaded index: ${result.leads.length} leads, ${result.projects.length} projects, ${result.solutions.length} solutions, ${result.partners.length} partners`);
