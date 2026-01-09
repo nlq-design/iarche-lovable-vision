@@ -673,6 +673,190 @@ function parseProviderResponse(
 
 // ============= ENTITY CONTEXT & PROMPTS =============
 
+// ============= DEFAULT TRANSCRIPTION PROMPTS (v7.0 Fallback) =============
+
+function getDefaultTranscriptionSystemPrompt(): string {
+  return `# Analyse Transcription v7.0 - Mode Exhaustif
+
+Tu es un analyste expert pour IArche (conseil IA B2B). Tu analyses des transcriptions audio.
+
+## RÈGLES CRITIQUES DE PRÉSERVATION
+
+### 1. ZÉRO PERTE D'INFORMATION
+Tu DOIS capturer et préserver :
+- **TOUS les montants** : euros, pourcentages, délais, quantités
+- **TOUTES les dates** : convertir en format absolu DD/MM/YYYY
+- **TOUS les noms propres** : personnes, entreprises, produits
+- **TOUTES les décisions** : explicites ou implicites
+- **TOUS les engagements** : avec responsable identifié
+
+### 2. NORMALISATION PHONÉTIQUE
+Utilise le dictionnaire fourni (dictionary_context) pour normaliser les variations.
+Exemple : "bérécos" → "Beerecos", "stéfane" → "Stéphane"
+
+### 3. MATCHING ENTITÉS CRM
+Consulte crm_context pour identifier les entités existantes.
+Pour chaque mention, détermine :
+- Si c'est une entité EXISTANTE → action: "link" avec existing_id
+- Si c'est NOUVELLE → action: "create"
+- Si INCERTAIN → action: "verify"
+
+### 4. DATES RELATIVES → ABSOLUES
+Convertis toutes les dates relatives en dates absolues :
+- "demain" → DD/MM/YYYY (basé sur aujourd'hui)
+- "vendredi prochain" → date calculée
+- "dans 2 semaines" → date calculée
+- "fin janvier" → dernier jour ouvré du mois
+
+### 5. ACTIONS ITEMS LIÉS
+Chaque action doit identifier :
+- Responsable (@Qui)
+- Deadline (date absolue)
+- Entité liée si possible (lead, project, solution)
+
+## FORMAT DE SORTIE
+Tu DOIS retourner un JSON valide suivant l'output_schema fourni.
+Puis un résumé Markdown pour lecture humaine dans le champ summary_markdown.`;
+}
+
+function getDefaultTranscriptionUserPrompt(): string {
+  return `## Contexte utilisateur
+{{analysis_context}}
+
+## Transcription audio
+{{transcript}}
+
+---
+
+Analyse cette transcription en suivant les règles du système.
+
+CHECKLIST AVANT RÉPONSE :
+- [ ] Tous les montants capturés avec contexte ?
+- [ ] Toutes les dates converties en absolu ?
+- [ ] Tous les noms propres identifiés ?
+- [ ] Toutes les décisions listées ?
+- [ ] Matching CRM effectué pour chaque entité mentionnée ?
+- [ ] Actions items avec responsable + deadline + entité liée ?
+
+Retourne le JSON complet selon le schéma.`;
+}
+
+function getDefaultTranscriptionOutputSchema(): Record<string, unknown> {
+  return {
+    type: "object",
+    properties: {
+      title: { type: "string", description: "Titre court de la transcription" },
+      executive_summary: { type: "string", description: "Résumé en 3-5 phrases" },
+      participants: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            role: { type: "string" },
+            company: { type: "string" },
+            crm_match: {
+              type: "object",
+              properties: {
+                type: { type: "string", enum: ["lead", "partner"] },
+                id: { type: "string" },
+                confidence: { type: "number" }
+              }
+            }
+          },
+          required: ["name", "role"]
+        }
+      },
+      key_points: {
+        type: "array",
+        items: { type: "string" },
+        description: "Points clés abordés"
+      },
+      decisions: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            content: { type: "string" },
+            owner: { type: "string" },
+            date_mentioned: { type: "string" }
+          },
+          required: ["content"]
+        }
+      },
+      action_items: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            assignee: { type: "string" },
+            due_date: { type: "string", description: "Format YYYY-MM-DD" },
+            priority: { type: "string", enum: ["low", "medium", "high"] },
+            linked_entity: {
+              type: "object",
+              properties: {
+                type: { type: "string", enum: ["lead", "project", "solution", "partner"] },
+                id: { type: "string" },
+                name: { type: "string" }
+              }
+            }
+          },
+          required: ["title", "assignee", "priority"]
+        }
+      },
+      detected_entities: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            type: { type: "string", enum: ["lead", "project", "solution", "partner", "company", "person"] },
+            confidence: { type: "number", minimum: 0, maximum: 1 },
+            existing_id: { type: "string" },
+            action: { type: "string", enum: ["link", "create", "verify"] }
+          },
+          required: ["name", "type", "confidence", "action"]
+        },
+        description: "Entités CRM détectées pour liaison automatique"
+      },
+      financial_data: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            amount: { type: "number" },
+            currency: { type: "string", default: "EUR" },
+            context: { type: "string" }
+          },
+          required: ["amount", "context"]
+        }
+      },
+      dates_mentioned: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            original: { type: "string", description: "Expression originale" },
+            normalized: { type: "string", description: "Format YYYY-MM-DD" },
+            context: { type: "string" }
+          },
+          required: ["original", "normalized", "context"]
+        }
+      },
+      sentiment: { type: "string", enum: ["positive", "neutral", "negative"] },
+      next_steps: { type: "string", description: "Prochaines étapes résumées" },
+      quality_score: { 
+        type: "number", 
+        minimum: 0, 
+        maximum: 100,
+        description: "Score qualité audio/contenu"
+      }
+    },
+    required: ["title", "executive_summary", "participants", "key_points", "action_items", "detected_entities", "sentiment"]
+  };
+}
+
 /**
  * Determine the best transcription prompt based on context
  * - If project is linked → transcription_reunion_projet
@@ -760,8 +944,16 @@ async function loadPromptProfile(supabase: any, prompt_profile_id: string | null
   if (master?.slug) console.log(`[Prompt] Master loaded: ${master.slug}`);
 
   if (!master && !secondary) {
-    console.warn("[Prompt] No prompts found - using minimal fallback");
-    return null;
+    console.warn("[Prompt] No prompts found - using hardcoded fallback v7.0");
+    // Return hardcoded fallback prompt for transcription analysis
+    return {
+      id: 'fallback',
+      slug: 'transcription_fallback_v7',
+      system_prompt: getDefaultTranscriptionSystemPrompt(),
+      user_prompt: getDefaultTranscriptionUserPrompt(),
+      output_schema: getDefaultTranscriptionOutputSchema(),
+      model_config: { model: 'google/gemini-2.5-flash' },
+    };
   }
 
   const combinedSystem = [master?.system_prompt, secondary?.system_prompt]
@@ -772,9 +964,9 @@ async function loadPromptProfile(supabase: any, prompt_profile_id: string | null
   const out = {
     ...(secondary ?? master),
     system_prompt: combinedSystem,
-    user_prompt: secondary?.user_prompt ?? null,
-    output_schema: secondary?.output_schema ?? null,
-    model_config: (secondary?.model_config ?? master?.model_config) ?? null,
+    user_prompt: secondary?.user_prompt ?? getDefaultTranscriptionUserPrompt(),
+    output_schema: secondary?.output_schema ?? getDefaultTranscriptionOutputSchema(),
+    model_config: (secondary?.model_config ?? master?.model_config) ?? { model: 'google/gemini-2.5-flash' },
   };
 
   return out;
@@ -997,6 +1189,9 @@ async function fetchEntityContext(supabase: any, job: VoiceJob, transcript?: str
   // Fetch recent AI memory for this workspace/lead/project context
   recentMemory = await fetchRecentMemory(supabase, job.workspace_id, leadId, job.project_id);
 
+  // NEW: Fetch existing CRM entities for matching (lightweight index)
+  const existingEntities = await fetchExistingEntitiesIndex(supabase);
+
   return { 
     lead, 
     leadContacts,
@@ -1009,7 +1204,39 @@ async function fetchEntityContext(supabase: any, job: VoiceJob, transcript?: str
     autoDetectionUsed: shouldAutoDetect,
     aliasMap,
     recentMemory,
+    existingEntities,
   };
+}
+
+// NEW: Fetch lightweight index of existing CRM entities for matching
+// deno-lint-ignore no-explicit-any
+async function fetchExistingEntitiesIndex(supabase: any): Promise<{
+  leads: Array<{ id: string; name: string; company: string | null }>;
+  projects: Array<{ id: string; name: string; slug: string }>;
+  solutions: Array<{ id: string; title: string; slug: string }>;
+  partners: Array<{ id: string; name: string; company: string | null; type: string }>;
+}> {
+  try {
+    const [leadsRes, projectsRes, solutionsRes, partnersRes] = await Promise.all([
+      supabase.from("leads").select("id, name, company").order("created_at", { ascending: false }).limit(100),
+      supabase.from("projects").select("id, name, slug").order("created_at", { ascending: false }).limit(50),
+      supabase.from("articles").select("id, title, slug").eq("resource_type", "solution").eq("published", true),
+      supabase.from("partners").select("id, name, company, type").eq("status", "active").limit(50),
+    ]);
+
+    const result = {
+      leads: (leadsRes.data || []).map((l: any) => ({ id: l.id, name: l.name, company: l.company })),
+      projects: (projectsRes.data || []).map((p: any) => ({ id: p.id, name: p.name, slug: p.slug })),
+      solutions: (solutionsRes.data || []).map((s: any) => ({ id: s.id, title: s.title, slug: s.slug })),
+      partners: (partnersRes.data || []).map((p: any) => ({ id: p.id, name: p.name, company: p.company, type: p.type })),
+    };
+
+    console.log(`[Entities] Loaded index: ${result.leads.length} leads, ${result.projects.length} projects, ${result.solutions.length} solutions, ${result.partners.length} partners`);
+    return result;
+  } catch (err) {
+    logError("EntitiesIndex", err);
+    return { leads: [], projects: [], solutions: [], partners: [] };
+  }
 }
 
 type EntityContext = Awaited<ReturnType<typeof fetchEntityContext>>;
@@ -1018,7 +1245,7 @@ function buildLLM(
   systemPrompt: string,
   userPrompt: string | null,
   transcriptText: string,
-  ctx: EntityContext & { aliasMap?: Map<string, string>; recentMemory?: any[] },
+  ctx: EntityContext & { aliasMap?: Map<string, string>; recentMemory?: any[]; existingEntities?: any },
   schema: Record<string, unknown> | null,
   analysisContext: string | null
 ) {
@@ -1058,6 +1285,31 @@ function buildLLM(
     entity_type: m.entity_type,
   })) ?? [];
 
+  // NEW: Format existing entities for CRM matching
+  const existingEntitiesContext = ctx.existingEntities ? {
+    leads: ctx.existingEntities.leads?.slice(0, 30).map((l: any) => ({
+      id: l.id,
+      name: l.name,
+      company: l.company,
+    })) ?? [],
+    projects: ctx.existingEntities.projects?.slice(0, 20).map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+    })) ?? [],
+    solutions: ctx.existingEntities.solutions?.map((s: any) => ({
+      id: s.id,
+      title: s.title,
+      slug: s.slug,
+    })) ?? [],
+    partners: ctx.existingEntities.partners?.slice(0, 20).map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      company: p.company,
+      type: p.type,
+    })) ?? [],
+  } : { leads: [], projects: [], solutions: [], partners: [] };
+
   const payload = {
     transcript: transcriptText.slice(0, MAX_TRANSCRIPTION_CHARS),
     analysis_context: analysisContext ?? null,
@@ -1069,6 +1321,8 @@ function buildLLM(
       recent_activity: ctx.activity?.slice(0, 10),
       open_tasks: ctx.tasks?.slice(0, 20),
     },
+    // NEW: Existing entities for matching
+    existing_entities: existingEntitiesContext,
     rag_context: {
       auto_detection_used: ctx.autoDetectionUsed ?? false,
       detected_solutions: detectedSolutionsContext,
@@ -1086,6 +1340,10 @@ function buildLLM(
       json_only: true,
       no_hallucination: true,
       max_executive_summary_words: 200,
+      // NEW: Explicit matching instructions
+      entity_matching: "Compare mentions against existing_entities. If name/company matches (fuzzy OK), set action='link' with existing_id. If new, set action='create'. If unsure, set action='verify'.",
+      date_normalization: "Convert ALL relative dates to absolute YYYY-MM-DD format based on today's date.",
+      financial_capture: "Extract ALL monetary values mentioned, even estimates or ranges.",
     },
   };
 
