@@ -510,19 +510,24 @@ export default function CockpitTranscriptionDetail() {
     ...rawSummary,
     // executive_summary: prioritize explicit field, fallback to 'summary' text
     executive_summary: raw?.executive_summary || raw?.summary || '',
+    // topics: from topics array or extract from key_points/technical_recommendations titles
+    topics: raw?.topics?.length ? raw.topics : 
+            (raw?.ai_technologies?.length ? raw.ai_technologies.map((t: { name?: string } | string) => 
+              typeof t === 'string' ? t : t.name
+            ).filter(Boolean) : []),
     // key_points: can come from key_points, highlights, or technical_recommendations
     key_points: raw?.key_points?.length ? raw.key_points : 
                 (raw?.highlights?.length ? raw.highlights : 
                 (raw?.technical_recommendations?.length ? raw.technical_recommendations : [])),
-    // decisions: can come from decisions or next_steps
-    decisions: raw?.decisions?.length ? raw.decisions : 
-               (raw?.next_steps?.length ? raw.next_steps.map((s: { action?: string } | string) => 
-                 typeof s === 'string' ? s : s.action
-               ) : []),
+    // decisions: from decisions array (normalize to strings)
+    decisions: raw?.decisions?.length ? raw.decisions.map((d: { content?: string } | string) => 
+                  typeof d === 'string' ? d : d.content
+                ).filter(Boolean) : [],
+    // next_steps: from next_steps array (normalize to actions)
+    next_steps: raw?.next_steps?.length ? raw.next_steps : [],
     // action_items: from action_items, tasks, or next_steps
     action_items: raw?.action_items?.length ? raw.action_items : 
-                  (raw?.tasks?.length ? raw.tasks : 
-                  (raw?.next_steps?.length ? raw.next_steps : [])),
+                  (raw?.tasks?.length ? raw.tasks : []),
     // risks_blockers: from risks_blockers or risks_limitations
     risks_blockers: raw?.risks_blockers?.length ? raw.risks_blockers : 
                     (raw?.risks_limitations?.length ? raw.risks_limitations : []),
@@ -967,6 +972,24 @@ export default function CockpitTranscriptionDetail() {
                 </CardContent>
               </Card>
 
+              {/* Topics Discussed */}
+              {summary.topics?.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Sujets évoqués</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {summary.topics.map((topic: string, i: number) => (
+                        <Badge key={i} variant="secondary" className="text-xs">
+                          {typeof topic === 'string' ? topic : JSON.stringify(topic)}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Key Points */}
               {summary.key_points?.length > 0 && (
                 <Card>
@@ -975,7 +998,7 @@ export default function CockpitTranscriptionDetail() {
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-1">
-                      {summary.key_points.map((point, i) => (
+                      {summary.key_points.map((point: string | object, i: number) => (
                         <li key={i} className="text-sm flex items-start gap-2">
                           <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
                           {typeof point === 'string' ? point : JSON.stringify(point)}
@@ -994,7 +1017,7 @@ export default function CockpitTranscriptionDetail() {
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-1">
-                      {summary.decisions.map((decision, i) => (
+                      {summary.decisions.map((decision: string | object, i: number) => (
                         <li key={i} className="text-sm flex items-start gap-2">
                           <ArrowRight className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                           {typeof decision === 'string' ? decision : JSON.stringify(decision)}
@@ -1016,7 +1039,7 @@ export default function CockpitTranscriptionDetail() {
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-1">
-                      {summary.risks_blockers.map((risk, i) => (
+                      {summary.risks_blockers.map((risk: string | object, i: number) => (
                         <li key={i} className="text-sm">{typeof risk === 'string' ? risk : JSON.stringify(risk)}</li>
                       ))}
                     </ul>
@@ -1035,7 +1058,7 @@ export default function CockpitTranscriptionDetail() {
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-1">
-                      {summary.questions_open.map((q, i) => (
+                      {summary.questions_open.map((q: string | object, i: number) => (
                         <li key={i} className="text-sm">{typeof q === 'string' ? q : JSON.stringify(q)}</li>
                       ))}
                     </ul>
@@ -1044,13 +1067,20 @@ export default function CockpitTranscriptionDetail() {
               )}
 
               {/* Next Steps */}
-              {summary.next_steps && (
+              {summary.next_steps?.length > 0 && (
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm">Prochaines étapes</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm">{typeof summary.next_steps === 'string' ? summary.next_steps : JSON.stringify(summary.next_steps)}</p>
+                    <ul className="space-y-1">
+                      {summary.next_steps.map((step: { action?: string } | string, i: number) => (
+                        <li key={i} className="text-sm flex items-start gap-2">
+                          <ArrowRight className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+                          {typeof step === 'string' ? step : (step.action || JSON.stringify(step))}
+                        </li>
+                      ))}
+                    </ul>
                   </CardContent>
                 </Card>
               )}
