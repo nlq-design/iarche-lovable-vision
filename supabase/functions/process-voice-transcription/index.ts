@@ -858,19 +858,98 @@ function getDefaultTranscriptionOutputSchema(): Record<string, unknown> {
 }
 
 /**
- * Determine the best transcription prompt based on context
- * - If project is linked → transcription_reunion_projet
- * - If lead is linked (commercial context) → transcription_rdv_commercial
- * - Default → transcription_rdv_commercial
+ * Partner type for prompt selection
  */
-function selectTranscriptionPromptSlug(job: VoiceJob): string {
-  // If project is linked, use project meeting prompt
+interface LinkedPartner {
+  id: string;
+  name: string;
+  partner_type: string;
+}
+
+/**
+ * Determine the best transcription prompt based on context v7.0
+ * Priority order:
+ * 1. Expert IA partner linked → transcription_avec_expert_ia
+ * 2. Referent/apporteur partner linked → transcription_avec_referent
+ * 3. Project linked → transcription_reunion_projet
+ * 4. Lead linked (commercial) → transcription_rdv_commercial
+ * 5. No entities linked (internal) → transcription_interne
+ * 6. Support tag detected → transcription_support_client
+ */
+function selectTranscriptionPromptSlug(
+  job: VoiceJob, 
+  linkedPartners: LinkedPartner[] = [],
+  tags: string[] = []
+): string {
+  // 1. Check for expert IA partner
+  const expertIA = linkedPartners.find(p => 
+    p.partner_type === 'expert_ia' || 
+    p.partner_type === 'expert-ia' ||
+    p.name?.toLowerCase().includes('expert ia')
+  );
+  if (expertIA) {
+    console.log(`[PromptSelect] Expert IA partner detected: ${expertIA.name}`);
+    return "transcription_avec_expert_ia";
+  }
+  
+  // 2. Check for referent/apporteur partner
+  const referent = linkedPartners.find(p => 
+    p.partner_type === 'referent' || 
+    p.partner_type === 'apporteur' ||
+    p.partner_type === 'revendeur'
+  );
+  if (referent) {
+    console.log(`[PromptSelect] Referent partner detected: ${referent.name}`);
+    return "transcription_avec_referent";
+  }
+  
+  // 3. Check for support tags
+  const supportTags = ['support', 'assistance', 'ticket', 'bug', 'incident'];
+  const hasSupport = tags.some(t => supportTags.includes(t.toLowerCase()));
+  if (hasSupport) {
+    console.log(`[PromptSelect] Support context detected via tags`);
+    return "transcription_support_client";
+  }
+  
+  // 4. Project linked → project meeting
   if (job.project_id) {
+    console.log(`[PromptSelect] Project context: ${job.project_id}`);
     return "transcription_reunion_projet";
   }
   
-  // Default: commercial RDV prompt (most common use case)
-  return "transcription_rdv_commercial";
+  // 5. Lead linked → commercial RDV
+  if (job.lead_id) {
+    console.log(`[PromptSelect] Lead context: ${job.lead_id}`);
+    return "transcription_rdv_commercial";
+  }
+  
+  // 6. No lead/project → internal meeting
+  console.log(`[PromptSelect] No entity linked, using internal meeting prompt`);
+  return "transcription_interne";
+}
+
+/**
+ * Load partners linked to a transcription job
+ */
+// deno-lint-ignore no-explicit-any
+async function loadLinkedPartners(supabase: any, transcriptionId: string): Promise<LinkedPartner[]> {
+  try {
+    const { data, error } = await supabase
+      .from("voice_transcription_partners")
+      .select("partner_id, partners(id, name, partner_type)")
+      .eq("transcription_id", transcriptionId);
+    
+    if (error) {
+      console.log(`[Partners] No partners table or error: ${error.message}`);
+      return [];
+    }
+    
+    // deno-lint-ignore no-explicit-any
+    return (data || []).map((row: any) => row.partners).filter(Boolean);
+  } catch {
+    // Table may not exist yet
+    return [];
+  }
 }
 
 // deno-lint-ignore no-explicit-any
@@ -894,7 +973,12 @@ async function loadMasterPrompt(supabase: any) {
 }
 
 // deno-lint-ignore no-explicit-any
-async function loadPromptProfile(supabase: any, prompt_profile_id: string | null, job?: VoiceJob) {
+async function loadPromptProfile(
+  supabase: any, 
+  prompt_profile_id: string | null, 
+  job?: VoiceJob,
+  transcriptionId?: string
+) {
   // Secondary prompt = the specialized transcription prompt
   let secondary: any = null;
 
@@ -910,8 +994,18 @@ async function loadPromptProfile(supabase: any, prompt_profile_id: string | null
     secondary = data;
     console.log(`[Prompt] Using explicit profile: ${secondary?.slug}`);
   } else {
-    // 2) Auto-select based on context (lead/project)
-    const selectedSlug = job ? selectTranscriptionPromptSlug(job) : "transcription_rdv_commercial";
+    // 2) Auto-select based on context (lead/project/partners)
+    // Load linked partners for smarter prompt selection
+    const linkedPartners = transcriptionId 
+      ? await loadLinkedPartners(supabase, transcriptionId) 
+      : [];
+    
+    // TODO: Load tags from transcription metadata if available
+    const tags: string[] = [];
+    
+    const selectedSlug = job 
+      ? selectTranscriptionPromptSlug(job, linkedPartners, tags) 
+      : "transcription_rdv_commercial";
 
     const { data: ctxPrompt } = await supabase
       .from("ai_prompts")
@@ -1924,7 +2018,7 @@ serve(async (req) => {
     console.log(`[Context] lead=${ctx.leadId}, project=${ctx.project?.id ?? null}, rag=${ctx.autoDetectionUsed}`);
 
     // LLM processing
-    const profile = await loadPromptProfile(supabase, vjob.prompt_profile_id, vjob);
+    const profile = await loadPromptProfile(supabase, vjob.prompt_profile_id, vjob, jobId);
     const systemPrompt = profile?.system_prompt ?? "Return JSON only.";
     const userPrompt = profile?.user_prompt ?? null;
     const outputSchema = profile?.output_schema ?? null;
