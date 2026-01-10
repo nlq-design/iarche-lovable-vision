@@ -7,7 +7,7 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
-import type { NormalizedSummary } from './normalizeSummary';
+import type { NormalizedSummary, ActionItem } from './normalizeSummary';
 
 interface TranscriptionSummaryTabProps {
   summary: NormalizedSummary;
@@ -131,20 +131,24 @@ export function TranscriptionSummaryTab({ summary }: TranscriptionSummaryTabProp
         </Card>
       )}
 
-      {/* Next Steps */}
-      {summary.next_steps && summary.next_steps.length > 0 && (
+      {/* Action Items Preview */}
+      {summary.action_items && summary.action_items.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Prochaines étapes</CardTitle>
+            <CardTitle className="text-sm">Actions à suivre</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-1">
-              {summary.next_steps.map((step, i) => (
+              {summary.action_items.slice(0, 3).map((item: ActionItem, i: number) => (
                 <li key={i} className="text-sm flex items-start gap-2">
                   <ArrowRight className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
-                  {typeof step === 'string' ? step : (step.action || safeStr(step))}
+                  <span>{item.task}</span>
+                  {item.owner && <Badge variant="outline" className="text-xs ml-1">{item.owner}</Badge>}
                 </li>
               ))}
+              {summary.action_items.length > 3 && (
+                <li className="text-xs text-muted-foreground">+ {summary.action_items.length - 3} autres actions</li>
+              )}
             </ul>
           </CardContent>
         </Card>
