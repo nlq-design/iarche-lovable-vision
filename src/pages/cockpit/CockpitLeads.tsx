@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import { useNavigate } from 'react-router-dom';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
