@@ -117,6 +117,7 @@ const CockpitSettings = lazy(() => import("./pages/cockpit/CockpitSettings"));
 const ProtectedVivierRoute = lazy(() => import("./components/viviers/ProtectedVivierRoute"));
 const ViviersDashboard = lazy(() => import("./pages/viviers/ViviersDashboard"));
 const ViviersLeads = lazy(() => import("./pages/viviers/ViviersLeads"));
+const VivierLeadDetail = lazy(() => import("./pages/viviers/VivierLeadDetail"));
 const ViviersImport = lazy(() => import("./pages/viviers/ViviersImport"));
 const ViviersScoring = lazy(() => import("./pages/viviers/ViviersScoring"));
 const ViviersCampaigns = lazy(() => import("./pages/viviers/ViviersCampaigns"));
@@ -690,6 +691,11 @@ const App = () => (
           <Route path="/viviers/leads" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>}>
               <ProtectedVivierRoute><ViviersLeads /></ProtectedVivierRoute>
+            </Suspense>
+          } />
+          <Route path="/viviers/leads/:slug" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>}>
+              <ProtectedVivierRoute><VivierLeadDetail /></ProtectedVivierRoute>
             </Suspense>
           } />
           <Route path="/viviers/import" element={
