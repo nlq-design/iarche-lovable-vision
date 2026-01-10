@@ -256,17 +256,17 @@ export default function CockpitTranscriptions() {
                                : 'Transcription en cours...'}
                          </h3>
                         
+                         {/* Date */}
+                         <p className="text-xs text-muted-foreground mt-1">
+                           {transcription.transcription_date 
+                             ? format(new Date(transcription.transcription_date), 'dd MMM yyyy', { locale: fr })
+                             : format(new Date(transcription.created_at), 'dd MMM yyyy', { locale: fr })}
+                         </p>
+
+                         {/* Liens entités - TOUJOURS AFFICHÉ */}
                          <div className="flex flex-wrap items-center gap-2 mt-2">
-                           {/* Date */}
-                           <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                             <Clock className="h-3 w-3" />
-                             {transcription.transcription_date 
-                               ? format(new Date(transcription.transcription_date), 'dd MMM yyyy', { locale: fr })
-                               : format(new Date(transcription.created_at), 'dd MMM yyyy HH:mm', { locale: fr })}
-                           </span>
-                           
                            {/* Lead */}
-                           {transcription.lead && (
+                           {transcription.lead ? (
                              <Badge 
                                variant="secondary" 
                                className="text-xs h-5 cursor-pointer hover:bg-primary/20"
@@ -278,7 +278,7 @@ export default function CockpitTranscriptions() {
                                <User className="h-3 w-3 mr-1" />
                                {transcription.lead.name}
                              </Badge>
-                           )}
+                           ) : null}
                            
                            {/* Contact */}
                            {transcription.lead_contact && (
@@ -289,7 +289,7 @@ export default function CockpitTranscriptions() {
                            )}
                            
                            {/* Project */}
-                           {transcription.project && (
+                           {transcription.project ? (
                              <Badge 
                                variant="secondary" 
                                className="text-xs h-5 cursor-pointer hover:bg-primary/20"
@@ -301,7 +301,7 @@ export default function CockpitTranscriptions() {
                                <FolderOpen className="h-3 w-3 mr-1" />
                                {transcription.project.name}
                              </Badge>
-                           )}
+                           ) : null}
                            
                            {/* Solution */}
                            {transcription.solution && (
@@ -318,32 +318,42 @@ export default function CockpitTranscriptions() {
                              </Badge>
                            )}
 
-                           {/* Actions count */}
-                           {transcription.summary?.action_items && transcription.summary.action_items.length > 0 && (
-                             <Badge variant="default" className="text-xs h-5 bg-primary/80">
-                               <ListTodo className="h-3 w-3 mr-1" />
-                               {transcription.summary.action_items.length} action{transcription.summary.action_items.length > 1 ? 's' : ''}
+                           {/* Placeholder si aucun lien */}
+                           {!transcription.lead && !transcription.project && !transcription.solution && !transcription.lead_contact && (
+                             <Badge variant="outline" className="text-xs h-5 text-muted-foreground border-dashed">
+                               Non lié
                              </Badge>
                            )}
                          </div>
 
-                         {transcription.summary?.executive_summary && (
-                           <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                             {typeof transcription.summary.executive_summary === 'string'
-                               ? transcription.summary.executive_summary
-                               : JSON.stringify(transcription.summary.executive_summary)}
-                           </p>
-                         )}
-                      </div>
+                         {/* Description - TOUJOURS AFFICHÉE */}
+                         <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                           {transcription.summary?.executive_summary
+                             ? (typeof transcription.summary.executive_summary === 'string'
+                                 ? transcription.summary.executive_summary
+                                 : JSON.stringify(transcription.summary.executive_summary))
+                             : 'Pas de résumé disponible'}
+                         </p>
 
-                      {transcription.summary?.extraction_quality && (
-                        <div className="text-right">
-                          <p className="text-xs text-muted-foreground">Confiance</p>
-                          <p className="text-lg font-semibold">
-                            {transcription.summary.extraction_quality.confidence}%
-                          </p>
-                        </div>
-                      )}
+                         {/* Footer - TOUJOURS AFFICHÉ */}
+                         <div className="flex items-center gap-3 mt-3">
+                           {/* Actions count - toujours affiché */}
+                           <Badge 
+                             variant={transcription.summary?.action_items && transcription.summary.action_items.length > 0 ? "default" : "outline"} 
+                             className={`text-xs h-5 ${transcription.summary?.action_items && transcription.summary.action_items.length > 0 ? 'bg-primary/80' : 'text-muted-foreground border-dashed'}`}
+                           >
+                             <ListTodo className="h-3 w-3 mr-1" />
+                             {transcription.summary?.action_items?.length || 0} action{(transcription.summary?.action_items?.length || 0) !== 1 ? 's' : ''}
+                           </Badge>
+
+                           {/* Confiance - toujours affiché */}
+                           <span className="text-xs text-muted-foreground ml-auto">
+                             Confiance : {transcription.summary?.extraction_quality?.confidence 
+                               ? `${transcription.summary.extraction_quality.confidence}%`
+                               : '—'}
+                           </span>
+                         </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
