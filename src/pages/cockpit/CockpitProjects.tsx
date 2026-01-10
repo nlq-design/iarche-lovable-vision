@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useCockpitProjects } from '@/hooks/cockpit';
+import { useCockpitProjects } from "@/hooks/cockpit";
 import { useCockpitVoiceTranscriptions } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { ProjectTimeline } from '@/components/cockpit/ProjectTimeline';
 import { format, differenceInDays } from 'date-fns';
