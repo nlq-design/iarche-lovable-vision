@@ -837,7 +837,7 @@ function getDefaultTranscriptionOutputSchema(): Record<string, unknown> {
             title: { type: "string" },
             assignee: { type: "string" },
             due_date: { type: "string", description: "Format YYYY-MM-DD" },
-            priority: { type: "string", enum: ["low", "medium", "high"] },
+            priority: { type: "string", enum: ["low", "medium", "high", "urgent"] },
             linked_entity: {
               type: "object",
               properties: {
@@ -1807,6 +1807,15 @@ async function processDetectedEntities(
 
 // ============= TASK CREATION =============
 
+const VALID_PRIORITIES = ["low", "medium", "high", "urgent"] as const;
+type TaskPriority = typeof VALID_PRIORITIES[number];
+
+function validatePriority(raw: unknown): TaskPriority {
+  const str = typeof raw === "string" ? raw.toLowerCase().trim() : "";
+  if (VALID_PRIORITIES.includes(str as TaskPriority)) return str as TaskPriority;
+  return "medium"; // Safe fallback
+}
+
 // deno-lint-ignore no-explicit-any
 async function createTasksFromActions(
   supabase: any, 
@@ -1830,7 +1839,7 @@ async function createTasksFromActions(
       workspace_id: job.workspace_id,
       title: title.slice(0, 200),
       task_type: "follow_up",
-      priority: (it?.priority as string) ?? "medium",
+      priority: validatePriority(it?.priority as string),
       status: "pending",
       lead_id: leadId,
       project_id: job.project_id,
