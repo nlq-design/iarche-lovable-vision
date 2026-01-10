@@ -288,25 +288,6 @@ export default function CockpitTranscriptions() {
                              </Badge>
                            )}
                            
-                           {/* Partners */}
-                           {transcription.transcription_partners && transcription.transcription_partners.length > 0 && 
-                             transcription.transcription_partners.map(tp => tp.partner && (
-                               <Badge 
-                                 key={tp.id}
-                                 variant="outline" 
-                                 className="text-xs h-5 cursor-pointer hover:bg-primary/20"
-                                 onClick={(e) => {
-                                   e.stopPropagation();
-                                   navigate(`/cockpit/partners/${tp.partner!.id}`);
-                                 }}
-                               >
-                                 <Users className="h-3 w-3 mr-1" />
-                                 {tp.partner.name}
-                                 {tp.role && <span className="ml-1 opacity-60">({tp.role})</span>}
-                               </Badge>
-                             ))
-                           }
-                           
                            {/* Project */}
                            {transcription.project && (
                              <Badge 
