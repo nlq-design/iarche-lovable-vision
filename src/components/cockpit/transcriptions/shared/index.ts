@@ -3,3 +3,5 @@ export { TranscriptionActionsTab } from './TranscriptionActionsTab';
 export { TranscriptionAudioPlayer } from './TranscriptionAudioPlayer';
 export { SimpleTranscript } from './SimpleTranscript';
 export { normalizeSummary, type NormalizedSummary } from './normalizeSummary';
+export { TranscriptionEntityLinks } from './TranscriptionEntityLinks';
+export { TranscriptionEmailDialog } from './TranscriptionEmailDialog';
