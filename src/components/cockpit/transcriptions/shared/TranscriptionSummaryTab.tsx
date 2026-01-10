@@ -7,20 +7,7 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
-
-interface NormalizedSummary {
-  executive_summary?: string;
-  topics?: string[];
-  key_points?: (string | object)[];
-  decisions?: (string | object)[];
-  risks_blockers?: (string | object)[];
-  questions_open?: (string | object)[];
-  next_steps?: ({ action?: string } | string)[];
-  extraction_quality?: {
-    confidence?: number;
-    uncertainties?: string[];
-  };
-}
+import type { NormalizedSummary } from './normalizeSummary';
 
 interface TranscriptionSummaryTabProps {
   summary: NormalizedSummary;
