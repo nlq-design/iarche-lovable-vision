@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
@@ -49,6 +50,7 @@ export default function CockpitTranscriptions() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [isReanalyzing, setIsReanalyzing] = useState(false);
+  const [reanalyzeProgress, setReanalyzeProgress] = useState({ current: 0, total: 0 });
 
   const { transcriptions, isLoading, stats, refetch, processTranscription } = useCockpitVoiceTranscriptions();
 
@@ -61,21 +63,24 @@ export default function CockpitTranscriptions() {
     }
 
     setIsReanalyzing(true);
-    toast.info(`Ré-analyse de ${doneTranscriptions.length} transcription(s) en cours...`);
+    setReanalyzeProgress({ current: 0, total: doneTranscriptions.length });
 
     let successCount = 0;
     let errorCount = 0;
 
-    for (const t of doneTranscriptions) {
+    for (let i = 0; i < doneTranscriptions.length; i++) {
+      const t = doneTranscriptions[i];
       try {
         await processTranscription.mutateAsync({ jobId: t.id, forceReanalyze: true });
         successCount++;
       } catch {
         errorCount++;
       }
+      setReanalyzeProgress({ current: i + 1, total: doneTranscriptions.length });
     }
 
     setIsReanalyzing(false);
+    setReanalyzeProgress({ current: 0, total: 0 });
     refetch();
     
     if (errorCount === 0) {
@@ -139,6 +144,28 @@ export default function CockpitTranscriptions() {
             </Button>
           </div>
         </div>
+
+        {/* Progress bar for batch re-analyze */}
+        {isReanalyzing && reanalyzeProgress.total > 0 && (
+          <div className="space-y-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                <span className="font-medium">Ré-analyse en cours...</span>
+              </div>
+              <span className="text-muted-foreground">
+                {reanalyzeProgress.current} / {reanalyzeProgress.total}
+              </span>
+            </div>
+            <Progress 
+              value={(reanalyzeProgress.current / reanalyzeProgress.total) * 100} 
+              className="h-2"
+            />
+            <p className="text-xs text-muted-foreground">
+              Environ {Math.ceil((reanalyzeProgress.total - reanalyzeProgress.current) * 0.5)} min restantes
+            </p>
+          </div>
+        )}
 
         {/* Stats inline */}
         <div className="flex flex-wrap items-center gap-4 p-3 bg-muted/40 rounded-lg border text-sm">
