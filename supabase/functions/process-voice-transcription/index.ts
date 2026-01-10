@@ -1759,6 +1759,31 @@ async function processDetectedEntities(
     } else {
       console.log(`[PostProcess] Created ${entitiesToLink.length} entity references`);
     }
+
+    // Auto-populate transcription_partners for partner-type entities
+    const partnerLinks = entitiesToLink
+      .filter(e => e.target_entity_type === 'partner')
+      .map(e => ({
+        transcription_id: transcriptionId,
+        partner_id: e.target_entity_id,
+        context: e.context || null,
+        created_at: new Date().toISOString(),
+      }));
+
+    if (partnerLinks.length > 0) {
+      const { error: partnerError } = await supabase
+        .from('transcription_partners')
+        .upsert(partnerLinks, { 
+          onConflict: 'transcription_id,partner_id',
+          ignoreDuplicates: true 
+        });
+
+      if (partnerError) {
+        console.warn(`[PostProcess] Failed to insert transcription_partners: ${partnerError.message?.slice(0, 100)}`);
+      } else {
+        console.log(`[PostProcess] Linked ${partnerLinks.length} partners to transcription`);
+      }
+    }
   }
 
   // Batch insert new aliases
