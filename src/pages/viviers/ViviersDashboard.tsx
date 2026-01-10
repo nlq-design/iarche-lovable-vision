@@ -14,17 +14,29 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import LogoArc from '@/components/ui/LogoArc';
+import { useViviers } from '@/hooks/viviers';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function ViviersDashboard() {
-  // Mock stats - will be replaced with real data
-  const stats = {
-    totalLeads: 0,
-    pendingScoring: 0,
-    qualified: 0,
-    campaigns: 0,
-    sentEmails: 0,
-    promotedToLeads: 0,
-  };
+  const { stats } = useViviers();
+
+  // Campaign stats
+  const { data: campaignStats } = useQuery({
+    queryKey: ['vivier-campaign-stats'],
+    queryFn: async () => {
+      const { data: campaigns, error } = await supabase
+        .from('vivier_campaigns')
+        .select('status, sent_count');
+
+      if (error) throw error;
+
+      const activeCampaigns = campaigns?.filter(c => c.status === 'sending' || c.status === 'scheduled').length || 0;
+      const totalSent = campaigns?.reduce((sum, c) => sum + (c.sent_count || 0), 0) || 0;
+
+      return { activeCampaigns, totalSent };
+    },
+  });
 
   return (
     <VivierLayout>
@@ -95,7 +107,7 @@ export default function ViviersDashboard() {
               <Mail className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.campaigns}</div>
+              <div className="text-2xl font-bold">{campaignStats?.activeCampaigns || 0}</div>
               <p className="text-xs text-muted-foreground">En cours d'envoi</p>
             </CardContent>
           </Card>
@@ -106,8 +118,8 @@ export default function ViviersDashboard() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.sentEmails}</div>
-              <p className="text-xs text-muted-foreground">Ce mois</p>
+              <div className="text-2xl font-bold">{campaignStats?.totalSent || 0}</div>
+              <p className="text-xs text-muted-foreground">Total</p>
             </CardContent>
           </Card>
 
@@ -117,7 +129,7 @@ export default function ViviersDashboard() {
               <ArrowRight className="h-4 w-4 text-success" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-success">{stats.promotedToLeads}</div>
+              <div className="text-2xl font-bold text-success">{stats.promoted}</div>
               <p className="text-xs text-muted-foreground">Transférés au CRM</p>
             </CardContent>
           </Card>
