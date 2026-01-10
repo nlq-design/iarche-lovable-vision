@@ -187,29 +187,28 @@ export default function ViviersImport() {
     };
   };
 
-  // Check for duplicates against existing viviers - batched for large datasets
+  // Check for duplicates using RPC function - handles 30k+ emails without URL limits
   const checkDuplicates = async (viviers: Partial<Vivier>[]): Promise<ParsedVivier[]> => {
     const emails = viviers.map(v => v.email).filter(Boolean) as string[];
     
     if (emails.length === 0) return viviers.map(data => ({ data, isDuplicate: false }));
 
-    // Batch email checks to avoid URL length limits (max ~2000 chars in URL)
-    const BATCH_SIZE = 200;
+    // Use RPC function to check duplicates in batches of 5000 (POST body, no URL limit)
+    const BATCH_SIZE = 5000;
     const existingEmailMap = new Map<string, string>();
 
     for (let i = 0; i < emails.length; i += BATCH_SIZE) {
       const batch = emails.slice(i, i + BATCH_SIZE);
+      
       const { data: existingViviers, error } = await supabase
-        .from('viviers')
-        .select('id, email')
-        .in('email', batch);
+        .rpc('viviers_lookup_existing_by_email', { emails: batch });
 
       if (error) {
         console.error('Error checking duplicates:', error);
         continue;
       }
 
-      (existingViviers || []).forEach(v => {
+      (existingViviers || []).forEach((v: { id: string; email: string }) => {
         if (v.email) existingEmailMap.set(v.email.toLowerCase(), v.id);
       });
     }
