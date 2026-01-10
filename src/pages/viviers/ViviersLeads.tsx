@@ -1,14 +1,19 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { VivierLayout } from '@/components/viviers/VivierLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Upload, Trash2, ArrowRight } from 'lucide-react';
+import { Users, Upload, Trash2, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import LogoArc from '@/components/ui/LogoArc';
 import { useViviers, type Vivier } from '@/hooks/viviers';
 import { VivierTable } from '@/components/viviers/VivierTable';
 import { VivierFilters } from '@/components/viviers/VivierFilters';
-import { VivierDetailSheet } from '@/components/viviers/VivierDetailSheet';
+import { generateVivierSlug } from './VivierLeadDetail';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function ViviersLeads() {
   const [page, setPage] = useState(1);
@@ -17,17 +22,17 @@ export default function ViviersLeads() {
   const [minScore, setMinScore] = useState<number | undefined>();
   const [maxScore, setMaxScore] = useState<number | undefined>();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [selectedVivier, setSelectedVivier] = useState<Vivier | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { 
     viviers, 
     totalCount, 
     totalPages, 
     isLoading,
-    updateVivier,
-    deleteVivier,
     bulkDeleteViviers,
+    refetch,
   } = useViviers({ 
     page, 
     pageSize: 25, 
@@ -58,24 +63,35 @@ export default function ViviersLeads() {
   };
 
   const handleRowClick = (vivier: Vivier) => {
-    setSelectedVivier(vivier);
-    setSheetOpen(true);
-  };
-
-  const handleSave = (data: Partial<Vivier>) => {
-    if (data.id) {
-      updateVivier.mutate(data as Vivier & { id: string });
-    }
-  };
-
-  const handleDelete = (id: string) => {
-    deleteVivier.mutate(id);
+    const slug = generateVivierSlug(vivier);
+    navigate(`/viviers/leads/${slug}`);
   };
 
   const handleBulkDelete = () => {
     if (selectedIds.size > 0) {
       bulkDeleteViviers.mutate(Array.from(selectedIds));
       setSelectedIds(new Set());
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    setIsDeletingAll(true);
+    try {
+      const { error } = await supabase
+        .from('viviers')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['viviers'] });
+      queryClient.invalidateQueries({ queryKey: ['viviers-stats'] });
+      toast.success('Tous les leads ont été supprimés');
+      setSelectedIds(new Set());
+    } catch (error) {
+      toast.error(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    } finally {
+      setIsDeletingAll(false);
     }
   };
 
@@ -99,12 +115,43 @@ export default function ViviersLeads() {
               Gérez vos leads froids avant promotion vers le CRM
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {selectedIds.size > 0 && (
               <Button variant="destructive" onClick={handleBulkDelete}>
                 <Trash2 className="w-4 h-4 mr-2" />
                 Supprimer ({selectedIds.size})
               </Button>
+            )}
+            {totalCount > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="text-destructive border-destructive/50 hover:bg-destructive/10">
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    Tout supprimer
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="max-h-[85vh] overflow-auto">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                      <AlertTriangle className="w-5 h-5" />
+                      Supprimer tous les leads ?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Cette action est <strong>irréversible</strong>. Vous êtes sur le point de supprimer <strong>{totalCount} lead{totalCount > 1 ? 's' : ''}</strong> du vivier.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleDeleteAll} 
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      disabled={isDeletingAll}
+                    >
+                      {isDeletingAll ? 'Suppression...' : 'Oui, tout supprimer'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
             <Button asChild>
               <Link to="/viviers/import">
@@ -177,16 +224,6 @@ export default function ViviersLeads() {
           />
         )}
       </div>
-
-      {/* Detail Sheet */}
-      <VivierDetailSheet
-        vivier={selectedVivier}
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        onSave={handleSave}
-        onDelete={handleDelete}
-        isSaving={updateVivier.isPending}
-      />
     </VivierLayout>
   );
 }

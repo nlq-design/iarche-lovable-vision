@@ -3,7 +3,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Building2, Mail, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Building2, Mail, MapPin, Phone, Hash, Briefcase } from 'lucide-react';
 import type { Vivier } from '@/hooks/viviers/useViviers';
 import { VIVIER_STATUSES } from '@/hooks/viviers/useViviers';
 
@@ -45,14 +45,6 @@ export function VivierTable({
     return <Badge className="bg-red-500">{score}</Badge>;
   };
 
-  const getDisplayName = (vivier: Vivier) => {
-    return vivier.contact_name || 
-      [vivier.contact_first_name, vivier.contact_last_name].filter(Boolean).join(' ') ||
-      vivier.company_name || 
-      vivier.email || 
-      'Sans nom';
-  };
-
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -65,7 +57,7 @@ export function VivierTable({
 
   return (
     <div className="space-y-4">
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
@@ -77,9 +69,12 @@ export function VivierTable({
                   className={someSelected ? 'data-[state=checked]:bg-primary' : ''}
                 />
               </TableHead>
-              <TableHead>Contact</TableHead>
               <TableHead>Entreprise</TableHead>
+              <TableHead>Dirigeant</TableHead>
+              <TableHead>Contact</TableHead>
               <TableHead>Localisation</TableHead>
+              <TableHead>Activité</TableHead>
+              <TableHead>SIRET</TableHead>
               <TableHead className="text-center">Score</TableHead>
               <TableHead>Statut</TableHead>
             </TableRow>
@@ -87,6 +82,11 @@ export function VivierTable({
           <TableBody>
             {viviers.map((vivier) => {
               const statusConfig = VIVIER_STATUSES[(vivier.status as keyof typeof VIVIER_STATUSES) || 'new'];
+              
+              // Build display name for contact
+              const contactDisplay = vivier.contact_name || 
+                [vivier.contact_first_name, vivier.contact_last_name].filter(Boolean).join(' ') ||
+                '';
               
               return (
                 <TableRow 
@@ -98,42 +98,81 @@ export function VivierTable({
                     <Checkbox
                       checked={selectedIds.has(vivier.id)}
                       onCheckedChange={(checked) => onSelectChange(vivier.id, !!checked)}
-                      aria-label={`Sélectionner ${getDisplayName(vivier)}`}
+                      aria-label={`Sélectionner ${vivier.company_name || vivier.email}`}
                     />
                   </TableCell>
+                  
+                  {/* Entreprise (NOM) */}
                   <TableCell>
-                    <div>
-                      <p className="font-medium text-sm">{getDisplayName(vivier)}</p>
+                    <div className="max-w-[180px]">
+                      <p className="font-medium text-sm truncate">{vivier.company_name || '-'}</p>
+                      {vivier.legal_form && (
+                        <p className="text-xs text-muted-foreground truncate">{vivier.legal_form}</p>
+                      )}
+                    </div>
+                  </TableCell>
+                  
+                  {/* Dirigeant */}
+                  <TableCell>
+                    <p className="text-sm truncate max-w-[150px]">{contactDisplay || '-'}</p>
+                  </TableCell>
+                  
+                  {/* Contact (Email + Phone) */}
+                  <TableCell>
+                    <div className="space-y-0.5 max-w-[200px]">
                       {vivier.email && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                          <Mail className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{vivier.email}</span>
+                        </p>
+                      )}
+                      {vivier.phone && (
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          {vivier.email}
+                          <Phone className="h-3 w-3 flex-shrink-0" />
+                          {vivier.phone}
                         </p>
                       )}
                     </div>
                   </TableCell>
+                  
+                  {/* Localisation (Ville + CP) */}
                   <TableCell>
-                    {vivier.company_name && (
-                      <div className="flex items-center gap-1.5">
-                        <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="text-sm">{vivier.company_name}</span>
+                    {(vivier.city || vivier.postal_code) ? (
+                      <div className="flex items-center gap-1.5 text-sm max-w-[150px]">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                        <span className="truncate">
+                          {[vivier.postal_code, vivier.city].filter(Boolean).join(' ')}
+                        </span>
                       </div>
-                    )}
-                    {vivier.industry && (
-                      <p className="text-xs text-muted-foreground mt-0.5">{vivier.industry}</p>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
+                  
+                  {/* Activité */}
                   <TableCell>
-                    {(vivier.city || vivier.region) && (
-                      <div className="flex items-center gap-1.5 text-sm">
-                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                        {[vivier.city, vivier.region].filter(Boolean).join(', ')}
-                      </div>
+                    <p className="text-sm truncate max-w-[150px]" title={vivier.industry || ''}>
+                      {vivier.industry || '-'}
+                    </p>
+                  </TableCell>
+                  
+                  {/* SIRET */}
+                  <TableCell>
+                    {vivier.siret ? (
+                      <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">
+                        {vivier.siret}
+                      </code>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
+                  
+                  {/* Score */}
                   <TableCell className="text-center">
                     {getScoreBadge(vivier.cold_score)}
                   </TableCell>
+                  
+                  {/* Statut */}
                   <TableCell>
                     <Badge variant="outline" className={`${statusConfig.color} text-white border-0`}>
                       {statusConfig.label}
