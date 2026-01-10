@@ -196,48 +196,48 @@ export default function CockpitDashboard() {
             </CardContent>
           </Card>
 
-        {/* Prochains RDV */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Prochains rendez-vous
-            </CardTitle>
-            <CardDescription>{todayBookings?.length || 0} RDV aujourd'hui</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {bookingsLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map(i => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
-              </div>
-            ) : !todayBookings || todayBookings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
-                <Calendar className="h-8 w-8 mb-2 opacity-50" />
-                <p className="text-sm">Aucun RDV aujourd'hui</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {todayBookings.slice(0, 4).map((booking: any) => (
-                  <div key={booking.id} className="flex items-center justify-between p-2 rounded-lg border">
-                    <div className="flex items-center gap-3">
-                      <Calendar className="h-4 w-4 text-primary" />
-                      <div>
-                        <p className="text-sm font-medium">{booking.name}</p>
-                        <p className="text-xs text-muted-foreground">{booking.company || booking.email}</p>
+          {/* Prochains RDV */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Prochains rendez-vous
+              </CardTitle>
+              <CardDescription>{todayBookings?.length || 0} RDV aujourd'hui</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {bookingsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <Skeleton key={i} className="h-10 w-full" />
+                  ))}
+                </div>
+              ) : !todayBookings || todayBookings.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+                  <Calendar className="h-8 w-8 mb-2 opacity-50" />
+                  <p className="text-sm">Aucun RDV aujourd'hui</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {todayBookings.slice(0, 4).map((booking: any) => (
+                    <div key={booking.id} className="flex items-center justify-between p-2 rounded-lg border">
+                      <div className="flex items-center gap-3">
+                        <Calendar className="h-4 w-4 text-primary" />
+                        <div>
+                          <p className="text-sm font-medium">{booking.name}</p>
+                          <p className="text-xs text-muted-foreground">{booking.company || booking.email}</p>
+                        </div>
                       </div>
+                      <Badge variant="outline">
+                        {format(new Date(booking.start_time), 'HH:mm', { locale: fr })}
+                      </Badge>
                     </div>
-                    <Badge variant="outline">
-                      {format(new Date(booking.start_time), 'HH:mm', { locale: fr })}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Pipeline preview */}
         <Card>
