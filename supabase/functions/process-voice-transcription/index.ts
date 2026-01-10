@@ -2390,9 +2390,9 @@ RÈGLES CRITIQUES:
     if (summaryObj.title && typeof summaryObj.title === 'string' && summaryObj.title.trim()) {
       extractedTitle = summaryObj.title.trim().slice(0, 100);
     } 
-    // Otherwise, extract first sentence from summary text (max 100 chars)
-    else if (summaryObj.summary && typeof summaryObj.summary === 'string' && summaryObj.summary.trim()) {
-      const fullSummary = summaryObj.summary.trim();
+    // Otherwise, extract first sentence from executive_summary (max 100 chars)
+    else if (summaryObj.executive_summary && typeof summaryObj.executive_summary === 'string' && summaryObj.executive_summary.trim()) {
+      const fullSummary = summaryObj.executive_summary.trim();
       // Get first sentence (up to first period, question mark, or exclamation)
       const firstSentenceMatch = fullSummary.match(/^[^.!?]+[.!?]?/);
       const firstSentence = firstSentenceMatch ? firstSentenceMatch[0].trim() : fullSummary;
