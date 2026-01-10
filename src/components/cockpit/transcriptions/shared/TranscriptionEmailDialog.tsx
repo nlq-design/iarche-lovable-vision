@@ -40,9 +40,8 @@ interface TranscriptionEmailDialogProps {
   leadEmail?: string | null;
   summary?: {
     executive_summary?: string;
-    key_points?: unknown[];
-    action_items?: unknown[];
-    next_steps?: string;
+    key_points?: string[];
+    action_items?: { task: string; owner?: string; due_date?: string; priority?: string }[];
   } | null;
 }
 
@@ -75,7 +74,6 @@ export function TranscriptionEmailDialog({
             transcript_summary: summary?.executive_summary || '',
             key_points: summary?.key_points || [],
             action_items: summary?.action_items || [],
-            next_steps: summary?.next_steps || '',
           },
         },
       });

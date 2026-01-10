@@ -65,7 +65,7 @@ export interface TranscriptionSummary {
   }[];
   risks_blockers: string[];
   questions_open: string[];
-  next_steps: string;
+  // next_steps is now merged into action_items via normalizeSummary
   crm_enrichment: {
     suggested_lead_score_delta: number | null;
     suggested_stage_change: string | null;
