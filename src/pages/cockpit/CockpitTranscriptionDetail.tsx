@@ -611,7 +611,7 @@ export default function CockpitTranscriptionDetail() {
           executive_summary: summary.executive_summary,
           key_points: summary.key_points,
           action_items: summary.action_items,
-          next_steps: summary.next_steps?.map(s => typeof s === 'string' ? s : s.action || '').join(', '),
+          next_steps: summary.action_items?.map(a => a.task).join(', ') || '',
         } : null}
       />
     </CockpitLayout>

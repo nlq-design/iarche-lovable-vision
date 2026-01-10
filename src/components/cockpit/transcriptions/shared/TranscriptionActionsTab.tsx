@@ -5,20 +5,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { User, Calendar, ListTodo, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
-
-interface ActionItem {
-  task?: string;
-  step?: string;
-  owner?: string;
-  due_date?: string;
-  due?: string;
-  priority?: string;
-  category?: string;
-  [key: string]: unknown;
-}
+import type { ActionItem } from './normalizeSummary';
 
 interface TranscriptionActionsTabProps {
-  actionItems: (ActionItem | string)[];
+  actionItems: ActionItem[];
   transcriptionId: string;
   leadId?: string | null;
   projectId?: string | null;
@@ -34,15 +24,6 @@ interface TranscriptionActionsTabProps {
   }) => void;
 }
 
-// Safe string converter
-const safeStr = (v: unknown): string => {
-  if (v == null) return '';
-  if (typeof v === 'string') return v;
-  if (typeof v === 'number') return String(v);
-  if (v instanceof Date) return v.toISOString();
-  if (typeof v === 'object') return JSON.stringify(v);
-  return String(v);
-};
 
 // Parse due_date string (YYYY-MM-DD or various French formats)
 const parseDueDate = (raw: string): string | null => {
@@ -71,10 +52,9 @@ export function TranscriptionActionsTab({
   const handleCreateAllTasks = () => {
     setCreatingAll(true);
     actionItems.forEach((action) => {
-      const actionObj = action as Record<string, unknown>;
-      const taskText = typeof action === 'string' ? action : safeStr(actionObj.task || actionObj.step || '');
-      const priorityRaw = safeStr(actionObj.priority) || 'medium';
-      const dueDateParsed = parseDueDate(safeStr(actionObj.due_date || actionObj.due));
+      const taskText = action.task || '';
+      const priorityRaw = action.priority || 'medium';
+      const dueDateParsed = parseDueDate(action.due_date || '');
 
       if (taskText) {
         onCreateTask({
@@ -93,12 +73,11 @@ export function TranscriptionActionsTab({
     setCreatingAll(false);
   };
 
-  const handleCreateSingleTask = (action: ActionItem | string, index: number) => {
+  const handleCreateSingleTask = (action: ActionItem, index: number) => {
     setCreatingTaskIndex(index);
-    const actionObj = action as Record<string, unknown>;
-    const taskText = typeof action === 'string' ? action : safeStr(actionObj.task || actionObj.step || '');
-    const priorityRaw = safeStr(actionObj.priority) || 'medium';
-    const dueDateParsed = parseDueDate(safeStr(actionObj.due_date || actionObj.due));
+    const taskText = action.task || '';
+    const priorityRaw = action.priority || 'medium';
+    const dueDateParsed = parseDueDate(action.due_date || '');
 
     if (taskText) {
       onCreateTask({
@@ -143,13 +122,11 @@ export function TranscriptionActionsTab({
       </div>
 
       {actionItems.map((action, i) => {
-        const actionObj = action as Record<string, unknown>;
-        const taskText = typeof action === 'string' ? action : safeStr(actionObj.task || actionObj.step || '');
-        const ownerText = typeof action === 'object' ? safeStr(actionObj.owner) : '';
-        const dueText = typeof action === 'object' ? safeStr(actionObj.due_date || actionObj.due) : '';
-        const priorityRaw = typeof action === 'object' ? safeStr(actionObj.priority) : 'medium';
-        const priorityText = priorityRaw || 'medium';
-        const categoryRaw = typeof action === 'object' ? safeStr(actionObj.category) : '';
+        const taskText = action.task || '';
+        const ownerText = action.owner || '';
+        const dueText = action.due_date || '';
+        const priorityText = action.priority || 'medium';
+        const categoryRaw = action.category || '';
 
         if (!taskText) return null;
 
