@@ -396,8 +396,10 @@ export default function CockpitTranscriptions() {
 
                            {/* Confiance - toujours affiché */}
                            <span className="text-xs text-muted-foreground ml-auto">
-                             Confiance : {transcription.summary?.extraction_quality?.confidence 
-                               ? `${transcription.summary.extraction_quality.confidence}%`
+                             Confiance : {transcription.summary?.extraction_quality?.confidence != null
+                               ? `${transcription.summary.extraction_quality.confidence <= 1 
+                                   ? Math.round(transcription.summary.extraction_quality.confidence * 100) 
+                                   : Math.round(transcription.summary.extraction_quality.confidence)}%`
                                : '—'}
                            </span>
                          </div>
