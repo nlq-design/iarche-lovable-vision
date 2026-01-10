@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { VivierLayout } from '@/components/viviers/VivierLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import * as XLSX from 'xlsx';
 
 export default function ViviersLeads() {
   const [page, setPage] = useState(1);
@@ -21,8 +22,12 @@ export default function ViviersLeads() {
   const [status, setStatus] = useState('');
   const [minScore, setMinScore] = useState<number | undefined>();
   const [maxScore, setMaxScore] = useState<number | undefined>();
+  const [city, setCity] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [industry, setIndustry] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeletingAll, setIsDeletingAll] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -40,6 +45,9 @@ export default function ViviersLeads() {
     status: status && status !== 'all' ? status : undefined,
     minScore,
     maxScore,
+    city: city || undefined,
+    postalCode: postalCode || undefined,
+    industry: industry || undefined,
   });
 
   const handleSelectChange = (id: string, selected: boolean) => {
@@ -74,6 +82,97 @@ export default function ViviersLeads() {
     }
   };
 
+  // Export function - fetches all filtered data and exports to XLSX
+  const handleExport = useCallback(async () => {
+    if (totalCount === 0) {
+      toast.error('Aucun lead à exporter');
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      // Build query with same filters but fetch all (with reasonable limit)
+      let query = supabase
+        .from('viviers')
+        .select('company_name, contact_name, contact_first_name, contact_last_name, email, phone, city, postal_code, region, industry, siret, cold_score, status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(50000); // Safety limit
+
+      // Apply filters
+      if (search) {
+        query = query.or(`email.ilike.%${search}%,company_name.ilike.%${search}%,contact_name.ilike.%${search}%`);
+      }
+      if (status && status !== 'all') {
+        query = query.eq('status', status);
+      }
+      if (minScore !== undefined) {
+        query = query.gte('cold_score', minScore);
+      }
+      if (maxScore !== undefined) {
+        query = query.lte('cold_score', maxScore);
+      }
+      if (city) {
+        query = query.ilike('city', `%${city}%`);
+      }
+      if (postalCode) {
+        query = query.ilike('postal_code', `${postalCode}%`);
+      }
+      if (industry) {
+        query = query.ilike('industry', `%${industry}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        toast.error('Aucune donnée à exporter');
+        return;
+      }
+
+      // Transform data for export
+      const exportData = data.map(v => ({
+        'Entreprise': v.company_name || '',
+        'Contact': v.contact_name || [v.contact_first_name, v.contact_last_name].filter(Boolean).join(' ') || '',
+        'Email': v.email || '',
+        'Téléphone': v.phone || '',
+        'Ville': v.city || '',
+        'Code Postal': v.postal_code || '',
+        'Région': v.region || '',
+        'Secteur': v.industry || '',
+        'SIRET': v.siret || '',
+        'Score': v.cold_score ?? '',
+        'Statut': v.status || '',
+        'Créé le': v.created_at ? new Date(v.created_at).toLocaleDateString('fr-FR') : '',
+      }));
+
+      // Create workbook and worksheet
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Leads Vivier');
+
+      // Auto-size columns
+      const colWidths = Object.keys(exportData[0] || {}).map(key => ({
+        wch: Math.max(key.length, 15)
+      }));
+      ws['!cols'] = colWidths;
+
+      // Generate filename with date
+      const date = new Date().toISOString().split('T')[0];
+      const filename = `viviers-export-${date}.xlsx`;
+
+      // Download file
+      XLSX.writeFile(wb, filename);
+
+      toast.success(`${data.length} leads exportés`);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error(`Erreur d'export: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [search, status, minScore, maxScore, city, postalCode, industry, totalCount]);
+
   const handleDeleteAll = async () => {
     setIsDeletingAll(true);
     try {
@@ -92,9 +191,19 @@ export default function ViviersLeads() {
       if (maxScore !== undefined) {
         query = query.lte('cold_score', maxScore);
       }
+      if (city) {
+        query = query.ilike('city', `%${city}%`);
+      }
+      if (postalCode) {
+        query = query.ilike('postal_code', `${postalCode}%`);
+      }
+      if (industry) {
+        query = query.ilike('industry', `%${industry}%`);
+      }
       
       // Require at least one condition to prevent accidental full delete
-      if (!search && (!status || status === 'all') && minScore === undefined && maxScore === undefined) {
+      const hasFilters = search || (status && status !== 'all') || minScore !== undefined || maxScore !== undefined || city || postalCode || industry;
+      if (!hasFilters) {
         query = query.neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all if no filters
       }
 
@@ -113,13 +222,16 @@ export default function ViviersLeads() {
     }
   };
 
-  const hasFilters = !!(search || (status && status !== 'all') || minScore !== undefined || maxScore !== undefined);
+  const hasFilters = !!(search || (status && status !== 'all') || minScore !== undefined || maxScore !== undefined || city || postalCode || industry);
 
   const handleClearFilters = () => {
     setSearch('');
     setStatus('');
     setMinScore(undefined);
     setMaxScore(undefined);
+    setCity('');
+    setPostalCode('');
+    setIndustry('');
     setPage(1);
   };
 
@@ -147,7 +259,7 @@ export default function ViviersLeads() {
                 <AlertDialogTrigger asChild>
                   <Button variant="outline" className="text-destructive border-destructive/50 hover:bg-destructive/10">
                     <AlertTriangle className="w-4 h-4 mr-2" />
-                    {hasFilters ? `Supprimer les ${totalCount} filtrés` : 'Tout supprimer'}
+                    {hasFilters ? `Supprimer les ${totalCount.toLocaleString('fr-FR')} filtrés` : 'Tout supprimer'}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent className="max-h-[85vh] overflow-auto">
@@ -157,7 +269,7 @@ export default function ViviersLeads() {
                       {hasFilters ? 'Supprimer les leads filtrés ?' : 'Supprimer tous les leads ?'}
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      Cette action est <strong>irréversible</strong>. Vous êtes sur le point de supprimer <strong>{totalCount} lead{totalCount > 1 ? 's' : ''}</strong>
+                      Cette action est <strong>irréversible</strong>. Vous êtes sur le point de supprimer <strong>{totalCount.toLocaleString('fr-FR')} lead{totalCount > 1 ? 's' : ''}</strong>
                       {hasFilters && ' correspondant aux filtres actuels'}.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
@@ -168,7 +280,7 @@ export default function ViviersLeads() {
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       disabled={isDeletingAll}
                     >
-                      {isDeletingAll ? 'Suppression...' : `Supprimer ${totalCount} lead${totalCount > 1 ? 's' : ''}`}
+                      {isDeletingAll ? 'Suppression...' : `Supprimer ${totalCount.toLocaleString('fr-FR')} lead${totalCount > 1 ? 's' : ''}`}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -204,7 +316,25 @@ export default function ViviersLeads() {
                 setMaxScore(max);
                 setPage(1);
               }}
+              city={city}
+              onCityChange={(value) => {
+                setCity(value);
+                setPage(1);
+              }}
+              postalCode={postalCode}
+              onPostalCodeChange={(value) => {
+                setPostalCode(value);
+                setPage(1);
+              }}
+              industry={industry}
+              onIndustryChange={(value) => {
+                setIndustry(value);
+                setPage(1);
+              }}
               onClearFilters={handleClearFilters}
+              onExport={handleExport}
+              isExporting={isExporting}
+              totalCount={totalCount}
             />
           </CardContent>
         </Card>
@@ -216,11 +346,11 @@ export default function ViviersLeads() {
               <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Aucun lead dans le vivier</h3>
               <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-                {search || status || minScore || maxScore 
+                {hasFilters 
                   ? "Aucun lead ne correspond à vos critères de recherche."
                   : "Importez vos leads froids depuis un fichier CSV ou XLSX pour commencer."}
               </p>
-              {!search && !status && !minScore && !maxScore && (
+              {!hasFilters && (
                 <Button asChild>
                   <Link to="/viviers/import">
                     <Upload className="w-4 h-4 mr-2" />
