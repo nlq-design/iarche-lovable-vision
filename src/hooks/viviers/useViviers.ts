@@ -65,14 +65,17 @@ interface UseViviersOptions {
   status?: string;
   minScore?: number;
   maxScore?: number;
+  city?: string;
+  postalCode?: string;
+  industry?: string;
 }
 
 export function useViviers(options: UseViviersOptions = {}) {
-  const { page = 1, pageSize = 25, search, status, minScore, maxScore } = options;
+  const { page = 1, pageSize = 25, search, status, minScore, maxScore, city, postalCode, industry } = options;
   const queryClient = useQueryClient();
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['viviers', page, pageSize, search, status, minScore, maxScore],
+    queryKey: ['viviers', page, pageSize, search, status, minScore, maxScore, city, postalCode, industry],
     queryFn: async () => {
       let query = supabase
         .from('viviers')
@@ -84,7 +87,7 @@ export function useViviers(options: UseViviersOptions = {}) {
       const to = from + pageSize - 1;
       query = query.range(from, to);
 
-      // Search filter
+      // Search filter (email, company, contact name)
       if (search) {
         query = query.or(`email.ilike.%${search}%,company_name.ilike.%${search}%,contact_name.ilike.%${search}%`);
       }
@@ -100,6 +103,21 @@ export function useViviers(options: UseViviersOptions = {}) {
       }
       if (maxScore !== undefined) {
         query = query.lte('cold_score', maxScore);
+      }
+
+      // City filter
+      if (city) {
+        query = query.ilike('city', `%${city}%`);
+      }
+
+      // Postal code filter (prefix match for department filtering)
+      if (postalCode) {
+        query = query.ilike('postal_code', `${postalCode}%`);
+      }
+
+      // Industry filter
+      if (industry) {
+        query = query.ilike('industry', `%${industry}%`);
       }
 
       const { data, error, count } = await query;
