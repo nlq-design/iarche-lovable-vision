@@ -77,16 +77,34 @@ export default function ViviersLeads() {
   const handleDeleteAll = async () => {
     setIsDeletingAll(true);
     try {
-      const { error } = await supabase
-        .from('viviers')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      let query = supabase.from('viviers').delete();
+      
+      // Apply same filters as the list
+      if (search) {
+        query = query.or(`email.ilike.%${search}%,company_name.ilike.%${search}%,contact_name.ilike.%${search}%`);
+      }
+      if (status && status !== 'all') {
+        query = query.eq('status', status);
+      }
+      if (minScore !== undefined) {
+        query = query.gte('cold_score', minScore);
+      }
+      if (maxScore !== undefined) {
+        query = query.lte('cold_score', maxScore);
+      }
+      
+      // Require at least one condition to prevent accidental full delete
+      if (!search && (!status || status === 'all') && minScore === undefined && maxScore === undefined) {
+        query = query.neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all if no filters
+      }
+
+      const { error } = await query;
 
       if (error) throw error;
 
       queryClient.invalidateQueries({ queryKey: ['viviers'] });
       queryClient.invalidateQueries({ queryKey: ['viviers-stats'] });
-      toast.success('Tous les leads ont été supprimés');
+      toast.success(`${totalCount} lead${totalCount > 1 ? 's' : ''} supprimé${totalCount > 1 ? 's' : ''}`);
       setSelectedIds(new Set());
     } catch (error) {
       toast.error(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
@@ -94,6 +112,8 @@ export default function ViviersLeads() {
       setIsDeletingAll(false);
     }
   };
+
+  const hasFilters = !!(search || (status && status !== 'all') || minScore !== undefined || maxScore !== undefined);
 
   const handleClearFilters = () => {
     setSearch('');
@@ -127,17 +147,18 @@ export default function ViviersLeads() {
                 <AlertDialogTrigger asChild>
                   <Button variant="outline" className="text-destructive border-destructive/50 hover:bg-destructive/10">
                     <AlertTriangle className="w-4 h-4 mr-2" />
-                    Tout supprimer
+                    {hasFilters ? `Supprimer les ${totalCount} filtrés` : 'Tout supprimer'}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent className="max-h-[85vh] overflow-auto">
                   <AlertDialogHeader>
                     <AlertDialogTitle className="flex items-center gap-2 text-destructive">
                       <AlertTriangle className="w-5 h-5" />
-                      Supprimer tous les leads ?
+                      {hasFilters ? 'Supprimer les leads filtrés ?' : 'Supprimer tous les leads ?'}
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      Cette action est <strong>irréversible</strong>. Vous êtes sur le point de supprimer <strong>{totalCount} lead{totalCount > 1 ? 's' : ''}</strong> du vivier.
+                      Cette action est <strong>irréversible</strong>. Vous êtes sur le point de supprimer <strong>{totalCount} lead{totalCount > 1 ? 's' : ''}</strong>
+                      {hasFilters && ' correspondant aux filtres actuels'}.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -147,7 +168,7 @@ export default function ViviersLeads() {
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       disabled={isDeletingAll}
                     >
-                      {isDeletingAll ? 'Suppression...' : 'Oui, tout supprimer'}
+                      {isDeletingAll ? 'Suppression...' : `Supprimer ${totalCount} lead${totalCount > 1 ? 's' : ''}`}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
