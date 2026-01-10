@@ -159,7 +159,7 @@ export function useViviers(options: UseViviersOptions = {}) {
     },
   });
 
-  // Bulk create mutation
+  // Bulk create mutation with batching for large imports
   const bulkCreateViviers = useMutation({
     mutationFn: async (viviers: Partial<Vivier>[]) => {
       const toInsert = viviers.map(v => {
@@ -171,13 +171,22 @@ export function useViviers(options: UseViviersOptions = {}) {
         };
       });
 
-      const { data, error } = await supabase
-        .from('viviers')
-        .insert(toInsert as any)
-        .select();
+      // Batch insert in chunks of 500 to avoid timeouts
+      const BATCH_SIZE = 500;
+      const results: any[] = [];
+      
+      for (let i = 0; i < toInsert.length; i += BATCH_SIZE) {
+        const batch = toInsert.slice(i, i + BATCH_SIZE);
+        const { data, error } = await supabase
+          .from('viviers')
+          .insert(batch as any)
+          .select();
 
-      if (error) throw error;
-      return data;
+        if (error) throw error;
+        if (data) results.push(...data);
+      }
+
+      return results;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['viviers'] });
