@@ -44,6 +44,8 @@ export interface VoiceTranscription {
   solution?: { id: string; title: string } | null;
   meeting_note?: { id: string; objectives: string | null; booking_id: string | null } | null;
   prompt_profile?: { id: string; name: string } | null;
+  // Partners via junction table
+  partners?: { partner: { id: string; name: string; slug: string | null; partner_type: string | null } }[];
 }
 
 export interface TranscriptionSummary {
@@ -136,7 +138,8 @@ export function useCockpitVoiceTranscriptions(
           project:projects(id, name),
           solution:articles(id, title),
           meeting_note:meeting_notes(id, objectives, booking_id),
-          prompt_profile:ai_prompts(id, name)
+          prompt_profile:ai_prompts(id, name),
+          partners:transcription_partners(partner:partners(id, name, slug, partner_type))
         `)
         .eq('workspace_id', workspaceId)
         .order('created_at', { ascending: false });

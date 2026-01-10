@@ -27,6 +27,7 @@ import {
   Users,
   ListTodo,
   RefreshCw,
+  Handshake,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -345,8 +346,28 @@ export default function CockpitTranscriptions() {
                              </Badge>
                            )}
 
+                           {/* Partners */}
+                           {transcription.partners && transcription.partners.length > 0 && (
+                             transcription.partners.map((p) => (
+                               p.partner && (
+                                 <Badge 
+                                   key={p.partner.id}
+                                   variant="outline" 
+                                   className="text-xs h-5 cursor-pointer hover:bg-primary/20 border-amber-500/50 text-amber-700 dark:text-amber-400"
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     navigate(`/cockpit/partenaires/${p.partner.slug || p.partner.id}`);
+                                   }}
+                                 >
+                                   <Handshake className="h-3 w-3 mr-1" />
+                                   {p.partner.name}
+                                 </Badge>
+                               )
+                             ))
+                           )}
+
                            {/* Placeholder si aucun lien */}
-                           {!transcription.lead && !transcription.project && !transcription.solution && !transcription.lead_contact && (
+                           {!transcription.lead && !transcription.project && !transcription.solution && !transcription.lead_contact && (!transcription.partners || transcription.partners.length === 0) && (
                              <Badge variant="outline" className="text-xs h-5 text-muted-foreground border-dashed">
                                Non lié
                              </Badge>
