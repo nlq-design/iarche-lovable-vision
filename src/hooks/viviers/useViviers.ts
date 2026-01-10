@@ -114,22 +114,47 @@ export function useViviers(options: UseViviersOptions = {}) {
     },
   });
 
-  // Stats query
+  // Stats query - using count queries to avoid the 1000 row limit
   const { data: stats } = useQuery({
     queryKey: ['viviers-stats'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get total count
+      const { count: totalLeads, error: totalError } = await supabase
         .from('viviers')
-        .select('status, cold_score, promoted_at');
+        .select('*', { count: 'exact', head: true });
 
-      if (error) throw error;
+      if (totalError) throw totalError;
 
-      const viviers = data || [];
+      // Get pending scoring count (no score and not promoted)
+      const { count: pendingScoring, error: pendingError } = await supabase
+        .from('viviers')
+        .select('*', { count: 'exact', head: true })
+        .is('cold_score', null)
+        .neq('status', 'promoted');
+
+      if (pendingError) throw pendingError;
+
+      // Get qualified count (score >= 60)
+      const { count: qualified, error: qualifiedError } = await supabase
+        .from('viviers')
+        .select('*', { count: 'exact', head: true })
+        .gte('cold_score', 60);
+
+      if (qualifiedError) throw qualifiedError;
+
+      // Get promoted count
+      const { count: promoted, error: promotedError } = await supabase
+        .from('viviers')
+        .select('*', { count: 'exact', head: true })
+        .not('promoted_at', 'is', null);
+
+      if (promotedError) throw promotedError;
+
       return {
-        totalLeads: viviers.length,
-        pendingScoring: viviers.filter(v => !v.cold_score && v.status !== 'promoted').length,
-        qualified: viviers.filter(v => (v.cold_score || 0) >= 60).length,
-        promoted: viviers.filter(v => v.promoted_at).length,
+        totalLeads: totalLeads || 0,
+        pendingScoring: pendingScoring || 0,
+        qualified: qualified || 0,
+        promoted: promoted || 0,
       };
     },
   });
