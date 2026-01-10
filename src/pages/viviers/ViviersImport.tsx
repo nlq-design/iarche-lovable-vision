@@ -68,6 +68,33 @@ export default function ViviersImport() {
     });
   };
 
+  // Parse Excel serial date to ISO string
+  const parseExcelDate = (value: string | number | undefined): string | null => {
+    if (!value) return null;
+    
+    const strValue = String(value).trim();
+    if (!strValue) return null;
+    
+    // Check if it's an Excel serial number (numeric)
+    const numValue = Number(strValue);
+    if (!isNaN(numValue) && numValue > 1000 && numValue < 100000) {
+      // Excel serial date: days since 1900-01-01 (with Excel's leap year bug)
+      const excelEpoch = new Date(1899, 11, 30); // Dec 30, 1899
+      const date = new Date(excelEpoch.getTime() + numValue * 24 * 60 * 60 * 1000);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+      }
+    }
+    
+    // Try parsing as regular date string (e.g., "7 February 1995")
+    const parsed = new Date(strValue);
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toISOString().split('T')[0];
+    }
+    
+    return null; // Return null if unparseable
+  };
+
   // Map row data to Vivier model - adapted for your Excel format
   const mapToVivier = (row: Record<string, string>) => {
     // Handle name: either use DIRIGEANT or NOM
@@ -92,42 +119,45 @@ export default function ViviersImport() {
       ? `${effectifMin}-${effectifMax}` 
       : (row.effectif || effectifMin || effectifMax || '');
 
+    // Parse creation date safely
+    const creationDate = parseExcelDate(row.immatriculation) || parseExcelDate(row.creation_date);
+
     return {
       // Email (required)
       email: row.adresse_e_mail || row.email || row.e_mail,
       
       // Company info
       company_name: nom || row.company || row.company_name || row.entreprise || row.societe,
-      siret: row.siret || '',
-      siren: row.siret ? row.siret.substring(0, 9) : (row.siren || ''),
-      naf_code: row.naf_ape || row.naf || row.ape || '',
-      legal_form: row.forme_juridique || row.legal_form || '',
-      industry: row.activite || row.industry || row.secteur || '',
-      creation_date: row.immatriculation || row.creation_date || '',
+      siret: row.siret || null,
+      siren: row.siret ? row.siret.substring(0, 9) : (row.siren || null),
+      naf_code: row.naf_ape || row.naf || row.ape || null,
+      legal_form: row.forme_juridique || row.legal_form || null,
+      industry: row.activite || row.industry || row.secteur || null,
+      creation_date: creationDate,
       
       // Contact info
-      contact_name: dirigeant || row.contact || row.contact_name || '',
-      contact_first_name: firstName || row.first_name || row.firstname || row.prenom || '',
-      contact_last_name: lastName || row.last_name || row.lastname || '',
-      contact_position: row.position || row.poste || row.job_title || row.title || '',
+      contact_name: dirigeant || row.contact || row.contact_name || null,
+      contact_first_name: firstName || row.first_name || row.firstname || row.prenom || null,
+      contact_last_name: lastName || row.last_name || row.lastname || null,
+      contact_position: row.position || row.poste || row.job_title || row.title || null,
       
       // Phone
-      phone: row.telephone || row.phone || row.tel || '',
+      phone: row.telephone || row.phone || row.tel || null,
       
       // Address
-      address: fullAddress,
-      postal_code: row.code_postal || row.postal_code || row.zip || '',
-      city: row.ville || row.city || '',
-      region: row.region || '',
+      address: fullAddress || null,
+      postal_code: row.code_postal || row.postal_code || row.zip || null,
+      city: row.ville || row.city || null,
+      region: row.region || null,
       country: row.country || row.pays || 'France',
       
       // Website/LinkedIn
-      website: row.website || row.site || row.url || '',
-      linkedin_url: row.linkedin || row.linkedin_url || '',
+      website: row.website || row.site || row.url || null,
+      linkedin_url: row.linkedin || row.linkedin_url || null,
       
       // Company metrics
-      company_size: companySize,
-      revenue_range: ca,
+      company_size: companySize || null,
+      revenue_range: ca || null,
       employee_count: effectifMin ? parseInt(effectifMin, 10) || null : null,
       
       // Store original data for reference
