@@ -132,49 +132,71 @@ export default function CockpitTranscriptionDetail() {
     }
   }, [transcription]);
 
-  // Fetch audio URL and dynamic metadata
+  // Fetch audio URL and dynamic metadata - try multiple buckets
   useEffect(() => {
     setAudioUrl(null);
     setDynamicDuration(null);
     setDynamicFileSize(null);
 
     if (!transcriptionId || !transcription?.storage_path) return;
+    
+    // Skip if file was chunked and not preserved (ends with _no_file)
+    if (transcription.storage_path.endsWith('_no_file')) {
+      console.log('[Audio] Chunked file not preserved, audio unavailable');
+      return;
+    }
 
-    supabase.storage
-      .from('voice-transcriptions')
-      .createSignedUrl(transcription.storage_path, 3600)
-      .then(({ data, error }) => {
-        if (error) {
-          console.error('[Audio] Failed to get signed URL:', error);
-          return;
-        }
-        if (data?.signedUrl) {
-          setAudioUrl(data.signedUrl);
-          
-          // If no stored metadata, try to get it dynamically
-          if (!transcription.duration_seconds || !transcription.file_size_bytes) {
-            fetch(data.signedUrl, { method: 'HEAD' })
-              .then(res => {
-                const contentLength = res.headers.get('content-length');
-                if (contentLength && !transcription.file_size_bytes) {
-                  setDynamicFileSize(parseInt(contentLength, 10));
-                }
-              })
-              .catch(() => {});
-            
-            if (!transcription.duration_seconds) {
-              const tempAudio = new Audio();
-              tempAudio.addEventListener('loadedmetadata', () => {
-                if (isFinite(tempAudio.duration) && tempAudio.duration > 0) {
-                  setDynamicDuration(Math.round(tempAudio.duration));
-                }
-              });
-              tempAudio.src = data.signedUrl;
-              tempAudio.load();
+    const fetchSignedUrl = async () => {
+      // Try primary bucket first
+      const { data: primaryData, error: primaryError } = await supabase.storage
+        .from('voice-transcriptions')
+        .createSignedUrl(transcription.storage_path, 3600);
+
+      if (!primaryError && primaryData?.signedUrl) {
+        return primaryData.signedUrl;
+      }
+
+      // Fallback to cockpit-uploads bucket
+      const { data: fallbackData, error: fallbackError } = await supabase.storage
+        .from('cockpit-uploads')
+        .createSignedUrl(transcription.storage_path, 3600);
+
+      if (!fallbackError && fallbackData?.signedUrl) {
+        return fallbackData.signedUrl;
+      }
+
+      console.error('[Audio] Failed to get signed URL from both buckets:', primaryError, fallbackError);
+      return null;
+    };
+
+    fetchSignedUrl().then((signedUrl) => {
+      if (!signedUrl) return;
+      
+      setAudioUrl(signedUrl);
+      
+      // If no stored metadata, try to get it dynamically
+      if (!transcription.duration_seconds || !transcription.file_size_bytes) {
+        fetch(signedUrl, { method: 'HEAD' })
+          .then(res => {
+            const contentLength = res.headers.get('content-length');
+            if (contentLength && !transcription.file_size_bytes) {
+              setDynamicFileSize(parseInt(contentLength, 10));
             }
-          }
+          })
+          .catch(() => {});
+        
+        if (!transcription.duration_seconds) {
+          const tempAudio = new Audio();
+          tempAudio.addEventListener('loadedmetadata', () => {
+            if (isFinite(tempAudio.duration) && tempAudio.duration > 0) {
+              setDynamicDuration(Math.round(tempAudio.duration));
+            }
+          });
+          tempAudio.src = signedUrl;
+          tempAudio.load();
         }
-      });
+      }
+    });
   }, [transcriptionId, transcription?.storage_path, transcription?.duration_seconds, transcription?.file_size_bytes]);
 
   const handleRetry = () => {
