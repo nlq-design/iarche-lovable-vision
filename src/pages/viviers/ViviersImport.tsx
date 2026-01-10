@@ -27,6 +27,8 @@ export default function ViviersImport() {
   const [pastedData, setPastedData] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importTotal, setImportTotal] = useState(0);
   const [dragActive, setDragActive] = useState(false);
   const [parsedData, setParsedData] = useState<ParsedVivier[] | null>(null);
   const [duplicateAction, setDuplicateAction] = useState<DuplicateAction>('skip');
@@ -104,7 +106,39 @@ export default function ViviersImport() {
     return null;
   };
 
-  // Map row data to Vivier model
+  // Safe integer parser - returns null if out of range or invalid
+  const safeParseInt = (value: string | undefined, maxValue: number = 2147483647): number | null => {
+    if (!value) return null;
+    const trimmed = String(value).trim().replace(/\s/g, '');
+    if (!trimmed) return null;
+    
+    // Only parse if it looks like a reasonable number (not a SIRET/SIREN)
+    if (trimmed.length > 9) return null; // Too long to be employee count
+    
+    const num = parseInt(trimmed, 10);
+    if (isNaN(num) || num < 0 || num > maxValue) return null;
+    return num;
+  };
+
+  // Safe string cleaner - ensures text doesn't exceed limits
+  const safeString = (value: string | undefined, maxLength: number = 500): string | null => {
+    if (!value) return null;
+    const trimmed = String(value).trim();
+    if (!trimmed) return null;
+    return trimmed.substring(0, maxLength);
+  };
+
+  // Safe SIRET/SIREN - keeps as string, validates format
+  const safeSiret = (value: string | undefined): string | null => {
+    if (!value) return null;
+    const cleaned = String(value).trim().replace(/\s/g, '');
+    if (!cleaned) return null;
+    // SIRET is 14 digits, SIREN is 9 digits - keep as string
+    if (!/^\d{9,14}$/.test(cleaned)) return null;
+    return cleaned;
+  };
+
+  // Map row data to Vivier model with robust parsing
   const mapToVivier = (row: Record<string, string>): Partial<Vivier> => {
     const dirigeant = row.dirigeant || '';
     const nom = row.nom || '';
@@ -120,55 +154,65 @@ export default function ViviersImport() {
       : (row.effectif || effectifMin || effectifMax || '');
     const creationDate = parseExcelDate(row.immatriculation) || parseExcelDate(row.creation_date);
 
+    // Get SIRET and derive SIREN from it
+    const siret = safeSiret(row.siret);
+    const siren = siret ? siret.substring(0, 9) : safeSiret(row.siren);
+
     return {
-      email: row.adresse_e_mail || row.email || row.e_mail,
-      company_name: nom || row.company || row.company_name || row.entreprise || row.societe,
-      siret: row.siret || null,
-      siren: row.siret ? row.siret.substring(0, 9) : (row.siren || null),
-      naf_code: row.naf_ape || row.naf || row.ape || null,
-      legal_form: row.forme_juridique || row.legal_form || null,
-      industry: row.activite || row.industry || row.secteur || null,
+      email: safeString(row.adresse_e_mail || row.email || row.e_mail, 255),
+      company_name: safeString(nom || row.company || row.company_name || row.entreprise || row.societe, 255),
+      siret: siret,
+      siren: siren,
+      naf_code: safeString(row.naf_ape || row.naf || row.ape, 10),
+      legal_form: safeString(row.forme_juridique || row.legal_form, 100),
+      industry: safeString(row.activite || row.industry || row.secteur, 255),
       creation_date: creationDate,
-      contact_name: dirigeant || row.contact || row.contact_name || null,
-      contact_first_name: firstName || row.first_name || row.firstname || row.prenom || null,
-      contact_last_name: lastName || row.last_name || row.lastname || null,
-      contact_position: row.position || row.poste || row.job_title || row.title || null,
-      phone: row.telephone || row.phone || row.tel || null,
-      address: fullAddress || null,
-      postal_code: row.code_postal || row.postal_code || row.zip || null,
-      city: row.ville || row.city || null,
-      region: row.region || null,
-      country: row.country || row.pays || 'France',
-      website: row.website || row.site || row.url || null,
-      linkedin_url: row.linkedin || row.linkedin_url || null,
-      company_size: companySize || null,
-      revenue_range: ca || null,
-      employee_count: effectifMin ? parseInt(effectifMin, 10) || null : null,
+      contact_name: safeString(dirigeant || row.contact || row.contact_name, 255),
+      contact_first_name: safeString(firstName || row.first_name || row.firstname || row.prenom, 100),
+      contact_last_name: safeString(lastName || row.last_name || row.lastname, 100),
+      contact_position: safeString(row.position || row.poste || row.job_title || row.title, 100),
+      phone: safeString(row.telephone || row.phone || row.tel, 50),
+      address: safeString(fullAddress, 500),
+      postal_code: safeString(row.code_postal || row.postal_code || row.zip, 20),
+      city: safeString(row.ville || row.city, 100),
+      region: safeString(row.region, 100),
+      country: safeString(row.country || row.pays, 100) || 'France',
+      website: safeString(row.website || row.site || row.url, 255),
+      linkedin_url: safeString(row.linkedin || row.linkedin_url, 255),
+      company_size: safeString(companySize, 50),
+      revenue_range: safeString(ca, 50),
+      employee_count: safeParseInt(effectifMin) || safeParseInt(row.effectif),
       raw_data: row as any,
       source: 'import',
     };
   };
 
-  // Check for duplicates against existing viviers
+  // Check for duplicates against existing viviers - batched for large datasets
   const checkDuplicates = async (viviers: Partial<Vivier>[]): Promise<ParsedVivier[]> => {
     const emails = viviers.map(v => v.email).filter(Boolean) as string[];
     
     if (emails.length === 0) return viviers.map(data => ({ data, isDuplicate: false }));
 
-    // Fetch existing viviers with these emails
-    const { data: existingViviers, error } = await supabase
-      .from('viviers')
-      .select('id, email')
-      .in('email', emails);
+    // Batch email checks to avoid URL length limits (max ~2000 chars in URL)
+    const BATCH_SIZE = 200;
+    const existingEmailMap = new Map<string, string>();
 
-    if (error) {
-      console.error('Error checking duplicates:', error);
-      return viviers.map(data => ({ data, isDuplicate: false }));
+    for (let i = 0; i < emails.length; i += BATCH_SIZE) {
+      const batch = emails.slice(i, i + BATCH_SIZE);
+      const { data: existingViviers, error } = await supabase
+        .from('viviers')
+        .select('id, email')
+        .in('email', batch);
+
+      if (error) {
+        console.error('Error checking duplicates:', error);
+        continue;
+      }
+
+      (existingViviers || []).forEach(v => {
+        if (v.email) existingEmailMap.set(v.email.toLowerCase(), v.id);
+      });
     }
-
-    const existingEmailMap = new Map(
-      (existingViviers || []).map(v => [v.email?.toLowerCase(), v.id])
-    );
 
     return viviers.map(data => {
       const emailLower = data.email?.toLowerCase();
@@ -220,11 +264,13 @@ export default function ViviersImport() {
     }
   };
 
-  // Perform the actual import
+  // Perform the actual import with batch processing
   const handleImport = async () => {
     if (!parsedData) return;
     
     setIsImporting(true);
+    setImportProgress(0);
+    
     try {
       const toImport: Partial<Vivier>[] = [];
       const toUpdate: { id: string; data: Partial<Vivier> }[] = [];
@@ -236,34 +282,63 @@ export default function ViviersImport() {
           toUpdate.push({ id: item.existingId, data: item.data });
         } else if (!item.isDuplicate) {
           toImport.push(item.data);
-        } else if (item.isDuplicate && duplicateAction === 'skip') {
-          // Skip - do nothing
         }
       });
 
-      // Bulk insert new entries
-      if (toImport.length > 0) {
-        await bulkCreateViviers.mutateAsync(toImport);
-      }
+      const totalOperations = toImport.length + toUpdate.length;
+      setImportTotal(totalOperations);
+      let processed = 0;
 
-      // Update existing entries
-      if (toUpdate.length > 0) {
-        for (const { id, data } of toUpdate) {
-          const { id: _, ...updateData } = data;
-          await supabase
+      // Bulk insert new entries in batches
+      if (toImport.length > 0) {
+        const BATCH_SIZE = 500;
+        for (let i = 0; i < toImport.length; i += BATCH_SIZE) {
+          const batch = toImport.slice(i, i + BATCH_SIZE);
+          const batchData = batch.map(v => {
+            const { id, ...rest } = v;
+            return { ...rest, source: v.source || 'import', status: 'new' };
+          });
+          
+          const { error } = await supabase
             .from('viviers')
-            .update({ ...updateData, updated_at: new Date().toISOString() })
-            .eq('id', id);
+            .insert(batchData as any);
+
+          if (error) throw error;
+          
+          processed += batch.length;
+          setImportProgress(Math.round((processed / totalOperations) * 100));
         }
       }
 
-      const totalProcessed = toImport.length + toUpdate.length;
-      toast.success(`${totalProcessed} lead${totalProcessed > 1 ? 's' : ''} importé${totalProcessed > 1 ? 's' : ''}`);
+      // Update existing entries in batches
+      if (toUpdate.length > 0) {
+        const UPDATE_BATCH_SIZE = 50;
+        for (let i = 0; i < toUpdate.length; i += UPDATE_BATCH_SIZE) {
+          const batch = toUpdate.slice(i, i + UPDATE_BATCH_SIZE);
+          
+          await Promise.all(
+            batch.map(async ({ id, data }) => {
+              const { id: _, ...updateData } = data;
+              await supabase
+                .from('viviers')
+                .update({ ...updateData, updated_at: new Date().toISOString() })
+                .eq('id', id);
+            })
+          );
+          
+          processed += batch.length;
+          setImportProgress(Math.round((processed / totalOperations) * 100));
+        }
+      }
+
+      toast.success(`${totalOperations} lead${totalOperations > 1 ? 's' : ''} importé${totalOperations > 1 ? 's' : ''}`);
       navigate('/viviers/leads');
     } catch (error) {
       toast.error(`Erreur d'import: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
     } finally {
       setIsImporting(false);
+      setImportProgress(0);
+      setImportTotal(0);
     }
   };
 
@@ -514,23 +589,42 @@ export default function ViviersImport() {
               </CardContent>
             </Card>
 
-            {/* Import Button */}
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={handleReset}>
-                Annuler
-              </Button>
-              <Button 
-                onClick={handleImport} 
-                disabled={selectedCount === 0 || isImporting}
-                size="lg"
-              >
-                {isImporting ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                )}
-                Importer {selectedCount} lead{selectedCount > 1 ? 's' : ''}
-              </Button>
+            {/* Import Button with Progress */}
+            <div className="flex flex-col gap-4">
+              {isImporting && importTotal > 0 && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Import en cours...</span>
+                    <span className="font-medium">{importProgress}%</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary transition-all duration-300 ease-out"
+                      style={{ width: `${importProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    {Math.round((importProgress / 100) * importTotal)} / {importTotal} traités
+                  </p>
+                </div>
+              )}
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={handleReset} disabled={isImporting}>
+                  Annuler
+                </Button>
+                <Button 
+                  onClick={handleImport} 
+                  disabled={selectedCount === 0 || isImporting}
+                  size="lg"
+                >
+                  {isImporting ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                  )}
+                  {isImporting ? `Import... ${importProgress}%` : `Importer ${selectedCount} lead${selectedCount > 1 ? 's' : ''}`}
+                </Button>
+              </div>
             </div>
           </div>
         ) : (
