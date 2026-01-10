@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { User, Calendar, ListTodo, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import type { Json } from '@/integrations/supabase/types';
 
 interface ActionItem {
   task?: string;
@@ -29,7 +30,7 @@ interface TranscriptionActionsTabProps {
     project_id: string | null;
     due_date: string | null;
     ai_generated: boolean;
-    ai_metadata: Record<string, unknown>;
+    ai_metadata: Json;
   }) => void;
 }
 

@@ -10,9 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -27,46 +25,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Play,
-  Pause,
-  Trash2,
-  RefreshCw,
-  User,
-  FolderOpen,
-  Package,
   Calendar,
-  CheckCircle2,
   AlertTriangle,
-  HelpCircle,
-  ArrowRight,
-  Sparkles,
   Loader2,
   FileText,
   Mail,
-  Send,
-  Copy,
   Check,
-  UserPlus,
   X,
-  Users,
-  FolderPlus,
-  PackagePlus,
-  ListTodo,
+  Trash2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -77,22 +43,17 @@ import { useCockpitProjects } from '@/hooks/cockpit/useCockpitProjects';
 import { useCockpitLeadContacts } from '@/hooks/cockpit/useCockpitLeadContacts';
 import { useCockpitTasks } from '@/hooks/cockpit/useCockpitTasks';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
 import { useQuery } from '@tanstack/react-query';
-
-// Simple transcript display (Whisper doesn't provide diarization)
-function SimpleTranscript({ text }: { text: string }) {
-  if (!text) {
-    return <p className="text-sm text-muted-foreground">Aucune transcription disponible</p>;
-  }
-  
-  return (
-    <div className="prose prose-sm max-w-none">
-      <p className="text-sm leading-relaxed whitespace-pre-wrap">{text}</p>
-    </div>
-  );
-}
+import {
+  TranscriptionSummaryTab,
+  TranscriptionActionsTab,
+  TranscriptionAudioPlayer,
+  SimpleTranscript,
+  TranscriptionEntityLinks,
+  TranscriptionEmailDialog,
+  normalizeSummary,
+} from './shared';
 
 interface TranscriptionDetailSheetProps {
   transcriptionId: string | null;
@@ -107,9 +68,8 @@ export function TranscriptionDetailSheet({
 }: TranscriptionDetailSheetProps) {
   const navigate = useNavigate();
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
 
   const { useTranscription, deleteTranscription, processTranscription, updateTranscription } = useCockpitVoiceTranscriptions();
   const { data: transcription, isLoading, refetch } = useTranscription(transcriptionId || '');
@@ -135,31 +95,9 @@ export function TranscriptionDetailSheet({
     },
   });
 
-  // Task creation state
-  const [creatingTaskIndex, setCreatingTaskIndex] = useState<number | null>(null);
-
-  // Entity selector states
-  const [showLeadSelector, setShowLeadSelector] = useState(false);
-  const [showContactSelector, setShowContactSelector] = useState(false);
-  const [showProjectSelector, setShowProjectSelector] = useState(false);
-  const [showSolutionSelector, setShowSolutionSelector] = useState(false);
-  const [showEmailDialog, setShowEmailDialog] = useState(false);
-  const [emailType, setEmailType] = useState<'post_meeting' | 'followup'>('post_meeting');
-  const [isGeneratingEmail, setIsGeneratingEmail] = useState(false);
-  const [generatedEmail, setGeneratedEmail] = useState<{
-    subject: string;
-    greeting: string;
-    body: string;
-    cta: string;
-    signature: string;
-  } | null>(null);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-
-  // Editable title state (moved before conditional return to respect hooks rules)
+  // Editable title state
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
-  
-  // Editable date state
   const [editingDate, setEditingDate] = useState(false);
 
   // Sync title draft when transcription loads
@@ -170,92 +108,31 @@ export function TranscriptionDetailSheet({
     }
   }, [transcription]);
 
-  // Fetch audio URL using direct storage signed URL (most reliable)
+  // Fetch audio URL
   useEffect(() => {
-    // Reset audio when transcription changes
-    if (audioElement) {
-      audioElement.pause();
-      setAudioElement(null);
-      setIsPlaying(false);
-    }
     setAudioUrl(null);
 
     if (!transcriptionId || !transcription?.storage_path) return;
 
-    // Use direct signed URL approach (avoids edge function parameter issues)
     supabase.storage
       .from('voice-transcriptions')
       .createSignedUrl(transcription.storage_path, 3600)
       .then(({ data, error }) => {
-        if (error) {
-          console.error('[Audio] Failed to get signed URL:', error);
-          return;
-        }
-        if (data?.signedUrl) {
-          console.log(`[Audio] Loaded URL for transcription ${transcription.slug || transcriptionId}`);
+        if (!error && data?.signedUrl) {
           setAudioUrl(data.signedUrl);
         }
       });
-    
-    return () => {
-      if (audioElement) {
-        audioElement.pause();
-      }
-    };
-  }, [transcriptionId, transcription?.storage_path, transcription?.slug]);
-
-  const handlePlayPause = () => {
-    if (!audioUrl) {
-      toast.error('Fichier audio non disponible');
-      return;
-    }
-    
-    if (!audioElement) {
-      console.log(`[Audio] Creating new audio element for: ${transcription?.slug || transcriptionId}`);
-      const audio = new Audio(audioUrl);
-      audio.onended = () => setIsPlaying(false);
-      audio.onerror = (e) => {
-        console.error('[Audio] Playback error:', e);
-        toast.error('Erreur de lecture audio');
-        setIsPlaying(false);
-      };
-      setAudioElement(audio);
-      audio.play().catch(err => {
-        console.error('[Audio] Play failed:', err);
-        toast.error('Impossible de lire l\'audio');
-      });
-      setIsPlaying(true);
-    } else if (isPlaying) {
-      audioElement.pause();
-      setIsPlaying(false);
-    } else {
-      audioElement.play().catch(err => {
-        console.error('[Audio] Resume failed:', err);
-        // Try recreating the audio element
-        setAudioElement(null);
-        handlePlayPause();
-      });
-      setIsPlaying(true);
-    }
-  };
+  }, [transcriptionId, transcription?.storage_path]);
 
   const handleRetry = () => {
     if (transcriptionId) {
-      processTranscription.mutate({ jobId: transcriptionId }, {
-        onSuccess: () => refetch(),
-      });
+      processTranscription.mutate({ jobId: transcriptionId }, { onSuccess: () => refetch() });
     }
   };
 
   const handleReanalyze = () => {
     if (transcriptionId) {
-      toast.info('Ré-analyse en cours...');
-      processTranscription.mutate({ jobId: transcriptionId, forceReanalyze: true }, {
-        onSuccess: () => {
-          refetch();
-          toast.success('Synthèse et actions régénérées');
-        },
-      });
+      processTranscription.mutate({ jobId: transcriptionId, forceReanalyze: true }, { onSuccess: () => refetch() });
     }
   };
 
@@ -270,57 +147,11 @@ export function TranscriptionDetailSheet({
     }
   };
 
-  const handleGenerateEmail = async () => {
-    if (!transcription) return;
-    setIsGeneratingEmail(true);
-    setGeneratedEmail(null);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-followup-email', {
-        body: {
-          transcription_id: transcriptionId,
-          lead_id: transcription.lead?.id || null,
-          email_type: emailType,
-          context: {
-            transcript_summary: summary?.executive_summary || '',
-            key_points: summary?.key_points || [],
-            action_items: summary?.action_items || [],
-            next_steps: summary?.next_steps || '',
-          },
-        },
-      });
-
-      if (error) throw error;
-      if (!data?.ok) throw new Error(data?.error || 'Erreur de génération');
-
-      setGeneratedEmail(data.email);
-      toast.success('Email généré avec succès');
-    } catch (err) {
-      console.error('Email generation error:', err);
-      toast.error(err instanceof Error ? err.message : 'Erreur lors de la génération');
-    } finally {
-      setIsGeneratingEmail(false);
+  const handleEntityUpdate = (updates: Record<string, string | null>) => {
+    if (transcriptionId) {
+      updateTranscription.mutate({ id: transcriptionId, updates });
     }
   };
-
-  const handleCopyToClipboard = async (text: string, field: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    toast.success('Copié dans le presse-papier');
-    setTimeout(() => setCopiedField(null), 2000);
-  };
-
-  const handleOpenMailClient = () => {
-    if (!generatedEmail) return;
-    const recipientEmail = transcription?.lead?.email || '';
-    const mailtoUrl = `mailto:${recipientEmail}?subject=${encodeURIComponent(generatedEmail.subject)}&body=${encodeURIComponent(`${generatedEmail.greeting}\n\n${generatedEmail.body.replace(/<[^>]*>/g, '')}\n\n${generatedEmail.signature}`)}`;
-    window.open(mailtoUrl, '_blank');
-  };
-
-  if (!transcriptionId) return null;
-
-  const statusConfig = TRANSCRIPTION_STATUSES.find(s => s.value === transcription?.status);
-  const summary = transcription?.summary;
 
   const handleSaveTitle = () => {
     if (transcriptionId && titleDraft.trim()) {
@@ -339,6 +170,11 @@ export function TranscriptionDetailSheet({
     }
   };
 
+  if (!transcriptionId) return null;
+
+  const statusConfig = TRANSCRIPTION_STATUSES.find(s => s.value === transcription?.status);
+  const summary = transcription?.summary;
+  const normalizedSummary = normalizeSummary(summary);
   const displayTitle = transcription?.title || (summary?.title ? (typeof summary.title === 'string' ? summary.title : JSON.stringify(summary.title)) : 'Transcription');
 
   return (
@@ -426,326 +262,32 @@ export function TranscriptionDetailSheet({
             <ScrollArea className="flex-1">
               <div className="px-6 py-4 space-y-6">
                 {/* Audio Player */}
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={handlePlayPause}
-                        disabled={!audioUrl}
-                      >
-                        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                      </Button>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">
-                          {transcription?.original_filename || 'Audio original'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {transcription?.source === 'upload' ? 'Fichier importé' : 'Enregistrement'}
-                        </p>
-                      </div>
-                      {transcription?.status === 'error' && (
-                        <Button size="sm" variant="outline" onClick={handleRetry}>
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                          Réessayer
-                        </Button>
-                      )}
-                      {transcription?.status === 'done' && (
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={handleReanalyze}
-                          disabled={processTranscription.isPending}
-                        >
-                          {processTranscription.isPending ? (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-4 w-4 mr-2" />
-                          )}
-                          Ré-analyser
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                <TranscriptionAudioPlayer
+                  audioUrl={audioUrl}
+                  originalFilename={transcription?.original_filename}
+                  source={transcription?.source}
+                  status={transcription?.status || 'queued'}
+                  isProcessing={processTranscription.isPending}
+                  onRetry={handleRetry}
+                  onReanalyze={handleReanalyze}
+                />
 
                 {/* Entity Links */}
-                <div className="flex flex-wrap gap-2">
-                  {/* Lead Link */}
-                  {transcription?.lead ? (
-                    <Badge variant="secondary" className="cursor-pointer group" onClick={() => {
-                      onOpenChange(false);
-                      navigate(`/cockpit/leads/${transcription.lead!.id}`);
-                    }}>
-                      <User className="h-3 w-3 mr-1" />
-                      {transcription.lead.name}
-                      <button 
-                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (transcriptionId) {
-                            updateTranscription.mutate({ id: transcriptionId, updates: { lead_id: null } });
-                          }
-                        }}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ) : (
-                    showLeadSelector ? (
-                      <div className="flex items-center gap-2">
-                        <Select
-                          onValueChange={(leadId) => {
-                            if (transcriptionId) {
-                              updateTranscription.mutate(
-                                { id: transcriptionId, updates: { lead_id: leadId } },
-                                { onSuccess: () => setShowLeadSelector(false) }
-                              );
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="h-7 w-48 text-xs">
-                            <SelectValue placeholder="Sélectionner un lead..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {leads.map((lead) => (
-                              <SelectItem key={lead.id} value={lead.id}>
-                                {lead.name} {lead.company && `(${lead.company})`}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          onClick={() => setShowLeadSelector(false)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <Badge 
-                        variant="outline" 
-                        className="cursor-pointer hover:bg-muted"
-                        onClick={() => setShowLeadSelector(true)}
-                      >
-                        <UserPlus className="h-3 w-3 mr-1" />
-                        Lier à un lead
-                      </Badge>
-                    )
-                  )}
-                  
-                  {/* Contact Link - Only show when lead is linked */}
-                  {transcription?.lead && (
-                    transcription?.lead_contact ? (
-                      <Badge variant="outline" className="group">
-                        <Users className="h-3 w-3 mr-1" />
-                        {transcription.lead_contact.name}
-                        {transcription.lead_contact.position && (
-                          <span className="text-muted-foreground ml-1">({transcription.lead_contact.position})</span>
-                        )}
-                        <button 
-                          className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (transcriptionId) {
-                              updateTranscription.mutate({ id: transcriptionId, updates: { lead_contact_id: null } });
-                            }
-                          }}
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ) : showContactSelector ? (
-                      <div className="flex items-center gap-2">
-                        <Select
-                          onValueChange={(contactId) => {
-                            if (transcriptionId) {
-                              updateTranscription.mutate(
-                                { id: transcriptionId, updates: { lead_contact_id: contactId } },
-                                { onSuccess: () => setShowContactSelector(false) }
-                              );
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="h-7 w-48 text-xs">
-                            <SelectValue placeholder="Sélectionner un contact..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {leadContacts.map((contact) => (
-                              <SelectItem key={contact.id} value={contact.id}>
-                                {contact.name} {contact.position && `(${contact.position})`}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          onClick={() => setShowContactSelector(false)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ) : leadContacts.length > 0 ? (
-                      <Badge 
-                        variant="outline" 
-                        className="cursor-pointer hover:bg-muted"
-                        onClick={() => setShowContactSelector(true)}
-                      >
-                        <Users className="h-3 w-3 mr-1" />
-                        Lier à un contact
-                      </Badge>
-                    ) : null
-                  )}
-                  
-                  {/* Project Link */}
-                  {transcription?.project ? (
-                    <Badge variant="secondary" className="cursor-pointer group" onClick={() => {
-                      onOpenChange(false);
-                      navigate(`/cockpit/projects/${transcription.project!.id}`);
-                    }}>
-                      <FolderOpen className="h-3 w-3 mr-1" />
-                      {transcription.project.name}
-                      <button 
-                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (transcriptionId) {
-                            updateTranscription.mutate({ id: transcriptionId, updates: { project_id: null } });
-                          }
-                        }}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ) : (
-                    showProjectSelector ? (
-                      <div className="flex items-center gap-2">
-                        <Select
-                          onValueChange={(projectId) => {
-                            if (transcriptionId) {
-                              updateTranscription.mutate(
-                                { id: transcriptionId, updates: { project_id: projectId } },
-                                { onSuccess: () => setShowProjectSelector(false) }
-                              );
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="h-7 w-48 text-xs">
-                            <SelectValue placeholder="Sélectionner un projet..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(projects ?? []).map((project) => (
-                              <SelectItem key={project.id} value={project.id}>
-                                {project.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          onClick={() => setShowProjectSelector(false)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <Badge 
-                        variant="outline" 
-                        className="cursor-pointer hover:bg-muted"
-                        onClick={() => setShowProjectSelector(true)}
-                      >
-                        <FolderPlus className="h-3 w-3 mr-1" />
-                        Lier à un projet
-                      </Badge>
-                    )
-                  )}
-                  
-                  {/* Solution Link */}
-                  {transcription?.solution ? (
-                    <Badge variant="secondary" className="cursor-pointer group" onClick={() => {
-                      onOpenChange(false);
-                      navigate(`/cockpit/solutions/${transcription.solution!.id}`);
-                    }}>
-                      <Package className="h-3 w-3 mr-1" />
-                      {transcription.solution.title}
-                      <button 
-                        className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (transcriptionId) {
-                            updateTranscription.mutate({ id: transcriptionId, updates: { solution_id: null } });
-                          }
-                        }}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ) : (
-                    showSolutionSelector ? (
-                      <div className="flex items-center gap-2">
-                        <Select
-                          onValueChange={(solutionId) => {
-                            if (transcriptionId) {
-                              updateTranscription.mutate(
-                                { id: transcriptionId, updates: { solution_id: solutionId } },
-                                { onSuccess: () => setShowSolutionSelector(false) }
-                              );
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="h-7 w-48 text-xs">
-                            <SelectValue placeholder="Sélectionner une solution..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {solutions.map((solution) => (
-                              <SelectItem key={solution.id} value={solution.id}>
-                                {solution.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          onClick={() => setShowSolutionSelector(false)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <Badge 
-                        variant="outline" 
-                        className="cursor-pointer hover:bg-muted"
-                        onClick={() => setShowSolutionSelector(true)}
-                      >
-                        <PackagePlus className="h-3 w-3 mr-1" />
-                        Lier à une solution
-                      </Badge>
-                    )
-                  )}
-                  
-                  {/* Meeting Note Link (read only) */}
-                  {transcription?.meeting_note && (
-                    <Badge variant="secondary" className="cursor-pointer" onClick={() => {
-                      onOpenChange(false);
-                      navigate(`/cockpit/agenda`);
-                    }}>
-                      <FileText className="h-3 w-3 mr-1" />
-                      {transcription.meeting_note.objectives 
-                        ? transcription.meeting_note.objectives.substring(0, 30) + '...'
-                        : 'Compte-rendu'
-                      }
-                    </Badge>
-                  )}
-                </div>
+                <TranscriptionEntityLinks
+                  transcriptionId={transcriptionId}
+                  lead={transcription?.lead}
+                  leadContact={transcription?.lead_contact}
+                  project={transcription?.project}
+                  solution={transcription?.solution}
+                  meetingNote={transcription?.meeting_note}
+                  leads={leads}
+                  projects={projects ?? []}
+                  solutions={solutions}
+                  leadContacts={leadContacts}
+                  onUpdate={handleEntityUpdate}
+                  onNavigate={navigate}
+                  onClose={() => onOpenChange(false)}
+                />
 
                 {/* Partners Section */}
                 {transcriptionId && (
@@ -766,116 +308,7 @@ export function TranscriptionDetailSheet({
                     </TabsList>
 
                     <TabsContent value="summary" className="space-y-4 pt-4">
-                      {/* Executive Summary */}
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm flex items-center gap-2">
-                            <Sparkles className="h-4 w-4 text-primary" />
-                            Résumé exécutif
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm">{typeof summary.executive_summary === 'string' ? summary.executive_summary : JSON.stringify(summary.executive_summary)}</p>
-                        </CardContent>
-                      </Card>
-
-                      {/* Key Points */}
-                      {summary.key_points?.length > 0 && (
-                        <Card>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm">Points clés</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <ul className="space-y-1">
-                              {summary.key_points.map((point, i) => (
-                                <li key={i} className="text-sm flex items-start gap-2">
-                                  <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
-                                  {typeof point === 'string' ? point : JSON.stringify(point)}
-                                </li>
-                              ))}
-                            </ul>
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {/* Decisions */}
-                      {summary.decisions?.length > 0 && (
-                        <Card>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm">Décisions prises</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <ul className="space-y-1">
-                              {summary.decisions.map((decision, i) => (
-                                <li key={i} className="text-sm flex items-start gap-2">
-                                  <ArrowRight className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                                  {typeof decision === 'string' ? decision : JSON.stringify(decision)}
-                                </li>
-                              ))}
-                            </ul>
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {/* Risks & Blockers */}
-                      {summary.risks_blockers?.length > 0 && (
-                        <Card>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm flex items-center gap-2 text-amber-600">
-                              <AlertTriangle className="h-4 w-4" />
-                              Risques / Blocages
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <ul className="space-y-1">
-                              {summary.risks_blockers.map((risk, i) => (
-                                <li key={i} className="text-sm">{typeof risk === 'string' ? risk : JSON.stringify(risk)}</li>
-                              ))}
-                            </ul>
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {/* Questions Open */}
-                      {summary.questions_open?.length > 0 && (
-                        <Card>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm flex items-center gap-2">
-                              <HelpCircle className="h-4 w-4" />
-                              Questions en suspens
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <ul className="space-y-1">
-                              {summary.questions_open.map((q, i) => (
-                                <li key={i} className="text-sm">{typeof q === 'string' ? q : JSON.stringify(q)}</li>
-                              ))}
-                            </ul>
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {/* Next Steps */}
-                      {summary.next_steps && (
-                        <Card>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm">Prochaines étapes</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-sm">{typeof summary.next_steps === 'string' ? summary.next_steps : JSON.stringify(summary.next_steps)}</p>
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {/* Quality indicator */}
-                      {summary.extraction_quality && (
-                        <div className="flex items-center justify-between text-sm text-muted-foreground pt-2">
-                          <span>Confiance IA: {summary.extraction_quality.confidence}%</span>
-                          {summary.extraction_quality.uncertainties?.length > 0 && (
-                            <span>{summary.extraction_quality.uncertainties.length} incertitude(s)</span>
-                          )}
-                        </div>
-                      )}
+                      <TranscriptionSummaryTab summary={normalizedSummary} />
                     </TabsContent>
 
                     <TabsContent value="transcript" className="pt-4 space-y-4">
@@ -893,165 +326,13 @@ export function TranscriptionDetailSheet({
                     </TabsContent>
 
                     <TabsContent value="actions" className="space-y-4 pt-4">
-                      {summary.action_items?.length > 0 ? (
-                        <>
-                          {/* Bulk create button */}
-                          <div className="flex justify-end">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                const safeStr = (v: unknown): string => {
-                                  if (v == null) return '';
-                                  if (typeof v === 'string') return v;
-                                  if (typeof v === 'number') return String(v);
-                                  return JSON.stringify(v);
-                                };
-
-                                // Parse due_date string (YYYY-MM-DD or various French formats)
-                                const parseDueDate = (raw: string): string | null => {
-                                  if (!raw) return null;
-                                  // Already ISO format
-                                  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-                                  // Try to extract YYYY-MM-DD from longer ISO string
-                                  const isoMatch = raw.match(/(\d{4}-\d{2}-\d{2})/);
-                                  if (isoMatch) return isoMatch[1];
-                                  // French DD/MM/YYYY
-                                  const frMatch = raw.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-                                  if (frMatch) {
-                                    const [, d, m, y] = frMatch;
-                                    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-                                  }
-                                  return null;
-                                };
-                                
-                                summary.action_items?.forEach((action) => {
-                                  const actionObj = action as Record<string, unknown>;
-                                  const taskText = typeof action === 'string' ? action : safeStr(actionObj.task || actionObj.step || '');
-                                  const priorityRaw = safeStr(actionObj.priority) || 'medium';
-                                  const dueDateParsed = parseDueDate(safeStr(actionObj.due_date || actionObj.due));
-                                  
-                                  if (taskText) {
-                                    createTask.mutate({
-                                      title: taskText.slice(0, 200),
-                                      task_type: 'follow_up',
-                                      priority: (['low', 'medium', 'high'].includes(priorityRaw) ? priorityRaw : 'medium') as 'low' | 'medium' | 'high',
-                                      lead_id: transcription?.lead_id || null,
-                                      project_id: transcription?.project_id || null,
-                                      due_date: dueDateParsed,
-                                      ai_generated: true,
-                                      ai_metadata: { source: 'transcription', transcription_id: transcriptionId },
-                                    });
-                                  }
-                                });
-                                toast.success(`${summary.action_items?.length || 0} tâches créées`);
-                              }}
-                            >
-                              <ListTodo className="h-4 w-4 mr-2" />
-                              Créer toutes les tâches
-                            </Button>
-                          </div>
-
-                          {summary.action_items.map((action, i) => {
-                            // Safe string converter - prevents rendering objects as React children
-                            const safeStr = (v: unknown): string => {
-                              if (v == null) return '';
-                              if (typeof v === 'string') return v;
-                              if (typeof v === 'number') return String(v);
-                              if (v instanceof Date) return v.toISOString();
-                              if (typeof v === 'object') return JSON.stringify(v);
-                              return String(v);
-                            };
-
-                            // Parse due_date string (YYYY-MM-DD or various French formats)
-                            const parseDueDate = (raw: string): string | null => {
-                              if (!raw) return null;
-                              if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-                              const isoMatch = raw.match(/(\d{4}-\d{2}-\d{2})/);
-                              if (isoMatch) return isoMatch[1];
-                              const frMatch = raw.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-                              if (frMatch) {
-                                const [, d, m, y] = frMatch;
-                                return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-                              }
-                              return null;
-                            };
-
-                            // Handle different LLM schemas: { task, owner, due_date } or { step, owner, due }
-                            const actionObj = action as Record<string, unknown>;
-                            const taskText = typeof action === 'string' ? action : safeStr(actionObj.task || actionObj.step || '');
-                            const ownerText = typeof action === 'object' ? safeStr(actionObj.owner) : '';
-                            const dueText = typeof action === 'object' ? safeStr(actionObj.due_date || actionObj.due) : '';
-                            const dueDateParsed = parseDueDate(dueText);
-                            const priorityRaw = typeof action === 'object' ? safeStr(actionObj.priority) : 'medium';
-                            const priorityText = priorityRaw || 'medium';
-                            const categoryRaw = typeof action === 'object' ? safeStr(actionObj.category) : '';
-
-                            if (!taskText) return null;
-
-                            return (
-                              <Card key={i}>
-                                <CardContent className="p-4">
-                                  <div className="flex items-start justify-between gap-4">
-                                    <div className="flex-1">
-                                      <p className="font-medium text-sm">{taskText}</p>
-                                      <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-muted-foreground">
-                                        {ownerText && <span className="flex items-center gap-1"><User className="h-3 w-3" /> {ownerText}</span>}
-                                        {dueText && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {dueText}</span>}
-                                        {categoryRaw && (
-                                          <Badge variant="outline" className="text-xs h-5">
-                                            {categoryRaw}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <Badge variant={
-                                        priorityText === 'high' ? 'destructive' :
-                                        priorityText === 'medium' ? 'default' : 'secondary'
-                                      }>
-                                        {priorityText}
-                                      </Badge>
-                                      <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        className="h-8 w-8"
-                                        disabled={creatingTaskIndex === i}
-                                        onClick={() => {
-                                          setCreatingTaskIndex(i);
-                                          createTask.mutate({
-                                            title: taskText.slice(0, 200),
-                                            task_type: 'follow_up',
-                                            priority: (['low', 'medium', 'high'].includes(priorityText) ? priorityText : 'medium') as 'low' | 'medium' | 'high',
-                                            lead_id: transcription?.lead_id || null,
-                                            project_id: transcription?.project_id || null,
-                                            due_date: dueDateParsed,
-                                            ai_generated: true,
-                                            ai_metadata: { source: 'transcription', transcription_id: transcriptionId },
-                                          }, {
-                                            onSettled: () => setCreatingTaskIndex(null),
-                                          });
-                                        }}
-                                        title="Créer une tâche"
-                                      >
-                                        {creatingTaskIndex === i ? (
-                                          <Loader2 className="h-4 w-4 animate-spin" />
-                                        ) : (
-                                          <ListTodo className="h-4 w-4" />
-                                        )}
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            );
-                          })}
-                        </>
-                      ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <p>Aucune action identifiée</p>
-                        </div>
-                      )}
+                      <TranscriptionActionsTab
+                        actionItems={normalizedSummary.action_items}
+                        transcriptionId={transcriptionId}
+                        leadId={transcription?.lead_id}
+                        projectId={transcription?.project_id}
+                        onCreateTask={(task) => createTask.mutate(task)}
+                      />
                     </TabsContent>
                   </Tabs>
                 ) : transcription?.status === 'error' ? (
@@ -1074,7 +355,6 @@ export function TranscriptionDetailSheet({
                             {(transcription.ai_metadata as any)?.last_error || 'Une erreur est survenue'}
                           </p>
                           <Button onClick={handleRetry}>
-                            <RefreshCw className="h-4 w-4 mr-2" />
                             Réessayer
                           </Button>
                         </>
@@ -1100,7 +380,6 @@ export function TranscriptionDetailSheet({
 
           {/* Footer */}
           <div className="px-6 py-4 border-t bg-background space-y-2">
-            {/* Email button only visible when transcription is done */}
             {transcription?.status === 'done' && (
               <Button
                 variant="outline"
@@ -1142,133 +421,16 @@ export function TranscriptionDetailSheet({
       </AlertDialog>
 
       {/* Email Generation Dialog */}
-      <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Rédiger un email de suivi
-            </DialogTitle>
-            <DialogDescription>
-              {transcription?.lead 
-                ? `Email de suivi pour ${transcription.lead.name}${transcription.lead.company ? ` (${transcription.lead.company})` : ''}`
-                : 'Générez un email de suivi basé sur la transcription'}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {/* Email Type Selector */}
-            <div className="space-y-2">
-              <Label>Type d'email</Label>
-              <Select value={emailType} onValueChange={(v: any) => setEmailType(v)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="post_meeting">
-                    Post-RDV - Suivi après la réunion
-                  </SelectItem>
-                  <SelectItem value="followup">
-                    Relance - Suite aux discussions
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Generate Button */}
-            {!generatedEmail && (
-              <Button 
-                onClick={handleGenerateEmail} 
-                disabled={isGeneratingEmail}
-                className="w-full"
-              >
-                {isGeneratingEmail ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Génération en cours...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Générer l'email
-                  </>
-                )}
-              </Button>
-            )}
-
-            {/* Generated Email Preview */}
-            {generatedEmail && (
-              <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
-                {/* Subject */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">Objet</Label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2"
-                      onClick={() => handleCopyToClipboard(generatedEmail.subject, 'subject')}
-                    >
-                      {copiedField === 'subject' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                    </Button>
-                  </div>
-                  <p className="font-medium text-sm">{generatedEmail.subject}</p>
-                </div>
-
-                <Separator />
-
-                {/* Body */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs text-muted-foreground">Corps de l'email</Label>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2"
-                      onClick={() => handleCopyToClipboard(
-                        `${generatedEmail.greeting}\n\n${generatedEmail.body.replace(/<[^>]*>/g, '')}\n\n${generatedEmail.signature}`,
-                        'body'
-                      )}
-                    >
-                      {copiedField === 'body' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                    </Button>
-                  </div>
-                  <div className="bg-background rounded p-3 text-sm space-y-3">
-                    <p>{generatedEmail.greeting}</p>
-                    <div dangerouslySetInnerHTML={{ __html: generatedEmail.body }} />
-                    <p className="text-muted-foreground whitespace-pre-line">{generatedEmail.signature}</p>
-                  </div>
-                </div>
-
-                {/* CTA Info */}
-                {generatedEmail.cta && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span className="font-medium">CTA suggéré :</span>
-                    <Badge variant="secondary">{generatedEmail.cta}</Badge>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <DialogFooter className="gap-2">
-            {generatedEmail && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => setGeneratedEmail(null)}
-                >
-                  Régénérer
-                </Button>
-                <Button onClick={handleOpenMailClient}>
-                  <Send className="h-4 w-4 mr-2" />
-                  Ouvrir dans email
-                </Button>
-              </>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <TranscriptionEmailDialog
+        open={showEmailDialog}
+        onOpenChange={setShowEmailDialog}
+        transcriptionId={transcriptionId}
+        leadId={transcription?.lead?.id}
+        leadName={transcription?.lead?.name}
+        leadCompany={transcription?.lead?.company}
+        leadEmail={transcription?.lead?.email}
+        summary={summary}
+      />
     </>
   );
 }
