@@ -155,7 +155,7 @@ export function AIGenerationModal({
             summary: transcription.summary.executive_summary,
             keyPoints: transcription.summary.key_points,
             decisions: transcription.summary.decisions,
-            nextSteps: transcription.summary.next_steps,
+            actionItems: transcription.summary.action_items,
           };
         }
       }
