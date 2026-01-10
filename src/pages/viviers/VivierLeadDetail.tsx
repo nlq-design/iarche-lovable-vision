@@ -17,7 +17,7 @@ import LogoArc from '@/components/ui/LogoArc';
 import type { Vivier } from '@/hooks/viviers/useViviers';
 import { VIVIER_STATUSES } from '@/hooks/viviers/useViviers';
 
-// Generate slug from vivier data
+// Generate slug from vivier data - uses full ID for guaranteed uniqueness
 export function generateVivierSlug(vivier: Vivier): string {
   const parts: string[] = [];
   
@@ -26,17 +26,13 @@ export function generateVivierSlug(vivier: Vivier): string {
     parts.push(vivier.company_name);
   } else if (vivier.contact_name) {
     parts.push(vivier.contact_name);
-  } else if (vivier.contact_last_name) {
-    parts.push(vivier.contact_last_name);
+  } else if (vivier.email) {
+    // Use email prefix if no name
+    parts.push(vivier.email.split('@')[0]);
   }
   
-  // Add city for uniqueness
-  if (vivier.city) {
-    parts.push(vivier.city);
-  }
-  
-  // Add ID suffix for guaranteed uniqueness
-  parts.push(vivier.id.substring(0, 8));
+  // Add full ID for guaranteed uniqueness (1 vivier = 1 slug)
+  parts.push(vivier.id);
   
   return parts
     .join('-')
@@ -48,6 +44,30 @@ export function generateVivierSlug(vivier: Vivier): string {
     .replace(/^-|-$/g, ''); // Trim dashes
 }
 
+// Extract ID from slug (last 36 characters = UUID)
+function extractIdFromSlug(slug: string): string | null {
+  if (!slug) return null;
+  
+  // UUID is 36 chars (8-4-4-4-12 with dashes)
+  // Try to find UUID pattern at the end
+  const uuidMatch = slug.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+  if (uuidMatch) {
+    return uuidMatch[1];
+  }
+  
+  // Fallback: take last segment after last dash that looks like start of UUID
+  const segments = slug.split('-');
+  if (segments.length >= 5) {
+    // Reconstruct UUID from last 5 segments
+    const potentialUuid = segments.slice(-5).join('-');
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(potentialUuid)) {
+      return potentialUuid;
+    }
+  }
+  
+  return null;
+}
+
 export default function VivierLeadDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -56,21 +76,21 @@ export default function VivierLeadDetail() {
   const [formData, setFormData] = useState<Partial<Vivier>>({});
   const [isEditing, setIsEditing] = useState(false);
 
-  // Fetch vivier by slug (extract ID from end of slug)
+  // Fetch vivier by slug (extract full UUID from slug)
   const { data: vivier, isLoading, error } = useQuery({
     queryKey: ['vivier-by-slug', slug],
     queryFn: async () => {
       if (!slug) return null;
       
-      // Extract ID from slug (last 8 characters)
-      const idPrefix = slug.split('-').pop();
+      // Extract full UUID from slug
+      const id = extractIdFromSlug(slug);
       
-      if (!idPrefix) return null;
+      if (!id) return null;
       
       const { data, error } = await supabase
         .from('viviers')
         .select('*')
-        .ilike('id', `${idPrefix}%`)
+        .eq('id', id)
         .maybeSingle();
 
       if (error) throw error;
