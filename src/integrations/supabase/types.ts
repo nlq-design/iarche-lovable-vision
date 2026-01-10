@@ -4998,6 +4998,13 @@ export type Database = {
           valid: boolean
         }[]
       }
+      viviers_lookup_existing_by_email: {
+        Args: { emails: string[] }
+        Returns: {
+          email: string
+          id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "cockpit_user" | "cockpit_admin"
