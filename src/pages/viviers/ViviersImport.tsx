@@ -96,6 +96,58 @@ export default function ViviersImport() {
     });
   };
 
+  // ========== DATA TYPE VALIDATORS ==========
+  // Check if value looks like a valid postal code (French: 5 digits)
+  const isValidPostalCode = (value: string): boolean => {
+    if (!value) return false;
+    const cleaned = value.replace(/\s/g, '');
+    return /^\d{5}$/.test(cleaned);
+  };
+
+  // Check if value looks like a date (contains month names or date patterns)
+  const looksLikeDate = (value: string): boolean => {
+    if (!value) return false;
+    const lower = value.toLowerCase();
+    const frenchMonths = ['janvier', 'février', 'fevrier', 'mars', 'avril', 'mai', 'juin', 
+                          'juillet', 'août', 'aout', 'septembre', 'octobre', 'novembre', 'décembre', 'decembre'];
+    return frenchMonths.some(m => lower.includes(m)) || /^\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}$/.test(value);
+  };
+
+  // Check if value looks like a SIRET/SIREN (9-14 digits)
+  const looksLikeSiret = (value: string): boolean => {
+    if (!value) return false;
+    const cleaned = value.replace(/\s/g, '');
+    return /^\d{9,14}$/.test(cleaned);
+  };
+
+  // Check if value looks like a phone number
+  const looksLikePhone = (value: string): boolean => {
+    if (!value) return false;
+    const digitsOnly = value.replace(/\D/g, '');
+    return digitsOnly.length >= 9 && digitsOnly.length <= 14;
+  };
+
+  // Check if value looks like an email
+  const looksLikeEmail = (value: string): boolean => {
+    if (!value) return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+  };
+
+  // Check if value is mostly text (letters, not digits/dates)
+  const isMostlyText = (value: string): boolean => {
+    if (!value) return false;
+    const letterCount = (value.match(/[a-zA-ZÀ-ÿ]/g) || []).length;
+    const totalChars = value.replace(/\s/g, '').length;
+    return totalChars > 0 && letterCount / totalChars > 0.5;
+  };
+
+  // Check if value looks like a NAF/APE code (4 digits + 1 letter or similar)
+  const looksLikeNafCode = (value: string): boolean => {
+    if (!value) return false;
+    const cleaned = value.replace(/\s/g, '').toUpperCase();
+    return /^\d{2,4}[A-Z]?$/.test(cleaned) || /^\d{4}[A-Z]$/.test(cleaned);
+  };
+
   // Parse Excel serial date to ISO string
   const parseExcelDate = (value: string | number | undefined): string | null => {
     if (!value) return null;
@@ -119,26 +171,32 @@ export default function ViviersImport() {
     return null;
   };
 
-  // Safe integer parser - returns null if out of range or invalid
-  const safeParseInt = (value: string | undefined, maxValue: number = 2147483647): number | null => {
-    if (!value) return null;
-    const trimmed = String(value).trim().replace(/\s/g, '');
-    if (!trimmed) return null;
-    
-    // Only parse if it looks like a reasonable number (not a SIRET/SIREN)
-    if (trimmed.length > 9) return null; // Too long to be employee count
-    
-    const num = parseInt(trimmed, 10);
-    if (isNaN(num) || num < 0 || num > maxValue) return null;
-    return num;
-  };
-
-  // Safe string cleaner - ensures text doesn't exceed limits
-  const safeString = (value: string | undefined, maxLength: number = 500): string | null => {
+  // Safe string with length limit
+  const safeString = (value: string | undefined, maxLength: number): string | null => {
     if (!value) return null;
     const trimmed = String(value).trim();
     if (!trimmed) return null;
     return trimmed.substring(0, maxLength);
+  };
+
+  // Safe email validation
+  const safeEmail = (value: string | undefined): string | null => {
+    if (!value) return null;
+    const trimmed = String(value).trim().toLowerCase();
+    if (!trimmed) return null;
+    // Basic email regex
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return null;
+    return trimmed;
+  };
+
+  // Safe integer parsing (avoid overflow)
+  const safeParseInt = (value: string | undefined): number | null => {
+    if (!value) return null;
+    const trimmed = String(value).trim();
+    if (!trimmed) return null;
+    const num = parseInt(trimmed.replace(/\s/g, ''), 10);
+    if (isNaN(num) || num > 999999999) return null; // Max 9 digits to avoid overflow
+    return num;
   };
 
   // Safe SIRET/SIREN - keeps as string, validates format
@@ -151,22 +209,33 @@ export default function ViviersImport() {
     return cleaned;
   };
 
-  // Safe email - validates email format
-  const safeEmail = (value: string | undefined): string | null => {
-    if (!value) return null;
-    const trimmed = String(value).trim().toLowerCase();
-    if (!trimmed) return null;
-    // Basic email regex validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmed)) return null;
-    return trimmed;
-  };
-
   // Helper to find first non-empty value from multiple possible column names
   const findValue = (row: Record<string, string>, ...keys: string[]): string => {
     for (const key of keys) {
       const val = row[key]?.trim();
       if (val) return val;
+    }
+    return '';
+  };
+
+  // Smart find: find value with type validation
+  const findValueValidated = (
+    row: Record<string, string>, 
+    validator: (val: string) => boolean, 
+    ...keys: string[]
+  ): string => {
+    for (const key of keys) {
+      const val = row[key]?.trim();
+      if (val && validator(val)) return val;
+    }
+    return '';
+  };
+
+  // Smart fallback: scan ALL columns to find a value matching a pattern
+  const findByPattern = (row: Record<string, string>, validator: (val: string) => boolean): string => {
+    for (const [, value] of Object.entries(row)) {
+      const val = value?.trim();
+      if (val && validator(val)) return val;
     }
     return '';
   };
@@ -188,6 +257,7 @@ export default function ViviersImport() {
   };
 
   // Map row data to Vivier model with robust parsing - handles ALL CSV column variations regardless of order
+  // ENHANCED: Adds data validation to prevent mis-mapping (e.g., date in postal_code field)
   const mapToVivier = (row: Record<string, string>): Partial<Vivier> => {
     // ========== COMPANY NAME ==========
     // Possible columns: NOM, COMPANY, COMPANY_NAME, ENTREPRISE, SOCIETE, RAISON_SOCIALE, DENOMINATION
@@ -198,37 +268,57 @@ export default function ViviersImport() {
 
     // ========== SIRET / SIREN ==========
     // Possible columns: SIRET, SIREN, N_SIRET, NUMERO_SIRET
-    const siretRaw = findValue(row, 'siret', 'n_siret', 'numero_siret', 'num_siret');
+    // ENHANCED: Validate that value looks like SIRET, else search all columns
+    let siretRaw = findValueValidated(row, looksLikeSiret, 
+      'siret', 'n_siret', 'numero_siret', 'num_siret'
+    );
+    // Fallback: if column "siret" doesn't contain valid SIRET, scan all values for 14-digit number
+    if (!siretRaw) {
+      siretRaw = findByPattern(row, looksLikeSiret);
+    }
     const siret = safeSiret(siretRaw);
-    const sirenRaw = findValue(row, 'siren', 'n_siren', 'numero_siren');
+    
+    let sirenRaw = findValueValidated(row, looksLikeSiret, 'siren', 'n_siren', 'numero_siren');
     const siren = siret ? siret.substring(0, 9) : safeSiret(sirenRaw);
 
     // ========== NAF / APE CODE ==========
     // Possible columns: NAF, APE, NAF_APE, CODE_NAF, CODE_APE, NAF_REV2
-    const nafCode = findValue(row, 
+    // ENHANCED: Validate format (4 digits + letter)
+    let nafCode = findValueValidated(row, looksLikeNafCode,
       'naf_ape', 'naf', 'ape', 'code_naf', 'code_ape', 
-      'naf_rev2', 'activite_principale'
+      'naf_rev2', 'activite_principale', 'code_activite'
     );
+    // Fallback: scan all columns for NAF code pattern
+    if (!nafCode) {
+      nafCode = findByPattern(row, looksLikeNafCode);
+    }
 
     // ========== LEGAL FORM ==========
-    // Possible columns: FORME_JURIDIQUE, LEGAL_FORM, STATUT_JURIDIQUE, FORME_JURID, NATURE_JURIDIQUE
-    const legalForm = findValue(row, 
+    // Possible columns: FORME_JURIDIQUE, LEGAL_FORM, STATUT_JURIDIQUE
+    // Must be text, not a number or date
+    const legalFormRaw = findValue(row, 
       'forme_juridique', 'legal_form', 'statut_juridique', 
-      'forme_jurid', 'nature_juridique', 'type_societe'
+      'forme_jurid', 'nature_juridique', 'type_societe', 'forme_jur'
     );
+    // Only accept if it's mostly text (avoid mismatched columns)
+    const legalForm = (legalFormRaw && (isMostlyText(legalFormRaw) || /^(SARL|SAS|EURL|SA|EI|EIRL|SNC|SCI|SASU|GIE)$/i.test(legalFormRaw))) 
+      ? legalFormRaw 
+      : null;
 
     // ========== ACTIVITY / INDUSTRY ==========
-    // Possible columns: ACTIVITE, ACTIVITY, INDUSTRY, SECTEUR, SECTEUR_ACTIVITE, LIBELLE_NAF
+    // Possible columns: ACTIVITE, ACTIVITY, INDUSTRY, SECTEUR
     const industry = findValue(row, 
       'activite', 'activity', 'industry', 'secteur', 
-      'secteur_activite', 'libelle_naf', 'libelle_activite', 'metier'
+      'secteur_activite', 'libelle_naf', 'libelle_activite', 'metier',
+      'objet_social', 'description_activite'
     );
 
     // ========== CONTACT / DIRIGEANT ==========
-    // Possible columns: DIRIGEANT, CONTACT, CONTACT_NAME, NOM_CONTACT, RESPONSABLE, GERANT
+    // Possible columns: DIRIGEANT, CONTACT, CONTACT_NAME
     const dirigeant = findValue(row, 
       'dirigeant', 'contact', 'contact_name', 'nom_contact', 
-      'responsable', 'gerant', 'representant', 'interlocuteur'
+      'responsable', 'gerant', 'representant', 'interlocuteur',
+      'nom_dirigeant', 'representant_legal'
     );
     
     // Parse first/last name from dirigeant if present
@@ -245,51 +335,63 @@ export default function ViviersImport() {
     lastName = findValue(row, 'nom_contact', 'lastname', 'last_name', 'contact_nom', 'nom_dirigeant') || lastName;
 
     // ========== CONTACT POSITION ==========
-    // Possible columns: POSITION, POSTE, JOB_TITLE, TITLE, FONCTION, QUALITE
     const contactPosition = findValue(row, 
       'position', 'poste', 'job_title', 'title', 
       'fonction', 'qualite', 'role'
     );
 
     // ========== EMAIL ==========
-    // Possible columns: EMAIL, E_MAIL, MAIL, ADRESSE_E_MAIL, ADRESSE_MAIL, COURRIEL
-    const emailRaw = findValue(row, 
+    // ENHANCED: First try named columns, then scan for email pattern
+    let emailRaw = findValueValidated(row, looksLikeEmail,
       'email', 'e_mail', 'mail', 'adresse_e_mail', 
       'adresse_mail', 'courriel', 'adresse_email', 'contact_email'
     );
+    // Fallback: scan all columns for email pattern
+    if (!emailRaw) {
+      emailRaw = findByPattern(row, looksLikeEmail);
+    }
     const email = safeEmail(emailRaw);
 
     // ========== PHONE ==========
-    // Possible columns: TELEPHONE, PHONE, TEL, NUMERO_TELEPHONE, MOBILE, PORTABLE
-    const phoneRaw = findValue(row, 
+    // ENHANCED: Validate that value looks like a phone number
+    let phoneRaw = findValueValidated(row, looksLikePhone,
       'telephone', 'phone', 'tel', 'numero_telephone', 
       'mobile', 'portable', 'tel_fixe', 'tel_mobile', 'contact_tel'
     );
+    // Fallback: scan all columns for phone pattern (but avoid SIRET)
+    if (!phoneRaw) {
+      phoneRaw = findByPattern(row, (val) => looksLikePhone(val) && !looksLikeSiret(val));
+    }
     const phone = normalizePhone(phoneRaw);
 
     // ========== ADDRESS ==========
-    // Possible columns: ADRESSE, ADDRESS, ADRESSE_1, ADRESSE_COMPLETE, RUE, VOIE
     const address = findValue(row, 
       'adresse', 'address', 'adresse_1', 'adresse_complete', 
-      'rue', 'voie', 'adresse_siege', 'adresse_postale'
+      'rue', 'voie', 'adresse_siege', 'adresse_postale',
+      'adresse_ligne1', 'num_voie'
     );
 
     // ========== POSTAL CODE ==========
-    // Possible columns: CODE_POSTAL, POSTAL_CODE, CP, ZIP, CODE_POST
-    const postalCode = findValue(row, 
+    // ENHANCED: Must be valid postal code (5 digits for France)
+    let postalCode = findValueValidated(row, isValidPostalCode,
       'code_postal', 'postal_code', 'cp', 'zip', 
       'code_post', 'code_postale'
     );
+    // Fallback: scan for 5-digit postal code pattern
+    if (!postalCode) {
+      postalCode = findByPattern(row, isValidPostalCode);
+    }
 
     // ========== CITY ==========
-    // Possible columns: VILLE, CITY, COMMUNE, LOCALITE
-    const city = findValue(row, 
+    // Must be text, not date or number
+    const cityRaw = findValue(row, 
       'ville', 'city', 'commune', 'localite', 
       'ville_siege', 'lieu'
     );
+    // Validate: city should be text, not a date or number
+    const city = (cityRaw && isMostlyText(cityRaw) && !looksLikeDate(cityRaw)) ? cityRaw : null;
 
     // ========== REGION / DEPARTMENT ==========
-    // Possible columns: DEPARTEMENT, DEPT, REGION, DEP
     const region = findValue(row, 
       'departement', 'dept', 'region', 'dep', 
       'nom_departement', 'libelle_departement'
@@ -299,7 +401,6 @@ export default function ViviersImport() {
     const country = findValue(row, 'pays', 'country') || 'France';
 
     // ========== WEBSITE ==========
-    // Possible columns: WEBSITE, SITE, URL, SITE_WEB, SITE_INTERNET
     const website = findValue(row, 
       'website', 'site', 'url', 'site_web', 
       'site_internet', 'web'
@@ -311,14 +412,13 @@ export default function ViviersImport() {
     );
 
     // ========== EMPLOYEE COUNT / COMPANY SIZE ==========
-    // Possible columns: EFFECTIF, EFFECTIF_MIN, EFFECTIF_MAX, EMPLOYEES, NB_SALARIES, TRANCHE_EFFECTIF
     const effectifMin = findValue(row, 'effectif_min', 'effectif_minimum');
     const effectifMax = findValue(row, 'effectif_max', 'effectif_maximum');
     const effectif = findValue(row, 'effectif', 'employees', 'nb_salaries', 'nombre_salaries', 'salaries');
     const trancheEffectif = findValue(row, 'tranche_effectif', 'taille_entreprise', 'taille');
     
     let companySize = '';
-    if (trancheEffectif) {
+    if (trancheEffectif && isMostlyText(trancheEffectif)) {
       companySize = trancheEffectif;
     } else if (effectifMin && effectifMax) {
       companySize = `${effectifMin}-${effectifMax}`;
@@ -326,22 +426,36 @@ export default function ViviersImport() {
       companySize = effectif || effectifMin || effectifMax || '';
     }
     
-    const employeeCount = safeParseInt(effectifMin) || safeParseInt(effectif);
+    // Only parse if it looks like a number (not SIRET)
+    const employeeCount = (effectifMin && !looksLikeSiret(effectifMin)) 
+      ? safeParseInt(effectifMin) 
+      : (effectif && !looksLikeSiret(effectif)) 
+        ? safeParseInt(effectif) 
+        : null;
 
     // ========== REVENUE / CA ==========
-    // Possible columns: CA, CHIFFRE_AFFAIRES, REVENUE, CA_ANNUEL
     const caRaw = findValue(row, 
       'ca', 'chiffre_affaires', 'revenue', 'ca_annuel', 
-      'chiffre_d_affaires', 'revenus'
+      'chiffre_d_affaires', 'revenus', 'resultat'
     );
-    const revenueRange = caRaw ? safeString(caRaw.replace(/[€\s]/g, '').trim(), 50) : null;
+    // Only accept if it looks like a number (avoid text)
+    const revenueRange = (caRaw && /\d/.test(caRaw)) 
+      ? safeString(caRaw.replace(/[€\s]/g, '').trim(), 50) 
+      : null;
 
     // ========== CREATION DATE ==========
-    // Possible columns: IMMATRICULATION, CREATION_DATE, DATE_CREATION, DATE_IMMATRICULATION
-    const creationDateRaw = findValue(row, 
+    // ENHANCED: First look in named columns, then scan for date patterns
+    let creationDateRaw = findValueValidated(row, looksLikeDate,
       'immatriculation', 'creation_date', 'date_creation', 
       'date_immatriculation', 'annee_creation', 'date_debut_activite'
     );
+    // Also check columns that might contain date even without proper header
+    if (!creationDateRaw) {
+      creationDateRaw = findValue(row, 
+        'immatriculation', 'creation_date', 'date_creation', 
+        'date_immatriculation', 'annee_creation', 'date_debut_activite'
+      );
+    }
     
     let creationDate = parseExcelDate(creationDateRaw);
     if (!creationDate && creationDateRaw) {
@@ -357,6 +471,31 @@ export default function ViviersImport() {
         const month = frenchMonths[monthName.toLowerCase()];
         if (month) {
           creationDate = `${year}-${month}-${day.padStart(2, '0')}`;
+        }
+      }
+    }
+    
+    // ENHANCED: If postal_code got a date, try to recover it
+    const postalCodeFromHeader = row['code_postal'] || row['cp'] || row['postal_code'];
+    if (postalCodeFromHeader && looksLikeDate(postalCodeFromHeader) && !creationDate) {
+      // The date was put in postal_code field by mistake, use it as creation date
+      const recoveredDate = parseExcelDate(postalCodeFromHeader);
+      if (recoveredDate) {
+        creationDate = recoveredDate;
+      } else {
+        // Try French format
+        const frenchMonths: Record<string, string> = {
+          'janvier': '01', 'février': '02', 'fevrier': '02', 'mars': '03', 'avril': '04',
+          'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08', 'aout': '08',
+          'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12', 'decembre': '12'
+        };
+        const match = postalCodeFromHeader.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/);
+        if (match) {
+          const [, day, monthName, year] = match;
+          const month = frenchMonths[monthName.toLowerCase()];
+          if (month) {
+            creationDate = `${year}-${month}-${day.padStart(2, '0')}`;
+          }
         }
       }
     }
