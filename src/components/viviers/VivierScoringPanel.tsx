@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Play, Loader2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Sparkles, Play, Loader2, CheckCircle, XCircle, AlertTriangle, Square } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -23,10 +25,20 @@ interface VivierScoringPanelProps {
 
 export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPanelProps) {
   const [isScoring, setIsScoring] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState<ScoringResult | null>(null);
+  const [autoContinue, setAutoContinue] = useState(false);
+  const [totalScored, setTotalScored] = useState(0);
+  const [totalErrors, setTotalErrors] = useState(0);
   const [batchSize, setBatchSize] = useState(100);
+  const [currentBatch, setCurrentBatch] = useState(0);
+  const stopRef = useRef(false);
   const queryClient = useQueryClient();
+
+  // Initial count when auto-continue started
+  const initialPendingRef = useRef(0);
+
+  const progress = initialPendingRef.current > 0 
+    ? Math.round(((initialPendingRef.current - pendingCount + totalScored) / initialPendingRef.current) * 100)
+    : 0;
 
   const handleStartScoring = async () => {
     if (pendingCount === 0) {
@@ -34,9 +46,9 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
       return;
     }
 
+    stopRef.current = false;
     setIsScoring(true);
-    setProgress(0);
-    setResult(null);
+    setCurrentBatch(prev => prev + 1);
 
     try {
       const { data, error } = await supabase.functions.invoke('score-viviers-batch', {
@@ -45,86 +57,63 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
 
       if (error) throw error;
 
-      setResult(data as ScoringResult);
-      setProgress(100);
+      const result = data as ScoringResult;
+      setTotalScored(prev => prev + result.scored);
+      setTotalErrors(prev => prev + result.errors);
 
-      if (data.scored > 0) {
-        toast.success(`${data.scored} leads scorés avec succès`);
+      if (result.scored > 0) {
+        toast.success(`Batch ${currentBatch + 1}: ${result.scored} leads scorés`);
         queryClient.invalidateQueries({ queryKey: ['viviers'] });
         queryClient.invalidateQueries({ queryKey: ['viviers-stats'] });
+        queryClient.invalidateQueries({ queryKey: ['viviers-scoring-stats'] });
         onComplete?.();
-      } else if (data.errors > 0) {
-        toast.warning(`Scoring terminé avec ${data.errors} erreurs`);
+      } else if (result.errors > 0) {
+        toast.warning(`Batch terminé avec ${result.errors} erreurs`);
+      } else {
+        toast.info('Aucun lead à scorer dans ce batch');
+        setAutoContinue(false);
       }
     } catch (err) {
       console.error('Scoring error:', err);
       toast.error(err instanceof Error ? err.message : 'Erreur de scoring');
+      setAutoContinue(false);
     } finally {
       setIsScoring(false);
     }
   };
 
-  const handleScoreAll = async () => {
-    if (pendingCount === 0) {
-      toast.info('Aucun lead à scorer');
-      return;
+  // Auto-continue effect
+  useEffect(() => {
+    if (autoContinue && !isScoring && pendingCount > 0 && !stopRef.current) {
+      const timer = setTimeout(() => {
+        handleStartScoring();
+      }, 500);
+      return () => clearTimeout(timer);
     }
+  }, [autoContinue, isScoring, pendingCount]);
 
-    const confirmed = window.confirm(
-      `Vous êtes sur le point de scorer ${pendingCount.toLocaleString('fr-FR')} leads. Cette opération peut prendre plusieurs minutes. Continuer ?`
-    );
-
-    if (!confirmed) return;
-
-    setIsScoring(true);
-    setProgress(0);
-    setResult(null);
-
-    let totalScored = 0;
-    let totalErrors = 0;
-    const batchesToProcess = Math.ceil(pendingCount / batchSize);
-
-    try {
-      for (let i = 0; i < batchesToProcess; i++) {
-        const { data, error } = await supabase.functions.invoke('score-viviers-batch', {
-          body: { batch_size: batchSize },
-        });
-
-        if (error) {
-          console.error(`Batch ${i + 1} error:`, error);
-          totalErrors += batchSize;
-        } else {
-          totalScored += data.scored || 0;
-          totalErrors += data.errors || 0;
-        }
-
-        setProgress(Math.round(((i + 1) / batchesToProcess) * 100));
-
-        // Reduced delay between batches
-        if (i < batchesToProcess - 1) {
-          await new Promise(resolve => setTimeout(resolve, 300));
-        }
-      }
-
-      setResult({
-        success: true,
-        batch_id: 'all',
-        scored: totalScored,
-        errors: totalErrors,
-        details: [],
-      });
-
-      queryClient.invalidateQueries({ queryKey: ['viviers'] });
-      queryClient.invalidateQueries({ queryKey: ['viviers-stats'] });
-      
-      toast.success(`Scoring terminé : ${totalScored} scorés, ${totalErrors} erreurs`);
-      onComplete?.();
-    } catch (err) {
-      console.error('Full scoring error:', err);
-      toast.error(err instanceof Error ? err.message : 'Erreur de scoring');
-    } finally {
-      setIsScoring(false);
+  const handleToggleAutoContinue = (checked: boolean) => {
+    if (checked) {
+      initialPendingRef.current = pendingCount;
+      setTotalScored(0);
+      setTotalErrors(0);
+      setCurrentBatch(0);
     }
+    setAutoContinue(checked);
+    stopRef.current = !checked;
+  };
+
+  const handleStop = () => {
+    stopRef.current = true;
+    setAutoContinue(false);
+    toast.info('Scoring arrêté');
+  };
+
+  const handleReset = () => {
+    setTotalScored(0);
+    setTotalErrors(0);
+    setCurrentBatch(0);
+    initialPendingRef.current = 0;
   };
 
   return (
@@ -150,60 +139,70 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
           </Badge>
         </div>
 
-        {/* Progress */}
-        {isScoring && (
-          <div className="space-y-2">
+        {/* Progress - show when auto-continue is on or has scored */}
+        {(autoContinue || totalScored > 0) && (
+          <div className="space-y-2 p-3 bg-muted/30 rounded-lg">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Progression</span>
+              <span className="text-muted-foreground">
+                Session: {totalScored.toLocaleString('fr-FR')} scorés
+                {totalErrors > 0 && <span className="text-destructive ml-2">({totalErrors} erreurs)</span>}
+              </span>
               <span className="font-medium">{progress}%</span>
             </div>
             <Progress value={progress} className="h-2" />
+            <p className="text-xs text-muted-foreground">
+              Batch #{currentBatch} • {batchSize} leads/batch
+            </p>
           </div>
         )}
 
-        {/* Results */}
-        {result && (
-          <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
-            {result.errors === 0 ? (
-              <CheckCircle className="w-5 h-5 text-green-500" />
-            ) : result.scored > result.errors ? (
-              <AlertTriangle className="w-5 h-5 text-yellow-500" />
-            ) : (
-              <XCircle className="w-5 h-5 text-red-500" />
-            )}
-            <div className="flex-1">
-              <p className="text-sm font-medium">
-                {result.scored} scorés, {result.errors} erreurs
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Batch ID: {result.batch_id.slice(0, 8)}...
-              </p>
-            </div>
+        {/* Auto-continue toggle */}
+        <div className="flex items-center justify-between p-3 border rounded-lg">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="auto-continue"
+              checked={autoContinue}
+              onCheckedChange={handleToggleAutoContinue}
+              disabled={pendingCount === 0}
+            />
+            <Label htmlFor="auto-continue" className="cursor-pointer">
+              Mode continu
+            </Label>
           </div>
-        )}
+          <p className="text-xs text-muted-foreground">
+            Score automatiquement jusqu'à arrêt manuel
+          </p>
+        </div>
 
         {/* Actions */}
         <div className="flex gap-2">
-          <Button
-            onClick={handleStartScoring}
-            disabled={isScoring || pendingCount === 0}
-            className="flex-1"
-          >
-            {isScoring ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Play className="w-4 h-4 mr-2" />
-            )}
-            Scorer {batchSize} leads
-          </Button>
-          
-          {pendingCount > batchSize && (
+          {autoContinue ? (
             <Button
-              variant="outline"
-              onClick={handleScoreAll}
-              disabled={isScoring || pendingCount === 0}
+              onClick={handleStop}
+              variant="destructive"
+              className="flex-1"
             >
-              Tout scorer
+              <Square className="w-4 h-4 mr-2" />
+              Arrêter
+            </Button>
+          ) : (
+            <Button
+              onClick={handleStartScoring}
+              disabled={isScoring || pendingCount === 0}
+              className="flex-1"
+            >
+              {isScoring ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4 mr-2" />
+              )}
+              Scorer {batchSize} leads
+            </Button>
+          )}
+          
+          {totalScored > 0 && !autoContinue && (
+            <Button variant="outline" onClick={handleReset}>
+              Reset
             </Button>
           )}
         </div>
@@ -220,12 +219,20 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
                   ? 'bg-primary text-primary-foreground' 
                   : 'bg-muted hover:bg-muted/80'
               }`}
-              disabled={isScoring}
+              disabled={isScoring || autoContinue}
             >
               {size}
             </button>
           ))}
         </div>
+
+        {/* Estimation */}
+        {pendingCount > 0 && (
+          <p className="text-xs text-muted-foreground text-center">
+            Estimation : ~{Math.ceil(pendingCount / batchSize / 60)} min pour {pendingCount.toLocaleString('fr-FR')} leads
+            ({Math.ceil(pendingCount / batchSize)} batches)
+          </p>
+        )}
       </CardContent>
     </Card>
   );
