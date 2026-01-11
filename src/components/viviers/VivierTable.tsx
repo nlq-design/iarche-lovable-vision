@@ -21,6 +21,7 @@ export interface ColumnFilters {
   status: string;
 }
 
+// Empty filters default value
 export const emptyColumnFilters: ColumnFilters = {
   company: '',
   contact: '',
