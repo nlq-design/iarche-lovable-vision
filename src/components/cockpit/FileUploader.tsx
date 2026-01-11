@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Upload, X, File, FileText, Image, Clipboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { compressImage } from '@/lib/imageCompression';
 
 interface FileUploaderProps {
   value: File | File[] | null;
@@ -12,6 +13,7 @@ interface FileUploaderProps {
   className?: string;
   label?: string;
   enablePaste?: boolean;
+  compressImages?: boolean; // Enable image compression
 }
 
 const getFileIcon = (file: File) => {
@@ -34,7 +36,8 @@ export const FileUploader = ({
   maxSize = 50,
   className,
   label,
-  enablePaste = true
+  enablePaste = true,
+  compressImages = true
 }: FileUploaderProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,11 +45,19 @@ export const FileUploader = ({
 
   const files = value ? (Array.isArray(value) ? value : [value]) : [];
 
-  const handleFiles = (fileList: FileList | File[] | null) => {
+  const handleFiles = async (fileList: FileList | File[] | null) => {
     if (!fileList) return;
     
-    const newFiles = Array.isArray(fileList) ? fileList : Array.from(fileList);
+    let newFiles = Array.isArray(fileList) ? fileList : Array.from(fileList);
     const maxBytes = maxSize * 1024 * 1024;
+    
+    // Compress images if enabled
+    if (compressImages) {
+      newFiles = await Promise.all(
+        newFiles.map(f => compressImage(f, { maxSizeMB: 1, quality: 0.8 }))
+      );
+    }
+    
     const validFiles = newFiles.filter(f => f.size <= maxBytes);
     
     if (multiple) {
