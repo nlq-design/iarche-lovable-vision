@@ -41,6 +41,8 @@ export function useVivierLists() {
       if (error) throw error;
       return data as VivierList[];
     },
+    staleTime: 60 * 1000, // Cache for 1 minute
+    refetchOnWindowFocus: false, // Prevent refetch on tab focus
   });
 
   const createList = useMutation({
@@ -214,5 +216,7 @@ export function useVivierList(id: string | null) {
       return data as VivierList | null;
     },
     enabled: !!id,
+    staleTime: 60 * 1000, // Cache for 1 minute
+    refetchOnWindowFocus: false, // Prevent refetch on tab focus
   });
 }
