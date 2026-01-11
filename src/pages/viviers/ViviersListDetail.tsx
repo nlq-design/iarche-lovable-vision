@@ -60,8 +60,8 @@ export default function ViviersListDetail() {
         // IMPORTANT: do NOT request an exact count here (it can timeout on large datasets).
         // We use the synced list.lead_count for pagination/count display instead.
         .select('id, company_name, contact_name, email, phone, city, industry, cold_score, status')
-        // Include NULL statuses ("not promoted" should include unset status)
-        .or('status.neq.promoted,status.is.null');
+        // Exclude only promoted leads (use .not() to avoid OR logic issues with other filters)
+        .not('status', 'eq', 'promoted');
 
       // Apply filters based on list type
       if (list.list_type === 'static' && list.static_vivier_ids?.length > 0) {
