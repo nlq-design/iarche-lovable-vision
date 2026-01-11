@@ -3,7 +3,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Mail, MapPin, Phone, ExternalLink } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Mail, MapPin, Phone, ExternalLink } from 'lucide-react';
 import type { Vivier } from '@/hooks/viviers/useViviers';
 import { VIVIER_STATUSES } from '@/hooks/viviers/useViviers';
 
@@ -18,7 +19,11 @@ interface VivierTableProps {
   totalPages: number;
   totalCount: number;
   onPageChange: (page: number) => void;
+  pageSize?: number;
+  onPageSizeChange?: (size: number) => void;
 }
+
+const PAGE_SIZE_OPTIONS = [25, 50, 100, 200];
 
 export function VivierTable({
   viviers,
@@ -31,6 +36,8 @@ export function VivierTable({
   totalPages,
   totalCount,
   onPageChange,
+  pageSize = 50,
+  onPageSizeChange,
 }: VivierTableProps) {
   const allSelected = viviers.length > 0 && viviers.every(v => selectedIds.has(v.id));
   const someSelected = viviers.some(v => selectedIds.has(v.id)) && !allSelected;
@@ -205,29 +212,98 @@ export function VivierTable({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-1">
-        <p className="text-sm text-muted-foreground">
-          {totalCount.toLocaleString('fr-FR')} lead{totalCount > 1 ? 's' : ''} au total
-        </p>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-1">
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-muted-foreground">
+            {totalCount.toLocaleString('fr-FR')} lead{totalCount > 1 ? 's' : ''}
+          </p>
+          {onPageSizeChange && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Afficher</span>
+              <Select value={pageSize.toString()} onValueChange={(v) => onPageSizeChange(Number(v))}>
+                <SelectTrigger className="h-8 w-[70px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <SelectItem key={size} value={size.toString()}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-sm text-muted-foreground">par page</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-1">
+          {/* First page */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(1)}
+            disabled={page <= 1}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </Button>
+          
+          {/* Previous page */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => onPageChange(page - 1)}
             disabled={page <= 1}
+            className="h-8 w-8 p-0"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm text-muted-foreground min-w-[100px] text-center">
-            Page {page} / {totalPages || 1}
-          </span>
+          
+          {/* Page selector */}
+          <div className="flex items-center gap-1.5 mx-1">
+            <span className="text-sm text-muted-foreground">Page</span>
+            <Select value={page.toString()} onValueChange={(v) => onPageChange(Number(v))}>
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {Array.from({ length: Math.min(totalPages || 1, 100) }, (_, i) => i + 1).map((p) => (
+                  <SelectItem key={p} value={p.toString()}>
+                    {p}
+                  </SelectItem>
+                ))}
+                {totalPages > 100 && (
+                  <>
+                    <SelectItem value="..." disabled>...</SelectItem>
+                    <SelectItem value={totalPages.toString()}>{totalPages}</SelectItem>
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-muted-foreground">/ {totalPages || 1}</span>
+          </div>
+          
+          {/* Next page */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => onPageChange(page + 1)}
             disabled={page >= totalPages}
+            className="h-8 w-8 p-0"
           >
             <ChevronRight className="h-4 w-4" />
+          </Button>
+          
+          {/* Last page */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(totalPages)}
+            disabled={page >= totalPages}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronsRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
