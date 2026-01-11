@@ -5,10 +5,10 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Play, Loader2, CheckCircle, XCircle, AlertTriangle, Square } from 'lucide-react';
+import { Sparkles, Play, Loader2, Square } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 
 interface ScoringResult {
   success: boolean;
@@ -26,19 +26,55 @@ interface VivierScoringPanelProps {
 export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPanelProps) {
   const [isScoring, setIsScoring] = useState(false);
   const [autoContinue, setAutoContinue] = useState(false);
-  const [totalScored, setTotalScored] = useState(0);
-  const [totalErrors, setTotalErrors] = useState(0);
+  const [sessionErrors, setSessionErrors] = useState(0);
   const [batchSize, setBatchSize] = useState(100);
   const [currentBatch, setCurrentBatch] = useState(0);
   const stopRef = useRef(false);
   const queryClient = useQueryClient();
 
-  // Initial count when auto-continue started
+  // Initial scored count when session started
+  const sessionStartScoredRef = useRef(0);
   const initialPendingRef = useRef(0);
 
+  // Real-time scored count from database - polls every 2s when active
+  const { data: scoredCount = 0 } = useQuery({
+    queryKey: ['viviers-scored-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('viviers')
+        .select('*', { count: 'exact', head: true })
+        .not('ai_score', 'is', null);
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    refetchInterval: autoContinue || isScoring ? 2000 : false,
+    staleTime: 1000,
+  });
+
+  // Total viviers count
+  const { data: totalCount = 0 } = useQuery({
+    queryKey: ['viviers-total-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('viviers')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw error;
+      return count || 0;
+    },
+    staleTime: 30000,
+  });
+
+  // Session scored = current scored - scored when session started
+  const sessionScored = Math.max(0, scoredCount - sessionStartScoredRef.current);
+  
+  // Progress based on initial pending count at session start
   const progress = initialPendingRef.current > 0 
-    ? Math.round(((initialPendingRef.current - pendingCount + totalScored) / initialPendingRef.current) * 100)
-    : 0;
+    ? Math.min(100, Math.round((sessionScored / initialPendingRef.current) * 100))
+    : totalCount > 0 
+      ? Math.round((scoredCount / totalCount) * 100)
+      : 0;
 
   const handleStartScoring = async () => {
     if (pendingCount === 0) {
@@ -58,14 +94,17 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
       if (error) throw error;
 
       const result = data as ScoringResult;
-      setTotalScored(prev => prev + result.scored);
-      setTotalErrors(prev => prev + result.errors);
+      
+      if (result.errors > 0) {
+        setSessionErrors(prev => prev + result.errors);
+      }
 
       if (result.scored > 0) {
         toast.success(`Batch ${currentBatch + 1}: ${result.scored} leads scorés`);
         queryClient.invalidateQueries({ queryKey: ['viviers'] });
         queryClient.invalidateQueries({ queryKey: ['viviers-stats'] });
         queryClient.invalidateQueries({ queryKey: ['viviers-scoring-stats'] });
+        queryClient.invalidateQueries({ queryKey: ['viviers-scored-count'] });
         onComplete?.();
       } else if (result.errors > 0) {
         toast.warning(`Batch terminé avec ${result.errors} erreurs`);
@@ -94,9 +133,10 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
 
   const handleToggleAutoContinue = (checked: boolean) => {
     if (checked) {
+      // Store starting values for progress calculation
+      sessionStartScoredRef.current = scoredCount;
       initialPendingRef.current = pendingCount;
-      setTotalScored(0);
-      setTotalErrors(0);
+      setSessionErrors(0);
       setCurrentBatch(0);
     }
     setAutoContinue(checked);
@@ -110,11 +150,14 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
   };
 
   const handleReset = () => {
-    setTotalScored(0);
-    setTotalErrors(0);
-    setCurrentBatch(0);
+    sessionStartScoredRef.current = scoredCount;
     initialPendingRef.current = 0;
+    setSessionErrors(0);
+    setCurrentBatch(0);
   };
+
+  // Show progress section when active or has session data
+  const showProgress = autoContinue || sessionScored > 0 || currentBatch > 0;
 
   return (
     <Card>
@@ -128,31 +171,35 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Stats */}
-        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-          <div>
-            <p className="text-sm text-muted-foreground">Leads en attente de scoring</p>
-            <p className="text-2xl font-bold">{pendingCount.toLocaleString('fr-FR')}</p>
+        {/* Global stats */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-3 bg-muted/50 rounded-lg">
+            <p className="text-xs text-muted-foreground">En attente</p>
+            <p className="text-xl font-bold">{pendingCount.toLocaleString('fr-FR')}</p>
           </div>
-          <Badge variant={pendingCount > 0 ? 'default' : 'secondary'}>
-            {pendingCount > 0 ? 'À scorer' : 'Tous scorés'}
-          </Badge>
+          <div className="p-3 bg-muted/50 rounded-lg">
+            <p className="text-xs text-muted-foreground">Déjà scorés</p>
+            <p className="text-xl font-bold text-primary">{scoredCount.toLocaleString('fr-FR')}</p>
+          </div>
         </div>
 
-        {/* Progress - show when auto-continue is on or has scored */}
-        {(autoContinue || totalScored > 0) && (
-          <div className="space-y-2 p-3 bg-muted/30 rounded-lg">
+        {/* Session Progress */}
+        {showProgress && (
+          <div className="space-y-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                Session: {totalScored.toLocaleString('fr-FR')} scorés
-                {totalErrors > 0 && <span className="text-destructive ml-2">({totalErrors} erreurs)</span>}
+              <span className="font-medium">
+                Session: {sessionScored.toLocaleString('fr-FR')} scorés
+                {sessionErrors > 0 && (
+                  <span className="text-destructive ml-2">({sessionErrors} erreurs)</span>
+                )}
               </span>
-              <span className="font-medium">{progress}%</span>
+              <span className="font-bold text-primary">{progress}%</span>
             </div>
-            <Progress value={progress} className="h-2" />
-            <p className="text-xs text-muted-foreground">
-              Batch #{currentBatch} • {batchSize} leads/batch
-            </p>
+            <Progress value={progress} className="h-3" />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Batch #{currentBatch} • {batchSize} leads/batch</span>
+              {autoContinue && <span className="text-primary animate-pulse">En cours...</span>}
+            </div>
           </div>
         )}
 
@@ -200,7 +247,7 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
             </Button>
           )}
           
-          {totalScored > 0 && !autoContinue && (
+          {sessionScored > 0 && !autoContinue && (
             <Button variant="outline" onClick={handleReset}>
               Reset
             </Button>
@@ -229,7 +276,7 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
         {/* Estimation */}
         {pendingCount > 0 && (
           <p className="text-xs text-muted-foreground text-center">
-            Estimation : ~{Math.ceil(pendingCount / batchSize / 60)} min pour {pendingCount.toLocaleString('fr-FR')} leads
+            Estimation : ~{Math.ceil(pendingCount / batchSize / 6)} min pour {pendingCount.toLocaleString('fr-FR')} leads
             ({Math.ceil(pendingCount / batchSize)} batches)
           </p>
         )}
