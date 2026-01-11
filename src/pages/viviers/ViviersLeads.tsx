@@ -190,8 +190,9 @@ export default function ViviersLeads() {
   const handleDeleteAll = async () => {
     setIsDeletingAll(true);
     try {
-      // For large datasets, we need to delete in batches to avoid timeout
-      const BATCH_SIZE = 1000;
+      // Batch size reduced to avoid URL length limits (UUIDs are 36 chars each)
+      // ~100 UUIDs = ~4KB URL which is safe
+      const BATCH_SIZE = 100;
       let deletedCount = 0;
       let hasMore = true;
       
