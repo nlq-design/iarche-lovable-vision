@@ -321,6 +321,7 @@ export default function VivierCampaignDetail() {
           campaignName={campaign.name}
           subject={campaign.subject || ''}
           htmlContent={campaign.html_content || campaign.body_html || ''}
+          theme={(campaign.template_theme as EmailTheme) || 'bleu-nuit'}
           senderName={campaign.sender_name || undefined}
           senderEmail={campaign.sender_email || undefined}
         />

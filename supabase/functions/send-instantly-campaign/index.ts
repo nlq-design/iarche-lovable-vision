@@ -8,6 +8,107 @@ const corsHeaders = {
 
 const INSTANTLY_API_URL = 'https://api.instantly.ai/api/v2';
 
+// Email template colors and themes
+const EMAIL_COLORS = {
+  bleuNuit: '#1A2B4A',
+  terracotta: '#B04A32',
+  blancCasse: '#FAF9F7',
+  white: '#FFFFFF',
+  grey: '#6B7280',
+  lightGrey: '#E5E7EB',
+};
+
+const EMAIL_THEMES: Record<string, {
+  headerBg: string;
+  headerText: string;
+  bodyBg: string;
+  bodyText: string;
+  footerBg: string;
+  accent: string;
+  logoSrc: string;
+}> = {
+  'bleu-nuit': {
+    headerBg: `linear-gradient(135deg, ${EMAIL_COLORS.bleuNuit} 0%, ${EMAIL_COLORS.terracotta} 100%)`,
+    headerText: EMAIL_COLORS.white,
+    bodyBg: EMAIL_COLORS.white,
+    bodyText: '#374151',
+    footerBg: EMAIL_COLORS.blancCasse,
+    accent: EMAIL_COLORS.terracotta,
+    logoSrc: 'https://iarche.fr/logos/iarche-white.svg',
+  },
+  'blanc-casse': {
+    headerBg: EMAIL_COLORS.blancCasse,
+    headerText: EMAIL_COLORS.bleuNuit,
+    bodyBg: EMAIL_COLORS.white,
+    bodyText: '#374151',
+    footerBg: EMAIL_COLORS.blancCasse,
+    accent: EMAIL_COLORS.terracotta,
+    logoSrc: 'https://iarche.fr/logos/iarche-dark.svg',
+  },
+  'terracotta': {
+    headerBg: EMAIL_COLORS.terracotta,
+    headerText: EMAIL_COLORS.white,
+    bodyBg: EMAIL_COLORS.white,
+    bodyText: '#374151',
+    footerBg: EMAIL_COLORS.blancCasse,
+    accent: EMAIL_COLORS.bleuNuit,
+    logoSrc: 'https://iarche.fr/logos/iarche-white.svg',
+  },
+  'minimaliste': {
+    headerBg: EMAIL_COLORS.white,
+    headerText: EMAIL_COLORS.bleuNuit,
+    bodyBg: EMAIL_COLORS.white,
+    bodyText: '#374151',
+    footerBg: EMAIL_COLORS.white,
+    accent: EMAIL_COLORS.terracotta,
+    logoSrc: 'https://iarche.fr/logos/iarche-dark.svg',
+  },
+};
+
+function generateEmailTemplate(bodyHtml: string, themeKey: string, senderName: string): string {
+  const t = EMAIL_THEMES[themeKey] || EMAIL_THEMES['bleu-nuit'];
+  const headerStyle = t.headerBg.startsWith('linear') 
+    ? `background: ${t.headerBg};` 
+    : `background-color: ${t.headerBg};`;
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+    .container { max-width: 600px; margin: 0 auto; background: ${t.bodyBg}; }
+    .header { ${headerStyle} padding: 32px; text-align: center; }
+    .header img { height: 40px; }
+    .content { padding: 32px; color: ${t.bodyText}; line-height: 1.6; }
+    .content h1, .content h2, .content h3 { color: ${EMAIL_COLORS.bleuNuit}; margin-top: 0; }
+    .content a { color: ${t.accent}; }
+    .button { display: inline-block; background: ${t.accent}; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0; font-weight: 500; }
+    .footer { background: ${t.footerBg}; padding: 24px; text-align: center; font-size: 12px; border-top: 1px solid ${EMAIL_COLORS.lightGrey}; }
+    .footer p { color: ${EMAIL_COLORS.grey}; margin: 8px 0; }
+    .footer a { color: ${t.accent}; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div style="background: #f4f4f4; padding: 20px 0;">
+    <div class="container">
+      <div class="header">
+        <img src="${t.logoSrc}" alt="IArche" />
+      </div>
+      <div class="content">
+        ${bodyHtml}
+      </div>
+      <div class="footer">
+        <p>Envoyé par ${senderName} • IArche</p>
+        <p><a href="{{unsubscribe_url}}">Se désinscrire</a></p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -94,7 +195,12 @@ serve(async (req) => {
         
         // Prepare email sequences with campaign content
         const emailSubject = campaign.subject || campaign.name;
-        const emailBody = campaign.html_content || campaign.body_html || '<p>Contenu de l\'email</p>';
+        const rawBody = campaign.html_content || campaign.body_html || '<p>Contenu de l\'email</p>';
+        
+        // Generate full email template with branding
+        const theme = campaign.template_theme || 'bleu-nuit';
+        const senderName = campaign.sender_name || 'IArche';
+        const fullEmailHtml = generateEmailTemplate(rawBody, theme, senderName);
         
         // Create campaign in Instantly with email sequence
         const createResponse = await fetch(`${INSTANTLY_API_URL}/campaigns`, {
@@ -116,7 +222,7 @@ serve(async (req) => {
                 delay: 0,
                 variants: [{
                   subject: emailSubject,
-                  body: emailBody,
+                  body: fullEmailHtml,
                 }],
               }],
             }],

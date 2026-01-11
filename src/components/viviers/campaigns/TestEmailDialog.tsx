@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Send, X, Plus, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { generateFullEmailHtml, type EmailTheme } from './EmailPreviewRenderer';
 
 interface TestEmailDialogProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface TestEmailDialogProps {
   campaignName: string;
   subject: string;
   htmlContent: string;
+  theme?: EmailTheme;
   senderName?: string;
   senderEmail?: string;
 }
@@ -29,6 +31,7 @@ export function TestEmailDialog({
   campaignName,
   subject,
   htmlContent,
+  theme = 'bleu-nuit',
   senderName = 'IArche',
   senderEmail,
 }: TestEmailDialogProps) {
@@ -72,12 +75,15 @@ export function TestEmailDialog({
     setResult(null);
 
     try {
+      // Generate full email HTML with theme/header/footer
+      const fullHtmlContent = generateFullEmailHtml(htmlContent, theme, senderName);
+      
       const { data, error } = await supabase.functions.invoke('send-campaign-test', {
         body: {
           campaign_id: campaignId,
           recipients: validRecipients,
           subject,
-          html_content: htmlContent,
+          html_content: fullHtmlContent,
           sender_name: senderName,
           sender_email: senderEmail,
         },
