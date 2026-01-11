@@ -35,10 +35,8 @@ export const emptyColumnFilters: ColumnFilters = {
 
 interface FilterOptions {
   companies: string[];
-  contacts: string[];
   locations: string[];
   industries: string[];
-  sirets: string[];
 }
 
 interface VivierTableProps {
@@ -196,12 +194,10 @@ export function VivierTable({
     label: config.label,
   }));
 
-  // Build options from filterOptions
+  // Build options from filterOptions (only for Entreprise, Localisation, Activité)
   const companyOptions = filterOptions?.companies?.map(c => ({ value: c, label: c })) || [];
-  const contactOptions = filterOptions?.contacts?.map(c => ({ value: c, label: c })) || [];
   const locationOptions = filterOptions?.locations?.map(l => ({ value: l, label: l })) || [];
   const industryOptions = filterOptions?.industries?.map(i => ({ value: i, label: i })) || [];
-  const siretOptions = filterOptions?.sirets?.map(s => ({ value: s, label: s })) || [];
 
   return (
     <div className="space-y-4">
@@ -249,23 +245,8 @@ export function VivierTable({
                     options={companyOptions}
                   />
                 </TableHead>
-                <TableHead className="min-w-[140px]">
-                  <FilterableHeader 
-                    label="Dirigeant" 
-                    value={columnFilters.contact} 
-                    onChange={(v) => updateFilter('contact', v)}
-                    type="select"
-                    options={contactOptions}
-                  />
-                </TableHead>
-                <TableHead className="min-w-[200px]">
-                  <FilterableHeader 
-                    label="Contact" 
-                    value={columnFilters.email} 
-                    onChange={(v) => updateFilter('email', v)}
-                    placeholder="Filtrer email..."
-                  />
-                </TableHead>
+                <TableHead className="min-w-[140px]">Dirigeant</TableHead>
+                <TableHead className="min-w-[200px]">Contact</TableHead>
                 <TableHead className="min-w-[130px]">
                   <FilterableHeader 
                     label="Localisation" 
@@ -284,15 +265,7 @@ export function VivierTable({
                     options={industryOptions}
                   />
                 </TableHead>
-                <TableHead className="min-w-[130px]">
-                  <FilterableHeader 
-                    label="SIRET" 
-                    value={columnFilters.siret} 
-                    onChange={(v) => updateFilter('siret', v)}
-                    type="select"
-                    options={siretOptions}
-                  />
-                </TableHead>
+                <TableHead className="min-w-[130px]">SIRET</TableHead>
                 <TableHead className="w-16 text-center">
                   <FilterableHeader 
                     label="Score" 
