@@ -190,44 +190,68 @@ export default function ViviersLeads() {
   const handleDeleteAll = async () => {
     setIsDeletingAll(true);
     try {
-      let query = supabase.from('viviers').delete();
+      // For large datasets, we need to delete in batches to avoid timeout
+      const BATCH_SIZE = 1000;
+      let deletedCount = 0;
+      let hasMore = true;
       
-      // Apply same filters as the list
-      if (search) {
-        query = query.or(`email.ilike.%${search}%,company_name.ilike.%${search}%,contact_name.ilike.%${search}%`);
+      while (hasMore) {
+        // First, fetch IDs to delete (with same filters as list)
+        let selectQuery = supabase.from('viviers').select('id');
+        
+        // Apply same filters as the list
+        if (search) {
+          selectQuery = selectQuery.or(`email.ilike.%${search}%,company_name.ilike.%${search}%,contact_name.ilike.%${search}%`);
+        }
+        if (status && status !== 'all') {
+          selectQuery = selectQuery.eq('status', status);
+        }
+        if (minScore !== undefined) {
+          selectQuery = selectQuery.gte('cold_score', minScore);
+        }
+        if (maxScore !== undefined) {
+          selectQuery = selectQuery.lte('cold_score', maxScore);
+        }
+        if (city) {
+          selectQuery = selectQuery.ilike('city', `%${city}%`);
+        }
+        if (postalCode) {
+          selectQuery = selectQuery.ilike('postal_code', `${postalCode}%`);
+        }
+        if (industry) {
+          selectQuery = selectQuery.ilike('industry', `%${industry}%`);
+        }
+        
+        // Limit batch size
+        const { data: idsToDelete, error: selectError } = await selectQuery.limit(BATCH_SIZE);
+        
+        if (selectError) throw selectError;
+        
+        if (!idsToDelete || idsToDelete.length === 0) {
+          hasMore = false;
+          break;
+        }
+        
+        // Delete this batch
+        const ids = idsToDelete.map(row => row.id);
+        const { error: deleteError } = await supabase
+          .from('viviers')
+          .delete()
+          .in('id', ids);
+          
+        if (deleteError) throw deleteError;
+        
+        deletedCount += ids.length;
+        
+        // If we got less than BATCH_SIZE, we're done
+        if (idsToDelete.length < BATCH_SIZE) {
+          hasMore = false;
+        }
       }
-      if (status && status !== 'all') {
-        query = query.eq('status', status);
-      }
-      if (minScore !== undefined) {
-        query = query.gte('cold_score', minScore);
-      }
-      if (maxScore !== undefined) {
-        query = query.lte('cold_score', maxScore);
-      }
-      if (city) {
-        query = query.ilike('city', `%${city}%`);
-      }
-      if (postalCode) {
-        query = query.ilike('postal_code', `${postalCode}%`);
-      }
-      if (industry) {
-        query = query.ilike('industry', `%${industry}%`);
-      }
-      
-      // Require at least one condition to prevent accidental full delete
-      const hasFilters = search || (status && status !== 'all') || minScore !== undefined || maxScore !== undefined || city || postalCode || industry;
-      if (!hasFilters) {
-        query = query.neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all if no filters
-      }
-
-      const { error } = await query;
-
-      if (error) throw error;
 
       queryClient.invalidateQueries({ queryKey: ['viviers'] });
       queryClient.invalidateQueries({ queryKey: ['viviers-stats'] });
-      toast.success(`${totalCount} lead${totalCount > 1 ? 's' : ''} supprimé${totalCount > 1 ? 's' : ''}`);
+      toast.success(`${deletedCount} lead${deletedCount > 1 ? 's' : ''} supprimé${deletedCount > 1 ? 's' : ''}`);
       setSelectedIds(new Set());
     } catch (error) {
       toast.error(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
