@@ -1,3 +1,4 @@
+// AdminEmails v2.1
 import { useState, useEffect, Suspense } from 'react';
 import DOMPurify from 'dompurify';
 import { supabase } from '@/integrations/supabase/client';
