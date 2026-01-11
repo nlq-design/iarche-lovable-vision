@@ -90,8 +90,9 @@ export function usePappersVivierEnrich() {
         if (rep.position) updateData.contact_position = rep.position;
       }
 
-      // Store full Pappers data in ai_metadata for reference
-      updateData.ai_metadata = {
+      // Store full Pappers data in raw_data for reference (existing JSONB column)
+      // Note: We don't merge with existing raw_data here to keep it simple
+      updateData.raw_data = {
         pappers_enriched_at: new Date().toISOString(),
         pappers_data: data,
       };
