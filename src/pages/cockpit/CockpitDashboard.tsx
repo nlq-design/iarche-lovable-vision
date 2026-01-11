@@ -1,4 +1,4 @@
-// Cockpit Dashboard v2
+// Cockpit Dashboard v2.1
 import { useState } from 'react';
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
