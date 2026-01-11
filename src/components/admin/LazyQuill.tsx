@@ -1,9 +1,14 @@
 import { lazy, Suspense } from 'react';
 import { EditorSkeleton } from './EditorSkeleton';
-import 'react-quill/dist/quill.snow.css';
 
-// Lazy load React Quill
-const ReactQuillLazy = lazy(() => import('react-quill'));
+// Lazy load React Quill with CSS
+const ReactQuillLazy = lazy(() => 
+  import('react-quill').then(module => {
+    // Import CSS dynamically alongside the component
+    import('react-quill/dist/quill.snow.css');
+    return module;
+  })
+);
 
 interface LazyQuillProps {
   value: string;
