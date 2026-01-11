@@ -151,6 +151,17 @@ export default function ViviersImport() {
     return cleaned;
   };
 
+  // Safe email - validates email format
+  const safeEmail = (value: string | undefined): string | null => {
+    if (!value) return null;
+    const trimmed = String(value).trim().toLowerCase();
+    if (!trimmed) return null;
+    // Basic email regex validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmed)) return null;
+    return trimmed;
+  };
+
   // Map row data to Vivier model with robust parsing - handles all CSV column variations
   const mapToVivier = (row: Record<string, string>): Partial<Vivier> => {
     // Handle DIRIGEANT field - extract first/last name
@@ -179,7 +190,9 @@ export default function ViviersImport() {
     ) : '';
     
     // Handle email with various column names (ADRESSE E-MAIL, ADRESSE_E-MAIL, ADRESSE_E_MAIL)
-    const email = row.adresse_e_mail || row.adresse_e_mail || row.email || row.e_mail || row.mail || '';
+    // Apply email validation to reject non-email values
+    const emailRaw = row.adresse_e_mail || row.adresse_e_mail || row.email || row.e_mail || row.mail || '';
+    const email = safeEmail(emailRaw) || '';
     
     // Handle activity/industry (ACTIVITE)
     const industry = row.activite || row.activity || row.industry || row.secteur || '';
