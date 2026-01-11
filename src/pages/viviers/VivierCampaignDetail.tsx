@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { useVivierCampaignDetail } from '@/hooks/useVivierCampaignDetail';
@@ -7,6 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CampaignEmailEditor, type EmailTheme } from '@/components/viviers/campaigns/CampaignEmailEditor';
+import { ImportRecipientsDialog } from '@/components/viviers/campaigns/ImportRecipientsDialog';
+import { TestEmailDialog } from '@/components/viviers/campaigns/TestEmailDialog';
 import { 
   ArrowLeft, 
   Mail, 
@@ -25,7 +29,8 @@ import {
   Play,
   Pause,
   RefreshCw,
-  Plus
+  Plus,
+  Save
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -52,7 +57,48 @@ const RECIPIENT_STATUS_CONFIG: Record<string, { label: string; variant: 'default
 export default function VivierCampaignDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { campaign, recipients, stats, isLoading, isError } = useVivierCampaignDetail(slug);
+  const { campaign, recipients, stats, isLoading, isError, updateCampaign, addRecipients } = useVivierCampaignDetail(slug);
+
+  // State for dialogs
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showTestDialog, setShowTestDialog] = useState(false);
+  
+  // State for inline editing
+  const [editingContent, setEditingContent] = useState(false);
+  const [draftSubject, setDraftSubject] = useState('');
+  const [draftBody, setDraftBody] = useState('');
+  const [draftTheme, setDraftTheme] = useState<EmailTheme>('bleu-nuit');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Initialize draft content from campaign
+  const initializeEditor = () => {
+    if (campaign) {
+      setDraftSubject(campaign.subject || '');
+      setDraftBody(campaign.html_content || campaign.body_html || '');
+      setDraftTheme((campaign.template_theme as EmailTheme) || 'bleu-nuit');
+      setEditingContent(true);
+    }
+  };
+
+  // Save content changes
+  const saveContent = async () => {
+    setIsSaving(true);
+    try {
+      await updateCampaign.mutateAsync({
+        subject: draftSubject,
+        html_content: draftBody,
+        template_theme: draftTheme,
+      });
+      setEditingContent(false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Import recipients handler
+  const handleImportRecipients = async (newRecipients: Array<{ email: string; name?: string; company?: string }>) => {
+    return addRecipients.mutateAsync(newRecipients);
+  };
 
   if (isLoading) {
     return (
@@ -126,16 +172,34 @@ export default function VivierCampaignDetail() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate(`/viviers/campaigns/${slug}/edit`)}>
+            <Button variant="outline" onClick={initializeEditor}>
               <Pencil className="w-4 h-4 mr-2" />
               Modifier
             </Button>
-            <Button>
+            <Button onClick={() => setShowTestDialog(true)}>
               <Send className="w-4 h-4 mr-2" />
               Envoyer test
             </Button>
           </div>
         </div>
+
+        {/* Import & Test Dialogs */}
+        <ImportRecipientsDialog
+          open={showImportDialog}
+          onOpenChange={setShowImportDialog}
+          onImport={handleImportRecipients}
+          existingEmails={recipients.map(r => r.email)}
+        />
+        <TestEmailDialog
+          open={showTestDialog}
+          onOpenChange={setShowTestDialog}
+          campaignId={campaign.id}
+          campaignName={campaign.name}
+          subject={campaign.subject || ''}
+          htmlContent={campaign.html_content || campaign.body_html || ''}
+          senderName={campaign.sender_name || undefined}
+          senderEmail={campaign.sender_email || undefined}
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -258,7 +322,7 @@ export default function VivierCampaignDetail() {
                     <CardTitle>Liste des recipients</CardTitle>
                     <CardDescription>{stats.total} contacts dans cette campagne</CardDescription>
                   </div>
-                  <Button>
+                  <Button onClick={() => setShowImportDialog(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Importer
                   </Button>
