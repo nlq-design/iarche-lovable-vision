@@ -67,15 +67,19 @@ interface UseViviersOptions {
   maxScore?: number;
   city?: string;
   postalCode?: string;
+  department?: string;
   industry?: string;
+  companySize?: string;
+  hasEmail?: boolean;
+  hasPhone?: boolean;
 }
 
 export function useViviers(options: UseViviersOptions = {}) {
-  const { page = 1, pageSize = 25, search, status, minScore, maxScore, city, postalCode, industry } = options;
+  const { page = 1, pageSize = 25, search, status, minScore, maxScore, city, postalCode, department, industry, companySize, hasEmail, hasPhone } = options;
   const queryClient = useQueryClient();
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['viviers', page, pageSize, search, status, minScore, maxScore, city, postalCode, industry],
+    queryKey: ['viviers', page, pageSize, search, status, minScore, maxScore, city, postalCode, department, industry, companySize, hasEmail, hasPhone],
     queryFn: async () => {
       // Select only columns needed for the list view (performance optimization)
       let query = supabase
@@ -116,9 +120,29 @@ export function useViviers(options: UseViviersOptions = {}) {
         query = query.ilike('postal_code', `${postalCode}%`);
       }
 
+      // Department filter (first 2-3 digits of postal code)
+      if (department) {
+        query = query.ilike('postal_code', `${department}%`);
+      }
+
       // Industry filter
       if (industry) {
         query = query.ilike('industry', `%${industry}%`);
+      }
+
+      // Company size filter
+      if (companySize) {
+        query = query.eq('company_size', companySize);
+      }
+
+      // Has email filter
+      if (hasEmail === true) {
+        query = query.not('email', 'is', null).neq('email', '');
+      }
+
+      // Has phone filter
+      if (hasPhone === true) {
+        query = query.not('phone', 'is', null).neq('phone', '');
       }
 
       const { data, error, count } = await query;

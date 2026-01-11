@@ -1,18 +1,33 @@
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { VivierLayout } from '@/components/viviers/VivierLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Mail, 
-  Plus, 
-  Play,
-  BarChart3,
-  Send,
-  CheckCircle2
-} from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Mail, Plus, Play, BarChart3, Send, CheckCircle2, MoreHorizontal, Pause, Trash2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import LogoArc from '@/components/ui/LogoArc';
+import { useVivierCampaigns, CAMPAIGN_STATUSES } from '@/hooks/viviers/useVivierCampaigns';
+import { CreateCampaignDialog } from '@/components/viviers/CreateCampaignDialog';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export default function ViviersCampaigns() {
+  const [searchParams] = useSearchParams();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const { campaigns, stats, isLoading, deleteCampaign, updateStatus } = useVivierCampaigns();
+
+  const preselectedListId = searchParams.get('listId') || undefined;
+  const preselectedListName = searchParams.get('listName') || undefined;
+
+  // Auto-open dialog if coming from a list
+  useEffect(() => {
+    if (preselectedListId) {
+      setShowCreateDialog(true);
+    }
+  }, [preselectedListId]);
+
   return (
     <VivierLayout>
       <div className="p-6 space-y-6">
@@ -25,7 +40,7 @@ export default function ViviersCampaigns() {
               Gérez vos campagnes d'emailing vers les leads du vivier
             </p>
           </div>
-          <Button>
+          <Button onClick={() => setShowCreateDialog(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Nouvelle campagne
           </Button>
@@ -38,92 +53,124 @@ export default function ViviersCampaigns() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Campagnes actives</p>
-                  <p className="text-2xl font-bold">0</p>
+                  <p className="text-2xl font-bold">{stats.active}</p>
                 </div>
-                <Play className="h-8 w-8 text-success" />
+                <Play className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Emails envoyés</p>
-                  <p className="text-2xl font-bold">0</p>
+                  <p className="text-2xl font-bold">{stats.totalSent.toLocaleString('fr-FR')}</p>
                 </div>
                 <Send className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Taux d'ouverture</p>
-                  <p className="text-2xl font-bold">--%</p>
+                  <p className="text-2xl font-bold">{stats.avgOpenRate > 0 ? `${stats.avgOpenRate.toFixed(1)}%` : '--%'}</p>
                 </div>
                 <BarChart3 className="h-8 w-8 text-accent" />
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Réponses</p>
-                  <p className="text-2xl font-bold">0</p>
+                  <p className="text-2xl font-bold">{stats.totalReplies}</p>
                 </div>
-                <CheckCircle2 className="h-8 w-8 text-success" />
+                <CheckCircle2 className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Domains Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Domaines d'envoi</CardTitle>
-            <CardDescription>
-              État des domaines email configurés pour l'envoi
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-amber-500" />
-                  <span className="font-medium">Domaines satellites</span>
+        {/* Campaigns List */}
+        {campaigns.length > 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Vos campagnes</CardTitle>
+              <CardDescription>{campaigns.length} campagne(s)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[400px]">
+                <div className="space-y-2">
+                  {campaigns.map((campaign) => (
+                    <div key={campaign.id} className="flex items-center gap-4 p-4 rounded-lg border hover:bg-muted/50 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium truncate">{campaign.name}</h4>
+                          <Badge variant="outline" className="shrink-0">
+                            <div className={`w-2 h-2 rounded-full mr-1.5 ${CAMPAIGN_STATUSES[campaign.status].color}`} />
+                            {CAMPAIGN_STATUSES[campaign.status].label}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {campaign.total_recipients?.toLocaleString('fr-FR') || 0} destinataires • 
+                          {campaign.sent_count || 0} envoyés • 
+                          {campaign.created_at && formatDistanceToNow(new Date(campaign.created_at), { addSuffix: true, locale: fr })}
+                        </p>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {campaign.status === 'draft' && (
+                            <DropdownMenuItem onClick={() => updateStatus.mutate({ id: campaign.id, status: 'running' })}>
+                              <Play className="w-4 h-4 mr-2" /> Lancer
+                            </DropdownMenuItem>
+                          )}
+                          {campaign.status === 'running' && (
+                            <DropdownMenuItem onClick={() => updateStatus.mutate({ id: campaign.id, status: 'paused' })}>
+                              <Pause className="w-4 h-4 mr-2" /> Pause
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={() => deleteCampaign.mutate(campaign.id)} className="text-destructive">
+                            <Trash2 className="w-4 h-4 mr-2" /> Supprimer
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  ))}
                 </div>
-                <Badge variant="outline">15 en warm-up (J15)</Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-success" />
-                  <span className="font-medium">Domaines Brevo</span>
-                </div>
-                <Badge variant="outline" className="text-success border-success/30">2 actifs</Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-dashed">
+            <CardContent className="py-16 text-center">
+              <Mail className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Aucune campagne créée</h3>
+              <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+                Créez votre première campagne email pour contacter les leads du vivier.
+              </p>
+              <Button onClick={() => setShowCreateDialog(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Créer une campagne
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Empty State */}
-        <Card className="border-dashed">
-          <CardContent className="py-16 text-center">
-            <Mail className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Aucune campagne créée</h3>
-            <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-              Créez votre première campagne email pour contacter les leads du vivier.
-            </p>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Créer une campagne
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Create Dialog */}
+        <CreateCampaignDialog
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
+          preselectedListId={preselectedListId}
+          preselectedListName={preselectedListName}
+        />
       </div>
     </VivierLayout>
   );

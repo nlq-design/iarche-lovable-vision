@@ -22,7 +22,11 @@ export interface FilterCriteria {
   maxScore?: number;
   city?: string;
   postalCode?: string;
+  department?: string;
   industry?: string;
+  companySize?: string;
+  hasEmail?: boolean;
+  hasPhone?: boolean;
 }
 
 interface SaveToListDialogProps {
