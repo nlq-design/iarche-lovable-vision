@@ -70,7 +70,8 @@ export default function ViviersListDetail() {
           query = query.or(`company_name.ilike.%${String(criteria.search)}%,contact_name.ilike.%${String(criteria.search)}%`);
         }
         if (criteria.city) {
-          query = query.eq('city', String(criteria.city));
+          // Use ilike for case-insensitive city matching
+          query = query.ilike('city', String(criteria.city));
         }
         if (criteria.postalCode) {
           query = query.ilike('postal_code', `${String(criteria.postalCode)}%`);
@@ -130,7 +131,7 @@ export default function ViviersListDetail() {
       query = query.in('id', list.static_vivier_ids);
     } else if (list?.list_type === 'dynamic' && list.criteria_json) {
       const criteria = list.criteria_json as Record<string, unknown>;
-      if (criteria.city) query = query.eq('city', String(criteria.city));
+      if (criteria.city) query = query.ilike('city', String(criteria.city));
       if (criteria.postalCode) query = query.ilike('postal_code', `${String(criteria.postalCode)}%`);
       if (criteria.industry) query = query.ilike('industry', `%${String(criteria.industry)}%`);
       if (criteria.minScore !== undefined) query = query.gte('cold_score', Number(criteria.minScore));
