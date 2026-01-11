@@ -132,10 +132,12 @@ export default function ViviersListDetail() {
       query = query.in('id', list.static_vivier_ids);
     } else if (list?.list_type === 'dynamic' && list.criteria_json) {
       const criteria = list.criteria_json as Record<string, unknown>;
-      if (criteria.city) query = query.ilike('city', String(criteria.city));
+      // Use wildcards for case-insensitive matching (data may be uppercase)
+      if (criteria.city) query = query.ilike('city', `%${String(criteria.city)}%`);
       if (criteria.postalCode) query = query.ilike('postal_code', `${String(criteria.postalCode)}%`);
       if (criteria.industry) query = query.ilike('industry', `%${String(criteria.industry)}%`);
       if (criteria.minScore !== undefined) query = query.gte('cold_score', Number(criteria.minScore));
+      if (criteria.maxScore !== undefined) query = query.lte('cold_score', Number(criteria.maxScore));
     }
 
     const { data: allMembers } = await query.order('cold_score', { ascending: false }).limit(10000);
