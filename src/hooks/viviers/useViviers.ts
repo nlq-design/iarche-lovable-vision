@@ -172,31 +172,16 @@ export function useViviers(options: UseViviersOptions = {}) {
         query = query.not('phone', 'is', null).neq('phone', '');
       }
 
-      // Column-level filters (second layer filtering) - exact match for dropdown selections
+      // Column-level filters (second layer filtering) - only Entreprise, Localisation, Activité
       if (columnFilters) {
         // Company column filter - exact match
         if (columnFilters.company) {
           query = query.eq('company_name', columnFilters.company);
         }
         
-        // Contact column filter - exact match on contact_name
-        if (columnFilters.contact) {
-          query = query.eq('contact_name', columnFilters.contact);
-        }
-        
-        // Email column filter - keeps ilike for text search
-        if (columnFilters.email) {
-          query = query.ilike('email', `%${columnFilters.email}%`);
-        }
-        
         // Location column filter - exact match on city
         if (columnFilters.location) {
           query = query.eq('city', columnFilters.location);
-        }
-        
-        // SIRET column filter - exact match
-        if (columnFilters.siret) {
-          query = query.eq('siret', columnFilters.siret);
         }
         
         // Industry column filter - exact match

@@ -77,8 +77,18 @@ export default function ViviersLeads() {
     },
   });
 
-  // Fetch filter options for dropdowns
-  const { data: filterOptions } = useVivierFilterOptions();
+  // Fetch filter options for dropdowns - contextual based on filter 1
+  const { data: filterOptions } = useVivierFilterOptions({
+    status: status && status !== 'all' ? status : undefined,
+    city: city || undefined,
+    postalCode: postalCode || undefined,
+    department: department || undefined,
+    industry: industry || undefined,
+    companySize: companySize || undefined,
+    hasEmail,
+    hasPhone,
+    search: search || undefined,
+  });
 
   const handleSelectChange = (id: string, selected: boolean) => {
     setSelectedIds(prev => {
@@ -151,21 +161,12 @@ export default function ViviersLeads() {
         query = query.ilike('industry', `%${industry}%`);
       }
 
-      // Apply column filters (layer 2) - exact match for dropdown selections
+      // Apply column filters (layer 2) - only Entreprise, Localisation, Activité
       if (columnFilters.company) {
         query = query.eq('company_name', columnFilters.company);
       }
-      if (columnFilters.contact) {
-        query = query.eq('contact_name', columnFilters.contact);
-      }
-      if (columnFilters.email) {
-        query = query.ilike('email', `%${columnFilters.email}%`);
-      }
       if (columnFilters.location) {
         query = query.eq('city', columnFilters.location);
-      }
-      if (columnFilters.siret) {
-        query = query.eq('siret', columnFilters.siret);
       }
       if (columnFilters.industry) {
         query = query.eq('industry', columnFilters.industry);
