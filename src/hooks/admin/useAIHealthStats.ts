@@ -207,8 +207,8 @@ export function useAIHealthStats() {
         healthIssues,
       };
     },
-    staleTime: 30 * 1000, // 30 seconds
-    refetchOnWindowFocus: true
+    staleTime: 60 * 1000, // 1 minute - health stats are not critical
+    refetchOnWindowFocus: false, // Avoid reload on tab focus
   });
 }
 
