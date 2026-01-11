@@ -6,7 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const BATCH_SIZE = 50;
+const BATCH_SIZE = 100;
+const CONCURRENCY = 15; // Parallel AI calls
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const AI_GATEWAY_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
 
@@ -186,8 +187,7 @@ serve(async (req) => {
       details: [] as { id: string; score: number; success: boolean }[],
     };
 
-    // Process viviers in parallel with concurrency limit
-    const CONCURRENCY = 5;
+    // Process viviers in parallel with higher concurrency
     for (let i = 0; i < viviers.length; i += CONCURRENCY) {
       const chunk = viviers.slice(i, i + CONCURRENCY);
       
