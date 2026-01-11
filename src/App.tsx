@@ -121,7 +121,7 @@ const VivierLeadDetail = lazy(() => import("./pages/viviers/VivierLeadDetail"));
 const ViviersImport = lazy(() => import("./pages/viviers/ViviersImport"));
 const ViviersScoring = lazy(() => import("./pages/viviers/ViviersScoring"));
 const ViviersCampaigns = lazy(() => import("./pages/viviers/ViviersCampaigns"));
-const VivierCampaignDetail = lazy(() => import("./pages/cockpit/viviers/VivierCampaignDetail"));
+const VivierCampaignDetail = lazy(() => import("./pages/viviers/VivierCampaignDetail"));
 const ViviersSettings = lazy(() => import("./pages/viviers/ViviersSettings"));
 const ViviersListDetail = lazy(() => import("./pages/viviers/ViviersListDetail"));
 
