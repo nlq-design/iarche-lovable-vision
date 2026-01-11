@@ -97,13 +97,14 @@ export default function ViviersListDetail() {
         }
       }
 
-      const { data, error, count } = await query
+      const { data, error } = await query
         .order('cold_score', { ascending: false, nullsFirst: false })
         .range((page - 1) * pageSize, page * pageSize - 1);
 
       if (error) throw error;
 
-      return { members: data || [], totalCount: count || 0 };
+      // Use list.lead_count for totalCount since we don't request count (timeout on large datasets)
+      return { members: data || [], totalCount: list.lead_count || data?.length || 0 };
     },
     enabled: !!list,
   });
