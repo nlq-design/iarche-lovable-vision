@@ -4452,6 +4452,7 @@ export type Database = {
           scoring_criteria: Json | null
           siren: string | null
           siret: string | null
+          slug: string | null
           source: string
           source_file: string | null
           status: string | null
@@ -4497,6 +4498,7 @@ export type Database = {
           scoring_criteria?: Json | null
           siren?: string | null
           siret?: string | null
+          slug?: string | null
           source: string
           source_file?: string | null
           status?: string | null
@@ -4542,6 +4544,7 @@ export type Database = {
           scoring_criteria?: Json | null
           siren?: string | null
           siret?: string | null
+          slug?: string | null
           source?: string
           source_file?: string | null
           status?: string | null

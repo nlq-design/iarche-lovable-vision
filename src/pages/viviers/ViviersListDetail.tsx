@@ -49,7 +49,7 @@ export default function ViviersListDetail() {
   const [page, setPage] = useState(1);
   const pageSize = 50;
 
-  // Fetch list members
+  // Fetch list members with optimized caching
   const { data: membersData, isLoading: membersLoading, refetch: refetchMembers } = useQuery({
     queryKey: ['vivier-list-members', id, page],
     queryFn: async () => {
@@ -107,6 +107,8 @@ export default function ViviersListDetail() {
       return { members: data || [], totalCount: list.lead_count || data?.length || 0 };
     },
     enabled: !!list,
+    staleTime: 30 * 1000, // Cache for 30 seconds
+    refetchOnWindowFocus: false, // Prevent refetch on tab focus
   });
 
   const handleSync = async () => {
