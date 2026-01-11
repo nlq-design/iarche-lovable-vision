@@ -17,6 +17,7 @@ import LogoArc from '@/components/ui/LogoArc';
 import type { Vivier } from '@/hooks/viviers/useViviers';
 import { VIVIER_STATUSES } from '@/hooks/viviers/useViviers';
 import { usePappersVivierEnrich } from '@/hooks/viviers/usePappersVivierEnrich';
+import { VivierActivityTimeline } from '@/components/viviers/VivierActivityTimeline';
 
 // Generate slug from vivier data - uses full ID for guaranteed uniqueness
 export function generateVivierSlug(vivier: Vivier): string {
@@ -484,10 +485,13 @@ export default function VivierLeadDetail() {
                   placeholder="Notes internes..."
                 />
               ) : (
-                <p className="text-sm whitespace-pre-wrap">{vivier.notes || 'Aucune note'}</p>
+              <p className="text-sm whitespace-pre-wrap">{vivier.notes || 'Aucune note'}</p>
               )}
             </CardContent>
           </Card>
+
+          {/* Activity Timeline */}
+          <VivierActivityTimeline vivierId={vivier.id} />
         </div>
       </div>
     </VivierLayout>
