@@ -1,7 +1,7 @@
 # CDC Amélioration Recherche IA - Module Viviers
 
-**Version:** 2.0.0  
-**Statut:** 🚧 EN COURS  
+**Version:** 2.1.0  
+**Statut:** ✅ TERMINÉ  
 **Date:** 2026-01-11  
 **Module parent:** /viviers  
 **Auteur:** Lovable AI
@@ -11,9 +11,9 @@
 ## TL;DR
 
 Amélioration progressive du module Recherche IA sur `/viviers/leads` en 3 phases :
-- **Phase 1** : Quick Wins (historique, suggestions, preview) ✅ FAIT
-- **Phase 2** : Combinaison filtres + Export XLSX direct ✅ FAIT
-- **Phase 3** : Intelligence avancée (VivierInsights + recommandations proactives) 🚧 EN COURS
+- **Phase 1** : Quick Wins (historique, suggestions, preview) ✅ TERMINÉ
+- **Phase 2** : Combinaison filtres + Export XLSX direct ✅ TERMINÉ
+- **Phase 3** : Intelligence avancée (VivierInsights + recommandations proactives) ✅ TERMINÉ
 
 ---
 
@@ -135,19 +135,26 @@ Amélioration progressive du module Recherche IA sur `/viviers/leads` en 3 phase
 - `src/pages/viviers/ViviersListDetail.tsx` ✅ (créé)
 - `src/App.tsx` ✅ (route ajoutée)
 
-### 3.3 Phase 3 - Intelligence Avancée 🚧 EN COURS
+### 3.3 Phase 3 - Intelligence Avancée ✅ TERMINÉE
 
 **Objectif** : Recommandations proactives et insights basés sur analyse de données
 
 | Feature | Description | Source données | Status |
 |---------|-------------|----------------|--------|
-| VivierInsights | Composant dédié insights | Stats agrégées | 🚧 |
-| Recommandations | Badge opportunités détectées | Query stats | 🚧 |
-| Analyse cohorte | Taux réponse par segment | `vivier_campaigns` | 🚧 |
-| Prompt Admin | Intégration `ai_prompts` | vivier-insights | 🚧 |
+| VivierInsights | Composant dédié insights | Stats agrégées | ✅ |
+| Recommandations | Badge opportunités détectées | Query stats | ✅ |
+| Analyse cohorte | Top secteurs/villes | `viviers` | ✅ |
+| Prompt Admin | Intégration `ai_prompts` | vivier-insights | ✅ |
 
 **Nouveaux composants** :
-- `src/components/viviers/VivierInsights.tsx`
+- `src/components/viviers/VivierInsights.tsx` ✅
+
+**Nouvelle Edge Function** :
+- `supabase/functions/vivier-insights/index.ts` ✅
+
+**Nouveau Prompt (ai_prompts)** :
+- Slug: `vivier-insights` ✅
+- Catégorie: `vivier`
 
 **Nouvelle Edge Function** :
 - `supabase/functions/vivier-insights/index.ts`
@@ -389,14 +396,14 @@ const model = modelConfig.model || 'google/gemini-2.5-flash';
 - [x] Route `/viviers/lists/:id` accessible
 - [x] Leads affichés correctement (fix case-insensitive)
 
-### 7.3 Phase 3 (À valider)
+### 7.3 Phase 3 ✅
 
-- [ ] Composant VivierInsights créé et affiché sur `/viviers/leads`
-- [ ] Edge function vivier-insights opérationnelle
-- [ ] Prompt vivier-insights inséré dans ai_prompts
-- [ ] Insights générés à partir de stats réelles
-- [ ] Actions cliquables déclenchent recherche IA ou filtres
-- [ ] Prompt modifiable via `/admin/ai-prompts`
+- [x] Composant VivierInsights créé et affiché sur `/viviers/leads`
+- [x] Edge function vivier-insights opérationnelle
+- [x] Prompt vivier-insights inséré dans ai_prompts
+- [x] Insights générés à partir de stats réelles
+- [x] Actions cliquables déclenchent recherche IA ou filtres
+- [x] Prompt modifiable via `/admin/ai-prompts`
 
 ---
 
