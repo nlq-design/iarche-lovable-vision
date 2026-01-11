@@ -37,6 +37,12 @@ export interface VivierCampaign {
   created_at: string;
   updated_at: string | null;
   metadata: Json;
+  // Instantly integration fields
+  instantly_campaign_id: string | null;
+  instantly_status: string | null;
+  instantly_account_id: string | null;
+  last_synced_at: string | null;
+  launched_at: string | null;
 }
 
 export interface CampaignRecipient {

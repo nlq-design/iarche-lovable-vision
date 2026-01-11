@@ -8,9 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CampaignEmailEditor, type EmailTheme } from '@/components/viviers/campaigns/CampaignEmailEditor';
 import { ImportRecipientsDialog } from '@/components/viviers/campaigns/ImportRecipientsDialog';
 import { TestEmailDialog } from '@/components/viviers/campaigns/TestEmailDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { 
   ArrowLeft, 
   Mail, 
@@ -30,13 +33,18 @@ import {
   Pause,
   RefreshCw,
   Plus,
-  Save
+  Save,
+  Zap,
+  Upload,
+  Rocket,
+  Link2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   draft: { label: 'Brouillon', color: 'bg-gray-500', icon: Pencil },
+  created: { label: 'Créée', color: 'bg-blue-500', icon: Link2 },
   pending: { label: 'En attente', color: 'bg-yellow-500', icon: Clock },
   active: { label: 'Active', color: 'bg-green-500', icon: Play },
   paused: { label: 'Pause', color: 'bg-orange-500', icon: Pause },
@@ -57,7 +65,7 @@ const RECIPIENT_STATUS_CONFIG: Record<string, { label: string; variant: 'default
 export default function VivierCampaignDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { campaign, recipients, stats, isLoading, isError, updateCampaign, addRecipients } = useVivierCampaignDetail(slug);
+  const { campaign, recipients, stats, isLoading, isError, updateCampaign, addRecipients, refetch } = useVivierCampaignDetail(slug);
 
   // State for dialogs
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -69,6 +77,9 @@ export default function VivierCampaignDetail() {
   const [draftBody, setDraftBody] = useState('');
   const [draftTheme, setDraftTheme] = useState<EmailTheme>('bleu-nuit');
   const [isSaving, setIsSaving] = useState(false);
+
+  // Instantly integration states
+  const [instantlyLoading, setInstantlyLoading] = useState<string | null>(null);
 
   // Initialize draft content from campaign
   const initializeEditor = () => {
@@ -98,6 +109,45 @@ export default function VivierCampaignDetail() {
   // Import recipients handler
   const handleImportRecipients = async (newRecipients: Array<{ email: string; name?: string; company?: string }>) => {
     return addRecipients.mutateAsync(newRecipients);
+  };
+
+  // Instantly API actions
+  const callInstantlyAction = async (action: string) => {
+    if (!campaign) return;
+    
+    setInstantlyLoading(action);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-instantly-campaign', {
+        body: { campaign_id: campaign.id, action }
+      });
+
+      if (error) throw error;
+
+      switch (action) {
+        case 'create':
+          toast.success('Campagne créée dans Instantly');
+          break;
+        case 'add_leads':
+          toast.success(`${data.added || 0} leads ajoutés à Instantly`);
+          break;
+        case 'launch':
+          toast.success('Campagne lancée !');
+          break;
+        case 'pause':
+          toast.success('Campagne mise en pause');
+          break;
+        case 'status':
+          toast.info('Statut synchronisé');
+          break;
+      }
+      
+      refetch();
+    } catch (error) {
+      console.error('Instantly action error:', error);
+      toast.error(`Erreur: ${error instanceof Error ? error.message : 'Action échouée'}`);
+    } finally {
+      setInstantlyLoading(null);
+    }
   };
 
   if (isLoading) {
@@ -172,16 +222,89 @@ export default function VivierCampaignDetail() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={initializeEditor}>
-              <Pencil className="w-4 h-4 mr-2" />
-              Modifier
-            </Button>
-            <Button onClick={() => setShowTestDialog(true)}>
+            <Button variant="outline" onClick={() => setShowTestDialog(true)}>
               <Send className="w-4 h-4 mr-2" />
-              Envoyer test
+              Test
             </Button>
+            {!campaign.instantly_campaign_id ? (
+              <Button 
+                onClick={() => callInstantlyAction('create')}
+                disabled={instantlyLoading === 'create'}
+              >
+                {instantlyLoading === 'create' ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Zap className="w-4 h-4 mr-2" />
+                )}
+                Créer dans Instantly
+              </Button>
+            ) : campaign.status === 'active' ? (
+              <Button 
+                variant="outline"
+                onClick={() => callInstantlyAction('pause')}
+                disabled={instantlyLoading === 'pause'}
+              >
+                {instantlyLoading === 'pause' ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Pause className="w-4 h-4 mr-2" />
+                )}
+                Pause
+              </Button>
+            ) : (
+              <Button 
+                onClick={() => callInstantlyAction('launch')}
+                disabled={instantlyLoading === 'launch' || stats.total === 0}
+              >
+                {instantlyLoading === 'launch' ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Rocket className="w-4 h-4 mr-2" />
+                )}
+                Lancer
+              </Button>
+            )}
           </div>
         </div>
+
+        {/* Instantly Status Banner */}
+        {campaign.instantly_campaign_id && (
+          <Alert className="border-blue-200 bg-blue-50">
+            <Zap className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="flex items-center justify-between">
+              <span className="text-blue-800">
+                Connectée à Instantly • ID: <code className="text-xs bg-blue-100 px-1 rounded">{campaign.instantly_campaign_id}</code>
+              </span>
+              <div className="flex gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => callInstantlyAction('add_leads')}
+                  disabled={instantlyLoading === 'add_leads'}
+                >
+                  {instantlyLoading === 'add_leads' ? (
+                    <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                  ) : (
+                    <Upload className="w-3 h-3 mr-1" />
+                  )}
+                  Sync leads
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="ghost"
+                  onClick={() => callInstantlyAction('status')}
+                  disabled={instantlyLoading === 'status'}
+                >
+                  {instantlyLoading === 'status' ? (
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-3 h-3" />
+                  )}
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Import & Test Dialogs */}
         <ImportRecipientsDialog
@@ -444,7 +567,7 @@ export default function VivierCampaignDetail() {
           </TabsContent>
 
           {/* Settings Tab */}
-          <TabsContent value="settings" className="mt-4">
+          <TabsContent value="settings" className="mt-4 space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Paramètres de la campagne</CardTitle>
@@ -466,6 +589,112 @@ export default function VivierCampaignDetail() {
                       <p>Thème : {campaign.template_theme || 'bleu-nuit'}</p>
                       {campaign.scheduled_at && (
                         <p>Planifié : {format(new Date(campaign.scheduled_at), 'PPp', { locale: fr })}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Instantly Integration Card */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-yellow-500" />
+                  <CardTitle>Intégration Instantly</CardTitle>
+                </div>
+                <CardDescription>
+                  Synchronisation avec la plateforme d'envoi cold email
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">Statut de synchronisation</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">ID Instantly</span>
+                        <span className="font-mono text-xs">
+                          {campaign.instantly_campaign_id || 'Non créée'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Statut</span>
+                        <Badge variant={campaign.instantly_campaign_id ? 'default' : 'secondary'}>
+                          {campaign.instantly_campaign_id ? 'Connectée' : 'Non connectée'}
+                        </Badge>
+                      </div>
+                      {campaign.last_synced_at && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Dernière sync</span>
+                          <span className="text-xs">
+                            {format(new Date(campaign.last_synced_at), 'dd/MM HH:mm', { locale: fr })}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">Actions</h4>
+                    <div className="space-y-2">
+                      {!campaign.instantly_campaign_id ? (
+                        <Button 
+                          className="w-full"
+                          onClick={() => callInstantlyAction('create')}
+                          disabled={instantlyLoading === 'create'}
+                        >
+                          {instantlyLoading === 'create' ? (
+                            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Zap className="w-4 h-4 mr-2" />
+                          )}
+                          Créer dans Instantly
+                        </Button>
+                      ) : (
+                        <>
+                          <Button 
+                            className="w-full"
+                            variant="outline"
+                            onClick={() => callInstantlyAction('add_leads')}
+                            disabled={instantlyLoading === 'add_leads'}
+                          >
+                            {instantlyLoading === 'add_leads' ? (
+                              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <Upload className="w-4 h-4 mr-2" />
+                            )}
+                            Synchroniser les leads ({stats.total})
+                          </Button>
+                          {campaign.status === 'active' ? (
+                            <Button 
+                              className="w-full"
+                              variant="destructive"
+                              onClick={() => callInstantlyAction('pause')}
+                              disabled={instantlyLoading === 'pause'}
+                            >
+                              {instantlyLoading === 'pause' ? (
+                                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                              ) : (
+                                <Pause className="w-4 h-4 mr-2" />
+                              )}
+                              Mettre en pause
+                            </Button>
+                          ) : (
+                            <Button 
+                              className="w-full"
+                              onClick={() => callInstantlyAction('launch')}
+                              disabled={instantlyLoading === 'launch' || stats.total === 0}
+                            >
+                              {instantlyLoading === 'launch' ? (
+                                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                              ) : (
+                                <Rocket className="w-4 h-4 mr-2" />
+                              )}
+                              Lancer la campagne
+                            </Button>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
