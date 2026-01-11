@@ -67,7 +67,7 @@ serve(async (req) => {
     // Total and average score
     const { data: totalData, error: totalError } = await supabase
       .from('viviers')
-      .select('id, cold_score, last_contacted_at', { count: 'exact' });
+      .select('id, cold_score, status, scored_at', { count: 'exact' });
 
     if (totalError) {
       console.error('Error fetching totals:', totalError);
@@ -79,10 +79,9 @@ serve(async (req) => {
     const avg_score = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
     const high_score_count = scores.filter(s => s >= 70).length;
     
-    // Not contacted in 30 days (qualified leads)
+    // Leads with status 'new' and score >= 50 (qualified but not yet contacted)
     const not_contacted_30d = totalData?.filter(v => {
-      if (!v.last_contacted_at) return v.cold_score && v.cold_score >= 50;
-      return new Date(v.last_contacted_at) < thirtyDaysAgo && v.cold_score && v.cold_score >= 50;
+      return v.status === 'new' && v.cold_score && v.cold_score >= 50;
     }).length || 0;
 
     // Top industries
