@@ -19,7 +19,7 @@ serve(async (req) => {
 
     const payload = await req.json();
     
-    console.log('Instantly webhook received:', JSON.stringify(payload, null, 2));
+    console.log('📩 Instantly webhook received:', JSON.stringify(payload, null, 2));
 
     const { 
       event_type, 
@@ -30,6 +30,7 @@ serve(async (req) => {
     } = payload;
 
     if (!event_type || !instantly_campaign_id) {
+      console.warn('Missing required fields:', { event_type, instantly_campaign_id });
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -39,7 +40,7 @@ serve(async (req) => {
     // Find our campaign by Instantly ID
     const { data: campaign, error: campaignError } = await supabase
       .from('vivier_campaigns')
-      .select('id, name')
+      .select('id, name, sent_count, open_count, click_count, reply_count, bounce_count, unsubscribe_count')
       .eq('instantly_campaign_id', instantly_campaign_id)
       .single();
 
@@ -50,94 +51,174 @@ serve(async (req) => {
       });
     }
 
-    // Find recipient by email
+    console.log(`✅ Matched campaign: ${campaign.name} (${campaign.id})`);
+
+    // Find recipient by email in vivier_campaign_recipients
     let recipientId: string | null = null;
     let vivierId: string | null = null;
     
     if (lead_email) {
-      const { data: recipient } = await supabase
-        .from('vivier_campaign_recipients')
-        .select('id, vivier_id')
-        .eq('campaign_id', campaign.id)
-        .eq('viviers.email', lead_email)
-        .single();
+      // First get the vivier with this email
+      const { data: vivier } = await supabase
+        .from('viviers')
+        .select('id')
+        .eq('email', lead_email)
+        .maybeSingle();
       
-      if (recipient) {
-        recipientId = recipient.id;
-        vivierId = recipient.vivier_id;
+      if (vivier) {
+        // Then find the recipient record
+        const { data: recipient } = await supabase
+          .from('vivier_campaign_recipients')
+          .select('id, vivier_id')
+          .eq('campaign_id', campaign.id)
+          .eq('vivier_id', vivier.id)
+          .maybeSingle();
+        
+        if (recipient) {
+          recipientId = recipient.id;
+          vivierId = recipient.vivier_id;
+          console.log(`Found recipient: ${recipientId} for vivier: ${vivierId}`);
+        }
       }
     }
 
-    // Map Instantly events to our status
-    const eventUpdates: Record<string, { field: string; value: string | Date }> = {
-      'email_sent': { field: 'sent_at', value: new Date().toISOString() },
-      'email_opened': { field: 'opened_at', value: new Date().toISOString() },
-      'email_clicked': { field: 'clicked_at', value: new Date().toISOString() },
-      'email_replied': { field: 'replied_at', value: new Date().toISOString() },
-      'email_bounced': { field: 'bounce_type', value: data?.bounce_type || 'hard' },
-      'lead_unsubscribed': { field: 'unsubscribed_at', value: new Date().toISOString() },
+    // Map Instantly events to recipient updates and campaign counter increments
+    const eventConfig: Record<string, { 
+      recipientField: string; 
+      recipientValue: string | Date;
+      campaignCounter?: string;
+    }> = {
+      'email_sent': { 
+        recipientField: 'sent_at', 
+        recipientValue: new Date().toISOString(),
+        campaignCounter: 'sent_count'
+      },
+      'email_opened': { 
+        recipientField: 'opened_at', 
+        recipientValue: new Date().toISOString(),
+        campaignCounter: 'open_count'
+      },
+      'email_clicked': { 
+        recipientField: 'clicked_at', 
+        recipientValue: new Date().toISOString(),
+        campaignCounter: 'click_count'
+      },
+      'email_replied': { 
+        recipientField: 'replied_at', 
+        recipientValue: new Date().toISOString(),
+        campaignCounter: 'reply_count'
+      },
+      'email_bounced': { 
+        recipientField: 'bounce_type', 
+        recipientValue: data?.bounce_type || 'hard',
+        campaignCounter: 'bounce_count'
+      },
+      'lead_unsubscribed': { 
+        recipientField: 'unsubscribed_at', 
+        recipientValue: new Date().toISOString(),
+        campaignCounter: 'unsubscribe_count'
+      },
     };
 
-    const update = eventUpdates[event_type];
+    const config = eventConfig[event_type];
     
-    if (update && recipientId) {
+    // Update recipient if found
+    if (config && recipientId) {
       await supabase
         .from('vivier_campaign_recipients')
-        .update({ [update.field]: update.value })
+        .update({ [config.recipientField]: config.recipientValue })
         .eq('id', recipientId);
 
-      console.log(`Updated recipient ${recipientId}: ${update.field} = ${update.value}`);
-
-      // If replied, consider promoting to lead
-      if (event_type === 'email_replied' && vivierId) {
-        console.log(`Reply detected for vivier ${vivierId}, consider promotion to lead`);
-        
-        // Log activity
-        await supabase.from('activity_log').insert({
-          workspace_id: '00000000-0000-0000-0000-000000000001',
-          entity_type: 'lead',
-          entity_id: vivierId,
-          activity_type: 'email_reply',
-          title: `Réponse email reçue`,
-          content: `Le prospect a répondu à la campagne "${campaign.name}"`,
-          pending_ai_review: true,
-          metadata: {
-            campaign_id: campaign.id,
-            campaign_name: campaign.name,
-            event_type,
-            instantly_campaign_id,
-          },
-        });
-      }
+      console.log(`Updated recipient ${recipientId}: ${config.recipientField} = ${config.recipientValue}`);
     }
 
-    // Update campaign stats (aggregate) - simple update without RPC
-    if (event_type === 'email_sent') {
-      const { data: currentCampaign } = await supabase
+    // Update campaign counters
+    if (config?.campaignCounter) {
+      const counterField = config.campaignCounter as keyof typeof campaign;
+      const currentValue = (campaign[counterField] as number) || 0;
+      
+      await supabase
         .from('vivier_campaigns')
-        .select('emails_sent')
+        .update({ 
+          [config.campaignCounter]: currentValue + 1,
+          last_synced_at: new Date().toISOString()
+        })
+        .eq('id', campaign.id);
+
+      console.log(`Updated campaign ${campaign.id}: ${config.campaignCounter} = ${currentValue + 1}`);
+    }
+
+    // Calculate rates after updates
+    if (config?.campaignCounter && ['open_count', 'click_count', 'reply_count', 'bounce_count'].includes(config.campaignCounter)) {
+      const { data: updatedCampaign } = await supabase
+        .from('vivier_campaigns')
+        .select('sent_count, open_count, click_count, reply_count, bounce_count')
         .eq('id', campaign.id)
         .single();
-      
-      if (currentCampaign) {
-        await supabase
-          .from('vivier_campaigns')
-          .update({ emails_sent: (currentCampaign.emails_sent || 0) + 1 })
-          .eq('id', campaign.id);
+
+      if (updatedCampaign && updatedCampaign.sent_count && updatedCampaign.sent_count > 0) {
+        const rates: Record<string, number> = {};
+        
+        if (updatedCampaign.open_count) {
+          rates.open_rate = (updatedCampaign.open_count / updatedCampaign.sent_count) * 100;
+        }
+        if (updatedCampaign.click_count) {
+          rates.click_rate = (updatedCampaign.click_count / updatedCampaign.sent_count) * 100;
+        }
+        if (updatedCampaign.reply_count) {
+          rates.reply_rate = (updatedCampaign.reply_count / updatedCampaign.sent_count) * 100;
+        }
+        if (updatedCampaign.bounce_count) {
+          rates.bounce_rate = (updatedCampaign.bounce_count / updatedCampaign.sent_count) * 100;
+        }
+
+        if (Object.keys(rates).length > 0) {
+          await supabase
+            .from('vivier_campaigns')
+            .update(rates)
+            .eq('id', campaign.id);
+          
+          console.log(`Updated rates for campaign ${campaign.id}:`, rates);
+        }
       }
     }
+
+    // Log activity for replies (hot leads!)
+    if (event_type === 'email_replied' && vivierId) {
+      console.log(`🔥 Reply detected for vivier ${vivierId} - creating activity log`);
+      
+      await supabase.from('activity_log').insert({
+        workspace_id: '00000000-0000-0000-0000-000000000001',
+        entity_type: 'vivier',
+        entity_id: vivierId,
+        activity_type: 'email_reply',
+        title: `Réponse email reçue`,
+        content: `Le prospect a répondu à la campagne "${campaign.name}"`,
+        pending_ai_review: true,
+        metadata: {
+          campaign_id: campaign.id,
+          campaign_name: campaign.name,
+          event_type,
+          instantly_campaign_id,
+          lead_email,
+        },
+      });
+    }
+
+    console.log(`✅ Webhook processed successfully: ${event_type} for campaign ${campaign.name}`);
 
     return new Response(JSON.stringify({ 
       received: true, 
       matched: true,
       campaign_id: campaign.id,
       event_type,
+      recipient_updated: !!recipientId,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in instantly-webhook:', error);
+    console.error('❌ Error in instantly-webhook:', error);
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : 'Unknown error' 
     }), {
