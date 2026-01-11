@@ -1,10 +1,13 @@
+import { useState, useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Mail, MapPin, Phone, ExternalLink } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Mail, MapPin, Phone, ExternalLink, Filter, X } from 'lucide-react';
 import type { Vivier } from '@/hooks/viviers/useViviers';
 import { VIVIER_STATUSES } from '@/hooks/viviers/useViviers';
 
@@ -25,6 +28,99 @@ interface VivierTableProps {
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 200];
 
+interface ColumnFilters {
+  company: string;
+  contact: string;
+  email: string;
+  location: string;
+  industry: string;
+  siret: string;
+  score: string;
+  status: string;
+}
+
+const emptyFilters: ColumnFilters = {
+  company: '',
+  contact: '',
+  email: '',
+  location: '',
+  industry: '',
+  siret: '',
+  score: '',
+  status: '',
+};
+
+function FilterableHeader({ 
+  label, 
+  value, 
+  onChange, 
+  placeholder,
+  type = 'text',
+  options,
+}: { 
+  label: string; 
+  value: string; 
+  onChange: (v: string) => void; 
+  placeholder?: string;
+  type?: 'text' | 'select';
+  options?: { value: string; label: string }[];
+}) {
+  const hasFilter = value.length > 0;
+  
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className={`h-auto p-0 font-medium hover:bg-transparent gap-1 ${hasFilter ? 'text-primary' : ''}`}
+        >
+          {label}
+          <Filter className={`h-3 w-3 ${hasFilter ? 'text-primary fill-primary/20' : 'text-muted-foreground'}`} />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-48 p-2" align="start">
+        <div className="space-y-2">
+          {type === 'select' && options ? (
+            <Select value={value || 'all'} onValueChange={(v) => onChange(v === 'all' ? '' : v)}>
+              <SelectTrigger className="h-8">
+                <SelectValue placeholder={placeholder} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous</SelectItem>
+                {options.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              placeholder={placeholder || `Filtrer ${label.toLowerCase()}...`}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              className="h-8"
+              autoFocus
+            />
+          )}
+          {hasFilter && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full h-7 text-xs" 
+              onClick={() => onChange('')}
+            >
+              <X className="h-3 w-3 mr-1" />
+              Effacer
+            </Button>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function VivierTable({
   viviers,
   isLoading,
@@ -39,8 +135,44 @@ export function VivierTable({
   pageSize = 50,
   onPageSizeChange,
 }: VivierTableProps) {
-  const allSelected = viviers.length > 0 && viviers.every(v => selectedIds.has(v.id));
-  const someSelected = viviers.some(v => selectedIds.has(v.id)) && !allSelected;
+  const [columnFilters, setColumnFilters] = useState<ColumnFilters>(emptyFilters);
+  
+  const updateFilter = (key: keyof ColumnFilters, value: string) => {
+    setColumnFilters(prev => ({ ...prev, [key]: value }));
+  };
+  
+  const hasColumnFilters = Object.values(columnFilters).some(v => v.length > 0);
+  const activeColumnFilterCount = Object.values(columnFilters).filter(v => v.length > 0).length;
+  
+  // Apply column filters locally
+  const filteredViviers = useMemo(() => {
+    if (!hasColumnFilters) return viviers;
+    
+    return viviers.filter(v => {
+      const contactName = v.contact_name || [v.contact_first_name, v.contact_last_name].filter(Boolean).join(' ') || '';
+      const location = [v.postal_code, v.city].filter(Boolean).join(' ');
+      
+      if (columnFilters.company && !v.company_name?.toLowerCase().includes(columnFilters.company.toLowerCase())) return false;
+      if (columnFilters.contact && !contactName.toLowerCase().includes(columnFilters.contact.toLowerCase())) return false;
+      if (columnFilters.email && !v.email?.toLowerCase().includes(columnFilters.email.toLowerCase())) return false;
+      if (columnFilters.location && !location.toLowerCase().includes(columnFilters.location.toLowerCase())) return false;
+      if (columnFilters.industry && !v.industry?.toLowerCase().includes(columnFilters.industry.toLowerCase())) return false;
+      if (columnFilters.siret && !v.siret?.includes(columnFilters.siret)) return false;
+      if (columnFilters.score) {
+        const score = v.cold_score;
+        if (columnFilters.score === 'high' && (score === null || score === undefined || score < 70)) return false;
+        if (columnFilters.score === 'medium' && (score === null || score === undefined || score < 40 || score >= 70)) return false;
+        if (columnFilters.score === 'low' && (score === null || score === undefined || score >= 40)) return false;
+        if (columnFilters.score === 'none' && score !== null && score !== undefined) return false;
+      }
+      if (columnFilters.status && v.status !== columnFilters.status) return false;
+      
+      return true;
+    });
+  }, [viviers, columnFilters, hasColumnFilters]);
+  
+  const allSelected = filteredViviers.length > 0 && filteredViviers.every(v => selectedIds.has(v.id));
+  const someSelected = filteredViviers.some(v => selectedIds.has(v.id)) && !allSelected;
 
   const getScoreBadge = (score: number | null | undefined) => {
     if (score === null || score === undefined) {
@@ -55,19 +187,53 @@ export function VivierTable({
   if (isLoading) {
     return (
       <div className="space-y-2">
-        {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+        {Array.from({ length: Math.min(pageSize, 10) }).map((_, i) => (
           <Skeleton key={i} className="h-12 w-full" />
         ))}
       </div>
     );
   }
 
-  if (viviers.length === 0) {
+  if (filteredViviers.length === 0 && !hasColumnFilters) {
     return null;
   }
 
+  const scoreOptions = [
+    { value: 'high', label: '≥70 (Élevé)' },
+    { value: 'medium', label: '40-69 (Moyen)' },
+    { value: 'low', label: '<40 (Faible)' },
+    { value: 'none', label: 'Non scoré' },
+  ];
+
+  const statusOptions = Object.entries(VIVIER_STATUSES).map(([value, config]) => ({
+    value,
+    label: config.label,
+  }));
+
   return (
     <div className="space-y-4">
+      {/* Column filter indicator */}
+      {hasColumnFilters && (
+        <div className="flex items-center gap-2 px-1">
+          <Badge variant="secondary" className="gap-1">
+            <Filter className="h-3 w-3" />
+            {activeColumnFilterCount} filtre{activeColumnFilterCount > 1 ? 's' : ''} colonne
+          </Badge>
+          <span className="text-sm text-muted-foreground">
+            {filteredViviers.length} / {viviers.length} affichés sur cette page
+          </span>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 text-xs"
+            onClick={() => setColumnFilters(emptyFilters)}
+          >
+            <X className="h-3 w-3 mr-1" />
+            Effacer filtres colonnes
+          </Button>
+        </div>
+      )}
+      
       <div className="border rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
@@ -81,19 +247,79 @@ export function VivierTable({
                     className={someSelected ? 'data-[state=checked]:bg-primary' : ''}
                   />
                 </TableHead>
-                <TableHead className="min-w-[180px]">Entreprise</TableHead>
-                <TableHead className="min-w-[140px]">Dirigeant</TableHead>
-                <TableHead className="min-w-[200px]">Contact</TableHead>
-                <TableHead className="min-w-[130px]">Localisation</TableHead>
-                <TableHead className="min-w-[150px]">Activité</TableHead>
-                <TableHead className="min-w-[130px]">SIRET</TableHead>
-                <TableHead className="w-16 text-center">Score</TableHead>
-                <TableHead className="w-24">Statut</TableHead>
+                <TableHead className="min-w-[180px]">
+                  <FilterableHeader 
+                    label="Entreprise" 
+                    value={columnFilters.company} 
+                    onChange={(v) => updateFilter('company', v)} 
+                  />
+                </TableHead>
+                <TableHead className="min-w-[140px]">
+                  <FilterableHeader 
+                    label="Dirigeant" 
+                    value={columnFilters.contact} 
+                    onChange={(v) => updateFilter('contact', v)} 
+                  />
+                </TableHead>
+                <TableHead className="min-w-[200px]">
+                  <FilterableHeader 
+                    label="Contact" 
+                    value={columnFilters.email} 
+                    onChange={(v) => updateFilter('email', v)}
+                    placeholder="Filtrer email..."
+                  />
+                </TableHead>
+                <TableHead className="min-w-[130px]">
+                  <FilterableHeader 
+                    label="Localisation" 
+                    value={columnFilters.location} 
+                    onChange={(v) => updateFilter('location', v)} 
+                  />
+                </TableHead>
+                <TableHead className="min-w-[150px]">
+                  <FilterableHeader 
+                    label="Activité" 
+                    value={columnFilters.industry} 
+                    onChange={(v) => updateFilter('industry', v)} 
+                  />
+                </TableHead>
+                <TableHead className="min-w-[130px]">
+                  <FilterableHeader 
+                    label="SIRET" 
+                    value={columnFilters.siret} 
+                    onChange={(v) => updateFilter('siret', v)} 
+                  />
+                </TableHead>
+                <TableHead className="w-16 text-center">
+                  <FilterableHeader 
+                    label="Score" 
+                    value={columnFilters.score} 
+                    onChange={(v) => updateFilter('score', v)}
+                    type="select"
+                    options={scoreOptions}
+                  />
+                </TableHead>
+                <TableHead className="w-24">
+                  <FilterableHeader 
+                    label="Statut" 
+                    value={columnFilters.status} 
+                    onChange={(v) => updateFilter('status', v)}
+                    type="select"
+                    options={statusOptions}
+                  />
+                </TableHead>
                 <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {viviers.map((vivier) => {
+              {filteredViviers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                    Aucun lead ne correspond aux filtres de colonnes
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredViviers.map((vivier) => {
                 const statusConfig = VIVIER_STATUSES[(vivier.status as keyof typeof VIVIER_STATUSES) || 'new'];
                 
                 // Build display name for contact
@@ -205,7 +431,8 @@ export function VivierTable({
                     </TableCell>
                   </TableRow>
                 );
-              })}
+              })
+              )}
             </TableBody>
           </Table>
         </div>
