@@ -18,6 +18,7 @@ import type { Vivier } from '@/hooks/viviers/useViviers';
 import { VIVIER_STATUSES } from '@/hooks/viviers/useViviers';
 import { usePappersVivierEnrich } from '@/hooks/viviers/usePappersVivierEnrich';
 import { VivierActivityTimeline } from '@/components/viviers/VivierActivityTimeline';
+import { VivierLegalDataCard } from '@/components/viviers/VivierLegalDataCard';
 
 // Generate slug from vivier data - uses full ID for guaranteed uniqueness
 export function generateVivierSlug(vivier: Vivier): string {
@@ -361,6 +362,9 @@ export default function VivierLeadDetail() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Legal Data from Pappers */}
+          <VivierLegalDataCard rawData={vivier.raw_data as any} />
 
           {/* Contact Info */}
           <Card>
