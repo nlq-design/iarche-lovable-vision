@@ -155,9 +155,12 @@ export function useViviers(options: UseViviersOptions = {}) {
         totalPages: Math.ceil((count || 0) / pageSize),
       };
     },
+    staleTime: 30 * 1000, // 30 seconds - avoid refetch on navigation
+    refetchOnWindowFocus: false, // Disable refetch on tab focus
   });
 
   // Stats query - using count queries to avoid the 1000 row limit
+  // Cached for 2 minutes since stats don't need real-time updates
   const { data: stats } = useQuery({
     queryKey: ['viviers-stats'],
     queryFn: async () => {
@@ -200,6 +203,9 @@ export function useViviers(options: UseViviersOptions = {}) {
         promoted: promoted || 0,
       };
     },
+    staleTime: 2 * 60 * 1000, // 2 minutes cache - stats are stable
+    refetchOnWindowFocus: false, // Don't refetch on tab focus
+    refetchOnMount: false, // Use cached data if available
   });
 
   // Create mutation
