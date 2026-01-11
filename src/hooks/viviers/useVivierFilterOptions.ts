@@ -76,7 +76,7 @@ export function useVivierFilterOptions(params: UseVivierFilterOptionsParams = {}
           );
         }
         
-        const { data } = await query.order(column).limit(200);
+        const { data } = await query.order(column);
         
         if (!data) return [];
         
