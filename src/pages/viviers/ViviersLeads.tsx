@@ -3,14 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { VivierLayout } from '@/components/viviers/VivierLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Upload, Trash2, AlertTriangle } from 'lucide-react';
+import { Users, Upload, Trash2, AlertTriangle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import LogoArc from '@/components/ui/LogoArc';
 import { useViviers, type Vivier } from '@/hooks/viviers';
 import { VivierTable } from '@/components/viviers/VivierTable';
 import { VivierFilters } from '@/components/viviers/VivierFilters';
+import { VivierAISearch } from '@/components/viviers/VivierAISearch';
+import { VivierScoringPanel } from '@/components/viviers/VivierScoringPanel';
+import { VivierListsPanel } from '@/components/viviers/VivierListsPanel';
 import { generateVivierSlug } from './VivierLeadDetail';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -28,6 +32,7 @@ export default function ViviersLeads() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [showAITools, setShowAITools] = useState(true);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -35,10 +40,11 @@ export default function ViviersLeads() {
     viviers, 
     totalCount, 
     totalPages, 
+    stats,
     isLoading,
     bulkDeleteViviers,
     refetch,
-  } = useViviers({ 
+  } = useViviers({
     page, 
     pageSize: 25, 
     search: search || undefined,
@@ -294,6 +300,40 @@ export default function ViviersLeads() {
             </Button>
           </div>
         </div>
+
+        {/* AI Tools Section */}
+        <Collapsible open={showAITools} onOpenChange={setShowAITools}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="w-full justify-between mb-2">
+              <span className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                Outils IA
+              </span>
+              {showAITools ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <VivierAISearch 
+                onFiltersApply={(filters) => {
+                  if (filters.search) setSearch(filters.search);
+                  if (filters.city) setCity(filters.city);
+                  if (filters.postalCode) setPostalCode(filters.postalCode);
+                  if (filters.industry) setIndustry(filters.industry);
+                  if (filters.minScore !== undefined) setMinScore(filters.minScore);
+                  if (filters.maxScore !== undefined) setMaxScore(filters.maxScore);
+                  if (filters.status) setStatus(filters.status);
+                  setPage(1);
+                }}
+              />
+              <VivierScoringPanel 
+                pendingCount={stats.pendingScoring} 
+                onComplete={() => refetch()}
+              />
+              <VivierListsPanel />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Filters */}
         <Card>
