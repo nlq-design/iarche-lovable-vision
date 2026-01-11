@@ -57,8 +57,11 @@ export default function ViviersListDetail() {
 
       let query = supabase
         .from('viviers')
-        .select('id, company_name, contact_name, email, phone, city, industry, cold_score, status', { count: 'exact' })
-        .neq('status', 'promoted');
+        // IMPORTANT: do NOT request an exact count here (it can timeout on large datasets).
+        // We use the synced list.lead_count for pagination/count display instead.
+        .select('id, company_name, contact_name, email, phone, city, industry, cold_score, status')
+        // Include NULL statuses ("not promoted" should include unset status)
+        .or('status.neq.promoted,status.is.null');
 
       // Apply filters based on list type
       if (list.list_type === 'static' && list.static_vivier_ids?.length > 0) {
