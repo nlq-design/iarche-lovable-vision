@@ -326,6 +326,8 @@ export default function ViviersLeads() {
     setCompanySize('');
     setHasEmail(undefined);
     setHasPhone(undefined);
+    setColumnFilters(emptyColumnFilters);
+    setSelectedIds(new Set());
     setPage(1);
   };
 
