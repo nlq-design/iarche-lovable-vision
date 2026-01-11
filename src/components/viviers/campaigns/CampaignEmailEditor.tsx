@@ -1,78 +1,17 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LazyQuill } from '@/components/admin/LazyQuill';
-import { Eye, Code, Palette, Variable, RefreshCw, Copy, Check } from 'lucide-react';
+import { Eye, Code, Palette, Variable, Copy, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { generateFullEmailHtml, EMAIL_THEMES, type EmailTheme } from './EmailPreviewRenderer';
 
-// Email theme system (matching EmailTemplateEditor patterns)
-const EMAIL_COLORS = {
-  bleuNuit: '#1A2B4A',
-  terracotta: '#B04A32',
-  blancCasse: '#FAF9F7',
-  white: '#FFFFFF',
-  grey: '#6B7280',
-  lightGrey: '#E5E7EB',
-};
-
-export type EmailTheme = 'bleu-nuit' | 'blanc-casse' | 'terracotta' | 'minimaliste';
-
-const EMAIL_THEMES: Record<EmailTheme, {
-  label: string;
-  headerBg: string;
-  headerText: string;
-  bodyBg: string;
-  bodyText: string;
-  footerBg: string;
-  accent: string;
-  logoSrc: string;
-}> = {
-  'bleu-nuit': {
-    label: 'Bleu Nuit (Gradient)',
-    headerBg: `linear-gradient(135deg, ${EMAIL_COLORS.bleuNuit} 0%, ${EMAIL_COLORS.terracotta} 100%)`,
-    headerText: EMAIL_COLORS.white,
-    bodyBg: EMAIL_COLORS.white,
-    bodyText: '#374151',
-    footerBg: EMAIL_COLORS.blancCasse,
-    accent: EMAIL_COLORS.terracotta,
-    logoSrc: 'https://iarche.fr/logos/iarche-white.svg',
-  },
-  'blanc-casse': {
-    label: 'Blanc Cassé (Élégant)',
-    headerBg: EMAIL_COLORS.blancCasse,
-    headerText: EMAIL_COLORS.bleuNuit,
-    bodyBg: EMAIL_COLORS.white,
-    bodyText: '#374151',
-    footerBg: EMAIL_COLORS.blancCasse,
-    accent: EMAIL_COLORS.terracotta,
-    logoSrc: 'https://iarche.fr/logos/iarche-dark.svg',
-  },
-  'terracotta': {
-    label: 'Terracotta (Chaleureux)',
-    headerBg: EMAIL_COLORS.terracotta,
-    headerText: EMAIL_COLORS.white,
-    bodyBg: EMAIL_COLORS.white,
-    bodyText: '#374151',
-    footerBg: EMAIL_COLORS.blancCasse,
-    accent: EMAIL_COLORS.bleuNuit,
-    logoSrc: 'https://iarche.fr/logos/iarche-white.svg',
-  },
-  'minimaliste': {
-    label: 'Minimaliste (Simple)',
-    headerBg: EMAIL_COLORS.white,
-    headerText: EMAIL_COLORS.bleuNuit,
-    bodyBg: EMAIL_COLORS.white,
-    bodyText: '#374151',
-    footerBg: EMAIL_COLORS.white,
-    accent: EMAIL_COLORS.terracotta,
-    logoSrc: 'https://iarche.fr/logos/iarche-dark.svg',
-  },
-};
+export type { EmailTheme };
 
 // Campaign-specific variables
 const CAMPAIGN_VARIABLES = [
@@ -125,51 +64,15 @@ export function CampaignEmailEditor({
   const [copiedVar, setCopiedVar] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'editor' | 'preview' | 'html'>('editor');
 
-  const themeConfig = EMAIL_THEMES[theme];
-
-  // Generate full HTML email
+  // Generate full HTML email using shared function
   const fullHtmlEmail = useMemo(() => {
-    const t = EMAIL_THEMES[theme];
-    const headerStyle = t.headerBg.startsWith('linear') 
-      ? `background: ${t.headerBg};` 
-      : `background-color: ${t.headerBg};`;
-
-    return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
-    .container { max-width: 600px; margin: 0 auto; background: ${t.bodyBg}; }
-    .header { ${headerStyle} padding: 32px; text-align: center; }
-    .header img { height: 40px; }
-    .content { padding: 32px; color: ${t.bodyText}; line-height: 1.6; }
-    .content h1, .content h2, .content h3 { color: ${EMAIL_COLORS.bleuNuit}; margin-top: 0; }
-    .content a { color: ${t.accent}; }
-    .button { display: inline-block; background: ${t.accent}; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0; font-weight: 500; }
-    .footer { background: ${t.footerBg}; padding: 24px; text-align: center; font-size: 12px; border-top: 1px solid ${EMAIL_COLORS.lightGrey}; }
-    .footer p { color: ${EMAIL_COLORS.grey}; margin: 8px 0; }
-    .footer a { color: ${t.accent}; text-decoration: underline; }
-  </style>
-</head>
-<body>
-  <div style="background: #f4f4f4; padding: 20px 0;">
-    <div class="container">
-      <div class="header">
-        <img src="${t.logoSrc}" alt="IArche" />
-      </div>
-      <div class="content">
-        ${bodyHtml || '<p>Rédigez votre email ici...</p>'}
-      </div>
-      <div class="footer">
-        <p>Envoyé par ${senderName} • IArche</p>
-        <p><a href="{{unsubscribe_url}}">Se désinscrire</a></p>
-      </div>
-    </div>
-  </div>
-</body>
-</html>`;
+    return generateFullEmailHtml(bodyHtml, theme, senderName, {
+      '{{first_name}}': 'Jean',
+      '{{last_name}}': 'Dupont',
+      '{{name}}': 'Jean Dupont',
+      '{{email}}': 'jean.dupont@example.com',
+      '{{company}}': 'Entreprise Test',
+    });
   }, [bodyHtml, theme, senderName]);
 
   const insertVariable = (variable: string) => {

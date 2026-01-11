@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CampaignEmailEditor, type EmailTheme } from '@/components/viviers/campaigns/CampaignEmailEditor';
 import { ImportRecipientsDialog } from '@/components/viviers/campaigns/ImportRecipientsDialog';
 import { TestEmailDialog } from '@/components/viviers/campaigns/TestEmailDialog';
+import { EmailPreviewRenderer } from '@/components/viviers/campaigns/EmailPreviewRenderer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
@@ -452,14 +453,20 @@ export default function VivierCampaignDetail() {
                 </CardHeader>
                 <CardContent>
                   {campaign.body_html || campaign.html_content ? (
-                    <div className="border rounded-lg p-6 bg-white">
-                      <div 
-                        className="prose max-w-none"
-                        dangerouslySetInnerHTML={{ 
-                          __html: campaign.html_content || campaign.body_html || '' 
-                        }}
-                      />
-                    </div>
+                    <EmailPreviewRenderer
+                      bodyHtml={campaign.html_content || campaign.body_html || ''}
+                      theme={(campaign.template_theme as EmailTheme) || 'bleu-nuit'}
+                      senderName={campaign.sender_name || 'IArche'}
+                      subject={campaign.subject || undefined}
+                      previewVariables={{
+                        '{{first_name}}': 'Jean',
+                        '{{last_name}}': 'Dupont',
+                        '{{name}}': 'Jean Dupont',
+                        '{{email}}': 'jean.dupont@example.com',
+                        '{{company}}': 'Entreprise Test',
+                        '{{unsubscribe_url}}': '#',
+                      }}
+                    />
                   ) : (
                     <div className="text-center py-12 text-muted-foreground">
                       <Mail className="w-12 h-12 mx-auto mb-4 opacity-50" />
