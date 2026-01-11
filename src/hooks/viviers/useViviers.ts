@@ -224,47 +224,37 @@ export function useViviers(options: UseViviersOptions = {}) {
 
   // Stats query - using count queries to avoid the 1000 row limit
   // Cached for 2 minutes since stats don't need real-time updates
+  // Uses parallel queries for better performance and individual error handling
   const { data: stats } = useQuery({
     queryKey: ['viviers-stats'],
     queryFn: async () => {
-      // Get total count
-      const { count: totalLeads, error: totalError } = await supabase
-        .from('viviers')
-        .select('*', { count: 'exact', head: true });
+      // Run all count queries in parallel for better performance
+      const [totalResult, pendingResult, qualifiedResult, promotedResult] = await Promise.allSettled([
+        // Total count
+        supabase.from('viviers').select('id', { count: 'exact', head: true }),
+        // Pending scoring (no score and not promoted)
+        supabase.from('viviers').select('id', { count: 'exact', head: true })
+          .is('cold_score', null)
+          .neq('status', 'promoted'),
+        // Qualified (score >= 60)
+        supabase.from('viviers').select('id', { count: 'exact', head: true })
+          .gte('cold_score', 60),
+        // Promoted (status = promoted)
+        supabase.from('viviers').select('id', { count: 'exact', head: true })
+          .eq('status', 'promoted'),
+      ]);
 
-      if (totalError) throw totalError;
+      // Extract counts with fallback to 0 on error
+      const totalLeads = totalResult.status === 'fulfilled' && !totalResult.value.error 
+        ? totalResult.value.count || 0 : 0;
+      const pendingScoring = pendingResult.status === 'fulfilled' && !pendingResult.value.error 
+        ? pendingResult.value.count || 0 : 0;
+      const qualified = qualifiedResult.status === 'fulfilled' && !qualifiedResult.value.error 
+        ? qualifiedResult.value.count || 0 : 0;
+      const promoted = promotedResult.status === 'fulfilled' && !promotedResult.value.error 
+        ? promotedResult.value.count || 0 : 0;
 
-      // Get pending scoring count (no score and not promoted)
-      const { count: pendingScoring, error: pendingError } = await supabase
-        .from('viviers')
-        .select('*', { count: 'exact', head: true })
-        .is('cold_score', null)
-        .neq('status', 'promoted');
-
-      if (pendingError) throw pendingError;
-
-      // Get qualified count (score >= 60)
-      const { count: qualified, error: qualifiedError } = await supabase
-        .from('viviers')
-        .select('*', { count: 'exact', head: true })
-        .gte('cold_score', 60);
-
-      if (qualifiedError) throw qualifiedError;
-
-      // Get promoted count
-      const { count: promoted, error: promotedError } = await supabase
-        .from('viviers')
-        .select('*', { count: 'exact', head: true })
-        .not('promoted_at', 'is', null);
-
-      if (promotedError) throw promotedError;
-
-      return {
-        totalLeads: totalLeads || 0,
-        pendingScoring: pendingScoring || 0,
-        qualified: qualified || 0,
-        promoted: promoted || 0,
-      };
+      return { totalLeads, pendingScoring, qualified, promoted };
     },
     staleTime: 2 * 60 * 1000, // 2 minutes cache - stats are stable
     refetchOnWindowFocus: false, // Don't refetch on tab focus
