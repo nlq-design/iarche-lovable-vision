@@ -278,39 +278,82 @@ export default function VivierCampaignDetail() {
 
           {/* Content Tab */}
           <TabsContent value="content" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Aperçu de l'email</CardTitle>
-                <CardDescription>
-                  Sujet : {campaign.subject || 'Non défini'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {campaign.body_html || campaign.html_content ? (
-                  <div className="border rounded-lg p-6 bg-white">
-                    <div 
-                      className="prose max-w-none"
-                      dangerouslySetInnerHTML={{ 
-                        __html: campaign.html_content || campaign.body_html || '' 
-                      }}
-                    />
+            {editingContent ? (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Édition du contenu</CardTitle>
+                      <CardDescription>
+                        Modifiez le sujet et le corps de votre email
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={() => setEditingContent(false)}>
+                        Annuler
+                      </Button>
+                      <Button onClick={saveContent} disabled={isSaving}>
+                        {isSaving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                        Enregistrer
+                      </Button>
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Mail className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>Aucun contenu défini</p>
-                    <Button 
-                      variant="outline" 
-                      className="mt-4"
-                      onClick={() => navigate(`/viviers/campaigns/${slug}/edit`)}
-                    >
+                </CardHeader>
+                <CardContent>
+                  <CampaignEmailEditor
+                    subject={draftSubject}
+                    bodyHtml={draftBody}
+                    theme={draftTheme}
+                    onSubjectChange={setDraftSubject}
+                    onBodyChange={setDraftBody}
+                    onThemeChange={setDraftTheme}
+                    senderName={campaign.sender_name || 'IArche'}
+                  />
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Aperçu de l'email</CardTitle>
+                      <CardDescription>
+                        Sujet : {campaign.subject || 'Non défini'}
+                      </CardDescription>
+                    </div>
+                    <Button variant="outline" onClick={initializeEditor}>
                       <Pencil className="w-4 h-4 mr-2" />
-                      Créer le contenu
+                      Modifier
                     </Button>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent>
+                  {campaign.body_html || campaign.html_content ? (
+                    <div className="border rounded-lg p-6 bg-white">
+                      <div 
+                        className="prose max-w-none"
+                        dangerouslySetInnerHTML={{ 
+                          __html: campaign.html_content || campaign.body_html || '' 
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Mail className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Aucun contenu défini</p>
+                      <Button 
+                        variant="outline" 
+                        className="mt-4"
+                        onClick={initializeEditor}
+                      >
+                        <Pencil className="w-4 h-4 mr-2" />
+                        Créer le contenu
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Recipients Tab */}
