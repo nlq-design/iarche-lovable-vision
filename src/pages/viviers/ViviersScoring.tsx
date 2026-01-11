@@ -1,17 +1,37 @@
 import { VivierLayout } from '@/components/viviers/VivierLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { 
   Target, 
   Sparkles, 
-  Play,
   CheckCircle2,
   AlertTriangle,
   XCircle
 } from 'lucide-react';
 import LogoArc from '@/components/ui/LogoArc';
+import { VivierScoringPanel } from '@/components/viviers/VivierScoringPanel';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function ViviersScoring() {
+  // Fetch scoring stats
+  const { data: stats, refetch } = useQuery({
+    queryKey: ['viviers-scoring-stats'],
+    queryFn: async () => {
+      const [pending, high, medium, low] = await Promise.all([
+        supabase.from('viviers').select('id', { count: 'exact', head: true }).is('cold_score', null),
+        supabase.from('viviers').select('id', { count: 'exact', head: true }).gte('cold_score', 80),
+        supabase.from('viviers').select('id', { count: 'exact', head: true }).gte('cold_score', 40).lt('cold_score', 80),
+        supabase.from('viviers').select('id', { count: 'exact', head: true }).lt('cold_score', 40).not('cold_score', 'is', null),
+      ]);
+      return {
+        pending: pending.count ?? 0,
+        high: high.count ?? 0,
+        medium: medium.count ?? 0,
+        low: low.count ?? 0,
+      };
+    },
+  });
+
   return (
     <VivierLayout>
       <div className="p-6 space-y-6">
@@ -24,10 +44,6 @@ export default function ViviersScoring() {
               Qualification automatique des leads par intelligence artificielle
             </p>
           </div>
-          <Button>
-            <Play className="w-4 h-4 mr-2" />
-            Lancer le scoring
-          </Button>
         </div>
 
         {/* Stats */}
@@ -37,7 +53,7 @@ export default function ViviersScoring() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">En attente</p>
-                  <p className="text-2xl font-bold">0</p>
+                  <p className="text-2xl font-bold">{stats?.pending.toLocaleString('fr-FR') ?? '...'}</p>
                 </div>
                 <Target className="h-8 w-8 text-accent" />
               </div>
@@ -49,9 +65,9 @@ export default function ViviersScoring() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Score élevé (≥80)</p>
-                  <p className="text-2xl font-bold text-success">0</p>
+                  <p className="text-2xl font-bold text-green-600">{stats?.high.toLocaleString('fr-FR') ?? '...'}</p>
                 </div>
-                <CheckCircle2 className="h-8 w-8 text-success" />
+                <CheckCircle2 className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
@@ -61,7 +77,7 @@ export default function ViviersScoring() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Score moyen (40-79)</p>
-                  <p className="text-2xl font-bold text-amber-600">0</p>
+                  <p className="text-2xl font-bold text-amber-600">{stats?.medium.toLocaleString('fr-FR') ?? '...'}</p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-amber-500" />
               </div>
@@ -73,13 +89,16 @@ export default function ViviersScoring() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Score faible (&lt;40)</p>
-                  <p className="text-2xl font-bold text-destructive">0</p>
+                  <p className="text-2xl font-bold text-destructive">{stats?.low.toLocaleString('fr-FR') ?? '...'}</p>
                 </div>
                 <XCircle className="h-8 w-8 text-destructive" />
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Scoring Panel */}
+        <VivierScoringPanel pendingCount={stats?.pending ?? 0} onComplete={() => refetch()} />
 
         {/* Scoring Config */}
         <Card>
