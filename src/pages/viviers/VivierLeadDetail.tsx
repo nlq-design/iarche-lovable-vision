@@ -10,12 +10,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Save, Trash2, Building2, Mail, Phone, MapPin, Globe, Linkedin, Calendar, Hash, Users, Loader2, FileText } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Building2, Mail, Phone, MapPin, Globe, Linkedin, Calendar, Hash, Users, Loader2, FileText, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import LogoArc from '@/components/ui/LogoArc';
 import type { Vivier } from '@/hooks/viviers/useViviers';
 import { VIVIER_STATUSES } from '@/hooks/viviers/useViviers';
+import { usePappersVivierEnrich } from '@/hooks/viviers/usePappersVivierEnrich';
 
 // Generate slug from vivier data - uses full ID for guaranteed uniqueness
 export function generateVivierSlug(vivier: Vivier): string {
@@ -75,6 +76,9 @@ export default function VivierLeadDetail() {
   
   const [formData, setFormData] = useState<Partial<Vivier>>({});
   const [isEditing, setIsEditing] = useState(false);
+  
+  // Pappers enrichment
+  const { enrichVivier, isLoading: isPappersLoading } = usePappersVivierEnrich();
 
   // Fetch vivier by slug (extract full UUID from slug)
   const { data: vivier, isLoading, error } = useQuery({
@@ -297,7 +301,27 @@ export default function VivierLeadDetail() {
                       onChange={(e) => handleChange('siret', e.target.value)}
                     />
                   ) : (
-                    <p className="text-sm mt-1 font-mono">{vivier.siret || '-'}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-sm font-mono">{vivier.siret || '-'}</p>
+                      {vivier.siret && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => enrichVivier(vivier.id, vivier.siret!)}
+                          disabled={isPappersLoading}
+                          className="h-6 px-2 text-xs"
+                        >
+                          {isPappersLoading ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <>
+                              <Sparkles className="w-3 h-3 mr-1" />
+                              Enrichir
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </div>
                 <div>
