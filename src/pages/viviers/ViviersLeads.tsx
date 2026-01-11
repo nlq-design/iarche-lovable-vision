@@ -375,6 +375,7 @@ export default function ViviersLeads() {
               onExport={handleExport}
               isExporting={isExporting}
               totalCount={totalCount}
+              selectedIds={Array.from(selectedIds)}
             />
           </CardContent>
         </Card>

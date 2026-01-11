@@ -1,12 +1,13 @@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, X, SlidersHorizontal, Download, MapPin, Building2, Briefcase } from 'lucide-react';
+import { Search, X, SlidersHorizontal, Download, MapPin, Briefcase, ListPlus } from 'lucide-react';
 import { VIVIER_STATUSES } from '@/hooks/viviers/useViviers';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { SaveToListDialog, type FilterCriteria } from './SaveToListDialog';
 
 interface VivierFiltersProps {
   search: string;
@@ -26,6 +27,7 @@ interface VivierFiltersProps {
   onExport?: () => void;
   isExporting?: boolean;
   totalCount?: number;
+  selectedIds?: string[];
 }
 
 // Debounce hook for optimized input handling
@@ -58,7 +60,19 @@ export function VivierFilters({
   onExport,
   isExporting,
   totalCount = 0,
+  selectedIds = [],
 }: VivierFiltersProps) {
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  
+  const currentFilters: FilterCriteria = {
+    search: search || undefined,
+    status: status && status !== 'all' ? status : undefined,
+    minScore,
+    maxScore,
+    city: city || undefined,
+    postalCode: postalCode || undefined,
+    industry: industry || undefined,
+  };
   const [scoreRange, setScoreRange] = useState<[number, number]>([minScore || 0, maxScore || 100]);
   const [localSearch, setLocalSearch] = useState(search);
   const [localCity, setLocalCity] = useState(city || '');
@@ -137,6 +151,19 @@ export function VivierFilters({
           />
         </div>
 
+        {/* Save to List button */}
+        <Button 
+          variant="outline" 
+          onClick={() => setShowSaveDialog(true)} 
+          disabled={totalCount === 0}
+          className="gap-2"
+        >
+          <ListPlus className="h-4 w-4" />
+          {selectedIds.length > 0 
+            ? `Liste (${selectedIds.length})` 
+            : `Sauvegarder${totalCount > 0 ? ` (${totalCount.toLocaleString('fr-FR')})` : ''}`}
+        </Button>
+
         {/* Export button */}
         {onExport && (
           <Button 
@@ -146,10 +173,19 @@ export function VivierFilters({
             className="gap-2"
           >
             <Download className="h-4 w-4" />
-            {isExporting ? 'Export...' : `Exporter${totalCount > 0 ? ` (${totalCount.toLocaleString('fr-FR')})` : ''}`}
+            {isExporting ? 'Export...' : 'XLSX'}
           </Button>
         )}
       </div>
+
+      {/* Save to List Dialog */}
+      <SaveToListDialog
+        open={showSaveDialog}
+        onOpenChange={setShowSaveDialog}
+        filters={currentFilters}
+        totalCount={totalCount}
+        selectedIds={selectedIds}
+      />
 
       {/* Filters row */}
       <div className="flex flex-wrap gap-2 items-center">
