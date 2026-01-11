@@ -6,6 +6,7 @@ import type { Json } from '@/integrations/supabase/types';
 export interface VivierCampaign {
   id: string;
   name: string;
+  slug?: string | null;
   status: 'draft' | 'scheduled' | 'running' | 'paused' | 'completed' | 'cancelled';
   subject?: string | null;
   body_html?: string | null;

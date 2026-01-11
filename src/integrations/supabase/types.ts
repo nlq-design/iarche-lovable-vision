@@ -4085,12 +4085,64 @@ export type Database = {
         }
         Relationships: []
       }
+      vivier_campaign_events: {
+        Row: {
+          campaign_id: string | null
+          created_at: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          recipient_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          recipient_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          recipient_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vivier_campaign_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "vivier_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vivier_campaign_events_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "vivier_campaign_recipients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vivier_campaign_recipients: {
         Row: {
           bounce_reason: string | null
           bounce_type: string | null
           bounced_at: string | null
           campaign_id: string | null
+          click_count: number | null
+          click_urls: Json | null
+          clicked_at: string | null
+          company: string | null
           company_name: string | null
           created_at: string | null
           current_step: number | null
@@ -4099,16 +4151,23 @@ export type Database = {
           email: string
           first_name: string | null
           id: string
+          import_batch_id: string | null
           instantly_lead_id: string | null
           last_name: string | null
+          lead_id: string | null
+          name: string | null
+          open_count: number | null
           opened_at: string | null
           promoted_at: string | null
           promoted_to_lead_id: string | null
           promotion_reason: string | null
           replied_at: string | null
           sent_at: string | null
+          source: string | null
           status: string | null
           unsubscribed_at: string | null
+          updated_at: string | null
+          variables_data: Json | null
           vivier_id: string | null
         }
         Insert: {
@@ -4116,6 +4175,10 @@ export type Database = {
           bounce_type?: string | null
           bounced_at?: string | null
           campaign_id?: string | null
+          click_count?: number | null
+          click_urls?: Json | null
+          clicked_at?: string | null
+          company?: string | null
           company_name?: string | null
           created_at?: string | null
           current_step?: number | null
@@ -4124,16 +4187,23 @@ export type Database = {
           email: string
           first_name?: string | null
           id?: string
+          import_batch_id?: string | null
           instantly_lead_id?: string | null
           last_name?: string | null
+          lead_id?: string | null
+          name?: string | null
+          open_count?: number | null
           opened_at?: string | null
           promoted_at?: string | null
           promoted_to_lead_id?: string | null
           promotion_reason?: string | null
           replied_at?: string | null
           sent_at?: string | null
+          source?: string | null
           status?: string | null
           unsubscribed_at?: string | null
+          updated_at?: string | null
+          variables_data?: Json | null
           vivier_id?: string | null
         }
         Update: {
@@ -4141,6 +4211,10 @@ export type Database = {
           bounce_type?: string | null
           bounced_at?: string | null
           campaign_id?: string | null
+          click_count?: number | null
+          click_urls?: Json | null
+          clicked_at?: string | null
+          company?: string | null
           company_name?: string | null
           created_at?: string | null
           current_step?: number | null
@@ -4149,16 +4223,23 @@ export type Database = {
           email?: string
           first_name?: string | null
           id?: string
+          import_batch_id?: string | null
           instantly_lead_id?: string | null
           last_name?: string | null
+          lead_id?: string | null
+          name?: string | null
+          open_count?: number | null
           opened_at?: string | null
           promoted_at?: string | null
           promoted_to_lead_id?: string | null
           promotion_reason?: string | null
           replied_at?: string | null
           sent_at?: string | null
+          source?: string | null
           status?: string | null
           unsubscribed_at?: string | null
+          updated_at?: string | null
+          variables_data?: Json | null
           vivier_id?: string | null
         }
         Relationships: [
@@ -4167,6 +4248,13 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "vivier_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vivier_campaign_recipients_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
             referencedColumns: ["id"]
           },
           {
@@ -4202,28 +4290,40 @@ export type Database = {
           daily_limit: number | null
           delivered_count: number | null
           domain_id: string | null
+          html_content: string | null
           id: string
+          import_source: string | null
           instantly_account_id: string | null
           instantly_campaign_id: string | null
           instantly_status: string | null
           last_synced_at: string | null
+          metadata: Json | null
           name: string
           open_count: number | null
           open_rate: number | null
           preview_text: string | null
           reply_count: number | null
           reply_rate: number | null
+          reply_to: string | null
           scheduled_at: string | null
           segment_criteria: Json | null
           send_schedule: Json | null
+          sender_email: string | null
+          sender_name: string | null
           sent_count: number | null
           sequence_steps: Json | null
+          slug: string | null
           started_at: string | null
           status: string | null
           subject: string | null
+          template_theme: string | null
+          test_recipients: string[] | null
+          test_sent_at: string | null
+          text_content: string | null
           total_recipients: number | null
           unsubscribe_count: number | null
           updated_at: string | null
+          variables: Json | null
           vivier_ids: string[] | null
           workspace_id: string | null
         }
@@ -4243,28 +4343,40 @@ export type Database = {
           daily_limit?: number | null
           delivered_count?: number | null
           domain_id?: string | null
+          html_content?: string | null
           id?: string
+          import_source?: string | null
           instantly_account_id?: string | null
           instantly_campaign_id?: string | null
           instantly_status?: string | null
           last_synced_at?: string | null
+          metadata?: Json | null
           name: string
           open_count?: number | null
           open_rate?: number | null
           preview_text?: string | null
           reply_count?: number | null
           reply_rate?: number | null
+          reply_to?: string | null
           scheduled_at?: string | null
           segment_criteria?: Json | null
           send_schedule?: Json | null
+          sender_email?: string | null
+          sender_name?: string | null
           sent_count?: number | null
           sequence_steps?: Json | null
+          slug?: string | null
           started_at?: string | null
           status?: string | null
           subject?: string | null
+          template_theme?: string | null
+          test_recipients?: string[] | null
+          test_sent_at?: string | null
+          text_content?: string | null
           total_recipients?: number | null
           unsubscribe_count?: number | null
           updated_at?: string | null
+          variables?: Json | null
           vivier_ids?: string[] | null
           workspace_id?: string | null
         }
@@ -4284,28 +4396,40 @@ export type Database = {
           daily_limit?: number | null
           delivered_count?: number | null
           domain_id?: string | null
+          html_content?: string | null
           id?: string
+          import_source?: string | null
           instantly_account_id?: string | null
           instantly_campaign_id?: string | null
           instantly_status?: string | null
           last_synced_at?: string | null
+          metadata?: Json | null
           name?: string
           open_count?: number | null
           open_rate?: number | null
           preview_text?: string | null
           reply_count?: number | null
           reply_rate?: number | null
+          reply_to?: string | null
           scheduled_at?: string | null
           segment_criteria?: Json | null
           send_schedule?: Json | null
+          sender_email?: string | null
+          sender_name?: string | null
           sent_count?: number | null
           sequence_steps?: Json | null
+          slug?: string | null
           started_at?: string | null
           status?: string | null
           subject?: string | null
+          template_theme?: string | null
+          test_recipients?: string[] | null
+          test_sent_at?: string | null
+          text_content?: string | null
           total_recipients?: number | null
           unsubscribe_count?: number | null
           updated_at?: string | null
+          variables?: Json | null
           vivier_ids?: string[] | null
           workspace_id?: string | null
         }
