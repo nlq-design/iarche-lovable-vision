@@ -1077,11 +1077,13 @@ export default function ViviersImport() {
                                 <SelectItem value="_none_" className="text-muted-foreground italic">
                                   Non mappé
                                 </SelectItem>
-                                {mappingPreview.originalHeaders.map((header) => (
-                                  <SelectItem key={header} value={header} className="font-mono text-xs">
-                                    {header}
-                                  </SelectItem>
-                                ))}
+                                {mappingPreview.originalHeaders
+                                  .filter((header) => header && header.trim() !== '')
+                                  .map((header) => (
+                                    <SelectItem key={header} value={header} className="font-mono text-xs">
+                                      {header}
+                                    </SelectItem>
+                                  ))}
                               </SelectContent>
                             </Select>
                             {m.detectedColumn && !m.manualColumn && (
