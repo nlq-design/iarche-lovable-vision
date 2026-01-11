@@ -19,6 +19,8 @@ export interface VivierCampaign {
   delivered_count?: number | null;
   open_count?: number | null;
   open_rate?: number | null;
+  click_count?: number | null;
+  click_rate?: number | null;
   reply_count?: number | null;
   reply_rate?: number | null;
   bounce_count?: number | null;
@@ -35,6 +37,7 @@ export interface VivierCampaign {
   created_at?: string | null;
   updated_at?: string | null;
   created_by?: string | null;
+  last_synced_at?: string | null;
 }
 
 export type CampaignStatus = VivierCampaign['status'];
@@ -79,17 +82,25 @@ export function useVivierCampaigns() {
   });
 
   // Stats
+  const totalSent = campaigns.reduce((sum, c) => sum + (c.sent_count || 0), 0);
+  const totalOpens = campaigns.reduce((sum, c) => sum + (c.open_count || 0), 0);
+  const totalClicks = campaigns.reduce((sum, c) => sum + (c.click_count || 0), 0);
+  const totalReplies = campaigns.reduce((sum, c) => sum + (c.reply_count || 0), 0);
+  const totalBounces = campaigns.reduce((sum, c) => sum + (c.bounce_count || 0), 0);
+
   const stats = {
     total: campaigns.length,
     active: campaigns.filter(c => c.status === 'running').length,
     draft: campaigns.filter(c => c.status === 'draft').length,
     completed: campaigns.filter(c => c.status === 'completed').length,
-    totalSent: campaigns.reduce((sum, c) => sum + (c.sent_count || 0), 0),
-    totalOpens: campaigns.reduce((sum, c) => sum + (c.open_count || 0), 0),
-    totalReplies: campaigns.reduce((sum, c) => sum + (c.reply_count || 0), 0),
-    avgOpenRate: campaigns.length > 0
-      ? campaigns.reduce((sum, c) => sum + (c.open_rate || 0), 0) / campaigns.length
-      : 0,
+    totalSent,
+    totalOpens,
+    totalClicks,
+    totalReplies,
+    totalBounces,
+    avgOpenRate: totalSent > 0 ? (totalOpens / totalSent) * 100 : 0,
+    avgClickRate: totalSent > 0 ? (totalClicks / totalSent) * 100 : 0,
+    avgReplyRate: totalSent > 0 ? (totalReplies / totalSent) * 100 : 0,
   };
 
   // Create campaign

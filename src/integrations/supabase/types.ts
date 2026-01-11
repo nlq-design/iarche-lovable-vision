@@ -4194,6 +4194,8 @@ export type Database = {
           body_text: string | null
           bounce_count: number | null
           bounce_rate: number | null
+          click_count: number | null
+          click_rate: number | null
           completed_at: string | null
           created_at: string | null
           created_by: string | null
@@ -4204,6 +4206,7 @@ export type Database = {
           instantly_account_id: string | null
           instantly_campaign_id: string | null
           instantly_status: string | null
+          last_synced_at: string | null
           name: string
           open_count: number | null
           open_rate: number | null
@@ -4232,6 +4235,8 @@ export type Database = {
           body_text?: string | null
           bounce_count?: number | null
           bounce_rate?: number | null
+          click_count?: number | null
+          click_rate?: number | null
           completed_at?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -4242,6 +4247,7 @@ export type Database = {
           instantly_account_id?: string | null
           instantly_campaign_id?: string | null
           instantly_status?: string | null
+          last_synced_at?: string | null
           name: string
           open_count?: number | null
           open_rate?: number | null
@@ -4270,6 +4276,8 @@ export type Database = {
           body_text?: string | null
           bounce_count?: number | null
           bounce_rate?: number | null
+          click_count?: number | null
+          click_rate?: number | null
           completed_at?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -4280,6 +4288,7 @@ export type Database = {
           instantly_account_id?: string | null
           instantly_campaign_id?: string | null
           instantly_status?: string | null
+          last_synced_at?: string | null
           name?: string
           open_count?: number | null
           open_rate?: number | null

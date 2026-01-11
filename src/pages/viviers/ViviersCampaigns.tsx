@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, Plus, Play, BarChart3, Send, CheckCircle2, MoreHorizontal, Pause, Trash2 } from 'lucide-react';
+import { Mail, Plus, Play, BarChart3, Send, CheckCircle2, MoreHorizontal, Pause, Trash2, MousePointerClick, Eye, MessageSquare } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import LogoArc from '@/components/ui/LogoArc';
 import { useVivierCampaigns, CAMPAIGN_STATUSES } from '@/hooks/viviers/useVivierCampaigns';
@@ -47,18 +47,7 @@ export default function ViviersCampaigns() {
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Campagnes actives</p>
-                  <p className="text-2xl font-bold">{stats.active}</p>
-                </div>
-                <Play className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -74,10 +63,23 @@ export default function ViviersCampaigns() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Taux d'ouverture</p>
-                  <p className="text-2xl font-bold">{stats.avgOpenRate > 0 ? `${stats.avgOpenRate.toFixed(1)}%` : '--%'}</p>
+                  <p className="text-sm text-muted-foreground">Ouvertures</p>
+                  <p className="text-2xl font-bold">{stats.totalOpens.toLocaleString('fr-FR')}</p>
+                  <p className="text-xs text-muted-foreground">{stats.avgOpenRate > 0 ? `${stats.avgOpenRate.toFixed(1)}%` : '-'}</p>
                 </div>
-                <BarChart3 className="h-8 w-8 text-accent" />
+                <Eye className="h-8 w-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Clics</p>
+                  <p className="text-2xl font-bold">{stats.totalClicks.toLocaleString('fr-FR')}</p>
+                  <p className="text-xs text-muted-foreground">{stats.avgClickRate > 0 ? `${stats.avgClickRate.toFixed(1)}%` : '-'}</p>
+                </div>
+                <MousePointerClick className="h-8 w-8 text-accent" />
               </div>
             </CardContent>
           </Card>
@@ -86,9 +88,21 @@ export default function ViviersCampaigns() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Réponses</p>
-                  <p className="text-2xl font-bold">{stats.totalReplies}</p>
+                  <p className="text-2xl font-bold text-green-600">{stats.totalReplies}</p>
+                  <p className="text-xs text-muted-foreground">{stats.avgReplyRate > 0 ? `${stats.avgReplyRate.toFixed(1)}%` : '-'}</p>
                 </div>
-                <CheckCircle2 className="h-8 w-8 text-green-500" />
+                <MessageSquare className="h-8 w-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Campagnes actives</p>
+                  <p className="text-2xl font-bold">{stats.active}</p>
+                </div>
+                <Play className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
@@ -113,11 +127,28 @@ export default function ViviersCampaigns() {
                             <div className={`w-2 h-2 rounded-full mr-1.5 ${CAMPAIGN_STATUSES[campaign.status].color}`} />
                             {CAMPAIGN_STATUSES[campaign.status].label}
                           </Badge>
+                          {campaign.instantly_campaign_id && (
+                            <Badge variant="secondary" className="text-xs">Instantly</Badge>
+                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {campaign.total_recipients?.toLocaleString('fr-FR') || 0} destinataires • 
-                          {campaign.sent_count || 0} envoyés • 
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                          <span>{campaign.total_recipients?.toLocaleString('fr-FR') || 0} destinataires</span>
+                          <span className="flex items-center gap-1">
+                            <Send className="w-3 h-3" /> {campaign.sent_count || 0}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Eye className="w-3 h-3" /> {campaign.open_count || 0}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MousePointerClick className="w-3 h-3" /> {campaign.click_count || 0}
+                          </span>
+                          <span className="flex items-center gap-1 text-green-600">
+                            <MessageSquare className="w-3 h-3" /> {campaign.reply_count || 0}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
                           {campaign.created_at && formatDistanceToNow(new Date(campaign.created_at), { addSuffix: true, locale: fr })}
+                          {campaign.last_synced_at && ` • Sync ${formatDistanceToNow(new Date(campaign.last_synced_at), { addSuffix: true, locale: fr })}`}
                         </p>
                       </div>
                       <DropdownMenu>
