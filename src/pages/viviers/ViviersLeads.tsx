@@ -28,7 +28,11 @@ export default function ViviersLeads() {
   const [maxScore, setMaxScore] = useState<number | undefined>();
   const [city, setCity] = useState('');
   const [postalCode, setPostalCode] = useState('');
+  const [department, setDepartment] = useState('');
   const [industry, setIndustry] = useState('');
+  const [companySize, setCompanySize] = useState('');
+  const [hasEmail, setHasEmail] = useState<boolean | undefined>();
+  const [hasPhone, setHasPhone] = useState<boolean | undefined>();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeletingAll, setIsDeletingAll] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -53,7 +57,11 @@ export default function ViviersLeads() {
     maxScore,
     city: city || undefined,
     postalCode: postalCode || undefined,
+    department: department || undefined,
     industry: industry || undefined,
+    companySize: companySize || undefined,
+    hasEmail,
+    hasPhone,
   });
 
   const handleSelectChange = (id: string, selected: boolean) => {
@@ -228,7 +236,7 @@ export default function ViviersLeads() {
     }
   };
 
-  const hasFilters = !!(search || (status && status !== 'all') || minScore !== undefined || maxScore !== undefined || city || postalCode || industry);
+  const hasFilters = !!(search || (status && status !== 'all') || minScore !== undefined || maxScore !== undefined || city || postalCode || department || industry || companySize || hasEmail !== undefined || hasPhone !== undefined);
 
   const handleClearFilters = () => {
     setSearch('');
@@ -237,7 +245,11 @@ export default function ViviersLeads() {
     setMaxScore(undefined);
     setCity('');
     setPostalCode('');
+    setDepartment('');
     setIndustry('');
+    setCompanySize('');
+    setHasEmail(undefined);
+    setHasPhone(undefined);
     setPage(1);
   };
 
@@ -366,9 +378,29 @@ export default function ViviersLeads() {
                 setPostalCode(value);
                 setPage(1);
               }}
+              department={department}
+              onDepartmentChange={(value) => {
+                setDepartment(value);
+                setPage(1);
+              }}
               industry={industry}
               onIndustryChange={(value) => {
                 setIndustry(value);
+                setPage(1);
+              }}
+              companySize={companySize}
+              onCompanySizeChange={(value) => {
+                setCompanySize(value);
+                setPage(1);
+              }}
+              hasEmail={hasEmail}
+              onHasEmailChange={(value) => {
+                setHasEmail(value);
+                setPage(1);
+              }}
+              hasPhone={hasPhone}
+              onHasPhoneChange={(value) => {
+                setHasPhone(value);
                 setPage(1);
               }}
               onClearFilters={handleClearFilters}
