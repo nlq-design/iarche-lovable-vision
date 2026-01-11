@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload, FileSpreadsheet, ClipboardPaste, CheckCircle2, AlertCircle, ArrowRight, Loader2, AlertTriangle, Copy, RefreshCw } from 'lucide-react';
 import { useState, useRef, useCallback } from 'react';
 import LogoArc from '@/components/ui/LogoArc';
@@ -35,8 +36,10 @@ interface MappingPreview {
   field: string;
   label: string;
   detectedColumn: string | null;
+  manualColumn: string | null; // User-selected override
   sampleValues: string[];
   confidence: 'high' | 'medium' | 'low' | 'none';
+  keys: string[]; // Original keys for fallback matching
 }
 
 interface MappingPreviewState {
@@ -645,10 +648,38 @@ export default function ViviersImport() {
         }
       }
       
-      return { field: def.field, label: def.label, detectedColumn, sampleValues, confidence };
+      return { field: def.field, label: def.label, detectedColumn, manualColumn: null, sampleValues, confidence, keys: def.keys };
     });
     
     return { mappings, rawRows: rows, originalHeaders };
+  };
+  
+  // Update manual column mapping
+  const handleUpdateManualMapping = (fieldIndex: number, columnName: string | null) => {
+    if (!mappingPreview) return;
+    
+    const updatedMappings = [...mappingPreview.mappings];
+    const mapping = updatedMappings[fieldIndex];
+    
+    // Update manual column
+    mapping.manualColumn = columnName;
+    
+    // Update sample values based on new column
+    if (columnName) {
+      const sampleRows = mappingPreview.rawRows.slice(0, 5);
+      const normalizedCol = normalizeHeader(columnName);
+      mapping.sampleValues = sampleRows.map(r => r[normalizedCol] || '').filter(Boolean).slice(0, 3);
+      mapping.confidence = mapping.sampleValues.length > 0 ? 'high' : 'low';
+    } else {
+      // Revert to auto-detected
+      mapping.sampleValues = [];
+      mapping.confidence = 'none';
+    }
+    
+    setMappingPreview({
+      ...mappingPreview,
+      mappings: updatedMappings
+    });
   };
   
   // Show mapping preview instead of directly analyzing
@@ -663,11 +694,20 @@ export default function ViviersImport() {
     toast.success(`${rows.length} lignes détectées - Vérifiez le mapping`);
   };
   
-  // Confirm mapping and proceed to full analysis
+  // Confirm mapping and proceed to full analysis with manual overrides
   const handleConfirmMapping = async () => {
     if (!mappingPreview) return;
+    
+    // Build custom column mapping from manual overrides
+    const columnOverrides: Record<string, string> = {};
+    mappingPreview.mappings.forEach(m => {
+      if (m.manualColumn) {
+        columnOverrides[m.field] = normalizeHeader(m.manualColumn);
+      }
+    });
+    
     setMappingPreview(null);
-    await handleAnalyze(mappingPreview.rawRows);
+    await handleAnalyze(mappingPreview.rawRows, columnOverrides);
   };
   
   // Cancel mapping preview
@@ -679,7 +719,7 @@ export default function ViviersImport() {
   };
 
   // Analyze file and detect duplicates
-  const handleAnalyze = async (rows: Record<string, string>[]) => {
+  const handleAnalyze = async (rows: Record<string, string>[], columnOverrides?: Record<string, string>) => {
     setIsAnalyzing(true);
     try {
       if (rows.length === 0) {
@@ -687,7 +727,19 @@ export default function ViviersImport() {
         return;
       }
 
-      const viviers = rows.map(mapToVivier).filter(v => v.email);
+      // Apply column overrides if provided
+      const processedRows = columnOverrides ? rows.map(row => {
+        const newRow = { ...row };
+        Object.entries(columnOverrides).forEach(([field, column]) => {
+          // Add the overridden column value to a standardized key
+          if (row[column]) {
+            newRow[field] = row[column];
+          }
+        });
+        return newRow;
+      }) : rows;
+
+      const viviers = processedRows.map(mapToVivier).filter(v => v.email);
       
       if (viviers.length === 0) {
         toast.error('Aucun email valide trouvé. Assurez-vous que la colonne email existe.');
@@ -1003,23 +1055,44 @@ export default function ViviersImport() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50">
-                        <TableHead className="w-[180px]">Champ cible</TableHead>
-                        <TableHead>Colonne détectée</TableHead>
+                        <TableHead className="w-[150px]">Champ cible</TableHead>
+                        <TableHead className="w-[200px]">Colonne source</TableHead>
                         <TableHead>Exemples de valeurs</TableHead>
                         <TableHead className="w-[100px] text-center">Confiance</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {mappingPreview.mappings.map((m, index) => (
-                        <TableRow key={index} className={m.confidence === 'none' ? 'opacity-50' : ''}>
+                        <TableRow key={index} className={m.confidence === 'none' && !m.manualColumn ? 'opacity-50' : ''}>
                           <TableCell className="font-medium">{m.label}</TableCell>
                           <TableCell>
-                            {m.detectedColumn ? (
-                              <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-                                {m.detectedColumn}
+                            <Select
+                              value={m.manualColumn || m.detectedColumn?.replace(' (auto-détecté)', '') || '_none_'}
+                              onValueChange={(value) => handleUpdateManualMapping(index, value === '_none_' ? null : value)}
+                            >
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue placeholder="Sélectionner..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="_none_" className="text-muted-foreground italic">
+                                  Non mappé
+                                </SelectItem>
+                                {mappingPreview.originalHeaders.map((header) => (
+                                  <SelectItem key={header} value={header} className="font-mono text-xs">
+                                    {header}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {m.detectedColumn && !m.manualColumn && (
+                              <span className="text-xs text-muted-foreground mt-1 block">
+                                Auto-détecté
                               </span>
-                            ) : (
-                              <span className="text-muted-foreground italic">Non détecté</span>
+                            )}
+                            {m.manualColumn && (
+                              <span className="text-xs text-primary mt-1 block">
+                                Manuel
+                              </span>
                             )}
                           </TableCell>
                           <TableCell>
