@@ -77,9 +77,10 @@ export function useViviers(options: UseViviersOptions = {}) {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['viviers', page, pageSize, search, status, minScore, maxScore, city, postalCode, industry],
     queryFn: async () => {
+      // Select only columns needed for the list view (performance optimization)
       let query = supabase
         .from('viviers')
-        .select('*', { count: 'exact' })
+        .select('id, company_name, contact_name, contact_first_name, contact_last_name, email, phone, city, postal_code, industry, cold_score, status, created_at', { count: 'exact' })
         .order('created_at', { ascending: false });
 
       // Pagination
@@ -87,7 +88,7 @@ export function useViviers(options: UseViviersOptions = {}) {
       const to = from + pageSize - 1;
       query = query.range(from, to);
 
-      // Search filter (email, company, contact name)
+      // Search filter - using trigram indexes for fast ILIKE
       if (search) {
         query = query.or(`email.ilike.%${search}%,company_name.ilike.%${search}%,contact_name.ilike.%${search}%`);
       }
