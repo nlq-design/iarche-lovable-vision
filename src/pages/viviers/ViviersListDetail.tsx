@@ -70,13 +70,14 @@ export default function ViviersListDetail() {
           query = query.or(`company_name.ilike.%${String(criteria.search)}%,contact_name.ilike.%${String(criteria.search)}%`);
         }
         if (criteria.city) {
-          // Use ilike for case-insensitive city matching
-          query = query.ilike('city', String(criteria.city));
+          // Use ilike with pattern for case-insensitive city matching
+          query = query.ilike('city', `%${String(criteria.city)}%`);
         }
         if (criteria.postalCode) {
           query = query.ilike('postal_code', `${String(criteria.postalCode)}%`);
         }
         if (criteria.industry) {
+          // Use ilike with pattern for case-insensitive industry matching
           query = query.ilike('industry', `%${String(criteria.industry)}%`);
         }
         if (criteria.minScore !== undefined) {
