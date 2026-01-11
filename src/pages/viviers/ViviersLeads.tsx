@@ -12,6 +12,7 @@ import { VivierFilters } from '@/components/viviers/VivierFilters';
 import { VivierAISearch } from '@/components/viviers/VivierAISearch';
 import { VivierScoringPanel } from '@/components/viviers/VivierScoringPanel';
 import { VivierListsPanel } from '@/components/viviers/VivierListsPanel';
+import { VivierInsights } from '@/components/viviers/VivierInsights';
 import { generateVivierSlug } from './VivierLeadDetail';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -407,7 +408,7 @@ export default function ViviersLeads() {
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2">
               <VivierAISearch 
                 onFiltersApply={(filters) => {
                   if (filters.search) setSearch(filters.search);
@@ -419,7 +420,27 @@ export default function ViviersLeads() {
                   if (filters.status) setStatus(filters.status);
                   setPage(1);
                 }}
+                currentFilters={{
+                  search: search || undefined,
+                  city: city || undefined,
+                  postalCode: postalCode || undefined,
+                  industry: industry || undefined,
+                  minScore,
+                  maxScore,
+                  status: status || undefined,
+                  hasEmail,
+                  hasPhone,
+                }}
               />
+              <VivierInsights 
+                onQuerySuggest={(query) => {
+                  // Trigger AI search with suggested query
+                  setSearch(query);
+                  setPage(1);
+                }}
+              />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
               <VivierScoringPanel 
                 pendingCount={stats.pendingScoring} 
                 onComplete={() => refetch()}
