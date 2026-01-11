@@ -138,50 +138,108 @@ export default function ViviersImport() {
     return cleaned;
   };
 
-  // Map row data to Vivier model with robust parsing
+  // Map row data to Vivier model with robust parsing - handles all CSV column variations
   const mapToVivier = (row: Record<string, string>): Partial<Vivier> => {
+    // Handle DIRIGEANT field - extract first/last name
     const dirigeant = row.dirigeant || '';
-    const nom = row.nom || '';
     const nameParts = dirigeant.split(' ').filter(Boolean);
     const lastName = nameParts[0] || '';
     const firstName = nameParts.slice(1).join(' ') || '';
-    const fullAddress = row.adresse || '';
-    const ca = row.ca || '';
+    
+    // Handle company name (NOM in files)
+    const companyName = row.nom || row.company || row.company_name || row.entreprise || row.societe || '';
+    
+    // Handle address variations
+    const address = row.adresse || row.address || '';
+    
+    // Handle postal code with/without underscore
+    const postalCode = row.code_postal || row.code_postal || row.postal_code || row.cp || row.zip || '';
+    
+    // Handle city
+    const city = row.ville || row.city || '';
+    
+    // Handle phone (TELEPHONE)
+    const phone = row.telephone || row.phone || row.tel || '';
+    // Clean phone - add leading 0 if French number without it
+    const cleanPhone = phone ? (
+      /^\d{9}$/.test(phone.replace(/\s/g, '')) ? '0' + phone.replace(/\s/g, '') : phone
+    ) : '';
+    
+    // Handle email with various column names (ADRESSE E-MAIL, ADRESSE_E-MAIL, ADRESSE_E_MAIL)
+    const email = row.adresse_e_mail || row.adresse_e_mail || row.email || row.e_mail || row.mail || '';
+    
+    // Handle activity/industry (ACTIVITE)
+    const industry = row.activite || row.activity || row.industry || row.secteur || '';
+    
+    // Handle legal form (FORME_JURIDIQUE)
+    const legalForm = row.forme_juridique || row.legal_form || row.statut_juridique || '';
+    
+    // Handle SIRET (keep as string, handle variations)
+    const siretRaw = row.siret || '';
+    const siret = safeSiret(siretRaw);
+    const siren = siret ? siret.substring(0, 9) : safeSiret(row.siren);
+    
+    // Handle NAF/APE code (NAF APE, NAF_APE)
+    const nafCode = row.naf_ape || row.naf || row.ape || row.code_naf || '';
+    
+    // Handle creation date (IMMATRICULATION) - can be "17 novembre 1999" format
+    let creationDate = parseExcelDate(row.immatriculation);
+    if (!creationDate && row.immatriculation) {
+      // Try to parse French date format "17 novembre 1999"
+      const frenchMonths: Record<string, string> = {
+        'janvier': '01', 'février': '02', 'fevrier': '02', 'mars': '03', 'avril': '04',
+        'mai': '05', 'juin': '06', 'juillet': '07', 'août': '08', 'aout': '08',
+        'septembre': '09', 'octobre': '10', 'novembre': '11', 'décembre': '12', 'decembre': '12'
+      };
+      const match = row.immatriculation.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/);
+      if (match) {
+        const [, day, monthName, year] = match;
+        const month = frenchMonths[monthName.toLowerCase()];
+        if (month) {
+          creationDate = `${year}-${month}-${day.padStart(2, '0')}`;
+        }
+      }
+    }
+    
+    // Handle revenue (CA) - clean currency format "45 828 893 €"
+    const caRaw = row.ca || row.chiffre_affaires || row.revenue || '';
+    const revenueRange = caRaw ? safeString(caRaw.replace(/[€\s]/g, '').trim(), 50) : null;
+    
+    // Handle employee counts (EFFECTIF, EFFECTIF_MIN, EFFECTIF_MAX)
     const effectifMin = row.effectif_min || '';
     const effectifMax = row.effectif_max || '';
+    const effectif = row.effectif || '';
     const companySize = effectifMin && effectifMax 
       ? `${effectifMin}-${effectifMax}` 
-      : (row.effectif || effectifMin || effectifMax || '');
-    const creationDate = parseExcelDate(row.immatriculation) || parseExcelDate(row.creation_date);
-
-    // Get SIRET and derive SIREN from it
-    const siret = safeSiret(row.siret);
-    const siren = siret ? siret.substring(0, 9) : safeSiret(row.siren);
+      : (effectif || effectifMin || effectifMax || '');
+    
+    // Handle department (DEPARTEMENT) - can be used for region
+    const department = row.departement || row.dept || '';
 
     return {
-      email: safeString(row.adresse_e_mail || row.email || row.e_mail, 255),
-      company_name: safeString(nom || row.company || row.company_name || row.entreprise || row.societe, 255),
+      email: safeString(email, 255),
+      company_name: safeString(companyName, 255),
       siret: siret,
       siren: siren,
-      naf_code: safeString(row.naf_ape || row.naf || row.ape, 10),
-      legal_form: safeString(row.forme_juridique || row.legal_form, 100),
-      industry: safeString(row.activite || row.industry || row.secteur, 255),
+      naf_code: safeString(nafCode, 10),
+      legal_form: safeString(legalForm, 100),
+      industry: safeString(industry, 255),
       creation_date: creationDate,
       contact_name: safeString(dirigeant || row.contact || row.contact_name, 255),
       contact_first_name: safeString(firstName || row.first_name || row.firstname || row.prenom, 100),
       contact_last_name: safeString(lastName || row.last_name || row.lastname, 100),
       contact_position: safeString(row.position || row.poste || row.job_title || row.title, 100),
-      phone: safeString(row.telephone || row.phone || row.tel, 50),
-      address: safeString(fullAddress, 500),
-      postal_code: safeString(row.code_postal || row.postal_code || row.zip, 20),
-      city: safeString(row.ville || row.city, 100),
-      region: safeString(row.region, 100),
+      phone: safeString(cleanPhone, 50),
+      address: safeString(address, 500),
+      postal_code: safeString(postalCode, 20),
+      city: safeString(city, 100),
+      region: safeString(department || row.region, 100),
       country: safeString(row.country || row.pays, 100) || 'France',
       website: safeString(row.website || row.site || row.url, 255),
       linkedin_url: safeString(row.linkedin || row.linkedin_url, 255),
       company_size: safeString(companySize, 50),
-      revenue_range: safeString(ca, 50),
-      employee_count: safeParseInt(effectifMin) || safeParseInt(row.effectif),
+      revenue_range: revenueRange,
+      employee_count: safeParseInt(effectifMin) || safeParseInt(effectif),
       raw_data: row as any,
       source: 'import',
     };
