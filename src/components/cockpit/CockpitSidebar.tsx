@@ -29,6 +29,8 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useQueryClient } from '@tanstack/react-query';
+import { prefetchRoute } from '@/lib/prefetchQueries';
 
 const navigationItems = [
   { title: 'Dashboard', url: '/cockpit', icon: LayoutDashboard, exact: true },
@@ -51,6 +53,7 @@ export function CockpitSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
+  const queryClient = useQueryClient();
   
   const isCollapsed = state === 'collapsed';
 
@@ -59,6 +62,11 @@ export function CockpitSidebar() {
       return currentPath === url;
     }
     return currentPath.startsWith(url);
+  };
+
+  // Prefetch data on hover for instant navigation
+  const handlePrefetch = (url: string) => {
+    prefetchRoute(url, queryClient);
   };
 
   return (
@@ -80,6 +88,8 @@ export function CockpitSidebar() {
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
                 }`}
                 activeClassName=""
+                onMouseEnter={() => handlePrefetch(item.url)}
+                onFocus={() => handlePrefetch(item.url)}
               >
                 <item.icon className="h-4 w-4 flex-shrink-0" />
                 {!isCollapsed && <span>{item.title}</span>}
