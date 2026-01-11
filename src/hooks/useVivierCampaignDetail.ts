@@ -52,16 +52,23 @@ export interface CampaignRecipient {
   company_name: string | null;
   status: string | null;
   sent_at: string | null;
+  delivered_at: string | null;
   opened_at: string | null;
   clicked_at: string | null;
   replied_at: string | null;
   bounced_at: string | null;
+  bounce_type: string | null;
   bounce_reason: string | null;
+  unsubscribed_at: string | null;
   open_count: number | null;
   click_count: number | null;
-  variables_data: Json;
+  click_urls: Json | null;
+  variables_data: Json | null;
+  custom_variables: Json | null;
   source: string | null;
+  import_batch_id: string | null;
   created_at: string | null;
+  updated_at: string | null;
 }
 
 export interface CampaignStats {
