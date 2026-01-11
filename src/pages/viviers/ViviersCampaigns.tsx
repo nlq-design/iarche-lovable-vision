@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { VivierLayout } from '@/components/viviers/VivierLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { fr } from 'date-fns/locale';
 
 export default function ViviersCampaigns() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { campaigns, stats, isLoading, deleteCampaign, updateStatus } = useVivierCampaigns();
 
@@ -119,10 +120,14 @@ export default function ViviersCampaigns() {
               <ScrollArea className="h-[400px]">
                 <div className="space-y-2">
                   {campaigns.map((campaign) => (
-                    <div key={campaign.id} className="flex items-center gap-4 p-4 rounded-lg border hover:bg-muted/50 transition-colors">
+                    <div 
+                      key={campaign.id} 
+                      className="flex items-center gap-4 p-4 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => campaign.slug && navigate(`/viviers/campaigns/${campaign.slug}`)}
+                    >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="font-medium truncate">{campaign.name}</h4>
+                          <h4 className="font-medium truncate hover:underline">{campaign.name}</h4>
                           <Badge variant="outline" className="shrink-0">
                             <div className={`w-2 h-2 rounded-full mr-1.5 ${CAMPAIGN_STATUSES[campaign.status].color}`} />
                             {CAMPAIGN_STATUSES[campaign.status].label}
@@ -153,22 +158,25 @@ export default function ViviersCampaigns() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
                             <MoreHorizontal className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); campaign.slug && navigate(`/viviers/campaigns/${campaign.slug}`); }}>
+                            <BarChart3 className="w-4 h-4 mr-2" /> Voir détails
+                          </DropdownMenuItem>
                           {campaign.status === 'draft' && (
-                            <DropdownMenuItem onClick={() => updateStatus.mutate({ id: campaign.id, status: 'running' })}>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); updateStatus.mutate({ id: campaign.id, status: 'running' }); }}>
                               <Play className="w-4 h-4 mr-2" /> Lancer
                             </DropdownMenuItem>
                           )}
                           {campaign.status === 'running' && (
-                            <DropdownMenuItem onClick={() => updateStatus.mutate({ id: campaign.id, status: 'paused' })}>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); updateStatus.mutate({ id: campaign.id, status: 'paused' }); }}>
                               <Pause className="w-4 h-4 mr-2" /> Pause
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem onClick={() => deleteCampaign.mutate(campaign.id)} className="text-destructive">
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); deleteCampaign.mutate(campaign.id); }} className="text-destructive">
                             <Trash2 className="w-4 h-4 mr-2" /> Supprimer
                           </DropdownMenuItem>
                         </DropdownMenuContent>
