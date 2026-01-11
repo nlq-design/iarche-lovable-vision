@@ -43,7 +43,7 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
       const { count, error } = await supabase
         .from('viviers')
         .select('*', { count: 'exact', head: true })
-        .not('ai_score', 'is', null);
+        .not('cold_score', 'is', null);
       
       if (error) throw error;
       return count || 0;

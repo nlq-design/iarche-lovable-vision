@@ -137,17 +137,6 @@ export default function ViviersScoring() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Empty State */}
-        <Card className="border-dashed">
-          <CardContent className="py-16 text-center">
-            <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Aucun lead à scorer</h3>
-            <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-              Importez des leads dans le vivier pour pouvoir lancer le scoring IA.
-            </p>
-          </CardContent>
-        </Card>
       </div>
     </VivierLayout>
   );
