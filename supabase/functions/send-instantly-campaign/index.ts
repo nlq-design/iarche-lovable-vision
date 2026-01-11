@@ -104,6 +104,7 @@ serve(async (req) => {
             name: campaign.name,
             campaign_schedule: {
               schedules: [{
+                name: 'Default Schedule',
                 days: { 1: true, 2: true, 3: true, 4: true, 5: true },
                 timezone: 'Europe/Paris',
                 timing: { from: '09:00', to: '18:00' },
