@@ -25,7 +25,7 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
   const [isScoring, setIsScoring] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<ScoringResult | null>(null);
-  const [batchSize, setBatchSize] = useState(50);
+  const [batchSize, setBatchSize] = useState(100);
   const queryClient = useQueryClient();
 
   const handleStartScoring = async () => {
@@ -100,9 +100,9 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
 
         setProgress(Math.round(((i + 1) / batchesToProcess) * 100));
 
-        // Small delay to avoid rate limiting
+        // Reduced delay between batches
         if (i < batchesToProcess - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
       }
 
@@ -211,7 +211,7 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
         {/* Batch size selector */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>Taille du batch :</span>
-          {[25, 50, 100].map((size) => (
+          {[50, 100, 200].map((size) => (
             <button
               key={size}
               onClick={() => setBatchSize(size)}
