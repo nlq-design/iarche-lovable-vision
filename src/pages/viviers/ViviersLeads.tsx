@@ -70,6 +70,7 @@ export default function ViviersLeads() {
       contact: columnFilters.contact || undefined,
       email: columnFilters.email || undefined,
       location: columnFilters.location || undefined,
+      industry: columnFilters.industry || undefined,
       siret: columnFilters.siret || undefined,
       scoreRange: columnFilters.score as 'high' | 'medium' | 'low' | 'none' | undefined,
       statusFilter: columnFilters.status || undefined,
@@ -165,6 +166,9 @@ export default function ViviersLeads() {
       }
       if (columnFilters.siret) {
         query = query.ilike('siret', `%${columnFilters.siret}%`);
+      }
+      if (columnFilters.industry) {
+        query = query.eq('industry', columnFilters.industry);
       }
       if (columnFilters.score) {
         if (columnFilters.score === 'high') {

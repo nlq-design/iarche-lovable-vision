@@ -78,6 +78,7 @@ interface UseViviersOptions {
     contact?: string;
     email?: string;
     location?: string;
+    industry?: string;
     siret?: string;
     scoreRange?: 'high' | 'medium' | 'low' | 'none';
     statusFilter?: string;
@@ -196,6 +197,11 @@ export function useViviers(options: UseViviersOptions = {}) {
         // SIRET column filter
         if (columnFilters.siret) {
           query = query.ilike('siret', `%${columnFilters.siret}%`);
+        }
+        
+        // Industry column filter
+        if (columnFilters.industry) {
+          query = query.eq('industry', columnFilters.industry);
         }
         
         // Score range filter
