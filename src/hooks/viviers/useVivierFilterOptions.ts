@@ -27,6 +27,7 @@ export function useVivierFilterOptions(params: UseVivierFilterOptionsParams = {}
     queryKey: ['vivier-filter-options', status, city, postalCode, department, industry, companySize, hasEmail, hasPhone, search],
     queryFn: async (): Promise<FilterOptions> => {
       // Fetch distinct values for each column with filter 1 applied
+      // IMPORTANT: Limit results to avoid timeout on large datasets (130k+ rows)
       const fetchDistinct = async (column: 'company_name' | 'city' | 'industry'): Promise<string[]> => {
         let query = supabase
           .from('viviers')
@@ -34,25 +35,29 @@ export function useVivierFilterOptions(params: UseVivierFilterOptionsParams = {}
           .not(column, 'is', null)
           .neq(column, '');
         
-        // Apply filter 1 conditions
+        // Apply filter 1 conditions - use exact match (eq) for city when selected
         if (status && status !== 'all') {
           query = query.eq('status', status);
         }
         
+        // City filter - use exact match for performance (selected from autocomplete)
         if (city) {
-          query = query.ilike('city', `%${city}%`);
+          query = query.eq('city', city);
         }
         
         if (postalCode) {
-          query = query.ilike('postal_code', `%${postalCode}%`);
+          // Use prefix match for postal code (faster with index)
+          query = query.ilike('postal_code', `${postalCode}%`);
         }
         
         if (department) {
-          query = query.or(`postal_code.ilike.${department}%,city.ilike.%${department}%`);
+          // Use prefix match only for department
+          query = query.ilike('postal_code', `${department}%`);
         }
         
         if (industry) {
-          query = query.ilike('industry', `%${industry}%`);
+          // Use prefix match for industry
+          query = query.ilike('industry', `${industry}%`);
         }
         
         if (companySize) {
@@ -68,15 +73,21 @@ export function useVivierFilterOptions(params: UseVivierFilterOptionsParams = {}
         }
         
         if (search) {
+          // Use prefix match for search to be faster
           query = query.or(
-            `company_name.ilike.%${search}%,` +
-            `contact_name.ilike.%${search}%,` +
-            `email.ilike.%${search}%,` +
-            `city.ilike.%${search}%`
+            `company_name.ilike.${search}%,` +
+            `contact_name.ilike.${search}%,` +
+            `email.ilike.${search}%`
           );
         }
         
-        const { data } = await query.order(column);
+        // CRITICAL: Limit to 500 rows to avoid timeout, then dedupe client-side
+        const { data, error } = await query.order(column).limit(500);
+        
+        if (error) {
+          console.error(`Filter options error for ${column}:`, error);
+          return [];
+        }
         
         if (!data) return [];
         
@@ -85,22 +96,26 @@ export function useVivierFilterOptions(params: UseVivierFilterOptionsParams = {}
           return typeof value === 'string' ? value : null;
         }).filter((v): v is string => v !== null && v !== '');
         
-        return [...new Set(values)];
+        // Deduplicate and limit to 200 distinct values for UI performance
+        return [...new Set(values)].slice(0, 200);
       };
 
-      // Fetch in parallel
-      const [companies, locations, industries] = await Promise.all([
-        fetchDistinct('company_name'),
-        fetchDistinct('city'),
-        fetchDistinct('industry'),
-      ]);
-
-      return {
-        companies,
-        locations,
-        industries,
-      };
+      // Fetch in parallel with error handling
+      try {
+        const [companies, locations, industries] = await Promise.all([
+          fetchDistinct('company_name'),
+          fetchDistinct('city'),
+          fetchDistinct('industry'),
+        ]);
+        
+        return { companies, locations, industries };
+      } catch (error) {
+        console.error('Filter options fetch error:', error);
+        return { companies: [], locations: [], industries: [] };
+      }
     },
-    staleTime: 2 * 60 * 1000, // Cache for 2 minutes (shorter because contextual)
+    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+    refetchOnWindowFocus: false,
+    retry: 1, // Only retry once on error
   });
 }

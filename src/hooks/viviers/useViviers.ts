@@ -137,9 +137,9 @@ export function useViviers(options: UseViviersOptions = {}) {
         query = query.lte('cold_score', maxScore);
       }
 
-      // City filter
+      // City filter - use exact match for performance (selected from autocomplete)
       if (city) {
-        query = query.ilike('city', `%${city}%`);
+        query = query.eq('city', city);
       }
 
       // Postal code filter (prefix match for department filtering)
@@ -152,9 +152,9 @@ export function useViviers(options: UseViviersOptions = {}) {
         query = query.ilike('postal_code', `${department}%`);
       }
 
-      // Industry filter
+      // Industry filter - use prefix match for better performance
       if (industry) {
-        query = query.ilike('industry', `%${industry}%`);
+        query = query.ilike('industry', `${industry}%`);
       }
 
       // Company size filter

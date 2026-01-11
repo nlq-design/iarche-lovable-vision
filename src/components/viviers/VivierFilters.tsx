@@ -1,7 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, X, SlidersHorizontal, Download, MapPin, Briefcase, ListPlus, Building2, Mail, Phone } from 'lucide-react';
+import { Search, X, SlidersHorizontal, Download, Briefcase, ListPlus, Building2, Mail, Phone } from 'lucide-react';
 import { VIVIER_STATUSES } from '@/hooks/viviers/useViviers';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useState, useEffect } from 'react';
 import { SaveToListDialog, type FilterCriteria } from './SaveToListDialog';
+import { CityAutocomplete } from './CityAutocomplete';
 
 interface VivierFiltersProps {
   search: string;
@@ -128,13 +129,12 @@ export function VivierFilters({
   };
   const [scoreRange, setScoreRange] = useState<[number, number]>([minScore || 0, maxScore || 100]);
   const [localSearch, setLocalSearch] = useState(search);
-  const [localCity, setLocalCity] = useState(city || '');
   const [localPostalCode, setLocalPostalCode] = useState(postalCode || '');
   const [localIndustry, setLocalIndustry] = useState(industry || '');
   
-  // Debounce all text inputs for performance (300ms delay)
+  // Debounce text inputs for performance (300ms delay)
+  // Note: City now uses CityAutocomplete with exact match, no debounce needed
   const debouncedSearch = useDebounce(localSearch, 300);
-  const debouncedCity = useDebounce(localCity, 300);
   const debouncedPostalCode = useDebounce(localPostalCode, 300);
   const debouncedIndustry = useDebounce(localIndustry, 300);
 
@@ -146,10 +146,10 @@ export function VivierFilters({
   }, [debouncedSearch, search, onSearchChange]);
 
   useEffect(() => {
-    if (onCityChange && debouncedCity !== city) {
-      onCityChange(debouncedCity);
+    if (onPostalCodeChange && debouncedPostalCode !== postalCode) {
+      onPostalCodeChange(debouncedPostalCode);
     }
-  }, [debouncedCity, city, onCityChange]);
+  }, [debouncedPostalCode, postalCode, onPostalCodeChange]);
 
   useEffect(() => {
     if (onPostalCodeChange && debouncedPostalCode !== postalCode) {
@@ -186,10 +186,10 @@ export function VivierFilters({
 
   const handleClearAll = () => {
     setLocalSearch('');
-    setLocalCity('');
     setLocalPostalCode('');
     setLocalIndustry('');
     setScoreRange([0, 100]);
+    if (onCityChange) onCityChange('');
     if (onDepartmentChange) onDepartmentChange('');
     if (onCompanySizeChange) onCompanySizeChange('');
     if (onHasEmailChange) onHasEmailChange(undefined);
@@ -305,17 +305,13 @@ export function VivierFilters({
           </PopoverContent>
         </Popover>
 
-        {/* City filter */}
+        {/* City filter - now with autocomplete for exact match */}
         {onCityChange && (
-          <div className="relative">
-            <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Ville..."
-              className="pl-8 h-9 w-[130px]"
-              value={localCity}
-              onChange={(e) => setLocalCity(e.target.value)}
-            />
-          </div>
+          <CityAutocomplete
+            value={city || ''}
+            onChange={onCityChange}
+            placeholder="Ville..."
+          />
         )}
 
         {/* Postal code filter */}

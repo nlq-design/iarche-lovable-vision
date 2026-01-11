@@ -151,14 +151,16 @@ export default function ViviersLeads() {
       if (maxScore !== undefined) {
         query = query.lte('cold_score', maxScore);
       }
+      // City filter - use exact match (selected from autocomplete)
       if (city) {
-        query = query.ilike('city', `%${city}%`);
+        query = query.eq('city', city);
       }
       if (postalCode) {
         query = query.ilike('postal_code', `${postalCode}%`);
       }
+      // Industry filter - use prefix match
       if (industry) {
-        query = query.ilike('industry', `%${industry}%`);
+        query = query.ilike('industry', `${industry}%`);
       }
 
       // Apply column filters (layer 2) - only Entreprise, Localisation, Activité
@@ -264,14 +266,16 @@ export default function ViviersLeads() {
         if (maxScore !== undefined) {
           selectQuery = selectQuery.lte('cold_score', maxScore);
         }
+        // City filter - use exact match (selected from autocomplete)
         if (city) {
-          selectQuery = selectQuery.ilike('city', `%${city}%`);
+          selectQuery = selectQuery.eq('city', city);
         }
         if (postalCode) {
           selectQuery = selectQuery.ilike('postal_code', `${postalCode}%`);
         }
+        // Industry filter - use prefix match
         if (industry) {
-          selectQuery = selectQuery.ilike('industry', `%${industry}%`);
+          selectQuery = selectQuery.ilike('industry', `${industry}%`);
         }
         
         // Limit batch size
