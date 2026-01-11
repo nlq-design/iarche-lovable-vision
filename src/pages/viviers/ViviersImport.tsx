@@ -23,6 +23,13 @@ interface ParsedVivier {
   existingId?: string;
 }
 
+interface FileQueueItem {
+  file: File;
+  status: 'pending' | 'processing' | 'done' | 'error';
+  rowCount?: number;
+  error?: string;
+}
+
 export default function ViviersImport() {
   const [pastedData, setPastedData] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -36,6 +43,12 @@ export default function ViviersImport() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { bulkCreateViviers } = useViviers();
+  
+  // Multi-file queue state
+  const [fileQueue, setFileQueue] = useState<FileQueueItem[]>([]);
+  const [currentFileIndex, setCurrentFileIndex] = useState(0);
+  const [isProcessingQueue, setIsProcessingQueue] = useState(false);
+  const [allParsedRows, setAllParsedRows] = useState<Record<string, string>[]>([]);
 
   // Normalize header names to lowercase and remove special characters
   const normalizeHeader = (header: string): string => {
@@ -399,6 +412,72 @@ export default function ViviersImport() {
     }
   };
 
+  // Parse a single file and return rows
+  const parseFile = async (file: File): Promise<Record<string, string>[]> => {
+    const fileName = file.name.toLowerCase();
+    
+    if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+      const buffer = await file.arrayBuffer();
+      return parseExcel(buffer);
+    } else if (fileName.endsWith('.csv') || fileName.endsWith('.txt')) {
+      const text = await file.text();
+      return parseCSV(text);
+    }
+    throw new Error('Format non supporté');
+  };
+
+  // Process the file queue sequentially
+  const processFileQueue = async (files: File[]) => {
+    setIsProcessingQueue(true);
+    setIsAnalyzing(true);
+    
+    const queue: FileQueueItem[] = files.map(file => ({
+      file,
+      status: 'pending' as const,
+    }));
+    setFileQueue(queue);
+    
+    let allRows: Record<string, string>[] = [];
+    
+    for (let i = 0; i < queue.length; i++) {
+      setCurrentFileIndex(i);
+      setFileQueue(prev => prev.map((item, idx) => 
+        idx === i ? { ...item, status: 'processing' } : item
+      ));
+      
+      try {
+        const rows = await parseFile(queue[i].file);
+        allRows = [...allRows, ...rows];
+        
+        setFileQueue(prev => prev.map((item, idx) => 
+          idx === i ? { ...item, status: 'done', rowCount: rows.length } : item
+        ));
+        
+        toast.success(`${queue[i].file.name}: ${rows.length} lignes`);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+        setFileQueue(prev => prev.map((item, idx) => 
+          idx === i ? { ...item, status: 'error', error: errorMessage } : item
+        ));
+        toast.error(`${queue[i].file.name}: ${errorMessage}`);
+      }
+      
+      // Small delay to allow UI updates
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    
+    setAllParsedRows(allRows);
+    setIsProcessingQueue(false);
+    
+    // Now analyze all collected rows
+    if (allRows.length > 0) {
+      await handleAnalyze(allRows);
+    } else {
+      setIsAnalyzing(false);
+      toast.error('Aucune donnée valide trouvée dans les fichiers');
+    }
+  };
+
   const handleFileUpload = async (file: File) => {
     const fileName = file.name.toLowerCase();
     
@@ -415,18 +494,38 @@ export default function ViviersImport() {
     }
   };
 
+  // Handle multiple file selection
+  const handleMultipleFiles = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    const validFiles = fileArray.filter(file => {
+      const name = file.name.toLowerCase();
+      return name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv') || name.endsWith('.txt');
+    });
+    
+    if (validFiles.length === 0) {
+      toast.error('Aucun fichier valide sélectionné');
+      return;
+    }
+    
+    if (validFiles.length === 1) {
+      await handleFileUpload(validFiles[0]);
+    } else {
+      await processFileQueue(validFiles);
+    }
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    await handleFileUpload(file);
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    await handleMultipleFiles(files);
   };
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      await handleFileUpload(file);
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      await handleMultipleFiles(files);
     }
   }, []);
 
@@ -439,6 +538,9 @@ export default function ViviersImport() {
     setParsedData(null);
     setSelectedRows(new Set());
     setPastedData('');
+    setFileQueue([]);
+    setAllParsedRows([]);
+    setCurrentFileIndex(0);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -717,21 +819,58 @@ export default function ViviersImport() {
                     <input 
                       ref={fileInputRef} 
                       type="file" 
-                      accept=".xlsx,.xls,.csv,.txt" 
+                      accept=".xlsx,.xls,.csv,.txt"
+                      multiple
                       onChange={handleFileChange} 
                       className="hidden" 
                     />
                     {isAnalyzing ? (
-                      <>
-                        <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
-                        <h3 className="text-lg font-semibold mb-2">Analyse des doublons...</h3>
-                      </>
+                      <div className="space-y-4">
+                        <Loader2 className="w-12 h-12 text-primary mx-auto animate-spin" />
+                        <h3 className="text-lg font-semibold">
+                          {isProcessingQueue ? 'Lecture des fichiers...' : 'Analyse des doublons...'}
+                        </h3>
+                        
+                        {/* File Queue Progress */}
+                        {fileQueue.length > 0 && (
+                          <div className="text-left max-w-md mx-auto space-y-2">
+                            {fileQueue.map((item, idx) => (
+                              <div key={idx} className="flex items-center gap-2 text-sm">
+                                {item.status === 'pending' && (
+                                  <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30" />
+                                )}
+                                {item.status === 'processing' && (
+                                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                                )}
+                                {item.status === 'done' && (
+                                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                )}
+                                {item.status === 'error' && (
+                                  <AlertCircle className="w-4 h-4 text-destructive" />
+                                )}
+                                <span className={item.status === 'processing' ? 'font-medium' : 'text-muted-foreground'}>
+                                  {item.file.name}
+                                </span>
+                                {item.rowCount !== undefined && (
+                                  <Badge variant="secondary" className="ml-auto">{item.rowCount} lignes</Badge>
+                                )}
+                                {item.error && (
+                                  <span className="text-destructive text-xs ml-auto">{item.error}</span>
+                                )}
+                              </div>
+                            ))}
+                            <div className="text-xs text-muted-foreground mt-2 text-center">
+                              Fichier {currentFileIndex + 1} / {fileQueue.length}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <>
                         <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">Glissez-déposez votre fichier ici</h3>
-                        <p className="text-muted-foreground mb-4">ou cliquez pour sélectionner</p>
-                        <Button variant="outline">Sélectionner un fichier</Button>
+                        <h3 className="text-lg font-semibold mb-2">Glissez-déposez vos fichiers ici</h3>
+                        <p className="text-muted-foreground mb-4">ou cliquez pour sélectionner (multi-fichiers supporté)</p>
+                        <Button variant="outline">Sélectionner des fichiers</Button>
                       </>
                     )}
                   </div>
