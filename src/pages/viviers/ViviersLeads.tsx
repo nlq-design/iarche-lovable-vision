@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Users, Upload, Trash2, AlertTriangle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import LogoArc from '@/components/ui/LogoArc';
-import { useViviers, type Vivier } from '@/hooks/viviers';
+import { useViviers, useVivierFilterOptions, type Vivier } from '@/hooks/viviers';
 import { VivierTable, type ColumnFilters, emptyColumnFilters } from '@/components/viviers/VivierTable';
 import { VivierFilters } from '@/components/viviers/VivierFilters';
 import { VivierAISearch } from '@/components/viviers/VivierAISearch';
@@ -75,6 +75,9 @@ export default function ViviersLeads() {
       statusFilter: columnFilters.status || undefined,
     },
   });
+
+  // Fetch filter options for dropdowns
+  const { data: filterOptions } = useVivierFilterOptions();
 
   const handleSelectChange = (id: string, selected: boolean) => {
     setSelectedIds(prev => {
@@ -147,6 +150,37 @@ export default function ViviersLeads() {
         query = query.ilike('industry', `%${industry}%`);
       }
 
+      // Apply column filters (layer 2)
+      if (columnFilters.company) {
+        query = query.ilike('company_name', `%${columnFilters.company}%`);
+      }
+      if (columnFilters.contact) {
+        query = query.ilike('contact_name', `%${columnFilters.contact}%`);
+      }
+      if (columnFilters.email) {
+        query = query.ilike('email', `%${columnFilters.email}%`);
+      }
+      if (columnFilters.location) {
+        query = query.ilike('city', `%${columnFilters.location}%`);
+      }
+      if (columnFilters.siret) {
+        query = query.ilike('siret', `%${columnFilters.siret}%`);
+      }
+      if (columnFilters.score) {
+        if (columnFilters.score === 'high') {
+          query = query.gte('cold_score', 70);
+        } else if (columnFilters.score === 'medium') {
+          query = query.gte('cold_score', 40).lt('cold_score', 70);
+        } else if (columnFilters.score === 'low') {
+          query = query.lt('cold_score', 40).not('cold_score', 'is', null);
+        } else if (columnFilters.score === 'none') {
+          query = query.is('cold_score', null);
+        }
+      }
+      if (columnFilters.status) {
+        query = query.eq('status', columnFilters.status);
+      }
+
       const { data, error } = await query;
 
       if (error) throw error;
@@ -197,7 +231,7 @@ export default function ViviersLeads() {
     } finally {
       setIsExporting(false);
     }
-  }, [search, status, minScore, maxScore, city, postalCode, industry, totalCount]);
+  }, [search, status, minScore, maxScore, city, postalCode, industry, totalCount, columnFilters]);
 
   const handleDeleteAll = async () => {
     setIsDeletingAll(true);
@@ -492,6 +526,7 @@ export default function ViviersLeads() {
               setColumnFilters(filters);
               setPage(1);
             }}
+            filterOptions={filterOptions}
           />
         )}
       </div>

@@ -33,6 +33,14 @@ export const emptyColumnFilters: ColumnFilters = {
   status: '',
 };
 
+interface FilterOptions {
+  companies: string[];
+  contacts: string[];
+  locations: string[];
+  industries: string[];
+  sirets: string[];
+}
+
 interface VivierTableProps {
   viviers: Vivier[];
   isLoading: boolean;
@@ -48,6 +56,7 @@ interface VivierTableProps {
   onPageSizeChange?: (size: number) => void;
   columnFilters: ColumnFilters;
   onColumnFiltersChange: (filters: ColumnFilters) => void;
+  filterOptions?: FilterOptions;
 }
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 200];
@@ -138,6 +147,7 @@ export function VivierTable({
   onPageSizeChange,
   columnFilters,
   onColumnFiltersChange,
+  filterOptions,
 }: VivierTableProps) {
   const updateFilter = (key: keyof ColumnFilters, value: string) => {
     onColumnFiltersChange({ ...columnFilters, [key]: value });
@@ -186,6 +196,13 @@ export function VivierTable({
     label: config.label,
   }));
 
+  // Build options from filterOptions
+  const companyOptions = filterOptions?.companies?.map(c => ({ value: c, label: c })) || [];
+  const contactOptions = filterOptions?.contacts?.map(c => ({ value: c, label: c })) || [];
+  const locationOptions = filterOptions?.locations?.map(l => ({ value: l, label: l })) || [];
+  const industryOptions = filterOptions?.industries?.map(i => ({ value: i, label: i })) || [];
+  const siretOptions = filterOptions?.sirets?.map(s => ({ value: s, label: s })) || [];
+
   return (
     <div className="space-y-4">
       {/* Column filter indicator */}
@@ -227,14 +244,18 @@ export function VivierTable({
                   <FilterableHeader 
                     label="Entreprise" 
                     value={columnFilters.company} 
-                    onChange={(v) => updateFilter('company', v)} 
+                    onChange={(v) => updateFilter('company', v)}
+                    type="select"
+                    options={companyOptions}
                   />
                 </TableHead>
                 <TableHead className="min-w-[140px]">
                   <FilterableHeader 
                     label="Dirigeant" 
                     value={columnFilters.contact} 
-                    onChange={(v) => updateFilter('contact', v)} 
+                    onChange={(v) => updateFilter('contact', v)}
+                    type="select"
+                    options={contactOptions}
                   />
                 </TableHead>
                 <TableHead className="min-w-[200px]">
@@ -249,21 +270,27 @@ export function VivierTable({
                   <FilterableHeader 
                     label="Localisation" 
                     value={columnFilters.location} 
-                    onChange={(v) => updateFilter('location', v)} 
+                    onChange={(v) => updateFilter('location', v)}
+                    type="select"
+                    options={locationOptions}
                   />
                 </TableHead>
                 <TableHead className="min-w-[150px]">
                   <FilterableHeader 
                     label="Activité" 
                     value={columnFilters.industry} 
-                    onChange={(v) => updateFilter('industry', v)} 
+                    onChange={(v) => updateFilter('industry', v)}
+                    type="select"
+                    options={industryOptions}
                   />
                 </TableHead>
                 <TableHead className="min-w-[130px]">
                   <FilterableHeader 
                     label="SIRET" 
                     value={columnFilters.siret} 
-                    onChange={(v) => updateFilter('siret', v)} 
+                    onChange={(v) => updateFilter('siret', v)}
+                    type="select"
+                    options={siretOptions}
                   />
                 </TableHead>
                 <TableHead className="w-16 text-center">
