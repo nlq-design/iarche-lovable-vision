@@ -30,6 +30,21 @@ interface FileQueueItem {
   error?: string;
 }
 
+// Mapping preview interface
+interface MappingPreview {
+  field: string;
+  label: string;
+  detectedColumn: string | null;
+  sampleValues: string[];
+  confidence: 'high' | 'medium' | 'low' | 'none';
+}
+
+interface MappingPreviewState {
+  mappings: MappingPreview[];
+  rawRows: Record<string, string>[];
+  originalHeaders: string[];
+}
+
 export default function ViviersImport() {
   const [pastedData, setPastedData] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -49,6 +64,9 @@ export default function ViviersImport() {
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
   const [isProcessingQueue, setIsProcessingQueue] = useState(false);
   const [allParsedRows, setAllParsedRows] = useState<Record<string, string>[]>([]);
+  
+  // Mapping preview state
+  const [mappingPreview, setMappingPreview] = useState<MappingPreviewState | null>(null);
 
   // Normalize header names to lowercase and remove special characters
   const normalizeHeader = (header: string): string => {
@@ -566,6 +584,100 @@ export default function ViviersImport() {
     });
   };
 
+  // Generate mapping preview before full analysis
+  const generateMappingPreview = (rows: Record<string, string>[]): MappingPreviewState => {
+    if (rows.length === 0) return { mappings: [], rawRows: [], originalHeaders: [] };
+    
+    const originalHeaders = Object.keys(rows[0]);
+    const sampleRows = rows.slice(0, 5); // Take first 5 rows for samples
+    
+    // Define fields to check
+    const fieldDefinitions: { field: string; label: string; validator?: (v: string) => boolean; keys: string[] }[] = [
+      { field: 'email', label: 'Email', validator: looksLikeEmail, keys: ['email', 'e_mail', 'mail', 'adresse_e_mail', 'adresse_mail', 'courriel', 'adresse_email', 'contact_email'] },
+      { field: 'company_name', label: 'Entreprise', keys: ['nom', 'company', 'company_name', 'entreprise', 'societe', 'raison_sociale', 'denomination', 'nom_entreprise', 'nom_societe'] },
+      { field: 'siret', label: 'SIRET', validator: looksLikeSiret, keys: ['siret', 'n_siret', 'numero_siret', 'num_siret'] },
+      { field: 'contact_name', label: 'Contact/Dirigeant', keys: ['dirigeant', 'contact', 'contact_name', 'nom_contact', 'responsable', 'gerant', 'representant', 'interlocuteur', 'nom_dirigeant', 'representant_legal'] },
+      { field: 'phone', label: 'Téléphone', validator: looksLikePhone, keys: ['telephone', 'phone', 'tel', 'numero_telephone', 'mobile', 'portable', 'tel_fixe', 'tel_mobile', 'contact_tel'] },
+      { field: 'postal_code', label: 'Code Postal', validator: isValidPostalCode, keys: ['code_postal', 'postal_code', 'cp', 'zip', 'code_post', 'code_postale'] },
+      { field: 'city', label: 'Ville', keys: ['ville', 'city', 'commune', 'localite', 'ville_siege', 'lieu'] },
+      { field: 'industry', label: 'Secteur/Activité', keys: ['activite', 'activity', 'industry', 'secteur', 'secteur_activite', 'libelle_naf', 'libelle_activite', 'metier', 'objet_social'] },
+      { field: 'naf_code', label: 'Code NAF/APE', validator: looksLikeNafCode, keys: ['naf_ape', 'naf', 'ape', 'code_naf', 'code_ape', 'naf_rev2', 'activite_principale'] },
+      { field: 'address', label: 'Adresse', keys: ['adresse', 'address', 'adresse_1', 'adresse_complete', 'rue', 'voie', 'adresse_siege'] },
+      { field: 'website', label: 'Site Web', keys: ['website', 'site_web', 'url', 'site', 'site_internet'] },
+    ];
+    
+    const mappings: MappingPreview[] = fieldDefinitions.map(def => {
+      let detectedColumn: string | null = null;
+      let sampleValues: string[] = [];
+      let confidence: 'high' | 'medium' | 'low' | 'none' = 'none';
+      
+      // First try: find by column name
+      for (const key of def.keys) {
+        if (originalHeaders.some(h => normalizeHeader(h) === key)) {
+          const matchedHeader = originalHeaders.find(h => normalizeHeader(h) === key)!;
+          detectedColumn = matchedHeader;
+          sampleValues = sampleRows.map(r => r[normalizeHeader(matchedHeader)] || '').filter(Boolean).slice(0, 3);
+          
+          // Validate if validator exists
+          if (def.validator) {
+            const validCount = sampleValues.filter(v => def.validator!(v)).length;
+            confidence = validCount === sampleValues.length ? 'high' : validCount > 0 ? 'medium' : 'low';
+          } else {
+            confidence = sampleValues.length > 0 ? 'high' : 'low';
+          }
+          break;
+        }
+      }
+      
+      // Second try: pattern detection if no column name match but has validator
+      if (!detectedColumn && def.validator) {
+        for (const header of originalHeaders) {
+          const normalizedHeader = normalizeHeader(header);
+          const values = sampleRows.map(r => r[normalizedHeader] || '').filter(Boolean);
+          const validCount = values.filter(v => def.validator!(v)).length;
+          
+          if (validCount >= Math.ceil(values.length * 0.7)) {
+            detectedColumn = `${header} (auto-détecté)`;
+            sampleValues = values.filter(v => def.validator!(v)).slice(0, 3);
+            confidence = 'medium';
+            break;
+          }
+        }
+      }
+      
+      return { field: def.field, label: def.label, detectedColumn, sampleValues, confidence };
+    });
+    
+    return { mappings, rawRows: rows, originalHeaders };
+  };
+  
+  // Show mapping preview instead of directly analyzing
+  const handleShowMappingPreview = async (rows: Record<string, string>[]) => {
+    if (rows.length === 0) {
+      toast.error('Aucune donnée valide trouvée');
+      return;
+    }
+    
+    const preview = generateMappingPreview(rows);
+    setMappingPreview(preview);
+    toast.success(`${rows.length} lignes détectées - Vérifiez le mapping`);
+  };
+  
+  // Confirm mapping and proceed to full analysis
+  const handleConfirmMapping = async () => {
+    if (!mappingPreview) return;
+    setMappingPreview(null);
+    await handleAnalyze(mappingPreview.rawRows);
+  };
+  
+  // Cancel mapping preview
+  const handleCancelMapping = () => {
+    setMappingPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   // Analyze file and detect duplicates
   const handleAnalyze = async (rows: Record<string, string>[]) => {
     setIsAnalyzing(true);
@@ -740,9 +852,9 @@ export default function ViviersImport() {
     setAllParsedRows(allRows);
     setIsProcessingQueue(false);
     
-    // Now analyze all collected rows
+    // Now show mapping preview for all collected rows
     if (allRows.length > 0) {
-      await handleAnalyze(allRows);
+      await handleShowMappingPreview(allRows);
     } else {
       setIsAnalyzing(false);
       toast.error('Aucune donnée valide trouvée dans les fichiers');
@@ -755,11 +867,11 @@ export default function ViviersImport() {
     if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
       const buffer = await file.arrayBuffer();
       const rows = parseExcel(buffer);
-      handleAnalyze(rows);
+      handleShowMappingPreview(rows);
     } else if (fileName.endsWith('.csv') || fileName.endsWith('.txt')) {
       const text = await file.text();
       const rows = parseCSV(text);
-      handleAnalyze(rows);
+      handleShowMappingPreview(rows);
     } else {
       toast.error('Format non supporté. Utilisez Excel (.xlsx), CSV ou TXT.');
     }
@@ -802,7 +914,7 @@ export default function ViviersImport() {
 
   const handlePasteAnalyze = () => {
     const rows = parseCSV(pastedData);
-    handleAnalyze(rows);
+    handleShowMappingPreview(rows);
   };
 
   const handleReset = () => {
@@ -812,6 +924,7 @@ export default function ViviersImport() {
     setFileQueue([]);
     setAllParsedRows([]);
     setCurrentFileIndex(0);
+    setMappingPreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -851,7 +964,7 @@ export default function ViviersImport() {
             <LogoArc size="sm" className="mt-2" />
             <p className="text-muted-foreground mt-2">Importez vos leads avec détection automatique des doublons</p>
           </div>
-          {parsedData && (
+          {(parsedData || mappingPreview) && (
             <Button variant="outline" onClick={handleReset}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Nouveau fichier
@@ -859,8 +972,123 @@ export default function ViviersImport() {
           )}
         </div>
 
-        {/* Preview & Import Section */}
-        {parsedData ? (
+        {/* Mapping Preview Step */}
+        {mappingPreview && !parsedData ? (
+          <div className="space-y-6">
+            <Card className="border-primary/30 bg-primary/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileSpreadsheet className="w-5 h-5 text-primary" />
+                  Prévisualisation du Mapping
+                </CardTitle>
+                <CardDescription>
+                  Vérifiez que les colonnes sont correctement associées aux champs avant d'importer ({mappingPreview.rawRows.length} lignes)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Original headers */}
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-sm font-medium mb-2">En-têtes détectés dans le fichier :</p>
+                  <div className="flex flex-wrap gap-2">
+                    {mappingPreview.originalHeaders.map((h, i) => (
+                      <Badge key={i} variant="outline" className="text-xs">
+                        {h}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Mapping table */}
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="w-[180px]">Champ cible</TableHead>
+                        <TableHead>Colonne détectée</TableHead>
+                        <TableHead>Exemples de valeurs</TableHead>
+                        <TableHead className="w-[100px] text-center">Confiance</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {mappingPreview.mappings.map((m, index) => (
+                        <TableRow key={index} className={m.confidence === 'none' ? 'opacity-50' : ''}>
+                          <TableCell className="font-medium">{m.label}</TableCell>
+                          <TableCell>
+                            {m.detectedColumn ? (
+                              <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
+                                {m.detectedColumn}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground italic">Non détecté</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {m.sampleValues.length > 0 ? (
+                                m.sampleValues.map((v, i) => (
+                                  <span key={i} className="text-xs bg-background border px-2 py-0.5 rounded truncate max-w-[150px]">
+                                    {v}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-muted-foreground text-xs">-</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {m.confidence === 'high' && (
+                              <Badge className="bg-green-500/10 text-green-600 border-green-500/30">
+                                <CheckCircle2 className="w-3 h-3 mr-1" />
+                                OK
+                              </Badge>
+                            )}
+                            {m.confidence === 'medium' && (
+                              <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/30">
+                                <AlertTriangle className="w-3 h-3 mr-1" />
+                                Partiel
+                              </Badge>
+                            )}
+                            {m.confidence === 'low' && (
+                              <Badge className="bg-red-500/10 text-red-600 border-red-500/30">
+                                <AlertCircle className="w-3 h-3 mr-1" />
+                                Faible
+                              </Badge>
+                            )}
+                            {m.confidence === 'none' && (
+                              <Badge variant="outline" className="text-muted-foreground">
+                                -
+                              </Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                
+                {/* Action buttons */}
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button variant="outline" onClick={handleCancelMapping}>
+                    Annuler
+                  </Button>
+                  <Button onClick={handleConfirmMapping} disabled={isAnalyzing}>
+                    {isAnalyzing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Analyse en cours...
+                      </>
+                    ) : (
+                      <>
+                        <ArrowRight className="w-4 h-4 mr-2" />
+                        Confirmer et analyser
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : parsedData ? (
           <div className="space-y-6">
             {/* Summary Cards */}
             <div className="grid gap-4 sm:grid-cols-3">
