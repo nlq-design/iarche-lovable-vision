@@ -4361,6 +4361,51 @@ export type Database = {
         }
         Relationships: []
       }
+      vivier_lists: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          criteria_json: Json | null
+          description: string | null
+          id: string
+          last_sync_at: string | null
+          lead_count: number | null
+          list_type: string
+          name: string
+          static_vivier_ids: string[] | null
+          updated_at: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          criteria_json?: Json | null
+          description?: string | null
+          id?: string
+          last_sync_at?: string | null
+          lead_count?: number | null
+          list_type?: string
+          name: string
+          static_vivier_ids?: string[] | null
+          updated_at?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          criteria_json?: Json | null
+          description?: string | null
+          id?: string
+          last_sync_at?: string | null
+          lead_count?: number | null
+          list_type?: string
+          name?: string
+          static_vivier_ids?: string[] | null
+          updated_at?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       viviers: {
         Row: {
           address: string | null
@@ -4393,6 +4438,8 @@ export type Database = {
           raw_data: Json | null
           region: string | null
           revenue_range: string | null
+          scored_at: string | null
+          scoring_batch_id: string | null
           scoring_criteria: Json | null
           siren: string | null
           siret: string | null
@@ -4436,6 +4483,8 @@ export type Database = {
           raw_data?: Json | null
           region?: string | null
           revenue_range?: string | null
+          scored_at?: string | null
+          scoring_batch_id?: string | null
           scoring_criteria?: Json | null
           siren?: string | null
           siret?: string | null
@@ -4479,6 +4528,8 @@ export type Database = {
           raw_data?: Json | null
           region?: string | null
           revenue_range?: string | null
+          scored_at?: string | null
+          scoring_batch_id?: string | null
           scoring_criteria?: Json | null
           siren?: string | null
           siret?: string | null
