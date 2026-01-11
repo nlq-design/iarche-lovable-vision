@@ -42,6 +42,8 @@ export function useCockpitTasks(workspaceId?: string, entityType?: string, entit
       if (error) throw error;
       return data;
     },
+    staleTime: 60 * 1000, // 1 minute cache
+    refetchOnWindowFocus: false,
   });
 
   // Fetch today's tasks
@@ -67,6 +69,8 @@ export function useCockpitTasks(workspaceId?: string, entityType?: string, entit
         if (error) throw error;
         return data;
       },
+      staleTime: 60 * 1000,
+      refetchOnWindowFocus: false,
     });
   };
 
@@ -93,6 +97,8 @@ export function useCockpitTasks(workspaceId?: string, entityType?: string, entit
         if (error) throw error;
         return data;
       },
+      staleTime: 60 * 1000,
+      refetchOnWindowFocus: false,
     });
   };
 

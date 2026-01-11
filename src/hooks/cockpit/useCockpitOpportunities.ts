@@ -33,6 +33,8 @@ export function useCockpitOpportunities(workspaceId?: string) {
       if (error) throw error;
       return data;
     },
+    staleTime: 60 * 1000, // 1 minute cache
+    refetchOnWindowFocus: false,
   });
 
   // Fetch opportunities by stage
@@ -57,6 +59,8 @@ export function useCockpitOpportunities(workspaceId?: string) {
         if (error) throw error;
         return data;
       },
+      staleTime: 60 * 1000,
+      refetchOnWindowFocus: false,
     });
   };
 
