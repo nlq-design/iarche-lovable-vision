@@ -4297,6 +4297,7 @@ export type Database = {
           instantly_campaign_id: string | null
           instantly_status: string | null
           last_synced_at: string | null
+          launched_at: string | null
           metadata: Json | null
           name: string
           open_count: number | null
@@ -4350,6 +4351,7 @@ export type Database = {
           instantly_campaign_id?: string | null
           instantly_status?: string | null
           last_synced_at?: string | null
+          launched_at?: string | null
           metadata?: Json | null
           name: string
           open_count?: number | null
@@ -4403,6 +4405,7 @@ export type Database = {
           instantly_campaign_id?: string | null
           instantly_status?: string | null
           last_synced_at?: string | null
+          launched_at?: string | null
           metadata?: Json | null
           name?: string
           open_count?: number | null

@@ -92,7 +92,11 @@ serve(async (req) => {
       case 'create': {
         console.log(`Creating Instantly campaign: ${campaign.name}`);
         
-        // Create campaign in Instantly
+        // Prepare email sequences with campaign content
+        const emailSubject = campaign.subject || campaign.name;
+        const emailBody = campaign.html_content || campaign.body_html || '<p>Contenu de l\'email</p>';
+        
+        // Create campaign in Instantly with email sequence
         const createResponse = await fetch(`${INSTANTLY_API_URL}/campaigns`, {
           method: 'POST',
           headers: instantlyHeaders,
@@ -105,13 +109,23 @@ serve(async (req) => {
                 timing: { from: '09:00', to: '18:00' },
               }],
             },
+            sequences: [{
+              steps: [{
+                type: 'email',
+                delay: 0,
+                variants: [{
+                  subject: emailSubject,
+                  body: emailBody,
+                }],
+              }],
+            }],
           }),
         });
 
         if (!createResponse.ok) {
           const errorText = await createResponse.text();
           console.error('Instantly create error:', createResponse.status, errorText);
-          throw new Error(`Failed to create campaign in Instantly`);
+          throw new Error(`Failed to create campaign in Instantly: ${errorText}`);
         }
 
         const instantlyCampaign = await createResponse.json();
@@ -123,6 +137,7 @@ serve(async (req) => {
           .update({ 
             instantly_campaign_id: instantlyCampaign.id,
             status: 'created',
+            last_synced_at: new Date().toISOString(),
           })
           .eq('id', campaign_id);
 
