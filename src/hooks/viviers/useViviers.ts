@@ -72,19 +72,45 @@ interface UseViviersOptions {
   companySize?: string;
   hasEmail?: boolean;
   hasPhone?: boolean;
+  // Column-level filters
+  columnFilters?: {
+    company?: string;
+    contact?: string;
+    email?: string;
+    location?: string;
+    siret?: string;
+    scoreRange?: 'high' | 'medium' | 'low' | 'none';
+    statusFilter?: string;
+  };
 }
 
 export function useViviers(options: UseViviersOptions = {}) {
-  const { page = 1, pageSize = 25, search, status, minScore, maxScore, city, postalCode, department, industry, companySize, hasEmail, hasPhone } = options;
+  const { 
+    page = 1, 
+    pageSize = 25, 
+    search, 
+    status, 
+    minScore, 
+    maxScore, 
+    city, 
+    postalCode, 
+    department, 
+    industry, 
+    companySize, 
+    hasEmail, 
+    hasPhone,
+    columnFilters,
+  } = options;
   const queryClient = useQueryClient();
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['viviers', page, pageSize, search, status, minScore, maxScore, city, postalCode, department, industry, companySize, hasEmail, hasPhone],
+    queryKey: ['viviers', page, pageSize, search, status, minScore, maxScore, city, postalCode, department, industry, companySize, hasEmail, hasPhone, columnFilters],
     queryFn: async () => {
       // Select only columns needed for the list view (performance optimization)
+      // Add siret and legal_form for column filters
       let query = supabase
         .from('viviers')
-        .select('id, company_name, contact_name, contact_first_name, contact_last_name, email, phone, city, postal_code, industry, cold_score, status, created_at', { count: 'exact' })
+        .select('id, company_name, contact_name, contact_first_name, contact_last_name, email, phone, city, postal_code, industry, cold_score, status, created_at, siret, legal_form', { count: 'exact' })
         .order('created_at', { ascending: false });
 
       // Pagination
@@ -143,6 +169,52 @@ export function useViviers(options: UseViviersOptions = {}) {
       // Has phone filter
       if (hasPhone === true) {
         query = query.not('phone', 'is', null).neq('phone', '');
+      }
+
+      // Column-level filters (second layer filtering)
+      if (columnFilters) {
+        // Company column filter
+        if (columnFilters.company) {
+          query = query.ilike('company_name', `%${columnFilters.company}%`);
+        }
+        
+        // Contact column filter (searches in contact_name, first_name, last_name)
+        if (columnFilters.contact) {
+          query = query.or(`contact_name.ilike.%${columnFilters.contact}%,contact_first_name.ilike.%${columnFilters.contact}%,contact_last_name.ilike.%${columnFilters.contact}%`);
+        }
+        
+        // Email column filter
+        if (columnFilters.email) {
+          query = query.ilike('email', `%${columnFilters.email}%`);
+        }
+        
+        // Location column filter (city + postal_code)
+        if (columnFilters.location) {
+          query = query.or(`city.ilike.%${columnFilters.location}%,postal_code.ilike.%${columnFilters.location}%`);
+        }
+        
+        // SIRET column filter
+        if (columnFilters.siret) {
+          query = query.ilike('siret', `%${columnFilters.siret}%`);
+        }
+        
+        // Score range filter
+        if (columnFilters.scoreRange) {
+          if (columnFilters.scoreRange === 'high') {
+            query = query.gte('cold_score', 70);
+          } else if (columnFilters.scoreRange === 'medium') {
+            query = query.gte('cold_score', 40).lt('cold_score', 70);
+          } else if (columnFilters.scoreRange === 'low') {
+            query = query.lt('cold_score', 40).not('cold_score', 'is', null);
+          } else if (columnFilters.scoreRange === 'none') {
+            query = query.is('cold_score', null);
+          }
+        }
+        
+        // Status column filter (overrides main status filter if set)
+        if (columnFilters.statusFilter) {
+          query = query.eq('status', columnFilters.statusFilter);
+        }
       }
 
       const { data, error, count } = await query;
