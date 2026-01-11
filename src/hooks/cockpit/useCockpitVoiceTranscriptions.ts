@@ -156,6 +156,8 @@ export function useCockpitVoiceTranscriptions(
       if (error) throw error;
       return (data ?? []) as unknown as VoiceTranscription[];
     },
+    staleTime: 60 * 1000, // 1 minute cache
+    refetchOnWindowFocus: false,
   });
 
   // Fetch single transcription
@@ -336,6 +338,8 @@ export function useAIPromptProfiles(category = 'transcription') {
       if (error) throw error;
       return data ?? [];
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes - prompts rarely change
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -352,6 +356,8 @@ export function useLLMModels() {
       if (error) throw error;
       return (data ?? []) as LLMModel[];
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes - models config rarely changes
+    refetchOnWindowFocus: false,
   });
 }
 

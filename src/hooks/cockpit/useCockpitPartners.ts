@@ -60,6 +60,8 @@ export function useCockpitPartners() {
       if (error) throw error;
       return data as Partner[];
     },
+    staleTime: 2 * 60 * 1000, // 2 minutes - partners rarely change
+    refetchOnWindowFocus: false,
   });
 
   // Inclut les partenaires supprimés (pour la corbeille)
@@ -74,6 +76,8 @@ export function useCockpitPartners() {
       if (error) throw error;
       return data as Partner[];
     },
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const createPartner = useMutation({
@@ -218,6 +222,8 @@ export function useProjectPartners(projectId: string | undefined) {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const linkPartner = useMutation({

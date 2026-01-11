@@ -34,6 +34,8 @@ export function useCockpitProjects(workspaceId?: string) {
       if (error) throw error;
       return data;
     },
+    staleTime: 60 * 1000, // 1 minute cache
+    refetchOnWindowFocus: false,
   });
 
   // Create project

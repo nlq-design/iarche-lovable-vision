@@ -30,7 +30,9 @@ export function CockpitHeader() {
       if (error) throw error;
       return count || 0;
     },
-    refetchInterval: 60000, // Refresh every minute
+    staleTime: 60 * 1000, // 1 minute cache
+    refetchOnWindowFocus: false,
+    refetchInterval: 60000, // Still refresh every minute in background
   });
   const { user, signOut } = useAuth();
   const { stepUpExpiresAt, hasCockpitAdminAccess } = useCockpitAuth();

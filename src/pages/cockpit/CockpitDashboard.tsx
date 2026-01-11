@@ -401,6 +401,8 @@ function StagnantEntitiesWidget() {
       if (error) return [];
       return data;
     },
+    staleTime: 2 * 60 * 1000, // 2 minutes cache
+    refetchOnWindowFocus: false,
   });
 
   if (isLoading || stagnantOpportunities.length === 0) return null;

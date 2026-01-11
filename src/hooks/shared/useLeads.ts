@@ -29,6 +29,8 @@ export const useLeads = () => {
       if (error) throw error;
       return data as Lead[];
     },
+    staleTime: 60 * 1000, // 1 minute cache
+    refetchOnWindowFocus: false,
   });
 
   // Create lead
@@ -168,6 +170,8 @@ export const useLeadsByStatus = (status: string) => {
       if (error) throw error;
       return data as Lead[];
     },
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -187,5 +191,7 @@ export const useLeadsBySource = (source: string) => {
       if (error) throw error;
       return data as Lead[];
     },
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
