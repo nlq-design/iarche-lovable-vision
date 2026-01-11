@@ -7,7 +7,7 @@ import { Users, Upload, Trash2, AlertTriangle, Sparkles, ChevronDown, ChevronUp 
 import { Link } from 'react-router-dom';
 import LogoArc from '@/components/ui/LogoArc';
 import { useViviers, type Vivier } from '@/hooks/viviers';
-import { VivierTable } from '@/components/viviers/VivierTable';
+import { VivierTable, type ColumnFilters, emptyColumnFilters } from '@/components/viviers/VivierTable';
 import { VivierFilters } from '@/components/viviers/VivierFilters';
 import { VivierAISearch } from '@/components/viviers/VivierAISearch';
 import { VivierScoringPanel } from '@/components/viviers/VivierScoringPanel';
@@ -41,6 +41,7 @@ export default function ViviersLeads() {
   const queryClient = useQueryClient();
 
   const [pageSize, setPageSize] = useState(50);
+  const [columnFilters, setColumnFilters] = useState<ColumnFilters>(emptyColumnFilters);
 
   const { 
     viviers, 
@@ -64,6 +65,15 @@ export default function ViviersLeads() {
     companySize: companySize || undefined,
     hasEmail,
     hasPhone,
+    columnFilters: {
+      company: columnFilters.company || undefined,
+      contact: columnFilters.contact || undefined,
+      email: columnFilters.email || undefined,
+      location: columnFilters.location || undefined,
+      siret: columnFilters.siret || undefined,
+      scoreRange: columnFilters.score as 'high' | 'medium' | 'low' | 'none' | undefined,
+      statusFilter: columnFilters.status || undefined,
+    },
   });
 
   const handleSelectChange = (id: string, selected: boolean) => {
@@ -477,6 +487,11 @@ export default function ViviersLeads() {
             totalPages={totalPages}
             totalCount={totalCount}
             onPageChange={setPage}
+            columnFilters={columnFilters}
+            onColumnFiltersChange={(filters) => {
+              setColumnFilters(filters);
+              setPage(1);
+            }}
           />
         )}
       </div>

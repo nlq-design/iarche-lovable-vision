@@ -1,4 +1,3 @@
-import { useState, useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +9,28 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Mail, MapPin, Phone, ExternalLink, Filter, X } from 'lucide-react';
 import type { Vivier } from '@/hooks/viviers/useViviers';
 import { VIVIER_STATUSES } from '@/hooks/viviers/useViviers';
+
+export interface ColumnFilters {
+  company: string;
+  contact: string;
+  email: string;
+  location: string;
+  industry: string;
+  siret: string;
+  score: string;
+  status: string;
+}
+
+export const emptyColumnFilters: ColumnFilters = {
+  company: '',
+  contact: '',
+  email: '',
+  location: '',
+  industry: '',
+  siret: '',
+  score: '',
+  status: '',
+};
 
 interface VivierTableProps {
   viviers: Vivier[];
@@ -24,31 +45,11 @@ interface VivierTableProps {
   onPageChange: (page: number) => void;
   pageSize?: number;
   onPageSizeChange?: (size: number) => void;
+  columnFilters: ColumnFilters;
+  onColumnFiltersChange: (filters: ColumnFilters) => void;
 }
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 200];
-
-interface ColumnFilters {
-  company: string;
-  contact: string;
-  email: string;
-  location: string;
-  industry: string;
-  siret: string;
-  score: string;
-  status: string;
-}
-
-const emptyFilters: ColumnFilters = {
-  company: '',
-  contact: '',
-  email: '',
-  location: '',
-  industry: '',
-  siret: '',
-  score: '',
-  status: '',
-};
 
 function FilterableHeader({ 
   label, 
@@ -134,45 +135,19 @@ export function VivierTable({
   onPageChange,
   pageSize = 50,
   onPageSizeChange,
+  columnFilters,
+  onColumnFiltersChange,
 }: VivierTableProps) {
-  const [columnFilters, setColumnFilters] = useState<ColumnFilters>(emptyFilters);
-  
   const updateFilter = (key: keyof ColumnFilters, value: string) => {
-    setColumnFilters(prev => ({ ...prev, [key]: value }));
+    onColumnFiltersChange({ ...columnFilters, [key]: value });
   };
   
   const hasColumnFilters = Object.values(columnFilters).some(v => v.length > 0);
   const activeColumnFilterCount = Object.values(columnFilters).filter(v => v.length > 0).length;
   
-  // Apply column filters locally
-  const filteredViviers = useMemo(() => {
-    if (!hasColumnFilters) return viviers;
-    
-    return viviers.filter(v => {
-      const contactName = v.contact_name || [v.contact_first_name, v.contact_last_name].filter(Boolean).join(' ') || '';
-      const location = [v.postal_code, v.city].filter(Boolean).join(' ');
-      
-      if (columnFilters.company && !v.company_name?.toLowerCase().includes(columnFilters.company.toLowerCase())) return false;
-      if (columnFilters.contact && !contactName.toLowerCase().includes(columnFilters.contact.toLowerCase())) return false;
-      if (columnFilters.email && !v.email?.toLowerCase().includes(columnFilters.email.toLowerCase())) return false;
-      if (columnFilters.location && !location.toLowerCase().includes(columnFilters.location.toLowerCase())) return false;
-      if (columnFilters.industry && !v.industry?.toLowerCase().includes(columnFilters.industry.toLowerCase())) return false;
-      if (columnFilters.siret && !v.siret?.includes(columnFilters.siret)) return false;
-      if (columnFilters.score) {
-        const score = v.cold_score;
-        if (columnFilters.score === 'high' && (score === null || score === undefined || score < 70)) return false;
-        if (columnFilters.score === 'medium' && (score === null || score === undefined || score < 40 || score >= 70)) return false;
-        if (columnFilters.score === 'low' && (score === null || score === undefined || score >= 40)) return false;
-        if (columnFilters.score === 'none' && score !== null && score !== undefined) return false;
-      }
-      if (columnFilters.status && v.status !== columnFilters.status) return false;
-      
-      return true;
-    });
-  }, [viviers, columnFilters, hasColumnFilters]);
-  
-  const allSelected = filteredViviers.length > 0 && filteredViviers.every(v => selectedIds.has(v.id));
-  const someSelected = filteredViviers.some(v => selectedIds.has(v.id)) && !allSelected;
+  // Filters are now applied server-side, use viviers directly
+  const allSelected = viviers.length > 0 && viviers.every(v => selectedIds.has(v.id));
+  const someSelected = viviers.some(v => selectedIds.has(v.id)) && !allSelected;
 
   const getScoreBadge = (score: number | null | undefined) => {
     if (score === null || score === undefined) {
@@ -194,7 +169,7 @@ export function VivierTable({
     );
   }
 
-  if (filteredViviers.length === 0 && !hasColumnFilters) {
+  if (viviers.length === 0 && !hasColumnFilters) {
     return null;
   }
 
@@ -220,13 +195,13 @@ export function VivierTable({
             {activeColumnFilterCount} filtre{activeColumnFilterCount > 1 ? 's' : ''} colonne
           </Badge>
           <span className="text-sm text-muted-foreground">
-            {filteredViviers.length} / {viviers.length} affichés sur cette page
+            {totalCount.toLocaleString('fr-FR')} résultat{totalCount > 1 ? 's' : ''}
           </span>
           <Button 
             variant="ghost" 
             size="sm" 
             className="h-6 text-xs"
-            onClick={() => setColumnFilters(emptyFilters)}
+            onClick={() => onColumnFiltersChange(emptyColumnFilters)}
           >
             <X className="h-3 w-3 mr-1" />
             Effacer filtres colonnes
@@ -312,14 +287,14 @@ export function VivierTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredViviers.length === 0 ? (
+              {viviers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                    Aucun lead ne correspond aux filtres de colonnes
+                    Aucun lead ne correspond aux filtres
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredViviers.map((vivier) => {
+                viviers.map((vivier) => {
                 const statusConfig = VIVIER_STATUSES[(vivier.status as keyof typeof VIVIER_STATUSES) || 'new'];
                 
                 // Build display name for contact
