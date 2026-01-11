@@ -172,34 +172,34 @@ export function useViviers(options: UseViviersOptions = {}) {
         query = query.not('phone', 'is', null).neq('phone', '');
       }
 
-      // Column-level filters (second layer filtering)
+      // Column-level filters (second layer filtering) - exact match for dropdown selections
       if (columnFilters) {
-        // Company column filter
+        // Company column filter - exact match
         if (columnFilters.company) {
-          query = query.ilike('company_name', `%${columnFilters.company}%`);
+          query = query.eq('company_name', columnFilters.company);
         }
         
-        // Contact column filter (searches in contact_name, first_name, last_name)
+        // Contact column filter - exact match on contact_name
         if (columnFilters.contact) {
-          query = query.or(`contact_name.ilike.%${columnFilters.contact}%,contact_first_name.ilike.%${columnFilters.contact}%,contact_last_name.ilike.%${columnFilters.contact}%`);
+          query = query.eq('contact_name', columnFilters.contact);
         }
         
-        // Email column filter
+        // Email column filter - keeps ilike for text search
         if (columnFilters.email) {
           query = query.ilike('email', `%${columnFilters.email}%`);
         }
         
-        // Location column filter (city + postal_code)
+        // Location column filter - exact match on city
         if (columnFilters.location) {
-          query = query.or(`city.ilike.%${columnFilters.location}%,postal_code.ilike.%${columnFilters.location}%`);
+          query = query.eq('city', columnFilters.location);
         }
         
-        // SIRET column filter
+        // SIRET column filter - exact match
         if (columnFilters.siret) {
-          query = query.ilike('siret', `%${columnFilters.siret}%`);
+          query = query.eq('siret', columnFilters.siret);
         }
         
-        // Industry column filter
+        // Industry column filter - exact match
         if (columnFilters.industry) {
           query = query.eq('industry', columnFilters.industry);
         }
