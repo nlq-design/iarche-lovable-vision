@@ -151,21 +151,21 @@ export default function ViviersLeads() {
         query = query.ilike('industry', `%${industry}%`);
       }
 
-      // Apply column filters (layer 2)
+      // Apply column filters (layer 2) - exact match for dropdown selections
       if (columnFilters.company) {
-        query = query.ilike('company_name', `%${columnFilters.company}%`);
+        query = query.eq('company_name', columnFilters.company);
       }
       if (columnFilters.contact) {
-        query = query.ilike('contact_name', `%${columnFilters.contact}%`);
+        query = query.eq('contact_name', columnFilters.contact);
       }
       if (columnFilters.email) {
         query = query.ilike('email', `%${columnFilters.email}%`);
       }
       if (columnFilters.location) {
-        query = query.ilike('city', `%${columnFilters.location}%`);
+        query = query.eq('city', columnFilters.location);
       }
       if (columnFilters.siret) {
-        query = query.ilike('siret', `%${columnFilters.siret}%`);
+        query = query.eq('siret', columnFilters.siret);
       }
       if (columnFilters.industry) {
         query = query.eq('industry', columnFilters.industry);
