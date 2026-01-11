@@ -40,6 +40,8 @@ export default function ViviersLeads() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  const [pageSize, setPageSize] = useState(50);
+
   const { 
     viviers, 
     totalCount, 
@@ -50,7 +52,7 @@ export default function ViviersLeads() {
     refetch,
   } = useViviers({
     page, 
-    pageSize: 25, 
+    pageSize, 
     search: search || undefined,
     status: status && status !== 'all' ? status : undefined,
     minScore,
@@ -464,6 +466,11 @@ export default function ViviersLeads() {
             isLoading={isLoading}
             selectedIds={selectedIds}
             onSelectChange={handleSelectChange}
+            pageSize={pageSize}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
             onSelectAll={handleSelectAll}
             onRowClick={handleRowClick}
             page={page}
