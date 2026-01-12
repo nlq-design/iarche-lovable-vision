@@ -23,6 +23,7 @@ const AteliersWebinaires = lazy(() => import("./pages/AteliersWebinaires"));
 const Newsletter = lazy(() => import("./pages/Newsletter"));
 const LivreOr = lazy(() => import("./pages/LivreOr"));
 const Status = lazy(() => import("./pages/Status"));
+const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
 import MentionsLegales from "./pages/MentionsLegales";
 import ConditionsGenerales from "./pages/ConditionsGenerales";
 import Confidentialite from "./pages/Confidentialite";
@@ -204,6 +205,13 @@ const App = () => (
           <Route path="/status" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <Status />
+            </Suspense>
+          } />
+          
+          {/* Unsubscribe page */}
+          <Route path="/unsubscribe" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <UnsubscribePage />
             </Suspense>
           } />
           
