@@ -101,7 +101,7 @@ function generateEmailTemplate(bodyHtml: string, themeKey: string, senderName: s
       </div>
       <div class="footer">
         <p>Envoyé par ${senderName} • IArche</p>
-        <p><a href="{{unsubscribe_url}}">Se désinscrire</a></p>
+        <p><a href="https://iarche.fr/unsubscribe?email={{email}}&campaign={{campaign_id}}">Se désinscrire</a></p>
       </div>
     </div>
   </div>
