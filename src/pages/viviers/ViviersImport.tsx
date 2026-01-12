@@ -432,6 +432,12 @@ export default function ViviersImport() {
       'linkedin', 'linkedin_url', 'profil_linkedin', 'url_linkedin'
     );
 
+    // ========== SOURCE ==========
+    // Possible columns: SOURCE, ORIGINE, PROVENANCE, CANAL
+    const sourceValue = findValue(row, 
+      'source', 'origine', 'provenance', 'canal', 'source_lead', 'source_import'
+    );
+
     // ========== EMPLOYEE COUNT / COMPANY SIZE ==========
     const effectifMin = findValue(row, 'effectif_min', 'effectif_minimum');
     const effectifMax = findValue(row, 'effectif_max', 'effectif_maximum');
@@ -546,7 +552,7 @@ export default function ViviersImport() {
       revenue_range: revenueRange,
       employee_count: employeeCount,
       raw_data: row as any,
-      source: 'import',
+      source: safeString(sourceValue, 100) || 'import',
     };
   };
 
@@ -607,6 +613,7 @@ export default function ViviersImport() {
       { field: 'naf_code', label: 'Code NAF/APE', validator: looksLikeNafCode, keys: ['naf_ape', 'naf', 'ape', 'code_naf', 'code_ape', 'naf_rev2', 'activite_principale'] },
       { field: 'address', label: 'Adresse', keys: ['adresse', 'address', 'adresse_1', 'adresse_complete', 'rue', 'voie', 'adresse_siege'] },
       { field: 'website', label: 'Site Web', keys: ['website', 'site_web', 'url', 'site', 'site_internet'] },
+      { field: 'source', label: 'Source', keys: ['source', 'origine', 'provenance', 'canal', 'source_lead', 'source_import'] },
     ];
     
     const mappings: MappingPreview[] = fieldDefinitions.map(def => {
