@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -70,6 +72,9 @@ export default function ViviersImport() {
   
   // Mapping preview state
   const [mappingPreview, setMappingPreview] = useState<MappingPreviewState | null>(null);
+  
+  // Manual source text input (applies to all imported leads)
+  const [manualSourceText, setManualSourceText] = useState('');
 
   // Normalize header names to lowercase and remove special characters
   const normalizeHeader = (header: string): string => {
@@ -713,8 +718,11 @@ export default function ViviersImport() {
       }
     });
     
+    // Capture manual source before clearing state
+    const sourceOverride = manualSourceText.trim() || undefined;
+    
     setMappingPreview(null);
-    await handleAnalyze(mappingPreview.rawRows, columnOverrides);
+    await handleAnalyze(mappingPreview.rawRows, columnOverrides, sourceOverride);
   };
   
   // Cancel mapping preview
@@ -726,7 +734,7 @@ export default function ViviersImport() {
   };
 
   // Analyze file and detect duplicates
-  const handleAnalyze = async (rows: Record<string, string>[], columnOverrides?: Record<string, string>) => {
+  const handleAnalyze = async (rows: Record<string, string>[], columnOverrides?: Record<string, string>, sourceOverride?: string) => {
     setIsAnalyzing(true);
     try {
       if (rows.length === 0) {
@@ -746,7 +754,14 @@ export default function ViviersImport() {
         return newRow;
       }) : rows;
 
-      const viviers = processedRows.map(mapToVivier).filter(v => v.email);
+      // Map to vivier objects, applying manual source override if provided
+      const viviers = processedRows.map(row => {
+        const vivier = mapToVivier(row);
+        if (sourceOverride) {
+          vivier.source = sourceOverride;
+        }
+        return vivier;
+      }).filter(v => v.email);
       
       if (viviers.length === 0) {
         toast.error('Aucun email valide trouvé. Assurez-vous que la colonne email existe.');
@@ -984,6 +999,7 @@ export default function ViviersImport() {
     setAllParsedRows([]);
     setCurrentFileIndex(0);
     setMappingPreview(null);
+    setManualSourceText('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -1146,6 +1162,28 @@ export default function ViviersImport() {
                       ))}
                     </TableBody>
                   </Table>
+                </div>
+                
+                {/* Manual source override */}
+                <div className="border rounded-lg p-4 bg-muted/30">
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 max-w-md">
+                      <Label htmlFor="manual-source" className="text-sm font-medium mb-1.5 block">
+                        Source manuelle (optionnel)
+                      </Label>
+                      <Input
+                        id="manual-source"
+                        placeholder="Ex: Salon Pro 2026, LinkedIn Ads, Partenaire XYZ..."
+                        value={manualSourceText}
+                        onChange={(e) => setManualSourceText(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground flex-1">
+                      Si renseigné, cette valeur sera appliquée à <strong>tous</strong> les leads importés, 
+                      ignorant la colonne "Source" du fichier.
+                    </p>
+                  </div>
                 </div>
                 
                 {/* Action buttons */}
