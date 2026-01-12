@@ -12,8 +12,15 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
-// Allowed Telegram user IDs (configure these for security)
-const ALLOWED_USERS: number[] = []; // Empty = allow all, or add specific user IDs
+// Allowed Telegram user IDs - retrieved from secret or hardcoded for known admins
+// TELEGRAM_ADMIN_CHAT_ID contains the authorized admin chat ID
+const TELEGRAM_ADMIN_CHAT_ID = Deno.env.get("TELEGRAM_ADMIN_CHAT_ID");
+const ALLOWED_USERS: number[] = TELEGRAM_ADMIN_CHAT_ID 
+  ? TELEGRAM_ADMIN_CHAT_ID.split(",").map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id))
+  : [];
+
+// Security: Reject if no allowed users configured
+const REQUIRE_USER_WHITELIST = true;
 
 // Max file size for Telegram files (50MB - Supabase storage limit)
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
@@ -1416,8 +1423,16 @@ serve(async (req) => {
       return new Response("OK", { status: 200 });
     }
 
-    // Security check
+    // Security check - Enforce user whitelist
+    if (REQUIRE_USER_WHITELIST && ALLOWED_USERS.length === 0) {
+      console.error("Security: No allowed users configured in TELEGRAM_ADMIN_CHAT_ID");
+      await sendTelegramMessage(chatId, "⛔ Bot non configuré. Veuillez définir TELEGRAM_ADMIN_CHAT_ID.");
+      await markUpdateAsCompleted(updateId, "No allowed users configured");
+      return new Response("OK", { status: 200 });
+    }
+
     if (ALLOWED_USERS.length > 0 && !ALLOWED_USERS.includes(userId)) {
+      console.log(`Security: Unauthorized user ${userId} (${userName}) attempted access`);
       await sendTelegramMessage(chatId, "⛔ Accès non autorisé. Contactez l'administrateur.");
       await markUpdateAsCompleted(updateId, "Unauthorized user");
       return new Response("OK", { status: 200 });
