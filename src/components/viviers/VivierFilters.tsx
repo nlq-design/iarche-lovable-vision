@@ -11,6 +11,12 @@ import { useState, useEffect } from 'react';
 import { SaveToListDialog, type FilterCriteria } from './SaveToListDialog';
 import { CityAutocomplete } from './CityAutocomplete';
 
+// Available sources
+const VIVIER_SOURCES = [
+  { value: 'import', label: 'Import' },
+  { value: 'Lemlist', label: 'Lemlist' },
+];
+
 interface VivierFiltersProps {
   search: string;
   onSearchChange: (value: string) => void;
@@ -19,6 +25,8 @@ interface VivierFiltersProps {
   minScore: number | undefined;
   maxScore: number | undefined;
   onScoreChange: (min: number | undefined, max: number | undefined) => void;
+  source?: string;
+  onSourceChange?: (value: string) => void;
   city?: string;
   onCityChange?: (value: string) => void;
   postalCode?: string;
@@ -92,6 +100,8 @@ export function VivierFilters({
   minScore,
   maxScore,
   onScoreChange,
+  source,
+  onSourceChange,
   city,
   onCityChange,
   postalCode,
@@ -119,6 +129,7 @@ export function VivierFilters({
     status: status && status !== 'all' ? status : undefined,
     minScore,
     maxScore,
+    source: source || undefined,
     city: city || undefined,
     postalCode: postalCode || undefined,
     department: department || undefined,
@@ -163,11 +174,12 @@ export function VivierFilters({
     }
   }, [debouncedIndustry, industry, onIndustryChange]);
 
-  const hasFilters = search || status || minScore !== undefined || maxScore !== undefined || city || postalCode || department || industry || companySize || hasEmail !== undefined || hasPhone !== undefined;
+  const hasFilters = search || status || minScore !== undefined || maxScore !== undefined || source || city || postalCode || department || industry || companySize || hasEmail !== undefined || hasPhone !== undefined;
   const activeFilterCount = [
     search, 
     status && status !== 'all', 
     minScore !== undefined || maxScore !== undefined,
+    source,
     city,
     postalCode,
     department,
@@ -189,6 +201,7 @@ export function VivierFilters({
     setLocalPostalCode('');
     setLocalIndustry('');
     setScoreRange([0, 100]);
+    if (onSourceChange) onSourceChange('');
     if (onCityChange) onCityChange('');
     if (onDepartmentChange) onDepartmentChange('');
     if (onCompanySizeChange) onCompanySizeChange('');
@@ -267,6 +280,23 @@ export function VivierFilters({
             ))}
           </SelectContent>
         </Select>
+
+        {/* Source filter */}
+        {onSourceChange && (
+          <Select value={source || 'all'} onValueChange={(v) => onSourceChange(v === 'all' ? '' : v)}>
+            <SelectTrigger className="w-[130px] h-9">
+              <SelectValue placeholder="Source" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes sources</SelectItem>
+              {VIVIER_SOURCES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         {/* Score filter */}
         <Popover>

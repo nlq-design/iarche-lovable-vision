@@ -20,6 +20,7 @@ export interface FilterCriteria {
   status?: string;
   minScore?: number;
   maxScore?: number;
+  source?: string;
   city?: string;
   postalCode?: string;
   department?: string;

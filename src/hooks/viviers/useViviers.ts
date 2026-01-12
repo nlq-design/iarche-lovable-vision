@@ -65,6 +65,7 @@ interface UseViviersOptions {
   status?: string;
   minScore?: number;
   maxScore?: number;
+  source?: string;
   city?: string;
   postalCode?: string;
   department?: string;
@@ -93,6 +94,7 @@ export function useViviers(options: UseViviersOptions = {}) {
     status, 
     minScore, 
     maxScore, 
+    source,
     city, 
     postalCode, 
     department, 
@@ -105,7 +107,7 @@ export function useViviers(options: UseViviersOptions = {}) {
   const queryClient = useQueryClient();
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['viviers', page, pageSize, search, status, minScore, maxScore, city, postalCode, department, industry, companySize, hasEmail, hasPhone, columnFilters],
+    queryKey: ['viviers', page, pageSize, search, status, minScore, maxScore, source, city, postalCode, department, industry, companySize, hasEmail, hasPhone, columnFilters],
     queryFn: async () => {
       // Select only columns needed for the list view (performance optimization)
       // Add siret and legal_form for column filters
@@ -135,6 +137,11 @@ export function useViviers(options: UseViviersOptions = {}) {
       }
       if (maxScore !== undefined) {
         query = query.lte('cold_score', maxScore);
+      }
+
+      // Source filter
+      if (source) {
+        query = query.eq('source', source);
       }
 
       // City filter - use exact match for performance (selected from autocomplete)

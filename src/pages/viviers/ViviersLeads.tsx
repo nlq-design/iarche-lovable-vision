@@ -27,6 +27,7 @@ export default function ViviersLeads() {
   const [status, setStatus] = useState('');
   const [minScore, setMinScore] = useState<number | undefined>();
   const [maxScore, setMaxScore] = useState<number | undefined>();
+  const [source, setSource] = useState('');
   const [city, setCity] = useState('');
   const [postalCode, setPostalCode] = useState('');
   const [department, setDepartment] = useState('');
@@ -59,6 +60,7 @@ export default function ViviersLeads() {
     status: status && status !== 'all' ? status : undefined,
     minScore,
     maxScore,
+    source: source || undefined,
     city: city || undefined,
     postalCode: postalCode || undefined,
     department: department || undefined,
@@ -317,13 +319,14 @@ export default function ViviersLeads() {
     }
   };
 
-  const hasFilters = !!(search || (status && status !== 'all') || minScore !== undefined || maxScore !== undefined || city || postalCode || department || industry || companySize || hasEmail !== undefined || hasPhone !== undefined);
+  const hasFilters = !!(search || (status && status !== 'all') || minScore !== undefined || maxScore !== undefined || source || city || postalCode || department || industry || companySize || hasEmail !== undefined || hasPhone !== undefined);
 
   const handleClearFilters = () => {
     setSearch('');
     setStatus('');
     setMinScore(undefined);
     setMaxScore(undefined);
+    setSource('');
     setCity('');
     setPostalCode('');
     setDepartment('');
@@ -469,6 +472,11 @@ export default function ViviersLeads() {
               onScoreChange={(min, max) => {
                 setMinScore(min);
                 setMaxScore(max);
+                setPage(1);
+              }}
+              source={source}
+              onSourceChange={(value) => {
+                setSource(value);
                 setPage(1);
               }}
               city={city}
