@@ -31,11 +31,10 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
   const [currentBatch, setCurrentBatch] = useState(0);
   const stopRef = useRef(false);
   const queryClient = useQueryClient();
-
-  // Initial scored count when session started
-  const sessionStartScoredRef = useRef(0);
-  const initialPendingRef = useRef(0);
-
+  // Initial scored count when session started - track if initialized
+  const sessionStartScoredRef = useRef<number | null>(null);
+  const initialPendingRef = useRef<number | null>(null);
+  const sessionInitializedRef = useRef(false);
   // Real-time scored count from database - polls every 2s when active
   const { data: scoredCount = 0 } = useQuery({
     queryKey: ['viviers-scored-count'],
@@ -65,17 +64,16 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
     },
     staleTime: 30000,
   });
-
   // Session scored = current scored - scored when session started
-  const sessionScored = Math.max(0, scoredCount - sessionStartScoredRef.current);
+  // Only calculate session values if a session has been explicitly started
+  const sessionScored = sessionInitializedRef.current && sessionStartScoredRef.current !== null
+    ? Math.max(0, scoredCount - sessionStartScoredRef.current)
+    : 0;
   
   // Progress based on initial pending count at session start
-  const progress = initialPendingRef.current > 0 
+  const progress = sessionInitializedRef.current && initialPendingRef.current && initialPendingRef.current > 0 
     ? Math.min(100, Math.round((sessionScored / initialPendingRef.current) * 100))
-    : totalCount > 0 
-      ? Math.round((scoredCount / totalCount) * 100)
-      : 0;
-
+    : 0;
   const handleStartScoring = async () => {
     if (pendingCount === 0) {
       toast.info('Aucun lead à scorer');
@@ -133,9 +131,10 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
 
   const handleToggleAutoContinue = (checked: boolean) => {
     if (checked) {
-      // Store starting values for progress calculation
+      // Store starting values for progress calculation and mark session as initialized
       sessionStartScoredRef.current = scoredCount;
       initialPendingRef.current = pendingCount;
+      sessionInitializedRef.current = true;
       setSessionErrors(0);
       setCurrentBatch(0);
     }
@@ -150,14 +149,15 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
   };
 
   const handleReset = () => {
-    sessionStartScoredRef.current = scoredCount;
-    initialPendingRef.current = 0;
+    sessionStartScoredRef.current = null;
+    initialPendingRef.current = null;
+    sessionInitializedRef.current = false;
     setSessionErrors(0);
     setCurrentBatch(0);
   };
 
-  // Show progress section when active or has session data
-  const showProgress = autoContinue || sessionScored > 0 || currentBatch > 0;
+  // Show progress section only when session has been explicitly started
+  const showProgress = sessionInitializedRef.current && (autoContinue || sessionScored > 0 || currentBatch > 0);
 
   return (
     <Card>
