@@ -146,3 +146,9 @@ verify_jwt = false
 
 [functions.telegram-proactive-notifications]
 verify_jwt = false
+
+[functions.campaign-unsubscribe]
+verify_jwt = false
+
+[functions.send-campaign-test]
+verify_jwt = true

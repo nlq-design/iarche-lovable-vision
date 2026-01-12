@@ -202,6 +202,12 @@ serve(async (req) => {
         const senderName = campaign.sender_name || 'IArche';
         const fullEmailHtml = generateEmailTemplate(rawBody, theme, senderName);
         
+        // Use custom schedule from database or defaults
+        const scheduleDays = campaign.schedule_days || { 0: false, 1: true, 2: true, 3: true, 4: true, 5: true, 6: false };
+        const scheduleTimezone = campaign.schedule_timezone || 'Europe/Paris';
+        const scheduleFrom = campaign.schedule_from || '09:00';
+        const scheduleTo = campaign.schedule_to || '18:00';
+
         // Create campaign in Instantly with email sequence
         const createResponse = await fetch(`${INSTANTLY_API_URL}/campaigns`, {
           method: 'POST',
@@ -211,9 +217,9 @@ serve(async (req) => {
             campaign_schedule: {
               schedules: [{
                 name: 'Default Schedule',
-                days: { 1: true, 2: true, 3: true, 4: true, 5: true },
-                timezone: 'Europe/Paris',
-                timing: { from: '09:00', to: '18:00' },
+                days: scheduleDays,
+                timezone: scheduleTimezone,
+                timing: { from: scheduleFrom, to: scheduleTo },
               }],
             },
             sequences: [{

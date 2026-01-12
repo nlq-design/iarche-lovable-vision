@@ -43,6 +43,11 @@ export interface VivierCampaign {
   instantly_account_id: string | null;
   last_synced_at: string | null;
   launched_at: string | null;
+  // Schedule fields
+  schedule_days: Json | null;
+  schedule_timezone: string | null;
+  schedule_from: string | null;
+  schedule_to: string | null;
 }
 
 export interface CampaignRecipient {

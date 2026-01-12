@@ -4306,6 +4306,10 @@ export type Database = {
           reply_count: number | null
           reply_rate: number | null
           reply_to: string | null
+          schedule_days: Json | null
+          schedule_from: string | null
+          schedule_timezone: string | null
+          schedule_to: string | null
           scheduled_at: string | null
           segment_criteria: Json | null
           send_schedule: Json | null
@@ -4360,6 +4364,10 @@ export type Database = {
           reply_count?: number | null
           reply_rate?: number | null
           reply_to?: string | null
+          schedule_days?: Json | null
+          schedule_from?: string | null
+          schedule_timezone?: string | null
+          schedule_to?: string | null
           scheduled_at?: string | null
           segment_criteria?: Json | null
           send_schedule?: Json | null
@@ -4414,6 +4422,10 @@ export type Database = {
           reply_count?: number | null
           reply_rate?: number | null
           reply_to?: string | null
+          schedule_days?: Json | null
+          schedule_from?: string | null
+          schedule_timezone?: string | null
+          schedule_to?: string | null
           scheduled_at?: string | null
           segment_criteria?: Json | null
           send_schedule?: Json | null

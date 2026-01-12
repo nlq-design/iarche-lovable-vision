@@ -12,6 +12,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CampaignEmailEditor, type EmailTheme } from '@/components/viviers/campaigns/CampaignEmailEditor';
 import { ImportRecipientsDialog } from '@/components/viviers/campaigns/ImportRecipientsDialog';
 import { TestEmailDialog } from '@/components/viviers/campaigns/TestEmailDialog';
+import { CampaignScheduler } from '@/components/viviers/campaigns/CampaignScheduler';
+import { CampaignAnalyticsChart } from '@/components/viviers/campaigns/CampaignAnalyticsChart';
+import { useCampaignExport } from '@/components/viviers/campaigns/useCampaignExport';
 import { EmailPreviewRenderer } from '@/components/viviers/campaigns/EmailPreviewRenderer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -67,6 +70,7 @@ export default function VivierCampaignDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { campaign, recipients, stats, isLoading, isError, updateCampaign, addRecipients, refetch } = useVivierCampaignDetail(slug);
+  const { exportRecipientsCsv } = useCampaignExport();
 
   // State for dialogs
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -559,23 +563,37 @@ export default function VivierCampaignDetail() {
 
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Analytics détaillées</CardTitle>
-                <CardDescription>Performances de la campagne</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Analytics en cours de développement</p>
-                  <p className="text-sm">Les graphiques détaillés seront disponibles prochainement</p>
-                </div>
-              </CardContent>
-            </Card>
+            <CampaignAnalyticsChart
+              recipients={recipients}
+              stats={stats}
+              campaignName={campaign.name}
+              onExport={() => exportRecipientsCsv(recipients, campaign, stats)}
+            />
           </TabsContent>
 
           {/* Settings Tab */}
           <TabsContent value="settings" className="mt-4 space-y-4">
+            {/* Schedule Card */}
+            <CampaignScheduler
+              schedule={{
+                days: (campaign.schedule_days as Record<number, boolean>) || { 0: false, 1: true, 2: true, 3: true, 4: true, 5: true, 6: false },
+                timezone: campaign.schedule_timezone || 'Europe/Paris',
+                timing: {
+                  from: campaign.schedule_from || '09:00',
+                  to: campaign.schedule_to || '18:00',
+                },
+              }}
+              onSave={async (schedule) => {
+                await updateCampaign.mutateAsync({
+                  schedule_days: schedule.days,
+                  schedule_timezone: schedule.timezone,
+                  schedule_from: schedule.timing.from,
+                  schedule_to: schedule.timing.to,
+                });
+              }}
+              disabled={campaign.status === 'active'}
+            />
+
             <Card>
               <CardHeader>
                 <CardTitle>Paramètres de la campagne</CardTitle>
