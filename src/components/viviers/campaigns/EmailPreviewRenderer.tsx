@@ -126,7 +126,7 @@ export function generateFullEmailHtml(
       </div>
       <div class="footer">
         <p>Envoyé par ${senderName} • IArche</p>
-        <p><a href="{{unsubscribe_url}}">Se désinscrire</a></p>
+        <p><a href="https://iarche.fr/unsubscribe?email={{email}}">Se désinscrire</a></p>
       </div>
     </div>
   </div>
