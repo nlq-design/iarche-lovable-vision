@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
+import { createAndDownloadExcel } from '@/utils/excelUtils';
 import {
   Collapsible,
   CollapsibleContent,
@@ -241,11 +241,9 @@ export function VivierAISearch({ onFiltersApply, onResultsFound, onSaveList, cur
       return;
     }
 
-    const ws = XLSX.utils.json_to_sheet(result.results);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Recherche IA');
-    XLSX.writeFile(wb, `vivier-ai-${Date.now()}.xlsx`);
-    toast.success(`${result.results.length} leads exportés`);
+    createAndDownloadExcel(result.results, `vivier-ai-${Date.now()}.xlsx`, 'Recherche IA')
+      .then(() => toast.success(`${result.results.length} leads exportés`))
+      .catch(() => toast.error("Erreur lors de l'export"));
   };
 
   const handleCreateCampaign = () => {

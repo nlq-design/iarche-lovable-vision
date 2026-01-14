@@ -20,7 +20,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
+import { createAndDownloadExcel } from '@/utils/excelUtils';
 import {
   Table,
   TableBody,
@@ -153,10 +153,7 @@ export default function ViviersListDetail() {
       return;
     }
 
-    const ws = XLSX.utils.json_to_sheet(allMembers);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Leads');
-    XLSX.writeFile(wb, `liste-${list?.name || 'export'}-${Date.now()}.xlsx`);
+    await createAndDownloadExcel(allMembers, `liste-${list?.name || 'export'}-${Date.now()}.xlsx`, 'Leads');
     toast.success(`${allMembers.length} leads exportés`);
   };
 

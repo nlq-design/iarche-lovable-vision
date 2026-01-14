@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { AlertCircle, Upload, ClipboardList, CheckCircle, FileSpreadsheet, Loader2 } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import { parseExcelBuffer, normalizeHeader as normalizeHeaderUtil } from '@/utils/excelUtils';
 
 interface RecipientData {
   email: string;
@@ -70,21 +70,9 @@ export function ImportRecipientsDialog({
 
   const existingEmailsSet = new Set(existingEmails.map(e => e.toLowerCase()));
 
-  // Parse Excel file
-  const parseExcel = (buffer: ArrayBuffer): Record<string, string>[] => {
-    const workbook = XLSX.read(buffer, { type: 'array' });
-    const firstSheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheetName];
-    const rawData = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, { defval: '' });
-    
-    return rawData.map(row => {
-      const normalizedRow: Record<string, string> = {};
-      Object.entries(row).forEach(([key, value]) => {
-        const normalizedKey = normalizeHeader(key);
-        normalizedRow[normalizedKey] = String(value || '').trim();
-      });
-      return normalizedRow;
-    });
+  // Parse Excel file (async with ExcelJS)
+  const parseExcel = async (buffer: ArrayBuffer): Promise<Record<string, string>[]> => {
+    return parseExcelBuffer(buffer);
   };
 
   // Parse CSV/TSV text
@@ -151,7 +139,7 @@ export function ImportRecipientsDialog({
         const text = new TextDecoder().decode(buffer);
         rawData = parseCSV(text);
       } else {
-        rawData = parseExcel(buffer);
+        rawData = await parseExcel(buffer);
       }
 
       const recipients = rawData.map(mapToRecipient);

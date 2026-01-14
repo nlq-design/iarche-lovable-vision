@@ -16,7 +16,7 @@ import { useViviers, type Vivier } from '@/hooks/viviers';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import * as XLSX from 'xlsx';
+import { parseExcelBuffer, normalizeHeader as normalizeHeaderUtil } from '@/utils/excelUtils';
 
 type DuplicateAction = 'skip' | 'update';
 
@@ -87,21 +87,9 @@ export default function ViviersImport() {
       .replace(/^_|_$/g, '');
   };
 
-  // Parse Excel file
-  const parseExcel = (buffer: ArrayBuffer): Record<string, string>[] => {
-    const workbook = XLSX.read(buffer, { type: 'array' });
-    const firstSheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheetName];
-    const rawData = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, { defval: '' });
-    
-    return rawData.map(row => {
-      const normalizedRow: Record<string, string> = {};
-      Object.entries(row).forEach(([key, value]) => {
-        const normalizedKey = normalizeHeader(key);
-        normalizedRow[normalizedKey] = String(value || '').trim();
-      });
-      return normalizedRow;
-    });
+  // Parse Excel file (async with ExcelJS)
+  const parseExcel = async (buffer: ArrayBuffer): Promise<Record<string, string>[]> => {
+    return parseExcelBuffer(buffer);
   };
 
   // Parse CSV/TSV text
@@ -940,7 +928,7 @@ export default function ViviersImport() {
     
     if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
       const buffer = await file.arrayBuffer();
-      const rows = parseExcel(buffer);
+      const rows = await parseExcel(buffer);
       handleShowMappingPreview(rows);
     } else if (fileName.endsWith('.csv') || fileName.endsWith('.txt')) {
       const text = await file.text();
