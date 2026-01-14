@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import {
   Sheet,
   SheetContent,
@@ -1096,7 +1097,7 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
                   </div>
                   <div className="bg-background rounded p-3 text-sm space-y-3">
                     <p>{generatedEmail.greeting}</p>
-                    <div dangerouslySetInnerHTML={{ __html: generatedEmail.body }} />
+                    <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(generatedEmail.body, { ADD_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li'] }) }} />
                     <p className="text-muted-foreground whitespace-pre-line">{generatedEmail.signature}</p>
                   </div>
                 </div>

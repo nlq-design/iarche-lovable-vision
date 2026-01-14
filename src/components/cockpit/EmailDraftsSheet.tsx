@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import DOMPurify from 'dompurify';
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sheet,
@@ -250,7 +251,7 @@ export function EmailDraftsSheet({ open, onOpenChange, leadId }: EmailDraftsShee
 
                     <div className="prose prose-sm max-w-none">
                       <p className="font-medium">{selectedDraft.ai_metadata?.email_data?.greeting}</p>
-                      <div dangerouslySetInnerHTML={{ __html: selectedDraft.ai_metadata?.email_data?.body || "" }} />
+                      <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedDraft.ai_metadata?.email_data?.body || "", { ADD_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li'] }) }} />
                       {selectedDraft.ai_metadata?.email_data?.cta && (
                         <p>
                           <a href={selectedDraft.ai_metadata?.email_data?.cta_url} className="text-primary font-medium">
