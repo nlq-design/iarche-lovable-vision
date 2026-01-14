@@ -28,7 +28,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
+import { createAndDownloadExcel } from '@/utils/excelUtils';
 
 interface VivierListsPanelProps {
   onSelectList?: (list: VivierList) => void;
@@ -109,12 +109,8 @@ export function VivierListsPanel({ onSelectList }: VivierListsPanelProps) {
         'Statut': v.status || '',
       }));
 
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Leads');
-
       const filename = `${list.name.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.xlsx`;
-      XLSX.writeFile(wb, filename);
+      await createAndDownloadExcel(exportData, filename, 'Leads');
 
       toast.success(`${data.length} leads exportés`);
     } catch (error) {

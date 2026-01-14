@@ -19,7 +19,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
-import * as XLSX from 'xlsx';
+import { createAndDownloadExcel } from '@/utils/excelUtils';
 
 export default function ViviersLeads() {
   const [page, setPage] = useState(1);
@@ -216,23 +216,12 @@ export default function ViviersLeads() {
         'Créé le': v.created_at ? new Date(v.created_at).toLocaleDateString('fr-FR') : '',
       }));
 
-      // Create workbook and worksheet
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Leads Vivier');
-
-      // Auto-size columns
-      const colWidths = Object.keys(exportData[0] || {}).map(key => ({
-        wch: Math.max(key.length, 15)
-      }));
-      ws['!cols'] = colWidths;
-
       // Generate filename with date
       const date = new Date().toISOString().split('T')[0];
       const filename = `viviers-export-${date}.xlsx`;
 
-      // Download file
-      XLSX.writeFile(wb, filename);
+      // Create and download Excel file
+      await createAndDownloadExcel(exportData, filename, 'Leads Vivier');
 
       toast.success(`${data.length} leads exportés`);
     } catch (error) {
