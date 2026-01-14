@@ -15,6 +15,34 @@ const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const OPENAI_EMBEDDINGS_URL = "https://api.openai.com/v1/embeddings";
 
 // =============================================================================
+// INPUT SANITIZATION FOR SEARCH QUERIES
+// =============================================================================
+
+/**
+ * Sanitizes search input for Supabase ILIKE queries
+ * - Escapes SQL wildcards (%, _) to prevent wildcard injection
+ * - Limits length to prevent performance issues
+ * - Trims whitespace
+ */
+function sanitizeSearchInput(input: string, maxLength = 200): string {
+  if (!input || typeof input !== 'string') return '';
+  // Trim and limit length
+  const trimmed = input.trim().slice(0, maxLength);
+  // Escape SQL LIKE wildcards to prevent wildcard injection attacks
+  return trimmed.replace(/[%_]/g, '\\$&');
+}
+
+/**
+ * Validates and sanitizes a UUID to prevent injection
+ */
+function sanitizeUUID(input: string | undefined | null): string {
+  if (!input || typeof input !== 'string') return '';
+  // UUID v4 format validation
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(input.trim()) ? input.trim() : '';
+}
+
+// =============================================================================
 // MEMORY HELPERS
 // =============================================================================
 
@@ -2597,10 +2625,12 @@ async function executeTool(
         .order("created_at", { ascending: false })
         .limit(limit);
 
-      // Support recherche par nom/company
+      // Support recherche par nom/company with sanitized input
       if (args.query) {
-        const searchQuery = (args.query as string).trim();
-        query = query.or(`name.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+        const searchQuery = sanitizeSearchInput(args.query as string);
+        if (searchQuery) {
+          query = query.or(`name.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+        }
       }
       if (args.status) query = query.eq("qualification_status", args.status);
       if (args.source) query = query.eq("source", args.source);
@@ -2625,7 +2655,7 @@ async function executeTool(
     }
 
     case "search_leads": {
-      const searchQuery = (args.query as string || "").trim();
+      const searchQuery = sanitizeSearchInput(args.query as string);
       if (!searchQuery) {
         return { leads: [], count: 0, message: "Terme de recherche requis" };
       }
@@ -2766,6 +2796,11 @@ async function executeTool(
         return { error: "Requête de recherche vide", partners: [] };
       }
 
+      const sanitizedQuery = sanitizeSearchInput(searchQuery);
+      if (!sanitizedQuery) {
+        return { error: "Requête de recherche vide", partners: [] };
+      }
+
       const { data, error } = await supabase
         .from("partners")
         .select(`
@@ -2773,7 +2808,7 @@ async function executeTool(
           is_active, slug, ai_documents_summary, synthesis_stale
         `)
         .is("deleted_at", null)
-        .or(`name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%,slug.ilike.%${searchQuery}%`)
+        .or(`name.ilike.%${sanitizedQuery}%,email.ilike.%${sanitizedQuery}%,company.ilike.%${sanitizedQuery}%,slug.ilike.%${sanitizedQuery}%`)
         .limit(10);
 
       if (error) throw error;
@@ -3054,7 +3089,8 @@ async function executeTool(
         };
       }
 
-      // Recherche par nom de projet
+      // Recherche par nom de projet with sanitized input
+      const sanitizedQuery = sanitizeSearchInput(searchQuery);
       const { data, error } = await supabase
         .from("projects")
         .select(`
@@ -3064,7 +3100,7 @@ async function executeTool(
           lead:leads(id, name, company, email),
           opportunity:opportunities(id, title, stage, value_amount)
         `)
-        .ilike("name", `%${searchQuery}%`)
+        .ilike("name", `%${sanitizedQuery}%`)
         .order("created_at", { ascending: false })
         .limit(20);
 
@@ -3108,7 +3144,7 @@ async function executeTool(
     }
 
     case "search_solutions": {
-      const searchQuery = (args.query as string || "").trim().toLowerCase();
+      const searchQuery = sanitizeSearchInput(args.query as string);
       if (!searchQuery) {
         return { solutions: [], count: 0, message: "Terme de recherche requis" };
       }
@@ -3138,7 +3174,7 @@ async function executeTool(
     }
 
     case "search_documents": {
-      const searchQuery = (args.query as string || "").trim();
+      const searchQuery = sanitizeSearchInput(args.query as string);
       if (!searchQuery) {
         return { documents: [], count: 0, message: "Terme de recherche requis" };
       }
@@ -3503,14 +3539,29 @@ async function executeTool(
     }
 
     case "get_article_details": {
-      const { data: article, error } = await supabase
+      // Validate article_id as UUID and sanitize slug
+      const articleId = sanitizeUUID(args.article_id as string);
+      const articleSlug = sanitizeSearchInput(args.slug as string, 100);
+      
+      if (!articleId && !articleSlug) {
+        return { error: "article_id ou slug requis" };
+      }
+
+      // Build query with validated inputs
+      let query = supabase
         .from("articles")
         .select(`
           id, title, slug, content, excerpt, resource_type, published, published_at,
           cover_image_url, author, meta_title, meta_description, faq, created_at, updated_at
-        `)
-        .or(`id.eq.${args.article_id || ""},slug.eq.${args.slug || ""}`)
-        .single();
+        `);
+      
+      if (articleId) {
+        query = query.eq("id", articleId);
+      } else if (articleSlug) {
+        query = query.eq("slug", articleSlug);
+      }
+      
+      const { data: article, error } = await query.single();
 
       if (error) throw error;
 
@@ -7155,8 +7206,10 @@ Génère un contenu HTML pour email avec:
         .limit(args.limit as number || 20);
 
       if (args.query) {
-        const searchQuery = (args.query as string).trim();
-        query = query.or(`name.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+        const searchQuery = sanitizeSearchInput(args.query as string);
+        if (searchQuery) {
+          query = query.or(`name.ilike.%${searchQuery}%,company.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+        }
       }
       if (args.source) query = query.eq("source", args.source);
       if (args.min_score) query = query.gte("cold_score", args.min_score);
@@ -7170,7 +7223,7 @@ Génère un contenu HTML pour email avec:
     }
 
     case "search_viviers": {
-      const searchQuery = (args.query as string || "").trim();
+      const searchQuery = sanitizeSearchInput(args.query as string);
       if (!searchQuery) {
         return { viviers: [], count: 0, message: "Terme de recherche requis" };
       }
@@ -8809,12 +8862,21 @@ serve(async (req) => {
     // 3. Fetch active entities from recent context (leads/partners mentioned recently)
     let activeEntities: { type: string; id: string; name: string; details: string }[] = [];
     try {
-      const { data: contextMemory } = await supabase
+      // Build query with proper parameterized filters
+      let contextQuery = supabase
         .from("ai_agent_memory")
         .select("entity_type, entity_id, content")
         .eq("memory_type", "context")
-        .eq("category", "active_entity")
-        .or(session_id ? `session_id.eq.${session_id}` : `user_id.eq.${safeUserId}`)
+        .eq("category", "active_entity");
+      
+      // Use validated inputs for the filter - proper parameterized approach
+      if (session_id) {
+        contextQuery = contextQuery.eq("session_id", session_id);
+      } else if (safeUserId) {
+        contextQuery = contextQuery.eq("user_id", safeUserId);
+      }
+      
+      const { data: contextMemory } = await contextQuery
         .gte("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false })
         .limit(3); // Reduced from 5 to avoid context pollution
@@ -8875,12 +8937,20 @@ serve(async (req) => {
       
       // Expire active entities in database to prevent future bleeding
       try {
-        await supabase
+        let updateQuery = supabase
           .from("ai_agent_memory")
           .update({ expires_at: new Date().toISOString() })
           .eq("memory_type", "context")
-          .eq("category", "active_entity")
-          .or(session_id ? `session_id.eq.${session_id}` : `user_id.eq.${safeUserId}`);
+          .eq("category", "active_entity");
+        
+        // Use proper parameterized filter
+        if (session_id) {
+          updateQuery = updateQuery.eq("session_id", session_id);
+        } else if (safeUserId) {
+          updateQuery = updateQuery.eq("user_id", safeUserId);
+        }
+        
+        await updateQuery;
       } catch (err) {
         console.error("Failed to expire active entities:", err);
       }
