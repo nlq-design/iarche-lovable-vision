@@ -25,6 +25,22 @@ interface SearchFilters {
   hasSiret?: boolean;
 }
 
+// =============================================================================
+// INPUT SANITIZATION FOR SEARCH QUERIES
+// =============================================================================
+
+/**
+ * Sanitizes search input for Supabase ILIKE queries
+ * - Escapes SQL wildcards (%, _) to prevent wildcard injection
+ * - Limits length to prevent performance issues
+ * - Trims whitespace
+ */
+function sanitizeSearchInput(input: string | undefined, maxLength = 200): string {
+  if (!input || typeof input !== 'string') return '';
+  const trimmed = input.trim().slice(0, maxLength);
+  return trimmed.replace(/[%_]/g, '\\$&');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -159,21 +175,36 @@ Retourne un JSON avec les filtres applicables.`;
       .order('cold_score', { ascending: false, nullsFirst: false })
       .limit(limit);
 
-    // Apply filters
+    // Apply filters with sanitized inputs
     if (filters.search) {
-      dbQuery = dbQuery.or(`company_name.ilike.%${filters.search}%,contact_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
+      const sanitizedSearch = sanitizeSearchInput(filters.search);
+      if (sanitizedSearch) {
+        dbQuery = dbQuery.or(`company_name.ilike.%${sanitizedSearch}%,contact_name.ilike.%${sanitizedSearch}%,email.ilike.%${sanitizedSearch}%`);
+      }
     }
     if (filters.city) {
-      dbQuery = dbQuery.ilike('city', `%${filters.city}%`);
+      const sanitizedCity = sanitizeSearchInput(filters.city);
+      if (sanitizedCity) {
+        dbQuery = dbQuery.ilike('city', `%${sanitizedCity}%`);
+      }
     }
     if (filters.postalCode) {
-      dbQuery = dbQuery.ilike('postal_code', `${filters.postalCode}%`);
+      const sanitizedPostal = sanitizeSearchInput(filters.postalCode, 10);
+      if (sanitizedPostal) {
+        dbQuery = dbQuery.ilike('postal_code', `${sanitizedPostal}%`);
+      }
     }
     if (filters.region) {
-      dbQuery = dbQuery.ilike('region', `%${filters.region}%`);
+      const sanitizedRegion = sanitizeSearchInput(filters.region);
+      if (sanitizedRegion) {
+        dbQuery = dbQuery.ilike('region', `%${sanitizedRegion}%`);
+      }
     }
     if (filters.industry) {
-      dbQuery = dbQuery.ilike('industry', `%${filters.industry}%`);
+      const sanitizedIndustry = sanitizeSearchInput(filters.industry);
+      if (sanitizedIndustry) {
+        dbQuery = dbQuery.ilike('industry', `%${sanitizedIndustry}%`);
+      }
     }
     if (filters.minScore !== undefined) {
       dbQuery = dbQuery.gte('cold_score', filters.minScore);
