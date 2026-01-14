@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -247,16 +248,19 @@ export function ConsulteTab({
             {summary ? (
               <ScrollArea className="h-[300px]">
                 <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <div 
+                <div 
                     className="text-sm text-muted-foreground whitespace-pre-wrap"
                     dangerouslySetInnerHTML={{ 
-                      __html: summary
-                        .replace(/^### (.+)$/gm, '<h4 class="text-sm font-medium mt-3 mb-1">$1</h4>')
-                        .replace(/^## (.+)$/gm, '<h3 class="text-sm font-semibold mt-4 mb-2">$1</h3>')
-                        .replace(/^# (.+)$/gm, '<h2 class="text-base font-semibold mt-4 mb-2">$1</h2>')
-                        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                        .replace(/^- (.+)$/gm, '<li class="ml-4">$1</li>')
+                      __html: DOMPurify.sanitize(
+                        summary
+                          .replace(/^### (.+)$/gm, '<h4 class="text-sm font-medium mt-3 mb-1">$1</h4>')
+                          .replace(/^## (.+)$/gm, '<h3 class="text-sm font-semibold mt-4 mb-2">$1</h3>')
+                          .replace(/^# (.+)$/gm, '<h2 class="text-base font-semibold mt-4 mb-2">$1</h2>')
+                          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                          .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                          .replace(/^- (.+)$/gm, '<li class="ml-4">$1</li>'),
+                        { ADD_TAGS: ['h2', 'h3', 'h4', 'strong', 'em', 'li'], ADD_ATTR: ['class'] }
+                      )
                     }}
                   />
                 </div>

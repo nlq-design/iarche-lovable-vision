@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import DOMPurify from 'dompurify';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -194,7 +195,7 @@ export function TranscriptionEmailDialog({
                 </div>
                 <div className="bg-background rounded p-3 text-sm space-y-3">
                   <p>{generatedEmail.greeting}</p>
-                  <div dangerouslySetInnerHTML={{ __html: generatedEmail.body }} />
+                  <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(generatedEmail.body, { ADD_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li'] }) }} />
                   <p className="text-muted-foreground whitespace-pre-line">{generatedEmail.signature}</p>
                 </div>
               </div>
