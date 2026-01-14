@@ -8664,7 +8664,48 @@ serve(async (req) => {
       });
     }
 
-    console.log("Agent orchestrator called with", messages.length, "messages");
+    // =============================================================================
+    // INPUT VALIDATION - Security hardening for prompt injection protection
+    // =============================================================================
+    const MAX_MESSAGE_LENGTH = 8000; // Max chars per message
+    const MAX_MESSAGES_COUNT = 50;   // Max messages in conversation
+    const MAX_TOTAL_LENGTH = 50000;  // Max total chars across all messages
+
+    // Validate message count
+    if (messages.length > MAX_MESSAGES_COUNT) {
+      console.warn("[SECURITY] Too many messages:", messages.length);
+      return new Response(JSON.stringify({ error: "Too many messages. Maximum 50 allowed." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate each message and total length
+    let totalLength = 0;
+    for (const msg of messages) {
+      if (!msg || typeof msg !== 'object') continue;
+      const content = msg.content;
+      if (typeof content === 'string') {
+        if (content.length > MAX_MESSAGE_LENGTH) {
+          console.warn("[SECURITY] Message too long:", content.length);
+          return new Response(JSON.stringify({ error: `Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters.` }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        totalLength += content.length;
+      }
+    }
+
+    if (totalLength > MAX_TOTAL_LENGTH) {
+      console.warn("[SECURITY] Total content too long:", totalLength);
+      return new Response(JSON.stringify({ error: "Total conversation too long. Please start a new conversation." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log("Agent orchestrator called with", messages.length, "messages, total chars:", totalLength);
 
     // Fetch system prompt from ai_prompts table
     const { prompt: systemPrompt, model: configuredModel } = await getSystemPrompt(supabase);
@@ -8680,6 +8721,75 @@ serve(async (req) => {
     // Get the user's last message
     const lastUserMessage = messages.filter((m: { role: string }) => m.role === "user").pop();
     const userQuery = lastUserMessage?.content || "";
+
+    // =============================================================================
+    // RATE LIMITING - Prevent abuse
+    // =============================================================================
+    const effectiveUserId = authedUserId || (typeof user_id === "string" && /^[0-9a-fA-F-]{36}$/.test(user_id) ? user_id : null);
+    
+    if (effectiveUserId) {
+      try {
+        const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
+        const { data: recentCalls } = await supabase
+          .from('ai_usage_metrics')
+          .select('created_at')
+          .eq('user_id', effectiveUserId)
+          .gte('created_at', oneMinuteAgo);
+        
+        const callCount = recentCalls?.length || 0;
+        if (callCount > 30) { // 30 requests per minute limit
+          console.warn("[SECURITY] Rate limit exceeded for user:", effectiveUserId, "calls:", callCount);
+          return new Response(JSON.stringify({ 
+            error: "Limite de requêtes dépassée. Veuillez patienter une minute." 
+          }), {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } catch (err) {
+        console.error("Rate limit check failed (non-blocking):", err);
+      }
+    }
+
+    // =============================================================================
+    // PROMPT INJECTION DETECTION - Log suspicious patterns (monitoring only)
+    // =============================================================================
+    if (userQuery) {
+      const suspiciousPatterns = [
+        /ignore\s+(all\s+)?previous\s+instructions?/i,
+        /system\s+prompt/i,
+        /reveal\s+(your|the)\s+(prompt|instructions|system)/i,
+        /you\s+are\s+now\s+(in\s+)?\w+\s+mode/i,
+        /override\s+(your|the|all)\s+(rules|instructions|prompt)/i,
+        /forget\s+(all|everything|your)\s+(previous|instructions)/i,
+        /jailbreak/i,
+        /DAN\s+mode/i,
+      ];
+      
+      for (const pattern of suspiciousPatterns) {
+        if (pattern.test(userQuery)) {
+          console.warn('[SECURITY] Potential prompt injection detected:', {
+            pattern: pattern.source,
+            user_id: effectiveUserId,
+            workspace_id,
+            preview: userQuery.substring(0, 100)
+          });
+          // Log to audit table for monitoring (non-blocking)
+          supabase.from('admin_audit_logs').insert({
+            action_type: 'security_alert',
+            resource_type: 'ai_orchestrator',
+            resource_name: 'prompt_injection_attempt',
+            user_id: effectiveUserId,
+            new_data: { 
+              pattern: pattern.source, 
+              preview: userQuery.substring(0, 200),
+              workspace_id 
+            }
+          });
+          break;
+        }
+      }
+    }
 
     // =============================================================================
     // MEMORY INTEGRATION
