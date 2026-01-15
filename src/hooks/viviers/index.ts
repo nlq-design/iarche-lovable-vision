@@ -2,3 +2,7 @@ export { useViviers, useVivier, VIVIER_STATUSES } from './useViviers';
 export type { Vivier, VivierStatus } from './useViviers';
 export { useVivierFilterOptions } from './useVivierFilterOptions';
 export { useCitySearch } from './useCitySearch';
+export { useVivierStats } from './useVivierStats';
+export type { VivierStats, VivierScoreBreakdown } from './useVivierStats';
+export { useVivierInsights } from './useVivierInsights';
+export type { VivierInsight } from './useVivierInsights';
