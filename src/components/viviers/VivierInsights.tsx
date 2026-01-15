@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,32 +15,15 @@ import {
   Building2,
   MapPin
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-
-interface VivierInsight {
-  type: 'opportunity' | 'cohort' | 'trend' | 'alert';
-  title: string;
-  description: string;
-  metric?: string;
-  priority: 'high' | 'medium' | 'low';
-  suggested_query?: string;
-}
-
-interface VivierStats {
-  total_leads: number;
-  avg_score: number;
-  high_score_count: number;
-  not_contacted_30d: number;
-  top_industries: Array<{ industry: string; count: number; avg_score: number }>;
-  top_cities: Array<{ city: string; count: number }>;
-  score_distribution: Array<{ range: string; count: number }>;
-}
+import { useState } from 'react';
+import { useVivierInsights, VivierInsight } from '@/hooks/viviers/useVivierInsights';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface VivierInsightsProps {
   onQuerySuggest?: (query: string) => void;
@@ -61,48 +43,19 @@ const PRIORITY_COLORS = {
 };
 
 export function VivierInsights({ onQuerySuggest }: VivierInsightsProps) {
-  const [stats, setStats] = useState<VivierStats | null>(null);
-  const [insights, setInsights] = useState<VivierInsight[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const queryClient = useQueryClient();
+  
+  const { data, isLoading, isFetching, dataUpdatedAt, refetch } = useVivierInsights();
+  
+  const stats = data?.stats ?? null;
+  const insights = data?.insights ?? [];
 
-  const fetchInsights = async (showToast = false) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('vivier-insights');
-
-      if (error) throw error;
-
-      if (data.stats) {
-        setStats(data.stats);
-      }
-      if (data.insights) {
-        setInsights(data.insights);
-      }
-      setLastUpdated(new Date());
-      
-      if (showToast) {
-        toast.success('Insights actualisés');
-      }
-    } catch (err) {
-      console.error('Error fetching insights:', err);
-      if (showToast) {
-        toast.error('Erreur lors du chargement des insights');
-      }
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchInsights();
-  }, []);
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    fetchInsights(true);
+  const handleRefresh = async () => {
+    // Invalidate cache to force fresh data
+    await queryClient.invalidateQueries({ queryKey: ['vivier-insights'] });
+    refetch();
+    toast.success('Insights en cours d\'actualisation...');
   };
 
   const handleInsightAction = (insight: VivierInsight) => {
@@ -131,6 +84,7 @@ export function VivierInsights({ onQuerySuggest }: VivierInsightsProps) {
   }
 
   const highPriorityCount = insights.filter(i => i.priority === 'high').length;
+  const lastUpdated = dataUpdatedAt ? new Date(dataUpdatedAt) : null;
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
@@ -159,10 +113,10 @@ export function VivierInsights({ onQuerySuggest }: VivierInsightsProps) {
               variant="ghost" 
               size="sm" 
               onClick={handleRefresh}
-              disabled={isRefreshing}
+              disabled={isFetching}
               className="text-muted-foreground"
             >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
             </Button>
           </div>
         </CardHeader>
