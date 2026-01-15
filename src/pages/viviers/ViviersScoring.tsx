@@ -9,48 +9,11 @@ import {
 } from 'lucide-react';
 import LogoArc from '@/components/ui/LogoArc';
 import { VivierScoringPanel } from '@/components/viviers/VivierScoringPanel';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useVivierStats } from '@/hooks/viviers/useVivierStats';
 
 export default function ViviersScoring() {
-  // Fetch scoring stats using optimized RPC function + additional breakdowns
-  const { data: stats, refetch } = useQuery({
-    queryKey: ['viviers-stats'],
-    queryFn: async () => {
-      // Use the optimized RPC for base stats
-      const { data: rpcData, error: rpcError } = await supabase.rpc('get_viviers_stats');
-      
-      if (rpcError) {
-        console.error('Error fetching stats:', rpcError);
-        return { pending: 0, high: 0, medium: 0, low: 0 };
-      }
-      
-      const baseStats = rpcData?.[0];
-      const pending = Number(baseStats?.pending_scoring ?? 0);
-      const scored = Number(baseStats?.scored ?? 0);
-      
-      // If no scored leads, return early
-      if (scored === 0) {
-        return { pending, high: 0, medium: 0, low: 0 };
-      }
-      
-      // Get breakdown by score range (only if we have scored leads)
-      const [high, medium, low] = await Promise.all([
-        supabase.from('viviers').select('id', { count: 'exact', head: true }).gte('cold_score', 80),
-        supabase.from('viviers').select('id', { count: 'exact', head: true }).gte('cold_score', 40).lt('cold_score', 80),
-        supabase.from('viviers').select('id', { count: 'exact', head: true }).lt('cold_score', 40).not('cold_score', 'is', null),
-      ]);
-      
-      return {
-        pending,
-        high: high.count ?? 0,
-        medium: medium.count ?? 0,
-        low: low.count ?? 0,
-      };
-    },
-    staleTime: 30 * 1000, // 30 seconds cache
-    refetchOnWindowFocus: false,
-  });
+  // Use centralized stats hook with breakdown
+  const { stats, breakdown, refetch } = useVivierStats({ includeBreakdown: true });
 
   return (
     <VivierLayout>
@@ -73,7 +36,7 @@ export default function ViviersScoring() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">En attente</p>
-                  <p className="text-2xl font-bold">{stats?.pending.toLocaleString('fr-FR') ?? '...'}</p>
+                  <p className="text-2xl font-bold">{stats.pendingScoring.toLocaleString('fr-FR')}</p>
                 </div>
                 <Target className="h-8 w-8 text-accent" />
               </div>
@@ -85,7 +48,7 @@ export default function ViviersScoring() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Score élevé (≥80)</p>
-                  <p className="text-2xl font-bold text-green-600">{stats?.high.toLocaleString('fr-FR') ?? '...'}</p>
+                  <p className="text-2xl font-bold text-green-600">{breakdown.high.toLocaleString('fr-FR')}</p>
                 </div>
                 <CheckCircle2 className="h-8 w-8 text-green-500" />
               </div>
@@ -97,7 +60,7 @@ export default function ViviersScoring() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Score moyen (40-79)</p>
-                  <p className="text-2xl font-bold text-amber-600">{stats?.medium.toLocaleString('fr-FR') ?? '...'}</p>
+                  <p className="text-2xl font-bold text-amber-600">{breakdown.medium.toLocaleString('fr-FR')}</p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-amber-500" />
               </div>
@@ -109,7 +72,7 @@ export default function ViviersScoring() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Score faible (&lt;40)</p>
-                  <p className="text-2xl font-bold text-destructive">{stats?.low.toLocaleString('fr-FR') ?? '...'}</p>
+                  <p className="text-2xl font-bold text-destructive">{breakdown.low.toLocaleString('fr-FR')}</p>
                 </div>
                 <XCircle className="h-8 w-8 text-destructive" />
               </div>
@@ -118,7 +81,7 @@ export default function ViviersScoring() {
         </div>
 
         {/* Scoring Panel */}
-        <VivierScoringPanel pendingCount={stats?.pending ?? 0} onComplete={() => refetch()} />
+        <VivierScoringPanel pendingCount={stats.pendingScoring} onComplete={() => refetch()} />
 
         {/* Scoring Config */}
         <Card>

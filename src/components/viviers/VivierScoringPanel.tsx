@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Sparkles, Play, Loader2, Square } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useVivierStats } from '@/hooks/viviers/useVivierStats';
 
 interface ScoringResult {
   success: boolean;
@@ -18,10 +19,6 @@ interface ScoringResult {
 }
 
 interface VivierScoringPanelProps {
-  /**
-   * Optional pending count passed from parent; the panel also fetches live counts
-   * to avoid stale UI after imports.
-   */
   pendingCount?: number;
   onComplete?: () => void;
 }
@@ -34,44 +31,29 @@ export function VivierScoringPanel({ pendingCount: pendingCountProp = 0, onCompl
   const [currentBatch, setCurrentBatch] = useState(0);
   const stopRef = useRef(false);
   const queryClient = useQueryClient();
-  // Initial scored count when session started - track if initialized
   const sessionStartScoredRef = useRef<number | null>(null);
   const initialPendingRef = useRef<number | null>(null);
   const sessionInitializedRef = useRef(false);
 
-  // Live stats from optimized RPC function
-  const { data: liveStats } = useQuery({
-    queryKey: ['viviers-stats'],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_viviers_stats');
-      if (error) throw error;
-      const row = data?.[0];
-      return {
-        totalLeads: Number(row?.total_leads ?? 0),
-        pendingScoring: Number(row?.pending_scoring ?? 0),
-        qualified: Number(row?.qualified ?? 0),
-        promoted: Number(row?.promoted ?? 0),
-        scored: Number(row?.scored ?? 0),
-      };
-    },
+  // Use centralized stats hook with live refetch during scoring
+  const { stats } = useVivierStats({
     refetchInterval: autoContinue || isScoring ? 3000 : false,
-    staleTime: 2000,
   });
 
   // Use live stats or fallback to prop
-  const pendingCount = liveStats?.pendingScoring ?? pendingCountProp;
-  const scoredCount = liveStats?.scored ?? 0;
-  const totalCount = liveStats?.totalLeads ?? 0;
+  const pendingCount = stats.pendingScoring || pendingCountProp;
+  const scoredCount = stats.scored;
+  
   // Session scored = current scored - scored when session started
-  // Only calculate session values if a session has been explicitly started
   const sessionScored = sessionInitializedRef.current && sessionStartScoredRef.current !== null
     ? Math.max(0, scoredCount - sessionStartScoredRef.current)
     : 0;
-  
+
   // Progress based on initial pending count at session start
-  const progress = sessionInitializedRef.current && initialPendingRef.current && initialPendingRef.current > 0 
+  const progress = sessionInitializedRef.current && initialPendingRef.current && initialPendingRef.current > 0
     ? Math.min(100, Math.round((sessionScored / initialPendingRef.current) * 100))
     : 0;
+
   const handleStartScoring = async () => {
     if (pendingCount === 0) {
       toast.info('Aucun lead à scorer');
@@ -90,7 +72,7 @@ export function VivierScoringPanel({ pendingCount: pendingCountProp = 0, onCompl
       if (error) throw error;
 
       const result = data as ScoringResult;
-      
+
       if (result.errors > 0) {
         setSessionErrors(prev => prev + result.errors);
       }
@@ -127,7 +109,6 @@ export function VivierScoringPanel({ pendingCount: pendingCountProp = 0, onCompl
 
   const handleToggleAutoContinue = (checked: boolean) => {
     if (checked) {
-      // Store starting values for progress calculation and mark session as initialized
       sessionStartScoredRef.current = scoredCount;
       initialPendingRef.current = pendingCount;
       sessionInitializedRef.current = true;
@@ -152,7 +133,6 @@ export function VivierScoringPanel({ pendingCount: pendingCountProp = 0, onCompl
     setCurrentBatch(0);
   };
 
-  // Show progress section only when session has been explicitly started
   const showProgress = sessionInitializedRef.current && (autoContinue || sessionScored > 0 || currentBatch > 0);
 
   return (
@@ -242,7 +222,7 @@ export function VivierScoringPanel({ pendingCount: pendingCountProp = 0, onCompl
               Scorer {batchSize} leads
             </Button>
           )}
-          
+
           {sessionScored > 0 && !autoContinue && (
             <Button variant="outline" onClick={handleReset}>
               Reset
@@ -258,8 +238,8 @@ export function VivierScoringPanel({ pendingCount: pendingCountProp = 0, onCompl
               key={size}
               onClick={() => setBatchSize(size)}
               className={`px-2 py-1 rounded ${
-                batchSize === size 
-                  ? 'bg-primary text-primary-foreground' 
+                batchSize === size
+                  ? 'bg-primary text-primary-foreground'
                   : 'bg-muted hover:bg-muted/80'
               }`}
               disabled={isScoring || autoContinue}
