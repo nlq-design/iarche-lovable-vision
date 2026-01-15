@@ -61,35 +61,36 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // ============================================
-    // OPTIMIZED STATS FETCHING using RPC + parallel queries
-    // Avoids the 1000-row limit by using COUNT aggregations
+    // ULTRA-FAST STATS FETCHING - Direct parallel count queries
+    // Bypasses slow RPC and uses indexed columns only
     // ============================================
 
-    // Use the optimized RPC function for base stats
-    const { data: rpcStats, error: rpcError } = await supabase.rpc('get_viviers_stats');
-    
-    if (rpcError) {
-      console.error('Error fetching RPC stats:', rpcError);
-      throw rpcError;
-    }
+    // Run all count queries in parallel - much faster than RPC
+    const [
+      totalResult,
+      scoredResult,
+      qualifiedResult,
+      promotedResult,
+    ] = await Promise.all([
+      supabase.from('viviers').select('id', { count: 'exact', head: true }),
+      supabase.from('viviers').select('id', { count: 'exact', head: true }).not('cold_score', 'is', null),
+      supabase.from('viviers').select('id', { count: 'exact', head: true }).gte('cold_score', 70),
+      supabase.from('viviers').select('id', { count: 'exact', head: true }).eq('status', 'promoted'),
+    ]);
 
-    const statsRow = rpcStats?.[0];
-    const total_leads = Number(statsRow?.total_leads ?? 0);
-    const high_score_count = Number(statsRow?.qualified ?? 0);
-    const scored_count = Number(statsRow?.scored ?? 0);
-    const pending_count = Number(statsRow?.pending_scoring ?? 0);
+    const total_leads = totalResult.count || 0;
+    const scored_count = scoredResult.count || 0;
+    const high_score_count = qualifiedResult.count || 0;
+    const pending_count = total_leads - scored_count;
 
-    // Calculate avg_score using a separate optimized query
-    // Only calculate if there are scored leads to avoid division by zero
+    // For avg_score, sample a small set (fast) - don't scan full table
     let avg_score = 0;
     if (scored_count > 0) {
-      // Use a sample for large datasets to avoid timeout
-      const sampleSize = Math.min(scored_count, 10000);
       const { data: scoreData } = await supabase
         .from('viviers')
         .select('cold_score')
         .not('cold_score', 'is', null)
-        .limit(sampleSize);
+        .limit(500); // Small sample for speed
       
       if (scoreData && scoreData.length > 0) {
         const scores = scoreData.map(v => v.cold_score as number);
