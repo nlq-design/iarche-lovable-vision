@@ -266,13 +266,16 @@ export default function ViviersImport() {
     return num;
   };
 
-  // Safe SIRET/SIREN - keeps as string, validates format
+  // Safe SIRET/SIREN - keeps as string, validates EXACT format (9 or 14 digits only)
   const safeSiret = (value: string | undefined): string | null => {
     if (!value) return null;
     const cleaned = String(value).trim().replace(/\s/g, '');
     if (!cleaned) return null;
-    // SIRET is 14 digits, SIREN is 9 digits - keep as string
-    if (!/^\d{9,14}$/.test(cleaned)) return null;
+    // STRICT: SIRET must be exactly 14 digits, SIREN exactly 9 digits
+    // Reject 10-13 digit values (truncated/corrupted data)
+    if (!/^\d{9}$/.test(cleaned) && !/^\d{14}$/.test(cleaned)) return null;
+    // Reject if looks like a phone number (starts with 0[1-9])
+    if (/^0[1-9]/.test(cleaned)) return null;
     return cleaned;
   };
 
@@ -374,19 +377,29 @@ export default function ViviersImport() {
 
     // ========== ACTIVITY / INDUSTRY ==========
     // Possible columns: ACTIVITE, ACTIVITY, INDUSTRY, SECTEUR
-    const industry = findValue(row, 
+    // ENHANCED: Must be text, NOT an email (common mis-mapping)
+    const industryRaw = findValue(row, 
       'activite', 'activity', 'industry', 'secteur', 
       'secteur_activite', 'libelle_naf', 'libelle_activite', 'metier',
       'objet_social', 'description_activite'
     );
+    // Reject if it looks like an email (common CSV mapping error)
+    const industry = (industryRaw && !looksLikeEmail(industryRaw) && isMostlyText(industryRaw)) 
+      ? industryRaw 
+      : null;
 
     // ========== CONTACT / DIRIGEANT ==========
     // Possible columns: DIRIGEANT, CONTACT, CONTACT_NAME
-    const dirigeant = findValue(row, 
+    // ENHANCED: Must NOT be an email (3122 leads had email in contact_name)
+    const dirigeantRaw = findValue(row, 
       'dirigeant', 'contact', 'contact_name', 'nom_contact', 
       'responsable', 'gerant', 'representant', 'interlocuteur',
       'nom_dirigeant', 'representant_legal'
     );
+    // Reject if it looks like an email - this is a common CSV mapping error
+    const dirigeant = (dirigeantRaw && !looksLikeEmail(dirigeantRaw) && isMostlyText(dirigeantRaw)) 
+      ? dirigeantRaw 
+      : null;
     
     // Parse first/last name from dirigeant if present
     let firstName = '';
