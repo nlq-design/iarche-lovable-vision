@@ -229,50 +229,31 @@ export function useViviers(options: UseViviersOptions = {}) {
     refetchOnWindowFocus: false, // Disable refetch on tab focus
   });
 
-  // Stats query - using count queries to avoid the 1000 row limit
-  // Cached for 2 minutes since stats don't need real-time updates
-  // Uses parallel queries for better performance and individual error handling
+  // Stats query - using optimized RPC function for better performance on large tables
   const { data: stats } = useQuery({
     queryKey: ['viviers-stats'],
     queryFn: async () => {
-      // Run all count queries in parallel for better performance
-      const [totalResult, pendingResult, qualifiedResult, promotedResult] = await Promise.allSettled([
-        // Total count
-        supabase.from('viviers').select('id', { count: 'exact', head: true }),
-        // Pending scoring (no score and not promoted OR status is null)
-        supabase
-          .from('viviers')
-          .select('id', { count: 'exact', head: true })
-          .is('cold_score', null)
-          .or('status.neq.promoted,status.is.null'),
-        // Qualified (score >= 60)
-        supabase.from('viviers').select('id', { count: 'exact', head: true }).gte('cold_score', 60),
-        // Promoted (status = promoted)
-        supabase.from('viviers').select('id', { count: 'exact', head: true }).eq('status', 'promoted'),
-      ]);
+      // Use optimized RPC function that runs a single query with proper indexes
+      const { data, error } = await supabase.rpc('get_viviers_stats');
 
-      // Extract counts with fallback to 0 on error
-      const totalLeads =
-        totalResult.status === 'fulfilled' && !totalResult.value.error
-          ? totalResult.value.count || 0
-          : 0;
-      const pendingScoring =
-        pendingResult.status === 'fulfilled' && !pendingResult.value.error
-          ? pendingResult.value.count || 0
-          : 0;
-      const qualified =
-        qualifiedResult.status === 'fulfilled' && !qualifiedResult.value.error
-          ? qualifiedResult.value.count || 0
-          : 0;
-      const promoted =
-        promotedResult.status === 'fulfilled' && !promotedResult.value.error
-          ? promotedResult.value.count || 0
-          : 0;
+      if (error) {
+        console.error('Error fetching viviers stats:', error);
+        // Fallback to default values on error
+        return { totalLeads: 0, pendingScoring: 0, qualified: 0, promoted: 0, scored: 0 };
+      }
 
-      return { totalLeads, pendingScoring, qualified, promoted };
+      // RPC returns an array with one row
+      const row = data?.[0];
+      return {
+        totalLeads: Number(row?.total_leads ?? 0),
+        pendingScoring: Number(row?.pending_scoring ?? 0),
+        qualified: Number(row?.qualified ?? 0),
+        promoted: Number(row?.promoted ?? 0),
+        scored: Number(row?.scored ?? 0),
+      };
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes cache - stats are stable
-    refetchOnWindowFocus: false, // Don't refetch on tab focus
+    staleTime: 30 * 1000, // 30 seconds cache
+    refetchOnWindowFocus: false,
   });
 
   // Create mutation
@@ -407,7 +388,7 @@ export function useViviers(options: UseViviersOptions = {}) {
     viviers: data?.viviers || [],
     totalCount: data?.totalCount || 0,
     totalPages: data?.totalPages || 0,
-    stats: stats || { totalLeads: 0, pendingScoring: 0, qualified: 0, promoted: 0 },
+    stats: stats || { totalLeads: 0, pendingScoring: 0, qualified: 0, promoted: 0, scored: 0 },
     isLoading,
     error,
     refetch,

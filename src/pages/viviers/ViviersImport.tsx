@@ -851,8 +851,6 @@ export default function ViviersImport() {
       // Ensure list + stats refresh on return
       queryClient.invalidateQueries({ queryKey: ['viviers'] });
       queryClient.invalidateQueries({ queryKey: ['viviers-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['viviers-pending-count'] });
-      queryClient.invalidateQueries({ queryKey: ['viviers-scored-count'] });
       navigate('/viviers/leads');
     } catch (error) {
       toast.error(`Erreur d'import: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);

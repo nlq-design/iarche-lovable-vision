@@ -13,23 +13,43 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function ViviersScoring() {
-  // Fetch scoring stats
+  // Fetch scoring stats using optimized RPC function + additional breakdowns
   const { data: stats, refetch } = useQuery({
-    queryKey: ['viviers-scoring-stats'],
+    queryKey: ['viviers-stats'],
     queryFn: async () => {
-      const [pending, high, medium, low] = await Promise.all([
-        supabase.from('viviers').select('id', { count: 'exact', head: true }).is('cold_score', null),
+      // Use the optimized RPC for base stats
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_viviers_stats');
+      
+      if (rpcError) {
+        console.error('Error fetching stats:', rpcError);
+        return { pending: 0, high: 0, medium: 0, low: 0 };
+      }
+      
+      const baseStats = rpcData?.[0];
+      const pending = Number(baseStats?.pending_scoring ?? 0);
+      const scored = Number(baseStats?.scored ?? 0);
+      
+      // If no scored leads, return early
+      if (scored === 0) {
+        return { pending, high: 0, medium: 0, low: 0 };
+      }
+      
+      // Get breakdown by score range (only if we have scored leads)
+      const [high, medium, low] = await Promise.all([
         supabase.from('viviers').select('id', { count: 'exact', head: true }).gte('cold_score', 80),
         supabase.from('viviers').select('id', { count: 'exact', head: true }).gte('cold_score', 40).lt('cold_score', 80),
         supabase.from('viviers').select('id', { count: 'exact', head: true }).lt('cold_score', 40).not('cold_score', 'is', null),
       ]);
+      
       return {
-        pending: pending.count ?? 0,
+        pending,
         high: high.count ?? 0,
         medium: medium.count ?? 0,
         low: low.count ?? 0,
       };
     },
+    staleTime: 30 * 1000, // 30 seconds cache
+    refetchOnWindowFocus: false,
   });
 
   return (
