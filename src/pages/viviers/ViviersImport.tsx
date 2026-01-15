@@ -93,22 +93,53 @@ export default function ViviersImport() {
     return parseExcelBuffer(buffer);
   };
 
-  // Parse CSV/TSV text
+  // Parse CSV/TSV text with robust handling of edge cases
   const parseCSV = (text: string): Record<string, string>[] => {
-    const lines = text.trim().split('\n');
+    // Remove BOM if present and normalize line endings
+    const cleanText = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const lines = cleanText.trim().split('\n').filter(line => line.trim().length > 0);
     if (lines.length < 2) return [];
     
-    const delimiter = lines[0].includes('\t') ? '\t' : (lines[0].includes(';') ? ';' : ',');
-    const headers = lines[0].split(delimiter).map(h => normalizeHeader(h.trim().replace(/['"]/g, '')));
+    // Detect delimiter: prioritize tab, then semicolon (common in FR exports), then comma
+    const firstLine = lines[0];
+    const delimiter = firstLine.includes('\t') ? '\t' : (firstLine.includes(';') ? ';' : ',');
     
-    return lines.slice(1).map(line => {
+    // Parse headers with deduplication (duplicate columns cause data loss)
+    const rawHeaders = firstLine.split(delimiter).map(h => normalizeHeader(h.trim().replace(/['"]/g, '')));
+    const headers: string[] = [];
+    const headerCounts: Record<string, number> = {};
+    rawHeaders.forEach(h => {
+      if (!h) {
+        headers.push(`_col_${headers.length}`); // Handle empty headers
+      } else if (headerCounts[h]) {
+        headerCounts[h]++;
+        headers.push(`${h}_${headerCounts[h]}`); // Deduplicate: email, email_2, email_3
+      } else {
+        headerCounts[h] = 1;
+        headers.push(h);
+      }
+    });
+    
+    const rows: Record<string, string>[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      // Skip completely empty rows
+      if (!line.trim()) continue;
+      
       const values = line.split(delimiter).map(v => v.trim().replace(/['"]/g, ''));
       const row: Record<string, string> = {};
-      headers.forEach((header, i) => {
-        row[header] = values[i] || '';
+      headers.forEach((header, idx) => {
+        row[header] = values[idx] || '';
       });
-      return row;
-    });
+      
+      // Skip rows that are completely empty (no values at all)
+      const hasAnyValue = Object.values(row).some(v => v.length > 0);
+      if (hasAnyValue) {
+        rows.push(row);
+      }
+    }
+    
+    return rows;
   };
 
   // ========== DATA TYPE VALIDATORS ==========
@@ -194,13 +225,21 @@ export default function ViviersImport() {
     return trimmed.substring(0, maxLength);
   };
 
-  // Safe email validation
+  // Safe email validation with enhanced checks
   const safeEmail = (value: string | undefined): string | null => {
     if (!value) return null;
     const trimmed = String(value).trim().toLowerCase();
     if (!trimmed) return null;
     // Basic email regex
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return null;
+    // Reject common placeholder/test emails
+    const invalidDomains = ['example.com', 'test.com', 'email.com', 'mail.com', 'xxx.com', 'abc.com'];
+    const invalidPatterns = ['test@', 'admin@', 'info@test', 'noreply@', 'no-reply@'];
+    const domain = trimmed.split('@')[1];
+    if (invalidDomains.includes(domain)) return null;
+    if (invalidPatterns.some(p => trimmed.startsWith(p))) return null;
+    // Max email length check (RFC 5321)
+    if (trimmed.length > 254) return null;
     return trimmed;
   };
 
@@ -722,13 +761,19 @@ export default function ViviersImport() {
     }
   };
 
-  // Analyze file and detect duplicates
+  // Analyze file and detect duplicates with enhanced validation
   const handleAnalyze = async (rows: Record<string, string>[], columnOverrides?: Record<string, string>, sourceOverride?: string) => {
     setIsAnalyzing(true);
     try {
       if (rows.length === 0) {
         toast.error('Aucune donnée valide trouvée');
         return;
+      }
+
+      // Limit analysis to prevent browser freeze (warn if too large)
+      const MAX_ROWS_BEFORE_WARNING = 50000;
+      if (rows.length > MAX_ROWS_BEFORE_WARNING) {
+        toast.warning(`Fichier volumineux (${rows.length.toLocaleString()} lignes). L'analyse peut prendre du temps.`);
       }
 
       // Apply column overrides if provided
@@ -744,20 +789,61 @@ export default function ViviersImport() {
       }) : rows;
 
       // Map to vivier objects, applying manual source override if provided
-      const viviers = processedRows.map(row => {
-        const vivier = mapToVivier(row);
-        if (sourceOverride) {
-          vivier.source = sourceOverride;
+      // Use chunked processing to avoid blocking UI on large files
+      const CHUNK_SIZE = 5000;
+      const viviers: Partial<Vivier>[] = [];
+      const skippedReasons: Record<string, number> = { 
+        no_email: 0, 
+        invalid_email: 0,
+        duplicate_in_file: 0 
+      };
+      const seenEmailsInFile = new Set<string>();
+      
+      for (let i = 0; i < processedRows.length; i += CHUNK_SIZE) {
+        const chunk = processedRows.slice(i, i + CHUNK_SIZE);
+        chunk.forEach(row => {
+          const vivier = mapToVivier(row);
+          if (sourceOverride) {
+            vivier.source = sourceOverride;
+          }
+          
+          // Track why rows are skipped
+          if (!vivier.email) {
+            skippedReasons.no_email++;
+            return;
+          }
+          
+          // Detect duplicates within the file itself (same email twice in CSV)
+          const emailLower = vivier.email.toLowerCase();
+          if (seenEmailsInFile.has(emailLower)) {
+            skippedReasons.duplicate_in_file++;
+            return;
+          }
+          seenEmailsInFile.add(emailLower);
+          
+          viviers.push(vivier);
+        });
+        
+        // Yield to UI every chunk (for large files)
+        if (i + CHUNK_SIZE < processedRows.length) {
+          await new Promise(resolve => setTimeout(resolve, 0));
         }
-        return vivier;
-      }).filter(v => v.email);
+      }
       
       if (viviers.length === 0) {
-        toast.error('Aucun email valide trouvé. Assurez-vous que la colonne email existe.');
+        const reasons: string[] = [];
+        if (skippedReasons.no_email > 0) reasons.push(`${skippedReasons.no_email} sans email`);
+        if (skippedReasons.invalid_email > 0) reasons.push(`${skippedReasons.invalid_email} emails invalides`);
+        toast.error(`Aucun lead valide trouvé. ${reasons.join(', ')}`);
         return;
       }
+      
+      // Log skipped stats for debugging
+      if (skippedReasons.duplicate_in_file > 0) {
+        console.info(`[Import] ${skippedReasons.duplicate_in_file} doublons internes au fichier ignorés`);
+      }
 
-      // Check for duplicates
+      // Check for duplicates in database
       const analyzed = await checkDuplicates(viviers);
       setParsedData(analyzed);
       
@@ -768,19 +854,27 @@ export default function ViviersImport() {
       setSelectedRows(nonDuplicateIndices);
       
       const duplicateCount = analyzed.filter(p => p.isDuplicate).length;
-      if (duplicateCount > 0) {
-        toast.warning(`${duplicateCount} doublon${duplicateCount > 1 ? 's' : ''} détecté${duplicateCount > 1 ? 's' : ''} sur ${analyzed.length} leads`);
+      const inFileSkipped = skippedReasons.duplicate_in_file;
+      
+      // Enhanced feedback with all skip reasons
+      let message = `${analyzed.length} leads analysés`;
+      if (duplicateCount > 0 || inFileSkipped > 0) {
+        const parts: string[] = [];
+        if (duplicateCount > 0) parts.push(`${duplicateCount} déjà en base`);
+        if (inFileSkipped > 0) parts.push(`${inFileSkipped} doublons dans le fichier`);
+        toast.warning(`${message}. Doublons: ${parts.join(', ')}`);
       } else {
-        toast.success(`${analyzed.length} leads prêts à importer (aucun doublon)`);
+        toast.success(`${message} - tous prêts à importer`);
       }
     } catch (error) {
+      console.error('[Import] Analyze error:', error);
       toast.error(`Erreur d'analyse: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  // Perform the actual import with batch processing
+  // Perform the actual import with batch processing and error recovery
   const handleImport = async () => {
     if (!parsedData) return;
     
@@ -802,24 +896,73 @@ export default function ViviersImport() {
       });
 
       const totalOperations = toImport.length + toUpdate.length;
+      if (totalOperations === 0) {
+        toast.warning('Aucun lead sélectionné pour l\'import');
+        setIsImporting(false);
+        return;
+      }
+      
       setImportTotal(totalOperations);
       let processed = 0;
+      let failedBatches = 0;
+      const errors: string[] = [];
 
-      // Bulk insert new entries in batches
+      // Bulk insert new entries in batches with retry logic
       if (toImport.length > 0) {
         const BATCH_SIZE = 500;
+        const MAX_RETRIES = 2;
+        
         for (let i = 0; i < toImport.length; i += BATCH_SIZE) {
           const batch = toImport.slice(i, i + BATCH_SIZE);
           const batchData = batch.map(v => {
             const { id, ...rest } = v;
-            return { ...rest, source: v.source || 'import', status: 'new' };
+            // Ensure all required fields have safe defaults, cold_score = NULL for pending
+            return { 
+              ...rest, 
+              source: v.source || 'import', 
+              status: 'new',
+              cold_score: null, // Explicitly NULL for pending scoring
+            };
           });
           
-          const { error } = await supabase
-            .from('viviers')
-            .insert(batchData as any);
+          let success = false;
+          for (let retry = 0; retry <= MAX_RETRIES && !success; retry++) {
+            try {
+              const { error } = await supabase
+                .from('viviers')
+                .insert(batchData as any);
 
-          if (error) throw error;
+              if (error) {
+                // If unique constraint violation, some emails already exist (race condition)
+                if (error.code === '23505') {
+                  console.warn(`[Import] Batch ${i}-${i+batch.length}: duplicate key, reducing batch size`);
+                  // Insert one-by-one to find which ones are duplicates
+                  for (const singleItem of batchData) {
+                    const { error: singleError } = await supabase
+                      .from('viviers')
+                      .insert(singleItem as any);
+                    if (singleError && singleError.code !== '23505') {
+                      console.error(`[Import] Single insert error:`, singleError);
+                    }
+                  }
+                  success = true;
+                } else {
+                  throw error;
+                }
+              } else {
+                success = true;
+              }
+            } catch (err) {
+              if (retry === MAX_RETRIES) {
+                failedBatches++;
+                errors.push(`Batch ${i+1}-${i+batch.length}: ${err instanceof Error ? err.message : 'Erreur'}`);
+                console.error(`[Import] Batch failed after retries:`, err);
+              } else {
+                // Wait before retry with exponential backoff
+                await new Promise(r => setTimeout(r, 500 * (retry + 1)));
+              }
+            }
+          }
           
           processed += batch.length;
           setImportProgress(Math.round((processed / totalOperations) * 100));
@@ -832,27 +975,46 @@ export default function ViviersImport() {
         for (let i = 0; i < toUpdate.length; i += UPDATE_BATCH_SIZE) {
           const batch = toUpdate.slice(i, i + UPDATE_BATCH_SIZE);
           
-          await Promise.all(
+          const results = await Promise.allSettled(
             batch.map(async ({ id, data }) => {
               const { id: _, ...updateData } = data;
-              await supabase
+              const { error } = await supabase
                 .from('viviers')
                 .update({ ...updateData, updated_at: new Date().toISOString() })
                 .eq('id', id);
+              if (error) throw error;
             })
           );
+          
+          // Count failures
+          const failures = results.filter(r => r.status === 'rejected');
+          if (failures.length > 0) {
+            failedBatches++;
+            console.error(`[Import] ${failures.length} update failures in batch`);
+          }
           
           processed += batch.length;
           setImportProgress(Math.round((processed / totalOperations) * 100));
         }
       }
 
-      toast.success(`${totalOperations} lead${totalOperations > 1 ? 's' : ''} importé${totalOperations > 1 ? 's' : ''}`);
-      // Ensure list + stats refresh on return
+      // Report results with appropriate toast level
+      const successCount = totalOperations - (failedBatches > 0 ? Math.min(failedBatches * 500, totalOperations) : 0);
+      if (failedBatches > 0) {
+        toast.warning(`${successCount} leads importés, ${failedBatches} lot(s) en erreur`);
+        if (errors.length > 0) {
+          console.error('[Import] Errors:', errors);
+        }
+      } else {
+        toast.success(`${totalOperations} lead${totalOperations > 1 ? 's' : ''} importé${totalOperations > 1 ? 's' : ''}`);
+      }
+      
+      // Always refresh stats + list after import (even partial success)
       queryClient.invalidateQueries({ queryKey: ['viviers'] });
       queryClient.invalidateQueries({ queryKey: ['viviers-stats'] });
       navigate('/viviers/leads');
     } catch (error) {
+      console.error('[Import] Critical error:', error);
       toast.error(`Erreur d'import: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
     } finally {
       setIsImporting(false);
