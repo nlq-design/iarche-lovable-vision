@@ -4580,6 +4580,7 @@ export type Database = {
           naf_code: string | null
           notes: string | null
           phone: string | null
+          phone2: string | null
           postal_code: string | null
           promoted_at: string | null
           promoted_to_lead_id: string | null
@@ -4626,6 +4627,7 @@ export type Database = {
           naf_code?: string | null
           notes?: string | null
           phone?: string | null
+          phone2?: string | null
           postal_code?: string | null
           promoted_at?: string | null
           promoted_to_lead_id?: string | null
@@ -4672,6 +4674,7 @@ export type Database = {
           naf_code?: string | null
           notes?: string | null
           phone?: string | null
+          phone2?: string | null
           postal_code?: string | null
           promoted_at?: string | null
           promoted_to_lead_id?: string | null
