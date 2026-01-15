@@ -160,17 +160,30 @@ export default function ViviersImport() {
   };
 
   // Check if value looks like a SIRET/SIREN (9-14 digits)
+  // IMPORTANT: Must NOT look like a French phone number (starting with 01-09)
   const looksLikeSiret = (value: string): boolean => {
     if (!value) return false;
     const cleaned = value.replace(/\s/g, '');
-    return /^\d{9,14}$/.test(cleaned);
+    // Must be 9 (SIREN) or 14 (SIRET) digits
+    if (!/^\d{9}$|^\d{14}$/.test(cleaned)) return false;
+    // French phone numbers start with 0[1-9], SIRET/SIREN never starts with 0
+    // SIREN starts with 1-9 (first digit is never 0)
+    // Exception: some old SIREN can start with 0 but not with 01-09 pattern
+    const firstTwoDigits = cleaned.substring(0, 2);
+    const phonePatterns = ['01', '02', '03', '04', '05', '06', '07', '08', '09'];
+    if (phonePatterns.includes(firstTwoDigits)) return false;
+    return true;
   };
 
-  // Check if value looks like a phone number
+  // Check if value looks like a French phone number (10 digits starting with 0)
   const looksLikePhone = (value: string): boolean => {
     if (!value) return false;
     const digitsOnly = value.replace(/\D/g, '');
-    return digitsOnly.length >= 9 && digitsOnly.length <= 14;
+    // French phone: 10 digits starting with 0, mobile/landline prefixes
+    if (digitsOnly.length === 10 && digitsOnly.startsWith('0')) return true;
+    // International format with country code (e.g., +33)
+    if (digitsOnly.length >= 11 && digitsOnly.length <= 13 && digitsOnly.startsWith('33')) return true;
+    return false;
   };
 
   // Check if value looks like an email
