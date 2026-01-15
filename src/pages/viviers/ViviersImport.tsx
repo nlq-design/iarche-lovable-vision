@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload, FileSpreadsheet, ClipboardPaste, CheckCircle2, AlertCircle, ArrowRight, Loader2, AlertTriangle, Copy, RefreshCw } from 'lucide-react';
 import { useState, useRef, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import LogoArc from '@/components/ui/LogoArc';
 import { useViviers, type Vivier } from '@/hooks/viviers';
 import { toast } from 'sonner';
@@ -62,8 +63,8 @@ export default function ViviersImport() {
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { bulkCreateViviers } = useViviers();
-  
   // Multi-file queue state
   const [fileQueue, setFileQueue] = useState<FileQueueItem[]>([]);
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
@@ -847,6 +848,11 @@ export default function ViviersImport() {
       }
 
       toast.success(`${totalOperations} lead${totalOperations > 1 ? 's' : ''} importé${totalOperations > 1 ? 's' : ''}`);
+      // Ensure list + stats refresh on return
+      queryClient.invalidateQueries({ queryKey: ['viviers'] });
+      queryClient.invalidateQueries({ queryKey: ['viviers-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['viviers-pending-count'] });
+      queryClient.invalidateQueries({ queryKey: ['viviers-scored-count'] });
       navigate('/viviers/leads');
     } catch (error) {
       toast.error(`Erreur d'import: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);

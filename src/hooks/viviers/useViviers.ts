@@ -239,33 +239,40 @@ export function useViviers(options: UseViviersOptions = {}) {
       const [totalResult, pendingResult, qualifiedResult, promotedResult] = await Promise.allSettled([
         // Total count
         supabase.from('viviers').select('id', { count: 'exact', head: true }),
-        // Pending scoring (no score and not promoted)
-        supabase.from('viviers').select('id', { count: 'exact', head: true })
+        // Pending scoring (no score and not promoted OR status is null)
+        supabase
+          .from('viviers')
+          .select('id', { count: 'exact', head: true })
           .is('cold_score', null)
-          .neq('status', 'promoted'),
+          .or('status.neq.promoted,status.is.null'),
         // Qualified (score >= 60)
-        supabase.from('viviers').select('id', { count: 'exact', head: true })
-          .gte('cold_score', 60),
+        supabase.from('viviers').select('id', { count: 'exact', head: true }).gte('cold_score', 60),
         // Promoted (status = promoted)
-        supabase.from('viviers').select('id', { count: 'exact', head: true })
-          .eq('status', 'promoted'),
+        supabase.from('viviers').select('id', { count: 'exact', head: true }).eq('status', 'promoted'),
       ]);
 
       // Extract counts with fallback to 0 on error
-      const totalLeads = totalResult.status === 'fulfilled' && !totalResult.value.error 
-        ? totalResult.value.count || 0 : 0;
-      const pendingScoring = pendingResult.status === 'fulfilled' && !pendingResult.value.error 
-        ? pendingResult.value.count || 0 : 0;
-      const qualified = qualifiedResult.status === 'fulfilled' && !qualifiedResult.value.error 
-        ? qualifiedResult.value.count || 0 : 0;
-      const promoted = promotedResult.status === 'fulfilled' && !promotedResult.value.error 
-        ? promotedResult.value.count || 0 : 0;
+      const totalLeads =
+        totalResult.status === 'fulfilled' && !totalResult.value.error
+          ? totalResult.value.count || 0
+          : 0;
+      const pendingScoring =
+        pendingResult.status === 'fulfilled' && !pendingResult.value.error
+          ? pendingResult.value.count || 0
+          : 0;
+      const qualified =
+        qualifiedResult.status === 'fulfilled' && !qualifiedResult.value.error
+          ? qualifiedResult.value.count || 0
+          : 0;
+      const promoted =
+        promotedResult.status === 'fulfilled' && !promotedResult.value.error
+          ? promotedResult.value.count || 0
+          : 0;
 
       return { totalLeads, pendingScoring, qualified, promoted };
     },
     staleTime: 2 * 60 * 1000, // 2 minutes cache - stats are stable
     refetchOnWindowFocus: false, // Don't refetch on tab focus
-    refetchOnMount: false, // Use cached data if available
   });
 
   // Create mutation
