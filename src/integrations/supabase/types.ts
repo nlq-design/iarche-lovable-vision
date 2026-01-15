@@ -5075,6 +5075,16 @@ export type Database = {
           metadata: Json
         }[]
       }
+      get_viviers_stats: {
+        Args: never
+        Returns: {
+          pending_scoring: number
+          promoted: number
+          qualified: number
+          scored: number
+          total_leads: number
+        }[]
+      }
       has_cockpit_access: { Args: { user_uuid: string }; Returns: boolean }
       has_role: {
         Args: {

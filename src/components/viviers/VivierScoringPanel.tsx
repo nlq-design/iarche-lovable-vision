@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Sparkles, Play, Loader2, Square } from 'lucide-react';
@@ -40,52 +39,29 @@ export function VivierScoringPanel({ pendingCount: pendingCountProp = 0, onCompl
   const initialPendingRef = useRef<number | null>(null);
   const sessionInitializedRef = useRef(false);
 
-  // Live pending count (unscored) from database
-  const { data: pendingCount = pendingCountProp } = useQuery({
-    queryKey: ['viviers-pending-count'],
+  // Live stats from optimized RPC function
+  const { data: liveStats } = useQuery({
+    queryKey: ['viviers-stats'],
     queryFn: async () => {
-      const { count, error } = await supabase
-        .from('viviers')
-        .select('id', { count: 'exact', head: true })
-        .is('cold_score', null)
-        .or('status.neq.promoted,status.is.null');
-
+      const { data, error } = await supabase.rpc('get_viviers_stats');
       if (error) throw error;
-      return count || 0;
+      const row = data?.[0];
+      return {
+        totalLeads: Number(row?.total_leads ?? 0),
+        pendingScoring: Number(row?.pending_scoring ?? 0),
+        qualified: Number(row?.qualified ?? 0),
+        promoted: Number(row?.promoted ?? 0),
+        scored: Number(row?.scored ?? 0),
+      };
     },
-    refetchInterval: autoContinue || isScoring ? 2000 : false,
-    staleTime: 1000,
+    refetchInterval: autoContinue || isScoring ? 3000 : false,
+    staleTime: 2000,
   });
 
-  // Real-time scored count from database - polls every 2s when active
-  const { data: scoredCount = 0 } = useQuery({
-    queryKey: ['viviers-scored-count'],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('viviers')
-        .select('id', { count: 'exact', head: true })
-        .not('cold_score', 'is', null);
-
-      if (error) throw error;
-      return count || 0;
-    },
-    refetchInterval: autoContinue || isScoring ? 2000 : false,
-    staleTime: 1000,
-  });
-
-  // Total viviers count
-  const { data: totalCount = 0 } = useQuery({
-    queryKey: ['viviers-total-count'],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('viviers')
-        .select('id', { count: 'exact', head: true });
-
-      if (error) throw error;
-      return count || 0;
-    },
-    staleTime: 30000,
-  });
+  // Use live stats or fallback to prop
+  const pendingCount = liveStats?.pendingScoring ?? pendingCountProp;
+  const scoredCount = liveStats?.scored ?? 0;
+  const totalCount = liveStats?.totalLeads ?? 0;
   // Session scored = current scored - scored when session started
   // Only calculate session values if a session has been explicitly started
   const sessionScored = sessionInitializedRef.current && sessionStartScoredRef.current !== null
@@ -123,8 +99,6 @@ export function VivierScoringPanel({ pendingCount: pendingCountProp = 0, onCompl
         toast.success(`Batch ${currentBatch + 1}: ${result.scored} leads scorés`);
         queryClient.invalidateQueries({ queryKey: ['viviers'] });
         queryClient.invalidateQueries({ queryKey: ['viviers-stats'] });
-        queryClient.invalidateQueries({ queryKey: ['viviers-scoring-stats'] });
-        queryClient.invalidateQueries({ queryKey: ['viviers-scored-count'] });
         onComplete?.();
       } else if (result.errors > 0) {
         toast.warning(`Batch terminé avec ${result.errors} erreurs`);
