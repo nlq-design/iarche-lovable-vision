@@ -17,7 +17,7 @@ import { useViviers, type Vivier } from '@/hooks/viviers';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { parseExcelBuffer, normalizeHeader as normalizeHeaderUtil } from '@/utils/excelUtils';
+import { parseExcelBuffer } from '@/utils/excelUtils';
 
 type DuplicateAction = 'skip' | 'update';
 
