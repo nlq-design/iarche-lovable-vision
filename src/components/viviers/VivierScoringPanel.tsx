@@ -19,11 +19,15 @@ interface ScoringResult {
 }
 
 interface VivierScoringPanelProps {
-  pendingCount: number;
+  /**
+   * Optional pending count passed from parent; the panel also fetches live counts
+   * to avoid stale UI after imports.
+   */
+  pendingCount?: number;
   onComplete?: () => void;
 }
 
-export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPanelProps) {
+export function VivierScoringPanel({ pendingCount: pendingCountProp = 0, onComplete }: VivierScoringPanelProps) {
   const [isScoring, setIsScoring] = useState(false);
   const [autoContinue, setAutoContinue] = useState(false);
   const [sessionErrors, setSessionErrors] = useState(0);
@@ -35,15 +39,33 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
   const sessionStartScoredRef = useRef<number | null>(null);
   const initialPendingRef = useRef<number | null>(null);
   const sessionInitializedRef = useRef(false);
+
+  // Live pending count (unscored) from database
+  const { data: pendingCount = pendingCountProp } = useQuery({
+    queryKey: ['viviers-pending-count'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('viviers')
+        .select('id', { count: 'exact', head: true })
+        .is('cold_score', null)
+        .or('status.neq.promoted,status.is.null');
+
+      if (error) throw error;
+      return count || 0;
+    },
+    refetchInterval: autoContinue || isScoring ? 2000 : false,
+    staleTime: 1000,
+  });
+
   // Real-time scored count from database - polls every 2s when active
   const { data: scoredCount = 0 } = useQuery({
     queryKey: ['viviers-scored-count'],
     queryFn: async () => {
       const { count, error } = await supabase
         .from('viviers')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .not('cold_score', 'is', null);
-      
+
       if (error) throw error;
       return count || 0;
     },
@@ -57,8 +79,8 @@ export function VivierScoringPanel({ pendingCount, onComplete }: VivierScoringPa
     queryFn: async () => {
       const { count, error } = await supabase
         .from('viviers')
-        .select('*', { count: 'exact', head: true });
-      
+        .select('id', { count: 'exact', head: true });
+
       if (error) throw error;
       return count || 0;
     },
