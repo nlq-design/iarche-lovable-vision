@@ -60,44 +60,72 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // 1. Fetch aggregated stats from viviers
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // ============================================
+    // OPTIMIZED STATS FETCHING using RPC + parallel queries
+    // Avoids the 1000-row limit by using COUNT aggregations
+    // ============================================
 
-    // Total and average score
-    const { data: totalData, error: totalError } = await supabase
-      .from('viviers')
-      .select('id, cold_score, status, scored_at', { count: 'exact' });
-
-    if (totalError) {
-      console.error('Error fetching totals:', totalError);
-      throw totalError;
+    // Use the optimized RPC function for base stats
+    const { data: rpcStats, error: rpcError } = await supabase.rpc('get_viviers_stats');
+    
+    if (rpcError) {
+      console.error('Error fetching RPC stats:', rpcError);
+      throw rpcError;
     }
 
-    const total_leads = totalData?.length || 0;
-    const scores = totalData?.map(v => v.cold_score).filter(s => s !== null) as number[];
-    const avg_score = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-    const high_score_count = scores.filter(s => s >= 70).length;
-    
-    // Leads with status 'new' and score >= 50 (qualified but not yet contacted)
-    const not_contacted_30d = totalData?.filter(v => {
-      return v.status === 'new' && v.cold_score && v.cold_score >= 50;
-    }).length || 0;
+    const statsRow = rpcStats?.[0];
+    const total_leads = Number(statsRow?.total_leads ?? 0);
+    const high_score_count = Number(statsRow?.qualified ?? 0);
+    const scored_count = Number(statsRow?.scored ?? 0);
+    const pending_count = Number(statsRow?.pending_scoring ?? 0);
 
-    // Top industries
+    // Calculate avg_score using a separate optimized query
+    // Only calculate if there are scored leads to avoid division by zero
+    let avg_score = 0;
+    if (scored_count > 0) {
+      // Use a sample for large datasets to avoid timeout
+      const sampleSize = Math.min(scored_count, 10000);
+      const { data: scoreData } = await supabase
+        .from('viviers')
+        .select('cold_score')
+        .not('cold_score', 'is', null)
+        .limit(sampleSize);
+      
+      if (scoreData && scoreData.length > 0) {
+        const scores = scoreData.map(v => v.cold_score as number);
+        avg_score = scores.reduce((a, b) => a + b, 0) / scores.length;
+      }
+    }
+
+    // Leads with status 'new' and score >= 50 (qualified but not yet contacted)
+    const { count: notContactedCount } = await supabase
+      .from('viviers')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'new')
+      .gte('cold_score', 50);
+    
+    const not_contacted_30d = notContactedCount || 0;
+
+    // ============================================
+    // TOP INDUSTRIES - Optimized with sampling
+    // ============================================
+    // For large tables, sample up to 20k rows to compute industry distribution
+    const SAMPLE_SIZE = 20000;
     const { data: industryData } = await supabase
       .from('viviers')
       .select('industry, cold_score')
-      .not('industry', 'is', null);
+      .not('industry', 'is', null)
+      .limit(SAMPLE_SIZE);
 
-    const industryMap = new Map<string, { count: number; totalScore: number }>();
+    const industryMap = new Map<string, { count: number; totalScore: number; scoredCount: number }>();
     industryData?.forEach(v => {
       const ind = v.industry?.toUpperCase().trim();
-      if (ind) {
-        const existing = industryMap.get(ind) || { count: 0, totalScore: 0 };
+      if (ind && ind.length > 2) { // Filter out very short industry names
+        const existing = industryMap.get(ind) || { count: 0, totalScore: 0, scoredCount: 0 };
         industryMap.set(ind, {
           count: existing.count + 1,
           totalScore: existing.totalScore + (v.cold_score || 0),
+          scoredCount: existing.scoredCount + (v.cold_score !== null ? 1 : 0),
         });
       }
     });
@@ -106,21 +134,24 @@ serve(async (req) => {
       .map(([industry, data]) => ({
         industry,
         count: data.count,
-        avg_score: Math.round(data.totalScore / data.count),
+        avg_score: data.scoredCount > 0 ? Math.round(data.totalScore / data.scoredCount) : 0,
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    // Top cities
+    // ============================================
+    // TOP CITIES - Optimized with sampling
+    // ============================================
     const { data: cityData } = await supabase
       .from('viviers')
       .select('city')
-      .not('city', 'is', null);
+      .not('city', 'is', null)
+      .limit(SAMPLE_SIZE);
 
     const cityMap = new Map<string, number>();
     cityData?.forEach(v => {
       const city = v.city?.toUpperCase().trim();
-      if (city) {
+      if (city && city.length > 2) { // Filter out very short city names
         cityMap.set(city, (cityMap.get(city) || 0) + 1);
       }
     });
@@ -130,13 +161,29 @@ serve(async (req) => {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    // Score distribution
+    // ============================================
+    // SCORE DISTRIBUTION - Using count queries for accuracy
+    // ============================================
+    // Parallel count queries for each score range
+    const [dist0_20, dist20_40, dist40_60, dist60_80, dist80_100] = await Promise.all([
+      supabase.from('viviers').select('id', { count: 'exact', head: true })
+        .not('cold_score', 'is', null).gte('cold_score', 0).lt('cold_score', 20),
+      supabase.from('viviers').select('id', { count: 'exact', head: true })
+        .not('cold_score', 'is', null).gte('cold_score', 20).lt('cold_score', 40),
+      supabase.from('viviers').select('id', { count: 'exact', head: true })
+        .not('cold_score', 'is', null).gte('cold_score', 40).lt('cold_score', 60),
+      supabase.from('viviers').select('id', { count: 'exact', head: true })
+        .not('cold_score', 'is', null).gte('cold_score', 60).lt('cold_score', 80),
+      supabase.from('viviers').select('id', { count: 'exact', head: true })
+        .not('cold_score', 'is', null).gte('cold_score', 80).lte('cold_score', 100),
+    ]);
+
     const score_distribution = [
-      { range: '0-20', count: scores.filter(s => s >= 0 && s < 20).length },
-      { range: '20-40', count: scores.filter(s => s >= 20 && s < 40).length },
-      { range: '40-60', count: scores.filter(s => s >= 40 && s < 60).length },
-      { range: '60-80', count: scores.filter(s => s >= 60 && s < 80).length },
-      { range: '80-100', count: scores.filter(s => s >= 80 && s <= 100).length },
+      { range: '0-20', count: dist0_20.count || 0 },
+      { range: '20-40', count: dist20_40.count || 0 },
+      { range: '40-60', count: dist40_60.count || 0 },
+      { range: '60-80', count: dist60_80.count || 0 },
+      { range: '80-100', count: dist80_100.count || 0 },
     ];
 
     const stats: VivierStats = {
@@ -148,6 +195,8 @@ serve(async (req) => {
       top_cities,
       score_distribution,
     };
+
+    console.log(`[vivier-insights] Stats computed: ${total_leads} total, ${scored_count} scored, ${pending_count} pending`);
 
     // 2. Fetch prompt from ai_prompts
     const { data: promptData } = await supabase
@@ -169,10 +218,11 @@ serve(async (req) => {
         const userPrompt = `Voici les statistiques actuelles des viviers:
 
 TOTAUX:
-- Total leads: ${stats.total_leads}
+- Total leads: ${stats.total_leads.toLocaleString('fr-FR')}
 - Score moyen: ${stats.avg_score}
-- Leads score ≥ 70: ${stats.high_score_count}
-- Leads qualifiés non contactés (30j): ${stats.not_contacted_30d}
+- Leads score ≥ 70: ${stats.high_score_count.toLocaleString('fr-FR')}
+- Leads qualifiés non contactés: ${stats.not_contacted_30d.toLocaleString('fr-FR')}
+- Leads en attente de scoring: ${pending_count.toLocaleString('fr-FR')}
 
 TOP SECTEURS:
 ${stats.top_industries.slice(0, 5).map(i => `- ${i.industry}: ${i.count} leads (score moy: ${i.avg_score})`).join('\n')}
@@ -234,15 +284,27 @@ Génère 3 à 5 insights actionnables basés sur ces données. Retourne uniqueme
 
     // 4. Fallback: generate basic insights from stats if AI failed
     if (insights.length === 0) {
+      // Alert for pending scoring
+      if (pending_count > 0) {
+        insights.push({
+          type: 'alert',
+          title: 'Leads en attente de scoring',
+          description: `${pending_count.toLocaleString('fr-FR')} leads n'ont pas encore été scorés. Lancez le scoring pour les qualifier.`,
+          metric: pending_count.toString(),
+          priority: pending_count > 10000 ? 'high' : 'medium',
+          suggested_query: 'leads sans score',
+        });
+      }
+
       // Generate rule-based insights
       if (stats.not_contacted_30d > 100) {
         insights.push({
           type: 'opportunity',
           title: 'Leads qualifiés non exploités',
-          description: `${stats.not_contacted_30d} leads avec score ≥ 50 n'ont pas été contactés depuis 30 jours.`,
+          description: `${stats.not_contacted_30d} leads avec score ≥ 50 n'ont pas été contactés.`,
           metric: stats.not_contacted_30d.toString(),
           priority: stats.not_contacted_30d > 500 ? 'high' : 'medium',
-          suggested_query: 'leads qualifiés non contactés depuis 30 jours',
+          suggested_query: 'leads qualifiés non contactés',
         });
       }
 
@@ -273,12 +335,13 @@ Génère 3 à 5 insights actionnables basés sur ces données. Retourne uniqueme
         .filter(d => d.range === '0-20' || d.range === '20-40')
         .reduce((sum, d) => sum + d.count, 0);
       
-      if (lowScoreCount > stats.total_leads * 0.4) {
+      const totalScored = stats.score_distribution.reduce((sum, d) => sum + d.count, 0);
+      if (totalScored > 0 && lowScoreCount > totalScored * 0.4) {
         insights.push({
           type: 'alert',
           title: 'Beaucoup de leads à faible score',
-          description: `${Math.round(lowScoreCount / stats.total_leads * 100)}% des leads ont un score < 40. Envisager un enrichissement ou nettoyage.`,
-          metric: `${Math.round(lowScoreCount / stats.total_leads * 100)}%`,
+          description: `${Math.round(lowScoreCount / totalScored * 100)}% des leads scorés ont un score < 40. Envisager un enrichissement ou nettoyage.`,
+          metric: `${Math.round(lowScoreCount / totalScored * 100)}%`,
           priority: 'medium',
           suggested_query: 'leads score inférieur à 40',
         });
