@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Json } from '@/integrations/supabase/types';
-import { useVivierStats } from './useVivierStats';
 
 export interface Vivier {
   id: string;
@@ -230,8 +229,28 @@ export function useViviers(options: UseViviersOptions = {}) {
     refetchOnWindowFocus: false, // Disable refetch on tab focus
   });
 
-  // Stats - use centralized hook (single source of truth)
-  const { stats } = useVivierStats();
+  // Stats query - inline to avoid nested hook issues
+  // Uses same queryKey as useVivierStats for cache sharing
+  const { data: stats } = useQuery({
+    queryKey: ['viviers-stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_viviers_stats');
+      if (error) {
+        console.error('Error fetching viviers stats:', error);
+        return { totalLeads: 0, pendingScoring: 0, qualified: 0, promoted: 0, scored: 0 };
+      }
+      const row = data?.[0];
+      return {
+        totalLeads: Number(row?.total_leads ?? 0),
+        pendingScoring: Number(row?.pending_scoring ?? 0),
+        qualified: Number(row?.qualified ?? 0),
+        promoted: Number(row?.promoted ?? 0),
+        scored: Number(row?.scored ?? 0),
+      };
+    },
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
   // Create mutation
   const createVivier = useMutation({
@@ -365,7 +384,7 @@ export function useViviers(options: UseViviersOptions = {}) {
     viviers: data?.viviers || [],
     totalCount: data?.totalCount || 0,
     totalPages: data?.totalPages || 0,
-    stats,
+    stats: stats || { totalLeads: 0, pendingScoring: 0, qualified: 0, promoted: 0, scored: 0 },
     isLoading,
     error,
     refetch,
