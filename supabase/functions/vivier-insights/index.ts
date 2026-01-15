@@ -65,63 +65,50 @@ serve(async (req) => {
     // Bypasses slow RPC and uses indexed columns only
     // ============================================
 
-    // Run all count queries in parallel - much faster than RPC
+    // ============================================
+    // ALL QUERIES IN SINGLE PARALLEL BATCH - Maximum speed
+    // Reduced sampling from 20k to 3k for speed on large datasets
+    // ============================================
+    const SAMPLE_SIZE = 3000; // Reduced from 20k - still representative
+
     const [
       totalResult,
       scoredResult,
       qualifiedResult,
-      promotedResult,
+      notContactedResult,
+      industryResult,
+      cityResult,
+      scoreResult,
     ] = await Promise.all([
+      // Core counts - very fast with indexes
       supabase.from('viviers').select('id', { count: 'exact', head: true }),
       supabase.from('viviers').select('id', { count: 'exact', head: true }).not('cold_score', 'is', null),
       supabase.from('viviers').select('id', { count: 'exact', head: true }).gte('cold_score', 70),
-      supabase.from('viviers').select('id', { count: 'exact', head: true }).eq('status', 'promoted'),
+      supabase.from('viviers').select('id', { count: 'exact', head: true }).eq('status', 'new').gte('cold_score', 50),
+      // Sampling for aggregates - reduced to 3k for speed
+      supabase.from('viviers').select('industry, cold_score').not('industry', 'is', null).limit(SAMPLE_SIZE),
+      supabase.from('viviers').select('city').not('city', 'is', null).limit(SAMPLE_SIZE),
+      supabase.from('viviers').select('cold_score').not('cold_score', 'is', null).limit(200),
     ]);
 
     const total_leads = totalResult.count || 0;
     const scored_count = scoredResult.count || 0;
     const high_score_count = qualifiedResult.count || 0;
     const pending_count = total_leads - scored_count;
+    const not_contacted_30d = notContactedResult.count || 0;
 
-    // For avg_score, sample a small set (fast) - don't scan full table
+    // Calculate avg_score from sample
     let avg_score = 0;
-    if (scored_count > 0) {
-      const { data: scoreData } = await supabase
-        .from('viviers')
-        .select('cold_score')
-        .not('cold_score', 'is', null)
-        .limit(500); // Small sample for speed
-      
-      if (scoreData && scoreData.length > 0) {
-        const scores = scoreData.map(v => v.cold_score as number);
-        avg_score = scores.reduce((a, b) => a + b, 0) / scores.length;
-      }
+    if (scoreResult.data && scoreResult.data.length > 0) {
+      const scores = scoreResult.data.map(v => v.cold_score as number);
+      avg_score = scores.reduce((a, b) => a + b, 0) / scores.length;
     }
 
-    // Leads with status 'new' and score >= 50 (qualified but not yet contacted)
-    const { count: notContactedCount } = await supabase
-      .from('viviers')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'new')
-      .gte('cold_score', 50);
-    
-    const not_contacted_30d = notContactedCount || 0;
-
-    // ============================================
-    // TOP INDUSTRIES - Optimized with sampling
-    // ============================================
-    // For large tables, sample up to 20k rows to compute industry distribution
-    const SAMPLE_SIZE = 20000;
-    const { data: industryData } = await supabase
-      .from('viviers')
-      .select('industry, cold_score')
-      .not('industry', 'is', null)
-      .limit(SAMPLE_SIZE);
-
+    // Process industry data in-memory (already fetched)
     const industryMap = new Map<string, { count: number; totalScore: number; scoredCount: number }>();
-    industryData?.forEach(v => {
+    industryResult.data?.forEach(v => {
       const ind = v.industry?.toUpperCase().trim();
-      if (ind && ind.length > 2) { // Filter out very short industry names
+      if (ind && ind.length > 2) {
         const existing = industryMap.get(ind) || { count: 0, totalScore: 0, scoredCount: 0 };
         industryMap.set(ind, {
           count: existing.count + 1,
@@ -140,19 +127,11 @@ serve(async (req) => {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    // ============================================
-    // TOP CITIES - Optimized with sampling
-    // ============================================
-    const { data: cityData } = await supabase
-      .from('viviers')
-      .select('city')
-      .not('city', 'is', null)
-      .limit(SAMPLE_SIZE);
-
+    // Process city data in-memory (already fetched)
     const cityMap = new Map<string, number>();
-    cityData?.forEach(v => {
+    cityResult.data?.forEach(v => {
       const city = v.city?.toUpperCase().trim();
-      if (city && city.length > 2) { // Filter out very short city names
+      if (city && city.length > 2) {
         cityMap.set(city, (cityMap.get(city) || 0) + 1);
       }
     });
