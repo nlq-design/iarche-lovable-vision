@@ -111,9 +111,10 @@ export function useViviers(options: UseViviersOptions = {}) {
     queryFn: async () => {
       // Select only columns needed for the list view (performance optimization)
       // Add siret and legal_form for column filters
+      // IMPORTANT: use count=planned to avoid statement timeouts on large volumes
       let query = supabase
         .from('viviers')
-        .select('id, company_name, contact_name, contact_first_name, contact_last_name, email, phone, city, postal_code, industry, cold_score, status, created_at, siret, legal_form', { count: 'exact' })
+        .select('id, company_name, contact_name, contact_first_name, contact_last_name, email, phone, city, postal_code, industry, cold_score, status, created_at, siret, legal_form', { count: 'planned' })
         .order('created_at', { ascending: false });
 
       // Pagination

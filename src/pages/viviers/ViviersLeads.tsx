@@ -51,6 +51,7 @@ export default function ViviersLeads() {
     totalPages, 
     stats,
     isLoading,
+    error,
     bulkDeleteViviers,
     refetch,
   } = useViviers({
@@ -513,7 +514,32 @@ export default function ViviersLeads() {
         </Card>
 
         {/* Content */}
-        {!isLoading && viviers.length === 0 ? (
+        {error && !isLoading ? (
+          <Card className="border-dashed">
+            <CardContent className="py-12">
+              <div className="max-w-2xl mx-auto text-center space-y-3">
+                <div className="flex items-center justify-center gap-2 text-destructive">
+                  <AlertTriangle className="w-5 h-5" />
+                  <h3 className="text-lg font-semibold">Impossible de charger les leads</h3>
+                </div>
+                <p className="text-muted-foreground">
+                  {(error as any)?.code === '57014'
+                    ? "Le backend a annulé la requête (timeout) — typiquement lié au comptage exact sur un gros volume."
+                    : (error as any)?.message || "Une erreur est survenue lors du chargement."}
+                </p>
+                <div className="flex items-center justify-center gap-2 pt-2">
+                  <Button onClick={() => refetch()} variant="outline">Réessayer</Button>
+                  <Button asChild>
+                    <Link to="/viviers/import">
+                      <Upload className="w-4 h-4 mr-2" />
+                      Importer
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : !isLoading && viviers.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="py-16 text-center">
               <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
