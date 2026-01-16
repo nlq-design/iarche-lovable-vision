@@ -28,10 +28,12 @@ export default function FooterEmailEditor() {
   const [address, setAddress] = useState('64100 Bayonne, France');
   const [siret, setSiret] = useState('XXX XXX XXX 00000');
 
-  // Generate HTML code
+  // Generate HTML code — v4.1 optimisé Outlook/Gmail
   const generateHTML = () => {
-    // v4.0: Logo PNG hébergé pour compatibilité email (pas d'arc sous le logo)
+    // Assets hébergés sur iarche.fr (évite blocage CDN tiers)
     const logoUrl = 'https://iarche.fr/logos/iarche-main.png';
+    const linkedinIconUrl = 'https://iarche.fr/icons/linkedin-white.png';
+    const globeIconUrl = 'https://iarche.fr/icons/globe-white.png';
     
     return `<!--[if mso]>
 <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" align="center">
@@ -40,19 +42,17 @@ export default function FooterEmailEditor() {
 <table role="presentation" style="max-width:600px;width:100%;margin:0 auto;font-family:Arial,Helvetica,sans-serif;border-collapse:collapse;">
   <tr>
     <td style="padding:24px 0;">
-      <!-- Logo SVG officiel v4.0 -->
+      <!-- Logo IArche v4.1 (Retina 160x64 affiché 80x32) -->
       <a href="https://iarche.fr" style="text-decoration:none;display:block;">
-        <img src="${logoUrl}" alt="IArche" width="80" height="32" style="display:block;">
+        <img src="${logoUrl}" alt="IArche - L'IA se construit avec vous" width="80" height="32" border="0" style="display:block;border:0;outline:none;text-decoration:none;">
       </a>
-      
-      <!-- v4.0: pas d'arc sous le logo -->
       
       <!-- Contact Info -->
       <table role="presentation" width="100%" style="margin-top:16px;">
         <tr>
           <td>
-            <p style="margin:0;font-size:16px;font-weight:600;color:#1A2B4A;">${name}</p>
-            <p style="margin:4px 0 0;font-size:14px;color:#B04A32;">${title}</p>
+            <p style="margin:0;font-size:16px;line-height:1.4;font-weight:600;color:#1A2B4A;">${name}</p>
+            <p style="margin:4px 0 0;font-size:14px;line-height:1.4;color:#B04A32;">${title}</p>
           </td>
         </tr>
       </table>
@@ -60,26 +60,26 @@ export default function FooterEmailEditor() {
       <!-- Links -->
       <table role="presentation" width="100%" style="margin-top:12px;">
         <tr>
-          <td style="font-size:14px;color:#4A5568;">
-            <p style="margin:0;">
+          <td style="font-size:14px;line-height:1.4;color:#4A5568;">
+            <p style="margin:0;line-height:1.4;">
               <a href="tel:${phone.replace(/\s/g, '')}" style="color:#4A5568;text-decoration:none;">${phone}</a>
             </p>
-            <p style="margin:4px 0 0;">
+            <p style="margin:4px 0 0;line-height:1.4;">
               <a href="mailto:${email}" style="color:#1A2B4A;text-decoration:none;">${email}</a>
             </p>
           </td>
         </tr>
       </table>
       
-      <!-- Social -->
+      <!-- Social (icônes hébergées, Retina 36x36 affichées 18x18, aria-label) -->
       <table role="presentation" width="100%" style="margin-top:16px;">
         <tr>
           <td>
-            <a href="${linkedinUrl}" style="display:inline-block;width:32px;height:32px;background-color:#1A2B4A;border-radius:4px;text-align:center;line-height:32px;text-decoration:none;">
-              <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" alt="LinkedIn" width="18" height="18" style="vertical-align:middle;filter:brightness(0) invert(1);">
+            <a href="${linkedinUrl}" aria-label="LinkedIn IArche" style="display:inline-block;width:32px;height:32px;background-color:#1A2B4A;border-radius:4px;text-align:center;line-height:32px;text-decoration:none;">
+              <img src="${linkedinIconUrl}" alt="LinkedIn" width="18" height="18" border="0" style="display:inline-block;vertical-align:middle;border:0;outline:none;text-decoration:none;">
             </a>
-            <a href="https://iarche.fr" style="display:inline-block;margin-left:8px;width:32px;height:32px;background-color:#B04A32;border-radius:4px;text-align:center;line-height:32px;text-decoration:none;">
-              <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" alt="Website" width="18" height="18" style="vertical-align:middle;filter:brightness(0) invert(1);">
+            <a href="https://iarche.fr" aria-label="Site web IArche" style="display:inline-block;margin-left:8px;width:32px;height:32px;background-color:#B04A32;border-radius:4px;text-align:center;line-height:32px;text-decoration:none;">
+              <img src="${globeIconUrl}" alt="Website" width="18" height="18" border="0" style="display:inline-block;vertical-align:middle;border:0;outline:none;text-decoration:none;">
             </a>
           </td>
         </tr>
@@ -89,19 +89,22 @@ export default function FooterEmailEditor() {
       <table role="presentation" width="100%" style="margin-top:16px;">
         <tr>
           <td>
-            <p style="margin:0;font-size:14px;font-style:italic;color:#6B7280;">
+            <p style="margin:0;font-size:14px;line-height:1.4;font-style:italic;color:#6B7280;">
               L'IA se construit avec vous
             </p>
           </td>
         </tr>
       </table>
       
-      <!-- Legal -->
+      <!-- Legal + RGPD -->
       <table role="presentation" width="100%" style="margin-top:16px;padding-top:16px;border-top:1px solid #E5E7EB;">
         <tr>
           <td>
-            <p style="margin:0;font-size:11px;color:#9CA3AF;">
+            <p style="margin:0;font-size:11px;line-height:1.4;color:#9CA3AF;">
               IArche · ${address} · SIRET ${siret}
+            </p>
+            <p style="margin:8px 0 0;font-size:10px;line-height:1.4;color:#9CA3AF;">
+              Ce message et ses pièces jointes sont confidentiels et destinés exclusivement à leurs destinataires.
             </p>
           </td>
         </tr>
