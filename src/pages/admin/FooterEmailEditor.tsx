@@ -29,11 +29,10 @@ export default function FooterEmailEditor() {
   const [siret, setSiret] = useState('XXX XXX XXX 00000');
 
   // Generate HTML code — v4.1 optimisé Outlook/Gmail
+  // Generate HTML code — v4.2 text-based icons (bulletproof email compatibility)
   const generateHTML = () => {
-    // Assets hébergés sur iarche.fr (évite blocage CDN tiers)
+    // Logo hébergé sur iarche.fr
     const logoUrl = 'https://iarche.fr/logos/iarche-main.png';
-    const linkedinIconUrl = 'https://iarche.fr/icons/linkedin-white.png';
-    const globeIconUrl = 'https://iarche.fr/icons/globe-white.png';
     
     return `<!--[if mso]>
 <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" align="center">
@@ -42,7 +41,7 @@ export default function FooterEmailEditor() {
 <table role="presentation" style="max-width:600px;width:100%;margin:0 auto;font-family:Arial,Helvetica,sans-serif;border-collapse:collapse;">
   <tr>
     <td style="padding:24px 0;">
-      <!-- Logo IArche v4.1 (Retina 160x64 affiché 80x32) -->
+      <!-- Logo IArche v4.2 -->
       <a href="https://iarche.fr" style="text-decoration:none;display:block;">
         <img src="${logoUrl}" alt="IArche - L'IA se construit avec vous" width="80" height="32" border="0" style="display:block;border:0;outline:none;text-decoration:none;">
       </a>
@@ -71,16 +70,22 @@ export default function FooterEmailEditor() {
         </tr>
       </table>
       
-      <!-- Social (icônes hébergées, Retina 36x36 affichées 18x18, aria-label) -->
+      <!-- Social v4.2: Text-based icons (bulletproof, no external images) -->
       <table role="presentation" width="100%" style="margin-top:16px;">
         <tr>
           <td>
-            <a href="${linkedinUrl}" aria-label="LinkedIn IArche" style="display:inline-block;width:32px;height:32px;background-color:#1A2B4A;border-radius:4px;text-align:center;line-height:32px;text-decoration:none;">
-              <img src="${linkedinIconUrl}" alt="LinkedIn" width="18" height="18" border="0" style="display:inline-block;vertical-align:middle;border:0;outline:none;text-decoration:none;">
-            </a>
-            <a href="https://iarche.fr" aria-label="Site web IArche" style="display:inline-block;margin-left:8px;width:32px;height:32px;background-color:#B04A32;border-radius:4px;text-align:center;line-height:32px;text-decoration:none;">
-              <img src="${globeIconUrl}" alt="Website" width="18" height="18" border="0" style="display:inline-block;vertical-align:middle;border:0;outline:none;text-decoration:none;">
-            </a>
+            <!--[if mso]>
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
+            <td style="padding-right:8px;">
+            <![endif]-->
+            <a href="${linkedinUrl}" aria-label="LinkedIn IArche" style="display:inline-block;width:28px;height:28px;background-color:#1A2B4A;border-radius:4px;text-align:center;line-height:28px;text-decoration:none;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#ffffff;mso-line-height-rule:exactly;">in</a>
+            <!--[if mso]>
+            </td><td>
+            <![endif]-->
+            <a href="https://iarche.fr" aria-label="Site web IArche" style="display:inline-block;margin-left:8px;width:28px;height:28px;background-color:#B04A32;border-radius:4px;text-align:center;line-height:28px;text-decoration:none;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;color:#ffffff;mso-line-height-rule:exactly;">↗</a>
+            <!--[if mso]>
+            </td></tr></table>
+            <![endif]-->
           </td>
         </tr>
       </table>
