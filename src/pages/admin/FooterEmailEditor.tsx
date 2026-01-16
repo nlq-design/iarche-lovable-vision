@@ -29,10 +29,11 @@ export default function FooterEmailEditor() {
   const [siret, setSiret] = useState('XXX XXX XXX 00000');
 
   // Generate HTML code — v4.1 optimisé Outlook/Gmail
-  // Generate HTML code — v4.2 text-based icons (bulletproof email compatibility)
+  // Generate HTML code — v4.3 text-based icons (bulletproof email compatibility)
   const generateHTML = () => {
-    // Logo hébergé sur iarche.fr
-    const logoUrl = 'https://iarche.fr/logos/iarche-main.png';
+    // Logo hébergé sur le site publié (iarche.fr n'héberge pas les assets)
+    // IMPORTANT: Remplacer par l'URL définitive de production une fois déployé sur iarche.fr
+    const logoUrl = 'https://iarche-lovable-vision.lovable.app/logos/iarche-main.png';
     
     return `<!--[if mso]>
 <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" align="center">

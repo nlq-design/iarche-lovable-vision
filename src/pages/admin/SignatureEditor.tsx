@@ -34,8 +34,9 @@ export default function SignatureEditor() {
   const [tagline, setTagline] = useState("L'IA se construit avec vous");
 
   const generateHTML = () => {
-    // v4.0: Logo PNG hébergé pour compatibilité email
-    const logoUrl = 'https://iarche.fr/logos/iarche-main.png';
+    // v4.3: Logo PNG hébergé sur le site publié (iarche.fr n'héberge pas les assets)
+    // IMPORTANT: Remplacer par l'URL définitive de production une fois déployé sur iarche.fr
+    const logoUrl = 'https://iarche-lovable-vision.lovable.app/logos/iarche-main.png';
 
     const phoneRow = telephone ? `
       <tr>
