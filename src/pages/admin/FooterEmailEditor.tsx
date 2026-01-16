@@ -42,9 +42,9 @@ export default function FooterEmailEditor() {
 <table role="presentation" style="max-width:600px;width:100%;margin:0 auto;font-family:Arial,Helvetica,sans-serif;border-collapse:collapse;">
   <tr>
     <td style="padding:24px 0;">
-      <!-- Logo IArche v4.2 -->
+      <!-- Logo IArche v4.3 (hauteur fixe, ratio respecté) -->
       <a href="https://iarche.fr" style="text-decoration:none;display:block;">
-        <img src="${logoUrl}" alt="IArche - L'IA se construit avec vous" width="80" height="32" border="0" style="display:block;border:0;outline:none;text-decoration:none;">
+        <img src="${logoUrl}" alt="IArche - L'IA se construit avec vous" height="32" border="0" style="display:block;border:0;outline:none;text-decoration:none;height:32px;">
       </a>
       
       <!-- Contact Info -->
@@ -234,9 +234,9 @@ export default function FooterEmailEditor() {
                       <div>
                         <a href="#" style={{ textDecoration: 'none' }}>
                           <img 
-                            src="/logos/iarche-main.svg" 
+                            src="/logos/iarche-main.png" 
                             alt="IArche" 
-                            style={{ height: '32px', display: 'block' }}
+                            style={{ height: '32px', width: 'auto', display: 'block' }}
                           />
                         </a>
                       </div>
@@ -304,9 +304,9 @@ export default function FooterEmailEditor() {
                       {/* Logo SVG officiel v4.0 */}
                       <div>
                         <img 
-                          src="/logos/iarche-main.svg" 
+                          src="/logos/iarche-main.png" 
                           alt="IArche" 
-                          style={{ height: '24px', display: 'block' }}
+                          style={{ height: '24px', width: 'auto', display: 'block' }}
                         />
                       </div>
                       {/* v4.0: pas d'arc sous le logo */}
