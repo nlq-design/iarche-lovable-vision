@@ -50,11 +50,11 @@ export default function SignatureEditor() {
     <td style="padding-right: 20px; vertical-align: top; border-right: 3px solid ${charterColors.terracotta};">
       <table cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td style="padding-bottom: 8px;">
-            <a href="https://iarche.fr" style="text-decoration:none;display:block;">
-              <img src="${logoUrl}" alt="IArche" width="80" height="32" style="display:block;">
-            </a>
-          </td>
+            <td style="padding-bottom: 8px;">
+              <a href="https://iarche.fr" style="text-decoration:none;display:block;">
+                <img src="${logoUrl}" alt="IArche" height="32" border="0" style="display:block;border:0;outline:none;text-decoration:none;height:32px;">
+              </a>
+            </td>
         </tr>
       </table>
     </td>
