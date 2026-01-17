@@ -140,6 +140,23 @@ export function useViviers(options: UseViviersOptions = {}) {
     (!columnFilters || !Object.values(columnFilters).some(Boolean))
   );
 
+  // Check if ONLY postalCode is selected (no other filters) - use optimized RPC
+  const isPostalCodeOnlyFilter = Boolean(
+    postalCode &&
+    !search &&
+    !status &&
+    minScore === undefined &&
+    maxScore === undefined &&
+    !source &&
+    !city &&
+    !department &&
+    !industry &&
+    !companySize &&
+    hasEmail === undefined &&
+    hasPhone === undefined &&
+    (!columnFilters || !Object.values(columnFilters).some(Boolean))
+  );
+
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['viviers', page, pageSize, search, status, minScore, maxScore, source, city, postalCode, department, industry, companySize, hasEmail, hasPhone, columnFilters],
     queryFn: async () => {
@@ -157,6 +174,34 @@ export function useViviers(options: UseViviersOptions = {}) {
           }),
           supabase.rpc('count_viviers_by_department', {
             p_department: department,
+          }),
+        ]);
+
+        if (dataResult.error) throw dataResult.error;
+        
+        const count = countResult.error ? 0 : Number(countResult.data ?? 0);
+        
+        return {
+          viviers: (dataResult.data as Vivier[]) || [],
+          totalCount: count,
+          totalPages: Math.ceil(count / pageSize),
+        };
+      }
+
+      // If ONLY postalCode is selected, use optimized RPC (bypasses RLS overhead)
+      if (isPostalCodeOnlyFilter && postalCode) {
+        const offset = (page - 1) * pageSize;
+        
+        const [dataResult, countResult] = await Promise.all([
+          supabase.rpc('get_viviers_by_postal_code', {
+            p_postal_code: postalCode,
+            p_limit: pageSize,
+            p_offset: offset,
+            p_order_by: 'created_at',
+            p_order_dir: 'desc',
+          }),
+          supabase.rpc('count_viviers_by_postal_code', {
+            p_postal_code: postalCode,
           }),
         ]);
 
