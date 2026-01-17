@@ -18,16 +18,12 @@ export function useCitySearch({ search, enabled = true }: UseCitySearchOptions) 
         return [];
       }
 
-      // Use prefix match (city%) instead of contains (%city%) for performance
-      // This is much faster as it can use indexes
+      // Use optimized RPC that bypasses RLS overhead and uses indexed search
       const { data, error } = await supabase
-        .from('viviers')
-        .select('city')
-        .not('city', 'is', null)
-        .neq('city', '')
-        .ilike('city', `${search.toUpperCase()}%`)
-        .order('city')
-        .limit(200); // Fetch more to dedupe, but limit for performance
+        .rpc('search_viviers_cities', {
+          p_search: search,
+          p_limit: 50
+        });
 
       if (error) {
         console.error('City search error:', error);
@@ -36,14 +32,7 @@ export function useCitySearch({ search, enabled = true }: UseCitySearchOptions) 
 
       if (!data) return [];
 
-      // Deduplicate and take first 50
-      const uniqueCities = [...new Set(
-        data
-          .map(row => row.city)
-          .filter((city): city is string => typeof city === 'string' && city !== '')
-      )].slice(0, 50);
-
-      return uniqueCities;
+      return data.map((row: { city: string }) => row.city);
     },
     enabled: enabled && search.length >= 2,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes

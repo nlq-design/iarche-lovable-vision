@@ -5207,6 +5207,12 @@ export type Database = {
           similarity: number
         }[]
       }
+      search_viviers_cities: {
+        Args: { p_limit?: number; p_search: string }
+        Returns: {
+          city: string
+        }[]
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       unlock_expired_accounts: { Args: never; Returns: undefined }
