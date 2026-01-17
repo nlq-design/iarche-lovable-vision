@@ -162,11 +162,9 @@ export function VivierFilters({
     }
   }, [debouncedPostalCode, postalCode, onPostalCodeChange]);
 
-  useEffect(() => {
-    if (onPostalCodeChange && debouncedPostalCode !== postalCode) {
-      onPostalCodeChange(debouncedPostalCode);
-    }
-  }, [debouncedPostalCode, postalCode, onPostalCodeChange]);
+
+  // (duplicate postal code debounce effect removed)
+
 
   useEffect(() => {
     if (onIndustryChange && debouncedIndustry !== industry) {

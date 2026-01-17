@@ -156,13 +156,15 @@ export function useViviers(options: UseViviersOptions = {}) {
         }
 
         // Postal code filter (prefix match for department filtering)
+        // Use LIKE (not ILIKE) so the btree index on postal_code can be used.
         if (postalCode) {
-          query = query.ilike('postal_code', `${postalCode}%`);
+          query = query.like('postal_code', `${postalCode}%`);
         }
 
         // Department filter (first 2-3 digits of postal code)
+        // Use LIKE for the same index-usage reason.
         if (department) {
-          query = query.ilike('postal_code', `${department}%`);
+          query = query.like('postal_code', `${department}%`);
         }
 
         // Industry filter - use prefix match for better performance
