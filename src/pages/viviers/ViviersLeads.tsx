@@ -81,17 +81,9 @@ export default function ViviersLeads() {
     },
   });
 
-  // Fetch filter options for dropdowns - contextual based on filter 1
+  // Fetch filter options for dropdowns - contextual based on department filter only (optimized RPC)
   const { data: filterOptions } = useVivierFilterOptions({
-    status: status && status !== 'all' ? status : undefined,
-    city: city || undefined,
-    postalCode: postalCode || undefined,
     department: department || undefined,
-    industry: industry || undefined,
-    companySize: companySize || undefined,
-    hasEmail,
-    hasPhone,
-    search: search || undefined,
   });
 
   const handleSelectChange = (id: string, selected: boolean) => {
