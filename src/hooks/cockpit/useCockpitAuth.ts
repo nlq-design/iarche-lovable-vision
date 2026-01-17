@@ -50,7 +50,12 @@ export const useCockpitAuth = () => {
       const { data: { totp } } = await supabase.auth.mfa.listFactors();
       const mfaEnabled = totp && totp.length > 0 && totp.some(f => f.status === 'verified');
 
-      // Check step-up session
+      // Auto-create session for cockpit users if they have access
+      if (hasCockpitAccess) {
+        await supabase.rpc('ensure_cockpit_session', { user_uuid: user.id });
+      }
+
+      // Check step-up session (should now exist after ensure_cockpit_session)
       const { data: session } = await supabase
         .from('cockpit_auth_sessions')
         .select('expires_at')
