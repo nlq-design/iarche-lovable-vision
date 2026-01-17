@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Mail, MapPin, Phone, ExternalLink, Filter, X } from 'lucide-react';
 import type { Vivier } from '@/hooks/viviers/useViviers';
 import { VIVIER_STATUSES } from '@/hooks/viviers/useViviers';
+import { useVivierEngagement, getEngagementLevel } from '@/hooks/viviers/useVivierEngagement';
+import { getVivierEngagementConfig, type VivierEngagementLevel } from '@/lib/colorCodes';
+import { VivierEngagementLegend } from './VivierEngagementLegend';
 
 export interface ColumnFilters {
   company: string;
@@ -154,6 +158,10 @@ export function VivierTable({
   const hasColumnFilters = Object.values(columnFilters).some(v => v.length > 0);
   const activeColumnFilterCount = Object.values(columnFilters).filter(v => v.length > 0).length;
   
+  // Fetch engagement stats for visible viviers
+  const vivierIds = useMemo(() => viviers.map(v => v.id), [viviers]);
+  const { data: engagementStats } = useVivierEngagement(vivierIds);
+  
   // Filters are now applied server-side, use viviers directly
   const allSelected = viviers.length > 0 && viviers.every(v => selectedIds.has(v.id));
   const someSelected = viviers.some(v => selectedIds.has(v.id)) && !allSelected;
@@ -201,27 +209,32 @@ export function VivierTable({
 
   return (
     <div className="space-y-4">
-      {/* Column filter indicator */}
-      {hasColumnFilters && (
-        <div className="flex items-center gap-2 px-1">
-          <Badge variant="secondary" className="gap-1">
-            <Filter className="h-3 w-3" />
-            {activeColumnFilterCount} filtre{activeColumnFilterCount > 1 ? 's' : ''} colonne
-          </Badge>
-          <span className="text-sm text-muted-foreground">
-            {totalCount.toLocaleString('fr-FR')} résultat{totalCount > 1 ? 's' : ''}
-          </span>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 text-xs"
-            onClick={() => onColumnFiltersChange(emptyColumnFilters)}
-          >
-            <X className="h-3 w-3 mr-1" />
-            Effacer filtres colonnes
-          </Button>
+      {/* Column filter indicator with legend */}
+      <div className="flex items-center justify-between gap-2 px-1">
+        <div className="flex items-center gap-2">
+          {hasColumnFilters && (
+            <>
+              <Badge variant="secondary" className="gap-1">
+                <Filter className="h-3 w-3" />
+                {activeColumnFilterCount} filtre{activeColumnFilterCount > 1 ? 's' : ''} colonne
+              </Badge>
+              <span className="text-sm text-muted-foreground">
+                {totalCount.toLocaleString('fr-FR')} résultat{totalCount > 1 ? 's' : ''}
+              </span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 text-xs"
+                onClick={() => onColumnFiltersChange(emptyColumnFilters)}
+              >
+                <X className="h-3 w-3 mr-1" />
+                Effacer filtres colonnes
+              </Button>
+            </>
+          )}
         </div>
-      )}
+        <VivierEngagementLegend />
+      </div>
       
       <div className="border rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
@@ -306,10 +319,14 @@ export function VivierTable({
                 // Location display
                 const location = [vivier.postal_code, vivier.city].filter(Boolean).join(' ');
                 
+                // Get engagement color for row
+                const engagementLevel = getEngagementLevel(engagementStats, vivier.id);
+                const engagementConfig = getVivierEngagementConfig(engagementLevel);
+                
                 return (
                   <TableRow 
                     key={vivier.id}
-                    className="cursor-pointer hover:bg-primary/5 transition-colors group"
+                    className={`cursor-pointer transition-colors group ${engagementConfig.bgClass} ${engagementConfig.hoverBgClass} border-l-4 ${engagementConfig.borderClass}`}
                     onClick={() => onRowClick(vivier)}
                   >
                     <TableCell className="px-3" onClick={(e) => e.stopPropagation()}>

@@ -4273,6 +4273,72 @@ export type Database = {
           },
         ]
       }
+      vivier_campaign_stats: {
+        Row: {
+          campaign_count: number
+          created_at: string
+          first_campaign_at: string | null
+          has_bounced: boolean
+          has_clicked: boolean
+          has_opened: boolean
+          has_unsubscribed: boolean
+          last_campaign_at: string | null
+          last_click_at: string | null
+          last_open_at: string | null
+          promoted_at: string | null
+          promoted_to_lead_id: string | null
+          updated_at: string
+          vivier_id: string
+        }
+        Insert: {
+          campaign_count?: number
+          created_at?: string
+          first_campaign_at?: string | null
+          has_bounced?: boolean
+          has_clicked?: boolean
+          has_opened?: boolean
+          has_unsubscribed?: boolean
+          last_campaign_at?: string | null
+          last_click_at?: string | null
+          last_open_at?: string | null
+          promoted_at?: string | null
+          promoted_to_lead_id?: string | null
+          updated_at?: string
+          vivier_id: string
+        }
+        Update: {
+          campaign_count?: number
+          created_at?: string
+          first_campaign_at?: string | null
+          has_bounced?: boolean
+          has_clicked?: boolean
+          has_opened?: boolean
+          has_unsubscribed?: boolean
+          last_campaign_at?: string | null
+          last_click_at?: string | null
+          last_open_at?: string | null
+          promoted_at?: string | null
+          promoted_to_lead_id?: string | null
+          updated_at?: string
+          vivier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vivier_campaign_stats_promoted_to_lead_id_fkey"
+            columns: ["promoted_to_lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vivier_campaign_stats_vivier_id_fkey"
+            columns: ["vivier_id"]
+            isOneToOne: true
+            referencedRelation: "viviers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vivier_campaigns: {
         Row: {
           ai_generated: boolean | null
@@ -5095,6 +5161,17 @@ export type Database = {
           metadata: Json
         }[]
       }
+      get_vivier_engagement_stats: {
+        Args: { p_vivier_ids: string[] }
+        Returns: {
+          campaign_count: number
+          engagement_level: string
+          has_bounced: boolean
+          has_clicked: boolean
+          has_opened: boolean
+          vivier_id: string
+        }[]
+      }
       get_viviers_by_department: {
         Args: {
           p_department: string
@@ -5250,6 +5327,10 @@ export type Database = {
       mark_ai_notifications_reviewed: {
         Args: { p_ids: string[] }
         Returns: number
+      }
+      promote_vivier_to_lead: {
+        Args: { p_qualification_status?: string; p_vivier_id: string }
+        Returns: string
       }
       refresh_stale_syntheses: {
         Args: { max_items?: number }
