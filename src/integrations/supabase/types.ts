@@ -5019,6 +5019,15 @@ export type Database = {
         Args: { p_department: string }
         Returns: number
       }
+      count_viviers_by_filter: {
+        Args: {
+          p_filter_type: string
+          p_filter_value?: string
+          p_max_score?: number
+          p_min_score?: number
+        }
+        Returns: number
+      }
       count_viviers_by_postal_code: {
         Args: { p_postal_code: string }
         Returns: number
@@ -5110,6 +5119,61 @@ export type Database = {
           postal_code: string
           siret: string
           status: string
+        }[]
+      }
+      get_viviers_by_filter: {
+        Args: {
+          p_filter_type: string
+          p_filter_value?: string
+          p_limit?: number
+          p_max_score?: number
+          p_min_score?: number
+          p_offset?: number
+          p_order_by?: string
+          p_order_dir?: string
+        }
+        Returns: {
+          address: string
+          batch_id: string
+          city: string
+          cold_score: number
+          company_name: string
+          company_size: string
+          consent_marketing: boolean
+          contact_first_name: string
+          contact_last_name: string
+          contact_name: string
+          contact_position: string
+          country: string
+          created_at: string
+          creation_date: string
+          email: string
+          employee_count: number
+          external_id: string
+          id: string
+          industry: string
+          legal_form: string
+          linkedin_url: string
+          naf_code: string
+          notes: string
+          phone: string
+          postal_code: string
+          promoted_at: string
+          promoted_to_lead_id: string
+          raw_data: Json
+          region: string
+          revenue_range: string
+          scoring_criteria: Json
+          siren: string
+          siret: string
+          source: string
+          source_file: string
+          status: string
+          tags: string[]
+          unsubscribed_at: string
+          updated_at: string
+          website: string
+          workspace_id: string
         }[]
       }
       get_viviers_by_postal_code: {

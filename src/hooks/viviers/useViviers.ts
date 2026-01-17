@@ -157,6 +157,45 @@ export function useViviers(options: UseViviersOptions = {}) {
     (!columnFilters || !Object.values(columnFilters).some(Boolean))
   );
 
+  // Helper to detect single-filter scenarios for optimized RPC
+  const getSingleFilterType = (): { type: string; value?: string; minScore?: number; maxScore?: number } | null => {
+    const noColumnFilters = !columnFilters || !Object.values(columnFilters).some(Boolean);
+    const noSearch = !search;
+    const noGeo = !city && !postalCode && !department;
+    const noIndustry = !industry;
+    const noSize = !companySize;
+    const noQuality = hasEmail === undefined && hasPhone === undefined;
+    
+    // Single source filter
+    if (source && !status && minScore === undefined && maxScore === undefined && noSearch && noGeo && noIndustry && noSize && noQuality && noColumnFilters) {
+      return { type: 'source', value: source };
+    }
+    // Single status filter
+    if (status && !source && minScore === undefined && maxScore === undefined && noSearch && noGeo && noIndustry && noSize && noQuality && noColumnFilters) {
+      return { type: 'status', value: status };
+    }
+    // Single company size filter
+    if (companySize && !source && !status && minScore === undefined && maxScore === undefined && noSearch && noGeo && noIndustry && noQuality && noColumnFilters) {
+      return { type: 'company_size', value: companySize };
+    }
+    // Score range filter only
+    if ((minScore !== undefined || maxScore !== undefined) && !source && !status && noSearch && noGeo && noIndustry && noSize && noQuality && noColumnFilters) {
+      return { type: 'score_range', minScore, maxScore };
+    }
+    // Has email only
+    if (hasEmail === true && hasPhone === undefined && !source && !status && minScore === undefined && maxScore === undefined && noSearch && noGeo && noIndustry && noSize && noColumnFilters) {
+      return { type: 'has_email' };
+    }
+    // Has phone only
+    if (hasPhone === true && hasEmail === undefined && !source && !status && minScore === undefined && maxScore === undefined && noSearch && noGeo && noIndustry && noSize && noColumnFilters) {
+      return { type: 'has_phone' };
+    }
+    
+    return null;
+  };
+
+  const singleFilter = getSingleFilterType();
+
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['viviers', page, pageSize, search, status, minScore, maxScore, source, city, postalCode, department, industry, companySize, hasEmail, hasPhone, columnFilters],
     queryFn: async () => {
@@ -202,6 +241,40 @@ export function useViviers(options: UseViviersOptions = {}) {
           }),
           supabase.rpc('count_viviers_by_postal_code', {
             p_postal_code: postalCode,
+          }),
+        ]);
+
+        if (dataResult.error) throw dataResult.error;
+        
+        const count = countResult.error ? 0 : Number(countResult.data ?? 0);
+        
+        return {
+          viviers: (dataResult.data as Vivier[]) || [],
+          totalCount: count,
+          totalPages: Math.ceil(count / pageSize),
+        };
+      }
+
+      // Use optimized single-filter RPC for source, status, company_size, score, quality filters
+      if (singleFilter) {
+        const offset = (page - 1) * pageSize;
+        
+        const [dataResult, countResult] = await Promise.all([
+          supabase.rpc('get_viviers_by_filter', {
+            p_filter_type: singleFilter.type,
+            p_filter_value: singleFilter.value || null,
+            p_min_score: singleFilter.minScore ?? null,
+            p_max_score: singleFilter.maxScore ?? null,
+            p_limit: pageSize,
+            p_offset: offset,
+            p_order_by: 'created_at',
+            p_order_dir: 'desc',
+          }),
+          supabase.rpc('count_viviers_by_filter', {
+            p_filter_type: singleFilter.type,
+            p_filter_value: singleFilter.value || null,
+            p_min_score: singleFilter.minScore ?? null,
+            p_max_score: singleFilter.maxScore ?? null,
           }),
         ]);
 
