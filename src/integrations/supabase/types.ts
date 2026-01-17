@@ -5019,6 +5019,10 @@ export type Database = {
         Args: { p_department: string }
         Returns: number
       }
+      count_viviers_by_postal_code: {
+        Args: { p_postal_code: string }
+        Returns: number
+      }
       create_entity_reference: {
         Args: {
           p_confidence?: number
@@ -5089,6 +5093,32 @@ export type Database = {
           p_offset?: number
           p_order_by?: string
           p_order_dir?: string
+        }
+        Returns: {
+          city: string
+          cold_score: number
+          company_name: string
+          contact_first_name: string
+          contact_last_name: string
+          contact_name: string
+          created_at: string
+          email: string
+          id: string
+          industry: string
+          legal_form: string
+          phone: string
+          postal_code: string
+          siret: string
+          status: string
+        }[]
+      }
+      get_viviers_by_postal_code: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_order_by?: string
+          p_order_dir?: string
+          p_postal_code: string
         }
         Returns: {
           city: string
