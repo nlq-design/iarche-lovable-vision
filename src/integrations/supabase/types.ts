@@ -5302,6 +5302,55 @@ export type Database = {
           total_leads: number
         }[]
       }
+      get_viviers_with_city_prefix_in_size: {
+        Args: { p_limit?: number }
+        Returns: {
+          city: string
+          company_size: string
+          id: string
+        }[]
+      }
+      get_viviers_with_city_siren_in_size: {
+        Args: { p_limit?: number }
+        Returns: {
+          city: string
+          company_size: string
+          id: string
+          siret: string
+        }[]
+      }
+      get_viviers_with_email_in_contact: {
+        Args: { p_limit?: number }
+        Returns: {
+          contact_name: string
+          email: string
+          id: string
+        }[]
+      }
+      get_viviers_with_naf_in_size: {
+        Args: { p_limit?: number }
+        Returns: {
+          company_size: string
+          id: string
+          naf_code: string
+        }[]
+      }
+      get_viviers_with_siret_in_size: {
+        Args: { p_limit?: number }
+        Returns: {
+          company_size: string
+          id: string
+          siret: string
+        }[]
+      }
+      get_viviers_with_year_in_size: {
+        Args: { p_limit?: number }
+        Returns: {
+          company_size: string
+          creation_date: string
+          id: string
+        }[]
+      }
       has_cockpit_access: { Args: { user_uuid: string }; Returns: boolean }
       has_role: {
         Args: {
