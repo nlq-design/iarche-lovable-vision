@@ -72,32 +72,37 @@ export function useVivierFilterOptions(params: UseVivierFilterOptionsParams = {}
           query = query.not('phone', 'is', null).neq('phone', '');
         }
         
-        if (search) {
-          // Use prefix match for search to be faster
+        const normalizedSearch = search?.trim();
+        if (normalizedSearch && normalizedSearch.length >= 2) {
+          // Prefix match only (faster) + only when at least 2 chars
           query = query.or(
-            `company_name.ilike.${search}%,` +
-            `contact_name.ilike.${search}%,` +
-            `email.ilike.${search}%`
+            `company_name.ilike.${normalizedSearch}%,` +
+            `contact_name.ilike.${normalizedSearch}%,` +
+            `email.ilike.${normalizedSearch}%`
           );
         }
-        
-        // CRITICAL: Limit to 500 rows to avoid timeout, then dedupe client-side
-        const { data, error } = await query.order(column).limit(500);
-        
+
+        // CRITICAL: Avoid ORDER BY on large volumes (can trigger timeouts). We'll sort client-side.
+        const { data, error } = await query.limit(300);
+
         if (error) {
           console.error(`Filter options error for ${column}:`, error);
           return [];
         }
-        
+
         if (!data) return [];
-        
-        const values = data.map((row) => {
-          const value = row[column];
-          return typeof value === 'string' ? value : null;
-        }).filter((v): v is string => v !== null && v !== '');
-        
-        // Deduplicate and limit to 200 distinct values for UI performance
-        return [...new Set(values)].slice(0, 200);
+
+        const values = data
+          .map((row) => {
+            const value = row[column];
+            return typeof value === 'string' ? value : null;
+          })
+          .filter((v): v is string => v !== null && v !== '');
+
+        // Deduplicate, sort, and limit for UI performance
+        return [...new Set(values)]
+          .sort((a, b) => a.localeCompare(b, 'fr'))
+          .slice(0, 200);
       };
 
       // Fetch in parallel with error handling

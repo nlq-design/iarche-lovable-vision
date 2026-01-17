@@ -106,124 +106,165 @@ export function useViviers(options: UseViviersOptions = {}) {
   } = options;
   const queryClient = useQueryClient();
 
+  const hasAnyFilter = Boolean(
+    search ||
+    status ||
+    minScore !== undefined ||
+    maxScore !== undefined ||
+    source ||
+    city ||
+    postalCode ||
+    department ||
+    industry ||
+    companySize ||
+    hasEmail !== undefined ||
+    hasPhone !== undefined ||
+    (columnFilters && Object.values(columnFilters).some(Boolean))
+  );
+
+
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['viviers', page, pageSize, search, status, minScore, maxScore, source, city, postalCode, department, industry, companySize, hasEmail, hasPhone, columnFilters],
     queryFn: async () => {
-      // Select only columns needed for the list view (performance optimization)
-      // Add siret and legal_form for column filters
-      // IMPORTANT: use count=planned to avoid statement timeouts on large volumes
-      let query = supabase
+      const applyFilters = (query: any) => {
+        // Search filter - using trigram indexes for fast ILIKE
+        if (search) {
+          query = query.or(`email.ilike.%${search}%,company_name.ilike.%${search}%,contact_name.ilike.%${search}%`);
+        }
+
+        // Status filter
+        if (status) {
+          query = query.eq('status', status);
+        }
+
+        // Score filters
+        if (minScore !== undefined) {
+          query = query.gte('cold_score', minScore);
+        }
+        if (maxScore !== undefined) {
+          query = query.lte('cold_score', maxScore);
+        }
+
+        // Source filter
+        if (source) {
+          query = query.eq('source', source);
+        }
+
+        // City filter - use exact match for performance (selected from autocomplete)
+        if (city) {
+          query = query.eq('city', city);
+        }
+
+        // Postal code filter (prefix match for department filtering)
+        if (postalCode) {
+          query = query.ilike('postal_code', `${postalCode}%`);
+        }
+
+        // Department filter (first 2-3 digits of postal code)
+        if (department) {
+          query = query.ilike('postal_code', `${department}%`);
+        }
+
+        // Industry filter - use prefix match for better performance
+        if (industry) {
+          query = query.ilike('industry', `${industry}%`);
+        }
+
+        // Company size filter
+        if (companySize) {
+          query = query.eq('company_size', companySize);
+        }
+
+        // Has email filter
+        if (hasEmail === true) {
+          query = query.not('email', 'is', null).neq('email', '');
+        }
+
+        // Has phone filter
+        if (hasPhone === true) {
+          query = query.not('phone', 'is', null).neq('phone', '');
+        }
+
+        // Column-level filters (second layer filtering) - only Entreprise, Localisation, Activité
+        if (columnFilters) {
+          if (columnFilters.company) {
+            query = query.eq('company_name', columnFilters.company);
+          }
+
+          if (columnFilters.location) {
+            query = query.eq('city', columnFilters.location);
+          }
+
+          if (columnFilters.industry) {
+            query = query.eq('industry', columnFilters.industry);
+          }
+
+          if (columnFilters.scoreRange) {
+            if (columnFilters.scoreRange === 'high') {
+              query = query.gte('cold_score', 70);
+            } else if (columnFilters.scoreRange === 'medium') {
+              query = query.gte('cold_score', 40).lt('cold_score', 70);
+            } else if (columnFilters.scoreRange === 'low') {
+              query = query.lt('cold_score', 40).not('cold_score', 'is', null);
+            } else if (columnFilters.scoreRange === 'none') {
+              query = query.is('cold_score', null);
+            }
+          }
+
+          if (columnFilters.statusFilter) {
+            query = query.eq('status', columnFilters.statusFilter);
+          }
+        }
+
+        return query;
+      };
+
+      // Main data query: avoid count here to reduce DB cost/timeouts
+      let dataQuery: any = supabase
         .from('viviers')
-        .select('id, company_name, contact_name, contact_first_name, contact_last_name, email, phone, city, postal_code, industry, cold_score, status, created_at, siret, legal_form', { count: 'planned' })
+        .select('id, company_name, contact_name, contact_first_name, contact_last_name, email, phone, city, postal_code, industry, cold_score, status, created_at, siret, legal_form')
         .order('created_at', { ascending: false });
 
       // Pagination
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
-      query = query.range(from, to);
+      dataQuery = dataQuery.range(from, to);
 
-      // Search filter - using trigram indexes for fast ILIKE
-      if (search) {
-        query = query.or(`email.ilike.%${search}%,company_name.ilike.%${search}%,contact_name.ilike.%${search}%`);
+      dataQuery = applyFilters(dataQuery);
+
+      // Count query: only when filters are active (otherwise we use the optimized stats RPC)
+      if (!hasAnyFilter) {
+        const { data, error } = await dataQuery;
+        if (error) throw error;
+        return {
+          viviers: (data as Vivier[]) || [],
+          totalCount: 0,
+          totalPages: 0,
+        };
       }
 
-      // Status filter
-      if (status) {
-        query = query.eq('status', status);
+      let countQuery: any = supabase
+        .from('viviers')
+        .select('id', { count: 'planned', head: true });
+      countQuery = applyFilters(countQuery);
+
+      const [{ data, error: dataError }, { count, error: countError }] = await Promise.all([
+        dataQuery,
+        countQuery,
+      ]);
+
+      if (dataError) throw dataError;
+      if (countError) {
+        // We can still display the page even if the count failed
+        console.error('Viviers count error:', countError);
       }
 
-      // Score filters
-      if (minScore !== undefined) {
-        query = query.gte('cold_score', minScore);
-      }
-      if (maxScore !== undefined) {
-        query = query.lte('cold_score', maxScore);
-      }
-
-      // Source filter
-      if (source) {
-        query = query.eq('source', source);
-      }
-
-      // City filter - use exact match for performance (selected from autocomplete)
-      if (city) {
-        query = query.eq('city', city);
-      }
-
-      // Postal code filter (prefix match for department filtering)
-      if (postalCode) {
-        query = query.ilike('postal_code', `${postalCode}%`);
-      }
-
-      // Department filter (first 2-3 digits of postal code)
-      if (department) {
-        query = query.ilike('postal_code', `${department}%`);
-      }
-
-      // Industry filter - use prefix match for better performance
-      if (industry) {
-        query = query.ilike('industry', `${industry}%`);
-      }
-
-      // Company size filter
-      if (companySize) {
-        query = query.eq('company_size', companySize);
-      }
-
-      // Has email filter
-      if (hasEmail === true) {
-        query = query.not('email', 'is', null).neq('email', '');
-      }
-
-      // Has phone filter
-      if (hasPhone === true) {
-        query = query.not('phone', 'is', null).neq('phone', '');
-      }
-
-      // Column-level filters (second layer filtering) - only Entreprise, Localisation, Activité
-      if (columnFilters) {
-        // Company column filter - exact match
-        if (columnFilters.company) {
-          query = query.eq('company_name', columnFilters.company);
-        }
-        
-        // Location column filter - exact match on city
-        if (columnFilters.location) {
-          query = query.eq('city', columnFilters.location);
-        }
-        
-        // Industry column filter - exact match
-        if (columnFilters.industry) {
-          query = query.eq('industry', columnFilters.industry);
-        }
-        
-        // Score range filter
-        if (columnFilters.scoreRange) {
-          if (columnFilters.scoreRange === 'high') {
-            query = query.gte('cold_score', 70);
-          } else if (columnFilters.scoreRange === 'medium') {
-            query = query.gte('cold_score', 40).lt('cold_score', 70);
-          } else if (columnFilters.scoreRange === 'low') {
-            query = query.lt('cold_score', 40).not('cold_score', 'is', null);
-          } else if (columnFilters.scoreRange === 'none') {
-            query = query.is('cold_score', null);
-          }
-        }
-        
-        // Status column filter (overrides main status filter if set)
-        if (columnFilters.statusFilter) {
-          query = query.eq('status', columnFilters.statusFilter);
-        }
-      }
-
-      const { data, error, count } = await query;
-
-      if (error) throw error;
+      const safeCount = count ?? 0;
 
       return {
-        viviers: data as Vivier[],
-        totalCount: count || 0,
-        totalPages: Math.ceil((count || 0) / pageSize),
+        viviers: (data as Vivier[]) || [],
+        totalCount: safeCount,
+        totalPages: Math.ceil(safeCount / pageSize),
       };
     },
     staleTime: 30 * 1000, // 30 seconds - avoid refetch on navigation
@@ -381,11 +422,15 @@ export function useViviers(options: UseViviersOptions = {}) {
     },
   });
 
+  const resolvedStats = stats || { totalLeads: 0, pendingScoring: 0, qualified: 0, promoted: 0, scored: 0 };
+  const resolvedTotalCount = hasAnyFilter ? (data?.totalCount || 0) : (resolvedStats.totalLeads || 0);
+  const resolvedTotalPages = Math.ceil(resolvedTotalCount / pageSize);
+
   return {
     viviers: data?.viviers || [],
-    totalCount: data?.totalCount || 0,
-    totalPages: data?.totalPages || 0,
-    stats: stats || { totalLeads: 0, pendingScoring: 0, qualified: 0, promoted: 0, scored: 0 },
+    totalCount: resolvedTotalCount,
+    totalPages: resolvedTotalPages,
+    stats: resolvedStats,
     isLoading,
     error,
     refetch,

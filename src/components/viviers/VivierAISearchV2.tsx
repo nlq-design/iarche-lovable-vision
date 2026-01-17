@@ -717,12 +717,24 @@ export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilter
                   <Button variant="ghost" size="sm" className="w-full justify-between">
                     <span className="text-xs flex items-center gap-2">
                       Aperçu ({Math.min(10, result.results.length)} sur {result.totalCount})
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); toggleSelectAll(); }}
-                        className="text-primary hover:underline"
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSelectAll();
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleSelectAll();
+                          }
+                        }}
+                        className="text-primary hover:underline cursor-pointer"
                       >
                         {selectedLeads.size === result.results.length ? 'Tout désélectionner' : 'Tout sélectionner'}
-                      </button>
+                      </span>
                     </span>
                     {showPreview ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </Button>
