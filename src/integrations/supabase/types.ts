@@ -5115,6 +5115,7 @@ export type Database = {
         Args: { p_project_id: string }
         Returns: undefined
       }
+      ensure_cockpit_session: { Args: { user_uuid: string }; Returns: boolean }
       generate_file_share_link: {
         Args: {
           p_expires_in_days?: number
@@ -5285,13 +5286,15 @@ export type Database = {
           department_code: string
         }[]
       }
-      get_viviers_filter_options: {
-        Args: { p_department?: string; p_limit?: number }
-        Returns: {
-          option_type: string
-          option_value: string
-        }[]
-      }
+      get_viviers_filter_options:
+        | { Args: never; Returns: Json }
+        | {
+            Args: { p_department?: string; p_limit?: number }
+            Returns: {
+              option_type: string
+              option_value: string
+            }[]
+          }
       get_viviers_stats: {
         Args: never
         Returns: {
