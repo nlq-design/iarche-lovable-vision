@@ -46,13 +46,13 @@ export function useVivierFilterOptions(params: UseVivierFilterOptionsParams = {}
         }
         
         if (postalCode) {
-          // Use prefix match for postal code (faster with index)
-          query = query.ilike('postal_code', `${postalCode}%`);
+          // Use prefix match with LIKE (faster with btree index on postal_code)
+          query = query.like('postal_code', `${postalCode}%`);
         }
         
         if (department) {
           // Use prefix match only for department
-          query = query.ilike('postal_code', `${department}%`);
+          query = query.like('postal_code', `${department}%`);
         }
         
         if (industry) {
