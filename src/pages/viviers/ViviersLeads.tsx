@@ -404,10 +404,13 @@ export default function ViviersLeads() {
             <div className="grid gap-4 md:grid-cols-2">
               <VivierAISearchV2 
                 onFiltersApply={(filters) => {
-                  if (filters.search) setSearch(filters.search);
+                  if (filters.searchText) setSearch(filters.searchText);
                   if (filters.city) setCity(filters.city);
-                  if (filters.postalCode) setPostalCode(filters.postalCode);
-                  if (filters.industry) setIndustry(filters.industry);
+                  if (filters.postalCodePrefix) {
+                    const prefix = Array.isArray(filters.postalCodePrefix) ? filters.postalCodePrefix[0] : filters.postalCodePrefix;
+                    setPostalCode(prefix);
+                  }
+                  if (filters.industry || filters.industryContains) setIndustry(filters.industry || filters.industryContains || '');
                   if (filters.companySize) setCompanySize(filters.companySize);
                   if (filters.minScore !== undefined) setMinScore(filters.minScore);
                   if (filters.maxScore !== undefined) setMaxScore(filters.maxScore);
@@ -418,10 +421,9 @@ export default function ViviersLeads() {
                   setPage(1);
                 }}
                 currentFilters={{
-                  search: search || undefined,
+                  searchText: search || undefined,
                   city: city || undefined,
-                  postalCode: postalCode || undefined,
-                  industry: industry || undefined,
+                  postalCodePrefix: postalCode || undefined,
                   companySize: companySize || undefined,
                   minScore,
                   maxScore,

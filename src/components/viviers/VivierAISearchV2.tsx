@@ -40,14 +40,27 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { Progress } from '@/components/ui/progress';
 
-// V2: Extended filters interface
-interface SearchFiltersV2 {
+// V3: Extended filters interface with email domains and exclusions
+interface SearchFiltersV3 {
+  // Text search
   search?: string;
+  searchText?: string;
+  searchInFields?: string[];
+  
+  // Email filters
+  emailDomain?: string;
+  emailDomainContains?: string;
+  excludeEmailDomains?: string[];
+  
+  // Location
   city?: string;
-  postalCode?: string;
-  region?: string;
-  country?: string;
+  postalCodePrefix?: string | string[];
+  excludeCities?: string[];
+  
+  // Company
   industry?: string;
+  industryContains?: string;
+  excludeIndustry?: string[];
   nafCode?: string;
   legalForm?: string;
   companySize?: string;
@@ -55,15 +68,25 @@ interface SearchFiltersV2 {
   minEmployees?: number;
   maxEmployees?: number;
   createdAfter?: string;
+  
+  // Contact
   contactPosition?: string;
+  hasContactName?: boolean;
+  hasCompanyName?: boolean;
+  
+  // Scoring
   minScore?: number;
   maxScore?: number;
   status?: string;
+  
+  // Data presence
   hasEmail?: boolean;
   hasPhone?: boolean;
   hasSiret?: boolean;
   hasWebsite?: boolean;
   hasLinkedin?: boolean;
+  
+  // Campaign eligibility
   campaignEligible?: boolean;
   source?: string;
   tags?: string[];
@@ -100,13 +123,13 @@ interface LeadResult {
   created_at: string | null;
 }
 
-interface AISearchResultV2 {
+interface AISearchResultV3 {
   success: boolean;
   query: string;
-  filters: SearchFiltersV2;
-  explanation: string;
-  intent: string;
+  filters: SearchFiltersV3;
+  interpretation: string;
   confidence: number;
+  clarification?: string | null;
   results: LeadResult[];
   totalCount: number;
   stats: {
@@ -120,7 +143,7 @@ interface AISearchResultV2 {
 
 interface AISearchHistory {
   query: string;
-  filters: SearchFiltersV2;
+  filters: SearchFiltersV3;
   resultCount: number;
   timestamp: string;
 }
@@ -132,21 +155,22 @@ interface SmartSuggestion {
   icon?: React.ReactNode;
 }
 
-interface VivierAISearchV2Props {
-  onFiltersApply?: (filters: SearchFiltersV2) => void;
+interface VivierAISearchV3Props {
+  onFiltersApply?: (filters: SearchFiltersV3) => void;
   onResultsFound?: (results: LeadResult[], totalCount: number) => void;
-  currentFilters?: SearchFiltersV2;
+  currentFilters?: SearchFiltersV3;
 }
 
-const STORAGE_KEY = 'vivier-ai-history-v2';
+const STORAGE_KEY = 'vivier-ai-history-v3';
 const MAX_HISTORY = 10;
 
 const EXAMPLE_QUERIES = [
-  "Agences immobilières à Bordeaux avec email",
-  "PME IT en Île-de-France score > 70",
-  "Décideurs (DG, CEO) dans le conseil",
-  "Leads éligibles campagne non contactés",
-  "SAS du secteur tech créées après 2020",
+  "Emails @gmail.com",
+  "Agences immobilières département 33",
+  "PME IT en Île-de-France sans webmail",
+  "Restaurants avec téléphone sauf Paris",
+  "Entreprises avec siret et email pro",
+  "Leads scorés > 60 éligibles campagne",
 ];
 
 function loadHistory(): AISearchHistory[] {
@@ -164,46 +188,50 @@ function saveHistory(history: AISearchHistory[]) {
   } catch {}
 }
 
-// Filter label mappings
+// V3 Filter label mappings
 const FILTER_LABELS: Record<string, string> = {
-  search: 'Recherche',
+  searchText: 'Texte',
+  searchInFields: 'Dans',
+  emailDomain: 'Email @',
+  emailDomainContains: 'Email contient',
+  excludeEmailDomains: 'Exclure emails',
   city: 'Ville',
-  postalCode: 'Dept/CP',
-  region: 'Région',
-  country: 'Pays',
+  postalCodePrefix: 'Dept/CP',
+  excludeCities: 'Exclure villes',
   industry: 'Secteur',
+  industryContains: 'Secteur contient',
+  excludeIndustry: 'Exclure secteurs',
   nafCode: 'Code NAF',
   legalForm: 'Forme juridique',
   companySize: 'Taille',
-  revenueRange: 'CA',
   minEmployees: 'Effectif ≥',
   maxEmployees: 'Effectif ≤',
   createdAfter: 'Créé après',
   contactPosition: 'Fonction',
+  hasContactName: 'Nom contact',
+  hasCompanyName: 'Nom entreprise',
   minScore: 'Score ≥',
   maxScore: 'Score ≤',
   status: 'Statut',
-  hasEmail: 'Email',
-  hasPhone: 'Téléphone',
-  hasSiret: 'SIRET',
-  hasWebsite: 'Site web',
-  hasLinkedin: 'LinkedIn',
+  hasEmail: 'Avec email',
+  hasPhone: 'Avec tél',
+  hasSiret: 'Avec SIRET',
   campaignEligible: 'Campagne OK',
   source: 'Source',
-  tags: 'Tags',
 };
 
-export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilters }: VivierAISearchV2Props) {
+export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilters }: VivierAISearchV3Props) {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [result, setResult] = useState<AISearchResultV2 | null>(null);
+  const [result, setResult] = useState<AISearchResultV3 | null>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [listName, setListName] = useState('');
   const [history, setHistory] = useState<AISearchHistory[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
+  const [isCleaningData, setIsCleaningData] = useState(false);
 
   useEffect(() => {
     setHistory(loadHistory());
@@ -214,7 +242,7 @@ export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilter
     const items: SmartSuggestion[] = [];
 
     if (currentFilters) {
-      if (currentFilters.city && !currentFilters.industry) {
+      if (currentFilters.city && !currentFilters.industry && !currentFilters.industryContains) {
         items.push({
           text: `+ Secteur IT`,
           query: `entreprises IT à ${currentFilters.city}`,
@@ -280,7 +308,7 @@ export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilter
         throw new Error(data.error || 'Recherche échouée');
       }
 
-      setResult(data as AISearchResultV2);
+      setResult(data as AISearchResultV3);
       
       // Update history
       const newHistory: AISearchHistory = {
@@ -350,7 +378,7 @@ export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilter
 
       const { error } = await supabase.from('vivier_lists').insert([{
         name: listName.trim(),
-        description: result.explanation,
+        description: result.interpretation,
         list_type: selectedLeads.size > 0 ? 'static' : 'dynamic',
         criteria_json: selectedLeads.size > 0 ? { lead_ids: leadIds } : result.filters,
         lead_count: leadIds.length,
@@ -423,6 +451,32 @@ export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilter
 
   const previewResults = result?.results.slice(0, 10) || [];
 
+  // Handle data cleanup
+  const handleCleanupData = async (mode: 'preview' | 'execute') => {
+    setIsCleaningData(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('vivier-cleanup', {
+        body: { mode, batchSize: 5000 },
+      });
+      
+      if (error) throw error;
+      
+      if (mode === 'preview') {
+        toast.info(`Aperçu: ${data.totalChanges} corrections possibles`, {
+          description: `Villes: ${data.stats.citiesExtracted}, NAF: ${data.stats.nafCodesMoved}, Années: ${data.stats.yearsMoved}`,
+        });
+      } else {
+        toast.success(`${data.totalChanges} corrections appliquées`, {
+          description: `Erreurs: ${data.stats.errors}`,
+        });
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erreur de nettoyage');
+    } finally {
+      setIsCleaningData(false);
+    }
+  };
+
   return (
     <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
       <CardHeader className="pb-3">
@@ -430,12 +484,24 @@ export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilter
           <div className="flex items-center gap-2 text-lg">
             <Sparkles className="w-5 h-5 text-primary" />
             Recherche IA
-            <Badge variant="outline" className="ml-2 text-xs">V2</Badge>
+            <Badge variant="outline" className="ml-2 text-xs">V3</Badge>
           </div>
           <div className="flex items-center gap-2">
+            {/* Data cleanup button */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => handleCleanupData('preview')}
+              disabled={isCleaningData}
+              className="text-muted-foreground text-xs"
+              title="Nettoyer les données polluées"
+            >
+              {isCleaningData ? <Loader2 className="w-3 h-3 animate-spin" /> : <Target className="w-3 h-3" />}
+              <span className="hidden sm:inline ml-1">Nettoyer</span>
+            </Button>
             {history.length > 0 && (
               <Button 
-                variant="ghost" 
+                variant="ghost"
                 size="sm" 
                 onClick={() => setShowHistory(!showHistory)}
                 className="text-muted-foreground"
@@ -477,7 +543,7 @@ export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilter
         </div>
 
         {/* Context indicator */}
-        {currentFilters && Object.keys(currentFilters).some(k => currentFilters[k as keyof SearchFiltersV2]) && (
+        {currentFilters && Object.keys(currentFilters).some(k => currentFilters[k as keyof SearchFiltersV3]) && (
           <div className="text-xs text-muted-foreground flex items-center gap-1">
             <Filter className="w-3 h-3" />
             L'IA combinera avec vos filtres actuels
@@ -555,13 +621,21 @@ export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilter
         {/* Results */}
         {result && (
           <div className="space-y-4 pt-2 border-t">
-            {/* Intent & Explanation */}
+            {/* Clarification alert if AI needs more info */}
+            {result.clarification && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 text-sm">
+                <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="font-medium">Clarification nécessaire</span>
+                </div>
+                <p className="mt-1 text-yellow-700 dark:text-yellow-300">{result.clarification}</p>
+              </div>
+            )}
+
+            {/* Interpretation & Confidence */}
             <div className="flex items-start gap-2">
-              <Badge variant="outline" className="shrink-0 capitalize">
-                {result.intent}
-              </Badge>
-              <p className="text-sm text-muted-foreground flex-1">{result.explanation}</p>
-              <Badge variant="secondary" className="text-xs">
+              <p className="text-sm text-muted-foreground flex-1">{result.interpretation}</p>
+              <Badge variant={result.confidence >= 80 ? "default" : result.confidence >= 50 ? "secondary" : "destructive"} className="text-xs shrink-0">
                 {result.confidence}% confiance
               </Badge>
             </div>

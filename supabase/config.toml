@@ -152,3 +152,12 @@ verify_jwt = false
 
 [functions.send-campaign-test]
 verify_jwt = true
+
+[functions.vivier-ai-search]
+verify_jwt = true
+
+[functions.vivier-cleanup]
+verify_jwt = true
+
+[functions.vivier-insights]
+verify_jwt = true
