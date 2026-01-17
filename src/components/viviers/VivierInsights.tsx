@@ -3,17 +3,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
-  Lightbulb, 
-  TrendingUp, 
-  AlertTriangle, 
-  Users, 
+  Flame, 
   Target,
+  Zap,
+  RefreshCcw,
   ChevronDown,
   ChevronUp,
   RefreshCw,
-  Sparkles,
-  Building2,
-  MapPin
+  ArrowRight,
+  TrendingUp,
+  Users,
+  Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -22,46 +22,56 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { useState } from 'react';
-import { useVivierInsights, VivierInsight } from '@/hooks/viviers/useVivierInsights';
+import { useVivierInsights, VivierOpportunity } from '@/hooks/viviers/useVivierInsights';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface VivierInsightsProps {
   onQuerySuggest?: (query: string) => void;
 }
 
-const ICON_MAP = {
-  opportunity: Target,
-  cohort: Users,
-  trend: TrendingUp,
-  alert: AlertTriangle,
-};
-
-const PRIORITY_COLORS = {
-  high: 'border-orange-500 bg-orange-500/10',
-  medium: 'border-primary bg-primary/10',
-  low: 'border-muted-foreground bg-muted',
+const TYPE_CONFIG = {
+  hot_leads: {
+    icon: Flame,
+    color: 'text-orange-500',
+    bg: 'bg-orange-500/10 border-orange-500/30',
+  },
+  golden_segment: {
+    icon: Target,
+    color: 'text-yellow-500',
+    bg: 'bg-yellow-500/10 border-yellow-500/30',
+  },
+  quick_win: {
+    icon: Zap,
+    color: 'text-green-500',
+    bg: 'bg-green-500/10 border-green-500/30',
+  },
+  reactivation: {
+    icon: RefreshCcw,
+    color: 'text-blue-500',
+    bg: 'bg-blue-500/10 border-blue-500/30',
+  },
 };
 
 export function VivierInsights({ onQuerySuggest }: VivierInsightsProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const queryClient = useQueryClient();
   
-  const { data, isLoading, isFetching, dataUpdatedAt, refetch } = useVivierInsights();
+  const { data, isLoading, isFetching, refetch } = useVivierInsights();
   
   const stats = data?.stats ?? null;
-  const insights = data?.insights ?? [];
+  const opportunities = data?.opportunities ?? [];
+  const dailySummary = data?.daily_summary ?? '';
 
   const handleRefresh = async () => {
-    // Invalidate cache to force fresh data
     await queryClient.invalidateQueries({ queryKey: ['vivier-insights'] });
     refetch();
-    toast.success('Insights en cours d\'actualisation...');
+    toast.success('Opportunités en cours d\'actualisation...');
   };
 
-  const handleInsightAction = (insight: VivierInsight) => {
-    if (insight.suggested_query && onQuerySuggest) {
-      onQuerySuggest(insight.suggested_query);
-      toast.success('Requête copiée dans la recherche IA');
+  const handleOpportunityAction = (opp: VivierOpportunity) => {
+    if (opp.action.query && onQuerySuggest) {
+      onQuerySuggest(opp.action.query);
+      toast.success(`Recherche: "${opp.action.query}"`);
     }
   };
 
@@ -70,12 +80,11 @@ export function VivierInsights({ onQuerySuggest }: VivierInsightsProps) {
       <Card className="border-primary/20 bg-gradient-to-br from-accent/5 to-transparent">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Lightbulb className="w-5 h-5 text-primary" />
-            Insights
+            <Sparkles className="w-5 h-5 text-primary" />
+            Opportunités du jour
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Skeleton className="h-20 w-full" />
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />
         </CardContent>
@@ -83,21 +92,20 @@ export function VivierInsights({ onQuerySuggest }: VivierInsightsProps) {
     );
   }
 
-  const highPriorityCount = insights.filter(i => i.priority === 'high').length;
-  const lastUpdated = dataUpdatedAt ? new Date(dataUpdatedAt) : null;
+  const highPriorityCount = opportunities.filter(o => o.priority === 'high').length;
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
       <Card className="border-primary/20 bg-gradient-to-br from-accent/5 to-transparent">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CollapsibleTrigger asChild>
               <Button variant="ghost" className="p-0 h-auto hover:bg-transparent">
                 <CardTitle className="flex items-center gap-2 text-lg cursor-pointer">
-                  <Lightbulb className="w-5 h-5 text-primary" />
-                  Insights
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  Opportunités
                   {highPriorityCount > 0 && (
-                    <Badge variant="destructive" className="ml-1 text-xs">
+                    <Badge className="ml-1 bg-orange-500 text-white text-xs">
                       {highPriorityCount}
                     </Badge>
                   )}
@@ -119,125 +127,88 @@ export function VivierInsights({ onQuerySuggest }: VivierInsightsProps) {
               <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
             </Button>
           </div>
+          
+          {/* Daily Summary */}
+          {dailySummary && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {dailySummary}
+            </p>
+          )}
         </CardHeader>
 
         <CollapsibleContent>
-          <CardContent className="space-y-4">
-            {/* Quick Stats */}
+          <CardContent className="space-y-3 pt-2">
+            {/* Quick Stats Row */}
             {stats && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-muted/30 rounded-lg">
-                <div className="text-center">
-                  <div className="text-xl font-bold text-primary">
-                    {stats.total_leads.toLocaleString('fr-FR')}
+              <div className="grid grid-cols-3 gap-2 p-2 bg-muted/30 rounded-lg text-center">
+                <div>
+                  <div className="text-lg font-bold text-primary flex items-center justify-center gap-1">
+                    <Flame className="w-4 h-4 text-orange-500" />
+                    {stats.hot_leads_count}
                   </div>
-                  <div className="text-xs text-muted-foreground">Total leads</div>
+                  <div className="text-xs text-muted-foreground">Leads chauds</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-primary">
-                    {Math.round(stats.avg_score)}
+                <div>
+                  <div className="text-lg font-bold text-primary flex items-center justify-center gap-1">
+                    <TrendingUp className="w-4 h-4 text-green-500" />
+                    {stats.high_score_count}
                   </div>
-                  <div className="text-xs text-muted-foreground">Score moyen</div>
+                  <div className="text-xs text-muted-foreground">Score ≥70</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-green-600">
-                    {stats.high_score_count.toLocaleString('fr-FR')}
+                <div>
+                  <div className="text-lg font-bold text-primary flex items-center justify-center gap-1">
+                    <Users className="w-4 h-4 text-blue-500" />
+                    {stats.complete_data_count}
                   </div>
-                  <div className="text-xs text-muted-foreground">Score ≥ 70</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-orange-500">
-                    {stats.not_contacted_30d.toLocaleString('fr-FR')}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Non contactés</div>
+                  <div className="text-xs text-muted-foreground">Données complètes</div>
                 </div>
               </div>
             )}
 
-            {/* Top Industries & Cities */}
-            {stats && (stats.top_industries.length > 0 || stats.top_cities.length > 0) && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {stats.top_industries.length > 0 && (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                      <Building2 className="w-3 h-3" />
-                      Top secteurs
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {stats.top_industries.slice(0, 4).map((ind, i) => (
-                        <Badge 
-                          key={i} 
-                          variant="secondary" 
-                          className="text-xs cursor-pointer hover:bg-secondary/80"
-                          onClick={() => onQuerySuggest?.(`secteur ${ind.industry}`)}
-                        >
-                          {ind.industry} ({ind.count})
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {stats.top_cities.length > 0 && (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                      <MapPin className="w-3 h-3" />
-                      Top villes
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {stats.top_cities.slice(0, 4).map((city, i) => (
-                        <Badge 
-                          key={i} 
-                          variant="outline" 
-                          className="text-xs cursor-pointer hover:bg-muted"
-                          onClick={() => onQuerySuggest?.(`ville ${city.city}`)}
-                        >
-                          {city.city} ({city.count})
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* AI Insights */}
-            {insights.length > 0 ? (
+            {/* Opportunities */}
+            {opportunities.length > 0 ? (
               <div className="space-y-2">
-                <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                  <Sparkles className="w-3 h-3" />
-                  Recommandations IA
-                </div>
-                {insights.map((insight, i) => {
-                  const Icon = ICON_MAP[insight.type];
+                {opportunities.map((opp, i) => {
+                  const config = TYPE_CONFIG[opp.type];
+                  const Icon = config.icon;
+                  
                   return (
                     <div
                       key={i}
-                      className={`p-3 rounded-lg border-l-4 ${PRIORITY_COLORS[insight.priority]} cursor-pointer transition-all hover:shadow-sm`}
-                      onClick={() => handleInsightAction(insight)}
+                      className={`p-3 rounded-lg border ${config.bg} cursor-pointer transition-all hover:shadow-md group`}
+                      onClick={() => handleOpportunityAction(opp)}
                     >
                       <div className="flex items-start gap-3">
-                        <Icon className={`w-5 h-5 shrink-0 mt-0.5 ${
-                          insight.priority === 'high' ? 'text-orange-500' : 
-                          insight.priority === 'medium' ? 'text-primary' : 
-                          'text-muted-foreground'
-                        }`} />
+                        <div className={`p-2 rounded-full bg-background ${config.color}`}>
+                          <Icon className="w-4 h-4" />
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-sm">{insight.title}</span>
-                            {insight.metric && (
-                              <Badge variant="secondary" className="text-xs font-bold">
-                                {insight.metric}
+                            <span className="font-medium text-sm">{opp.title}</span>
+                            {opp.priority === 'high' && (
+                              <Badge variant="destructive" className="text-xs px-1.5 py-0">
+                                Prioritaire
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {insight.description}
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                            {opp.description}
                           </p>
-                          {insight.suggested_query && (
-                            <div className="mt-1.5 flex items-center gap-1 text-xs text-primary">
-                              <Sparkles className="w-3 h-3" />
-                              Cliquez pour rechercher
-                            </div>
-                          )}
+                          <div className="mt-2 flex items-center gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="secondary"
+                              className="h-7 text-xs group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                            >
+                              {opp.action.label}
+                              <ArrowRight className="w-3 h-3 ml-1" />
+                            </Button>
+                            {opp.avg_score > 0 && (
+                              <Badge variant="outline" className="text-xs">
+                                Score ~{opp.avg_score}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -246,14 +217,7 @@ export function VivierInsights({ onQuerySuggest }: VivierInsightsProps) {
               </div>
             ) : (
               <div className="text-center py-4 text-sm text-muted-foreground">
-                Aucun insight disponible pour le moment
-              </div>
-            )}
-
-            {/* Last updated */}
-            {lastUpdated && (
-              <div className="text-xs text-muted-foreground text-center pt-2">
-                Actualisé {lastUpdated.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                Aucune opportunité détectée. Lancez le scoring pour en générer.
               </div>
             )}
           </CardContent>
