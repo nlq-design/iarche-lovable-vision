@@ -9,7 +9,7 @@ import LogoArc from '@/components/ui/LogoArc';
 import { useViviers, useVivierFilterOptions, type Vivier } from '@/hooks/viviers';
 import { VivierTable, type ColumnFilters, emptyColumnFilters } from '@/components/viviers/VivierTable';
 import { VivierFilters } from '@/components/viviers/VivierFilters';
-import { VivierAISearch } from '@/components/viviers/VivierAISearch';
+import { VivierAISearchV2 } from '@/components/viviers/VivierAISearchV2';
 import { VivierScoringPanel } from '@/components/viviers/VivierScoringPanel';
 import { VivierListsPanel } from '@/components/viviers/VivierListsPanel';
 import { VivierInsights } from '@/components/viviers/VivierInsights';
@@ -402,15 +402,19 @@ export default function ViviersLeads() {
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <VivierAISearch 
+              <VivierAISearchV2 
                 onFiltersApply={(filters) => {
                   if (filters.search) setSearch(filters.search);
                   if (filters.city) setCity(filters.city);
                   if (filters.postalCode) setPostalCode(filters.postalCode);
                   if (filters.industry) setIndustry(filters.industry);
+                  if (filters.companySize) setCompanySize(filters.companySize);
                   if (filters.minScore !== undefined) setMinScore(filters.minScore);
                   if (filters.maxScore !== undefined) setMaxScore(filters.maxScore);
                   if (filters.status) setStatus(filters.status);
+                  if (filters.hasEmail !== undefined) setHasEmail(filters.hasEmail);
+                  if (filters.hasPhone !== undefined) setHasPhone(filters.hasPhone);
+                  if (filters.source) setSource(filters.source);
                   setPage(1);
                 }}
                 currentFilters={{
@@ -418,11 +422,13 @@ export default function ViviersLeads() {
                   city: city || undefined,
                   postalCode: postalCode || undefined,
                   industry: industry || undefined,
+                  companySize: companySize || undefined,
                   minScore,
                   maxScore,
                   status: status || undefined,
                   hasEmail,
                   hasPhone,
+                  source: source || undefined,
                 }}
               />
               <VivierInsights 
