@@ -6,3 +6,5 @@ export { useVivierStats } from './useVivierStats';
 export type { VivierStats, VivierScoreBreakdown } from './useVivierStats';
 export { useVivierInsights } from './useVivierInsights';
 export type { VivierInsight } from './useVivierInsights';
+export { useVivierEngagement, getEngagementLevel } from './useVivierEngagement';
+export type { VivierEngagementStats } from './useVivierEngagement';
