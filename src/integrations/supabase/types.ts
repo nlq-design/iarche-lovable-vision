@@ -5327,6 +5327,13 @@ export type Database = {
           id: string
         }[]
       }
+      get_viviers_with_invalid_siret: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+          siret: string
+        }[]
+      }
       get_viviers_with_naf_in_size: {
         Args: { p_limit?: number }
         Returns: {
@@ -5341,6 +5348,21 @@ export type Database = {
           company_size: string
           id: string
           siret: string
+        }[]
+      }
+      get_viviers_with_truncated_naf: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+          naf_code: string
+        }[]
+      }
+      get_viviers_with_year_in_naf: {
+        Args: { p_limit?: number }
+        Returns: {
+          creation_date: string
+          id: string
+          naf_code: string
         }[]
       }
       get_viviers_with_year_in_size: {

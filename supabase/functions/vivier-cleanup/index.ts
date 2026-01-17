@@ -28,6 +28,9 @@ interface CleanupStats {
   nafCodesMoved: number;
   yearsMoved: number;
   emailsCleared: number;
+  yearInNafMoved: number;
+  invalidSiretCleared: number;
+  truncatedNafCleared: number;
   errors: number;
 }
 
@@ -75,6 +78,9 @@ serve(async (req) => {
       nafCodesMoved: 0,
       yearsMoved: 0,
       emailsCleared: 0,
+      yearInNafMoved: 0,
+      invalidSiretCleared: 0,
+      truncatedNafCleared: 0,
       errors: 0,
     };
     const results: CleanupResult[] = [];
@@ -331,8 +337,121 @@ serve(async (req) => {
       console.log(`Emails in contact_name: ${stats.emailsCleared} found`);
     }
 
+    // ========================================
+    // CLEANUP 7: Years in naf_code → move to creation_date
+    // ========================================
+    if (cleanupType === 'all' || cleanupType === 'year_in_naf') {
+      console.log('Checking years in naf_code...');
+      
+      const { data: yearNafLeads, error: yearNafError } = await supabase
+        .rpc('get_viviers_with_year_in_naf', { p_limit: batchSize });
+
+      if (!yearNafError && yearNafLeads && yearNafLeads.length > 0) {
+        for (const lead of yearNafLeads) {
+          stats.analyzed++;
+          const year = lead.naf_code;
+          results.push({
+            id: lead.id,
+            field: 'naf_code',
+            oldValue: year,
+            action: 'move_year_from_naf',
+            targetField: 'creation_date',
+            newValue: `${year}-01-01`,
+          });
+          stats.yearInNafMoved++;
+
+          if (mode === 'execute') {
+            const { error: updateError } = await supabase
+              .from('viviers')
+              .update({ creation_date: `${year}-01-01`, naf_code: null })
+              .eq('id', lead.id);
+            if (updateError) {
+              console.error(`Error moving year from naf for ${lead.id}:`, updateError);
+              stats.errors++;
+            }
+          }
+        }
+      }
+      console.log(`Years in naf_code: ${stats.yearInNafMoved} found`);
+    }
+
+    // ========================================
+    // CLEANUP 8: Invalid SIRET (not 9 or 14 digits) → nullify
+    // ========================================
+    if (cleanupType === 'all' || cleanupType === 'invalid_siret') {
+      console.log('Checking invalid SIRET lengths...');
+      
+      const { data: invalidSiretLeads, error: invSiretError } = await supabase
+        .rpc('get_viviers_with_invalid_siret', { p_limit: batchSize });
+
+      if (!invSiretError && invalidSiretLeads && invalidSiretLeads.length > 0) {
+        for (const lead of invalidSiretLeads) {
+          stats.analyzed++;
+          results.push({
+            id: lead.id,
+            field: 'siret',
+            oldValue: lead.siret,
+            action: 'clear_invalid_siret',
+            targetField: 'siret',
+            newValue: 'NULL',
+          });
+          stats.invalidSiretCleared++;
+
+          if (mode === 'execute') {
+            const { error: updateError } = await supabase
+              .from('viviers')
+              .update({ siret: null })
+              .eq('id', lead.id);
+            if (updateError) {
+              console.error(`Error clearing invalid siret for ${lead.id}:`, updateError);
+              stats.errors++;
+            }
+          }
+        }
+      }
+      console.log(`Invalid SIRET cleared: ${stats.invalidSiretCleared} found`);
+    }
+
+    // ========================================
+    // CLEANUP 9: Truncated NAF codes (1-2 digits) → nullify
+    // ========================================
+    if (cleanupType === 'all' || cleanupType === 'truncated_naf') {
+      console.log('Checking truncated NAF codes...');
+      
+      const { data: truncatedNafLeads, error: truncNafError } = await supabase
+        .rpc('get_viviers_with_truncated_naf', { p_limit: batchSize });
+
+      if (!truncNafError && truncatedNafLeads && truncatedNafLeads.length > 0) {
+        for (const lead of truncatedNafLeads) {
+          stats.analyzed++;
+          results.push({
+            id: lead.id,
+            field: 'naf_code',
+            oldValue: lead.naf_code,
+            action: 'clear_truncated_naf',
+            targetField: 'naf_code',
+            newValue: 'NULL',
+          });
+          stats.truncatedNafCleared++;
+
+          if (mode === 'execute') {
+            const { error: updateError } = await supabase
+              .from('viviers')
+              .update({ naf_code: null })
+              .eq('id', lead.id);
+            if (updateError) {
+              console.error(`Error clearing truncated naf for ${lead.id}:`, updateError);
+              stats.errors++;
+            }
+          }
+        }
+      }
+      console.log(`Truncated NAF codes cleared: ${stats.truncatedNafCleared} found`);
+    }
+
     const totalChanges = stats.siretMoved + stats.citiesExtracted + stats.citySirenExtracted + 
-                         stats.nafCodesMoved + stats.yearsMoved + stats.emailsCleared;
+                         stats.nafCodesMoved + stats.yearsMoved + stats.emailsCleared +
+                         stats.yearInNafMoved + stats.invalidSiretCleared + stats.truncatedNafCleared;
 
     console.log('=== CLEANUP COMPLETE ===');
     console.log('Stats:', JSON.stringify(stats, null, 2));
