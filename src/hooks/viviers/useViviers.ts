@@ -123,9 +123,54 @@ export function useViviers(options: UseViviersOptions = {}) {
   );
 
 
+  // Check if ONLY department is selected (no other filters) - use optimized RPC
+  const isDepartmentOnlyFilter = Boolean(
+    department &&
+    !search &&
+    !status &&
+    minScore === undefined &&
+    maxScore === undefined &&
+    !source &&
+    !city &&
+    !postalCode &&
+    !industry &&
+    !companySize &&
+    hasEmail === undefined &&
+    hasPhone === undefined &&
+    (!columnFilters || !Object.values(columnFilters).some(Boolean))
+  );
+
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['viviers', page, pageSize, search, status, minScore, maxScore, source, city, postalCode, department, industry, companySize, hasEmail, hasPhone, columnFilters],
     queryFn: async () => {
+      // If ONLY department is selected, use optimized RPC (bypasses RLS overhead)
+      if (isDepartmentOnlyFilter && department) {
+        const offset = (page - 1) * pageSize;
+        
+        const [dataResult, countResult] = await Promise.all([
+          supabase.rpc('get_viviers_by_department', {
+            p_department: department,
+            p_limit: pageSize,
+            p_offset: offset,
+            p_order_by: 'created_at',
+            p_order_dir: 'desc',
+          }),
+          supabase.rpc('count_viviers_by_department', {
+            p_department: department,
+          }),
+        ]);
+
+        if (dataResult.error) throw dataResult.error;
+        
+        const count = countResult.error ? 0 : Number(countResult.data ?? 0);
+        
+        return {
+          viviers: (dataResult.data as Vivier[]) || [],
+          totalCount: count,
+          totalPages: Math.ceil(count / pageSize),
+        };
+      }
+
       const applyFilters = (query: any) => {
         // Search filter - using trigram indexes for fast ILIKE
         if (search) {
