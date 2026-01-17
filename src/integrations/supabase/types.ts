@@ -5114,6 +5114,13 @@ export type Database = {
           department_code: string
         }[]
       }
+      get_viviers_filter_options: {
+        Args: { p_department?: string; p_limit?: number }
+        Returns: {
+          option_type: string
+          option_value: string
+        }[]
+      }
       get_viviers_stats: {
         Args: never
         Returns: {
