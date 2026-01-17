@@ -309,7 +309,13 @@ export default function ViviersLeads() {
     }
   };
 
-  const hasFilters = !!(search || (status && status !== 'all') || minScore !== undefined || maxScore !== undefined || source || city || postalCode || department || industry || companySize || hasEmail !== undefined || hasPhone !== undefined);
+  // Check if any column filter is active
+  const hasColumnFilters = Object.values(columnFilters).some(v => v !== '');
+  
+  const hasFilters = !!(search || (status && status !== 'all') || minScore !== undefined || maxScore !== undefined || source || city || postalCode || department || industry || companySize || hasEmail !== undefined || hasPhone !== undefined || hasColumnFilters);
+  
+  // Use stats.totalLeads (from optimized RPC) when no filters are active to avoid timeout issues
+  const displayTotalCount = hasFilters ? totalCount : stats.totalLeads;
 
   const handleClearFilters = () => {
     setSearch('');
@@ -348,12 +354,12 @@ export default function ViviersLeads() {
                 Supprimer ({selectedIds.size})
               </Button>
             )}
-            {totalCount > 0 && (
+            {displayTotalCount > 0 && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="outline" className="text-destructive border-destructive/50 hover:bg-destructive/10">
                     <AlertTriangle className="w-4 h-4 mr-2" />
-                    {hasFilters ? `Supprimer les ${totalCount.toLocaleString('fr-FR')} filtrés` : 'Tout supprimer'}
+                    {hasFilters ? `Supprimer les ${displayTotalCount.toLocaleString('fr-FR')} filtrés` : 'Tout supprimer'}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent className="max-h-[85vh] overflow-auto">
@@ -363,7 +369,7 @@ export default function ViviersLeads() {
                       {hasFilters ? 'Supprimer les leads filtrés ?' : 'Supprimer tous les leads ?'}
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      Cette action est <strong>irréversible</strong>. Vous êtes sur le point de supprimer <strong>{totalCount.toLocaleString('fr-FR')} lead{totalCount > 1 ? 's' : ''}</strong>
+                      Cette action est <strong>irréversible</strong>. Vous êtes sur le point de supprimer <strong>{displayTotalCount.toLocaleString('fr-FR')} lead{displayTotalCount > 1 ? 's' : ''}</strong>
                       {hasFilters && ' correspondant aux filtres actuels'}.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
@@ -374,7 +380,7 @@ export default function ViviersLeads() {
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       disabled={isDeletingAll}
                     >
-                      {isDeletingAll ? 'Suppression...' : `Supprimer ${totalCount.toLocaleString('fr-FR')} lead${totalCount > 1 ? 's' : ''}`}
+                      {isDeletingAll ? 'Suppression...' : `Supprimer ${displayTotalCount.toLocaleString('fr-FR')} lead${displayTotalCount > 1 ? 's' : ''}`}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -515,7 +521,7 @@ export default function ViviersLeads() {
               onClearFilters={handleClearFilters}
               onExport={handleExport}
               isExporting={isExporting}
-              totalCount={totalCount}
+              totalCount={displayTotalCount}
               selectedIds={Array.from(selectedIds)}
             />
           </CardContent>
