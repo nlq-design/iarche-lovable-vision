@@ -12,40 +12,46 @@ interface VivierStats {
   total_leads: number;
   avg_score: number;
   high_score_count: number;
-  not_contacted_30d: number;
+  recent_imports_7d: number;
+  hot_leads_count: number;
+  complete_data_count: number;
   top_industries: Array<{ industry: string; count: number; avg_score: number }>;
   top_cities: Array<{ city: string; count: number }>;
-  score_distribution: Array<{ range: string; count: number }>;
 }
 
-const FALLBACK_PROMPT = `Tu es un expert en analyse de données commerciales B2B.
-Tu reçois des statistiques agrégées sur une base de prospects.
-Génère des INSIGHTS ACTIONNABLES pour aider l'équipe commerciale.
+interface Opportunity {
+  type: 'hot_leads' | 'golden_segment' | 'quick_win' | 'reactivation';
+  title: string;
+  description: string;
+  count: number;
+  avg_score: number;
+  priority: 'high' | 'medium';
+  action: {
+    type: 'search' | 'export' | 'create_list' | 'score';
+    label: string;
+    query: string;
+  };
+}
 
-Types d'insights à produire:
-1. OPPORTUNITÉS : Leads à fort potentiel non exploités
-2. COHORTES : Segments surperformants
-3. TENDANCES : Évolutions notables
-4. ALERTES : Points d'attention
+const FALLBACK_PROMPT = `Tu es un assistant commercial expert en prospection B2B.
+Tu analyses les données du vivier pour identifier les OPPORTUNITÉS CONCRÈTES du jour.
 
-Règles:
-- Maximum 5 insights par réponse
-- Chaque insight DOIT avoir une action concrète
-- Être spécifique avec les chiffres
-- Toujours proposer une requête IA suggérée
+RÈGLES STRICTES:
+1. Chaque opportunité DOIT avoir une action immédiate réalisable
+2. Priorise les leads RÉCENTS avec BON SCORE (>60)
+3. Identifie les PATTERNS gagnants (secteur + ville + score)
+4. Maximum 4 opportunités, triées par potentiel commercial
 
-Format JSON strict (pas de markdown, juste le JSON):
+TYPES D'OPPORTUNITÉS:
+- "hot_leads": Leads récents (7j) avec score élevé, prêts à contacter
+- "golden_segment": Combinaison secteur+géo surperformante
+- "quick_win": Leads qualifiés avec données complètes (email+tel+siret)
+- "reactivation": Bons leads scorés mais jamais contactés
+
+FORMAT JSON STRICT:
 {
-  "insights": [
-    {
-      "type": "opportunity|cohort|trend|alert",
-      "title": "Titre court < 60 chars",
-      "description": "Description avec chiffres précis",
-      "metric": "Valeur clé",
-      "priority": "high|medium|low",
-      "suggested_query": "Requête IA suggérée"
-    }
-  ]
+  "opportunities": [...],
+  "daily_summary": "Résumé en 1 phrase"
 }`;
 
 serve(async (req) => {
@@ -61,50 +67,70 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // ============================================
-    // ULTRA-FAST STATS FETCHING - Direct parallel count queries
-    // Bypasses slow RPC and uses indexed columns only
+    // FETCH STATS FOR OPPORTUNITIES DETECTION
     // ============================================
-
-    // ============================================
-    // ALL QUERIES IN SINGLE PARALLEL BATCH - Maximum speed
-    // Reduced sampling from 20k to 3k for speed on large datasets
-    // ============================================
-    const SAMPLE_SIZE = 3000; // Reduced from 20k - still representative
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
     const [
       totalResult,
-      scoredResult,
-      qualifiedResult,
-      notContactedResult,
+      highScoreResult,
+      recentImportsResult,
+      hotLeadsResult,
+      completeDataResult,
+      neverContactedResult,
       industryResult,
       cityResult,
       scoreResult,
     ] = await Promise.all([
-      // Core counts - very fast with indexes
+      // Core counts
       supabase.from('viviers').select('id', { count: 'exact', head: true }),
-      supabase.from('viviers').select('id', { count: 'exact', head: true }).not('cold_score', 'is', null),
       supabase.from('viviers').select('id', { count: 'exact', head: true }).gte('cold_score', 70),
-      supabase.from('viviers').select('id', { count: 'exact', head: true }).eq('status', 'new').gte('cold_score', 50),
-      // Sampling for aggregates - reduced to 3k for speed
-      supabase.from('viviers').select('industry, cold_score').not('industry', 'is', null).limit(SAMPLE_SIZE),
-      supabase.from('viviers').select('city').not('city', 'is', null).limit(SAMPLE_SIZE),
-      supabase.from('viviers').select('cold_score').not('cold_score', 'is', null).limit(200),
+      // Recent imports (7 days)
+      supabase.from('viviers').select('id', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo),
+      // Hot leads: recent + high score
+      supabase.from('viviers').select('id', { count: 'exact', head: true })
+        .gte('created_at', sevenDaysAgo)
+        .gte('cold_score', 60),
+      // Complete data: has email + phone + siret
+      supabase.from('viviers').select('id', { count: 'exact', head: true })
+        .not('email', 'is', null)
+        .not('phone', 'is', null)
+        .not('siret', 'is', null)
+        .gte('cold_score', 50),
+      // Never contacted with good score
+      supabase.from('viviers').select('id', { count: 'exact', head: true })
+        .gte('cold_score', 60)
+        .or('status.eq.new,status.is.null'),
+      // Sampling for aggregates
+      supabase.from('viviers').select('industry, cold_score, city')
+        .not('industry', 'is', null)
+        .gte('cold_score', 50)
+        .limit(2000),
+      supabase.from('viviers').select('city, cold_score')
+        .not('city', 'is', null)
+        .gte('cold_score', 50)
+        .limit(2000),
+      supabase.from('viviers').select('cold_score')
+        .not('cold_score', 'is', null)
+        .limit(500),
     ]);
 
     const total_leads = totalResult.count || 0;
-    const scored_count = scoredResult.count || 0;
-    const high_score_count = qualifiedResult.count || 0;
-    const pending_count = total_leads - scored_count;
-    const not_contacted_30d = notContactedResult.count || 0;
+    const high_score_count = highScoreResult.count || 0;
+    const recent_imports_7d = recentImportsResult.count || 0;
+    const hot_leads_count = hotLeadsResult.count || 0;
+    const complete_data_count = completeDataResult.count || 0;
+    const never_contacted_count = neverContactedResult.count || 0;
 
-    // Calculate avg_score from sample
+    // Calculate avg score
     let avg_score = 0;
     if (scoreResult.data && scoreResult.data.length > 0) {
       const scores = scoreResult.data.map(v => v.cold_score as number);
       avg_score = scores.reduce((a, b) => a + b, 0) / scores.length;
     }
 
-    // Process industry data in-memory (already fetched)
+    // Process industry data with scores
     const industryMap = new Map<string, { count: number; totalScore: number; scoredCount: number }>();
     industryResult.data?.forEach(v => {
       const ind = v.industry?.toUpperCase().trim();
@@ -124,96 +150,181 @@ serve(async (req) => {
         count: data.count,
         avg_score: data.scoredCount > 0 ? Math.round(data.totalScore / data.scoredCount) : 0,
       }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
+      .filter(i => i.avg_score >= 50)
+      .sort((a, b) => (b.count * b.avg_score) - (a.count * a.avg_score))
+      .slice(0, 8);
 
-    // Process city data in-memory (already fetched)
-    const cityMap = new Map<string, number>();
+    // Process city data
+    const cityMap = new Map<string, { count: number; totalScore: number }>();
     cityResult.data?.forEach(v => {
       const city = v.city?.toUpperCase().trim();
       if (city && city.length > 2) {
-        cityMap.set(city, (cityMap.get(city) || 0) + 1);
+        const existing = cityMap.get(city) || { count: 0, totalScore: 0 };
+        cityMap.set(city, {
+          count: existing.count + 1,
+          totalScore: existing.totalScore + (v.cold_score || 0),
+        });
       }
     });
 
     const top_cities = Array.from(cityMap.entries())
-      .map(([city, count]) => ({ city, count }))
+      .map(([city, data]) => ({ 
+        city, 
+        count: data.count,
+        avg_score: Math.round(data.totalScore / data.count)
+      }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-
-    // ============================================
-    // SCORE DISTRIBUTION - Using count queries for accuracy
-    // ============================================
-    // Parallel count queries for each score range
-    const [dist0_20, dist20_40, dist40_60, dist60_80, dist80_100] = await Promise.all([
-      supabase.from('viviers').select('id', { count: 'exact', head: true })
-        .not('cold_score', 'is', null).gte('cold_score', 0).lt('cold_score', 20),
-      supabase.from('viviers').select('id', { count: 'exact', head: true })
-        .not('cold_score', 'is', null).gte('cold_score', 20).lt('cold_score', 40),
-      supabase.from('viviers').select('id', { count: 'exact', head: true })
-        .not('cold_score', 'is', null).gte('cold_score', 40).lt('cold_score', 60),
-      supabase.from('viviers').select('id', { count: 'exact', head: true })
-        .not('cold_score', 'is', null).gte('cold_score', 60).lt('cold_score', 80),
-      supabase.from('viviers').select('id', { count: 'exact', head: true })
-        .not('cold_score', 'is', null).gte('cold_score', 80).lte('cold_score', 100),
-    ]);
-
-    const score_distribution = [
-      { range: '0-20', count: dist0_20.count || 0 },
-      { range: '20-40', count: dist20_40.count || 0 },
-      { range: '40-60', count: dist40_60.count || 0 },
-      { range: '60-80', count: dist60_80.count || 0 },
-      { range: '80-100', count: dist80_100.count || 0 },
-    ];
+      .slice(0, 8);
 
     const stats: VivierStats = {
       total_leads,
       avg_score: Math.round(avg_score * 10) / 10,
       high_score_count,
-      not_contacted_30d,
+      recent_imports_7d,
+      hot_leads_count,
+      complete_data_count,
       top_industries,
       top_cities,
-      score_distribution,
     };
 
-    console.log(`[vivier-insights] Stats computed: ${total_leads} total, ${scored_count} scored, ${pending_count} pending`);
+    console.log(`[vivier-insights] Stats: ${total_leads} total, ${hot_leads_count} hot, ${complete_data_count} complete`);
 
-    // 2. Fetch prompt from ai_prompts
-    const { data: promptData } = await supabase
-      .from('ai_prompts')
-      .select('system_prompt, model_config')
-      .eq('slug', 'vivier-insights')
-      .single();
+    // ============================================
+    // GENERATE OPPORTUNITIES (Rule-based first, then AI enrichment)
+    // ============================================
+    let opportunities: Opportunity[] = [];
 
-    const systemPrompt = promptData?.system_prompt || FALLBACK_PROMPT;
-    const modelConfig = promptData?.model_config as { model?: string; temperature?: number } || {};
-    const model = modelConfig.model || 'google/gemini-2.5-flash';
-    const temperature = modelConfig.temperature || 0.3;
+    // 1. Hot Leads (recent + high score)
+    if (hot_leads_count > 0) {
+      opportunities.push({
+        type: 'hot_leads',
+        title: `${hot_leads_count} leads chauds cette semaine`,
+        description: `Leads importés ces 7 derniers jours avec score ≥60. Prêts à contacter.`,
+        count: hot_leads_count,
+        avg_score: 65,
+        priority: 'high',
+        action: {
+          type: 'search',
+          label: 'Voir les leads chauds',
+          query: 'leads récents score élevé',
+        },
+      });
+    }
 
-    // 3. Generate insights via AI
-    let insights: any[] = [];
+    // 2. Quick Wins (complete data)
+    if (complete_data_count > 10) {
+      opportunities.push({
+        type: 'quick_win',
+        title: `${complete_data_count} leads prêts à l'export`,
+        description: `Leads qualifiés avec email, téléphone et SIRET. Données complètes pour campagne.`,
+        count: complete_data_count,
+        avg_score: 55,
+        priority: 'high',
+        action: {
+          type: 'search',
+          label: 'Exporter les leads complets',
+          query: 'leads avec téléphone et siret score supérieur à 50',
+        },
+      });
+    }
 
-    if (lovableApiKey && total_leads > 0) {
+    // 3. Golden Segment (best industry)
+    if (top_industries.length > 0) {
+      const best = top_industries[0];
+      if (best.count >= 20 && best.avg_score >= 55) {
+        opportunities.push({
+          type: 'golden_segment',
+          title: `Pépite: ${best.industry.substring(0, 25)}`,
+          description: `${best.count} leads avec score moyen de ${best.avg_score}. Segment à fort potentiel.`,
+          count: best.count,
+          avg_score: best.avg_score,
+          priority: best.avg_score >= 65 ? 'high' : 'medium',
+          action: {
+            type: 'create_list',
+            label: 'Créer une liste',
+            query: `secteur ${best.industry}`,
+          },
+        });
+      }
+    }
+
+    // 4. Reactivation (never contacted but good score)
+    if (never_contacted_count > 50) {
+      opportunities.push({
+        type: 'reactivation',
+        title: `${never_contacted_count} leads à réactiver`,
+        description: `Leads scorés ≥60 jamais contactés. Potentiel inexploité.`,
+        count: never_contacted_count,
+        avg_score: 62,
+        priority: never_contacted_count > 200 ? 'high' : 'medium',
+        action: {
+          type: 'search',
+          label: 'Voir les leads dormants',
+          query: 'leads qualifiés non contactés',
+        },
+      });
+    }
+
+    // 5. Best City Opportunity
+    if (top_cities.length > 0) {
+      const bestCity = top_cities[0];
+      if (bestCity.count >= 30) {
+        opportunities.push({
+          type: 'golden_segment',
+          title: `${bestCity.count} leads à ${bestCity.city}`,
+          description: `Concentration importante sur cette ville. Idéal pour campagne géolocalisée.`,
+          count: bestCity.count,
+          avg_score: 0,
+          priority: 'medium',
+          action: {
+            type: 'search',
+            label: `Explorer ${bestCity.city}`,
+            query: `ville ${bestCity.city}`,
+          },
+        });
+      }
+    }
+
+    // Sort by priority and limit
+    opportunities = opportunities
+      .sort((a, b) => {
+        if (a.priority === 'high' && b.priority !== 'high') return -1;
+        if (b.priority === 'high' && a.priority !== 'high') return 1;
+        return b.count - a.count;
+      })
+      .slice(0, 4);
+
+    // ============================================
+    // AI ENRICHMENT (optional - add context to opportunities)
+    // ============================================
+    let dailySummary = `${total_leads.toLocaleString('fr-FR')} leads dont ${high_score_count} à fort potentiel.`;
+
+    if (lovableApiKey && opportunities.length > 0) {
       try {
-        const userPrompt = `Voici les statistiques actuelles des viviers:
+        const { data: promptData } = await supabase
+          .from('ai_prompts')
+          .select('system_prompt, model_config')
+          .eq('slug', 'vivier-insights')
+          .single();
 
-TOTAUX:
-- Total leads: ${stats.total_leads.toLocaleString('fr-FR')}
+        const systemPrompt = promptData?.system_prompt || FALLBACK_PROMPT;
+        const modelConfig = promptData?.model_config as { model?: string; temperature?: number } || {};
+
+        const userPrompt = `DONNÉES VIVIER:
+- Total: ${stats.total_leads.toLocaleString('fr-FR')} leads
 - Score moyen: ${stats.avg_score}
-- Leads score ≥ 70: ${stats.high_score_count.toLocaleString('fr-FR')}
-- Leads qualifiés non contactés: ${stats.not_contacted_30d.toLocaleString('fr-FR')}
-- Leads en attente de scoring: ${pending_count.toLocaleString('fr-FR')}
+- Leads score ≥70: ${stats.high_score_count}
+- Imports 7j: ${stats.recent_imports_7d}
+- Leads chauds (récents+score≥60): ${stats.hot_leads_count}
+- Données complètes (email+tel+siret): ${stats.complete_data_count}
 
-TOP SECTEURS:
-${stats.top_industries.slice(0, 5).map(i => `- ${i.industry}: ${i.count} leads (score moy: ${i.avg_score})`).join('\n')}
+TOP SECTEURS (score≥50):
+${stats.top_industries.slice(0, 5).map(i => `- ${i.industry}: ${i.count} (score: ${i.avg_score})`).join('\n')}
 
 TOP VILLES:
-${stats.top_cities.slice(0, 5).map(c => `- ${c.city}: ${c.count} leads`).join('\n')}
+${stats.top_cities.slice(0, 5).map(c => `- ${c.city}: ${c.count}`).join('\n')}
 
-DISTRIBUTION SCORES:
-${stats.score_distribution.map(d => `- ${d.range}: ${d.count} leads`).join('\n')}
-
-Génère 3 à 5 insights actionnables basés sur ces données. Retourne uniquement un objet JSON valide.`;
+Génère le daily_summary en 1 phrase percutante et enrichis les opportunités si tu identifies des patterns intéressants.`;
 
         const aiResponse = await fetch(LOVABLE_API_URL, {
           method: 'POST',
@@ -222,13 +333,13 @@ Génère 3 à 5 insights actionnables basés sur ces données. Retourne uniqueme
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model,
+            model: modelConfig.model || 'google/gemini-2.5-flash',
             messages: [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: userPrompt },
             ],
-            temperature,
-            max_tokens: 1500,
+            temperature: modelConfig.temperature || 0.4,
+            max_tokens: 1000,
           }),
         });
 
@@ -237,101 +348,38 @@ Génère 3 à 5 insights actionnables basés sur ces données. Retourne uniqueme
           const content = aiData.choices?.[0]?.message?.content;
           
           if (content) {
-            // Parse JSON from response (handle markdown code blocks)
             let jsonStr = content;
             const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-            if (jsonMatch) {
-              jsonStr = jsonMatch[1];
-            }
+            if (jsonMatch) jsonStr = jsonMatch[1];
             
             try {
               const parsed = JSON.parse(jsonStr.trim());
-              if (parsed.insights && Array.isArray(parsed.insights)) {
-                insights = parsed.insights;
+              if (parsed.daily_summary) {
+                dailySummary = parsed.daily_summary;
               }
-            } catch (parseErr) {
-              console.error('Failed to parse AI response:', parseErr);
+              // Merge AI opportunities if any new ones
+              if (parsed.opportunities?.length > 0) {
+                const aiOpps = parsed.opportunities.filter((o: any) => 
+                  o.type && o.title && o.action?.query &&
+                  !opportunities.some(existing => existing.type === o.type && existing.title === o.title)
+                );
+                opportunities = [...opportunities, ...aiOpps].slice(0, 4);
+              }
+            } catch (e) {
+              console.log('AI parsing skipped, using rule-based opportunities');
             }
           }
-        } else {
-          const errorText = await aiResponse.text();
-          console.error('AI API error:', aiResponse.status, errorText);
         }
       } catch (aiErr) {
-        console.error('AI call failed:', aiErr);
-      }
-    }
-
-    // 4. Fallback: generate basic insights from stats if AI failed
-    if (insights.length === 0) {
-      // Alert for pending scoring
-      if (pending_count > 0) {
-        insights.push({
-          type: 'alert',
-          title: 'Leads en attente de scoring',
-          description: `${pending_count.toLocaleString('fr-FR')} leads n'ont pas encore été scorés. Lancez le scoring pour les qualifier.`,
-          metric: pending_count.toString(),
-          priority: pending_count > 10000 ? 'high' : 'medium',
-          suggested_query: 'leads sans score',
-        });
-      }
-
-      // Generate rule-based insights
-      if (stats.not_contacted_30d > 100) {
-        insights.push({
-          type: 'opportunity',
-          title: 'Leads qualifiés non exploités',
-          description: `${stats.not_contacted_30d} leads avec score ≥ 50 n'ont pas été contactés.`,
-          metric: stats.not_contacted_30d.toString(),
-          priority: stats.not_contacted_30d > 500 ? 'high' : 'medium',
-          suggested_query: 'leads qualifiés non contactés',
-        });
-      }
-
-      if (stats.high_score_count > 0) {
-        insights.push({
-          type: 'opportunity',
-          title: 'Leads à fort potentiel',
-          description: `${stats.high_score_count} leads ont un score ≥ 70, prioritaires pour la prospection.`,
-          metric: stats.high_score_count.toString(),
-          priority: 'high',
-          suggested_query: 'leads score supérieur à 70',
-        });
-      }
-
-      if (stats.top_industries.length > 0 && stats.top_industries[0].count > 50) {
-        const topInd = stats.top_industries[0];
-        insights.push({
-          type: 'cohort',
-          title: `Secteur ${topInd.industry} dominant`,
-          description: `${topInd.count} leads dans ce secteur avec un score moyen de ${topInd.avg_score}.`,
-          metric: topInd.count.toString(),
-          priority: 'medium',
-          suggested_query: `secteur ${topInd.industry}`,
-        });
-      }
-
-      const lowScoreCount = stats.score_distribution
-        .filter(d => d.range === '0-20' || d.range === '20-40')
-        .reduce((sum, d) => sum + d.count, 0);
-      
-      const totalScored = stats.score_distribution.reduce((sum, d) => sum + d.count, 0);
-      if (totalScored > 0 && lowScoreCount > totalScored * 0.4) {
-        insights.push({
-          type: 'alert',
-          title: 'Beaucoup de leads à faible score',
-          description: `${Math.round(lowScoreCount / totalScored * 100)}% des leads scorés ont un score < 40. Envisager un enrichissement ou nettoyage.`,
-          metric: `${Math.round(lowScoreCount / totalScored * 100)}%`,
-          priority: 'medium',
-          suggested_query: 'leads score inférieur à 40',
-        });
+        console.log('AI enrichment skipped:', aiErr);
       }
     }
 
     return new Response(JSON.stringify({
       success: true,
       stats,
-      insights,
+      opportunities,
+      daily_summary: dailySummary,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

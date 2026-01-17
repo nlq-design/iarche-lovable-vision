@@ -5,12 +5,36 @@ export interface VivierStats {
   total_leads: number;
   avg_score: number;
   high_score_count: number;
-  not_contacted_30d: number;
+  recent_imports_7d: number;
+  hot_leads_count: number;
+  complete_data_count: number;
   top_industries: Array<{ industry: string; count: number; avg_score: number }>;
   top_cities: Array<{ city: string; count: number }>;
-  score_distribution: Array<{ range: string; count: number }>;
 }
 
+export interface VivierOpportunity {
+  type: 'hot_leads' | 'golden_segment' | 'quick_win' | 'reactivation';
+  title: string;
+  description: string;
+  count: number;
+  avg_score: number;
+  priority: 'high' | 'medium';
+  action: {
+    type: 'search' | 'export' | 'create_list' | 'score';
+    label: string;
+    query: string;
+  };
+}
+
+export interface VivierInsightsResponse {
+  success: boolean;
+  stats: VivierStats | null;
+  opportunities: VivierOpportunity[];
+  daily_summary: string;
+  error?: string;
+}
+
+// Legacy interface for backward compatibility
 export interface VivierInsight {
   type: 'opportunity' | 'cohort' | 'trend' | 'alert';
   title: string;
@@ -18,13 +42,6 @@ export interface VivierInsight {
   metric: string;
   priority: 'high' | 'medium' | 'low';
   suggested_query?: string;
-}
-
-interface VivierInsightsResponse {
-  success: boolean;
-  stats: VivierStats | null;
-  insights: VivierInsight[];
-  error?: string;
 }
 
 async function fetchVivierInsights(): Promise<VivierInsightsResponse> {
@@ -37,23 +54,23 @@ async function fetchVivierInsights(): Promise<VivierInsightsResponse> {
   return {
     success: data?.success ?? false,
     stats: data?.stats ?? null,
-    insights: data?.insights ?? [],
+    opportunities: data?.opportunities ?? [],
+    daily_summary: data?.daily_summary ?? '',
     error: data?.error,
   };
 }
 
 /**
- * Hook optimized for large datasets - caches insights for 15 minutes
- * to avoid redundant expensive calls to the vivier-insights edge function
+ * Hook optimized for large datasets - caches insights for 5 minutes
  */
 export function useVivierInsights() {
   return useQuery({
     queryKey: ['vivier-insights'],
     queryFn: fetchVivierInsights,
-    staleTime: 15 * 60 * 1000, // 15 minutes - insights don't change often
-    gcTime: 30 * 60 * 1000, // Keep in cache 30 minutes
-    refetchOnWindowFocus: false, // Don't refetch on tab focus
-    refetchOnMount: false, // Use cached data when navigating back
-    retry: 1, // Only retry once on failure
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: 1,
   });
 }
