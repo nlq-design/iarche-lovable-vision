@@ -204,7 +204,7 @@ serve(async (req) => {
         
         // Use custom schedule from database or defaults
         const scheduleDays = campaign.schedule_days || { 0: false, 1: true, 2: true, 3: true, 4: true, 5: true, 6: false };
-        const scheduleTimezone = campaign.schedule_timezone || 'Europe/Paris';
+        const scheduleTimezone = campaign.schedule_timezone || 'Etc/GMT-1';
         const scheduleFrom = campaign.schedule_from || '09:00';
         const scheduleTo = campaign.schedule_to || '18:00';
 
