@@ -29,7 +29,7 @@ interface CampaignSchedulerProps {
 
 const DEFAULT_SCHEDULE: CampaignSchedule = {
   days: { 1: true, 2: true, 3: true, 4: true, 5: true, 6: false, 0: false },
-  timezone: 'Europe/Paris',
+  timezone: 'Etc/GMT-1',
   timing: { from: '09:00', to: '18:00' },
 };
 
@@ -43,11 +43,14 @@ const DAY_LABELS: Record<number, string> = {
   0: 'Dim',
 };
 
+// Instantly API requires specific timezone formats
 const TIMEZONES = [
-  { value: 'Europe/Paris', label: 'Paris (CET)' },
-  { value: 'Europe/London', label: 'Londres (GMT)' },
-  { value: 'America/New_York', label: 'New York (EST)' },
-  { value: 'America/Los_Angeles', label: 'Los Angeles (PST)' },
+  { value: 'Etc/GMT-1', label: 'Paris (CET/UTC+1)' },
+  { value: 'Etc/GMT-2', label: 'Paris été (CEST/UTC+2)' },
+  { value: 'Etc/GMT', label: 'Londres (GMT/UTC)' },
+  { value: 'Etc/GMT+5', label: 'New York (EST/UTC-5)' },
+  { value: 'Etc/GMT+8', label: 'Los Angeles (PST/UTC-8)' },
+  { value: 'America/Chicago', label: 'Chicago (CST)' },
 ];
 
 const TIME_OPTIONS = [
