@@ -109,6 +109,30 @@ function generateEmailTemplate(bodyHtml: string, themeKey: string, senderName: s
 </html>`;
 }
 
+function normalizeInstantlyTimezone(tz: unknown): string | null {
+  if (!tz || typeof tz !== 'string') return null;
+
+  const trimmed = tz.trim();
+
+  // Map common IANA values from our UI/DB to Instantly-accepted enum values.
+  const map: Record<string, string> = {
+    'Europe/Paris': 'Etc/GMT-1',
+    'Europe/London': 'Etc/GMT',
+    'America/New_York': 'Etc/GMT+5',
+    'America/Los_Angeles': 'Etc/GMT+8',
+  };
+
+  const mapped = map[trimmed] ?? trimmed;
+
+  // Instantly API accepts a strict enum list; we keep a safe allow-pattern and fallback.
+  // Prefer Etc/GMT offsets which are known to be in Instantly's schema.
+  if (mapped === 'Etc/GMT') return mapped;
+  if (/^Etc\/GMT[+-]\d{1,2}$/.test(mapped)) return mapped;
+
+  // If a non-Etc IANA value slips in, do not forward it (prevents 400).
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -204,7 +228,7 @@ serve(async (req) => {
         
         // Use custom schedule from database or defaults
         const scheduleDays = campaign.schedule_days || { 0: false, 1: true, 2: true, 3: true, 4: true, 5: true, 6: false };
-        const scheduleTimezone = campaign.schedule_timezone || 'Etc/GMT-1';
+        const scheduleTimezone = normalizeInstantlyTimezone(campaign.schedule_timezone) || 'Etc/GMT-1';
         const scheduleFrom = campaign.schedule_from || '09:00';
         const scheduleTo = campaign.schedule_to || '18:00';
 
