@@ -5078,6 +5078,12 @@ export type Database = {
           metadata: Json
         }[]
       }
+      get_viviers_departments: {
+        Args: never
+        Returns: {
+          department_code: string
+        }[]
+      }
       get_viviers_stats: {
         Args: never
         Returns: {
