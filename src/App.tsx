@@ -138,6 +138,8 @@ const PartnerAnnouncements = lazy(() => import("./pages/partner/PartnerAnnouncem
 const PartnerProfile = lazy(() => import("./pages/partner/PartnerProfile"));
 const PartnerAcceptInvitation = lazy(() => import("./pages/partner/PartnerAcceptInvitation"));
 const PartnerTimeTracking = lazy(() => import("./pages/partner/PartnerTimeTracking"));
+const PartnerNotifications = lazy(() => import("./pages/partner/PartnerNotifications"));
+const PartnerActivity = lazy(() => import("./pages/partner/PartnerActivity"));
 
 // QueryClient avec cache optimisé
 const queryClient = new QueryClient({
@@ -793,6 +795,16 @@ const App = () => (
           <Route path="/espace-partenaire/temps" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedPartnerRoute><PartnerTimeTracking /></ProtectedPartnerRoute>
+            </Suspense>
+          } />
+          <Route path="/espace-partenaire/notifications" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedPartnerRoute><PartnerNotifications /></ProtectedPartnerRoute>
+            </Suspense>
+          } />
+          <Route path="/espace-partenaire/activite" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedPartnerRoute><PartnerActivity /></ProtectedPartnerRoute>
             </Suspense>
           } />
           <Route path="/espace-partenaire/accepter/:token" element={

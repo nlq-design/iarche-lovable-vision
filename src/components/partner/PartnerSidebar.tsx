@@ -21,7 +21,8 @@ import {
   Lightbulb,
   LogOut,
   FileAudio,
-  Clock
+  Clock,
+  Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePartnerAuth } from '@/hooks/partner/usePartnerAuth';
@@ -63,6 +64,11 @@ const menuItems = [
     title: 'Suivi du temps',
     url: '/espace-partenaire/temps',
     icon: Clock,
+  },
+  {
+    title: 'Mon Activité',
+    url: '/espace-partenaire/activite',
+    icon: Activity,
   },
   {
     title: 'Annonces',
