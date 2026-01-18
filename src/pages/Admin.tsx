@@ -38,12 +38,33 @@ const Admin = () => {
   const [leadsBreakdown, setLeadsBreakdown] = useState<any[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [dashboardLoading, setDashboardLoading] = useState(true);
+  
+  // État pour vérifier si l'utilisateur est partenaire (DOIT être déclaré ici, pas après un return)
+  const [isPartnerUser, setIsPartnerUser] = useState<boolean | null>(null);
 
   // Charger les stats du dashboard quand user est admin
   useEffect(() => {
     if (user && isAdmin) {
       loadDashboardStats();
     }
+  }, [user, isAdmin]);
+
+  // Vérifier si l'utilisateur est un partenaire (pour redirection amicale)
+  useEffect(() => {
+    async function checkPartnerStatus() {
+      if (!user || isAdmin) {
+        setIsPartnerUser(null);
+        return;
+      }
+      
+      try {
+        const { data: hasPartnerRole } = await supabase.rpc('is_partner_user');
+        setIsPartnerUser(!!hasPartnerRole);
+      } catch (err) {
+        setIsPartnerUser(false);
+      }
+    }
+    checkPartnerStatus();
   }, [user, isAdmin]);
 
   const loadDashboardStats = async () => {
@@ -334,22 +355,7 @@ const Admin = () => {
     );
   }
 
-  // Check if user is a partner (for friendly redirect message)
-  const [isPartnerUser, setIsPartnerUser] = useState<boolean | null>(null);
-  
-  useEffect(() => {
-    async function checkPartnerStatus() {
-      if (!user || isAdmin) return;
-      
-      try {
-        const { data: hasPartnerRole } = await supabase.rpc('is_partner_user');
-        setIsPartnerUser(!!hasPartnerRole);
-      } catch (err) {
-        setIsPartnerUser(false);
-      }
-    }
-    checkPartnerStatus();
-  }, [user, isAdmin]);
+  // La vérification du statut partenaire est faite dans le useEffect en haut du composant
 
   if (!isAdmin && isPartnerUser) {
     return (
