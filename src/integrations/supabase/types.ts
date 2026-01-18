@@ -2228,6 +2228,7 @@ export type Database = {
           consent_marketing: boolean | null
           country: string | null
           created_at: string | null
+          created_by_partner_id: string | null
           email: string
           familiarity_details: Json | null
           familiarity_score: number | null
@@ -2261,6 +2262,7 @@ export type Database = {
           consent_marketing?: boolean | null
           country?: string | null
           created_at?: string | null
+          created_by_partner_id?: string | null
           email: string
           familiarity_details?: Json | null
           familiarity_score?: number | null
@@ -2294,6 +2296,7 @@ export type Database = {
           consent_marketing?: boolean | null
           country?: string | null
           created_at?: string | null
+          created_by_partner_id?: string | null
           email?: string
           familiarity_details?: Json | null
           familiarity_score?: number | null
@@ -2317,7 +2320,15 @@ export type Database = {
           synthesis_stale?: boolean | null
           website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "leads_created_by_partner_id_fkey"
+            columns: ["created_by_partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       llm_models: {
         Row: {
@@ -3301,6 +3312,7 @@ export type Database = {
           budget_amount: number | null
           consumed_amount: number | null
           created_at: string | null
+          created_by_partner_id: string | null
           description: string | null
           health_status: string
           id: string
@@ -3323,6 +3335,7 @@ export type Database = {
           budget_amount?: number | null
           consumed_amount?: number | null
           created_at?: string | null
+          created_by_partner_id?: string | null
           description?: string | null
           health_status?: string
           id?: string
@@ -3345,6 +3358,7 @@ export type Database = {
           budget_amount?: number | null
           consumed_amount?: number | null
           created_at?: string | null
+          created_by_partner_id?: string | null
           description?: string | null
           health_status?: string
           id?: string
@@ -3360,6 +3374,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "projects_created_by_partner_id_fkey"
+            columns: ["created_by_partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "projects_lead_id_fkey"
             columns: ["lead_id"]
@@ -5059,6 +5080,7 @@ export type Database = {
           auto_create_tasks: boolean
           created_at: string
           created_by: string
+          created_by_partner_id: string | null
           duration_seconds: number | null
           file_size_bytes: number | null
           id: string
@@ -5092,6 +5114,7 @@ export type Database = {
           auto_create_tasks?: boolean
           created_at?: string
           created_by: string
+          created_by_partner_id?: string | null
           duration_seconds?: number | null
           file_size_bytes?: number | null
           id?: string
@@ -5125,6 +5148,7 @@ export type Database = {
           auto_create_tasks?: boolean
           created_at?: string
           created_by?: string
+          created_by_partner_id?: string | null
           duration_seconds?: number | null
           file_size_bytes?: number | null
           id?: string
@@ -5183,6 +5207,13 @@ export type Database = {
             columns: ["ai_usage_id"]
             isOneToOne: false
             referencedRelation: "ai_usage_metrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_transcriptions_created_by_partner_id_fkey"
+            columns: ["created_by_partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
             referencedColumns: ["id"]
           },
           {
@@ -5685,9 +5716,29 @@ export type Database = {
       }
       increment_form_views: { Args: { form_slug: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
+      is_lead_creator_partner: {
+        Args: { p_lead_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      is_lead_partner: {
+        Args: { p_lead_id: string; p_user_id: string }
+        Returns: boolean
+      }
       is_partner_user: { Args: never; Returns: boolean }
+      is_project_creator_partner: {
+        Args: { p_project_id: string; p_user_id: string }
+        Returns: boolean
+      }
       is_project_partner: {
         Args: { p_project_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      is_solution_partner: {
+        Args: { p_solution_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      is_transcription_creator_partner: {
+        Args: { p_transcription_id: string; p_user_id: string }
         Returns: boolean
       }
       is_workspace_member: {
