@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { getEmailHeader, getEmailFooter, wrapEmailContent, getCtaButton, getSignature, EMAIL_COLORS } from "../_shared/emailTemplate.ts";
+import { logEmail } from "../_shared/emailLogger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -169,70 +171,114 @@ serve(async (req: Request): Promise<Response> => {
     const baseUrl = Deno.env.get("SITE_URL") || "https://iarche-lovable-vision.lovable.app";
     const inviteUrl = `${baseUrl}/espace-partenaire/accepter/${token}`;
 
-    // Send invitation email (use verified domain iarche.fr)
-    const emailResponse = await resend.emails.send({
-      from: "IArche <contact@iarche.fr>",
-      to: [email],
-      subject: `Invitation à rejoindre l'Espace Partenaire IArche`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-            .header { text-align: center; margin-bottom: 40px; }
-            .logo { font-size: 28px; font-weight: bold; color: #6366f1; }
-            .content { background: #f9fafb; border-radius: 12px; padding: 32px; margin-bottom: 32px; }
-            .button { display: inline-block; background: #6366f1; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; margin: 24px 0; }
-            .button:hover { background: #4f46e5; }
-            .footer { text-align: center; color: #6b7280; font-size: 14px; }
-            .expiry { color: #ef4444; font-size: 14px; margin-top: 16px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <div class="logo">IArche</div>
-            </div>
-            <div class="content">
-              <h1 style="margin-top: 0;">Bonjour ${partner.name} 👋</h1>
-              <p>Vous avez été invité(e) à rejoindre l'<strong>Espace Partenaire IArche</strong>.</p>
-              <p>Cet espace vous permettra de :</p>
-              <ul>
-                <li>Suivre vos missions et projets en cours</li>
-                <li>Accéder aux documents partagés</li>
-                <li>Consulter les annonces de l'équipe</li>
-              </ul>
-              <div style="text-align: center;">
-                <a href="${inviteUrl}" class="button">Créer mon compte partenaire</a>
-              </div>
-              <p class="expiry">⚠️ Ce lien expire dans 7 jours.</p>
-            </div>
-            <div class="footer">
-              <p>Si vous n'avez pas demandé cette invitation, vous pouvez ignorer cet email.</p>
-              <p>© ${new Date().getFullYear()} IArche - Tous droits réservés</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
-    });
+    // Build email content using shared templates (charte graphique v4.0)
+    const emailSubject = `Invitation à rejoindre l'Espace Partenaire IArche`;
+    const header = getEmailHeader("🤝 Invitation Partenaire");
+    const footer = getEmailFooter();
+    
+    const emailContent = `
+      <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin: 0 0 16px 0;">
+        Bonjour <strong style="color: ${EMAIL_COLORS.nightBlue};">${partner.name}</strong> 👋
+      </p>
+      
+      <p style="color: ${EMAIL_COLORS.textGray}; font-size: 15px; margin: 0 0 20px 0;">
+        Vous avez été invité(e) à rejoindre l'<strong>Espace Partenaire IArche</strong>.
+      </p>
+      
+      <div style="background-color: ${EMAIL_COLORS.offWhite}; border-left: 4px solid ${EMAIL_COLORS.terracotta}; padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+        <p style="color: ${EMAIL_COLORS.textGray}; font-size: 14px; margin: 0 0 8px 0; font-weight: 600;">
+          Cet espace vous permettra de :
+        </p>
+        <ul style="color: ${EMAIL_COLORS.textGray}; font-size: 14px; margin: 8px 0 0 0; padding-left: 20px;">
+          <li style="margin-bottom: 4px;">Suivre vos missions et projets en cours</li>
+          <li style="margin-bottom: 4px;">Accéder aux documents partagés</li>
+          <li style="margin-bottom: 4px;">Consulter les annonces de l'équipe</li>
+        </ul>
+      </div>
+      
+      <div style="text-align: center; margin: 28px 0;">
+        ${getCtaButton("Créer mon compte partenaire", inviteUrl, "primary")}
+      </div>
+      
+      <p style="color: ${EMAIL_COLORS.mutedGray}; font-size: 13px; background-color: #FEF3C7; padding: 12px 16px; border-radius: 8px; margin: 20px 0;">
+        ⚠️ Ce lien expire dans <strong>7 jours</strong>. Si vous n'avez pas demandé cette invitation, vous pouvez ignorer cet email.
+      </p>
+      
+      ${getSignature()}
+    `;
 
-    console.log("Email sent successfully:", emailResponse);
+    const emailHtml = wrapEmailContent(header, emailContent, footer);
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Invitation envoyée à ${email}`,
-        invitation_id: invitation.id 
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    // Send invitation email using verified domain iarche.fr
+    try {
+      const emailResponse = await resend.emails.send({
+        from: "IArche <contact@iarche.fr>",
+        to: [email],
+        subject: emailSubject,
+        html: emailHtml,
+      });
+
+      console.log("Email sent successfully:", emailResponse);
+
+      // Log successful email
+      await logEmail({
+        recipient_email: email,
+        subject: emailSubject,
+        source_type: "partner_invitation",
+        email_type: "user_confirmation",
+        source_id: invitation.id,
+        status: "sent",
+        metadata: {
+          partner_id,
+          partner_name: partner.name,
+          invitation_id: invitation.id,
+        },
+      });
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Invitation envoyée à ${email}`,
+          invitation_id: invitation.id 
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    } catch (emailError: any) {
+      console.error("Failed to send email:", emailError);
+      
+      // Log failed email
+      await logEmail({
+        recipient_email: email,
+        subject: emailSubject,
+        source_type: "partner_invitation",
+        email_type: "user_confirmation",
+        source_id: invitation.id,
+        status: "failed",
+        error_message: emailError.message || "Unknown error",
+        metadata: {
+          partner_id,
+          partner_name: partner.name,
+          invitation_id: invitation.id,
+        },
+      });
+
+      // Invitation created but email failed - return partial success
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          warning: "Invitation créée mais l'email n'a pas pu être envoyé",
+          error: emailError.message,
+          invitation_id: invitation.id 
+        }),
+        {
+          status: 207, // Multi-Status
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
 
   } catch (error: any) {
     console.error("Error in invite-partner:", error);
