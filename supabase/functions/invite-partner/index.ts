@@ -169,9 +169,9 @@ serve(async (req: Request): Promise<Response> => {
     const baseUrl = Deno.env.get("SITE_URL") || "https://iarche-lovable-vision.lovable.app";
     const inviteUrl = `${baseUrl}/espace-partenaire/accepter/${token}`;
 
-    // Send invitation email
+    // Send invitation email (use verified domain iarche.fr)
     const emailResponse = await resend.emails.send({
-      from: "IArche <noreply@iarche.com>",
+      from: "IArche <contact@iarche.fr>",
       to: [email],
       subject: `Invitation à rejoindre l'Espace Partenaire IArche`,
       html: `
