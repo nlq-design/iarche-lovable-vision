@@ -334,6 +334,47 @@ const Admin = () => {
     );
   }
 
+  // Check if user is a partner (for friendly redirect message)
+  const [isPartnerUser, setIsPartnerUser] = useState<boolean | null>(null);
+  
+  useEffect(() => {
+    async function checkPartnerStatus() {
+      if (!user || isAdmin) return;
+      
+      try {
+        const { data: hasPartnerRole } = await supabase.rpc('is_partner_user');
+        setIsPartnerUser(!!hasPartnerRole);
+      } catch (err) {
+        setIsPartnerUser(false);
+      }
+    }
+    checkPartnerStatus();
+  }, [user, isAdmin]);
+
+  if (!isAdmin && isPartnerUser) {
+    return (
+      <div className="min-h-screen bg-muted/30 flex items-center justify-center px-6">
+        <Card className="max-w-md bg-background/95 border-border">
+          <CardHeader className="text-center">
+            <Users className="h-12 w-12 text-primary mx-auto mb-2" />
+            <CardTitle>Espace Partenaire</CardTitle>
+            <CardDescription>
+              Vous êtes connecté en tant que partenaire. Accédez à votre espace dédié pour consulter vos missions et documents.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <Button onClick={() => navigate('/espace-partenaire')} className="w-full">
+              Accéder à l'Espace Partenaire
+            </Button>
+            <Button onClick={() => navigate('/')} variant="outline" className="w-full">
+              Retour à l'accueil
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-muted/30 flex items-center justify-center px-6">

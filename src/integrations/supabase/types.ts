@@ -2843,6 +2843,50 @@ export type Database = {
           },
         ]
       }
+      partner_login_history: {
+        Row: {
+          device_type: string | null
+          id: string
+          ip_address: string | null
+          logged_in_at: string
+          logout_at: string | null
+          partner_id: string
+          session_duration_minutes: number | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          device_type?: string | null
+          id?: string
+          ip_address?: string | null
+          logged_in_at?: string
+          logout_at?: string | null
+          partner_id: string
+          session_duration_minutes?: number | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          device_type?: string | null
+          id?: string
+          ip_address?: string | null
+          logged_in_at?: string
+          logout_at?: string | null
+          partner_id?: string
+          session_duration_minutes?: number | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_login_history_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_time_entries: {
         Row: {
           created_at: string
@@ -2922,7 +2966,9 @@ export type Database = {
           email: string | null
           id: string
           is_active: boolean | null
+          last_login_at: string | null
           linkedin_url: string | null
+          login_count: number | null
           name: string
           partner_type: string
           phone: string | null
@@ -2945,7 +2991,9 @@ export type Database = {
           email?: string | null
           id?: string
           is_active?: boolean | null
+          last_login_at?: string | null
           linkedin_url?: string | null
+          login_count?: number | null
           name: string
           partner_type: string
           phone?: string | null
@@ -2968,7 +3016,9 @@ export type Database = {
           email?: string | null
           id?: string
           is_active?: boolean | null
+          last_login_at?: string | null
           linkedin_url?: string | null
+          login_count?: number | null
           name?: string
           partner_type?: string
           phone?: string | null
@@ -5643,6 +5693,15 @@ export type Database = {
       is_workspace_member: {
         Args: { p_user_id: string; p_workspace_id: string }
         Returns: boolean
+      }
+      log_partner_login: {
+        Args: {
+          p_ip_address?: string
+          p_partner_id: string
+          p_user_agent?: string
+          p_user_id: string
+        }
+        Returns: string
       }
       mark_ai_notifications_reviewed: {
         Args: { p_ids: string[] }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -13,6 +13,9 @@ export function usePartnerAuth() {
     avatar_url: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Track if we've already logged this session to avoid duplicate entries
+  const hasLoggedLogin = useRef<string | null>(null);
 
   useEffect(() => {
     async function checkPartnerAccess() {
@@ -23,6 +26,7 @@ export function usePartnerAuth() {
         setPartnerId(null);
         setPartnerData(null);
         setLoading(false);
+        hasLoggedLogin.current = null;
         return;
       }
 
@@ -60,6 +64,25 @@ export function usePartnerAuth() {
             partner_type: partner.partner_type,
             avatar_url: partner.avatar_url,
           });
+          
+          // Log partner login (only once per session)
+          if (hasLoggedLogin.current !== partner.id) {
+            hasLoggedLogin.current = partner.id;
+            
+            // Call the log_partner_login function
+            try {
+              await supabase.rpc('log_partner_login', {
+                p_partner_id: partner.id,
+                p_user_id: user.id,
+                p_ip_address: null, // We can't get IP from client side
+                p_user_agent: navigator.userAgent
+              });
+              console.log('Partner login logged successfully');
+            } catch (logError) {
+              console.error('Failed to log partner login:', logError);
+              // Don't block the login flow if logging fails
+            }
+          }
         }
       } catch (err) {
         console.error('Error checking partner access:', err);

@@ -28,6 +28,9 @@ export interface Partner {
   // AI Synthesis fields
   ai_documents_summary: string | null;
   synthesis_stale: boolean | null;
+  // Login tracking fields
+  last_login_at: string | null;
+  login_count: number | null;
 }
 
 // Génère un slug à partir d'un texte
@@ -83,7 +86,7 @@ export function useCockpitPartners() {
   });
 
   const createPartner = useMutation({
-    mutationFn: async (partner: Omit<Partner, "id" | "created_at" | "updated_at" | "workspace_id" | "deleted_at" | "ai_documents_summary" | "synthesis_stale">) => {
+    mutationFn: async (partner: Omit<Partner, "id" | "created_at" | "updated_at" | "workspace_id" | "deleted_at" | "ai_documents_summary" | "synthesis_stale" | "last_login_at" | "login_count">) => {
       const { data, error } = await supabase
         .from("partners")
         .insert({
