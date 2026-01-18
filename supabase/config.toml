@@ -163,7 +163,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.invite-partner]
-verify_jwt = true
+verify_jwt = false
 
 [functions.accept-partner-invitation]
 verify_jwt = false
