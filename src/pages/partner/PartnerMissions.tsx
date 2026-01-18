@@ -5,6 +5,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FolderKanban, Building2, Calendar, TrendingUp } from 'lucide-react';
 import { usePartnerProjects } from '@/hooks/partner/usePartnerProjects';
 import { CreatePartnerProjectDialog } from '@/components/partner/dialogs/CreatePartnerProjectDialog';
+import { EditPartnerProjectDialog } from '@/components/partner/dialogs/EditPartnerProjectDialog';
+import { DeletePartnerProjectDialog } from '@/components/partner/dialogs/DeletePartnerProjectDialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -83,12 +85,13 @@ export default function PartnerMissions() {
             {projects.map((project) => {
               const statusInfo = STATUS_LABELS[project.status] || { label: project.status, variant: 'outline' as const };
               const healthInfo = project.health_status ? HEALTH_LABELS[project.health_status] : null;
+              const isCreator = project.role === 'creator';
 
               return (
                 <Card key={project.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                      <div className="space-y-2">
+                      <div className="space-y-2 flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-lg">{project.name}</h3>
                           <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
@@ -108,7 +111,7 @@ export default function PartnerMissions() {
                           </div>
                         )}
 
-                        {project.role === 'creator' ? (
+                        {isCreator ? (
                           <Badge className="bg-primary/10 text-primary border-primary/20">
                             Créé par vous
                           </Badge>
@@ -119,28 +122,36 @@ export default function PartnerMissions() {
                         )}
                       </div>
 
-                      <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-                        {project.start_date && (
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4" />
-                            <span>
-                              Début: {format(new Date(project.start_date), 'dd MMM yyyy', { locale: fr })}
-                            </span>
+                      <div className="flex items-center gap-4">
+                        {isCreator && (
+                          <div className="flex items-center gap-1">
+                            <EditPartnerProjectDialog project={project} />
+                            <DeletePartnerProjectDialog projectId={project.id} projectName={project.name} />
                           </div>
                         )}
-                        {project.budget_amount && (
-                          <div className="flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4" />
-                            <span>
-                              Budget: {project.budget_amount.toLocaleString('fr-FR')} €
-                              {project.consumed_amount != null && (
-                                <span className="text-xs ml-1">
-                                  ({Math.round((project.consumed_amount / project.budget_amount) * 100)}% consommé)
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                          {project.start_date && (
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4" />
+                              <span>
+                                Début: {format(new Date(project.start_date), 'dd MMM yyyy', { locale: fr })}
+                              </span>
+                            </div>
+                          )}
+                          {project.budget_amount && (
+                            <div className="flex items-center gap-2">
+                              <TrendingUp className="h-4 w-4" />
+                              <span>
+                                Budget: {project.budget_amount.toLocaleString('fr-FR')} €
+                                {project.consumed_amount != null && (
+                                  <span className="text-xs ml-1">
+                                    ({Math.round((project.consumed_amount / project.budget_amount) * 100)}% consommé)
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </CardContent>
