@@ -2977,6 +2977,110 @@ export type Database = {
           },
         ]
       }
+      partner_notifications: {
+        Row: {
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          is_read: boolean | null
+          message: string | null
+          metadata: Json | null
+          partner_id: string
+          read_at: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          metadata?: Json | null
+          partner_id: string
+          read_at?: string | null
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          metadata?: Json | null
+          partner_id?: string
+          read_at?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_notifications_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_solution_interests: {
+        Row: {
+          client_company: string | null
+          client_email: string | null
+          client_name: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          partner_id: string
+          solution_id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_company?: string | null
+          client_email?: string | null
+          client_name?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          partner_id: string
+          solution_id: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_company?: string | null
+          client_email?: string | null
+          client_name?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          partner_id?: string
+          solution_id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_solution_interests_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_solution_interests_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_time_entries: {
         Row: {
           created_at: string
@@ -5434,6 +5538,19 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      partner_activity_feed: {
+        Row: {
+          activity_type: string | null
+          created_at: string | null
+          description: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string | null
+          partner_id: string | null
+          title: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {

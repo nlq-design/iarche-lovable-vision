@@ -1,7 +1,6 @@
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Bell } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { PartnerNotificationBell } from './PartnerNotificationBell';
 
 export function PartnerHeader() {
   return (
@@ -17,10 +16,7 @@ export function PartnerHeader() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-4 w-4" />
-          {/* Notification badge placeholder */}
-        </Button>
+        <PartnerNotificationBell />
       </div>
     </header>
   );
