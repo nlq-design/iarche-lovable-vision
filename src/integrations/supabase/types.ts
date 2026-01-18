@@ -5631,6 +5631,7 @@ export type Database = {
       }
       increment_form_views: { Args: { form_slug: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
+      is_partner_user: { Args: never; Returns: boolean }
       is_workspace_member: {
         Args: { p_user_id: string; p_workspace_id: string }
         Returns: boolean
