@@ -148,9 +148,9 @@ export default function CockpitDocumentDetail() {
   const { projects } = useCockpitProjects();
   const { leads } = useCockpitLeads();
 
-  // Find document by slug (which is the ID for now)
+  // Find document by slug or ID (backward compatibility)
   const document = !isNewDocument 
-    ? documents?.find(d => d.id === slug)
+    ? documents?.find(d => (d as any).slug === slug || d.id === slug)
     : null;
 
   // Edit form state
