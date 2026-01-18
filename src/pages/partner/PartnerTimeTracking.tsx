@@ -39,8 +39,10 @@ import {
   Pencil,
   Trash2,
   FolderKanban,
-  Users
+  Users,
+  Download
 } from 'lucide-react';
+import { TimeExportDialog } from '@/components/partner/TimeExportDialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -59,6 +61,7 @@ export default function PartnerTimeTracking() {
   const [formOpen, setFormOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<PartnerTimeEntry | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<PartnerTimeEntry | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const handleEdit = (entry: PartnerTimeEntry) => {
     if (entry.status !== 'pending') {
@@ -134,10 +137,16 @@ export default function PartnerTimeTracking() {
               Enregistrez et suivez le temps passé sur vos missions
             </p>
           </div>
-          <Button onClick={() => setFormOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Saisir du temps
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setExportOpen(true)}>
+              <Download className="h-4 w-4 mr-2" />
+              Exporter
+            </Button>
+            <Button onClick={() => setFormOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Saisir du temps
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -277,6 +286,9 @@ export default function PartnerTimeTracking() {
         onOpenChange={handleFormClose}
         editEntry={editEntry}
       />
+
+      {/* Export Dialog */}
+      <TimeExportDialog open={exportOpen} onOpenChange={setExportOpen} />
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteEntry} onOpenChange={() => setDeleteEntry(null)}>

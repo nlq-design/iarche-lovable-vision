@@ -11,6 +11,8 @@ export interface PartnerSolution {
   published: boolean;
   created_at: string;
   role: string | null;
+  tags: string[] | null;
+  thematiques: string[] | null;
 }
 
 export function usePartnerSolutions() {
@@ -43,7 +45,9 @@ export function usePartnerSolutions() {
           excerpt,
           cover_image_url,
           published,
-          created_at
+          created_at,
+          tags,
+          thematiques
         `)
         .in('id', solutionIds)
         .eq('resource_type', 'solution')
@@ -60,6 +64,8 @@ export function usePartnerSolutions() {
         published: s.published || false,
         created_at: s.created_at || '',
         role: roleMap.get(s.id) || null,
+        tags: s.tags || null,
+        thematiques: s.thematiques || null,
       }));
     },
     enabled: !!partnerId,
