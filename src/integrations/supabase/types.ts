@@ -1856,6 +1856,7 @@ export type Database = {
           quote_number: string | null
           sent_at: string | null
           sent_to: string | null
+          slug: string | null
           specification_id: string | null
           status: string
           supersedes_document_id: string | null
@@ -1886,6 +1887,7 @@ export type Database = {
           quote_number?: string | null
           sent_at?: string | null
           sent_to?: string | null
+          slug?: string | null
           specification_id?: string | null
           status?: string
           supersedes_document_id?: string | null
@@ -1916,6 +1918,7 @@ export type Database = {
           quote_number?: string | null
           sent_at?: string | null
           sent_to?: string | null
+          slug?: string | null
           specification_id?: string | null
           status?: string
           supersedes_document_id?: string | null
@@ -2246,6 +2249,7 @@ export type Database = {
           qualification_status: string | null
           revenue_range: string | null
           siret: string | null
+          slug: string | null
           source: string
           source_context: string | null
           source_id: string | null
@@ -2280,6 +2284,7 @@ export type Database = {
           qualification_status?: string | null
           revenue_range?: string | null
           siret?: string | null
+          slug?: string | null
           source: string
           source_context?: string | null
           source_id?: string | null
@@ -2314,6 +2319,7 @@ export type Database = {
           qualification_status?: string | null
           revenue_range?: string | null
           siret?: string | null
+          slug?: string | null
           source?: string
           source_context?: string | null
           source_id?: string | null
@@ -6031,6 +6037,7 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      slugify: { Args: { input_text: string }; Returns: string }
       unlock_expired_accounts: { Args: never; Returns: undefined }
       update_lead_familiarity: {
         Args: { p_lead_id: string }
