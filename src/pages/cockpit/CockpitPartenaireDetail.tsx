@@ -448,7 +448,7 @@ export default function CockpitPartenaireDetail() {
                     <CardHeader>
                       <CardTitle className="text-base">Métadonnées</CardTitle>
                     </CardHeader>
-                    <CardContent className="text-sm text-muted-foreground space-y-1">
+                    <CardContent className="text-sm text-muted-foreground space-y-2">
                       <p>Créé le {new Date(existingPartner.created_at).toLocaleDateString("fr-FR")}</p>
                       <p>Modifié le {new Date(existingPartner.updated_at).toLocaleDateString("fr-FR")}</p>
                       {existingPartner.deleted_at && (
@@ -456,6 +456,30 @@ export default function CockpitPartenaireDetail() {
                           Supprimé le {new Date(existingPartner.deleted_at).toLocaleDateString("fr-FR")}
                         </p>
                       )}
+                      
+                      {/* Login stats */}
+                      <div className="border-t pt-2 mt-2">
+                        <p className="font-medium text-foreground mb-1">Connexions</p>
+                        {existingPartner.last_login_at ? (
+                          <>
+                            <p>
+                              Dernière connexion :{" "}
+                              {new Date(existingPartner.last_login_at).toLocaleDateString("fr-FR", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                            <p>Total connexions : {existingPartner.login_count || 0}</p>
+                          </>
+                        ) : existingPartner.user_id ? (
+                          <p className="text-muted-foreground/70 italic">Jamais connecté</p>
+                        ) : (
+                          <p className="text-muted-foreground/70 italic">Compte non activé</p>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 )}
