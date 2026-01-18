@@ -356,11 +356,12 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get partner_id from user
+    // Get partner_id from user (exclude soft-deleted)
     const { data: partner } = await supabase
       .from('partners')
       .select('id, name, type')
       .eq('user_id', user.id)
+      .is('deleted_at', null)
       .single();
 
     if (!partner) {
