@@ -23,6 +23,8 @@ export interface Partner {
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
+  // User linking
+  user_id: string | null;
   // AI Synthesis fields
   ai_documents_summary: string | null;
   synthesis_stale: boolean | null;

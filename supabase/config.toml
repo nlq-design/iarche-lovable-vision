@@ -161,3 +161,9 @@ verify_jwt = true
 
 [functions.vivier-insights]
 verify_jwt = true
+
+[functions.invite-partner]
+verify_jwt = true
+
+[functions.accept-partner-invitation]
+verify_jwt = false
