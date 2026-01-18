@@ -5378,6 +5378,10 @@ export type Database = {
           related_entity_type: string
         }[]
       }
+      get_project_workspace_id: {
+        Args: { p_project_id: string }
+        Returns: string
+      }
       get_recent_ai_memory: {
         Args: {
           p_limit?: number
@@ -5632,6 +5636,10 @@ export type Database = {
       increment_form_views: { Args: { form_slug: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
       is_partner_user: { Args: never; Returns: boolean }
+      is_project_partner: {
+        Args: { p_project_id: string; p_user_id: string }
+        Returns: boolean
+      }
       is_workspace_member: {
         Args: { p_user_id: string; p_workspace_id: string }
         Returns: boolean
