@@ -56,8 +56,24 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const { data: hasAccess } = await supabaseClient.rpc("has_cockpit_access");
-    if (!hasAccess) {
+    // Check user role directly (bypass MFA check for edge function)
+    const { data: userRoles, error: roleError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userData.user.id);
+
+    if (roleError) {
+      console.error("Error checking user roles:", roleError);
+      return new Response(JSON.stringify({ error: "Erreur de vérification des droits" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const roles = userRoles?.map(r => r.role) || [];
+    const hasCockpitRole = roles.some(r => ['cockpit_user', 'cockpit_admin', 'admin'].includes(r));
+    
+    if (!hasCockpitRole) {
       return new Response(JSON.stringify({ error: "Accès refusé" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
