@@ -2678,6 +2678,238 @@ export type Database = {
           },
         ]
       }
+      partner_announcements: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_pinned: boolean
+          published_at: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_pinned?: boolean
+          published_at?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_pinned?: boolean
+          published_at?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      partner_comments: {
+        Row: {
+          content: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          partner_id: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          partner_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          partner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_comments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          created_by: string | null
+          email: string
+          expires_at: string
+          id: string
+          partner_id: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          email: string
+          expires_at?: string
+          id?: string
+          partner_id: string
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          partner_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_invitations_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          invoice_number: string | null
+          notes: string | null
+          paid_at: string | null
+          partner_id: string
+          period_end: string
+          period_start: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_number?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          partner_id: string
+          period_end: string
+          period_start: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          invoice_number?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          partner_id?: string
+          period_end?: string
+          period_start?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_invoices_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_time_entries: {
+        Row: {
+          created_at: string
+          date: string
+          description: string | null
+          hours: number
+          id: string
+          lead_id: string | null
+          partner_id: string
+          project_id: string | null
+          status: string
+          updated_at: string
+          validated_at: string | null
+          validated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          description?: string | null
+          hours: number
+          id?: string
+          lead_id?: string | null
+          partner_id: string
+          project_id?: string | null
+          status?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          description?: string | null
+          hours?: number
+          id?: string
+          lead_id?: string | null
+          partner_id?: string
+          project_id?: string | null
+          status?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_time_entries_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_time_entries_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_time_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partners: {
         Row: {
           ai_documents_summary: string | null
@@ -2698,6 +2930,7 @@ export type Database = {
           specialties: string[] | null
           synthesis_stale: boolean | null
           updated_at: string | null
+          user_id: string | null
           website: string | null
           workspace_id: string
         }
@@ -2720,6 +2953,7 @@ export type Database = {
           specialties?: string[] | null
           synthesis_stale?: boolean | null
           updated_at?: string | null
+          user_id?: string | null
           website?: string | null
           workspace_id?: string
         }
@@ -2742,6 +2976,7 @@ export type Database = {
           specialties?: string[] | null
           synthesis_stale?: boolean | null
           updated_at?: string | null
+          user_id?: string | null
           website?: string | null
           workspace_id?: string
         }
@@ -5129,6 +5364,7 @@ export type Database = {
         Returns: string
       }
       generate_phonetic_key: { Args: { input_text: string }; Returns: string }
+      get_current_partner_id: { Args: never; Returns: string }
       get_entity_references: {
         Args: { p_entity_id: string; p_entity_type: string }
         Returns: {
@@ -5377,6 +5613,7 @@ export type Database = {
         }[]
       }
       has_cockpit_access: { Args: { user_uuid: string }; Returns: boolean }
+      has_partner_access: { Args: { user_uuid: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -5520,7 +5757,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user" | "cockpit_user" | "cockpit_admin"
+      app_role: "admin" | "user" | "cockpit_user" | "cockpit_admin" | "partner"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5648,7 +5885,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user", "cockpit_user", "cockpit_admin"],
+      app_role: ["admin", "user", "cockpit_user", "cockpit_admin", "partner"],
     },
   },
 } as const
