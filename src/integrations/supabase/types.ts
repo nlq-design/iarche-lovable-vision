@@ -5525,6 +5525,10 @@ export type Database = {
       }
       generate_phonetic_key: { Args: { input_text: string }; Returns: string }
       get_current_partner_id: { Args: never; Returns: string }
+      get_document_workspace_id: {
+        Args: { p_document_id: string }
+        Returns: string
+      }
       get_entity_references: {
         Args: { p_entity_id: string; p_entity_type: string }
         Returns: {
@@ -5795,6 +5799,10 @@ export type Database = {
       }
       increment_form_views: { Args: { form_slug: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
+      is_document_partner: {
+        Args: { p_document_id: string; p_user_id: string }
+        Returns: boolean
+      }
       is_lead_creator_partner: {
         Args: { p_lead_id: string; p_user_id: string }
         Returns: boolean
