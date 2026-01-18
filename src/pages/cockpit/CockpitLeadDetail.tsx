@@ -113,7 +113,7 @@ const INDUSTRIES = [
 ];
 
 const CockpitLeadDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug: urlParam } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { updateLead } = useCockpitLeads();
@@ -121,6 +121,37 @@ const CockpitLeadDetail = () => {
   const { deleteLead } = useLeads();
   const { tasks } = useCockpitTasks();
   const { bookings } = useCockpitBookings();
+
+  // First, resolve the lead by slug or ID
+  const { data: lead, isLoading, refetch: refetchLead } = useQuery({
+    queryKey: ['lead-detail', urlParam],
+    queryFn: async () => {
+      if (!urlParam) return null;
+      // Try by slug first, then by ID (for backward compatibility)
+      const { data: bySlug } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('slug', urlParam)
+        .maybeSingle();
+      
+      if (bySlug) return bySlug;
+      
+      // Fallback to ID lookup (for old URLs with UUIDs)
+      const { data: byId, error } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('id', urlParam)
+        .single();
+      
+      if (error) throw error;
+      return byId;
+    },
+    enabled: !!urlParam,
+  });
+
+  // Get the resolved lead ID for all other queries
+  const id = lead?.id;
+
   const { uploads: linkedFiles } = useCockpitUploads(id ? { leadId: id } : undefined);
 
   const [formData, setFormData] = useState<Partial<Lead>>({});
@@ -181,21 +212,7 @@ const CockpitLeadDetail = () => {
     enabled: !!id,
   });
 
-  // Fetch lead
-  const { data: lead, isLoading, refetch: refetchLead } = useQuery({
-    queryKey: ['lead-detail', id],
-    queryFn: async () => {
-      if (!id) return null;
-      const { data, error } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('id', id)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id,
-  });
+  // Lead is fetched above with slug/id resolution
 
   // Fetch projects linked to this lead
   const { data: linkedProjects = [], refetch: refetchLinkedProjects } = useQuery({

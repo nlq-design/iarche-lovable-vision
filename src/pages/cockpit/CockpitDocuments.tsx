@@ -108,14 +108,14 @@ const CockpitDocuments = () => {
     navigate(`/cockpit/documents/nouveau-${slugPrefix}`);
   };
 
-  const handleViewDocument = (docId: string) => {
-    // Navigate to document detail page
-    navigate(`/cockpit/documents/${docId}`);
+  const handleViewDocument = (doc: any) => {
+    // Navigate to document detail page using slug
+    navigate(`/cockpit/documents/${doc.slug || doc.id}`);
   };
 
-  const handleEditDocument = (docId: string) => {
+  const handleEditDocument = (doc: any) => {
     // Navigate to document detail page with edit mode
-    navigate(`/cockpit/documents/${docId}`);
+    navigate(`/cockpit/documents/${doc.slug || doc.id}`);
   };
 
   const getLinkedEntityName = (doc: typeof documents[0]) => {
@@ -313,7 +313,7 @@ const CockpitDocuments = () => {
                                 variant="ghost" 
                                 size="sm" 
                                 className="h-7 w-7 p-0"
-                                onClick={() => handleViewDocument(doc.id)}
+                                onClick={() => handleViewDocument(doc)}
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
@@ -321,7 +321,7 @@ const CockpitDocuments = () => {
                                 variant="ghost" 
                                 size="sm" 
                                 className="h-7 w-7 p-0"
-                                onClick={() => handleEditDocument(doc.id)}
+                                onClick={() => handleEditDocument(doc)}
                               >
                                 <FileText className="h-4 w-4" />
                               </Button>

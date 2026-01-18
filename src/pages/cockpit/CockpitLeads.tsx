@@ -91,6 +91,7 @@ interface Lead {
   consent_marketing?: boolean | null;
   created_at?: string | null;
   last_contacted_at?: string | null;
+  slug?: string | null;
 }
 
 const CockpitLeads = () => {
@@ -129,7 +130,7 @@ const CockpitLeads = () => {
   }) || [];
 
   const handleRowClick = (lead: Lead) => {
-    navigate(`/cockpit/leads/${lead.id}`);
+    navigate(`/cockpit/leads/${lead.slug || lead.id}`);
   };
 
   const toggleSelectAll = () => {
