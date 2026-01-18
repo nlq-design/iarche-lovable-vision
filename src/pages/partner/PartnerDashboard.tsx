@@ -3,6 +3,7 @@ import { usePartnerAuth } from '@/hooks/partner/usePartnerAuth';
 import { usePartnerStats } from '@/hooks/partner/usePartnerStats';
 import { usePartnerProjects } from '@/hooks/partner/usePartnerProjects';
 import { usePartnerAnnouncements } from '@/hooks/partner/usePartnerAnnouncements';
+import { PartnerConsulteSection } from '@/components/partner/PartnerConsulteSection';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -110,6 +111,9 @@ export default function PartnerDashboard() {
             </Card>
           ))}
         </div>
+
+        {/* Partner-Consulte AI Section */}
+        <PartnerConsulteSection />
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
