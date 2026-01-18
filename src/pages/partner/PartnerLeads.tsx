@@ -2,12 +2,13 @@ import { PartnerLayout } from '@/components/partner/PartnerLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Building2, Mail, Phone, Calendar, Pencil, Trash2 } from 'lucide-react';
+import { Users, Building2, Mail, Phone, Calendar } from 'lucide-react';
 import { usePartnerLeads } from '@/hooks/partner/usePartnerLeads';
 import { CreatePartnerLeadDialog } from '@/components/partner/dialogs/CreatePartnerLeadDialog';
+import { EditPartnerLeadDialog } from '@/components/partner/dialogs/EditPartnerLeadDialog';
+import { DeletePartnerLeadDialog } from '@/components/partner/dialogs/DeletePartnerLeadDialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Button } from '@/components/ui/button';
 
 const QUALIFICATION_LABELS: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   new: { label: 'Nouveau', variant: 'secondary' },
@@ -90,12 +91,13 @@ export default function PartnerLeads() {
                 ? QUALIFICATION_LABELS[lead.qualification_status] 
                 : null;
               const sourceLabel = SOURCE_LABELS[lead.source] || lead.source;
+              const isCreator = lead.role === 'creator';
 
               return (
                 <Card key={lead.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                      <div className="space-y-2">
+                      <div className="space-y-2 flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-lg">{lead.name}</h3>
                           {qualifInfo && (
@@ -130,7 +132,7 @@ export default function PartnerLeads() {
 
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge variant="outline">{sourceLabel}</Badge>
-                          {lead.role === 'creator' ? (
+                          {isCreator ? (
                             <Badge className="bg-primary/10 text-primary border-primary/20">
                               Créé par vous
                             </Badge>
@@ -142,11 +144,19 @@ export default function PartnerLeads() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        <span>
-                          {format(new Date(lead.created_at), 'dd MMM yyyy', { locale: fr })}
-                        </span>
+                      <div className="flex items-center gap-4">
+                        {isCreator && (
+                          <div className="flex items-center gap-1">
+                            <EditPartnerLeadDialog lead={lead} />
+                            <DeletePartnerLeadDialog leadId={lead.id} leadName={lead.name} />
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            {format(new Date(lead.created_at), 'dd MMM yyyy', { locale: fr })}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
