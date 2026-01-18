@@ -27,13 +27,15 @@ import {
   RotateCcw,
   Sparkles,
   Send,
-  UserPlus
+  UserPlus,
+  Shield
 } from "lucide-react";
 import { useCockpitPartners, Partner, PartnerType, PARTNER_TYPES, generateSlug } from "@/hooks/cockpit/useCockpitPartners";
 import { ConsulteTab } from "@/components/cockpit/ConsulteTab";
 import { LinkedTranscriptionsSection } from "@/components/cockpit/LinkedTranscriptionsSection";
 import { LinkedFilesSection } from "@/components/cockpit/LinkedFilesSection";
 import { LinkedGeneratedDocumentsSection } from "@/components/cockpit/LinkedGeneratedDocumentsSection";
+import { PartnerLoginHistoryTab } from "@/components/cockpit/PartnerLoginHistoryTab";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
@@ -255,6 +257,12 @@ export default function CockpitPartenaireDetail() {
               <TabsTrigger value="consulte" className="gap-1.5 text-sm h-7">
                 <Sparkles className="h-3.5 w-3.5" />
                 Consulte
+              </TabsTrigger>
+            )}
+            {!isNew && existingPartner && existingPartner.user_id && (
+              <TabsTrigger value="activite" className="gap-1.5 text-sm h-7">
+                <Shield className="h-3.5 w-3.5" />
+                Activité
               </TabsTrigger>
             )}
           </TabsList>
@@ -514,6 +522,13 @@ export default function CockpitPartenaireDetail() {
                   queryClient.invalidateQueries({ queryKey: ['cockpit-partners-all'] });
                 }}
               />
+            </TabsContent>
+          )}
+
+          {/* Activité Tab - Login History */}
+          {!isNew && existingPartner && existingPartner.user_id && (
+            <TabsContent value="activite" className="space-y-4">
+              <PartnerLoginHistoryTab partnerId={existingPartner.id} />
             </TabsContent>
           )}
         </Tabs>
