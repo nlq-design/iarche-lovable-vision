@@ -2,10 +2,12 @@ import { PartnerLayout } from '@/components/partner/PartnerLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Building2, Mail, Phone, Calendar } from 'lucide-react';
+import { Users, Building2, Mail, Phone, Calendar, Pencil, Trash2 } from 'lucide-react';
 import { usePartnerLeads } from '@/hooks/partner/usePartnerLeads';
+import { CreatePartnerLeadDialog } from '@/components/partner/dialogs/CreatePartnerLeadDialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Button } from '@/components/ui/button';
 
 const QUALIFICATION_LABELS: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   new: { label: 'Nouveau', variant: 'secondary' },
@@ -21,6 +23,10 @@ const SOURCE_LABELS: Record<string, string> = {
   'livre-blanc': 'Livre blanc',
   'atelier-webinaire': 'Atelier/Webinaire',
   referral: 'Recommandation',
+  'partner-referral': 'Recommandation partenaire',
+  networking: 'Réseau / Networking',
+  direct: 'Contact direct',
+  event: 'Événement',
   organic: 'Organique',
   other: 'Autre',
 };
@@ -31,11 +37,14 @@ export default function PartnerLeads() {
   return (
     <PartnerLayout>
       <div className="p-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Leads liés</h1>
-          <p className="text-muted-foreground">
-            Contacts et prospects associés à vos missions
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Leads</h1>
+            <p className="text-muted-foreground">
+              Contacts et prospects associés à vos missions
+            </p>
+          </div>
+          <CreatePartnerLeadDialog />
         </div>
 
         {isLoading ? (
@@ -66,10 +75,11 @@ export default function PartnerLeads() {
             <CardContent>
               <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
                 <Users className="h-16 w-16 mb-4 opacity-50" />
-                <p className="text-lg font-medium">Aucun lead lié pour le moment</p>
-                <p className="text-sm max-w-md">
-                  Lorsque des contacts seront associés à vos missions, vous pourrez les consulter ici.
+                <p className="text-lg font-medium">Aucun lead pour le moment</p>
+                <p className="text-sm max-w-md mb-4">
+                  Créez votre premier lead ou attendez qu'on vous en assigne.
                 </p>
+                <CreatePartnerLeadDialog />
               </div>
             </CardContent>
           </Card>
@@ -120,7 +130,11 @@ export default function PartnerLeads() {
 
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge variant="outline">{sourceLabel}</Badge>
-                          {lead.role && (
+                          {lead.role === 'creator' ? (
+                            <Badge className="bg-primary/10 text-primary border-primary/20">
+                              Créé par vous
+                            </Badge>
+                          ) : lead.role && (
                             <Badge variant="secondary" className="capitalize">
                               {lead.role}
                             </Badge>
