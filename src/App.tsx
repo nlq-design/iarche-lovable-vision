@@ -126,6 +126,14 @@ const VivierCampaignDetail = lazy(() => import("./pages/viviers/VivierCampaignDe
 const ViviersSettings = lazy(() => import("./pages/viviers/ViviersSettings"));
 const ViviersListDetail = lazy(() => import("./pages/viviers/ViviersListDetail"));
 
+// Espace Partenaire (External Partner Portal)
+const ProtectedPartnerRoute = lazy(() => import("./components/partner/ProtectedPartnerRoute"));
+const PartnerDashboard = lazy(() => import("./pages/partner/PartnerDashboard"));
+const PartnerMissions = lazy(() => import("./pages/partner/PartnerMissions"));
+const PartnerDocuments = lazy(() => import("./pages/partner/PartnerDocuments"));
+const PartnerAnnouncements = lazy(() => import("./pages/partner/PartnerAnnouncements"));
+const PartnerProfile = lazy(() => import("./pages/partner/PartnerProfile"));
+
 // QueryClient avec cache optimisé
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -733,6 +741,33 @@ const App = () => (
           <Route path="/viviers/settings" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>}>
               <ProtectedVivierRoute><ViviersSettings /></ProtectedVivierRoute>
+            </Suspense>
+          } />
+          
+          {/* Espace Partenaire (External Partner Portal) */}
+          <Route path="/espace-partenaire" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedPartnerRoute><PartnerDashboard /></ProtectedPartnerRoute>
+            </Suspense>
+          } />
+          <Route path="/espace-partenaire/missions" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedPartnerRoute><PartnerMissions /></ProtectedPartnerRoute>
+            </Suspense>
+          } />
+          <Route path="/espace-partenaire/documents" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedPartnerRoute><PartnerDocuments /></ProtectedPartnerRoute>
+            </Suspense>
+          } />
+          <Route path="/espace-partenaire/annonces" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedPartnerRoute><PartnerAnnouncements /></ProtectedPartnerRoute>
+            </Suspense>
+          } />
+          <Route path="/espace-partenaire/profil" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedPartnerRoute><PartnerProfile /></ProtectedPartnerRoute>
             </Suspense>
           } />
           
