@@ -20,7 +20,8 @@ import {
   Users,
   Lightbulb,
   LogOut,
-  FileAudio
+  FileAudio,
+  Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePartnerAuth } from '@/hooks/partner/usePartnerAuth';
@@ -57,6 +58,11 @@ const menuItems = [
     title: 'Transcriptions',
     url: '/espace-partenaire/transcriptions',
     icon: FileAudio,
+  },
+  {
+    title: 'Suivi du temps',
+    url: '/espace-partenaire/temps',
+    icon: Clock,
   },
   {
     title: 'Annonces',
