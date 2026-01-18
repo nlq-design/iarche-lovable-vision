@@ -133,6 +133,7 @@ const PartnerMissions = lazy(() => import("./pages/partner/PartnerMissions"));
 const PartnerDocuments = lazy(() => import("./pages/partner/PartnerDocuments"));
 const PartnerAnnouncements = lazy(() => import("./pages/partner/PartnerAnnouncements"));
 const PartnerProfile = lazy(() => import("./pages/partner/PartnerProfile"));
+const PartnerAcceptInvitation = lazy(() => import("./pages/partner/PartnerAcceptInvitation"));
 
 // QueryClient avec cache optimisé
 const queryClient = new QueryClient({
@@ -768,6 +769,11 @@ const App = () => (
           <Route path="/espace-partenaire/profil" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedPartnerRoute><PartnerProfile /></ProtectedPartnerRoute>
+            </Suspense>
+          } />
+          <Route path="/espace-partenaire/accepter/:token" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <PartnerAcceptInvitation />
             </Suspense>
           } />
           

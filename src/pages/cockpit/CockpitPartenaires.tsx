@@ -131,6 +131,7 @@ export default function CockpitPartenaires() {
     await createPartner.mutateAsync({
       ...formData,
       avatar_url: null,
+      user_id: null,
     });
     setIsCreateOpen(false);
     resetForm();

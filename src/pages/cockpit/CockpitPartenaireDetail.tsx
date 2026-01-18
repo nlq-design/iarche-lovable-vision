@@ -25,7 +25,9 @@ import {
   Building2,
   Loader2,
   RotateCcw,
-  Sparkles
+  Sparkles,
+  Send,
+  UserPlus
 } from "lucide-react";
 import { useCockpitPartners, Partner, PartnerType, PARTNER_TYPES, generateSlug } from "@/hooks/cockpit/useCockpitPartners";
 import { ConsulteTab } from "@/components/cockpit/ConsulteTab";
@@ -43,6 +45,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { InvitePartnerDialog } from "@/components/cockpit/InvitePartnerDialog";
 
 const PARTNER_TYPE_CONFIG: Record<PartnerType, { label: string; icon: React.ReactNode; color: string }> = {
   expert_ia: { label: "Expert IA", icon: <Brain className="h-4 w-4" />, color: "text-purple-600" },
@@ -59,6 +62,7 @@ export default function CockpitPartenaireDetail() {
   const queryClient = useQueryClient();
   
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     slug: "",
     name: "",
@@ -110,6 +114,7 @@ export default function CockpitPartenaireDetail() {
       await createPartner.mutateAsync({
         ...formData,
         avatar_url: null,
+        user_id: null,
       });
       navigate("/cockpit/partenaires");
     } else if (existingPartner) {
@@ -203,6 +208,18 @@ export default function CockpitPartenaireDetail() {
               </>
             ) : (
               <>
+                {!isNew && existingPartner && !existingPartner.user_id && (
+                  <Button variant="outline" onClick={() => setInviteDialogOpen(true)}>
+                    <Send className="h-4 w-4 mr-2" />
+                    Inviter
+                  </Button>
+                )}
+                {!isNew && existingPartner?.user_id && (
+                  <Badge variant="secondary" className="h-9 px-3 flex items-center gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    Compte lié
+                  </Badge>
+                )}
                 {!isNew && (
                   <Button variant="outline" onClick={handleSoftDelete} disabled={softDeletePartner.isPending}>
                     <Trash2 className="h-4 w-4 mr-2" />
@@ -495,6 +512,17 @@ export default function CockpitPartenaireDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Invite Dialog */}
+      {existingPartner && (
+        <InvitePartnerDialog
+          open={inviteDialogOpen}
+          onOpenChange={setInviteDialogOpen}
+          partnerId={existingPartner.id}
+          partnerName={existingPartner.name}
+          partnerEmail={existingPartner.email || undefined}
+        />
+      )}
     </CockpitLayout>
   );
 }
