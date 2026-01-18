@@ -17,6 +17,8 @@ import {
   FileText, 
   Bell, 
   User,
+  Users,
+  Lightbulb,
   LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,6 +41,16 @@ const menuItems = [
     title: 'Documents',
     url: '/espace-partenaire/documents',
     icon: FileText,
+  },
+  {
+    title: 'Leads',
+    url: '/espace-partenaire/leads',
+    icon: Users,
+  },
+  {
+    title: 'Solutions',
+    url: '/espace-partenaire/solutions',
+    icon: Lightbulb,
   },
   {
     title: 'Annonces',

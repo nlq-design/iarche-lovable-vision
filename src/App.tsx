@@ -131,6 +131,8 @@ const ProtectedPartnerRoute = lazy(() => import("./components/partner/ProtectedP
 const PartnerDashboard = lazy(() => import("./pages/partner/PartnerDashboard"));
 const PartnerMissions = lazy(() => import("./pages/partner/PartnerMissions"));
 const PartnerDocuments = lazy(() => import("./pages/partner/PartnerDocuments"));
+const PartnerLeads = lazy(() => import("./pages/partner/PartnerLeads"));
+const PartnerSolutions = lazy(() => import("./pages/partner/PartnerSolutions"));
 const PartnerAnnouncements = lazy(() => import("./pages/partner/PartnerAnnouncements"));
 const PartnerProfile = lazy(() => import("./pages/partner/PartnerProfile"));
 const PartnerAcceptInvitation = lazy(() => import("./pages/partner/PartnerAcceptInvitation"));
@@ -759,6 +761,16 @@ const App = () => (
           <Route path="/espace-partenaire/documents" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedPartnerRoute><PartnerDocuments /></ProtectedPartnerRoute>
+            </Suspense>
+          } />
+          <Route path="/espace-partenaire/leads" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedPartnerRoute><PartnerLeads /></ProtectedPartnerRoute>
+            </Suspense>
+          } />
+          <Route path="/espace-partenaire/solutions" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedPartnerRoute><PartnerSolutions /></ProtectedPartnerRoute>
             </Suspense>
           } />
           <Route path="/espace-partenaire/annonces" element={
