@@ -133,6 +133,7 @@ const PartnerMissions = lazy(() => import("./pages/partner/PartnerMissions"));
 const PartnerDocuments = lazy(() => import("./pages/partner/PartnerDocuments"));
 const PartnerLeads = lazy(() => import("./pages/partner/PartnerLeads"));
 const PartnerSolutions = lazy(() => import("./pages/partner/PartnerSolutions"));
+const PartnerTranscriptions = lazy(() => import("./pages/partner/PartnerTranscriptions"));
 const PartnerAnnouncements = lazy(() => import("./pages/partner/PartnerAnnouncements"));
 const PartnerProfile = lazy(() => import("./pages/partner/PartnerProfile"));
 const PartnerAcceptInvitation = lazy(() => import("./pages/partner/PartnerAcceptInvitation"));
@@ -771,6 +772,11 @@ const App = () => (
           <Route path="/espace-partenaire/solutions" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedPartnerRoute><PartnerSolutions /></ProtectedPartnerRoute>
+            </Suspense>
+          } />
+          <Route path="/espace-partenaire/transcriptions" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedPartnerRoute><PartnerTranscriptions /></ProtectedPartnerRoute>
             </Suspense>
           } />
           <Route path="/espace-partenaire/annonces" element={

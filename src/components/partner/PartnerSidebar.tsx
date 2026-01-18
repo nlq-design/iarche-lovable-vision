@@ -19,7 +19,8 @@ import {
   User,
   Users,
   Lightbulb,
-  LogOut
+  LogOut,
+  FileAudio
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePartnerAuth } from '@/hooks/partner/usePartnerAuth';
@@ -51,6 +52,11 @@ const menuItems = [
     title: 'Solutions',
     url: '/espace-partenaire/solutions',
     icon: Lightbulb,
+  },
+  {
+    title: 'Transcriptions',
+    url: '/espace-partenaire/transcriptions',
+    icon: FileAudio,
   },
   {
     title: 'Annonces',

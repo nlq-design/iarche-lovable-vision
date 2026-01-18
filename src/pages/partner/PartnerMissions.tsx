@@ -4,12 +4,17 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FolderKanban, Building2, Calendar, TrendingUp } from 'lucide-react';
 import { usePartnerProjects } from '@/hooks/partner/usePartnerProjects';
+import { CreatePartnerProjectDialog } from '@/components/partner/dialogs/CreatePartnerProjectDialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 const STATUS_LABELS: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Brouillon', variant: 'secondary' },
+  scoping: { label: 'Cadrage', variant: 'outline' },
+  planning: { label: 'Planification', variant: 'outline' },
   active: { label: 'En cours', variant: 'default' },
+  in_progress: { label: 'En cours', variant: 'default' },
+  review: { label: 'Revue', variant: 'secondary' },
   on_hold: { label: 'En pause', variant: 'outline' },
   completed: { label: 'Terminé', variant: 'secondary' },
   cancelled: { label: 'Annulé', variant: 'destructive' },
@@ -27,11 +32,14 @@ export default function PartnerMissions() {
   return (
     <PartnerLayout>
       <div className="p-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Mes Missions</h1>
-          <p className="text-muted-foreground">
-            Projets auxquels vous êtes assigné
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Mes Missions</h1>
+            <p className="text-muted-foreground">
+              Projets auxquels vous êtes assigné
+            </p>
+          </div>
+          <CreatePartnerProjectDialog />
         </div>
 
         {isLoading ? (
@@ -63,9 +71,10 @@ export default function PartnerMissions() {
               <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
                 <FolderKanban className="h-16 w-16 mb-4 opacity-50" />
                 <p className="text-lg font-medium">Aucune mission pour le moment</p>
-                <p className="text-sm max-w-md">
-                  Lorsque vous serez assigné à des projets, ils apparaîtront ici avec tous les détails nécessaires.
+                <p className="text-sm max-w-md mb-4">
+                  Créez votre premier projet ou attendez qu'on vous en assigne.
                 </p>
+                <CreatePartnerProjectDialog />
               </div>
             </CardContent>
           </Card>
@@ -99,7 +108,11 @@ export default function PartnerMissions() {
                           </div>
                         )}
 
-                        {project.role && (
+                        {project.role === 'creator' ? (
+                          <Badge className="bg-primary/10 text-primary border-primary/20">
+                            Créé par vous
+                          </Badge>
+                        ) : project.role && (
                           <Badge variant="outline" className="capitalize">
                             {project.role}
                           </Badge>
