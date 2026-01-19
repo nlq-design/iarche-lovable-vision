@@ -356,17 +356,22 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    console.log(`[partner-consulte] User authenticated: ${user.id}, email: ${user.email}`);
+
     // Get partner_id from user (exclude soft-deleted)
-    const { data: partner } = await supabase
+    const { data: partner, error: partnerError } = await supabase
       .from('partners')
       .select('id, name, partner_type')
       .eq('user_id', user.id)
       .is('deleted_at', null)
       .single();
 
+    console.log(`[partner-consulte] Partner lookup result:`, { partner, partnerError });
+
     if (!partner) {
+      console.error(`[partner-consulte] Partner not found for user ${user.id}. Error:`, partnerError);
       return new Response(
-        JSON.stringify({ error: 'Partenaire non trouvé' }),
+        JSON.stringify({ error: 'Partenaire non trouvé', details: partnerError?.message }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
