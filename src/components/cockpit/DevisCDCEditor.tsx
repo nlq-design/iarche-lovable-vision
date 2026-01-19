@@ -20,8 +20,10 @@ import {
   ChevronDown,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  FileDown
 } from "lucide-react";
+import { useDocxToPdfExport } from '@/hooks/cockpit/useDocxToPdfExport';
 import { RichTextEditor } from './editor';
 import {
   Select,
@@ -130,6 +132,18 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
   const { documents, updateDocument } = useCockpitGeneratedDocuments();
   const { projects } = useCockpitProjects();
   const { leads } = useCockpitLeads();
+  const { exportPdf, isExporting: isExportingPdf } = useDocxToPdfExport();
+
+  const handleExportPdfHD = async () => {
+    await exportPdf({
+      title,
+      sections,
+      metadata,
+      theme,
+      documentType,
+      documentId: documentId || undefined,
+    });
+  };
   
   // Fetch solutions from articles with resource_type = 'solution'
   const [solutions, setSolutions] = useState<Array<{ id: string; title: string; slug: string }>>([]);
@@ -441,6 +455,10 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportPdfHD} disabled={isExportingPdf}>
+                <FileDown className="h-4 w-4 mr-2" />
+                {isExportingPdf ? 'Export en cours...' : 'Export PDF HD'}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleExportDOCX}>
                 <FileText className="h-4 w-4 mr-2" />
                 Export DOCX

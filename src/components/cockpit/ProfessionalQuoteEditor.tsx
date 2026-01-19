@@ -19,8 +19,10 @@ import {
   MapPin,
   Calendar,
   Hash,
-  CreditCard
+  CreditCard,
+  FileDown
 } from "lucide-react";
+import { useDocxToPdfExport } from '@/hooks/cockpit/useDocxToPdfExport';
 import {
   Select,
   SelectContent,
@@ -119,6 +121,7 @@ export function ProfessionalQuoteEditor({ documentId, onBack, onSave }: Professi
   const { projects } = useCockpitProjects();
   const { leads } = useCockpitLeads();
   const { entities: billingEntities, isLoading: billingLoading, defaultEntity, generateQuoteNumber } = useBillingEntities();
+  const { exportPdf, isExporting: isExportingPdf } = useDocxToPdfExport();
 
   // Load existing document or set defaults
   useEffect(() => {
@@ -367,6 +370,26 @@ export function ProfessionalQuoteEditor({ documentId, onBack, onSave }: Professi
     }
   };
 
+  const handleExportPdfHD = async () => {
+    const billingEntity = billingEntities.find(e => e.id === quoteData.billingEntityId);
+    
+    const sections = [
+      { id: 'header', title: 'En-tête', content: buildHeaderHTML(billingEntity, quoteData), order: 0 },
+      { id: 'object', title: 'Objet', content: `<div><h3>${quoteData.projectName}</h3><p>${quoteData.projectDescription}</p></div>`, order: 1 },
+      { id: 'services', title: 'Prestations', content: buildServicesHTML(quoteData.services, quoteData.currency), order: 2 },
+      { id: 'totals', title: 'Totaux', content: buildTotalsHTML(totalHT, tvaAmount, totalTTC, quoteData.tvaRate, quoteData.currency), order: 3 },
+      { id: 'payment', title: 'Paiement', content: `<div><p>${quoteData.paymentTerms}</p></div>`, order: 4 },
+    ];
+
+    await exportPdf({
+      title,
+      sections,
+      metadata: { ...quoteData, totalHT, tvaAmount, totalTTC },
+      documentType: 'quote',
+      documentId: documentId || undefined,
+    });
+  };
+
   // Build preview document for QuotePreview component
   const buildPreviewDocument = (): GeneratedDocument => {
     const billingEntity = billingEntities.find(e => e.id === quoteData.billingEntityId);
@@ -440,6 +463,10 @@ export function ProfessionalQuoteEditor({ documentId, onBack, onSave }: Professi
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportPdfHD} disabled={isExportingPdf}>
+                <FileDown className="h-4 w-4 mr-2" />
+                {isExportingPdf ? 'Export en cours...' : 'Export PDF HD'}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleExportDOCX}>
                 <FileText className="h-4 w-4 mr-2" />
                 Export DOCX
