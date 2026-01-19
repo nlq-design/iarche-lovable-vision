@@ -116,7 +116,7 @@ async function collectPartnerContext(
   // 1. Get partner info
   const { data: partner } = await supabase
     .from('partners')
-    .select('id, name, type, company')
+    .select('id, name, partner_type, company')
     .eq('id', partnerId)
     .single();
 
@@ -243,7 +243,7 @@ async function collectPartnerContext(
   return {
     partnerId: partner.id,
     partnerName: partner.name,
-    partnerType: partner.type || 'partner',
+    partnerType: partner.partner_type || 'partner',
     projects,
     leads,
     totalTranscriptions,
@@ -359,7 +359,7 @@ serve(async (req) => {
     // Get partner_id from user (exclude soft-deleted)
     const { data: partner } = await supabase
       .from('partners')
-      .select('id, name, type')
+      .select('id, name, partner_type')
       .eq('user_id', user.id)
       .is('deleted_at', null)
       .single();
@@ -387,7 +387,7 @@ serve(async (req) => {
     }
 
     // Build prompts
-    const systemPrompt = getPartnerSystemPrompt(partner.type || 'partner');
+    const systemPrompt = getPartnerSystemPrompt(partner.partner_type || 'partner');
     const userPrompt = buildUserPrompt(context);
 
     console.log(`[partner-consulte] Calling Lovable AI with ${context.totalTranscriptions} transcriptions...`);
