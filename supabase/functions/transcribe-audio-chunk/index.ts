@@ -66,9 +66,29 @@ serve(async (req) => {
       );
     }
 
+    // Get proper file extension for Whisper API
+    const getExtension = (mime: string): string => {
+      const map: Record<string, string> = {
+        'audio/wav': 'wav', 'audio/wave': 'wav', 'audio/x-wav': 'wav',
+        'audio/mpeg': 'mp3', 'audio/mp3': 'mp3',
+        'audio/mp4': 'm4a', 'audio/x-m4a': 'm4a',
+        'audio/ogg': 'ogg', 'audio/webm': 'webm',
+        'audio/flac': 'flac', 'audio/x-flac': 'flac',
+      };
+      return map[mime.toLowerCase()] || 'wav';
+    };
+
+    const ext = getExtension(audioFile.type);
+    const fileName = `chunk_${chunkIndex}.${ext}`;
+    
+    // Create a new File with proper name (Whisper requires filename with extension)
+    const namedFile = new File([audioFile], fileName, { type: audioFile.type });
+    
+    console.log(`[transcribe-audio-chunk] Sending to Whisper: ${fileName}, type: ${audioFile.type}`);
+
     // Prepare request to Whisper API
     const whisperFormData = new FormData();
-    whisperFormData.append("file", audioFile);
+    whisperFormData.append("file", namedFile, fileName);
     whisperFormData.append("model", "whisper-1");
     whisperFormData.append("language", language);
     whisperFormData.append("response_format", "text");
