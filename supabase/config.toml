@@ -167,3 +167,6 @@ verify_jwt = false
 
 [functions.accept-partner-invitation]
 verify_jwt = false
+
+[functions.partner-consulte]
+verify_jwt = false
