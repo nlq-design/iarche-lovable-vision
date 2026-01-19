@@ -40,10 +40,25 @@ export function usePartnerConsulte() {
 
     try {
       console.log('[usePartnerConsulte] Invoking partner-consulte edge function...');
-      
+
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        throw new Error(sessionError.message);
+      }
+
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) {
+        throw new Error('Session expirée. Veuillez vous reconnecter.');
+      }
+
       const { data, error: fnError } = await supabase.functions.invoke<PartnerConsulteResult>(
         'partner-consulte',
-        { body: {} }
+        {
+          body: {},
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
       );
 
       console.log('[usePartnerConsulte] Response:', { data, fnError });
