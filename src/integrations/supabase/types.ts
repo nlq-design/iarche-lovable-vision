@@ -1749,6 +1749,13 @@ export type Database = {
             referencedRelation: "forms"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "form_analytics_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       form_responses: {
@@ -1785,6 +1792,13 @@ export type Database = {
             columns: ["form_id"]
             isOneToOne: false
             referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_responses_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms_public"
             referencedColumns: ["id"]
           },
         ]
@@ -5545,6 +5559,45 @@ export type Database = {
           },
         ]
       }
+      forms_public: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          fields: Json | null
+          id: string | null
+          is_active: boolean | null
+          slug: string | null
+          submissions_count: number | null
+          title: string | null
+          updated_at: string | null
+          views_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          fields?: Json | null
+          id?: string | null
+          is_active?: boolean | null
+          slug?: string | null
+          submissions_count?: number | null
+          title?: string | null
+          updated_at?: string | null
+          views_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          fields?: Json | null
+          id?: string | null
+          is_active?: boolean | null
+          slug?: string | null
+          submissions_count?: number | null
+          title?: string | null
+          updated_at?: string | null
+          views_count?: number | null
+        }
+        Relationships: []
+      }
       partner_activity_feed: {
         Row: {
           activity_type: string | null
@@ -6057,6 +6110,16 @@ export type Database = {
           p_source_id?: string
         }
         Returns: string
+      }
+      validate_partner_invitation: {
+        Args: { p_token: string }
+        Returns: {
+          email: string
+          expires_at: string
+          id: string
+          is_valid: boolean
+          partner_type: string
+        }[]
       }
       validate_resource_type: {
         Args: never
