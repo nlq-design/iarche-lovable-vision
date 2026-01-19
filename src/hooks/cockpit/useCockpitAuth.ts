@@ -47,7 +47,8 @@ export const useCockpitAuth = () => {
       const hasCockpitAccess = hasCockpitUser || hasCockpitAdmin;
 
       // Check MFA status
-      const { data: { totp } } = await supabase.auth.mfa.listFactors();
+      const { data: mfaData } = await supabase.auth.mfa.listFactors();
+      const totp = mfaData?.totp;
       const mfaEnabled = totp && totp.length > 0 && totp.some(f => f.status === 'verified');
 
       // Auto-create session for cockpit users if they have access
