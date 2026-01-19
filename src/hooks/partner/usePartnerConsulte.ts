@@ -24,6 +24,20 @@ export function usePartnerConsulte() {
     setIsLoading(true);
     setError(null);
 
+    const extractFnErrorMessage = (err: any): { message: string; status?: number } => {
+      const status = err?.context?.status as number | undefined;
+      const body = err?.context?.body;
+
+      const bodyMessage =
+        (typeof body === 'string' ? body : undefined) ||
+        body?.error ||
+        body?.message ||
+        body?.details;
+
+      const message = bodyMessage || err?.message || 'Erreur lors de la génération de la synthèse';
+      return { message, status };
+    };
+
     try {
       const { data, error: fnError } = await supabase.functions.invoke<PartnerConsulteResult>(
         'partner-consulte',
@@ -31,7 +45,9 @@ export function usePartnerConsulte() {
       );
 
       if (fnError) {
-        throw fnError;
+        const { message, status } = extractFnErrorMessage(fnError);
+        const tagged = status ? `[${status}] ${message}` : message;
+        throw new Error(tagged);
       }
 
       if (data?.success && data.synthesis) {
@@ -43,14 +59,15 @@ export function usePartnerConsulte() {
         return false;
       }
     } catch (err: any) {
-      console.error('[usePartnerConsulte] Error:', err);
-      
-      if (err.message?.includes('429')) {
+      const { message, status } = extractFnErrorMessage(err);
+      console.error('[usePartnerConsulte] Error:', { status, message, err });
+
+      if (status === 429 || message.includes('429')) {
         setError('Limite de requêtes atteinte. Réessayez dans quelques instants.');
-      } else if (err.message?.includes('402')) {
+      } else if (status === 402 || message.includes('402')) {
         setError('Crédits IA insuffisants.');
       } else {
-        setError(err.message || 'Erreur lors de la génération de la synthèse');
+        setError(message);
       }
       return false;
     } finally {
