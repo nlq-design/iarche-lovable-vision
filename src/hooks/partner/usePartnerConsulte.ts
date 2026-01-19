@@ -56,12 +56,18 @@ export function usePartnerConsulte() {
         throw new Error('Session expirée. Veuillez vous reconnecter.');
       }
 
+      const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      if (!apikey) {
+        console.warn('[usePartnerConsulte] Missing VITE_SUPABASE_PUBLISHABLE_KEY; function call may be rejected');
+      }
+
       const { data, error: fnError } = await supabase.functions.invoke<PartnerConsulteResult>(
         'partner-consulte',
         {
           body: {},
           headers: {
             Authorization: `Bearer ${accessToken}`,
+            ...(apikey ? { apikey } : {}),
           },
         }
       );
