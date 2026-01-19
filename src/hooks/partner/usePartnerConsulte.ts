@@ -41,12 +41,17 @@ export function usePartnerConsulte() {
     try {
       console.log('[usePartnerConsulte] Invoking partner-consulte edge function...');
 
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        throw new Error(sessionError.message);
+      // Refresh session to avoid expired access tokens causing 401 in backend functions
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        // Non-bloquant: on tente quand même de récupérer la session actuelle
+        console.warn('[usePartnerConsulte] refreshSession failed, falling back to getSession', refreshError);
       }
 
-      const accessToken = sessionData?.session?.access_token;
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw new Error(sessionError.message);
+
+      const accessToken = refreshed?.session?.access_token ?? sessionData?.session?.access_token;
       if (!accessToken) {
         throw new Error('Session expirée. Veuillez vous reconnecter.');
       }
