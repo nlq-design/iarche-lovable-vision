@@ -2,12 +2,19 @@ import React, { forwardRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, FileText, Sparkles, Clock, CheckCircle, Edit } from "lucide-react";
+import { ArrowLeft, Download, FileText, Sparkles, Clock, CheckCircle, Edit, FileDown, ChevronDown } from "lucide-react";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { COLORS, GRADIENTS } from '@/components/admin/medias/shared/tokens';
 import DOMPurify from 'dompurify';
 import './preview-rich-content.css';
+import { useDocxToPdfExport } from '@/hooks/cockpit/useDocxToPdfExport';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // IArche colors for inline styles
 const IARCHE_COLORS = {
@@ -123,6 +130,7 @@ export const DevisCDCPreview = forwardRef<HTMLDivElement, DevisCDCPreviewProps>(
     };
 
     const statusConfig = DOCUMENT_STATUS_CONFIG[document.status as keyof typeof DOCUMENT_STATUS_CONFIG];
+    const { exportPdf, isExporting: isExportingPdf } = useDocxToPdfExport();
 
     const handleExportDOCX = async () => {
       try {
@@ -155,6 +163,17 @@ export const DevisCDCPreview = forwardRef<HTMLDivElement, DevisCDCPreviewProps>(
       }
     };
 
+    const handleExportPdfHD = async () => {
+      await exportPdf({
+        title: document.title,
+        sections,
+        metadata,
+        theme,
+        documentType: document.document_type as 'quote' | 'spec' | 'proposal',
+        documentId: document.id,
+      });
+    };
+
     return (
       <div className={isEmbedded ? "" : "p-5 space-y-4"} ref={ref}>
         {/* Header - only show when not embedded */}
@@ -177,10 +196,25 @@ export const DevisCDCPreview = forwardRef<HTMLDivElement, DevisCDCPreviewProps>(
               )}
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleExportDOCX}>
-                <Download className="h-4 w-4 mr-1.5" />
-                Exporter DOCX
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <Download className="h-4 w-4" />
+                    Exporter
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleExportPdfHD} disabled={isExportingPdf}>
+                    <FileDown className="h-4 w-4 mr-2" />
+                    {isExportingPdf ? 'Export en cours...' : 'Export PDF HD'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportDOCX}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Export DOCX
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button size="sm" onClick={onEdit}>
                 <Edit className="h-4 w-4 mr-1.5" />
                 Modifier

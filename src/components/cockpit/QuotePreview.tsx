@@ -2,12 +2,19 @@ import React, { forwardRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, FileText, Sparkles, Edit } from "lucide-react";
+import { ArrowLeft, Download, FileText, Sparkles, Edit, FileDown, ChevronDown } from "lucide-react";
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import DOMPurify from 'dompurify';
 import QRCode from 'react-qr-code';
 import './quote-preview.css';
+import { useDocxToPdfExport } from '@/hooks/cockpit/useDocxToPdfExport';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { DOCUMENT_STATUS_CONFIG, type GeneratedDocument } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
 import { supabase } from '@/integrations/supabase/client';
@@ -210,6 +217,7 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
     const metadata = content?.metadata || {};
 
     const statusConfig = DOCUMENT_STATUS_CONFIG[document.status as keyof typeof DOCUMENT_STATUS_CONFIG];
+    const { exportPdf, isExporting: isExportingPdf } = useDocxToPdfExport();
 
     // Get sections
     const headerSection = sections.find(s => s.id === 'header');
@@ -256,6 +264,16 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
         console.error('Error exporting DOCX:', error);
         toast.error('Erreur lors de l\'export DOCX');
       }
+    };
+
+    const handleExportPdfHD = async () => {
+      await exportPdf({
+        title: document.title,
+        sections,
+        metadata,
+        documentType: 'quote',
+        documentId: document.id,
+      });
     };
 
     // Render services - handle Markdown tables
@@ -361,22 +379,37 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
               )}
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleExportDOCX}>
-                <Download className="h-4 w-4 mr-1.5" />
-                DOCX
-              </Button>
-              {onExportWithCGV && (
-                <Button variant="outline" size="sm" onClick={onExportWithCGV}>
-                  <FileText className="h-4 w-4 mr-1.5" />
-                  PDF Devis
-                </Button>
-              )}
-              {onExportCGVOnly && (
-                <Button variant="ghost" size="sm" onClick={onExportCGVOnly}>
-                  <FileText className="h-4 w-4 mr-1.5" />
-                  CGV
-                </Button>
-              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <Download className="h-4 w-4" />
+                    Exporter
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleExportPdfHD} disabled={isExportingPdf}>
+                    <FileDown className="h-4 w-4 mr-2" />
+                    {isExportingPdf ? 'Export en cours...' : 'Export PDF HD'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleExportDOCX}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Export DOCX
+                  </DropdownMenuItem>
+                  {onExportWithCGV && (
+                    <DropdownMenuItem onClick={onExportWithCGV}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      PDF Devis + CGV
+                    </DropdownMenuItem>
+                  )}
+                  {onExportCGVOnly && (
+                    <DropdownMenuItem onClick={onExportCGVOnly}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      CGV seules
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button size="sm" onClick={onEdit}>
                 <Edit className="h-4 w-4 mr-1.5" />
                 Modifier
