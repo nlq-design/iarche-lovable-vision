@@ -57,29 +57,36 @@ export function usePartnerConsulte() {
       }
 
       const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      if (!apikey) {
-        console.warn('[usePartnerConsulte] Missing VITE_SUPABASE_PUBLISHABLE_KEY; function call may be rejected');
-      }
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/partner-consulte`;
 
-      const { data, error: fnError } = await supabase.functions.invoke<PartnerConsulteResult>(
-        'partner-consulte',
-        {
-          body: {},
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            ...(apikey ? { apikey } : {}),
-          },
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apikey ? { apikey } : {}),
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({}),
+      });
+
+      const raw = await resp.text();
+      const parsedBody = (() => {
+        try {
+          return raw ? JSON.parse(raw) : null;
+        } catch {
+          return raw;
         }
-      );
+      })();
 
-      console.log('[usePartnerConsulte] Response:', { data, fnError });
-
-      if (fnError) {
-        console.error('[usePartnerConsulte] Function error details:', JSON.stringify(fnError, null, 2));
-        const { message, status } = extractFnErrorMessage(fnError);
-        const tagged = status ? `[${status}] ${message}` : message;
-        throw new Error(tagged);
+      if (!resp.ok) {
+        const e: any = new Error('Edge Function returned a non-2xx status code');
+        e.context = { status: resp.status, body: parsedBody };
+        throw e;
       }
+
+      const data = parsedBody as PartnerConsulteResult;
+
+      console.log('[usePartnerConsulte] Response:', { data });
 
       if (data?.success && data.synthesis) {
         setSynthesis(data.synthesis);
