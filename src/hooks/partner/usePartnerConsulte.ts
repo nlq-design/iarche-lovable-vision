@@ -39,12 +39,17 @@ export function usePartnerConsulte() {
     };
 
     try {
+      console.log('[usePartnerConsulte] Invoking partner-consulte edge function...');
+      
       const { data, error: fnError } = await supabase.functions.invoke<PartnerConsulteResult>(
         'partner-consulte',
         { body: {} }
       );
 
+      console.log('[usePartnerConsulte] Response:', { data, fnError });
+
       if (fnError) {
+        console.error('[usePartnerConsulte] Function error details:', JSON.stringify(fnError, null, 2));
         const { message, status } = extractFnErrorMessage(fnError);
         const tagged = status ? `[${status}] ${message}` : message;
         throw new Error(tagged);
