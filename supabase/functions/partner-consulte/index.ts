@@ -1,6 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createClient } from "npm:@supabase/supabase-js@2.86.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -334,42 +334,64 @@ serve(async (req) => {
 
     // Authenticate user
     const authHeader = req.headers.get('Authorization');
+    const apiKeyHeader = req.headers.get('apikey');
+
     if (!authHeader) {
+      console.warn('[partner-consulte] Missing Authorization header', {
+        hasApikeyHeader: Boolean(apiKeyHeader),
+      });
       return new Response(
-        JSON.stringify({ error: 'Non autorisé' }),
+        JSON.stringify({ error: 'Non autorisé', details: 'missing_authorization_header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    if (!authHeader.startsWith('Bearer ')) {
+      console.warn('[partner-consulte] Invalid Authorization header format');
+      return new Response(
+        JSON.stringify({ error: 'Non autorisé', details: 'invalid_authorization_header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+
+    // Verify JWT with signing keys and extract claims
     const supabaseAuth = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
       auth: { persistSession: false },
       global: { headers: { Authorization: authHeader } }
     });
 
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
-    if (authError || !user) {
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      console.warn('[partner-consulte] JWT verification failed', {
+        message: claimsError?.message,
+      });
       return new Response(
-        JSON.stringify({ error: 'Non autorisé' }),
+        JSON.stringify({ error: 'Non autorisé', details: claimsError?.message || 'invalid_token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    const userId = claimsData.claims.sub;
+    const userEmail = (claimsData.claims as any)?.email;
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log(`[partner-consulte] User authenticated: ${user.id}, email: ${user.email}`);
+    console.log(`[partner-consulte] User authenticated: ${userId}, email: ${userEmail}`);
 
     // Get partner_id from user (exclude soft-deleted)
     const { data: partner, error: partnerError } = await supabase
       .from('partners')
       .select('id, name, partner_type')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .is('deleted_at', null)
       .single();
 
     console.log(`[partner-consulte] Partner lookup result:`, { partner, partnerError });
 
     if (!partner) {
-      console.error(`[partner-consulte] Partner not found for user ${user.id}. Error:`, partnerError);
+      console.error(`[partner-consulte] Partner not found for user ${userId}. Error:`, partnerError);
       return new Response(
         JSON.stringify({ error: 'Partenaire non trouvé', details: partnerError?.message }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
