@@ -33,12 +33,18 @@ export const useLeads = () => {
     refetchOnWindowFocus: false,
   });
 
+  // Default workspace ID (IArche Interne) - Phase 1.5 multi-tenant
+  const DEFAULT_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
+
   // Create lead
   const createLead = useMutation({
     mutationFn: async (lead: LeadInsert) => {
       const { data, error } = await supabase
         .from("leads")
-        .insert(lead)
+        .insert({
+          ...lead,
+          workspace_id: lead.workspace_id || DEFAULT_WORKSPACE_ID,
+        })
         .select()
         .single();
 
