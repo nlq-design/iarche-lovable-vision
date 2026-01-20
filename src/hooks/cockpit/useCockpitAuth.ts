@@ -51,12 +51,10 @@ export const useCockpitAuth = () => {
       const totp = mfaData?.totp;
       const mfaEnabled = totp && totp.length > 0 && totp.some(f => f.status === 'verified');
 
-      // Auto-create session for cockpit users if they have access
-      if (hasCockpitAccess) {
-        await supabase.rpc('ensure_cockpit_session', { user_uuid: user.id });
-      }
+      // SECURITY: Do NOT auto-create session - require explicit TOTP verification
+      // The user must complete step-up MFA via StepUpMfaDialog to get a session
 
-      // Check step-up session (should now exist after ensure_cockpit_session)
+      // Check step-up session (only valid if created through real TOTP verification)
       const { data: session } = await supabase
         .from('cockpit_auth_sessions')
         .select('expires_at')
