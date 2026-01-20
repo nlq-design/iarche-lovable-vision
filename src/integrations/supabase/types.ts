@@ -979,6 +979,7 @@ export type Database = {
           start_time: string
           status: string
           updated_at: string
+          workspace_id: string | null
           zoom_join_url: string | null
           zoom_meeting_id: string | null
         }
@@ -1003,6 +1004,7 @@ export type Database = {
           start_time: string
           status?: string
           updated_at?: string
+          workspace_id?: string | null
           zoom_join_url?: string | null
           zoom_meeting_id?: string | null
         }
@@ -1027,6 +1029,7 @@ export type Database = {
           start_time?: string
           status?: string
           updated_at?: string
+          workspace_id?: string | null
           zoom_join_url?: string | null
           zoom_meeting_id?: string | null
         }
@@ -2160,6 +2163,7 @@ export type Database = {
           phone: string | null
           position: string | null
           updated_at: string | null
+          workspace_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -2172,6 +2176,7 @@ export type Database = {
           phone?: string | null
           position?: string | null
           updated_at?: string | null
+          workspace_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -2184,6 +2189,7 @@ export type Database = {
           phone?: string | null
           position?: string | null
           updated_at?: string | null
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -2202,6 +2208,7 @@ export type Database = {
           lead_id: string
           partner_id: string
           role: string | null
+          workspace_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -2209,6 +2216,7 @@ export type Database = {
           lead_id: string
           partner_id: string
           role?: string | null
+          workspace_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -2216,6 +2224,7 @@ export type Database = {
           lead_id?: string
           partner_id?: string
           role?: string | null
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -2269,6 +2278,7 @@ export type Database = {
           source_id: string | null
           synthesis_stale: boolean | null
           website: string | null
+          workspace_id: string | null
         }
         Insert: {
           address?: string | null
@@ -2304,6 +2314,7 @@ export type Database = {
           source_id?: string | null
           synthesis_stale?: boolean | null
           website?: string | null
+          workspace_id?: string | null
         }
         Update: {
           address?: string | null
@@ -2339,6 +2350,7 @@ export type Database = {
           source_id?: string | null
           synthesis_stale?: boolean | null
           website?: string | null
+          workspace_id?: string | null
         }
         Relationships: [
           {
