@@ -6120,6 +6120,7 @@ export type Database = {
           p_source: string
           p_source_context?: string
           p_source_id?: string
+          p_workspace_id?: string
         }
         Returns: string
       }
