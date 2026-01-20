@@ -36,12 +36,18 @@ export const useBookings = () => {
     },
   });
 
+  // Default workspace ID (IArche Interne) - Phase 1.5 multi-tenant
+  const DEFAULT_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
+
   // Create booking
   const createBooking = useMutation({
     mutationFn: async (booking: BookingInsert) => {
       const { data, error } = await supabase
         .from("bookings")
-        .insert(booking)
+        .insert({
+          ...booking,
+          workspace_id: booking.workspace_id || DEFAULT_WORKSPACE_ID,
+        })
         .select()
         .single();
 

@@ -36,6 +36,9 @@ export function useCockpitLeadContacts(leadId: string | undefined) {
     enabled: !!leadId,
   });
 
+  // Default workspace ID (IArche Interne) - Phase 1.5 multi-tenant
+  const DEFAULT_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
+
   const createContact = useMutation({
     mutationFn: async (contact: Omit<LeadContact, "id" | "created_at" | "updated_at" | "lead_id">) => {
       const { data, error } = await supabase
@@ -43,6 +46,7 @@ export function useCockpitLeadContacts(leadId: string | undefined) {
         .insert({
           ...contact,
           lead_id: leadId,
+          workspace_id: DEFAULT_WORKSPACE_ID,
         })
         .select()
         .single();

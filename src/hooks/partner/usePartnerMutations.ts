@@ -44,6 +44,9 @@ export function usePartnerMutations() {
   const { partnerId } = usePartnerAuth();
   const queryClient = useQueryClient();
 
+  // Default workspace ID (IArche Interne) - Phase 1.5 multi-tenant
+  const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
+
   // Création de lead
   const createLead = useMutation({
     mutationFn: async (input: CreateLeadInput) => {
@@ -60,6 +63,7 @@ export function usePartnerMutations() {
           message: input.message || null,
           qualification_status: 'new',
           created_by_partner_id: partnerId,
+          workspace_id: DEFAULT_WORKSPACE_ID,
         })
         .select('id')
         .single();

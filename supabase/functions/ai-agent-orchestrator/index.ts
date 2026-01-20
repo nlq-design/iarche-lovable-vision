@@ -4992,6 +4992,8 @@ Génère un contenu HTML pour email avec:
             .maybeSingle();
 
           if (!existingLead) {
+            // Phase 1.5 multi-tenant: always include workspace_id
+            const DEFAULT_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
             await supabase.from("leads").insert({
               name: bookingPayload.name,
               email: normalizedEmail,
@@ -5000,6 +5002,7 @@ Génère un contenu HTML pour email avec:
               source: "agent",
               source_context: `RDV créé via Agent IA le ${bookingPayload.date}`,
               qualification_status: "contacted",
+              workspace_id: DEFAULT_WORKSPACE_ID,
             });
             console.log(`[create_booking] Created new lead for ${normalizedEmail}`);
           }
