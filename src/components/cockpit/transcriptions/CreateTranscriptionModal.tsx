@@ -263,17 +263,30 @@ export function CreateTranscriptionModal({
             toast.info(`${reason} - Découpage en ~${estimatedChunks} segments...`);
             
             try {
+              // Upload original file to storage AND transcribe in parallel
+              const uploadPromise = supabase.storage
+                .from('voice-transcriptions')
+                .upload(storagePath, audioBlob);
+              
               // Transcribe with chunking (audioMeta already fetched above)
-              const transcriptText = await transcribeLargeAudio(
+              const transcriptPromise = transcribeLargeAudio(
                 audioBlob,
                 'fr',
-              (progress) => setChunkingProgress(progress)
+                (progress) => setChunkingProgress(progress)
               );
               
-              // For large files, skip storage upload (exceeds bucket limit)
-              // We already have the transcript from client-side chunking
-              // Use a placeholder path to indicate no file stored
-              const finalStoragePath = `${DEFAULT_WORKSPACE_ID}/${userId}/chunked_${fileName}_no_file`;
+              // Wait for both operations
+              const [uploadResult, transcriptText] = await Promise.all([
+                uploadPromise,
+                transcriptPromise
+              ]);
+              
+              // Determine final storage path: use real path if upload succeeded, fallback otherwise
+              let finalStoragePath = storagePath;
+              if (uploadResult.error) {
+                console.warn('[Chunked Upload] Storage upload failed, audio will be unavailable:', uploadResult.error.message);
+                finalStoragePath = `${DEFAULT_WORKSPACE_ID}/${userId}/chunked_${fileName}_no_file`;
+              }
 
               // Create job with pre-transcribed text and metadata
               const job = await createTranscription.mutateAsync({
