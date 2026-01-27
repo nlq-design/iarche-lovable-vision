@@ -2006,6 +2006,7 @@ export type Database = {
           status: string | null
           suggested_alias: string
           suggested_canonical: string | null
+          workspace_id: string | null
         }
         Insert: {
           confidence_score?: number | null
@@ -2022,6 +2023,7 @@ export type Database = {
           status?: string | null
           suggested_alias: string
           suggested_canonical?: string | null
+          workspace_id?: string | null
         }
         Update: {
           confidence_score?: number | null
@@ -2038,6 +2040,7 @@ export type Database = {
           status?: string | null
           suggested_alias?: string
           suggested_canonical?: string | null
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -2045,6 +2048,13 @@ export type Database = {
             columns: ["created_alias_id"]
             isOneToOne: false
             referencedRelation: "keyword_aliases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "keyword_alias_suggestions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -2118,6 +2128,7 @@ export type Database = {
           updated_at: string | null
           validated_at: string | null
           validated_by: string | null
+          workspace_id: string | null
         }
         Insert: {
           canonical_term: string
@@ -2133,6 +2144,7 @@ export type Database = {
           updated_at?: string | null
           validated_at?: string | null
           validated_by?: string | null
+          workspace_id?: string | null
         }
         Update: {
           canonical_term?: string
@@ -2148,8 +2160,17 @@ export type Database = {
           updated_at?: string | null
           validated_at?: string | null
           validated_by?: string | null
+          workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "keyword_synonyms_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lead_contacts: {
         Row: {
@@ -4616,6 +4637,7 @@ export type Database = {
           ip_address: string | null
           recipient_id: string | null
           user_agent: string | null
+          workspace_id: string | null
         }
         Insert: {
           campaign_id?: string | null
@@ -4626,6 +4648,7 @@ export type Database = {
           ip_address?: string | null
           recipient_id?: string | null
           user_agent?: string | null
+          workspace_id?: string | null
         }
         Update: {
           campaign_id?: string | null
@@ -4636,6 +4659,7 @@ export type Database = {
           ip_address?: string | null
           recipient_id?: string | null
           user_agent?: string | null
+          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -4650,6 +4674,13 @@ export type Database = {
             columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "vivier_campaign_recipients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vivier_campaign_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
