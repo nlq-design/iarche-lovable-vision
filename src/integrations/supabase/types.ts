@@ -2006,7 +2006,7 @@ export type Database = {
           status: string | null
           suggested_alias: string
           suggested_canonical: string | null
-          workspace_id: string | null
+          workspace_id: string
         }
         Insert: {
           confidence_score?: number | null
@@ -2023,7 +2023,7 @@ export type Database = {
           status?: string | null
           suggested_alias: string
           suggested_canonical?: string | null
-          workspace_id?: string | null
+          workspace_id: string
         }
         Update: {
           confidence_score?: number | null
@@ -2040,7 +2040,7 @@ export type Database = {
           status?: string | null
           suggested_alias?: string
           suggested_canonical?: string | null
-          workspace_id?: string | null
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -2128,7 +2128,7 @@ export type Database = {
           updated_at: string | null
           validated_at: string | null
           validated_by: string | null
-          workspace_id: string | null
+          workspace_id: string
         }
         Insert: {
           canonical_term: string
@@ -2144,7 +2144,7 @@ export type Database = {
           updated_at?: string | null
           validated_at?: string | null
           validated_by?: string | null
-          workspace_id?: string | null
+          workspace_id: string
         }
         Update: {
           canonical_term?: string
@@ -2160,7 +2160,7 @@ export type Database = {
           updated_at?: string | null
           validated_at?: string | null
           validated_by?: string | null
-          workspace_id?: string | null
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -4637,7 +4637,7 @@ export type Database = {
           ip_address: string | null
           recipient_id: string | null
           user_agent: string | null
-          workspace_id: string | null
+          workspace_id: string
         }
         Insert: {
           campaign_id?: string | null
@@ -4648,7 +4648,7 @@ export type Database = {
           ip_address?: string | null
           recipient_id?: string | null
           user_agent?: string | null
-          workspace_id?: string | null
+          workspace_id: string
         }
         Update: {
           campaign_id?: string | null
@@ -4659,7 +4659,7 @@ export type Database = {
           ip_address?: string | null
           recipient_id?: string | null
           user_agent?: string | null
-          workspace_id?: string | null
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -5140,7 +5140,7 @@ export type Database = {
           name: string
           static_vivier_ids: string[] | null
           updated_at: string | null
-          workspace_id: string | null
+          workspace_id: string
         }
         Insert: {
           created_at?: string | null
@@ -5154,7 +5154,7 @@ export type Database = {
           name: string
           static_vivier_ids?: string[] | null
           updated_at?: string | null
-          workspace_id?: string | null
+          workspace_id?: string
         }
         Update: {
           created_at?: string | null
@@ -5168,7 +5168,7 @@ export type Database = {
           name?: string
           static_vivier_ids?: string[] | null
           updated_at?: string | null
-          workspace_id?: string | null
+          workspace_id?: string
         }
         Relationships: []
       }
