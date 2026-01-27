@@ -66,7 +66,8 @@ const Logo: React.FC<LogoProps> = ({
       width={width}
       height={height}
       style={{ height }}
-      {...(priority && { fetchPriority: 'high' as const })}
+      loading={priority ? 'eager' : undefined}
+      decoding={priority ? 'sync' : 'async'}
     />
   );
 };
