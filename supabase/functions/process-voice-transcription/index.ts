@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// Centralized AI client for provider switching and fallback
+import { callLLMWithFallback } from "../_shared/ai-legacy-bridge.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,14 +11,9 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+// Note: Provider API keys are now managed by the centralized AI client
+// ANTHROPIC_API_KEY and OPENROUTER_API_KEY are read automatically by ai-client.ts
 
-const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
-const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
-const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
 
 // Limits - Whisper max is 25MB, but we can stream larger files
@@ -475,203 +472,44 @@ function extractJsonFromText(content: string): Record<string, unknown> {
   };
 }
 
-// ============= LLM CALL WITH TIMEOUT + RETRY =============
+// ============= LLM CALL - NOW USING CENTRALIZED AI CLIENT =============
+// The callLLM function now uses the centralized AI client with automatic
+// provider fallback. Provider switching is controlled via /admin/api-library.
 
 async function callLLM(
-  provider: LLMProvider,
-  modelId: string,
+  _provider: LLMProvider, // Kept for API compatibility, provider is now managed centrally
+  _modelId: string, // Kept for API compatibility, model is selected via ai_models config
   sys: string,
   usr: string,
   outputSchema: Record<string, unknown> | null,
-  supportsTools: boolean
+  _supportsTools: boolean // Handled automatically by centralized client
 ): Promise<Record<string, unknown>> {
-  console.log(`[LLM] provider=${provider} model=${modelId}`);
-
-  const jsonStrictSuffix = `
-
-CRITICAL OUTPUT RULES:
-- Output ONLY valid JSON, nothing else.
-- No markdown, no code fences, no extra text.
-- If you cannot comply, output: {"error":"invalid_output"}.
-- Respect exact keys and structure requested.`;
-
-  const systemContent = sys + jsonStrictSuffix;
+  console.log(`[LLM] Using centralized AI client with fallback`);
   
   // Truncate user content to prevent memory issues
   const truncatedUsr = usr.length > MAX_TRANSCRIPTION_CHARS 
     ? usr.slice(0, MAX_TRANSCRIPTION_CHARS) + "\n[...TRUNCATED...]"
     : usr;
 
-  const makeRequestBody = () => {
-    const body: Record<string, unknown> = {
-      model: modelId,
-      messages: [
-        { role: "system", content: systemContent },
-        { role: "user", content: truncatedUsr },
-      ],
-    };
-
-    if (!supportsTools || !outputSchema) {
-      body.response_format = { type: "json_object" };
-    }
-
-    if (outputSchema && supportsTools) {
-      body.tools = [{
-        type: "function",
-        function: {
-          name: "submit_transcription_summary",
-          description: "Submit the structured summary of the transcription",
-          parameters: outputSchema
-        }
-      }];
-      body.tool_choice = { type: "function", function: { name: "submit_transcription_summary" } };
-    }
-
-    return body;
-  };
-
-  const attempt = async (attemptNo: number): Promise<Record<string, unknown>> => {
-    let apiUrl = LOVABLE_AI_GATEWAY;
-    let headers: Record<string, string> = {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    };
-
-    // Provider-specific configuration
-    if (provider === "openai" && OPENAI_API_KEY) {
-      apiUrl = OPENAI_API_URL;
-      headers = { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" };
-    } else if (provider === "anthropic" && ANTHROPIC_API_KEY) {
-      apiUrl = ANTHROPIC_API_URL;
-      headers = { 
-        "x-api-key": ANTHROPIC_API_KEY, 
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json" 
-      };
-    } else if (provider === "openrouter" && OPENROUTER_API_KEY) {
-      apiUrl = OPENROUTER_API_URL;
-      headers = { Authorization: `Bearer ${OPENROUTER_API_KEY}`, "Content-Type": "application/json" };
-    }
-
-    const requestBody = makeRequestBody();
-    
-    // Anthropic has different format
-    if (provider === "anthropic") {
-      const anthropicBody: Record<string, unknown> = {
-        model: modelId,
-        max_tokens: 4096,
-        system: systemContent,
-        messages: [{ role: "user", content: truncatedUsr }],
-      };
-      if (outputSchema && supportsTools) {
-        anthropicBody.tools = [{
-          name: "submit_transcription_summary",
-          description: "Submit the structured summary of the transcription",
-          input_schema: outputSchema
-        }];
-        anthropicBody.tool_choice = { type: "tool", name: "submit_transcription_summary" };
-      }
-      Object.assign(requestBody, anthropicBody);
-    }
-
-    const controller = new AbortController();
-    const t = setTimeout(() => controller.abort("timeout"), LLM_TIMEOUT_MS);
-
-    try {
-      const res = await fetch(apiUrl, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(requestBody),
-        signal: controller.signal,
-      });
-
-      const txt = await res.text();
-      logPreview(`LLM_Response_${attemptNo}`, txt);
-
-      if (res.status === 429) throw new Error("rate_limited");
-      if (res.status === 402) throw new Error("credits_exhausted");
-      if (!res.ok) throw new Error(`llm_failed: ${txt.slice(0, 500)}`);
-
-      return parseProviderResponse(provider, txt, outputSchema);
-    } finally {
-      clearTimeout(t);
-    }
-  };
-
   try {
-    return await attempt(1);
-  } catch (e: unknown) {
-    const msg = String((e as Error)?.message ?? e);
-    // 1 retry on transient errors - but NOT on timeout (abort kills us before we can catch)
-    // For timeout, we've already failed once; retrying just wastes time and risks platform kill
-    if (msg.includes("rate_limited") || (msg.includes("fetch") && !msg.includes("timeout") && !msg.includes("abort"))) {
-      console.warn(`[LLM] retrying once due to: ${msg.slice(0, 120)}`);
-      return await attempt(2);
-    }
-    // Re-throw with clear message for timeout
-    if (msg.includes("timeout") || msg.includes("abort")) {
-      throw new Error(`LLM_TIMEOUT: Analysis took too long (>${LLM_TIMEOUT_MS/1000}s). Transcript may be too complex or too long.`);
-    }
-    throw e;
-  }
-}
-
-function parseProviderResponse(
-  provider: LLMProvider,
-  responseText: string,
-  _outputSchema: Record<string, unknown> | null
-): Record<string, unknown> {
-  const json = JSON.parse(responseText);
-  
-  if (provider === "anthropic") {
-    const toolUse = json?.content?.find((c: Record<string, unknown>) => c.type === "tool_use");
-    if (toolUse?.input) return toolUse.input as Record<string, unknown>;
-    
-    const textContent = json?.content?.find((c: Record<string, unknown>) => c.type === "text");
-    if (textContent?.text) return extractJsonFromText(textContent.text as string);
-    throw new Error("anthropic_empty_content");
-  }
-  
-  // Check tool_calls first (most common response when using tools)
-  const toolCall = json?.choices?.[0]?.message?.tool_calls?.[0];
-  if (toolCall?.function?.arguments) {
-    try {
-      const parsed = JSON.parse(toolCall.function.arguments);
-      console.log(`[LLM] Parsed tool_call response successfully`);
-      return parsed;
-    } catch (parseErr) {
-      console.warn(`[LLM] tool_call parse failed, trying extractJsonFromText: ${String(parseErr).slice(0, 100)}`);
-      // Try to extract JSON from malformed arguments
-      const extracted = extractJsonFromText(toolCall.function.arguments);
-      if (extracted && Object.keys(extracted).length > 0 && !(extracted as any)._parse_fallback) {
-        return extracted;
+    const result = await callLLMWithFallback(
+      sys,
+      truncatedUsr,
+      outputSchema,
+      {
+        category: 'reasoning',
+        timeoutMs: LLM_TIMEOUT_MS,
+        maxTokens: 4096,
       }
-      // Fall through to content extraction
-    }
+    );
+    
+    console.log(`[LLM] Centralized client returned successfully`);
+    return result;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    logError("LLM_Centralized", e);
+    throw new Error(msg);
   }
-  
-  // Check content field
-  const content = json?.choices?.[0]?.message?.content;
-  
-  // If content is null/undefined but we have tool_calls, that's normal - the model used tools instead
-  // In this case, we should have returned above, but if parsing failed, create a fallback
-  if (!content && toolCall) {
-    console.warn(`[LLM] tool_call present but content empty, returning fallback`);
-    return { 
-      summary: "Analyse incomplète - réponse du modèle non parsable",
-      action_items: [],
-      _parse_fallback: true,
-      _raw_tool_call: toolCall?.function?.arguments?.slice(0, 500) ?? null
-    };
-  }
-  
-  // If no content and no tool_calls, that's an error
-  if (!content) {
-    console.error(`[LLM] llm_empty_content - response structure: choices=${JSON.stringify(json?.choices?.[0]?.message ?? null).slice(0, 300)}`);
-    throw new Error("llm_empty_content");
-  }
-  
-  return extractJsonFromText(content);
 }
 
 // ============= ENTITY CONTEXT & PROMPTS =============
