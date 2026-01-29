@@ -37,6 +37,8 @@ export class AIClient {
   private supabase: SupabaseClient<any>;
   private configCache: AIProviderConfig[] | null = null;
   private configCacheTime: number = 0;
+  private functionConfigCache: Map<string, { provider: string; model: string | null }> = new Map();
+  private functionConfigCacheTime: number = 0;
   private readonly CONFIG_CACHE_TTL = 60000; // 1 minute
 
   constructor(options: AIClientOptions = {}) {
@@ -80,6 +82,51 @@ export class AIClient {
     } catch (e) {
       console.warn('[AIClient] Config fetch error, using defaults:', e);
       return this.getDefaultConfigs();
+    }
+  }
+
+  /**
+   * Get function-specific model configuration
+   */
+  async getFunctionConfig(functionName: string): Promise<{ provider: AIProviderName; model: string | null } | null> {
+    const now = Date.now();
+    
+    // Check cache
+    if (this.functionConfigCache.has(functionName) && (now - this.functionConfigCacheTime) < this.CONFIG_CACHE_TTL) {
+      const cached = this.functionConfigCache.get(functionName)!;
+      return { provider: cached.provider as AIProviderName, model: cached.model };
+    }
+
+    try {
+      // Refresh all function configs at once
+      const { data, error } = await this.supabase
+        .from('edge_function_model_config')
+        .select('function_name, provider_name, model_id');
+
+      if (error) {
+        console.warn('[AIClient] Failed to fetch function config:', error.message);
+        return null;
+      }
+
+      // Cache all configs
+      this.functionConfigCache.clear();
+      this.functionConfigCacheTime = now;
+      
+      for (const row of (data || [])) {
+        this.functionConfigCache.set(row.function_name, {
+          provider: row.provider_name,
+          model: row.model_id,
+        });
+      }
+
+      const config = this.functionConfigCache.get(functionName);
+      if (config) {
+        return { provider: config.provider as AIProviderName, model: config.model };
+      }
+      return null;
+    } catch (e) {
+      console.warn('[AIClient] Function config fetch error:', e);
+      return null;
     }
   }
 

@@ -96,11 +96,12 @@ function extractJsonFromText(text: string): Record<string, unknown> {
 /**
  * Drop-in replacement for legacy callLLM functions.
  * Uses centralized AI client with automatic provider fallback.
+ * Now supports function-specific model configuration from database.
  * 
  * @param systemPrompt - System message for the LLM
  * @param userPrompt - User message/content
  * @param outputSchema - Optional JSON schema for structured output (via tool calling)
- * @param options - Additional options (model, provider, timeout)
+ * @param options - Additional options (model, provider, timeout, functionName)
  */
 export async function callLLMWithFallback(
   systemPrompt: string,
@@ -112,6 +113,7 @@ export async function callLLMWithFallback(
     workspaceId?: string;
     timeoutMs?: number;
     maxTokens?: number;
+    functionName?: string; // Edge function name to look up config
   } = {}
 ): Promise<Record<string, unknown>> {
   const client = createAIClient({
@@ -119,6 +121,19 @@ export async function callLLMWithFallback(
     enableLogging: true,
     enableMetrics: true,
   });
+
+  // Get function-specific config if functionName provided
+  let model = options.model;
+  let provider: 'lovable_ai' | 'openai' | 'anthropic' | 'openrouter' | undefined;
+  
+  if (options.functionName && !options.model) {
+    const fnConfig = await client.getFunctionConfig(options.functionName);
+    if (fnConfig) {
+      provider = fnConfig.provider;
+      model = fnConfig.model || undefined;
+      console.log(`[AILegacyBridge] Using config for ${options.functionName}: provider=${provider}, model=${model || 'default'}`);
+    }
+  }
 
   const jsonStrictSuffix = `
 
@@ -135,7 +150,8 @@ CRITICAL OUTPUT RULES:
 
   const request: AICompletionRequest = {
     messages,
-    model: options.model,
+    model,
+    provider,
     category: options.category || 'reasoning',
     max_tokens: options.maxTokens || 4096,
     fallback: true, // Enable provider fallback
@@ -195,6 +211,7 @@ CRITICAL OUTPUT RULES:
 /**
  * Simple text completion without structured output.
  * Uses centralized AI client with automatic provider fallback.
+ * Supports function-specific model configuration from database.
  */
 export async function completeLLM(
   systemPrompt: string,
@@ -205,6 +222,7 @@ export async function completeLLM(
     workspaceId?: string;
     maxTokens?: number;
     temperature?: number;
+    functionName?: string; // Edge function name to look up config
   } = {}
 ): Promise<string> {
   const client = createAIClient({
@@ -213,6 +231,19 @@ export async function completeLLM(
     enableMetrics: true,
   });
 
+  // Get function-specific config if functionName provided
+  let model = options.model;
+  let provider: 'lovable_ai' | 'openai' | 'anthropic' | 'openrouter' | undefined;
+  
+  if (options.functionName && !options.model) {
+    const fnConfig = await client.getFunctionConfig(options.functionName);
+    if (fnConfig) {
+      provider = fnConfig.provider;
+      model = fnConfig.model || undefined;
+      console.log(`[AILegacyBridge] Using config for ${options.functionName}: provider=${provider}, model=${model || 'default'}`);
+    }
+  }
+
   const messages: AIMessage[] = [
     { role: "system", content: systemPrompt },
     { role: "user", content: userPrompt },
@@ -220,7 +251,8 @@ export async function completeLLM(
 
   const response = await client.complete({
     messages,
-    model: options.model,
+    model,
+    provider,
     category: options.category || 'chat',
     max_tokens: options.maxTokens || 4096,
     temperature: options.temperature,
@@ -233,6 +265,7 @@ export async function completeLLM(
 /**
  * Chat completion with tool calling support (for agent-style functions).
  * Uses centralized AI client with automatic provider fallback.
+ * Supports function-specific model configuration from database.
  */
 export async function chatWithTools(
   messages: AIMessage[],
@@ -241,6 +274,7 @@ export async function chatWithTools(
     model?: string;
     workspaceId?: string;
     maxTokens?: number;
+    functionName?: string; // Edge function name to look up config
   } = {}
 ): Promise<{
   content: string;
@@ -257,10 +291,24 @@ export async function chatWithTools(
     enableMetrics: true,
   });
 
+  // Get function-specific config if functionName provided
+  let model = options.model;
+  let provider: 'lovable_ai' | 'openai' | 'anthropic' | 'openrouter' | undefined;
+  
+  if (options.functionName && !options.model) {
+    const fnConfig = await client.getFunctionConfig(options.functionName);
+    if (fnConfig) {
+      provider = fnConfig.provider;
+      model = fnConfig.model || undefined;
+      console.log(`[AILegacyBridge] Using config for ${options.functionName}: provider=${provider}, model=${model || 'default'}`);
+    }
+  }
+
   const response = await client.complete({
     messages,
     tools,
-    model: options.model,
+    model,
+    provider,
     category: 'reasoning',
     max_tokens: options.maxTokens || 4096,
     fallback: true,

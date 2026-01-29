@@ -1534,6 +1534,36 @@ export type Database = {
           },
         ]
       }
+      edge_function_model_config: {
+        Row: {
+          created_at: string
+          function_name: string
+          id: string
+          is_custom_model: boolean | null
+          model_id: string | null
+          provider_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          function_name: string
+          id?: string
+          is_custom_model?: boolean | null
+          model_id?: string | null
+          provider_name?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          function_name?: string
+          id?: string
+          is_custom_model?: boolean | null
+          model_id?: string | null
+          provider_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_configurations: {
         Row: {
           admin_email_subject: string | null
