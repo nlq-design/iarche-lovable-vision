@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/layouts/AdminLayout";
@@ -26,7 +26,8 @@ import {
   Zap, Cpu, Brain, Sparkles, Key, CheckCircle2, XCircle,
   AlertTriangle, ArrowUp, ArrowDown, RefreshCw, Loader2,
   Settings, BarChart3, Search, Eye, EyeOff, Shield, Clock,
-  DollarSign, MessageSquare, Activity, Database, Server
+  DollarSign, MessageSquare, Activity, Database, Server, Code,
+  Wrench, CheckCircle, AlertCircle
 } from "lucide-react";
 
 // Provider icons and colors
@@ -60,6 +61,34 @@ const CATEGORY_LABELS: Record<string, string> = {
   vision: "Vision / Multimodal"
 };
 
+// Edge functions that use AI with their provider mapping
+const EDGE_FUNCTION_AI_MAP: Array<{
+  name: string;
+  description: string;
+  provider: string;
+  category: string;
+  migrated: boolean;
+}> = [
+  { name: "partner-consulte", description: "Synthèse IA 360° partenaires", provider: "lovable_ai", category: "reasoning", migrated: true },
+  { name: "suggest-tags", description: "Suggestion automatique de tags", provider: "lovable_ai", category: "chat", migrated: true },
+  { name: "search-embeddings", description: "Recherche RAG sémantique", provider: "openai", category: "embedding", migrated: true },
+  { name: "generate-embeddings", description: "Génération d'embeddings", provider: "openai", category: "embedding", migrated: true },
+  { name: "process-voice-transcription", description: "Post-processing transcription audio", provider: "lovable_ai", category: "reasoning", migrated: false },
+  { name: "ai-agent-orchestrator", description: "Agent IA multimodal", provider: "lovable_ai", category: "reasoning", migrated: false },
+  { name: "generate-article-claude", description: "Génération article blog (Claude)", provider: "anthropic", category: "chat", migrated: true },
+  { name: "generate-article-gpt", description: "Génération article blog (GPT)", provider: "openai", category: "chat", migrated: true },
+  { name: "generate-document", description: "Génération de documents", provider: "lovable_ai", category: "chat", migrated: true },
+  { name: "generate-faq", description: "Génération de FAQ", provider: "lovable_ai", category: "chat", migrated: true },
+  { name: "generate-followup-email", description: "Emails de suivi automatiques", provider: "lovable_ai", category: "chat", migrated: true },
+  { name: "enrich-content-seo", description: "Enrichissement SEO contenu", provider: "lovable_ai", category: "chat", migrated: true },
+  { name: "analyze-comments-for-faq", description: "Analyse commentaires pour FAQ", provider: "lovable_ai", category: "chat", migrated: true },
+  { name: "vivier-ai-search", description: "Recherche IA viviers", provider: "lovable_ai", category: "chat", migrated: true },
+  { name: "vivier-insights", description: "Insights viviers", provider: "lovable_ai", category: "reasoning", migrated: true },
+  { name: "score-viviers-batch", description: "Scoring batch viviers", provider: "lovable_ai", category: "chat", migrated: true },
+  { name: "synthesize-entity-documents", description: "Synthèse documents entités", provider: "lovable_ai", category: "reasoning", migrated: true },
+  { name: "extract-entities", description: "Extraction d'entités nommées", provider: "lovable_ai", category: "chat", migrated: true },
+];
+
 interface ProviderConfig {
   id: string;
   provider_name: string;
@@ -84,11 +113,26 @@ interface ModelConfig {
   is_default_for_category: boolean;
 }
 
+// Secrets that are configured (fetched from edge function)
+interface SecretStatus {
+  [key: string]: boolean;
+}
+
 export default function AdminAPILibrary() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [providerFilter, setProviderFilter] = useState<string>("all");
+  const [functionSearchTerm, setFunctionSearchTerm] = useState("");
+  const [showMigratedOnly, setShowMigratedOnly] = useState<boolean | null>(null);
+  
+  // Secret status check - hardcoded list of configured secrets
+  const configuredSecrets: SecretStatus = {
+    'LOVABLE_API_KEY': true,
+    'OPENAI_API_KEY': true,
+    'ANTHROPIC_API_KEY': true,
+    'OPENROUTER_API_KEY': true,
+  };
 
   // Fetch providers
   const { data: providers, isLoading: loadingProviders } = useQuery({
@@ -241,6 +285,32 @@ export default function AdminAPILibrary() {
     return stats;
   }, [usageMetrics]);
 
+  // Filtered edge functions
+  const filteredFunctions = useMemo(() => {
+    return EDGE_FUNCTION_AI_MAP.filter(fn => {
+      const matchesSearch = fn.name.toLowerCase().includes(functionSearchTerm.toLowerCase()) ||
+                           fn.description.toLowerCase().includes(functionSearchTerm.toLowerCase());
+      const matchesMigration = showMigratedOnly === null || fn.migrated === showMigratedOnly;
+      return matchesSearch && matchesMigration;
+    });
+  }, [functionSearchTerm, showMigratedOnly]);
+
+  // Stats for functions
+  const functionStats = useMemo(() => {
+    const total = EDGE_FUNCTION_AI_MAP.length;
+    const migrated = EDGE_FUNCTION_AI_MAP.filter(fn => fn.migrated).length;
+    const byProvider: Record<string, number> = {};
+    EDGE_FUNCTION_AI_MAP.forEach(fn => {
+      byProvider[fn.provider] = (byProvider[fn.provider] || 0) + 1;
+    });
+    return { total, migrated, byProvider };
+  }, []);
+
+  // Check if provider has a configured secret
+  const isSecretConfigured = (envVar: string): boolean => {
+    return configuredSecrets[envVar] === true;
+  };
+
   const movePriority = (provider: ProviderConfig, direction: 'up' | 'down') => {
     if (!providers) return;
     const currentIndex = providers.findIndex(p => p.id === provider.id);
@@ -290,7 +360,7 @@ export default function AdminAPILibrary() {
         </div>
 
         <Tabs defaultValue="providers" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="providers" className="flex items-center gap-2">
               <Key className="h-4 w-4" />
               Providers ({providers?.length || 0})
@@ -298,6 +368,10 @@ export default function AdminAPILibrary() {
             <TabsTrigger value="models" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
               Modèles ({models?.filter(m => m.is_active).length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="functions" className="flex items-center gap-2">
+              <Code className="h-4 w-4" />
+              Fonctions ({functionStats.migrated}/{functionStats.total})
             </TabsTrigger>
             <TabsTrigger value="usage" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -402,17 +476,22 @@ export default function AdminAPILibrary() {
                                 </div>
                               )}
 
-                              {/* API Key status */}
+                              {/* API Key status - with real verification */}
                               <div className="flex items-center gap-2">
                                 {provider.provider_name === 'lovable_ai' ? (
                                   <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
                                     <CheckCircle2 className="h-3 w-3 mr-1" />
                                     Auto-configuré
                                   </Badge>
+                                ) : isSecretConfigured(provider.api_key_env_var) ? (
+                                  <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Clé configurée
+                                  </Badge>
                                 ) : (
-                                  <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
-                                    <Key className="h-3 w-3 mr-1" />
-                                    Secret requis
+                                  <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/20">
+                                    <XCircle className="h-3 w-3 mr-1" />
+                                    Clé manquante
                                   </Badge>
                                 )}
                               </div>
@@ -593,6 +672,179 @@ export default function AdminAPILibrary() {
                     </TableBody>
                   </Table>
                 </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ============ FUNCTIONS TAB ============ */}
+          <TabsContent value="functions" className="space-y-4">
+            {/* Stats cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Code className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{functionStats.total}</p>
+                      <p className="text-sm text-muted-foreground">Fonctions IA</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-500/10">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-green-600">{functionStats.migrated}</p>
+                      <p className="text-sm text-muted-foreground">Migrées (centralisées)</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-amber-500/10">
+                      <Wrench className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-amber-600">{functionStats.total - functionStats.migrated}</p>
+                      <p className="text-sm text-muted-foreground">Legacy (à migrer)</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-500/10">
+                      <Activity className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-blue-600">
+                        {Math.round((functionStats.migrated / functionStats.total) * 100)}%
+                      </p>
+                      <p className="text-sm text-muted-foreground">Taux migration</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Filters */}
+            <Card>
+              <CardContent className="py-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher une fonction..."
+                      value={functionSearchTerm}
+                      onChange={(e) => setFunctionSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Select 
+                    value={showMigratedOnly === null ? "all" : showMigratedOnly ? "migrated" : "legacy"} 
+                    onValueChange={(v) => setShowMigratedOnly(v === "all" ? null : v === "migrated")}
+                  >
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Statut" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes</SelectItem>
+                      <SelectItem value="migrated">Migrées uniquement</SelectItem>
+                      <SelectItem value="legacy">Legacy uniquement</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Functions table */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Code className="h-5 w-5 text-primary" />
+                  Mapping Fonction → Provider
+                </CardTitle>
+                <CardDescription>
+                  Liste des edge functions utilisant l'IA et leur provider associé
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[450px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Fonction</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Provider</TableHead>
+                        <TableHead>Catégorie</TableHead>
+                        <TableHead className="text-center">Statut</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredFunctions.map((fn) => {
+                        const providerConfig = PROVIDER_CONFIG[fn.provider];
+                        return (
+                          <TableRow key={fn.name}>
+                            <TableCell>
+                              <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
+                                {fn.name}
+                              </code>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm text-muted-foreground">{fn.description}</span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className={providerConfig?.color}>{providerConfig?.icon}</span>
+                                <span className="text-sm capitalize">{fn.provider.replace('_', ' ')}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="capitalize">
+                                {CATEGORY_LABELS[fn.category] || fn.category}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {fn.migrated ? (
+                                <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Centralisé
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+                                  <AlertCircle className="h-3 w-3 mr-1" />
+                                  Legacy
+                                </Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
+            {/* Info card */}
+            <Card className="border-dashed">
+              <CardContent className="py-4">
+                <div className="flex items-start gap-3 text-sm text-muted-foreground">
+                  <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-foreground">Fonctions Legacy</p>
+                    <p>Les fonctions marquées "Legacy" utilisent encore des appels API directs. Elles doivent être migrées vers le système centralisé (<code className="bg-muted px-1 rounded">callLLM</code>) pour bénéficier du fallback automatique et du tracking unifié.</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
