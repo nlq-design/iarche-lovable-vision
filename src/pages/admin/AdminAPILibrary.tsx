@@ -29,6 +29,7 @@ import {
   DollarSign, MessageSquare, Activity, Database, Server, Code,
   Wrench, CheckCircle, AlertCircle
 } from "lucide-react";
+import FunctionModelSelector from "@/components/admin/FunctionModelSelector";
 
 // Provider icons and colors
 const PROVIDER_CONFIG: Record<string, { icon: React.ReactNode; color: string; description: string }> = {
@@ -805,10 +806,10 @@ export default function AdminAPILibrary() {
                       <TableRow>
                         <TableHead>Fonction</TableHead>
                         <TableHead>Description</TableHead>
-                        <TableHead>Provider</TableHead>
+                        <TableHead>Provider & Modèle</TableHead>
                         <TableHead>Catégorie</TableHead>
                         <TableHead className="text-center">Statut</TableHead>
-                        <TableHead>Notes</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -825,10 +826,13 @@ export default function AdminAPILibrary() {
                               <span className="text-sm text-muted-foreground">{fn.description}</span>
                             </TableCell>
                             <TableCell>
-                              <div className="flex items-center gap-2">
-                                <span className={providerConfig?.color}>{providerConfig?.icon}</span>
-                                <span className="text-sm capitalize">{fn.provider.replace('_', ' ')}</span>
-                              </div>
+                              <FunctionModelSelector 
+                                functionName={fn.name}
+                                currentProvider={fn.provider}
+                                onConfigUpdate={() => {
+                                  queryClient.invalidateQueries({ queryKey: ['function-model-configs'] });
+                                }}
+                              />
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline" className="capitalize">
@@ -856,14 +860,9 @@ export default function AdminAPILibrary() {
                               )}
                             </TableCell>
                             <TableCell className="max-w-xs">
-                              {fn.legacyNote && (
-                                <p className="text-xs text-muted-foreground italic">
-                                  {fn.legacyNote}
-                                </p>
-                              )}
                               {fn.multiProvider && (
-                                <Badge variant="secondary" className="mt-1 text-xs">
-                                  Multi-provider intégré
+                                <Badge variant="secondary" className="text-xs">
+                                  Multi-provider
                                 </Badge>
                               )}
                             </TableCell>
