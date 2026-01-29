@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
+import { callLLM } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,7 +33,7 @@ serve(async (req) => {
   try {
     const { brief, tone, length, templateId }: RequestBody = await req.json();
     
-    console.log(`Generating article with Claude - tone: ${tone}, length: ${length}, template: ${templateId || 'custom'}`);
+    console.log(`[generate-article-claude] Generating article via centralized AI client - tone: ${tone}, length: ${length}, template: ${templateId || 'custom'}`);
 
     const systemPrompt = `Tu es un rédacteur expert pour IArche, une agence IA basée à Bayonne. 
 Tu rédiges des articles de blog professionnels sur l'IA pour les PME françaises.
@@ -78,33 +77,21 @@ CONTRAINTES :
 
 Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
+    // Use centralized AI client with automatic fallback
+    // Preference: anthropic for Claude models, with fallback chain
+    const content = await callLLM(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      {
+        provider: 'anthropic', // Prefer Anthropic for this function
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 4096,
-        messages: [
-          { role: 'user', content: userPrompt }
-        ],
-        system: systemPrompt
-      })
-    });
+        maxTokens: 4096
+      }
+    );
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Anthropic API error:', response.status, errorData);
-      throw new Error(`Anthropic API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('Claude response received');
-    
-    const content = data.content[0].text;
+    console.log('[generate-article-claude] Response received via centralized client');
     
     // Nettoyer la réponse pour extraire le JSON pur
     let cleanedContent = content.trim();
@@ -124,9 +111,20 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
     });
 
   } catch (error) {
-    console.error('Error in generate-article-claude:', error);
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
-      status: 500,
+    console.error('[generate-article-claude] Error:', error);
+    
+    // Handle specific AI errors
+    const errorMessage = (error as Error).message;
+    let statusCode = 500;
+    
+    if (errorMessage.includes('429') || errorMessage.includes('rate limit')) {
+      statusCode = 429;
+    } else if (errorMessage.includes('402') || errorMessage.includes('quota')) {
+      statusCode = 402;
+    }
+    
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: statusCode,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
