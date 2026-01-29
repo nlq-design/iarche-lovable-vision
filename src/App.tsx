@@ -88,6 +88,7 @@ const BrochurePublic = lazy(() => import("./pages/BrochurePublic"));
 const AdminBrochures = lazy(() => import("./pages/admin/AdminBrochures"));
 const BrochureEditor = lazy(() => import("./pages/admin/BrochureEditor"));
 const AdminAIPrompts = lazy(() => import("./pages/admin/AdminAIPrompts"));
+const AdminAPILibrary = lazy(() => import("./pages/admin/AdminAPILibrary"));
 const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"));
 
 // Cockpit Commercial
@@ -594,6 +595,13 @@ const App = () => (
           <Route path="/admin/ai-prompts" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><AdminAIPrompts /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          
+          {/* Bibliothèque API */}
+          <Route path="/admin/api-library" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminAPILibrary /></ProtectedAdminRoute>
             </Suspense>
           } />
           

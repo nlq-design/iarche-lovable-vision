@@ -26,7 +26,8 @@ import {
   Rocket,
   FileDown,
   Gauge,
-  Bot
+  Bot,
+  Server
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
@@ -106,6 +107,7 @@ const navigationItems = [
     group: 'Sécurité & IA',
     items: [
       { title: 'Prompts IA', url: '/admin/ai-prompts', icon: Bot },
+      { title: 'Bibliothèque API', url: '/admin/api-library', icon: Server },
       { title: 'Dashboard sécurité', url: '/admin/security-dashboard', icon: Shield },
       { title: 'Logs d\'audit', url: '/admin/audit-logs', icon: Shield },
       { title: 'Backups', url: '/admin/backups', icon: Database },
