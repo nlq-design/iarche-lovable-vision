@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+import { extractStructured } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,7 +20,7 @@ serve(async (req) => {
   try {
     const { title, content, excerpt }: RequestBody = await req.json();
     
-    console.log('Suggesting tags for article:', title);
+    console.log('[suggest-tags] Processing article:', title);
 
     const prompt = `Analyse cet article et suggère 5-8 tags pertinents en français.
 
@@ -36,84 +35,61 @@ Les tags doivent être :
 - En français
 - Courts (1-3 mots maximum)
 - Liés à l'IA, la technologie, ou le sujet de l'article
-- Utiles pour le SEO
+- Utiles pour le SEO`;
 
-Réponds UNIQUEMENT avec un tableau JSON de strings, sans texte avant ou après.
-Exemple : ["Intelligence Artificielle", "PME", "CLM", "Automatisation"]`;
-
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 200
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Lovable AI error:', response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Limite de requêtes atteinte. Veuillez réessayer plus tard.' }), 
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+    // Use centralized AI client with automatic provider fallback
+    const result = await extractStructured<{ tags: string[] }>(
+      [{ role: 'user', content: prompt }],
+      {
+        name: 'extract_tags',
+        description: 'Extract relevant tags from article content',
+        parameters: {
+          type: 'object',
+          properties: {
+            tags: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'List of 5-8 relevant tags in French'
+            }
+          },
+          required: ['tags']
+        }
       }
-      
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'Crédits insuffisants. Veuillez recharger votre compte Lovable AI.' }), 
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      throw new Error(`Lovable AI error: ${response.status}`);
+    );
+
+    console.log('[suggest-tags] AI response:', result);
+
+    if (!result) {
+      throw new Error('Failed to extract tags from AI response');
     }
 
-    const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
-    
-    console.log('AI response:', aiResponse);
-    
-    // Parser le JSON des tags
-    let tags: string[];
-    try {
-      // Extraire le JSON du texte (au cas où il y aurait du texte avant/après)
-      const jsonMatch = aiResponse.match(/\[.*\]/s);
-      if (jsonMatch) {
-        tags = JSON.parse(jsonMatch[0]);
-      } else {
-        tags = JSON.parse(aiResponse);
-      }
-    } catch (parseError) {
-      console.error('Error parsing tags:', parseError);
-      // Fallback: essayer de split par ligne ou virgule
-      tags = aiResponse
-        .replace(/[\[\]"]/g, '')
-        .split(/[,\n]/)
-        .map((t: string) => t.trim())
-        .filter((t: string) => t.length > 0);
-    }
-
-    return new Response(JSON.stringify({ tags }), {
+    return new Response(JSON.stringify({ tags: result.tags }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    console.error('Error in suggest-tags:', error);
+    console.error('[suggest-tags] Error:', error);
+    
+    const message = (error as Error).message || 'Unknown error';
+    
+    // Handle rate limits and payment errors
+    if (message.includes('rate_limit') || message.includes('429')) {
+      return new Response(
+        JSON.stringify({ error: 'Limite de requêtes atteinte. Veuillez réessayer plus tard.' }), 
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    if (message.includes('payment') || message.includes('402')) {
+      return new Response(
+        JSON.stringify({ error: 'Crédits insuffisants. Veuillez recharger votre compte.' }), 
+        { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     return new Response(
-      JSON.stringify({ error: (error as Error).message }), 
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      JSON.stringify({ error: message }), 
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
