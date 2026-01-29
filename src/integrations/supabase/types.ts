@@ -269,6 +269,54 @@ export type Database = {
           },
         ]
       }
+      ai_models: {
+        Row: {
+          capabilities: string[] | null
+          category: string
+          context_window: number | null
+          cost_per_1k_input: number | null
+          cost_per_1k_output: number | null
+          created_at: string | null
+          display_name: string
+          id: string
+          is_active: boolean | null
+          is_default_for_category: boolean | null
+          max_output_tokens: number | null
+          model_id: string
+          provider_name: string
+        }
+        Insert: {
+          capabilities?: string[] | null
+          category: string
+          context_window?: number | null
+          cost_per_1k_input?: number | null
+          cost_per_1k_output?: number | null
+          created_at?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          is_default_for_category?: boolean | null
+          max_output_tokens?: number | null
+          model_id: string
+          provider_name: string
+        }
+        Update: {
+          capabilities?: string[] | null
+          category?: string
+          context_window?: number | null
+          cost_per_1k_input?: number | null
+          cost_per_1k_output?: number | null
+          created_at?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          is_default_for_category?: boolean | null
+          max_output_tokens?: number | null
+          model_id?: string
+          provider_name?: string
+        }
+        Relationships: []
+      }
       ai_prompts: {
         Row: {
           category: string
@@ -313,6 +361,59 @@ export type Database = {
           workspace_id?: string | null
         }
         Relationships: []
+      }
+      ai_provider_config: {
+        Row: {
+          api_key_env_var: string
+          base_url: string
+          created_at: string | null
+          display_name: string
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          priority: number
+          provider_name: string
+          rate_limit_rpm: number | null
+          updated_at: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          api_key_env_var: string
+          base_url: string
+          created_at?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          priority?: number
+          provider_name: string
+          rate_limit_rpm?: number | null
+          updated_at?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          api_key_env_var?: string
+          base_url?: string
+          created_at?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          priority?: number
+          provider_name?: string
+          rate_limit_rpm?: number | null
+          updated_at?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_provider_config_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ai_usage_metrics: {
         Row: {
