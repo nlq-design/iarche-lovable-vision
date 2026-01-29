@@ -68,13 +68,34 @@ const EDGE_FUNCTION_AI_MAP: Array<{
   provider: string;
   category: string;
   migrated: boolean;
+  legacyNote?: string;
+  linesOfCode?: number;
+  multiProvider?: boolean;
 }> = [
   { name: "partner-consulte", description: "Synthèse IA 360° partenaires", provider: "lovable_ai", category: "reasoning", migrated: true },
   { name: "suggest-tags", description: "Suggestion automatique de tags", provider: "lovable_ai", category: "chat", migrated: true },
   { name: "search-embeddings", description: "Recherche RAG sémantique", provider: "openai", category: "embedding", migrated: true },
   { name: "generate-embeddings", description: "Génération d'embeddings", provider: "openai", category: "embedding", migrated: true },
-  { name: "process-voice-transcription", description: "Post-processing transcription audio", provider: "lovable_ai", category: "reasoning", migrated: false },
-  { name: "ai-agent-orchestrator", description: "Agent IA multimodal", provider: "lovable_ai", category: "reasoning", migrated: false },
+  { 
+    name: "process-voice-transcription", 
+    description: "Post-processing transcription audio", 
+    provider: "lovable_ai", 
+    category: "reasoning", 
+    migrated: false,
+    legacyNote: "Fonction complexe (2540 lignes) avec Whisper + LLM multi-provider. Risque de régression élevé.",
+    linesOfCode: 2540,
+    multiProvider: true
+  },
+  { 
+    name: "ai-agent-orchestrator", 
+    description: "Agent IA multimodal Cockpit", 
+    provider: "lovable_ai", 
+    category: "reasoning", 
+    migrated: false,
+    legacyNote: "Fonction critique (9297 lignes) : orchestrateur avec 50+ tools. Migration complexe planifiée.",
+    linesOfCode: 9297,
+    multiProvider: true
+  },
   { name: "generate-article-claude", description: "Génération article blog (Claude)", provider: "anthropic", category: "chat", migrated: true },
   { name: "generate-article-gpt", description: "Génération article blog (GPT)", provider: "openai", category: "chat", migrated: true },
   { name: "generate-document", description: "Génération de documents", provider: "lovable_ai", category: "chat", migrated: true },
@@ -787,6 +808,7 @@ export default function AdminAPILibrary() {
                         <TableHead>Provider</TableHead>
                         <TableHead>Catégorie</TableHead>
                         <TableHead className="text-center">Statut</TableHead>
+                        <TableHead>Notes</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -820,9 +842,28 @@ export default function AdminAPILibrary() {
                                   Centralisé
                                 </Badge>
                               ) : (
-                                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
-                                  <AlertCircle className="h-3 w-3 mr-1" />
-                                  Legacy
+                                <div className="flex flex-col items-center gap-1">
+                                  <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+                                    <AlertCircle className="h-3 w-3 mr-1" />
+                                    Legacy
+                                  </Badge>
+                                  {fn.linesOfCode && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {fn.linesOfCode.toLocaleString()} lignes
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell className="max-w-xs">
+                              {fn.legacyNote && (
+                                <p className="text-xs text-muted-foreground italic">
+                                  {fn.legacyNote}
+                                </p>
+                              )}
+                              {fn.multiProvider && (
+                                <Badge variant="secondary" className="mt-1 text-xs">
+                                  Multi-provider intégré
                                 </Badge>
                               )}
                             </TableCell>
