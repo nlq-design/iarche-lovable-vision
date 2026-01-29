@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { generateEmbedding } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,9 +9,6 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
-
-const OPENAI_EMBEDDINGS_URL = "https://api.openai.com/v1/embeddings";
 
 interface SearchRequest {
   query: string;
@@ -29,29 +27,6 @@ interface SearchResult {
   metadata: Record<string, unknown>;
 }
 
-async function generateEmbedding(text: string): Promise<number[]> {
-  const response = await fetch(OPENAI_EMBEDDINGS_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "text-embedding-3-small",
-      input: text,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Embedding API error:", errorText);
-    throw new Error(`embedding_failed: ${errorText}`);
-  }
-
-  const data = await response.json();
-  return data.data[0].embedding;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -65,10 +40,10 @@ serve(async (req) => {
       throw new Error("query is required");
     }
 
-    console.log("Search query:", body.query);
-    console.log("Filter types:", body.filter_types);
+    console.log("[search-embeddings] Query:", body.query);
+    console.log("[search-embeddings] Filter types:", body.filter_types);
 
-    // Generate embedding for the query
+    // Generate embedding using centralized AI client with automatic fallback
     const queryEmbedding = await generateEmbedding(body.query);
 
     // Search for similar resources using the database function
@@ -80,7 +55,7 @@ serve(async (req) => {
     });
 
     if (error) {
-      console.error("Search error:", error);
+      console.error("[search-embeddings] Search error:", error);
       throw error;
     }
 
@@ -97,7 +72,7 @@ serve(async (req) => {
       (a, b) => b.similarity - a.similarity
     );
 
-    console.log(`Found ${dedupedResults.length} unique results`);
+    console.log(`[search-embeddings] Found ${dedupedResults.length} unique results`);
 
     return new Response(
       JSON.stringify({
@@ -110,7 +85,18 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error("Search error:", error);
+    console.error("[search-embeddings] Error:", error);
+    
+    const message = (error as Error).message || 'Unknown error';
+    
+    // Handle rate limits
+    if (message.includes('rate_limit') || message.includes('429')) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Rate limit exceeded', results: [] }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     return new Response(
       JSON.stringify({ success: false, error: String(error), results: [] }),
       {
