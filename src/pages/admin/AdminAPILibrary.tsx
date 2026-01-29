@@ -81,8 +81,8 @@ const EDGE_FUNCTION_AI_MAP: Array<{
     description: "Post-processing transcription audio", 
     provider: "lovable_ai", 
     category: "reasoning", 
-    migrated: false,
-    legacyNote: "Fonction complexe (2540 lignes) avec Whisper + LLM multi-provider. Risque de régression élevé.",
+    migrated: true,
+    legacyNote: "✅ Migré vers ai-client.ts - Utilise callLLMWithFallback pour le fallback automatique.",
     linesOfCode: 2540,
     multiProvider: true
   },
@@ -91,8 +91,8 @@ const EDGE_FUNCTION_AI_MAP: Array<{
     description: "Agent IA multimodal Cockpit", 
     provider: "lovable_ai", 
     category: "reasoning", 
-    migrated: false,
-    legacyNote: "Fonction critique (9297 lignes) : orchestrateur avec 50+ tools. Migration complexe planifiée.",
+    migrated: true,
+    legacyNote: "✅ Migré vers ai-client.ts - Utilise AIClient.complete() avec chatWithTools.",
     linesOfCode: 9297,
     multiProvider: true
   },

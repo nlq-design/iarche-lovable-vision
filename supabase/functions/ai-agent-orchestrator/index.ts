@@ -1,5 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// Centralized AI client for provider switching and fallback
+import { createAIClient } from "../_shared/ai-client.ts";
+import { chatWithTools, completeLLM } from "../_shared/ai-legacy-bridge.ts";
+import type { AIMessage, AITool } from "../_shared/ai-types.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,10 +13,21 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+// Note: LOVABLE_API_KEY and OPENAI_API_KEY are now managed by the centralized AI client
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const OPENAI_EMBEDDINGS_URL = "https://api.openai.com/v1/embeddings";
+
+// Helper function to use centralized AI client
+async function callCentralizedAI(
+  systemPrompt: string,
+  userPrompt: string,
+  options: { maxTokens?: number } = {}
+): Promise<string> {
+  return completeLLM(systemPrompt, userPrompt, {
+    category: 'chat',
+    maxTokens: options.maxTokens || 4096,
+  });
+}
 
 // =============================================================================
 // INPUT SANITIZATION FOR SEARCH QUERIES
@@ -4702,25 +4717,11 @@ ${args.tone ? `Ton: ${args.tone}` : ""}
 L'article doit être structuré avec des sous-titres H2/H3, engageant et informatif.
 Retourne le contenu au format HTML avec les balises appropriées.`;
 
-      const response = await fetch(LOVABLE_AI_GATEWAY, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: "Tu es un expert en rédaction de contenu B2B pour une agence d'IA. Génère des articles professionnels et engageants." },
-            { role: "user", content: articlePrompt },
-          ],
-        }),
-      });
-
-      if (!response.ok) throw new Error("Content generation failed");
-
-      const result = await response.json();
-      const content = result.choices?.[0]?.message?.content || "";
+      // Use centralized AI client for provider fallback
+      const content = await callCentralizedAI(
+        "Tu es un expert en rédaction de contenu B2B pour une agence d'IA. Génère des articles professionnels et engageants.",
+        articlePrompt
+      );
 
       return {
         success: true,
@@ -4757,25 +4758,11 @@ Suggestions demandées:
 3. FAQ suggérées si absentes
 4. Mots-clés manquants`;
 
-      const response = await fetch(LOVABLE_AI_GATEWAY, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: "Tu es un expert SEO et content marketing. Analyse les articles et suggère des améliorations concrètes." },
-            { role: "user", content: analysisPrompt },
-          ],
-        }),
-      });
-
-      if (!response.ok) throw new Error("Analysis failed");
-
-      const result = await response.json();
-      const suggestions = result.choices?.[0]?.message?.content || "";
+      // Use centralized AI client for provider fallback
+      const suggestions = await callCentralizedAI(
+        "Tu es un expert SEO et content marketing. Analyse les articles et suggère des améliorations concrètes.",
+        analysisPrompt
+      );
 
       return {
         success: true,
@@ -4826,25 +4813,11 @@ Génère un contenu HTML pour email avec:
 4. Call-to-action
 5. Footer IArche`;
 
-      const response = await fetch(LOVABLE_AI_GATEWAY, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: "Tu es expert en email marketing B2B. Génère des newsletters engageantes au format HTML." },
-            { role: "user", content: newsletterPrompt },
-          ],
-        }),
-      });
-
-      if (!response.ok) throw new Error("Newsletter generation failed");
-
-      const result = await response.json();
-      const content = result.choices?.[0]?.message?.content || "";
+      // Use centralized AI client for provider fallback
+      const content = await callCentralizedAI(
+        "Tu es expert en email marketing B2B. Génère des newsletters engageantes au format HTML.",
+        newsletterPrompt
+      );
 
       return {
         success: true,
@@ -9135,36 +9108,34 @@ ${calendarRef.join('\n')}
       ...messages,
     ];
 
-    // Initial AI call with tools
-    let response = await fetch(LOVABLE_AI_GATEWAY, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: selectedModel,
-        messages: fullMessages,
-        tools: AGENT_TOOLS,
-        tool_choice: "auto",
-      }),
+    // Initial AI call with tools - using centralized client
+    const aiClient = createAIClient({
+      workspaceId: workspace_id,
+      userId: user_id,
+      enableLogging: true,
+      enableMetrics: true,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI API error:", errorText);
-      return new Response(JSON.stringify({ error: "ai_error", details: errorText }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    let aiResponse = await aiClient.complete({
+      messages: fullMessages as AIMessage[],
+      tools: AGENT_TOOLS as AITool[],
+      tool_choice: 'auto',
+      model: selectedModel,
+      category: 'reasoning',
+      fallback: true,
+    });
 
-    let result = await response.json();
-    let assistantMessage = result.choices?.[0]?.message;
+    let assistantMessage: { content?: string; tool_calls?: Array<{ id: string; function: { name: string; arguments: string } }> } | undefined = {
+      content: aiResponse.content,
+      tool_calls: aiResponse.tool_calls,
+    };
     const allToolCalls: { name: string; result?: unknown; error?: string; duration_ms?: number }[] = [];
 
     // Tool calling loop (max iterations depends on mode)
     let iterations = 0;
+    // deno-lint-ignore no-explicit-any
+    let conversationMessages: any[] = [...fullMessages];
+    
     while (assistantMessage?.tool_calls && iterations < maxIterations) {
       iterations++;
       console.log(`Tool calling iteration ${iterations}:`, assistantMessage.tool_calls.length, "calls");
@@ -9220,32 +9191,30 @@ ${calendarRef.join('\n')}
       }
 
       // Continue conversation with tool results
-      const continuedMessages = [
-        ...fullMessages,
-        assistantMessage,
+      conversationMessages = [
+        ...conversationMessages,
+        { role: "assistant", content: assistantMessage.content || "", tool_calls: assistantMessage.tool_calls },
         ...toolResults,
       ];
 
-      response = await fetch(LOVABLE_AI_GATEWAY, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      try {
+        aiResponse = await aiClient.complete({
+          messages: conversationMessages as AIMessage[],
+          tools: AGENT_TOOLS as AITool[],
+          tool_choice: 'auto',
           model: selectedModel,
-          messages: continuedMessages,
-          tools: AGENT_TOOLS,
-          tool_choice: "auto",
-        }),
-      });
-
-      if (!response.ok) {
+          category: 'reasoning',
+          fallback: true,
+        });
+        
+        assistantMessage = {
+          content: aiResponse.content,
+          tool_calls: aiResponse.tool_calls,
+        };
+      } catch (err) {
+        console.error("AI continuation error:", err);
         break;
       }
-
-      result = await response.json();
-      assistantMessage = result.choices?.[0]?.message;
     }
 
     const finalContent = assistantMessage?.content || "Je n'ai pas pu traiter votre demande.";
@@ -9272,7 +9241,7 @@ ${calendarRef.join('\n')}
       ok: true,
       message: finalContent,
       tool_calls: allToolCalls,
-      usage: result.usage,
+      usage: aiResponse.usage,
       memory_used: recentMemory.length + relevantMemory.length > 0,
       active_entities_count: activeEntities.length,
       performance: {
