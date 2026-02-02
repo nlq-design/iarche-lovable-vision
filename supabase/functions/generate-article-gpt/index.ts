@@ -77,16 +77,15 @@ CONTRAINTES :
 
 Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
 
-    // Use centralized AI client with automatic fallback
-    // Preference: openai for GPT models, with fallback chain
+    // Use centralized AI client with automatic DB config lookup
+    // The provider/model is now controlled via edge_function_model_config table
     const content = await callLLM(
       [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
       {
-        provider: 'openai', // Prefer OpenAI for this function
-        model: 'gpt-4o',
+        functionName: 'generate-article-gpt', // <-- Auto-lookup from DB
         maxTokens: 4096
       }
     );

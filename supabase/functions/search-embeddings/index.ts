@@ -43,8 +43,11 @@ serve(async (req) => {
     console.log("[search-embeddings] Query:", body.query);
     console.log("[search-embeddings] Filter types:", body.filter_types);
 
-    // Generate embedding using centralized AI client with automatic fallback
-    const queryEmbedding = await generateEmbedding(body.query);
+    // Generate embedding using centralized AI client
+    // Config is fetched from edge_function_model_config if available
+    const queryEmbedding = await generateEmbedding(body.query, { 
+      functionName: 'search-embeddings' 
+    });
 
     // Search for similar resources using the database function
     const { data: results, error } = await supabase.rpc("search_similar_resources", {

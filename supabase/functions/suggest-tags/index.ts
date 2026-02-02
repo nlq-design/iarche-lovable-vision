@@ -37,7 +37,7 @@ Les tags doivent être :
 - Liés à l'IA, la technologie, ou le sujet de l'article
 - Utiles pour le SEO`;
 
-    // Use centralized AI client with automatic provider fallback
+    // Use centralized AI client with automatic DB config lookup
     const result = await extractStructured<{ tags: string[] }>(
       [{ role: 'user', content: prompt }],
       {
@@ -54,7 +54,8 @@ Les tags doivent être :
           },
           required: ['tags']
         }
-      }
+      },
+      { functionName: 'suggest-tags' } // <-- Auto-lookup from DB
     );
 
     console.log('[suggest-tags] AI response:', result);

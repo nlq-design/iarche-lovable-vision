@@ -77,16 +77,15 @@ CONTRAINTES :
 
 Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
 
-    // Use centralized AI client with automatic fallback
-    // Preference: anthropic for Claude models, with fallback chain
+    // Use centralized AI client with automatic DB config lookup
+    // The provider/model is now controlled via edge_function_model_config table
     const content = await callLLM(
       [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
       {
-        provider: 'anthropic', // Prefer Anthropic for this function
-        model: 'claude-sonnet-4-20250514',
+        functionName: 'generate-article-claude', // <-- Auto-lookup from DB
         maxTokens: 4096
       }
     );
