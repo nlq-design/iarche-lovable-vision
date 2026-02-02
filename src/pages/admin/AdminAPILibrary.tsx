@@ -60,7 +60,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   chat: "Chat / Assistant",
   reasoning: "Raisonnement avancé",
   embedding: "Embeddings / RAG",
-  vision: "Vision / Multimodal"
+  vision: "Vision / Multimodal",
+  speech: "Speech-to-Text"
 };
 
 // Edge functions that use AI with their provider mapping
@@ -114,7 +115,7 @@ const EDGE_FUNCTION_AI_MAP: Array<{
     name: "transcribe-audio-chunk", 
     description: "Transcription audio Whisper", 
     provider: "openai", 
-    category: "vision", 
+    category: "speech", 
     migrated: false,
     legacyNote: "Utilise directement l'API OpenAI Whisper pour la transcription audio (speech-to-text)."
   },
