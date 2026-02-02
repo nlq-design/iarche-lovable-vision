@@ -30,7 +30,7 @@ import {
   Wrench, CheckCircle, AlertCircle, Gauge
 } from "lucide-react";
 import FunctionModelSelector from "@/components/admin/FunctionModelSelector";
-import AIQuotasManager from "@/components/admin/AIQuotasManager";
+import APIGovernanceManager from "@/components/admin/APIGovernanceManager";
 
 // Provider icons and colors
 const PROVIDER_CONFIG: Record<string, { icon: React.ReactNode; color: string; description: string }> = {
@@ -985,7 +985,7 @@ export default function AdminAPILibrary() {
 
           {/* ============ QUOTAS TAB ============ */}
           <TabsContent value="quotas" className="space-y-4">
-            <AIQuotasManager />
+            <APIGovernanceManager />
           </TabsContent>
 
           {/* ============ USAGE TAB ============ */}

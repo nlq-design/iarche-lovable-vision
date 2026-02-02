@@ -486,6 +486,278 @@ export type Database = {
           },
         ]
       }
+      api_pricing: {
+        Row: {
+          api_name: string
+          cost_per_1k_input_tokens: number | null
+          cost_per_1k_output_tokens: number | null
+          cost_per_request_cents: number | null
+          cost_per_unit_cents: number | null
+          created_at: string | null
+          currency: string | null
+          effective_from: string | null
+          effective_until: string | null
+          free_tier_requests: number | null
+          free_tier_tokens: number | null
+          id: string
+          is_active: boolean | null
+          model_id: string | null
+          provider_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          api_name: string
+          cost_per_1k_input_tokens?: number | null
+          cost_per_1k_output_tokens?: number | null
+          cost_per_request_cents?: number | null
+          cost_per_unit_cents?: number | null
+          created_at?: string | null
+          currency?: string | null
+          effective_from?: string | null
+          effective_until?: string | null
+          free_tier_requests?: number | null
+          free_tier_tokens?: number | null
+          id?: string
+          is_active?: boolean | null
+          model_id?: string | null
+          provider_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          api_name?: string
+          cost_per_1k_input_tokens?: number | null
+          cost_per_1k_output_tokens?: number | null
+          cost_per_request_cents?: number | null
+          cost_per_unit_cents?: number | null
+          created_at?: string | null
+          currency?: string | null
+          effective_from?: string | null
+          effective_until?: string | null
+          free_tier_requests?: number | null
+          free_tier_tokens?: number | null
+          id?: string
+          is_active?: boolean | null
+          model_id?: string | null
+          provider_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      api_quota_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_type: string
+          api_category: string | null
+          api_name: string | null
+          channels_notified: string[] | null
+          created_at: string | null
+          current_usage_percent: number
+          current_value: number
+          id: string
+          limit_value: number
+          metadata: Json | null
+          metric_type: string
+          notification_sent_at: string | null
+          quota_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type: string
+          api_category?: string | null
+          api_name?: string | null
+          channels_notified?: string[] | null
+          created_at?: string | null
+          current_usage_percent: number
+          current_value: number
+          id?: string
+          limit_value: number
+          metadata?: Json | null
+          metric_type: string
+          notification_sent_at?: string | null
+          quota_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type?: string
+          api_category?: string | null
+          api_name?: string | null
+          channels_notified?: string[] | null
+          created_at?: string | null
+          current_usage_percent?: number
+          current_value?: number
+          id?: string
+          limit_value?: number
+          metadata?: Json | null
+          metric_type?: string
+          notification_sent_at?: string | null
+          quota_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_quota_alerts_quota_id_fkey"
+            columns: ["quota_id"]
+            isOneToOne: false
+            referencedRelation: "api_quotas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_quotas: {
+        Row: {
+          alert_channels: string[] | null
+          alert_emails: string[] | null
+          alert_threshold_critical: number | null
+          alert_threshold_warning: number | null
+          api_category: string | null
+          api_name: string | null
+          billing_entity_id: string | null
+          block_at_limit: boolean | null
+          created_at: string | null
+          daily_requests_limit: number | null
+          id: string
+          is_active: boolean | null
+          monthly_cost_limit_cents: number | null
+          monthly_requests_limit: number | null
+          monthly_tokens_limit: number | null
+          priority: number | null
+          provider_name: string | null
+          requests_per_minute: number | null
+          updated_at: string | null
+          user_role: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          alert_channels?: string[] | null
+          alert_emails?: string[] | null
+          alert_threshold_critical?: number | null
+          alert_threshold_warning?: number | null
+          api_category?: string | null
+          api_name?: string | null
+          billing_entity_id?: string | null
+          block_at_limit?: boolean | null
+          created_at?: string | null
+          daily_requests_limit?: number | null
+          id?: string
+          is_active?: boolean | null
+          monthly_cost_limit_cents?: number | null
+          monthly_requests_limit?: number | null
+          monthly_tokens_limit?: number | null
+          priority?: number | null
+          provider_name?: string | null
+          requests_per_minute?: number | null
+          updated_at?: string | null
+          user_role?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          alert_channels?: string[] | null
+          alert_emails?: string[] | null
+          alert_threshold_critical?: number | null
+          alert_threshold_warning?: number | null
+          api_category?: string | null
+          api_name?: string | null
+          billing_entity_id?: string | null
+          block_at_limit?: boolean | null
+          created_at?: string | null
+          daily_requests_limit?: number | null
+          id?: string
+          is_active?: boolean | null
+          monthly_cost_limit_cents?: number | null
+          monthly_requests_limit?: number | null
+          monthly_tokens_limit?: number | null
+          priority?: number | null
+          provider_name?: string | null
+          requests_per_minute?: number | null
+          updated_at?: string | null
+          user_role?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
+      api_usage_metrics: {
+        Row: {
+          api_category: string
+          api_name: string
+          billing_entity_id: string | null
+          created_at: string
+          currency: string | null
+          entity_id: string | null
+          entity_type: string | null
+          error_code: string | null
+          error_message: string | null
+          estimated_cost_cents: number | null
+          id: string
+          input_tokens: number | null
+          latency_ms: number | null
+          metadata: Json | null
+          model_id: string | null
+          operation_type: string
+          output_tokens: number | null
+          provider_name: string
+          request_count: number | null
+          success: boolean | null
+          total_tokens: number | null
+          user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          api_category: string
+          api_name: string
+          billing_entity_id?: string | null
+          created_at?: string
+          currency?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          estimated_cost_cents?: number | null
+          id?: string
+          input_tokens?: number | null
+          latency_ms?: number | null
+          metadata?: Json | null
+          model_id?: string | null
+          operation_type: string
+          output_tokens?: number | null
+          provider_name: string
+          request_count?: number | null
+          success?: boolean | null
+          total_tokens?: number | null
+          user_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          api_category?: string
+          api_name?: string
+          billing_entity_id?: string | null
+          created_at?: string
+          currency?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          estimated_cost_cents?: number | null
+          id?: string
+          input_tokens?: number | null
+          latency_ms?: number | null
+          metadata?: Json | null
+          model_id?: string | null
+          operation_type?: string
+          output_tokens?: number | null
+          provider_name?: string
+          request_count?: number | null
+          success?: boolean | null
+          total_tokens?: number | null
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       article_categories: {
         Row: {
           article_id: string
@@ -5783,6 +6055,23 @@ export type Database = {
         }
         Relationships: []
       }
+      api_usage_summary: {
+        Row: {
+          api_category: string | null
+          api_name: string | null
+          avg_latency_ms: number | null
+          error_count: number | null
+          provider_name: string | null
+          request_count: number | null
+          success_count: number | null
+          total_cost_cents: number | null
+          total_tokens: number | null
+          usage_date: string | null
+          usage_month: string | null
+          workspace_id: string | null
+        }
+        Relationships: []
+      }
       comments_public: {
         Row: {
           approved: boolean | null
@@ -5962,6 +6251,24 @@ export type Database = {
         Returns: string
       }
       generate_phonetic_key: { Args: { input_text: string }; Returns: string }
+      get_api_usage_status: {
+        Args: { p_api_name?: string; p_period?: string; p_workspace_id: string }
+        Returns: {
+          api_category: string
+          api_name: string
+          provider_name: string
+          quota_cost: number
+          quota_requests: number
+          quota_tokens: number
+          request_count: number
+          status: string
+          total_cost_cents: number
+          total_tokens: number
+          usage_percent_cost: number
+          usage_percent_requests: number
+          usage_percent_tokens: number
+        }[]
+      }
       get_current_partner_id: { Args: never; Returns: string }
       get_document_workspace_id: {
         Args: { p_document_id: string }
@@ -6294,6 +6601,29 @@ export type Database = {
       }
       promote_vivier_to_lead: {
         Args: { p_qualification_status?: string; p_vivier_id: string }
+        Returns: string
+      }
+      record_api_usage: {
+        Args: {
+          p_api_category: string
+          p_api_name: string
+          p_billing_entity_id?: string
+          p_entity_id?: string
+          p_entity_type?: string
+          p_error_code?: string
+          p_error_message?: string
+          p_estimated_cost_cents?: number
+          p_input_tokens?: number
+          p_latency_ms?: number
+          p_metadata?: Json
+          p_model_id?: string
+          p_operation_type: string
+          p_output_tokens?: number
+          p_provider_name: string
+          p_success?: boolean
+          p_user_id?: string
+          p_workspace_id: string
+        }
         Returns: string
       }
       refresh_stale_syntheses: {
