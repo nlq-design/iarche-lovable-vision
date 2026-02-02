@@ -5616,6 +5616,94 @@ export type Database = {
           },
         ]
       }
+      workspace_ai_quotas: {
+        Row: {
+          alert_threshold_percent: number | null
+          created_at: string | null
+          current_period_start: string | null
+          hard_limit_enabled: boolean | null
+          id: string
+          monthly_cost_limit_cents: number | null
+          monthly_token_limit: number | null
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          alert_threshold_percent?: number | null
+          created_at?: string | null
+          current_period_start?: string | null
+          hard_limit_enabled?: boolean | null
+          id?: string
+          monthly_cost_limit_cents?: number | null
+          monthly_token_limit?: number | null
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          alert_threshold_percent?: number | null
+          created_at?: string | null
+          current_period_start?: string | null
+          hard_limit_enabled?: boolean | null
+          id?: string
+          monthly_cost_limit_cents?: number | null
+          monthly_token_limit?: number | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_ai_quotas_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_ai_usage: {
+        Row: {
+          created_at: string | null
+          id: string
+          period_end: string
+          period_start: string
+          request_count: number | null
+          total_cost_cents: number | null
+          total_tokens: number | null
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          period_end: string
+          period_start: string
+          request_count?: number | null
+          total_cost_cents?: number | null
+          total_tokens?: number | null
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          period_end?: string
+          period_start?: string
+          request_count?: number | null
+          total_cost_cents?: number | null
+          total_tokens?: number | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_ai_usage_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_members: {
         Row: {
           invited_by: string | null
@@ -6148,6 +6236,15 @@ export type Database = {
         Returns: undefined
       }
       increment_form_views: { Args: { form_slug: string }; Returns: undefined }
+      increment_workspace_ai_usage: {
+        Args: {
+          p_cost_cents: number
+          p_period_start: string
+          p_tokens: number
+          p_workspace_id: string
+        }
+        Returns: undefined
+      }
       is_admin: { Args: never; Returns: boolean }
       is_document_partner: {
         Args: { p_document_id: string; p_user_id: string }
