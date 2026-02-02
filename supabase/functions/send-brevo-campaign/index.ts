@@ -1,10 +1,14 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { logEmailBatch } from '../_shared/emailLogger.ts';
+import { checkAPIQuota, trackAPIUsage, createAPICallTracker } from '../_shared/api-tracker.ts';
 
 const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+// Default workspace for API tracking
+const DEFAULT_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -79,6 +83,29 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Check API quota before proceeding
+    const quotaCheck = await checkAPIQuota({
+      workspaceId: DEFAULT_WORKSPACE_ID,
+      userId: user.id,
+      userRole: 'admin',
+      apiCategory: 'email',
+      apiName: 'brevo',
+      providerName: 'brevo',
+    });
+
+    if (!quotaCheck.allowed) {
+      console.warn('[send-brevo-campaign] Quota exceeded:', quotaCheck.reason);
+      return new Response(
+        JSON.stringify({ error: 'Quota email dépassé', reason: quotaCheck.reason }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Log quota warnings
+    for (const alert of quotaCheck.alerts) {
+      console.warn(`[send-brevo-campaign] Alert: ${alert.type} - ${alert.message}`);
+    }
+
     console.log('Sending Brevo campaign:', subject);
 
     // Récupérer tous les abonnés newsletter
@@ -150,6 +177,26 @@ const handler = async (req: Request): Promise<Response> => {
 
     const successCount = emailResults.filter(r => r.success).length;
     const failCount = emailResults.filter(r => !r.success).length;
+
+    // Track API usage for each email sent
+    await trackAPIUsage({
+      workspaceId: DEFAULT_WORKSPACE_ID,
+      apiName: 'brevo',
+      apiCategory: 'email',
+      operationType: 'campaign_send',
+      providerName: 'brevo',
+      userId: user.id,
+      requestCount: subscribers.length,
+      success: successCount > 0,
+      errorMessage: failCount > 0 ? `${failCount} emails failed` : undefined,
+      estimatedCostCents: successCount * 0.1, // ~0.1 cent per email
+      metadata: {
+        campaign_subject: subject,
+        total_subscribers: subscribers.length,
+        success_count: successCount,
+        fail_count: failCount,
+      },
+    });
 
     // Log tous les emails
     const emailLogs = emailResults.map(result => ({

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { trackAPIUsage } from "../_shared/api-tracker.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,11 +29,11 @@ const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 // Typing action interval (Telegram resets after ~5 seconds)
 const TYPING_INTERVAL_MS = 4000;
 
+// Default workspace for API tracking
+const DEFAULT_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
+
 // Supabase client for deduplication
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-// Default workspace for Telegram imports
-const DEFAULT_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
 
 let cachedTelegramSystemUserId: string | null = null;
 
@@ -251,6 +252,19 @@ async function trackTelegramStat(
       processing_time_ms: processingTimeMs,
       status,
       error_message: errorMessage?.slice(0, 500),
+    });
+
+    // Also track in unified API metrics
+    await trackAPIUsage({
+      workspaceId: DEFAULT_WORKSPACE_ID,
+      apiName: 'telegram',
+      apiCategory: 'messaging',
+      operationType: commandName || messageType,
+      providerName: 'telegram',
+      latencyMs: processingTimeMs || undefined,
+      success: status === 'success',
+      errorMessage: status !== 'success' ? errorMessage?.slice(0, 200) : undefined,
+      metadata: { chat_id: chatId, user_name: userName },
     });
   } catch (err) {
     console.error("Failed to track Telegram stat:", err);

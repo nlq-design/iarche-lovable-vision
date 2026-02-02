@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { trackAPIUsage } from "../_shared/api-tracker.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,6 +11,9 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
+// Default workspace for API tracking
+const DEFAULT_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
+
 // Embedding dimension for OpenAI text-embedding-3-small
 const EMBEDDING_DIM = 1536;
 
@@ -17,7 +21,9 @@ const EMBEDDING_DIM = 1536;
  * Generate embedding using OpenAI API directly
  * Falls back to deterministic hash-based approach if OpenAI fails
  */
-async function generateEmbedding(text: string): Promise<number[]> {
+async function generateEmbedding(text: string): Promise<{ embedding: number[]; usedOpenAI: boolean }> {
+  const startTime = Date.now();
+  
   // Try OpenAI embeddings API
   if (OPENAI_API_KEY && OPENAI_API_KEY.startsWith("sk-")) {
     try {
@@ -33,14 +39,45 @@ async function generateEmbedding(text: string): Promise<number[]> {
         }),
       });
 
+      const latencyMs = Date.now() - startTime;
+
       if (response.ok) {
         const data = await response.json();
         if (data.data?.[0]?.embedding) {
-          return data.data[0].embedding;
+          // Track successful OpenAI API call
+          await trackAPIUsage({
+            workspaceId: DEFAULT_WORKSPACE_ID,
+            apiName: 'openai-embeddings',
+            apiCategory: 'ai',
+            operationType: 'embedding',
+            providerName: 'openai',
+            modelId: 'text-embedding-3-small',
+            inputTokens: Math.ceil(text.length / 4), // Approximate token count
+            outputTokens: 0,
+            totalTokens: Math.ceil(text.length / 4),
+            latencyMs,
+            success: true,
+            estimatedCostCents: (Math.ceil(text.length / 4) / 1000) * 0.002, // $0.002 per 1k tokens
+          });
+          return { embedding: data.data[0].embedding, usedOpenAI: true };
         }
       } else {
         const errorText = await response.text();
         console.warn("OpenAI embedding API error:", response.status, errorText);
+        
+        // Track failed call
+        await trackAPIUsage({
+          workspaceId: DEFAULT_WORKSPACE_ID,
+          apiName: 'openai-embeddings',
+          apiCategory: 'ai',
+          operationType: 'embedding',
+          providerName: 'openai',
+          modelId: 'text-embedding-3-small',
+          latencyMs,
+          success: false,
+          errorCode: String(response.status),
+          errorMessage: errorText.slice(0, 200),
+        });
       }
     } catch (e) {
       console.warn("OpenAI embedding request failed:", e);
@@ -72,7 +109,7 @@ async function generateEmbedding(text: string): Promise<number[]> {
     }
   }
   
-  return embedding;
+  return { embedding, usedOpenAI: false };
 }
 
 // Services data (statique)
@@ -263,7 +300,7 @@ async function indexResource(
     // Generate embeddings for each chunk
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
-      const embedding = await generateEmbedding(chunk);
+      const { embedding } = await generateEmbedding(chunk);
 
       const { error } = await supabase
         .from("resource_embeddings")
