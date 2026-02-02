@@ -27,7 +27,9 @@ import {
   AIModelCategory,
   AIProviderError,
   AIRateLimitError,
+  AIWorkspaceQuotaExceededError,
 } from "./ai-types.ts";
+import { getQuotaManager, QuotaManager, QuotaCheckResult } from "./ai-quota.ts";
 import {
   createProviderAdapter,
   getAvailableProviders,
@@ -53,12 +55,14 @@ export class AIClient {
   private functionConfigCacheTime: number = 0;
   private readonly CONFIG_CACHE_TTL = 60000; // 1 minute
   private resilience: ResilienceManager;
+  private quotaManager: QuotaManager;
 
   constructor(options: AIClientOptions = {}) {
     this.options = {
       enableLogging: true,
       enableMetrics: true,
       enableResilience: true,
+      enableQuotaCheck: true, // NEW: Quota enforcement enabled by default
       maxRetries: 3,
       timeoutMs: 60000,
       ...options,
@@ -72,6 +76,9 @@ export class AIClient {
     this.resilience = getResilienceManager({
       retry: { maxRetries: this.options.maxRetries },
     });
+    
+    // Initialize quota manager
+    this.quotaManager = getQuotaManager(this.supabase);
   }
 
   /**
@@ -186,12 +193,33 @@ export class AIClient {
   }
 
   /**
-   * Main completion method with automatic fallback and resilience
+   * Main completion method with automatic fallback, resilience, and quota enforcement
    */
   async complete(request: AICompletionRequest): Promise<AICompletionResponse> {
     const startTime = Date.now();
     const enableFallback = request.fallback !== false;
     const useResilience = this.options.enableResilience !== false;
+    const enableQuotaCheck = this.options.enableQuotaCheck !== false;
+
+    // Pre-request quota check (if workspace is specified)
+    let quotaResult: QuotaCheckResult | null = null;
+    if (enableQuotaCheck && this.options.workspaceId) {
+      quotaResult = await this.quotaManager.checkQuota(this.options.workspaceId);
+      
+      // Log alerts for monitoring
+      for (const alert of quotaResult.alerts) {
+        console.log(`[AIClient] Quota ${alert.type}: ${alert.message}`);
+      }
+      
+      // Block request if quota exceeded and hard limit is enabled
+      if (!quotaResult.allowed) {
+        throw new AIWorkspaceQuotaExceededError(
+          quotaResult.reason || 'Quota exceeded',
+          quotaResult.percentage_used,
+          this.options.workspaceId
+        );
+      }
+    }
 
     // If specific provider requested, use only that
     if (request.provider) {
@@ -375,7 +403,7 @@ export class AIClient {
   }
 
   /**
-   * Log usage metrics to database
+   * Log usage metrics to database and update workspace quota usage
    */
   private async logMetrics(
     request: AICompletionRequest,
@@ -384,6 +412,7 @@ export class AIClient {
     if (!this.options.enableMetrics) return;
 
     try {
+      // Log to ai_usage_metrics (existing behavior)
       await this.supabase.from('ai_usage_metrics').insert({
         workspace_id: this.options.workspaceId,
         user_id: this.options.userId,
@@ -401,10 +430,52 @@ export class AIClient {
           has_tools: !!request.tools,
         },
       });
+      
+      // Update workspace quota usage (NEW)
+      if (this.options.workspaceId && this.options.enableQuotaCheck !== false) {
+        const estimatedCostCents = this.estimateCostCents(response);
+        await this.quotaManager.recordUsage(
+          this.options.workspaceId,
+          response.usage.total_tokens,
+          estimatedCostCents,
+          {
+            provider: response.provider,
+            model: response.model,
+            operation_type: 'completion',
+          }
+        );
+      }
     } catch (e) {
       // Non-blocking error
       console.warn('[AIClient] Failed to log metrics:', e);
     }
+  }
+
+  /**
+   * Estimate cost in cents based on model and token usage
+   * Uses approximate pricing (can be refined with DB lookup later)
+   */
+  private estimateCostCents(response: AICompletionResponse): number {
+    // Approximate pricing per 1K tokens (input/output averaged)
+    const pricingPerMille: Record<string, number> = {
+      'gpt-4o': 0.5,      // ~$5/1M tokens avg
+      'gpt-4o-mini': 0.03, // ~$0.3/1M tokens avg
+      'gpt-4': 3.0,        // ~$30/1M tokens avg
+      'gpt-3.5-turbo': 0.1,
+      'claude-3-opus': 1.5,
+      'claude-3-sonnet': 0.3,
+      'claude-3-haiku': 0.025,
+      'gemini-pro': 0.05,
+      'gemini-flash': 0.01,
+    };
+    
+    // Find matching model or use default
+    const modelKey = Object.keys(pricingPerMille).find(k => 
+      response.model.toLowerCase().includes(k.toLowerCase())
+    );
+    const pricePerMille = modelKey ? pricingPerMille[modelKey] : 0.1; // Default conservative estimate
+    
+    return Math.ceil((response.usage.total_tokens / 1000) * pricePerMille * 100); // Convert to cents
   }
 
   /**
