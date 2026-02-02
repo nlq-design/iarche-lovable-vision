@@ -27,9 +27,10 @@ import {
   AlertTriangle, ArrowUp, ArrowDown, RefreshCw, Loader2,
   Settings, BarChart3, Search, Eye, EyeOff, Shield, Clock,
   DollarSign, MessageSquare, Activity, Database, Server, Code,
-  Wrench, CheckCircle, AlertCircle
+  Wrench, CheckCircle, AlertCircle, Gauge
 } from "lucide-react";
 import FunctionModelSelector from "@/components/admin/FunctionModelSelector";
+import AIQuotasManager from "@/components/admin/AIQuotasManager";
 
 // Provider icons and colors
 const PROVIDER_CONFIG: Record<string, { icon: React.ReactNode; color: string; description: string }> = {
@@ -382,7 +383,7 @@ export default function AdminAPILibrary() {
         </div>
 
         <Tabs defaultValue="providers" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="providers" className="flex items-center gap-2">
               <Key className="h-4 w-4" />
               Providers ({providers?.length || 0})
@@ -394,6 +395,10 @@ export default function AdminAPILibrary() {
             <TabsTrigger value="functions" className="flex items-center gap-2">
               <Code className="h-4 w-4" />
               Fonctions ({functionStats.migrated}/{functionStats.total})
+            </TabsTrigger>
+            <TabsTrigger value="quotas" className="flex items-center gap-2">
+              <Gauge className="h-4 w-4" />
+              Quotas
             </TabsTrigger>
             <TabsTrigger value="usage" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
@@ -887,6 +892,11 @@ export default function AdminAPILibrary() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* ============ QUOTAS TAB ============ */}
+          <TabsContent value="quotas" className="space-y-4">
+            <AIQuotasManager />
           </TabsContent>
 
           {/* ============ USAGE TAB ============ */}
