@@ -119,6 +119,7 @@ export interface AIClientOptions {
   enableLogging?: boolean;
   enableMetrics?: boolean;
   enableResilience?: boolean; // Enable circuit breaker, rate limiting, retry
+  enableQuotaCheck?: boolean; // Enable workspace quota enforcement (default: true)
   maxRetries?: number;
   timeoutMs?: number;
 }
@@ -157,5 +158,16 @@ export class AIQuotaExceededError extends AIProviderError {
   constructor(provider: AIProviderName) {
     super(`Quota/credits exceeded for ${provider}`, provider, 402, false);
     this.name = 'AIQuotaExceededError';
+  }
+}
+
+export class AIWorkspaceQuotaExceededError extends Error {
+  constructor(
+    message: string,
+    public percentageUsed: number,
+    public workspaceId: string
+  ) {
+    super(message);
+    this.name = 'AIWorkspaceQuotaExceededError';
   }
 }
