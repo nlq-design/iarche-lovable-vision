@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { handleAIError } from '@/lib/ai-error-handler';
 import { Link } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -119,15 +120,8 @@ export function ConsulteTab({
       } else {
         toast.error(data?.message || 'Erreur lors de la synthèse');
       }
-    } catch (error: any) {
-      console.error('Synthesis error:', error);
-      if (error.message?.includes('429')) {
-        toast.error('Limite atteinte, réessayez dans quelques instants');
-      } else if (error.message?.includes('402')) {
-        toast.error('Crédits IA insuffisants');
-      } else {
-        toast.error('Erreur lors de la génération');
-      }
+    } catch (error: unknown) {
+      handleAIError(error);
     } finally {
       setIsGenerating(false);
     }
