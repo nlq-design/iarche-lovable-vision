@@ -85,6 +85,7 @@ import { Separator } from "@/components/ui/separator";
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { handleAIError } from '@/lib/ai-error-handler';
 import { LinkedPartnersSection } from './LinkedPartnersSection';
 import { useCockpitPartners } from '@/hooks/cockpit/useCockpitPartners';
 import { useEntityPartners } from '@/hooks/cockpit/usePartnerLinks';
@@ -395,8 +396,7 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
       setGeneratedEmail(data.email);
       toast.success('Email généré avec succès');
     } catch (err) {
-      console.error('Email generation error:', err);
-      toast.error(err instanceof Error ? err.message : 'Erreur lors de la génération');
+      handleAIError(err);
     } finally {
       setIsGeneratingEmail(false);
     }
