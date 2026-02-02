@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { parseAIError } from '@/lib/ai-error-handler';
 
 interface PartnerConsulteResult {
   success: boolean;
@@ -24,22 +25,7 @@ export function usePartnerConsulte() {
     setIsLoading(true);
     setError(null);
 
-    const extractFnErrorMessage = (err: any): { message: string; status?: number } => {
-      const status = err?.context?.status as number | undefined;
-      const body = err?.context?.body;
-
-      const bodyMessage =
-        (typeof body === 'string' ? body : undefined) ||
-        body?.error ||
-        body?.message ||
-        body?.details;
-
-      const message = bodyMessage || err?.message || 'Erreur lors de la génération de la synthèse';
-      return { message, status };
-    };
-
     try {
-      console.log('[usePartnerConsulte] Invoking partner-consulte edge function...');
 
       // Refresh session to avoid expired access tokens causing 401 in backend functions
       const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
@@ -96,17 +82,10 @@ export function usePartnerConsulte() {
         setError(data?.message || data?.error || 'Erreur lors de la génération');
         return false;
       }
-    } catch (err: any) {
-      const { message, status } = extractFnErrorMessage(err);
-      console.error('[usePartnerConsulte] Error:', { status, message, err });
-
-      if (status === 429 || message.includes('429')) {
-        setError('Limite de requêtes atteinte. Réessayez dans quelques instants.');
-      } else if (status === 402 || message.includes('402')) {
-        setError('Crédits IA insuffisants.');
-      } else {
-        setError(message);
-      }
+    } catch (err: unknown) {
+      const aiError = parseAIError(err);
+      console.error('[usePartnerConsulte] Error:', aiError);
+      setError(aiError.message);
       return false;
     } finally {
       setIsLoading(false);
