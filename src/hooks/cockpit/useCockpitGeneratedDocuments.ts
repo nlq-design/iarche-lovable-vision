@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { handleAIError } from '@/lib/ai-error-handler';
 
 const QUERY_KEY = 'cockpit-generated-documents';
 
@@ -102,13 +103,7 @@ export function useCockpitGeneratedDocuments(projectId?: string, opportunityId?:
       toast.success('Document généré avec succès');
     },
     onError: (error: Error) => {
-      if (error.message.includes('rate_limited')) {
-        toast.error('Limite de requêtes atteinte, réessayez plus tard');
-      } else if (error.message.includes('credits_exhausted')) {
-        toast.error('Crédits IA épuisés');
-      } else {
-        toast.error(`Erreur: ${error.message}`);
-      }
+      handleAIError(error);
     },
   });
 

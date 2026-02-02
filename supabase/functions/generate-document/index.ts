@@ -1220,9 +1220,27 @@ CONSIGNES:
 
   } catch (error) {
     console.error("Error generating document:", error);
+    
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    
+    // Propagate quota/rate limit errors with proper status codes
+    if (errorMessage === "rate_limited" || errorMessage.includes("429")) {
+      return new Response(JSON.stringify({ error: "rate_limited" }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
+    if (errorMessage === "credits_exhausted" || errorMessage.includes("402")) {
+      return new Response(JSON.stringify({ error: "credits_exhausted" }), {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
     return new Response(JSON.stringify({ 
       error: "internal_error",
-      message: error instanceof Error ? error.message : "Unknown error"
+      message: errorMessage
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
