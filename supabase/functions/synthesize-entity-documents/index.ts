@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { callLLM } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -697,11 +698,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-
-    if (!lovableApiKey) {
-      throw new Error('LOVABLE_API_KEY not configured');
-    }
+    // API key validation is now handled by centralized ai-client
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { entity_type, entity_id, cascade = false, use_consulte_prompt = false }: SynthesizeRequest & { use_consulte_prompt?: boolean } = await req.json();
@@ -783,38 +780,16 @@ serve(async (req) => {
       .replace('{{events_count}}', String(graphData.events.length))
       .replace('{{context_notes_count}}', String(graphData.contextNotes.length));
 
-    console.log(`[synthesize-v2] Calling Lovable AI with ${graphData.contextNotes.length} context notes...`);
+    console.log(`[synthesize-v2] Calling centralized AI client with ${graphData.contextNotes.length} context notes...`);
 
-    // 5. Generate synthesis
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: modelConfig.model || 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-      }),
-    });
-
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('[synthesize-v2] AI error:', aiResponse.status, errorText);
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: 'Limite de requêtes atteinte.' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: 'Crédits IA insuffisants.' }), { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-      throw new Error(`AI gateway error: ${aiResponse.status}`);
-    }
-
-    const aiData = await aiResponse.json();
-    const synthesis = aiData.choices?.[0]?.message?.content;
+    // 5. Generate synthesis - Use centralized AI client with automatic DB config lookup
+    const synthesis = await callLLM(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      { functionName: 'synthesize-entity-documents' }
+    );
 
     if (!synthesis) {
       throw new Error('No synthesis generated');

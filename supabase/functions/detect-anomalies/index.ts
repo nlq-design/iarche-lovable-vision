@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { callLLM } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,16 +53,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (logsError) throw logsError;
 
-    // Analyser les logs avec l'IA
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY not configured');
-      return new Response(JSON.stringify({ error: 'AI service not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
-
     // Préparer les statistiques pour l'IA
     const deletionCount = logs?.filter(l => l.action_type === 'delete').length || 0;
     const uniqueUsers = new Set(logs?.map(l => l.user_id)).size;
@@ -70,7 +61,9 @@ const handler = async (req: Request): Promise<Response> => {
       return acc;
     }, {} as Record<string, number>) || {};
 
-    const prompt = `Analyse de sécurité des logs d'audit admin (dernières 24h) :
+    const systemPrompt = 'Tu es un expert en cybersécurité. Réponds UNIQUEMENT avec du JSON valide, sans markdown ni texte supplémentaire.';
+
+    const userPrompt = `Analyse de sécurité des logs d'audit admin (dernières 24h) :
 
 Total d'actions : ${logs?.length || 0}
 Suppressions : ${deletionCount}
@@ -97,36 +90,14 @@ Retourne ta réponse UNIQUEMENT sous cette structure JSON stricte :
   "recommendations": ["recommandation 1", "recommandation 2"]
 }`;
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'Tu es un expert en cybersécurité. Réponds UNIQUEMENT avec du JSON valide, sans markdown ni texte supplémentaire.' 
-          },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.3
-      }),
-    });
-
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('AI Gateway error:', aiResponse.status, errorText);
-      return new Response(JSON.stringify({ error: 'AI analysis failed' }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
-
-    const aiData = await aiResponse.json();
-    const content = aiData.choices[0].message.content;
+    // Use centralized AI client with automatic DB config lookup
+    const content = await callLLM(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      { functionName: 'detect-anomalies', temperature: 0.3 }
+    );
     
     // Extraire le JSON de la réponse (peut contenir du markdown)
     let analysis: AnomalyDetectionResult;

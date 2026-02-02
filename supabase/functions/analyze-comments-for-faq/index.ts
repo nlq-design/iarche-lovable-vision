@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { callLLM } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,7 +9,7 @@ const corsHeaders = {
 
 interface RequestBody {
   article_id: string;
-  lookback_days?: number; // Nombre de jours à analyser (défaut: 30)
+  lookback_days?: number;
 }
 
 serve(async (req) => {
@@ -21,11 +22,6 @@ serve(async (req) => {
 
     if (!article_id) {
       throw new Error('article_id is required');
-    }
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY not configured");
     }
 
     // Initialize Supabase
@@ -107,30 +103,14 @@ ${commentsText}
 
 Analyse ces commentaires et génère une FAQ pertinente basée sur les préoccupations réelles des lecteurs.`;
 
-    // Call Lovable AI
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Lovable AI error:", response.status, errorText);
-      throw new Error(`AI analysis failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const generatedText = data.choices?.[0]?.message?.content;
+    // Use centralized AI client with automatic DB config lookup
+    const generatedText = await callLLM(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      { functionName: 'analyze-comments-for-faq' }
+    );
 
     if (!generatedText) {
       throw new Error("No content generated");
@@ -168,13 +148,23 @@ Analyse ces commentaires et génère une FAQ pertinente basée sur les préoccup
 
   } catch (error) {
     console.error("Error in analyze-comments-for-faq:", error);
+    
+    const message = (error as Error).message || 'Unknown error';
+    let statusCode = 500;
+    
+    if (message.includes('rate_limit') || message.includes('429')) {
+      statusCode = 429;
+    } else if (message.includes('402') || message.includes('quota')) {
+      statusCode = 402;
+    }
+    
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: message,
         success: false
       }),
       {
-        status: 500,
+        status: statusCode,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
