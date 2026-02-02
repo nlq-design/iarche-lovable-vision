@@ -110,6 +110,29 @@ const EDGE_FUNCTION_AI_MAP: Array<{
   { name: "score-viviers-batch", description: "Scoring batch viviers", provider: "lovable_ai", category: "chat", migrated: true },
   { name: "synthesize-entity-documents", description: "Synthèse documents entités", provider: "lovable_ai", category: "reasoning", migrated: true },
   { name: "extract-entities", description: "Extraction d'entités nommées", provider: "lovable_ai", category: "chat", migrated: true },
+  { 
+    name: "transcribe-audio-chunk", 
+    description: "Transcription audio Whisper", 
+    provider: "openai", 
+    category: "vision", 
+    migrated: false,
+    legacyNote: "Utilise directement l'API OpenAI Whisper pour la transcription audio (speech-to-text)."
+  },
+];
+
+// External APIs (non-AI) for reference
+const EXTERNAL_API_MAP: Array<{
+  name: string;
+  description: string;
+  provider: string;
+  envVar: string;
+}> = [
+  { name: "pappers-lookup", description: "Enrichissement données entreprises", provider: "Pappers", envVar: "PAPPERS_API_KEY" },
+  { name: "fetch-openrouter-models", description: "Catalogue modèles OpenRouter", provider: "OpenRouter", envVar: "(public)" },
+  { name: "send-brevo-campaign", description: "Envoi campagnes email", provider: "Brevo", envVar: "BREVO_API_KEY" },
+  { name: "send-instantly-campaign", description: "Envoi séquences email", provider: "Instantly", envVar: "INSTANTLY_API_KEY" },
+  { name: "push-to-google-calendar", description: "Sync calendrier Google", provider: "Google", envVar: "GOOGLE_*" },
+  { name: "sync-google-calendar", description: "Sync bidirectionnelle calendrier", provider: "Google", envVar: "GOOGLE_*" },
 ];
 
 interface ProviderConfig {
@@ -155,6 +178,9 @@ export default function AdminAPILibrary() {
     'OPENAI_API_KEY': true,
     'ANTHROPIC_API_KEY': true,
     'OPENROUTER_API_KEY': true,
+    'PAPPERS_API_KEY': true,
+    'BREVO_API_KEY': true,
+    'INSTANTLY_API_KEY': true,
   };
 
   // Fetch providers
@@ -877,6 +903,67 @@ export default function AdminAPILibrary() {
                     </TableBody>
                   </Table>
                 </ScrollArea>
+              </CardContent>
+            </Card>
+
+            {/* External APIs card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Database className="h-5 w-5 text-blue-500" />
+                  APIs Externes (non-IA)
+                </CardTitle>
+                <CardDescription>
+                  Intégrations tierces pour l'enrichissement et les notifications
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fonction</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Provider</TableHead>
+                      <TableHead>Clé API</TableHead>
+                      <TableHead className="text-center">Statut</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {EXTERNAL_API_MAP.map((api) => (
+                      <TableRow key={api.name}>
+                        <TableCell>
+                          <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
+                            {api.name}
+                          </code>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-muted-foreground">{api.description}</span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{api.provider}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <code className="text-xs bg-muted px-1 py-0.5 rounded">{api.envVar}</code>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {api.envVar === "(public)" ? (
+                            <Badge variant="secondary">Public</Badge>
+                          ) : isSecretConfigured(api.envVar) ? (
+                            <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Configurée
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              Manquante
+                            </Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
 
