@@ -132,8 +132,8 @@ const EXTERNAL_API_MAP: Array<{
   { name: "fetch-openrouter-models", description: "Catalogue modèles OpenRouter", provider: "OpenRouter", envVar: "(public)" },
   { name: "send-brevo-campaign", description: "Envoi campagnes email", provider: "Brevo", envVar: "BREVO_API_KEY" },
   { name: "send-instantly-campaign", description: "Envoi séquences email", provider: "Instantly", envVar: "INSTANTLY_API_KEY" },
-  { name: "push-to-google-calendar", description: "Sync calendrier Google", provider: "Google", envVar: "GOOGLE_*" },
-  { name: "sync-google-calendar", description: "Sync bidirectionnelle calendrier", provider: "Google", envVar: "GOOGLE_*" },
+  { name: "push-to-google-calendar", description: "Sync calendrier Google", provider: "Google", envVar: "GOOGLE_SERVICE_ACCOUNT" },
+  { name: "sync-google-calendar", description: "Sync bidirectionnelle calendrier", provider: "Google", envVar: "GOOGLE_SERVICE_ACCOUNT" },
 ];
 
 interface ProviderConfig {
@@ -182,6 +182,7 @@ export default function AdminAPILibrary() {
     'PAPPERS_API_KEY': true,
     'BREVO_API_KEY': true,
     'INSTANTLY_API_KEY': true,
+    'GOOGLE_SERVICE_ACCOUNT': true, // GOOGLE_SERVICE_ACCOUNT_KEY + GOOGLE_CALENDAR_ID configured
   };
 
   // Fetch providers
