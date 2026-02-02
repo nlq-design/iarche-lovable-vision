@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createAPICallTracker, checkAPIQuota, APIQuotaExceededError } from "../_shared/api-tracker.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +9,7 @@ const corsHeaders = {
 
 const PAPPERS_API_KEY = Deno.env.get('PAPPERS_API_KEY');
 const PAPPERS_BASE_URL = 'https://api.pappers.fr/v2';
+const DEFAULT_WORKSPACE_ID = Deno.env.get('DEFAULT_WORKSPACE_ID') || 'default';
 
 interface PappersCompany {
   siren: string;
@@ -107,7 +109,8 @@ serve(async (req) => {
       });
     }
 
-    const { siret, siren, q, lead_id } = await req.json();
+    const { siret, siren, q, lead_id, workspace_id } = await req.json();
+    const workspaceId = workspace_id || DEFAULT_WORKSPACE_ID;
 
     if (!PAPPERS_API_KEY) {
       console.error('PAPPERS_API_KEY not configured');
@@ -117,18 +120,54 @@ serve(async (req) => {
       });
     }
 
+    // ===== API QUOTA CHECK =====
+    const quotaCheck = await checkAPIQuota({
+      workspaceId,
+      apiCategory: 'enrichment',
+      apiName: 'pappers',
+      userId: user.id,
+    });
+
+    if (!quotaCheck.allowed) {
+      console.warn('[pappers-lookup] Quota exceeded:', quotaCheck.reason);
+      return new Response(JSON.stringify({ 
+        error: 'Quota API dépassé', 
+        reason: quotaCheck.reason,
+        usagePercent: quotaCheck.usagePercent,
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Log quota alerts if any
+    for (const alert of quotaCheck.alerts) {
+      console.log(`[pappers-lookup] Quota ${alert.type}: ${alert.message}`);
+    }
+
+    // ===== PREPARE API TRACKER =====
+    const apiTracker = createAPICallTracker({
+      workspaceId,
+      apiName: 'pappers',
+      apiCategory: 'enrichment',
+      providerName: 'pappers',
+    });
+
     let url: string;
+    let operationType: string;
     let params = new URLSearchParams({ api_token: PAPPERS_API_KEY });
 
     // Search by SIRET (most precise)
     if (siret) {
       params.append('siret', siret);
       url = `${PAPPERS_BASE_URL}/entreprise?${params.toString()}`;
+      operationType = 'company_by_siret';
     }
     // Search by SIREN
     else if (siren) {
       params.append('siren', siren);
       url = `${PAPPERS_BASE_URL}/entreprise?${params.toString()}`;
+      operationType = 'company_by_siren';
     }
     // Search by company name
     else if (q) {
@@ -136,6 +175,7 @@ serve(async (req) => {
       params.append('page', '1');
       params.append('par_page', '5');
       url = `${PAPPERS_BASE_URL}/recherche?${params.toString()}`;
+      operationType = 'search';
     }
     else {
       return new Response(JSON.stringify({ error: 'siret, siren, or q (search query) required' }), {
@@ -144,7 +184,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Pappers API call: ${siret ? 'SIRET' : siren ? 'SIREN' : 'Search'} lookup`);
+    console.log(`[pappers-lookup] API call: ${operationType}`);
 
     const pappersResponse = await fetch(url, {
       method: 'GET',
@@ -153,7 +193,14 @@ serve(async (req) => {
 
     if (!pappersResponse.ok) {
       const errorText = await pappersResponse.text();
-      console.error('Pappers API error:', pappersResponse.status, errorText);
+      console.error('[pappers-lookup] API error:', pappersResponse.status, errorText);
+      
+      // Track failed request
+      await apiTracker.error(operationType, String(pappersResponse.status), errorText, {
+        userId: user.id,
+        entityType: 'lead',
+        entityId: lead_id,
+      });
       
       if (pappersResponse.status === 404) {
         return new Response(JSON.stringify({ error: 'Entreprise non trouvée', found: false }), {
@@ -169,6 +216,19 @@ serve(async (req) => {
     }
 
     const data = await pappersResponse.json();
+
+    // Track successful request (Pappers charges per call, ~1-2 cents)
+    await apiTracker.success(operationType, {
+      userId: user.id,
+      entityType: lead_id ? 'lead' : undefined,
+      entityId: lead_id,
+      estimatedCostCents: operationType === 'search' ? 1 : 2, // Search is cheaper
+      metadata: {
+        siret: siret || data.siret,
+        siren: siren || data.siren,
+        query: q,
+      },
+    });
 
     // If it's a search, return results list
     if (q && !siret && !siren) {

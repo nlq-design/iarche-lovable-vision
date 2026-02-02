@@ -404,6 +404,7 @@ export class AIClient {
 
   /**
    * Log usage metrics to database and update workspace quota usage
+   * Now uses the unified API tracker for consistent metrics across all APIs
    */
   private async logMetrics(
     request: AICompletionRequest,
@@ -412,28 +413,57 @@ export class AIClient {
     if (!this.options.enableMetrics) return;
 
     try {
-      // Log to ai_usage_metrics (existing behavior)
-      await this.supabase.from('ai_usage_metrics').insert({
-        workspace_id: this.options.workspaceId,
-        user_id: this.options.userId,
-        operation_type: 'completion',
-        model_provider: response.provider,
-        model_id: response.model,
-        input_tokens: response.usage.prompt_tokens,
-        output_tokens: response.usage.completion_tokens,
-        total_tokens: response.usage.total_tokens,
-        latency_ms: response.latency_ms,
-        success: true,
-        metadata: {
-          fallback_used: response.fallback_used,
-          category: request.category,
-          has_tools: !!request.tools,
-        },
-      });
+      const estimatedCostCents = this.estimateCostCents(response);
       
-      // Update workspace quota usage (NEW)
+      // Log to BOTH ai_usage_metrics (legacy) AND api_usage_metrics (unified)
+      await Promise.all([
+        // Legacy AI metrics table (for backward compatibility)
+        this.supabase.from('ai_usage_metrics').insert({
+          workspace_id: this.options.workspaceId,
+          user_id: this.options.userId,
+          operation_type: 'completion',
+          model_provider: response.provider,
+          model_id: response.model,
+          input_tokens: response.usage.prompt_tokens,
+          output_tokens: response.usage.completion_tokens,
+          total_tokens: response.usage.total_tokens,
+          latency_ms: response.latency_ms,
+          estimated_cost_cents: estimatedCostCents,
+          success: true,
+          metadata: {
+            fallback_used: response.fallback_used,
+            category: request.category,
+            has_tools: !!request.tools,
+          },
+        }),
+        
+        // NEW: Unified API metrics table for cross-API governance
+        this.supabase.from('api_usage_metrics').insert({
+          workspace_id: this.options.workspaceId,
+          user_id: this.options.userId,
+          api_name: response.provider,
+          api_category: 'ai',
+          operation_type: 'completion',
+          provider_name: response.provider,
+          model_id: response.model,
+          input_tokens: response.usage.prompt_tokens,
+          output_tokens: response.usage.completion_tokens,
+          total_tokens: response.usage.total_tokens,
+          request_count: 1,
+          latency_ms: response.latency_ms,
+          success: true,
+          estimated_cost_cents: estimatedCostCents,
+          metadata: {
+            fallback_used: response.fallback_used,
+            category: request.category,
+            has_tools: !!request.tools,
+            function_name: request.category,
+          },
+        }),
+      ]);
+      
+      // Update workspace quota usage
       if (this.options.workspaceId && this.options.enableQuotaCheck !== false) {
-        const estimatedCostCents = this.estimateCostCents(response);
         await this.quotaManager.recordUsage(
           this.options.workspaceId,
           response.usage.total_tokens,
