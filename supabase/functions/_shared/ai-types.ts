@@ -118,6 +118,7 @@ export interface AIClientOptions {
   sessionId?: string;
   enableLogging?: boolean;
   enableMetrics?: boolean;
+  enableResilience?: boolean; // Enable circuit breaker, rate limiting, retry
   maxRetries?: number;
   timeoutMs?: number;
 }

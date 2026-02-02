@@ -1,6 +1,13 @@
 /**
  * Centralized AI Client with Provider Switching & Fallback
- * Phase 1: Shadow Mode - Can be imported without affecting existing functions
+ * Phase 2: Production Mode - Full resilience with Circuit Breaker, Rate Limiting, and Retry
+ * 
+ * Features:
+ *   - Automatic provider fallback chain
+ *   - Circuit breaker to isolate failing providers
+ *   - Rate limiting (configurable per provider via DB)
+ *   - Exponential backoff with jitter
+ *   - Usage metrics logging
  * 
  * Usage:
  *   import { createAIClient } from "../_shared/ai-client.ts";
@@ -26,6 +33,11 @@ import {
   getAvailableProviders,
   OpenAIAdapter,
 } from "./ai-providers.ts";
+import {
+  getResilienceManager,
+  ResilienceManager,
+  CircuitState,
+} from "./ai-resilience.ts";
 
 // =============================================================================
 // AI CLIENT
@@ -40,12 +52,14 @@ export class AIClient {
   private functionConfigCache: Map<string, { provider: string; model: string | null }> = new Map();
   private functionConfigCacheTime: number = 0;
   private readonly CONFIG_CACHE_TTL = 60000; // 1 minute
+  private resilience: ResilienceManager;
 
   constructor(options: AIClientOptions = {}) {
     this.options = {
       enableLogging: true,
       enableMetrics: true,
-      maxRetries: 2,
+      enableResilience: true,
+      maxRetries: 3,
       timeoutMs: 60000,
       ...options,
     };
@@ -53,6 +67,11 @@ export class AIClient {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     this.supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Initialize resilience manager with configured retry count
+    this.resilience = getResilienceManager({
+      retry: { maxRetries: this.options.maxRetries },
+    });
   }
 
   /**
@@ -167,11 +186,12 @@ export class AIClient {
   }
 
   /**
-   * Main completion method with automatic fallback
+   * Main completion method with automatic fallback and resilience
    */
   async complete(request: AICompletionRequest): Promise<AICompletionResponse> {
     const startTime = Date.now();
     const enableFallback = request.fallback !== false;
+    const useResilience = this.options.enableResilience !== false;
 
     // If specific provider requested, use only that
     if (request.provider) {
@@ -182,6 +202,26 @@ export class AIClient {
           request.provider
         );
       }
+      
+      // Execute with resilience if enabled
+      if (useResilience) {
+        const config = (await this.getProviderConfigs()).find(c => c.provider_name === request.provider);
+        const response = await this.resilience.execute(
+          request.provider,
+          () => adapter.complete(request),
+          {
+            rpm: config?.rate_limit_rpm,
+            onRetry: (attempt, error, delayMs) => {
+              if (this.options.enableLogging) {
+                console.log(`[AIClient] ${request.provider}: Retry ${attempt} in ${delayMs}ms - ${error.message}`);
+              }
+            },
+          }
+        );
+        await this.logMetrics(request, response);
+        return response;
+      }
+      
       const response = await adapter.complete(request);
       await this.logMetrics(request, response);
       return response;
@@ -196,16 +236,45 @@ export class AIClient {
         const adapter = createProviderAdapter(config.provider_name);
         if (!adapter.isAvailable()) {
           if (this.options.enableLogging) {
-            console.log(`[AIClient] Skipping ${config.provider_name} - not available`);
+            console.log(`[AIClient] Skipping ${config.provider_name} - not available (missing API key)`);
           }
           continue;
+        }
+
+        // Check resilience availability (circuit breaker + rate limit)
+        if (useResilience) {
+          const availability = this.resilience.isProviderAvailable(config.provider_name, config.rate_limit_rpm);
+          if (!availability.available) {
+            if (this.options.enableLogging) {
+              console.log(`[AIClient] Skipping ${config.provider_name} - ${availability.reason}`);
+            }
+            errors.push(`${config.provider_name}: ${availability.reason}`);
+            continue;
+          }
         }
 
         if (this.options.enableLogging) {
           console.log(`[AIClient] Trying ${config.provider_name}...`);
         }
 
-        const response = await adapter.complete(request);
+        // Execute with or without resilience
+        let response: AICompletionResponse;
+        if (useResilience) {
+          response = await this.resilience.execute(
+            config.provider_name,
+            () => adapter.complete(request),
+            {
+              rpm: config.rate_limit_rpm,
+              onRetry: (attempt, error, delayMs) => {
+                if (this.options.enableLogging) {
+                  console.log(`[AIClient] ${config.provider_name}: Retry ${attempt} in ${delayMs}ms - ${error.message}`);
+                }
+              },
+            }
+          );
+        } else {
+          response = await adapter.complete(request);
+        }
         
         // Mark if fallback was used
         if (errors.length > 0) {
@@ -246,27 +315,60 @@ export class AIClient {
   }
 
   /**
-   * Embedding method - currently uses OpenAI as primary
+   * Embedding method with resilience support
    */
   async embed(request: AIEmbeddingRequest): Promise<AIEmbeddingResponse> {
+    const useResilience = this.options.enableResilience !== false;
     // For embeddings, prefer OpenAI due to quality
     const preferredOrder: AIProviderName[] = ['openai', 'openrouter'];
+    const errors: string[] = [];
     
     for (const providerName of preferredOrder) {
       const adapter = createProviderAdapter(providerName);
-      if (adapter.isAvailable() && adapter.embed) {
-        try {
-          return await adapter.embed(request);
-        } catch (error) {
+      if (!adapter.isAvailable() || !adapter.embed) {
+        continue;
+      }
+
+      // Check resilience availability
+      if (useResilience) {
+        const availability = this.resilience.isProviderAvailable(providerName);
+        if (!availability.available) {
           if (this.options.enableLogging) {
-            console.warn(`[AIClient] ${providerName} embedding failed:`, error);
+            console.log(`[AIClient] Skipping ${providerName} for embedding - ${availability.reason}`);
           }
+          errors.push(`${providerName}: ${availability.reason}`);
+          continue;
+        }
+      }
+
+      try {
+        if (useResilience) {
+          return await this.resilience.execute(
+            providerName,
+            () => adapter.embed!(request),
+            {
+              onRetry: (attempt, error, delayMs) => {
+                if (this.options.enableLogging) {
+                  console.log(`[AIClient] ${providerName}: Embedding retry ${attempt} in ${delayMs}ms`);
+                }
+              },
+            }
+          );
+        }
+        return await adapter.embed(request);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        errors.push(`${providerName}: ${errorMsg}`);
+        if (this.options.enableLogging) {
+          console.warn(`[AIClient] ${providerName} embedding failed:`, error);
         }
       }
     }
 
     throw new AIProviderError(
-      'No embedding provider available',
+      errors.length > 0 
+        ? `All embedding providers failed: ${errors.join('; ')}`
+        : 'No embedding provider available',
       'openai',
       503
     );
@@ -306,19 +408,46 @@ export class AIClient {
   }
 
   /**
-   * Get current provider status
+   * Get current provider status including resilience state
    */
   async getProviderStatus(): Promise<Array<{
     name: AIProviderName;
     available: boolean;
     priority: number;
+    circuitState?: CircuitState;
+    rateLimited?: boolean;
   }>> {
     const configs = await this.getProviderConfigs();
-    return configs.map(config => ({
-      name: config.provider_name,
-      available: createProviderAdapter(config.provider_name).isAvailable(),
-      priority: config.priority,
-    }));
+    const resilienceHealth = this.resilience.getHealthStatus();
+    
+    return configs.map(config => {
+      const health = resilienceHealth[config.provider_name];
+      return {
+        name: config.provider_name,
+        available: createProviderAdapter(config.provider_name).isAvailable() && health.available,
+        priority: config.priority,
+        circuitState: health.circuitState,
+        rateLimited: health.rateLimitTokens !== null && health.rateLimitTokens <= 0,
+      };
+    });
+  }
+
+  /**
+   * Get detailed resilience health status
+   */
+  getResilienceHealth(): Record<AIProviderName, {
+    circuitState: CircuitState;
+    rateLimitTokens: number | null;
+    available: boolean;
+  }> {
+    return this.resilience.getHealthStatus();
+  }
+
+  /**
+   * Manually reset a provider's circuit breaker (for admin use)
+   */
+  resetProviderCircuit(provider: AIProviderName): void {
+    this.resilience.circuitBreaker.reset(provider);
   }
 }
 
