@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { callLLM } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,7 +14,6 @@ Deno.serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')!;
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -125,35 +125,14 @@ RÈGLES STRICTES :
 
 ${article.content}`;
 
-        const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'google/gemini-2.5-flash',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userPrompt }
-            ],
-            temperature: 0.3,
-          }),
-        });
-
-        if (!aiResponse.ok) {
-          console.error(`[enrich-all-resources] AI error for ${article.slug}:`, aiResponse.status);
-          results.failed++;
-          results.details.push({
-            slug: article.slug,
-            status: 'failed',
-            reason: `AI error: ${aiResponse.status}`
-          });
-          continue;
-        }
-
-        const aiData = await aiResponse.json();
-        const enrichedContent = aiData.choices?.[0]?.message?.content;
+        // Use centralized AI client with automatic DB config lookup
+        const enrichedContent = await callLLM(
+          [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          { functionName: 'enrich-all-resources', temperature: 0.3 }
+        );
 
         if (!enrichedContent) {
           console.error(`[enrich-all-resources] No enriched content for ${article.slug}`);

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { callLLM } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,8 +9,6 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
-const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 interface ExtractRequest {
   mode: "scan_all" | "scan_recent" | "scan_entity";
@@ -225,7 +224,7 @@ serve(async (req) => {
       .join("\n---\n")
       .slice(0, 50000);
 
-    // Call LLM to extract entities
+    // System and user prompts for entity extraction
     const systemPrompt = `Tu es un expert en extraction d'entités nommées pour un CRM B2B.
 
 OBJECTIF: Extraire les noms propres récurrents des textes fournis pour alimenter un dictionnaire de normalisation.
@@ -266,35 +265,20 @@ Retourne UNIQUEMENT le JSON des entités extraites.`;
 
     console.log(`[ExtractEntities] Calling LLM with ${batchedText.length} chars`);
 
-    const llmResponse = await fetch(LOVABLE_AI_GATEWAY, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
-
-    if (!llmResponse.ok) {
-      const errText = await llmResponse.text();
-      throw new Error(`LLM error: ${llmResponse.status} - ${errText.slice(0, 200)}`);
-    }
-
-    const llmData = await llmResponse.json();
-    const content = llmData.choices?.[0]?.message?.content || "{}";
+    // Use centralized AI client with automatic DB config lookup
+    const llmContent = await callLLM(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      { functionName: 'extract-entities' }
+    );
     
     let extracted: { entities: ExtractedEntity[] };
     try {
-      extracted = JSON.parse(content);
+      extracted = JSON.parse(llmContent);
     } catch {
-      console.error("[ExtractEntities] JSON parse failed:", content.slice(0, 500));
+      console.error("[ExtractEntities] JSON parse failed:", llmContent.slice(0, 500));
       extracted = { entities: [] };
     }
 

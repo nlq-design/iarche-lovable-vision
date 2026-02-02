@@ -1,13 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { extractStructured } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-const AI_GATEWAY_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
 
 // V3: Extended search filters with email domains, exclusions, text search
 interface SearchFiltersV3 {
@@ -74,6 +72,72 @@ function sanitizeSearchInput(input: string | undefined, maxLength = 200): string
   return trimmed.replace(/[%_]/g, '\\$&');
 }
 
+const FILTER_SCHEMA = {
+  name: 'apply_filters',
+  description: 'Apply search filters based on natural language query - V3',
+  parameters: {
+    type: 'object',
+    properties: {
+      filters: {
+        type: 'object',
+        properties: {
+          // Text search
+          searchText: { type: 'string', description: 'Texte libre à chercher dans company_name et industry' },
+          searchInFields: { type: 'array', items: { type: 'string' }, description: 'Champs où chercher: company_name, industry, contact_name' },
+          
+          // Email
+          emailDomain: { type: 'string', description: 'Domaine email exact (gmail.com, notaires.fr)' },
+          emailDomainContains: { type: 'string', description: 'Domaine contient (ac- pour académiques)' },
+          excludeEmailDomains: { type: 'array', items: { type: 'string' }, description: 'Domaines à exclure (webmails)' },
+          
+          // Location
+          city: { type: 'string', description: 'Ville exacte' },
+          postalCodePrefix: { 
+            oneOf: [
+              { type: 'string' },
+              { type: 'array', items: { type: 'string' } }
+            ],
+            description: 'Préfixe(s) code postal / département (33, 75, ["75","77","78"])'
+          },
+          excludeCities: { type: 'array', items: { type: 'string' }, description: 'Villes à exclure' },
+          
+          // Company
+          industry: { type: 'string', description: 'Secteur exact EN MAJUSCULES (AGENCES IMMOBILIERES)' },
+          industryContains: { type: 'string', description: 'Secteur contient (ECOLES, ASSOCIATIONS)' },
+          excludeIndustry: { type: 'array', items: { type: 'string' }, description: 'Secteurs à exclure EN MAJUSCULES' },
+          nafCode: { type: 'string', description: 'Préfixe code NAF (68 pour immo, 56 pour resto)' },
+          legalForm: { type: 'string', description: 'Forme juridique (SARL, SAS, SA)' },
+          minEmployees: { type: 'number', description: 'Effectif minimum' },
+          maxEmployees: { type: 'number', description: 'Effectif maximum' },
+          
+          // Contact
+          contactPosition: { type: 'string', description: 'Fonction (DG, CEO, décideur)' },
+          hasContactName: { type: 'boolean', description: 'Contact nommé' },
+          hasCompanyName: { type: 'boolean', description: 'Entreprise identifiée' },
+          
+          // Scoring
+          minScore: { type: 'number', description: 'Score minimum 0-100' },
+          maxScore: { type: 'number', description: 'Score maximum 0-100' },
+          status: { type: 'string', description: 'Statut (new, qualified, contacted, promoted)' },
+          
+          // Data presence
+          hasEmail: { type: 'boolean' },
+          hasPhone: { type: 'boolean' },
+          hasSiret: { type: 'boolean' },
+          
+          // Campaign
+          campaignEligible: { type: 'boolean', description: 'Éligible campagne' },
+          source: { type: 'string' },
+        },
+      },
+      interpretation: { type: 'string', description: 'Explication courte des filtres en français' },
+      confidence: { type: 'number', description: 'Confiance 0-100' },
+      clarification: { type: 'string', description: 'Question si requête ambiguë, sinon null' },
+    },
+    required: ['filters', 'interpretation', 'confidence'],
+  },
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -86,10 +150,6 @@ serve(async (req) => {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
-    }
-
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
     }
 
     const supabase = createClient(
@@ -117,117 +177,20 @@ serve(async (req) => {
       throw new Error('Prompt vivier-target not found in database');
     }
 
-    // V3: Tool schema with extended filters
-    const aiResponse = await fetch(AI_GATEWAY_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: promptData.system_prompt },
-          { role: 'user', content: `Analyse cette requête de ciblage prospect et extrait les filtres JSON:\n\n"${userQuery}"\n\nContexte filtres existants: ${JSON.stringify(existingFilters || {})}` }
-        ],
-        tools: [
-          {
-            type: 'function',
-            function: {
-              name: 'apply_filters',
-              description: 'Apply search filters based on natural language query - V3',
-              parameters: {
-                type: 'object',
-                properties: {
-                  filters: {
-                    type: 'object',
-                    properties: {
-                      // Text search
-                      searchText: { type: 'string', description: 'Texte libre à chercher dans company_name et industry' },
-                      searchInFields: { type: 'array', items: { type: 'string' }, description: 'Champs où chercher: company_name, industry, contact_name' },
-                      
-                      // Email
-                      emailDomain: { type: 'string', description: 'Domaine email exact (gmail.com, notaires.fr)' },
-                      emailDomainContains: { type: 'string', description: 'Domaine contient (ac- pour académiques)' },
-                      excludeEmailDomains: { type: 'array', items: { type: 'string' }, description: 'Domaines à exclure (webmails)' },
-                      
-                      // Location
-                      city: { type: 'string', description: 'Ville exacte' },
-                      postalCodePrefix: { 
-                        oneOf: [
-                          { type: 'string' },
-                          { type: 'array', items: { type: 'string' } }
-                        ],
-                        description: 'Préfixe(s) code postal / département (33, 75, ["75","77","78"])'
-                      },
-                      excludeCities: { type: 'array', items: { type: 'string' }, description: 'Villes à exclure' },
-                      
-                      // Company
-                      industry: { type: 'string', description: 'Secteur exact EN MAJUSCULES (AGENCES IMMOBILIERES)' },
-                      industryContains: { type: 'string', description: 'Secteur contient (ECOLES, ASSOCIATIONS)' },
-                      excludeIndustry: { type: 'array', items: { type: 'string' }, description: 'Secteurs à exclure EN MAJUSCULES' },
-                      nafCode: { type: 'string', description: 'Préfixe code NAF (68 pour immo, 56 pour resto)' },
-                      legalForm: { type: 'string', description: 'Forme juridique (SARL, SAS, SA)' },
-                      minEmployees: { type: 'number', description: 'Effectif minimum' },
-                      maxEmployees: { type: 'number', description: 'Effectif maximum' },
-                      
-                      // Contact
-                      contactPosition: { type: 'string', description: 'Fonction (DG, CEO, décideur)' },
-                      hasContactName: { type: 'boolean', description: 'Contact nommé' },
-                      hasCompanyName: { type: 'boolean', description: 'Entreprise identifiée' },
-                      
-                      // Scoring
-                      minScore: { type: 'number', description: 'Score minimum 0-100' },
-                      maxScore: { type: 'number', description: 'Score maximum 0-100' },
-                      status: { type: 'string', description: 'Statut (new, qualified, contacted, promoted)' },
-                      
-                      // Data presence
-                      hasEmail: { type: 'boolean' },
-                      hasPhone: { type: 'boolean' },
-                      hasSiret: { type: 'boolean' },
-                      
-                      // Campaign
-                      campaignEligible: { type: 'boolean', description: 'Éligible campagne' },
-                      source: { type: 'string' },
-                    },
-                  },
-                  interpretation: { type: 'string', description: 'Explication courte des filtres en français' },
-                  confidence: { type: 'number', description: 'Confiance 0-100' },
-                  clarification: { type: 'string', description: 'Question si requête ambiguë, sinon null' },
-                },
-                required: ['filters', 'interpretation', 'confidence'],
-              },
-            },
-          },
-        ],
-        tool_choice: { type: 'function', function: { name: 'apply_filters' } },
-      }),
-    });
+    // Use centralized AI client with automatic DB config lookup
+    const parsed = await extractStructured<AIResponseV3>(
+      [
+        { role: 'system', content: promptData.system_prompt },
+        { role: 'user', content: `Analyse cette requête de ciblage prospect et extrait les filtres JSON:\n\n"${userQuery}"\n\nContexte filtres existants: ${JSON.stringify(existingFilters || {})}` }
+      ],
+      FILTER_SCHEMA,
+      { functionName: 'vivier-ai-search' }
+    );
 
-    if (!aiResponse.ok) {
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: 'Limite de requêtes atteinte' }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: 'Crédits IA épuisés' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      throw new Error(`AI Gateway error: ${aiResponse.status}`);
-    }
-
-    const aiData = await aiResponse.json();
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    
-    if (!toolCall?.function?.arguments) {
+    if (!parsed) {
       throw new Error('Échec de l\'analyse de la requête');
     }
 
-    const parsed: AIResponseV3 = JSON.parse(toolCall.function.arguments);
     const filters = parsed.filters || {};
     const interpretation = parsed.interpretation || '';
     const confidence = parsed.confidence || 80;
@@ -265,7 +228,6 @@ serve(async (req) => {
       }
     }
     if (filters.excludeEmailDomains && filters.excludeEmailDomains.length > 0) {
-      // Build NOT ILIKE conditions for each excluded domain
       for (const domain of filters.excludeEmailDomains.slice(0, 15)) {
         const d = sanitizeSearchInput(domain, 100);
         if (d) {
@@ -299,7 +261,6 @@ serve(async (req) => {
         const p = sanitizeSearchInput(prefixes[0], 10);
         if (p) dbQuery = dbQuery.ilike('postal_code', `${p}%`);
       } else if (prefixes.length > 1) {
-        // Multiple prefixes: use OR
         const orConditions = prefixes
           .map(p => sanitizeSearchInput(p, 10))
           .filter(Boolean)
@@ -438,11 +399,21 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in vivier-ai-search V3:', error);
+    
+    const message = error instanceof Error ? error.message : 'Erreur inconnue';
+    let statusCode = 500;
+    
+    if (message.includes('rate_limit') || message.includes('429')) {
+      statusCode = 429;
+    } else if (message.includes('402') || message.includes('quota')) {
+      statusCode = 402;
+    }
+    
     return new Response(JSON.stringify({
       success: false,
-      error: error instanceof Error ? error.message : 'Erreur inconnue',
+      error: message,
     }), {
-      status: 500,
+      status: statusCode,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
