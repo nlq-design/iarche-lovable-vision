@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { extractStructured } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,9 +8,7 @@ const corsHeaders = {
 };
 
 const BATCH_SIZE = 100;
-const CONCURRENCY = 15; // Parallel AI calls
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-const AI_GATEWAY_URL = 'https://ai.gateway.lovable.dev/v1/chat/completions';
+const CONCURRENCY = 15;
 
 interface ScoringResult {
   score: number;
@@ -22,6 +21,30 @@ interface ScoringResult {
   };
   recommendation: string;
 }
+
+const SCORING_SCHEMA = {
+  name: 'submit_score',
+  description: 'Submit the scoring result for this prospect',
+  parameters: {
+    type: 'object',
+    properties: {
+      score: { type: 'number', description: 'Score global de 0 à 100' },
+      details: {
+        type: 'object',
+        properties: {
+          completude: { type: 'number' },
+          secteur: { type: 'number' },
+          taille: { type: 'number' },
+          localisation: { type: 'number' },
+          signaux: { type: 'number' },
+        },
+        required: ['completude', 'secteur', 'taille', 'localisation', 'signaux'],
+      },
+      recommendation: { type: 'string', description: 'Courte recommandation action' },
+    },
+    required: ['score', 'details', 'recommendation'],
+  },
+};
 
 async function scoreVivier(vivier: Record<string, unknown>, systemPrompt: string): Promise<ScoringResult> {
   const vivierContext = `
@@ -39,64 +62,21 @@ CA: ${vivier.revenue_range || 'Non renseigné'}
 Date création: ${vivier.creation_date || 'Non renseigné'}
   `.trim();
 
-  const response = await fetch(AI_GATEWAY_URL, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'google/gemini-2.5-flash-lite',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Score ce prospect:\n\n${vivierContext}` }
-      ],
-      tools: [
-        {
-          type: 'function',
-          function: {
-            name: 'submit_score',
-            description: 'Submit the scoring result for this prospect',
-            parameters: {
-              type: 'object',
-              properties: {
-                score: { type: 'number', description: 'Score global de 0 à 100' },
-                details: {
-                  type: 'object',
-                  properties: {
-                    completude: { type: 'number' },
-                    secteur: { type: 'number' },
-                    taille: { type: 'number' },
-                    localisation: { type: 'number' },
-                    signaux: { type: 'number' },
-                  },
-                  required: ['completude', 'secteur', 'taille', 'localisation', 'signaux'],
-                },
-                recommendation: { type: 'string', description: 'Courte recommandation action' },
-              },
-              required: ['score', 'details', 'recommendation'],
-            },
-          },
-        },
-      ],
-      tool_choice: { type: 'function', function: { name: 'submit_score' } },
-    }),
-  });
+  // Use centralized AI client with automatic DB config lookup
+  const result = await extractStructured<ScoringResult>(
+    [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `Score ce prospect:\n\n${vivierContext}` }
+    ],
+    SCORING_SCHEMA,
+    { functionName: 'score-viviers-batch' }
+  );
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('AI Gateway error:', response.status, errorText);
-    throw new Error(`AI Gateway error: ${response.status}`);
+  if (!result) {
+    throw new Error('No scoring result from AI');
   }
 
-  const data = await response.json();
-  const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-  
-  if (!toolCall?.function?.arguments) {
-    throw new Error('No tool call in response');
-  }
-
-  return JSON.parse(toolCall.function.arguments) as ScoringResult;
+  return result;
 }
 
 serve(async (req) => {
@@ -113,9 +93,7 @@ serve(async (req) => {
       });
     }
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
-    }
+    // API key validation is now handled by centralized ai-client
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
