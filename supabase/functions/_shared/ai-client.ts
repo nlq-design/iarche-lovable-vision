@@ -336,10 +336,15 @@ export function createAIClient(options?: AIClientOptions): AIClient {
 
 /**
  * Simple completion call - drop-in replacement for direct API calls
+ * 
+ * IMPORTANT: Pass `functionName` to automatically use the model/provider
+ * configured in the `edge_function_model_config` table.
+ * If no config exists, falls back to the global provider chain.
  */
 export async function callLLM(
   messages: Array<{ role: string; content: string }>,
   options: {
+    functionName?: string; // <-- NEW: Auto-lookup config from DB
     model?: string;
     provider?: AIProviderName;
     temperature?: number;
@@ -349,10 +354,25 @@ export async function callLLM(
 ): Promise<string> {
   const client = createAIClient({ workspaceId: options.workspaceId });
   
+  // Auto-fetch function-specific config if functionName provided
+  let resolvedProvider = options.provider;
+  let resolvedModel = options.model;
+  
+  if (options.functionName) {
+    const functionConfig = await client.getFunctionConfig(options.functionName);
+    if (functionConfig) {
+      console.log(`[callLLM] Using DB config for ${options.functionName}: ${functionConfig.provider}/${functionConfig.model || 'default'}`);
+      resolvedProvider = functionConfig.provider;
+      resolvedModel = functionConfig.model || resolvedModel;
+    } else {
+      console.log(`[callLLM] No DB config for ${options.functionName}, using fallback chain`);
+    }
+  }
+  
   const response = await client.complete({
     messages: messages as AICompletionRequest['messages'],
-    model: options.model,
-    provider: options.provider,
+    model: resolvedModel,
+    provider: resolvedProvider,
     temperature: options.temperature,
     max_tokens: options.maxTokens,
   });
@@ -362,20 +382,37 @@ export async function callLLM(
 
 /**
  * Generate embeddings - drop-in replacement
+ * 
+ * IMPORTANT: Pass `functionName` to automatically use the model/provider
+ * configured in the `edge_function_model_config` table.
  */
 export async function generateEmbedding(
   text: string,
   options: {
+    functionName?: string; // <-- NEW: Auto-lookup config from DB
     model?: string;
     provider?: AIProviderName;
   } = {}
 ): Promise<number[]> {
   const client = createAIClient();
   
+  // Auto-fetch function-specific config if functionName provided
+  let resolvedProvider = options.provider;
+  let resolvedModel = options.model;
+  
+  if (options.functionName) {
+    const functionConfig = await client.getFunctionConfig(options.functionName);
+    if (functionConfig) {
+      console.log(`[generateEmbedding] Using DB config for ${options.functionName}: ${functionConfig.provider}/${functionConfig.model || 'default'}`);
+      resolvedProvider = functionConfig.provider;
+      resolvedModel = functionConfig.model || resolvedModel;
+    }
+  }
+  
   const response = await client.embed({
     input: text,
-    model: options.model,
-    provider: options.provider,
+    model: resolvedModel,
+    provider: resolvedProvider,
   });
 
   return response.embeddings[0];
@@ -383,6 +420,9 @@ export async function generateEmbedding(
 
 /**
  * Structured output extraction with tool calling
+ * 
+ * IMPORTANT: Pass `functionName` to automatically use the model/provider
+ * configured in the `edge_function_model_config` table.
  */
 export async function extractStructured<T>(
   messages: Array<{ role: string; content: string }>,
@@ -392,15 +432,27 @@ export async function extractStructured<T>(
     parameters: Record<string, unknown>;
   },
   options: {
+    functionName?: string; // <-- NEW: Auto-lookup config from DB
     provider?: AIProviderName;
     workspaceId?: string;
   } = {}
 ): Promise<T | null> {
   const client = createAIClient({ workspaceId: options.workspaceId });
   
+  // Auto-fetch function-specific config if functionName provided
+  let resolvedProvider = options.provider;
+  
+  if (options.functionName) {
+    const functionConfig = await client.getFunctionConfig(options.functionName);
+    if (functionConfig) {
+      console.log(`[extractStructured] Using DB config for ${options.functionName}: ${functionConfig.provider}`);
+      resolvedProvider = functionConfig.provider;
+    }
+  }
+  
   const response = await client.complete({
     messages: messages as AICompletionRequest['messages'],
-    provider: options.provider,
+    provider: resolvedProvider,
     tools: [{
       type: 'function',
       function: schema,

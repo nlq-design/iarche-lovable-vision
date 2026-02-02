@@ -1,12 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { callLLM } from "../_shared/ai-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const LOVABLE_API_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 interface VivierStats {
   total_leads: number;
@@ -62,7 +61,6 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -299,7 +297,7 @@ serve(async (req) => {
     // ============================================
     let dailySummary = `${total_leads.toLocaleString('fr-FR')} leads dont ${high_score_count} à fort potentiel.`;
 
-    if (lovableApiKey && opportunities.length > 0) {
+    if (opportunities.length > 0) {
       try {
         const { data: promptData } = await supabase
           .from('ai_prompts')
@@ -308,7 +306,6 @@ serve(async (req) => {
           .single();
 
         const systemPrompt = promptData?.system_prompt || FALLBACK_PROMPT;
-        const modelConfig = promptData?.model_config as { model?: string; temperature?: number } || {};
 
         const userPrompt = `DONNÉES VIVIER:
 - Total: ${stats.total_leads.toLocaleString('fr-FR')} leads
@@ -326,48 +323,39 @@ ${stats.top_cities.slice(0, 5).map(c => `- ${c.city}: ${c.count}`).join('\n')}
 
 Génère le daily_summary en 1 phrase percutante et enrichis les opportunités si tu identifies des patterns intéressants.`;
 
-        const aiResponse = await fetch(LOVABLE_API_URL, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${lovableApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: modelConfig.model || 'google/gemini-2.5-flash',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userPrompt },
-            ],
-            temperature: modelConfig.temperature || 0.4,
-            max_tokens: 1000,
-          }),
-        });
-
-        if (aiResponse.ok) {
-          const aiData = await aiResponse.json();
-          const content = aiData.choices?.[0]?.message?.content;
+        // Use centralized AI client with automatic DB config lookup
+        const aiContent = await callLLM(
+          [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          {
+            functionName: 'vivier-insights',
+            temperature: 0.4,
+            maxTokens: 1000
+          }
+        );
+        
+        if (aiContent) {
+          let jsonStr = aiContent;
+          const jsonMatch = aiContent.match(/```(?:json)?\s*([\s\S]*?)```/);
+          if (jsonMatch) jsonStr = jsonMatch[1];
           
-          if (content) {
-            let jsonStr = content;
-            const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-            if (jsonMatch) jsonStr = jsonMatch[1];
-            
-            try {
-              const parsed = JSON.parse(jsonStr.trim());
-              if (parsed.daily_summary) {
-                dailySummary = parsed.daily_summary;
-              }
-              // Merge AI opportunities if any new ones
-              if (parsed.opportunities?.length > 0) {
-                const aiOpps = parsed.opportunities.filter((o: any) => 
-                  o.type && o.title && o.action?.query &&
-                  !opportunities.some(existing => existing.type === o.type && existing.title === o.title)
-                );
-                opportunities = [...opportunities, ...aiOpps].slice(0, 4);
-              }
-            } catch (e) {
-              console.log('AI parsing skipped, using rule-based opportunities');
+          try {
+            const parsed = JSON.parse(jsonStr.trim());
+            if (parsed.daily_summary) {
+              dailySummary = parsed.daily_summary;
             }
+            // Merge AI opportunities if any new ones
+            if (parsed.opportunities?.length > 0) {
+              const aiOpps = parsed.opportunities.filter((o: any) => 
+                o.type && o.title && o.action?.query &&
+                !opportunities.some(existing => existing.type === o.type && existing.title === o.title)
+              );
+              opportunities = [...opportunities, ...aiOpps].slice(0, 4);
+            }
+          } catch (e) {
+            console.log('AI parsing skipped, using rule-based opportunities');
           }
         }
       } catch (aiErr) {

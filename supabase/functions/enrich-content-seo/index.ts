@@ -1,9 +1,12 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { callLLM } from "../_shared/ai-client.ts";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -16,15 +19,6 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Content is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      console.error('[enrich-content-seo] LOVABLE_API_KEY not configured');
-      return new Response(
-        JSON.stringify({ error: 'API key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -47,50 +41,19 @@ RÈGLES STRICTES :
 
 ${content}`;
 
-    console.log('[enrich-content-seo] Calling Lovable AI for SEO enrichment');
+    console.log('[enrich-content-seo] Calling centralized AI client');
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.3,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[enrich-content-seo] Lovable AI error:', response.status, errorText);
-      
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+    // Use centralized AI client with automatic DB config lookup
+    const enrichedContent = await callLLM(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      {
+        functionName: 'enrich-content-seo',
+        temperature: 0.3
       }
-      
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'Payment required. Please add credits to your Lovable AI workspace.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({ error: 'AI service error', details: errorText }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const data = await response.json();
-    const enrichedContent = data.choices?.[0]?.message?.content;
+    );
 
     if (!enrichedContent) {
       console.error('[enrich-content-seo] No enriched content returned from AI');
@@ -108,10 +71,20 @@ ${content}`;
     );
 
   } catch (error) {
-    console.error('[enrich-content-seo] Unexpected error:', error);
+    console.error('[enrich-content-seo] Error:', error);
+    
+    const message = (error as Error).message || 'Unknown error';
+    let statusCode = 500;
+    
+    if (message.includes('rate_limit') || message.includes('429')) {
+      statusCode = 429;
+    } else if (message.includes('402') || message.includes('quota')) {
+      statusCode = 402;
+    }
+    
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: message }),
+      { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
