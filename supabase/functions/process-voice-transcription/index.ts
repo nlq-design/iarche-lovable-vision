@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // Centralized AI client for provider switching and fallback
 import { callLLMWithFallback } from "../_shared/ai-legacy-bridge.ts";
+import { transcribeFromUrl } from "../_shared/assemblyai-utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,29 +11,20 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const ASSEMBLYAI_API_KEY = Deno.env.get("ASSEMBLYAI_API_KEY");
 // Note: Provider API keys are now managed by the centralized AI client
 // ANTHROPIC_API_KEY and OPENROUTER_API_KEY are read automatically by ai-client.ts
 
-const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
-
-// Limits - Whisper max is 25MB, but we can stream larger files
-const WHISPER_MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25MB - OpenAI Whisper per-request limit
-const EDGE_FUNCTION_MAX_FILE_SIZE = 250 * 1024 * 1024; // 250MB - streaming allows larger files
 const MAX_TRANSCRIPTION_CHARS = 20000; // Limit text sent to LLM (increased for better coverage)
 const CHUNK_SIZE_CHARS = 12000; // Size of each chunk for chunked analysis
 const MAX_CHUNKS = 5; // Maximum chunks to process (prevents runaway costs)
 
 // LLM timeout must be BELOW the Edge Function platform timeout (~60-150s) to fail gracefully.
-// If LLM takes too long, we catch the error and persist status before platform kills us.
 const LLM_TIMEOUT_MS = 55_000; // 55s - slightly increased for complex analysis
 const COMPRESSION_TIMEOUT_MS = 60_000; // 60s for compression of long transcripts
 
-// Whisper can take longer on long audio even if file size is small.
-// FIXED: Increase default timeout for files near the 25MB limit (often 20-40min audio).
-// The 55s default was causing timeouts on medium-length compressed audio.
-const WHISPER_TIMEOUT_MS = 90_000; // 90s default (covers most 10-30min audio)
-const WHISPER_TIMEOUT_LONG_MS = 180_000; // 180s for long audio (>15min or >15MB)
+// AssemblyAI max wait for transcription polling
+const ASSEMBLYAI_MAX_WAIT_MS = 300_000; // 5 minutes
 
 type LLMProvider = "lovable" | "openai" | "anthropic" | "openrouter";
 
@@ -68,280 +60,6 @@ function logPreview(tag: string, s: string, max = 300) {
 function logError(tag: string, err: unknown, max = 500) {
   const msg = err instanceof Error ? err.message : String(err);
   console.error(`[${tag}] ${msg.slice(0, max)}`);
-}
-
-// ============= MULTIPART STREAMING UTILITIES =============
-function encodeUtf8(s: string): Uint8Array {
-  return new TextEncoder().encode(s);
-}
-
-function concatUint8(a: Uint8Array, b: Uint8Array): Uint8Array {
-  const out = new Uint8Array(a.length + b.length);
-  out.set(a, 0);
-  out.set(b, a.length);
-  return out;
-}
-
-/**
- * Build a streaming multipart/form-data body without loading file in memory
- */
-function multipartStream(params: {
-  boundary: string;
-  fields: Array<{ name: string; value: string }>;
-  file: {
-    fieldName: string;
-    filename: string;
-    contentType: string;
-    stream: ReadableStream<Uint8Array>;
-  };
-}): ReadableStream<Uint8Array> {
-  const { boundary, fields, file } = params;
-
-  const preambleParts: Uint8Array[] = [];
-
-  for (const f of fields) {
-    preambleParts.push(encodeUtf8(
-      `--${boundary}\r\n` +
-      `Content-Disposition: form-data; name="${f.name}"\r\n\r\n` +
-      `${f.value}\r\n`
-    ));
-  }
-
-  preambleParts.push(encodeUtf8(
-    `--${boundary}\r\n` +
-    `Content-Disposition: form-data; name="${file.fieldName}"; filename="${file.filename}"\r\n` +
-    `Content-Type: ${file.contentType}\r\n\r\n`
-  ));
-
-  const preamble = preambleParts.reduce((acc, cur) => concatUint8(acc, cur), new Uint8Array());
-  const closing = encodeUtf8(`\r\n--${boundary}--\r\n`);
-
-  return new ReadableStream<Uint8Array>({
-    async start(controller) {
-      controller.enqueue(preamble);
-
-      const reader = file.stream.getReader();
-      try {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          if (value) controller.enqueue(value);
-        }
-      } finally {
-        reader.releaseLock();
-      }
-
-      controller.enqueue(closing);
-      controller.close();
-    }
-  });
-}
-
-/**
- * Get file extension from MIME type for Whisper API
- */
-function getExtensionFromMimeType(mimeType: string): string {
-  const mimeToExt: Record<string, string> = {
-    "audio/mpeg": "mp3",
-    "audio/mp3": "mp3",
-    "audio/mp4": "m4a",
-    "audio/m4a": "m4a",
-    "audio/x-m4a": "m4a",
-    "audio/aac": "m4a",
-    "audio/wav": "wav",
-    "audio/x-wav": "wav",
-    "audio/wave": "wav",
-    "audio/webm": "webm",
-    "audio/ogg": "ogg",
-    "audio/flac": "flac",
-    "audio/x-flac": "flac",
-    "video/mp4": "mp4",
-    "video/webm": "webm",
-  };
-
-  return mimeToExt[mimeType.toLowerCase()] || "mp3";
-}
-
-function detectAudioFormatFromMagic(bytes: Uint8Array): { mime: string; ext: string } | null {
-  const startsWithAscii = (ascii: string) => {
-    if (bytes.length < ascii.length) return false;
-    for (let i = 0; i < ascii.length; i++) {
-      if (bytes[i] !== ascii.charCodeAt(i)) return false;
-    }
-    return true;
-  };
-
-  const matchAsciiAt = (offset: number, ascii: string) => {
-    if (bytes.length < offset + ascii.length) return false;
-    for (let i = 0; i < ascii.length; i++) {
-      if (bytes[offset + i] !== ascii.charCodeAt(i)) return false;
-    }
-    return true;
-  };
-
-  // OGG container (often Opus-in-OGG for Telegram voice notes)
-  if (startsWithAscii("OggS")) return { mime: "audio/ogg", ext: "ogg" };
-
-  // WAV (RIFF....WAVE)
-  if (startsWithAscii("RIFF") && matchAsciiAt(8, "WAVE")) return { mime: "audio/wav", ext: "wav" };
-
-  // FLAC
-  if (startsWithAscii("fLaC")) return { mime: "audio/flac", ext: "flac" };
-
-  // WebM / Matroska
-  if (bytes.length >= 4 && bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3) {
-    return { mime: "audio/webm", ext: "webm" };
-  }
-
-  // MP3 (ID3 tag or frame sync)
-  if (startsWithAscii("ID3") || (bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0)) {
-    return { mime: "audio/mpeg", ext: "mp3" };
-  }
-
-  // MP4/M4A family: ....ftyp
-  if (matchAsciiAt(4, "ftyp")) {
-    return { mime: "audio/mp4", ext: "mp4" };
-  }
-
-  return null;
-}
-
-
-// ============= WHISPER TRANSCRIPTION (STREAMING) =============
-
-/**
- * Transcribe audio by streaming directly from Storage to Whisper
- * No blob() call - prevents memory exhaustion
- */
-async function transcribeWithWhisperStreaming(params: {
-  audioStream: ReadableStream<Uint8Array>;
-  fileName: string;
-  mimeType: string;
-  language?: string;
-}): Promise<string> {
-  if (!OPENAI_API_KEY) {
-    throw new Error("openai_api_key_not_configured: OPENAI_API_KEY is required for Whisper transcription");
-  }
-
-  const { audioStream, fileName, mimeType, language = "fr" } = params;
-  const boundary = `----edge-${crypto.randomUUID()}`;
-
-  console.log(`[Whisper] Streaming transcription: ${fileName}, type=${mimeType}`);
-
-  const fields = [
-    { name: "model", value: "whisper-1" },
-    { name: "language", value: language },
-    { name: "response_format", value: "text" },
-  ];
-
-  const bodyStream = multipartStream({
-    boundary,
-    fields,
-    file: {
-      fieldName: "file",
-      filename: fileName,
-      contentType: mimeType || "application/octet-stream",
-      stream: audioStream,
-    },
-  });
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort("timeout"), WHISPER_TIMEOUT_MS);
-
-  try {
-    let res: Response;
-    try {
-      res = await fetch(WHISPER_API_URL, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
-          "Content-Type": `multipart/form-data; boundary=${boundary}`,
-        },
-        body: bodyStream,
-        signal: controller.signal,
-      });
-    } catch (e) {
-      const msg = String((e as Error)?.message ?? e);
-      if (msg.includes("timeout") || msg.includes("abort")) {
-        throw new Error(`WHISPER_TIMEOUT: Transcription took too long (>${Math.round(WHISPER_TIMEOUT_MS / 1000)}s).`);
-      }
-      throw e;
-    }
-
-    const txt = await res.text();
-    logPreview("Whisper_Response", txt);
-
-    if (res.status === 413) {
-      throw new Error("WHISPER_MAX_SIZE: File exceeds Whisper API limit (25MB). Chunking or compression required.");
-    }
-
-    if (!res.ok) {
-      throw new Error(`whisper_api_error: ${res.status} - ${txt.slice(0, 500)}`);
-    }
-
-    return txt.trim();
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-/**
- * Fallback: Transcribe small audio using blob (for files < 25MB already fetched)
- */
-async function transcribeWithWhisperBlob(
-  audioBlob: Blob,
-  language = "fr",
-  timeoutMs = WHISPER_TIMEOUT_MS
-): Promise<string> {
-  if (!OPENAI_API_KEY) {
-    throw new Error("openai_api_key_not_configured");
-  }
-
-  const ext = getExtensionFromMimeType(audioBlob.type);
-  const fileName = `audio.${ext}`;
-  console.log(`[Whisper] Blob transcription: ${fileName}, size=${(audioBlob.size / 1024).toFixed(1)} KB, timeout=${Math.round(timeoutMs / 1000)}s`);
-
-  const formData = new FormData();
-  formData.append("file", audioBlob, fileName);
-  formData.append("model", "whisper-1");
-  formData.append("language", language);
-  formData.append("response_format", "text");
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort("timeout"), timeoutMs);
-
-  try {
-    let response: Response;
-    try {
-      response = await fetch(WHISPER_API_URL, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${OPENAI_API_KEY}`,
-        },
-        body: formData,
-        signal: controller.signal,
-      });
-    } catch (e) {
-      const msg = String((e as Error)?.message ?? e);
-      if (msg.includes("timeout") || msg.includes("abort")) {
-        throw new Error(`WHISPER_TIMEOUT: Transcription took too long (>${Math.round(timeoutMs / 1000)}s).`);
-      }
-      throw e;
-    }
-
-    if (response.status === 413) {
-      throw new Error("WHISPER_MAX_SIZE: File exceeds Whisper API limit (25MB). Chunking or compression required.");
-    }
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`whisper_api_error: ${response.status} - ${errorText.slice(0, 500)}`);
-    }
-
-    return (await response.text()).trim();
-  } finally {
-    clearTimeout(timeout);
-  }
 }
 
 // ============= JSON EXTRACTION O(n) =============
@@ -1788,7 +1506,7 @@ serve(async (req) => {
 
     console.log(`[Job] Processing ${jobId}`);
 
-    // If raw transcript already exists, skip Whisper and go straight to analysis.
+    // If raw transcript already exists, skip transcription and go straight to analysis.
     // This covers:
     // - client-side chunking flow (pre_transcribed_text)
     // - retries where transcription already completed
@@ -1798,7 +1516,7 @@ serve(async (req) => {
     let rawText: string;
 
     if (existingRawTranscript && existingRawTranscript.trim().length > 0) {
-      console.log("[Process] Using existing raw_transcript (skip Whisper)");
+      console.log("[Process] Using existing raw_transcript (skip transcription)");
       rawText = existingRawTranscript;
 
       await supabase
@@ -1813,7 +1531,11 @@ serve(async (req) => {
         })
         .eq("id", jobId);
     } else {
-      // Need to transcribe the audio
+      // Need to transcribe the audio via AssemblyAI
+      if (!ASSEMBLYAI_API_KEY) {
+        throw new Error("assemblyai_api_key_not_configured: ASSEMBLYAI_API_KEY is required");
+      }
+
       await supabase.from("voice_transcriptions").update({ 
         status: "transcribing",
         ai_metadata: {
@@ -1823,7 +1545,6 @@ serve(async (req) => {
       }).eq("id", jobId);
 
       // Get signed URL for audio - detect bucket from path prefix
-      // Telegram imports use cockpit-uploads bucket (telegram-audio/ prefix), others use voice-transcriptions
       const storagePath = vjob.storage_path;
       const isTelegramAudio = storagePath.startsWith("telegram-audio/");
       const bucket = isTelegramAudio ? "cockpit-uploads" : "voice-transcriptions";
@@ -1838,47 +1559,25 @@ serve(async (req) => {
         throw new Error(`signed_url_failed: ${signErr?.message ?? "no_url"}`);
       }
 
-      // Fetch audio with HEAD first to check size
+      // Fetch audio metadata
       const headRes = await fetch(signed.signedUrl, { method: "HEAD" });
       const contentLength = headRes.headers.get("content-length");
       const sizeBytes = contentLength ? Number(contentLength) : null;
-      const mimeType = (headRes.headers.get("content-type") ?? "application/octet-stream").split(";")[0];
       const fileSizeMB = typeof sizeBytes === "number" && !Number.isNaN(sizeBytes) ? sizeBytes / 1024 / 1024 : null;
 
-      console.log(`[Audio] size=${fileSizeMB ? fileSizeMB.toFixed(2) + " MB" : "unknown"}, type=${mimeType}`);
+      console.log(`[Audio] size=${fileSizeMB ? fileSizeMB.toFixed(2) + " MB" : "unknown"}`);
 
-      // Check if file exceeds Whisper API limit - require client-side chunking
-      if (typeof sizeBytes === "number" && sizeBytes > WHISPER_MAX_SIZE_BYTES) {
-        console.error(`[Process] WHISPER_MAX_SIZE: File exceeds Whisper API limit (25MB). Chunking or compression required.`);
-        await supabase.from("voice_transcriptions").update({
-          status: "error",
-          ai_metadata: {
-            ...aiMeta,
-            error_code: "WHISPER_MAX_SIZE",
-            error_message: `Fichier trop volumineux (${fileSizeMB?.toFixed(1)} MB). Utilisez le découpage client-side pour les fichiers > 25MB.`,
-            rejected_at: new Date().toISOString(),
-          },
-        }).eq("id", jobId);
-
-        return new Response(JSON.stringify({
-          ok: false,
-          error: "process_failed",
-          details: "WHISPER_MAX_SIZE: File exceeds Whisper API limit (25MB). Chunking or compression required.",
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      // Safety cap for extreme files (streaming limit)
-      if (typeof sizeBytes === "number" && sizeBytes > EDGE_FUNCTION_MAX_FILE_SIZE) {
+      // AssemblyAI can handle files up to ~2GB, no 25MB limit like Whisper
+      // Just a safety cap for extreme files
+      const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
+      if (typeof sizeBytes === "number" && sizeBytes > MAX_FILE_SIZE) {
         console.error(`[REJECTED] File too large: ${fileSizeMB?.toFixed(2)} MB`);
         await supabase.from("voice_transcriptions").update({
           status: "error",
           ai_metadata: {
             ...aiMeta,
             error_code: "file_too_large",
-            error_message: `Fichier trop volumineux (${fileSizeMB?.toFixed(1)} MB). Limite: ${(EDGE_FUNCTION_MAX_FILE_SIZE / 1024 / 1024)} MB.`,
+            error_message: `Fichier trop volumineux (${fileSizeMB?.toFixed(1)} MB). Limite: 500 MB.`,
             rejected_at: new Date().toISOString(),
           },
         }).eq("id", jobId);
@@ -1886,50 +1585,25 @@ serve(async (req) => {
         return new Response(JSON.stringify({
           ok: false,
           error: "file_too_large",
-          message: `Fichier audio trop volumineux. Maximum: ${(EDGE_FUNCTION_MAX_FILE_SIZE / 1024 / 1024)} MB.`,
+          message: `Fichier audio trop volumineux. Maximum: 500 MB.`,
         }), {
           status: 422,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Transcription: files <= 25MB only (larger files use client-side chunking)
-      const ext = getExtensionFromMimeType(mimeType);
-      const fileName = `audio.${ext}`;
-
-      const durationSeconds = (job as any)?.duration_seconds as number | null;
-      // FIXED: Use longer timeout for:
-      // - Files with known duration >= 15 min
-      // - Files >= 15MB (often contain 20-40min of compressed audio)
-      // - Always use longer timeout if duration is unknown (safer)
-      const fileSizeMBNum = typeof fileSizeMB === 'number' ? fileSizeMB : 0;
-      const needsLongTimeout = 
-        (durationSeconds && durationSeconds >= 15 * 60) ||  // >= 15 min
-        fileSizeMBNum >= 15 ||                               // >= 15MB
-        (!durationSeconds && fileSizeMBNum >= 10);           // Unknown duration + >= 10MB
-
-      const whisperTimeoutMs = needsLongTimeout ? WHISPER_TIMEOUT_LONG_MS : WHISPER_TIMEOUT_MS;
-
-      console.log(`[Whisper] Using blob mode for file <= 25MB (size=${fileSizeMBNum.toFixed(1)}MB, duration=${durationSeconds ? Math.round(durationSeconds/60)+'min' : 'unknown'}, timeout=${Math.round(whisperTimeoutMs / 1000)}s)`);
-      const audioRes = await fetch(signed.signedUrl);
-      if (!audioRes.ok) throw new Error(`audio_fetch_failed: ${audioRes.status}`);
-
-      let audioBlob = await audioRes.blob();
-
-      // Telegram sometimes serves misleading MIME types (or octet-stream).
-      // Whisper relies heavily on container/extension; sniff the magic bytes and override type when needed.
-      try {
-        const head = new Uint8Array(await audioBlob.slice(0, 64).arrayBuffer());
-        const detected = detectAudioFormatFromMagic(head);
-        if (detected && detected.mime !== audioBlob.type) {
-          console.log(`[Audio] magic_detected mime=${detected.mime} ext=${detected.ext} (was ${audioBlob.type || 'unknown'})`);
-          audioBlob = new Blob([audioBlob], { type: detected.mime });
+      // AssemblyAI can transcribe directly from a URL — no need to download/re-upload
+      console.log(`[AssemblyAI] Transcribing from signed URL...`);
+      const transcriptionResult = await transcribeFromUrl(
+        signed.signedUrl,
+        ASSEMBLYAI_API_KEY,
+        {
+          language_code: "fr",
+          maxWaitMs: ASSEMBLYAI_MAX_WAIT_MS,
         }
-      } catch (e) {
-        logError("Audio_Sniff", e);
-      }
+      );
 
-      rawText = await transcribeWithWhisperBlob(audioBlob, "fr", whisperTimeoutMs);
+      rawText = transcriptionResult.text;
 
       // Update with transcription result
       await supabase
@@ -1938,10 +1612,12 @@ serve(async (req) => {
           raw_transcript: rawText,
           segments: null,
           status: "analyzing",
+          duration_seconds: transcriptionResult.audio_duration,
           ai_metadata: {
             ...aiMeta,
-            source: "openai-whisper",
+            source: "assemblyai",
             transcribed_at: new Date().toISOString(),
+            audio_duration_s: transcriptionResult.audio_duration,
           },
         })
         .eq("id", jobId);
@@ -2225,7 +1901,7 @@ RÈGLES CRITIQUES:
       project_id: vjob.project_id,
       created_by: vjob.created_by,
       ai_metadata: {
-        stt_model: "whisper-1",
+        stt_model: "assemblyai",
         llm_model: llmModelFullName,
         llm_provider: provider,
         entity_linking: entityProcessingStats,
@@ -2359,11 +2035,11 @@ RÈGLES CRITIQUES:
       }
     }
 
-    const isExpected = errMsg.includes("LLM_TIMEOUT") || errMsg.includes("WHISPER_TIMEOUT") || errMsg.includes("rate_limited") || errMsg.includes("credits_exhausted");
+    const isExpected = errMsg.includes("LLM_TIMEOUT") || errMsg.includes("ASSEMBLYAI_TIMEOUT") || errMsg.includes("rate_limited") || errMsg.includes("credits_exhausted");
     const code = errMsg.includes("LLM_TIMEOUT")
       ? "LLM_TIMEOUT"
-      : errMsg.includes("WHISPER_TIMEOUT")
-        ? "WHISPER_TIMEOUT"
+      : errMsg.includes("ASSEMBLYAI_TIMEOUT")
+        ? "ASSEMBLYAI_TIMEOUT"
         : errMsg.includes("rate_limited")
           ? "rate_limited"
           : errMsg.includes("credits_exhausted")
