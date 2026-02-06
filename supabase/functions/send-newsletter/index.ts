@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { Resend } from "https://esm.sh/resend@4.0.0";
 import { logEmailBatch } from '../_shared/emailLogger.ts';
+import { trackAPIUsage } from '../_shared/api-tracker.ts';
 import { EMAIL_COLORS, LOGO_URL, getEmailHeader, getEmailFooter, wrapEmailContent, getCtaButton } from '../_shared/emailTemplate.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
