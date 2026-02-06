@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // Centralized AI client for provider switching and fallback
 import { callLLMWithFallback } from "../_shared/ai-legacy-bridge.ts";
+import { transcribeFromUrl } from "../_shared/assemblyai-utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,29 +11,20 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const ASSEMBLYAI_API_KEY = Deno.env.get("ASSEMBLYAI_API_KEY");
 // Note: Provider API keys are now managed by the centralized AI client
 // ANTHROPIC_API_KEY and OPENROUTER_API_KEY are read automatically by ai-client.ts
 
-const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
-
-// Limits - Whisper max is 25MB, but we can stream larger files
-const WHISPER_MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25MB - OpenAI Whisper per-request limit
-const EDGE_FUNCTION_MAX_FILE_SIZE = 250 * 1024 * 1024; // 250MB - streaming allows larger files
 const MAX_TRANSCRIPTION_CHARS = 20000; // Limit text sent to LLM (increased for better coverage)
 const CHUNK_SIZE_CHARS = 12000; // Size of each chunk for chunked analysis
 const MAX_CHUNKS = 5; // Maximum chunks to process (prevents runaway costs)
 
 // LLM timeout must be BELOW the Edge Function platform timeout (~60-150s) to fail gracefully.
-// If LLM takes too long, we catch the error and persist status before platform kills us.
 const LLM_TIMEOUT_MS = 55_000; // 55s - slightly increased for complex analysis
 const COMPRESSION_TIMEOUT_MS = 60_000; // 60s for compression of long transcripts
 
-// Whisper can take longer on long audio even if file size is small.
-// FIXED: Increase default timeout for files near the 25MB limit (often 20-40min audio).
-// The 55s default was causing timeouts on medium-length compressed audio.
-const WHISPER_TIMEOUT_MS = 90_000; // 90s default (covers most 10-30min audio)
-const WHISPER_TIMEOUT_LONG_MS = 180_000; // 180s for long audio (>15min or >15MB)
+// AssemblyAI max wait for transcription polling
+const ASSEMBLYAI_MAX_WAIT_MS = 300_000; // 5 minutes
 
 type LLMProvider = "lovable" | "openai" | "anthropic" | "openrouter";
 
