@@ -462,6 +462,22 @@ serve(async (req) => {
       }
     }
 
+    // Track Instantly API usage
+    try {
+      await trackAPIUsage({
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+        apiCategory: 'outreach',
+        apiName: 'instantly',
+        providerName: 'instantly',
+        operationType: action,
+        success: true,
+        estimatedCostCents: action === 'launch' ? 5 : (action === 'create' ? 2 : 0),
+        metadata: { campaign_id, action },
+      });
+    } catch (e) {
+      console.error('[send-instantly-campaign] Tracking error:', e);
+    }
+
   } catch (error) {
     console.error('Error in send-instantly-campaign:', error);
     return new Response(JSON.stringify({ 
