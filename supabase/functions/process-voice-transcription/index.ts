@@ -1901,7 +1901,7 @@ RÈGLES CRITIQUES:
       project_id: vjob.project_id,
       created_by: vjob.created_by,
       ai_metadata: {
-        stt_model: "whisper-1",
+        stt_model: "assemblyai",
         llm_model: llmModelFullName,
         llm_provider: provider,
         entity_linking: entityProcessingStats,
