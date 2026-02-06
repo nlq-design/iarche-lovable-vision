@@ -23,18 +23,18 @@ global.ResizeObserver = class ResizeObserver {
 };
 
 // Mock IntersectionObserver
-global.IntersectionObserver = class IntersectionObserver {
+const MockIntersectionObserver = class {
   readonly root: Element | null = null;
   readonly rootMargin: string = "";
   readonly thresholds: ReadonlyArray<number> = [];
   readonly scrollMargin: string = "";
+  constructor(_cb: any, _opts?: any) {}
   observe() {}
   unobserve() {}
   disconnect() {}
-  takeRecords(): IntersectionObserverEntry[] {
-    return [];
-  }
-} as unknown as typeof globalThis.IntersectionObserver;
+  takeRecords() { return []; }
+};
+(global as any).IntersectionObserver = MockIntersectionObserver;
 
 // Suppress console.error for expected React warnings in tests
 const originalError = console.error;
