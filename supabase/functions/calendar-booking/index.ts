@@ -1079,6 +1079,20 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error in calendar-booking:', error);
+
+    // Track failed API calls
+    try {
+      await trackAPIUsage({
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+        apiCategory: 'calendar',
+        apiName: 'google-calendar',
+        providerName: 'google',
+        operationType: 'booking',
+        success: false,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      });
+    } catch (_) { /* non-blocking */ }
+
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
