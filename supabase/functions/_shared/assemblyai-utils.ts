@@ -114,11 +114,12 @@ export async function pollTranscription(
     const data = await response.json();
 
     if (data.status === "completed") {
-      console.log(`[AssemblyAI] Transcription completed: ${data.text?.length ?? 0} chars, duration=${data.audio_duration}s`);
+      console.log(`[AssemblyAI] Transcription completed: ${data.text?.length ?? 0} chars, duration=${data.audio_duration}s, utterances=${data.utterances?.length ?? 0}`);
       return {
         text: data.text ?? "",
         audio_duration: data.audio_duration ?? null,
         words: data.words ?? [],
+        utterances: data.utterances ?? null,
       };
     }
 
