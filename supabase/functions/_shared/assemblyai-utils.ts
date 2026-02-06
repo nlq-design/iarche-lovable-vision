@@ -144,12 +144,13 @@ export async function transcribeWithAssemblyAI(
   options?: {
     language_code?: string;
     speech_model?: string;
+    speaker_labels?: boolean;
     maxWaitMs?: number;
     pollIntervalMs?: number;
   },
-): Promise<{ text: string; audio_duration: number | null }> {
+): Promise<{ text: string; audio_duration: number | null; utterances: unknown[] | null }> {
   const sizeKB = (audioData instanceof ArrayBuffer ? audioData.byteLength : audioData.length) / 1024;
-  console.log(`[AssemblyAI] Full pipeline: size=${sizeKB.toFixed(1)} KB`);
+  console.log(`[AssemblyAI] Full pipeline: size=${sizeKB.toFixed(1)} KB, speakers=${!!options?.speaker_labels}`);
 
   // 1) Upload
   const uploadUrl = await uploadToAssemblyAI(audioData, apiKey);
@@ -158,6 +159,7 @@ export async function transcribeWithAssemblyAI(
   const transcriptId = await startTranscription(uploadUrl, apiKey, {
     language_code: options?.language_code,
     speech_model: options?.speech_model,
+    speaker_labels: options?.speaker_labels,
   });
 
   // 3) Poll for result
@@ -166,7 +168,7 @@ export async function transcribeWithAssemblyAI(
     pollIntervalMs: options?.pollIntervalMs ?? 3000,
   });
 
-  return { text: result.text, audio_duration: result.audio_duration };
+  return { text: result.text, audio_duration: result.audio_duration, utterances: result.utterances };
 }
 
 /**
