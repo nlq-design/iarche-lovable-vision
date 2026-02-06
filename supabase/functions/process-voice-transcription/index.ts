@@ -1593,24 +1593,44 @@ serve(async (req) => {
       }
 
       // AssemblyAI can transcribe directly from a URL — no need to download/re-upload
-      console.log(`[AssemblyAI] Transcribing from signed URL...`);
+      // Speaker diarization enabled to identify different speakers
+      console.log(`[AssemblyAI] Transcribing from signed URL with speaker diarization...`);
       const transcriptionResult = await transcribeFromUrl(
         signed.signedUrl,
         ASSEMBLYAI_API_KEY,
         {
           language_code: "fr",
+          speaker_labels: true,
           maxWaitMs: ASSEMBLYAI_MAX_WAIT_MS,
         }
       );
 
       rawText = transcriptionResult.text;
 
+      // Format transcript with speaker labels if utterances are available
+      let speakerFormattedText: string | null = null;
+      const utterances = transcriptionResult.utterances as Array<{ speaker: string; text: string; start: number; end: number }> | null;
+      
+      if (utterances && utterances.length > 0) {
+        const uniqueSpeakers = [...new Set(utterances.map(u => u.speaker))];
+        console.log(`[Diarization] ${utterances.length} utterances, ${uniqueSpeakers.length} speakers detected`);
+        
+        speakerFormattedText = utterances
+          .map(u => `[Intervenant ${u.speaker}] ${u.text}`)
+          .join('\n');
+      }
+
       // Update with transcription result
       await supabase
         .from("voice_transcriptions")
         .update({
           raw_transcript: rawText,
-          segments: null,
+          segments: utterances ? JSON.stringify(utterances.map(u => ({
+            speaker: u.speaker,
+            text: u.text,
+            start_ms: u.start,
+            end_ms: u.end,
+          }))) : null,
           status: "analyzing",
           duration_seconds: transcriptionResult.audio_duration,
           ai_metadata: {
@@ -1618,9 +1638,16 @@ serve(async (req) => {
             source: "assemblyai",
             transcribed_at: new Date().toISOString(),
             audio_duration_s: transcriptionResult.audio_duration,
+            speaker_diarization: !!(utterances && utterances.length > 0),
+            speakers_count: utterances ? [...new Set(utterances.map(u => u.speaker))].length : 0,
           },
         })
         .eq("id", jobId);
+
+      // Use speaker-formatted text for LLM analysis if available (richer context)
+      if (speakerFormattedText) {
+        rawText = speakerFormattedText;
+      }
     }
 
     logPreview("Transcription", rawText);
