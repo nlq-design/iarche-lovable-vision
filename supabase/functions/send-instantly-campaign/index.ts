@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { trackAPIUsage } from "../_shared/api-tracker.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -459,6 +460,22 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+    }
+
+    // Track Instantly API usage
+    try {
+      await trackAPIUsage({
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+        apiCategory: 'outreach',
+        apiName: 'instantly',
+        providerName: 'instantly',
+        operationType: action,
+        success: true,
+        estimatedCostCents: action === 'launch' ? 5 : (action === 'create' ? 2 : 0),
+        metadata: { campaign_id, action },
+      });
+    } catch (e) {
+      console.error('[send-instantly-campaign] Tracking error:', e);
     }
 
   } catch (error) {

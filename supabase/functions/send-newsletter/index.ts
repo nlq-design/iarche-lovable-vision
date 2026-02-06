@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { Resend } from "https://esm.sh/resend@4.0.0";
 import { logEmailBatch } from '../_shared/emailLogger.ts';
+import { trackAPIUsage } from '../_shared/api-tracker.ts';
 import { EMAIL_COLORS, LOGO_URL, getEmailHeader, getEmailFooter, wrapEmailContent, getCtaButton } from '../_shared/emailTemplate.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -166,6 +167,23 @@ const handler = async (req: Request): Promise<Response> => {
     }));
 
     await logEmailBatch(emailLogs);
+
+    // Track email API usage
+    try {
+      await trackAPIUsage({
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+        apiCategory: 'email',
+        apiName: 'resend',
+        providerName: 'resend',
+        operationType: 'newsletter',
+        requestCount: subscribers.length,
+        success: failCount === 0,
+        estimatedCostCents: successCount * 0.1,
+        metadata: { article_id: articleId, sent: successCount, failed: failCount },
+      });
+    } catch (e) {
+      console.error('[send-newsletter] Tracking error:', e);
+    }
 
     console.log(`Newsletter sent: ${successCount} success, ${failCount} failed`);
 

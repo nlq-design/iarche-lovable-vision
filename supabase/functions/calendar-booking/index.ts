@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { trackAPIUsage } from '../_shared/api-tracker.ts';
 import { checkRateLimit, getRateLimitHeaders } from "../_shared/rateLimit.ts";
 import { calendarBookingSchema, validateRequest, type CalendarBookingRequest, type BookingData } from "../_shared/validation.ts";
 
@@ -1078,6 +1079,20 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error in calendar-booking:', error);
+
+    // Track failed API calls
+    try {
+      await trackAPIUsage({
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+        apiCategory: 'calendar',
+        apiName: 'google-calendar',
+        providerName: 'google',
+        operationType: 'booking',
+        success: false,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      });
+    } catch (_) { /* non-blocking */ }
+
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

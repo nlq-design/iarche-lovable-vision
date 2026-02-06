@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { Resend } from 'https://esm.sh/resend@2.0.0';
 import { logEmail } from '../_shared/emailLogger.ts';
+import { trackAPIUsage } from '../_shared/api-tracker.ts';
 import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
 import { EMAIL_COLORS, LOGO_URL, getEmailHeader, getEmailFooter, wrapEmailContent, getCtaButton, getInfoCard, getSignature } from '../_shared/emailTemplate.ts';
 import { formNotificationSchema, validateRequest, type FormNotificationRequest } from '../_shared/validation.ts';
@@ -354,6 +355,26 @@ Deno.serve(async (req: Request): Promise<Response> => {
           status: 'failed',
           error_message: emailError.message,
         });
+      }
+    }
+
+    // Track email API usage
+    const emailsSent = (results.admin ? 1 : 0) + (results.respondent ? 1 : 0);
+    if (emailsSent > 0) {
+      try {
+        await trackAPIUsage({
+          workspaceId: '00000000-0000-0000-0000-000000000001',
+          apiCategory: 'email',
+          apiName: 'resend',
+          providerName: 'resend',
+          operationType: 'form-notification',
+          requestCount: emailsSent,
+          success: true,
+          estimatedCostCents: emailsSent * 0.1,
+          metadata: { form_id, admin_sent: results.admin, respondent_sent: results.respondent },
+        });
+      } catch (e) {
+        console.error('[send-form-notification] Tracking error:', e);
       }
     }
 

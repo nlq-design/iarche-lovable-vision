@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { Resend } from 'https://esm.sh/resend@2.0.0';
 import { logEmail } from '../_shared/emailLogger.ts';
+import { trackAPIUsage } from '../_shared/api-tracker.ts';
 import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
 import { EMAIL_COLORS, LOGO_URL, getEmailHeader, getEmailFooter, wrapEmailContent, getInfoCard } from '../_shared/emailTemplate.ts';
 import { leadNotificationSchema, validateRequest } from '../_shared/validation.ts';
@@ -455,6 +456,23 @@ Deno.serve(async (req) => {
     }
 
     console.log('Lead notification email sent successfully:', data);
+
+    // Track email API usage
+    try {
+      await trackAPIUsage({
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+        apiCategory: 'email',
+        apiName: 'resend',
+        providerName: 'resend',
+        operationType: 'lead-notification',
+        requestCount: adminEmails.length,
+        success: true,
+        estimatedCostCents: adminEmails.length * 0.1,
+        metadata: { source, lead_id, recipients: adminEmails.length },
+      });
+    } catch (e) {
+      console.error('[send-lead-notification] Tracking error:', e);
+    }
 
     // Log success email for each admin recipient
     for (const recipient of adminEmails) {
