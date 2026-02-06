@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { trackAPIUsage } from "../_shared/api-tracker.ts";
 
 /**
  * Transcribe Audio Chunk
