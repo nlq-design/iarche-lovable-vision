@@ -97,7 +97,7 @@ export async function pollTranscription(
     pollIntervalMs?: number;
     maxWaitMs?: number;
   },
-): Promise<{ text: string; audio_duration: number | null; words: unknown[] }> {
+): Promise<{ text: string; audio_duration: number | null; words: unknown[]; utterances: unknown[] | null }> {
   const { pollIntervalMs = 3000, maxWaitMs = 300_000 } = options ?? {};
   const deadline = Date.now() + maxWaitMs;
 
