@@ -27,13 +27,14 @@ global.IntersectionObserver = class IntersectionObserver {
   readonly root: Element | null = null;
   readonly rootMargin: string = "";
   readonly thresholds: ReadonlyArray<number> = [];
+  readonly scrollMargin: string = "";
   observe() {}
   unobserve() {}
   disconnect() {}
   takeRecords(): IntersectionObserverEntry[] {
     return [];
   }
-};
+} as unknown as typeof globalThis.IntersectionObserver;
 
 // Suppress console.error for expected React warnings in tests
 const originalError = console.error;
