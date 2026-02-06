@@ -303,7 +303,26 @@ serve(async (req) => {
       }
     }
 
+    const totalPushed = results.bookings_pushed + results.tasks_pushed;
     console.log(`[push-to-google-calendar] Push complete. Bookings: ${results.bookings_pushed}, Tasks: ${results.tasks_pushed}, Errors: ${results.errors.length}`);
+
+    // Track Google Calendar API usage
+    if (totalPushed > 0) {
+      try {
+        await trackAPIUsage({
+          workspaceId: '00000000-0000-0000-0000-000000000001',
+          apiCategory: 'calendar',
+          apiName: 'google-calendar',
+          providerName: 'google',
+          operationType: 'push-events',
+          requestCount: totalPushed,
+          success: results.errors.length === 0,
+          metadata: { bookings: results.bookings_pushed, tasks: results.tasks_pushed, errors: results.errors.length },
+        });
+      } catch (e) {
+        console.error('[push-to-google-calendar] Tracking error:', e);
+      }
+    }
 
     return new Response(
       JSON.stringify({

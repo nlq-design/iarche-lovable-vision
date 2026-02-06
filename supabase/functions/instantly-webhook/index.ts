@@ -206,9 +206,24 @@ serve(async (req) => {
       });
     }
 
+    // Track webhook event
+    try {
+      await trackAPIUsage({
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+        apiCategory: 'outreach',
+        apiName: 'instantly-webhook',
+        providerName: 'instantly',
+        operationType: event_type,
+        success: true,
+        metadata: { campaign_id: campaign.id, lead_email, event_type },
+      });
+    } catch (e) {
+      console.error('[instantly-webhook] Tracking error:', e);
+    }
+
     console.log(`✅ Webhook processed successfully: ${event_type} for campaign ${campaign.name}`);
 
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       received: true, 
       matched: true,
       campaign_id: campaign.id,

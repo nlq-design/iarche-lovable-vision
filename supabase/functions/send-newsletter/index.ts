@@ -168,6 +168,23 @@ const handler = async (req: Request): Promise<Response> => {
 
     await logEmailBatch(emailLogs);
 
+    // Track email API usage
+    try {
+      await trackAPIUsage({
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+        apiCategory: 'email',
+        apiName: 'resend',
+        providerName: 'resend',
+        operationType: 'newsletter',
+        requestCount: subscribers.length,
+        success: failCount === 0,
+        estimatedCostCents: successCount * 0.1,
+        metadata: { article_id: articleId, sent: successCount, failed: failCount },
+      });
+    } catch (e) {
+      console.error('[send-newsletter] Tracking error:', e);
+    }
+
     console.log(`Newsletter sent: ${successCount} success, ${failCount} failed`);
 
     return new Response(

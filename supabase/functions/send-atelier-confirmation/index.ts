@@ -233,6 +233,23 @@ Deno.serve(async (req) => {
 
     console.log('Confirmation email sent successfully:', data);
 
+    // Track email API usage
+    try {
+      await trackAPIUsage({
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+        apiCategory: 'email',
+        apiName: 'resend',
+        providerName: 'resend',
+        operationType: 'atelier-confirmation',
+        requestCount: 1,
+        success: true,
+        estimatedCostCents: 0.1,
+        metadata: { atelier_id, email },
+      });
+    } catch (e) {
+      console.error('[send-atelier-confirmation] Tracking error:', e);
+    }
+
     // Log successful email
     await logEmail({
       recipient_email: email,

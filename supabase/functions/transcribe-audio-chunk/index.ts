@@ -193,6 +193,24 @@ serve(async (req) => {
       );
     }
 
+    // Track API usage for Whisper
+    try {
+      await trackAPIUsage({
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+        apiCategory: 'ai',
+        apiName: 'openai-whisper',
+        providerName: 'openai',
+        operationType: 'transcription',
+        modelId: 'whisper-1',
+        success: true,
+        latencyMs: result.processingTime || 0,
+        estimatedCostCents: Math.max(0.6, (fileSizeMB / 25) * 0.6), // ~$0.006/min, estimate from file size
+        metadata: { chunk_index: chunkIndex, file_size_mb: fileSizeMB, transcript_length: result.transcript?.length },
+      });
+    } catch (e) {
+      console.error('[transcribe-audio-chunk] Tracking error (non-blocking):', e);
+    }
+
     return new Response(
       JSON.stringify({ 
         ok: true,

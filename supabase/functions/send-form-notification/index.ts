@@ -358,6 +358,26 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }
     }
 
+    // Track email API usage
+    const emailsSent = (results.admin ? 1 : 0) + (results.respondent ? 1 : 0);
+    if (emailsSent > 0) {
+      try {
+        await trackAPIUsage({
+          workspaceId: '00000000-0000-0000-0000-000000000001',
+          apiCategory: 'email',
+          apiName: 'resend',
+          providerName: 'resend',
+          operationType: 'form-notification',
+          requestCount: emailsSent,
+          success: true,
+          estimatedCostCents: emailsSent * 0.1,
+          metadata: { form_id, admin_sent: results.admin, respondent_sent: results.respondent },
+        });
+      } catch (e) {
+        console.error('[send-form-notification] Tracking error:', e);
+      }
+    }
+
     return new Response(JSON.stringify({ success: true, results }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
