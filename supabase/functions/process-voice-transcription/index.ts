@@ -1506,7 +1506,7 @@ serve(async (req) => {
 
     console.log(`[Job] Processing ${jobId}`);
 
-    // If raw transcript already exists, skip Whisper and go straight to analysis.
+    // If raw transcript already exists, skip transcription and go straight to analysis.
     // This covers:
     // - client-side chunking flow (pre_transcribed_text)
     // - retries where transcription already completed
@@ -1516,7 +1516,7 @@ serve(async (req) => {
     let rawText: string;
 
     if (existingRawTranscript && existingRawTranscript.trim().length > 0) {
-      console.log("[Process] Using existing raw_transcript (skip Whisper)");
+      console.log("[Process] Using existing raw_transcript (skip transcription)");
       rawText = existingRawTranscript;
 
       await supabase
@@ -1531,7 +1531,11 @@ serve(async (req) => {
         })
         .eq("id", jobId);
     } else {
-      // Need to transcribe the audio
+      // Need to transcribe the audio via AssemblyAI
+      if (!ASSEMBLYAI_API_KEY) {
+        throw new Error("assemblyai_api_key_not_configured: ASSEMBLYAI_API_KEY is required");
+      }
+
       await supabase.from("voice_transcriptions").update({ 
         status: "transcribing",
         ai_metadata: {
@@ -1541,7 +1545,6 @@ serve(async (req) => {
       }).eq("id", jobId);
 
       // Get signed URL for audio - detect bucket from path prefix
-      // Telegram imports use cockpit-uploads bucket (telegram-audio/ prefix), others use voice-transcriptions
       const storagePath = vjob.storage_path;
       const isTelegramAudio = storagePath.startsWith("telegram-audio/");
       const bucket = isTelegramAudio ? "cockpit-uploads" : "voice-transcriptions";
@@ -1556,47 +1559,25 @@ serve(async (req) => {
         throw new Error(`signed_url_failed: ${signErr?.message ?? "no_url"}`);
       }
 
-      // Fetch audio with HEAD first to check size
+      // Fetch audio metadata
       const headRes = await fetch(signed.signedUrl, { method: "HEAD" });
       const contentLength = headRes.headers.get("content-length");
       const sizeBytes = contentLength ? Number(contentLength) : null;
-      const mimeType = (headRes.headers.get("content-type") ?? "application/octet-stream").split(";")[0];
       const fileSizeMB = typeof sizeBytes === "number" && !Number.isNaN(sizeBytes) ? sizeBytes / 1024 / 1024 : null;
 
-      console.log(`[Audio] size=${fileSizeMB ? fileSizeMB.toFixed(2) + " MB" : "unknown"}, type=${mimeType}`);
+      console.log(`[Audio] size=${fileSizeMB ? fileSizeMB.toFixed(2) + " MB" : "unknown"}`);
 
-      // Check if file exceeds Whisper API limit - require client-side chunking
-      if (typeof sizeBytes === "number" && sizeBytes > WHISPER_MAX_SIZE_BYTES) {
-        console.error(`[Process] WHISPER_MAX_SIZE: File exceeds Whisper API limit (25MB). Chunking or compression required.`);
-        await supabase.from("voice_transcriptions").update({
-          status: "error",
-          ai_metadata: {
-            ...aiMeta,
-            error_code: "WHISPER_MAX_SIZE",
-            error_message: `Fichier trop volumineux (${fileSizeMB?.toFixed(1)} MB). Utilisez le découpage client-side pour les fichiers > 25MB.`,
-            rejected_at: new Date().toISOString(),
-          },
-        }).eq("id", jobId);
-
-        return new Response(JSON.stringify({
-          ok: false,
-          error: "process_failed",
-          details: "WHISPER_MAX_SIZE: File exceeds Whisper API limit (25MB). Chunking or compression required.",
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      // Safety cap for extreme files (streaming limit)
-      if (typeof sizeBytes === "number" && sizeBytes > EDGE_FUNCTION_MAX_FILE_SIZE) {
+      // AssemblyAI can handle files up to ~2GB, no 25MB limit like Whisper
+      // Just a safety cap for extreme files
+      const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
+      if (typeof sizeBytes === "number" && sizeBytes > MAX_FILE_SIZE) {
         console.error(`[REJECTED] File too large: ${fileSizeMB?.toFixed(2)} MB`);
         await supabase.from("voice_transcriptions").update({
           status: "error",
           ai_metadata: {
             ...aiMeta,
             error_code: "file_too_large",
-            error_message: `Fichier trop volumineux (${fileSizeMB?.toFixed(1)} MB). Limite: ${(EDGE_FUNCTION_MAX_FILE_SIZE / 1024 / 1024)} MB.`,
+            error_message: `Fichier trop volumineux (${fileSizeMB?.toFixed(1)} MB). Limite: 500 MB.`,
             rejected_at: new Date().toISOString(),
           },
         }).eq("id", jobId);
@@ -1604,50 +1585,25 @@ serve(async (req) => {
         return new Response(JSON.stringify({
           ok: false,
           error: "file_too_large",
-          message: `Fichier audio trop volumineux. Maximum: ${(EDGE_FUNCTION_MAX_FILE_SIZE / 1024 / 1024)} MB.`,
+          message: `Fichier audio trop volumineux. Maximum: 500 MB.`,
         }), {
           status: 422,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Transcription: files <= 25MB only (larger files use client-side chunking)
-      const ext = getExtensionFromMimeType(mimeType);
-      const fileName = `audio.${ext}`;
-
-      const durationSeconds = (job as any)?.duration_seconds as number | null;
-      // FIXED: Use longer timeout for:
-      // - Files with known duration >= 15 min
-      // - Files >= 15MB (often contain 20-40min of compressed audio)
-      // - Always use longer timeout if duration is unknown (safer)
-      const fileSizeMBNum = typeof fileSizeMB === 'number' ? fileSizeMB : 0;
-      const needsLongTimeout = 
-        (durationSeconds && durationSeconds >= 15 * 60) ||  // >= 15 min
-        fileSizeMBNum >= 15 ||                               // >= 15MB
-        (!durationSeconds && fileSizeMBNum >= 10);           // Unknown duration + >= 10MB
-
-      const whisperTimeoutMs = needsLongTimeout ? WHISPER_TIMEOUT_LONG_MS : WHISPER_TIMEOUT_MS;
-
-      console.log(`[Whisper] Using blob mode for file <= 25MB (size=${fileSizeMBNum.toFixed(1)}MB, duration=${durationSeconds ? Math.round(durationSeconds/60)+'min' : 'unknown'}, timeout=${Math.round(whisperTimeoutMs / 1000)}s)`);
-      const audioRes = await fetch(signed.signedUrl);
-      if (!audioRes.ok) throw new Error(`audio_fetch_failed: ${audioRes.status}`);
-
-      let audioBlob = await audioRes.blob();
-
-      // Telegram sometimes serves misleading MIME types (or octet-stream).
-      // Whisper relies heavily on container/extension; sniff the magic bytes and override type when needed.
-      try {
-        const head = new Uint8Array(await audioBlob.slice(0, 64).arrayBuffer());
-        const detected = detectAudioFormatFromMagic(head);
-        if (detected && detected.mime !== audioBlob.type) {
-          console.log(`[Audio] magic_detected mime=${detected.mime} ext=${detected.ext} (was ${audioBlob.type || 'unknown'})`);
-          audioBlob = new Blob([audioBlob], { type: detected.mime });
+      // AssemblyAI can transcribe directly from a URL — no need to download/re-upload
+      console.log(`[AssemblyAI] Transcribing from signed URL...`);
+      const transcriptionResult = await transcribeFromUrl(
+        signed.signedUrl,
+        ASSEMBLYAI_API_KEY,
+        {
+          language_code: "fr",
+          maxWaitMs: ASSEMBLYAI_MAX_WAIT_MS,
         }
-      } catch (e) {
-        logError("Audio_Sniff", e);
-      }
+      );
 
-      rawText = await transcribeWithWhisperBlob(audioBlob, "fr", whisperTimeoutMs);
+      rawText = transcriptionResult.text;
 
       // Update with transcription result
       await supabase
@@ -1656,10 +1612,12 @@ serve(async (req) => {
           raw_transcript: rawText,
           segments: null,
           status: "analyzing",
+          duration_seconds: transcriptionResult.audio_duration,
           ai_metadata: {
             ...aiMeta,
-            source: "openai-whisper",
+            source: "assemblyai",
             transcribed_at: new Date().toISOString(),
+            audio_duration_s: transcriptionResult.audio_duration,
           },
         })
         .eq("id", jobId);
