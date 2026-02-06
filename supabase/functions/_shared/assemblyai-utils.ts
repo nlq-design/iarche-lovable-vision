@@ -50,6 +50,7 @@ export async function startTranscription(
   options?: {
     language_code?: string;
     speech_model?: string;
+    speaker_labels?: boolean;
   },
 ): Promise<string> {
   const body: Record<string, unknown> = {
@@ -60,6 +61,11 @@ export async function startTranscription(
   // Use best model if specified
   if (options?.speech_model) {
     body.speech_model = options.speech_model;
+  }
+
+  // Enable speaker diarization if requested
+  if (options?.speaker_labels) {
+    body.speaker_labels = true;
   }
 
   const response = await fetch(`${ASSEMBLYAI_API_URL}/transcript`, {
