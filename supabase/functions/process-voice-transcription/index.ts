@@ -2035,11 +2035,11 @@ RÈGLES CRITIQUES:
       }
     }
 
-    const isExpected = errMsg.includes("LLM_TIMEOUT") || errMsg.includes("WHISPER_TIMEOUT") || errMsg.includes("rate_limited") || errMsg.includes("credits_exhausted");
+    const isExpected = errMsg.includes("LLM_TIMEOUT") || errMsg.includes("ASSEMBLYAI_TIMEOUT") || errMsg.includes("rate_limited") || errMsg.includes("credits_exhausted");
     const code = errMsg.includes("LLM_TIMEOUT")
       ? "LLM_TIMEOUT"
-      : errMsg.includes("WHISPER_TIMEOUT")
-        ? "WHISPER_TIMEOUT"
+      : errMsg.includes("ASSEMBLYAI_TIMEOUT")
+        ? "ASSEMBLYAI_TIMEOUT"
         : errMsg.includes("rate_limited")
           ? "rate_limited"
           : errMsg.includes("credits_exhausted")
