@@ -181,16 +181,18 @@ export async function transcribeFromUrl(
   options?: {
     language_code?: string;
     speech_model?: string;
+    speaker_labels?: boolean;
     maxWaitMs?: number;
     pollIntervalMs?: number;
   },
-): Promise<{ text: string; audio_duration: number | null }> {
-  console.log(`[AssemblyAI] URL pipeline: ${audioUrl.slice(0, 60)}...`);
+): Promise<{ text: string; audio_duration: number | null; utterances: unknown[] | null }> {
+  console.log(`[AssemblyAI] URL pipeline: ${audioUrl.slice(0, 60)}... speakers=${!!options?.speaker_labels}`);
 
   // Start transcription directly from URL (no upload step)
   const transcriptId = await startTranscription(audioUrl, apiKey, {
     language_code: options?.language_code,
     speech_model: options?.speech_model,
+    speaker_labels: options?.speaker_labels,
   });
 
   const result = await pollTranscription(transcriptId, apiKey, {
@@ -198,5 +200,5 @@ export async function transcribeFromUrl(
     pollIntervalMs: options?.pollIntervalMs ?? 3000,
   });
 
-  return { text: result.text, audio_duration: result.audio_duration };
+  return { text: result.text, audio_duration: result.audio_duration, utterances: result.utterances };
 }
