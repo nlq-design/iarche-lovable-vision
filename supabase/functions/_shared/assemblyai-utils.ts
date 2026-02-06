@@ -50,6 +50,7 @@ export async function startTranscription(
   options?: {
     language_code?: string;
     speech_model?: string;
+    speaker_labels?: boolean;
   },
 ): Promise<string> {
   const body: Record<string, unknown> = {
@@ -60,6 +61,11 @@ export async function startTranscription(
   // Use best model if specified
   if (options?.speech_model) {
     body.speech_model = options.speech_model;
+  }
+
+  // Enable speaker diarization if requested
+  if (options?.speaker_labels) {
+    body.speaker_labels = true;
   }
 
   const response = await fetch(`${ASSEMBLYAI_API_URL}/transcript`, {
@@ -91,7 +97,7 @@ export async function pollTranscription(
     pollIntervalMs?: number;
     maxWaitMs?: number;
   },
-): Promise<{ text: string; audio_duration: number | null; words: unknown[] }> {
+): Promise<{ text: string; audio_duration: number | null; words: unknown[]; utterances: unknown[] | null }> {
   const { pollIntervalMs = 3000, maxWaitMs = 300_000 } = options ?? {};
   const deadline = Date.now() + maxWaitMs;
 
@@ -108,11 +114,12 @@ export async function pollTranscription(
     const data = await response.json();
 
     if (data.status === "completed") {
-      console.log(`[AssemblyAI] Transcription completed: ${data.text?.length ?? 0} chars, duration=${data.audio_duration}s`);
+      console.log(`[AssemblyAI] Transcription completed: ${data.text?.length ?? 0} chars, duration=${data.audio_duration}s, utterances=${data.utterances?.length ?? 0}`);
       return {
         text: data.text ?? "",
         audio_duration: data.audio_duration ?? null,
         words: data.words ?? [],
+        utterances: data.utterances ?? null,
       };
     }
 
@@ -137,12 +144,13 @@ export async function transcribeWithAssemblyAI(
   options?: {
     language_code?: string;
     speech_model?: string;
+    speaker_labels?: boolean;
     maxWaitMs?: number;
     pollIntervalMs?: number;
   },
-): Promise<{ text: string; audio_duration: number | null }> {
+): Promise<{ text: string; audio_duration: number | null; utterances: unknown[] | null }> {
   const sizeKB = (audioData instanceof ArrayBuffer ? audioData.byteLength : audioData.length) / 1024;
-  console.log(`[AssemblyAI] Full pipeline: size=${sizeKB.toFixed(1)} KB`);
+  console.log(`[AssemblyAI] Full pipeline: size=${sizeKB.toFixed(1)} KB, speakers=${!!options?.speaker_labels}`);
 
   // 1) Upload
   const uploadUrl = await uploadToAssemblyAI(audioData, apiKey);
@@ -151,6 +159,7 @@ export async function transcribeWithAssemblyAI(
   const transcriptId = await startTranscription(uploadUrl, apiKey, {
     language_code: options?.language_code,
     speech_model: options?.speech_model,
+    speaker_labels: options?.speaker_labels,
   });
 
   // 3) Poll for result
@@ -159,7 +168,7 @@ export async function transcribeWithAssemblyAI(
     pollIntervalMs: options?.pollIntervalMs ?? 3000,
   });
 
-  return { text: result.text, audio_duration: result.audio_duration };
+  return { text: result.text, audio_duration: result.audio_duration, utterances: result.utterances };
 }
 
 /**
@@ -172,16 +181,18 @@ export async function transcribeFromUrl(
   options?: {
     language_code?: string;
     speech_model?: string;
+    speaker_labels?: boolean;
     maxWaitMs?: number;
     pollIntervalMs?: number;
   },
-): Promise<{ text: string; audio_duration: number | null }> {
-  console.log(`[AssemblyAI] URL pipeline: ${audioUrl.slice(0, 60)}...`);
+): Promise<{ text: string; audio_duration: number | null; utterances: unknown[] | null }> {
+  console.log(`[AssemblyAI] URL pipeline: ${audioUrl.slice(0, 60)}... speakers=${!!options?.speaker_labels}`);
 
   // Start transcription directly from URL (no upload step)
   const transcriptId = await startTranscription(audioUrl, apiKey, {
     language_code: options?.language_code,
     speech_model: options?.speech_model,
+    speaker_labels: options?.speaker_labels,
   });
 
   const result = await pollTranscription(transcriptId, apiKey, {
@@ -189,5 +200,5 @@ export async function transcribeFromUrl(
     pollIntervalMs: options?.pollIntervalMs ?? 3000,
   });
 
-  return { text: result.text, audio_duration: result.audio_duration };
+  return { text: result.text, audio_duration: result.audio_duration, utterances: result.utterances };
 }
