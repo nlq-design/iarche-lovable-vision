@@ -221,7 +221,7 @@ export default function CockpitTranscriptionDetail() {
   const handleReanalyze = () => {
     if (transcription?.id) {
       toast.info('Ré-analyse en cours...');
-      processTranscription.mutate({ jobId: transcription.id, forceReanalyze: true }, {
+      processTranscription.mutate({ jobId: transcription.id, forceRetranscribe: true }, {
         onSuccess: () => {
           refetch();
           toast.success('Synthèse et actions régénérées');
@@ -327,7 +327,7 @@ export default function CockpitTranscriptionDetail() {
         updateTranscription.mutate({ id: transcriptionId, updates: { analysis_context: contextToSave } });
       }
       toast.info('Ré-analyse en cours avec le nouveau contexte...');
-      processTranscription.mutate({ jobId: transcriptionId, forceReanalyze: true }, {
+      processTranscription.mutate({ jobId: transcriptionId, forceRetranscribe: true }, {
         onSuccess: () => {
           refetch();
           toast.success('Synthèse et actions régénérées');

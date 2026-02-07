@@ -121,7 +121,7 @@ export default function CockpitTranscriptions() {
     for (let i = 0; i < doneTranscriptions.length; i++) {
       const t = doneTranscriptions[i];
       try {
-        await processTranscription.mutateAsync({ jobId: t.id, forceReanalyze: true });
+        await processTranscription.mutateAsync({ jobId: t.id, forceRetranscribe: true });
         successCount++;
       } catch {
         errorCount++;
