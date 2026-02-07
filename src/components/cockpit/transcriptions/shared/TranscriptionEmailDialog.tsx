@@ -42,7 +42,7 @@ interface TranscriptionEmailDialogProps {
   summary?: {
     executive_summary?: string;
     key_points?: string[];
-    action_items?: { task: string; owner?: string; due_date?: string; priority?: string }[];
+    action_items?: { task?: string; title?: string; owner?: string; due_date?: string; priority?: string }[];
   } | null;
 }
 

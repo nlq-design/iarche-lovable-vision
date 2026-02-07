@@ -15,8 +15,33 @@ export interface ActionItem {
   task: string;
   owner?: string;
   due_date?: string;
-  priority?: 'low' | 'medium' | 'high';
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
   category?: string;
+}
+
+export interface Participant {
+  name: string;
+  role?: string;
+  company?: string;
+  crm_match?: { type: string; id: string; confidence: number } | null;
+}
+
+export interface FinancialItem {
+  amount: number;
+  currency?: string;
+  context: string;
+}
+
+export interface DateMention {
+  original: string;
+  normalized: string;
+  context: string;
+}
+
+export interface NextStep {
+  action: string;
+  owner?: string | null;
+  deadline?: string | null;
 }
 
 export interface NormalizedSummary {
@@ -28,6 +53,12 @@ export interface NormalizedSummary {
   action_items: ActionItem[];
   risks_blockers: string[];
   questions_open: string[];
+  participants: Participant[];
+  financial_data: FinancialItem[];
+  dates_mentioned: DateMention[];
+  next_steps: NextStep[];
+  sentiment?: 'positive' | 'neutral' | 'negative';
+  quality_score?: number;
   extraction_quality?: {
     confidence?: number;
     uncertainties?: string[];
@@ -216,6 +247,56 @@ export function normalizeSummary(rawSummary: any): NormalizedSummary | null {
   // ========== EXTRACTION QUALITY ==========
   const extraction_quality = raw?.extraction_quality;
 
+  // ========== PARTICIPANTS ==========
+  const rawParticipants = ensureArray(raw?.participants);
+  const participants: Participant[] = rawParticipants
+    .filter((p): p is Record<string, unknown> => !!p && typeof p === 'object')
+    .map(p => ({
+      name: (p.name as string) || 'Inconnu',
+      role: (p.role as string) || undefined,
+      company: (p.company as string) || undefined,
+      crm_match: p.crm_match as Participant['crm_match'] ?? null,
+    }));
+
+  // ========== FINANCIAL DATA ==========
+  const rawFinancial = ensureArray(raw?.financial_data);
+  const financial_data: FinancialItem[] = rawFinancial
+    .filter((f): f is Record<string, unknown> => !!f && typeof f === 'object' && typeof (f as any).amount === 'number')
+    .map(f => ({
+      amount: f.amount as number,
+      currency: (f.currency as string) || '€',
+      context: (f.context as string) || '',
+    }));
+
+  // ========== DATES MENTIONED ==========
+  const rawDates = ensureArray(raw?.dates_mentioned);
+  const dates_mentioned: DateMention[] = rawDates
+    .filter((d): d is Record<string, unknown> => !!d && typeof d === 'object')
+    .map(d => ({
+      original: (d.original as string) || '',
+      normalized: (d.normalized as string) || '',
+      context: (d.context as string) || '',
+    }));
+
+  // ========== NEXT STEPS ==========
+  const rawNextStepsOnly = ensureArray(raw?.next_steps);
+  const next_steps: NextStep[] = rawNextStepsOnly
+    .map(s => {
+      if (typeof s === 'string') return { action: s };
+      if (s && typeof s === 'object') {
+        const obj = s as Record<string, unknown>;
+        const action = (obj.action as string) || (obj.step as string) || (obj.text as string) || '';
+        if (!action) return null;
+        return { action, owner: (obj.owner as string) || null, deadline: (obj.deadline as string) || null };
+      }
+      return null;
+    })
+    .filter(Boolean) as NextStep[];
+
+  // ========== SENTIMENT & QUALITY ==========
+  const sentiment = ['positive', 'neutral', 'negative'].includes(raw?.sentiment) ? raw.sentiment : undefined;
+  const quality_score = typeof raw?.quality_score === 'number' ? raw.quality_score : undefined;
+
   return {
     title,
     executive_summary,
@@ -225,6 +306,12 @@ export function normalizeSummary(rawSummary: any): NormalizedSummary | null {
     action_items,
     risks_blockers,
     questions_open,
+    participants,
+    financial_data,
+    dates_mentioned,
+    next_steps,
+    sentiment,
+    quality_score,
     extraction_quality,
   };
 }
