@@ -141,8 +141,9 @@ export default function CockpitTranscriptions() {
           await processTranscription.mutateAsync({ jobId: t.id, forceRetranscribe: true });
         }
         successCount++;
-      } catch {
+      } catch (err) {
         errorCount++;
+        console.error(`[Batch] Job ${t.id} failed (${isNoFile ? 'reanalyze' : 'retranscribe'}):`, err);
       }
       setReanalyzeProgress({ current: i + 1, total: allItems.length });
       
