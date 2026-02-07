@@ -2434,7 +2434,9 @@ serve(async (req) => {
           .maybeSingle();
 
         const currentMeta = (current as any)?.ai_metadata ?? {};
-        const isReanalyzeFailure = forceReanalyze && initialStatus === "done";
+        // Revert to "done" if this was a re-analysis of an already completed transcription
+        // This covers both direct forceReanalyze AND Phase 2 self-invoke (where initialStatus is "analyzing")
+        const isReanalyzeFailure = forceReanalyze && (initialStatus === "done" || initialStatus === "analyzing");
 
         await supabase
           .from("voice_transcriptions")
