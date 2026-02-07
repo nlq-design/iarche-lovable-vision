@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,13 +28,24 @@ import {
   ListTodo,
   RefreshCw,
   Handshake,
+  ShieldAlert,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useBlocker } from 'react-router-dom';
 import { useCockpitVoiceTranscriptions, TRANSCRIPTION_STATUSES } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { CreateTranscriptionModal } from '@/components/cockpit/transcriptions/CreateTranscriptionModal';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   queued: <Clock className="h-4 w-4" />,
@@ -51,10 +62,24 @@ export default function CockpitTranscriptions() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [isReanalyzing, setIsReanalyzing] = useState(false);
-  const [reanalyzeProgress, setReanalyzeProgress] = useState({ current: 0, total: 0 });
+  const [reanalyzeProgress, setReanalyzeProgress] = useState({ current: 0, total: 0, successCount: 0, errorCount: 0, currentJobTitle: '', startedAt: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [droppedFiles, setDroppedFiles] = useState<File[]>([]);
   const dragCounterRef = useRef(0);
+
+  // Block navigation when batch is running
+  const blocker = useBlocker(isReanalyzing);
+
+  // Block browser close/refresh when batch is running
+  useEffect(() => {
+    if (!isReanalyzing) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isReanalyzing]);
 
   const AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/webm', 'audio/x-m4a', 'audio/flac', 'audio/aac'];
 
@@ -124,7 +149,7 @@ export default function CockpitTranscriptions() {
 
     const allItems = [...audioItems, ...noFileItems]; // Audio first, then _no_file
     setIsReanalyzing(true);
-    setReanalyzeProgress({ current: 0, total: allItems.length });
+    setReanalyzeProgress({ current: 0, total: allItems.length, successCount: 0, errorCount: 0, currentJobTitle: '', startedAt: Date.now() });
 
     let successCount = 0;
     let errorCount = 0;
@@ -132,9 +157,11 @@ export default function CockpitTranscriptions() {
     for (let i = 0; i < allItems.length; i++) {
       const t = allItems[i];
       const isNoFile = t.storage_path?.endsWith('_no_file');
+      const jobTitle = t.title || t.summary?.title || t.original_filename || `#${i + 1}`;
+
+      setReanalyzeProgress(prev => ({ ...prev, current: i, currentJobTitle: typeof jobTitle === 'string' ? jobTitle : String(jobTitle) }));
 
       try {
-        // _no_file → reanalyze only; real audio → full retranscribe via AssemblyAI
         if (isNoFile) {
           await processTranscription.mutateAsync({ jobId: t.id, forceReanalyze: true });
         } else {
@@ -145,7 +172,7 @@ export default function CockpitTranscriptions() {
         errorCount++;
         console.error(`[Batch] Job ${t.id} failed (${isNoFile ? 'reanalyze' : 'retranscribe'}):`, err);
       }
-      setReanalyzeProgress({ current: i + 1, total: allItems.length });
+      setReanalyzeProgress(prev => ({ ...prev, current: i + 1, successCount, errorCount }));
       
       // Wait between items: 5s for audio (AssemblyAI rate limits), 2s for _no_file (lighter)
       if (i < allItems.length - 1) {
@@ -155,7 +182,7 @@ export default function CockpitTranscriptions() {
     }
 
     setIsReanalyzing(false);
-    setReanalyzeProgress({ current: 0, total: 0 });
+    setReanalyzeProgress({ current: 0, total: 0, successCount: 0, errorCount: 0, currentJobTitle: '', startedAt: 0 });
     refetch();
     
     if (errorCount === 0) {
@@ -235,26 +262,40 @@ export default function CockpitTranscriptions() {
         </div>
 
         {/* Progress bar for batch re-analyze */}
-        {isReanalyzing && reanalyzeProgress.total > 0 && (
-          <div className="space-y-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                <span className="font-medium">Ré-analyse en cours...</span>
+        {isReanalyzing && reanalyzeProgress.total > 0 && (() => {
+          const elapsed = (Date.now() - reanalyzeProgress.startedAt) / 1000;
+          const avgPerJob = reanalyzeProgress.current > 0 ? elapsed / reanalyzeProgress.current : 5;
+          const remaining = Math.ceil((reanalyzeProgress.total - reanalyzeProgress.current) * avgPerJob / 60);
+          const pct = Math.round((reanalyzeProgress.current / reanalyzeProgress.total) * 100);
+          return (
+            <div className="space-y-2 p-4 bg-primary/5 rounded-lg border border-primary/20">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-amber-500" />
+                  <span className="font-medium">⚠️ Ne quittez pas cette page — traitement en cours</span>
+                </div>
+                <span className="font-mono text-foreground">
+                  {reanalyzeProgress.current}/{reanalyzeProgress.total} ({pct}%)
+                </span>
               </div>
-              <span className="text-muted-foreground">
-                {reanalyzeProgress.current} / {reanalyzeProgress.total}
-              </span>
+              <Progress value={pct} className="h-2.5" />
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span className="truncate max-w-[50%]">
+                  En cours : <span className="font-medium text-foreground">{reanalyzeProgress.currentJobTitle}</span>
+                </span>
+                <div className="flex items-center gap-3">
+                  {reanalyzeProgress.successCount > 0 && (
+                    <span className="text-green-600">✓ {reanalyzeProgress.successCount}</span>
+                  )}
+                  {reanalyzeProgress.errorCount > 0 && (
+                    <span className="text-destructive">✗ {reanalyzeProgress.errorCount}</span>
+                  )}
+                  <span>~{remaining > 0 ? `${remaining} min` : '< 1 min'} restantes</span>
+                </div>
+              </div>
             </div>
-            <Progress 
-              value={(reanalyzeProgress.current / reanalyzeProgress.total) * 100} 
-              className="h-2"
-            />
-            <p className="text-xs text-muted-foreground">
-              Environ {Math.ceil((reanalyzeProgress.total - reanalyzeProgress.current) * 0.1)} min restantes (transcription + analyse en arrière-plan)
-            </p>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Stats inline */}
         <div className="flex flex-wrap items-center gap-4 p-3 bg-muted/40 rounded-lg border text-sm">
@@ -515,6 +556,36 @@ export default function CockpitTranscriptions() {
         }}
         defaultFiles={droppedFiles.length > 0 ? droppedFiles : undefined}
       />
+
+      {/* Navigation blocker dialog */}
+      <AlertDialog open={blocker.state === 'blocked'}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-amber-500" />
+              Traitement en cours
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              La ré-analyse est en cours ({reanalyzeProgress.current}/{reanalyzeProgress.total}).
+              Si vous quittez maintenant, le traitement sera interrompu et les transcriptions restantes ne seront pas traitées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => blocker.reset?.()}>
+              Rester sur la page
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                setIsReanalyzing(false);
+                blocker.proceed?.();
+              }}
+            >
+              Quitter et interrompre
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </CockpitLayout>
   );
 }
