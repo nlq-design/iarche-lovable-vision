@@ -1796,8 +1796,8 @@ serve(async (req) => {
         })
         .eq("id", jobId);
 
-      // Make enriched segments available for analysis
-      parsedSegments = enrichedSegments;
+      // parsedSegments already loaded from DB above (lines 1779-1784)
+      // No need to reassign — they are ready for the AssemblyAI-first analysis flow
     } else {
       // Need to transcribe the audio via AssemblyAI
       if (!ASSEMBLYAI_API_KEY) {
