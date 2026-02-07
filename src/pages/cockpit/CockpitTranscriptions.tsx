@@ -182,11 +182,13 @@ export default function CockpitTranscriptions() {
       setReanalyzeProgress(prev => ({ ...prev, current: i, currentJobTitle: typeof jobTitle === 'string' ? jobTitle : String(jobTitle) }));
 
       try {
-        if (hasAudio) {
-          await processTranscription.mutateAsync({ jobId: t.id, forceRetranscribe: true });
-        } else {
-          // No audio file → re-run LLM analysis only
+        const alreadyAssemblyAI = (t.ai_metadata as any)?.source === 'assemblyai';
+        if (!hasAudio || alreadyAssemblyAI) {
+          // No audio file or already transcribed by AssemblyAI → re-run LLM analysis only
           await processTranscription.mutateAsync({ jobId: t.id, forceReanalyze: true });
+        } else {
+          // Has audio but not yet AssemblyAI → full re-transcription
+          await processTranscription.mutateAsync({ jobId: t.id, forceRetranscribe: true });
         }
         successCount++;
       } catch (err: any) {
@@ -203,8 +205,9 @@ export default function CockpitTranscriptions() {
       setReanalyzeProgress(prev => ({ ...prev, current: i + 1, successCount, errorCount }));
 
       if (i < allItems.length - 1) {
-        const nextHasAudio = !allItems[i + 1].storage_path?.endsWith('_no_file');
-        await new Promise(r => setTimeout(r, nextHasAudio ? 5000 : 2000));
+        const nextItem = allItems[i + 1];
+        const nextIsLight = nextItem.storage_path?.endsWith('_no_file') || (nextItem.ai_metadata as any)?.source === 'assemblyai';
+        await new Promise(r => setTimeout(r, nextIsLight ? 2000 : 5000));
       }
     }
 

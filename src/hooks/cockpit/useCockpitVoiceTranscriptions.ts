@@ -50,33 +50,70 @@ export interface VoiceTranscription {
 
 export interface TranscriptionSummary {
   title: string;
-  context: {
+  executive_summary: string;
+  topics?: string[];
+  key_points: string[];
+  participants?: {
+    name: string;
+    role?: string;
+    company?: string;
+    crm_match?: { type: string; id: string; confidence: number } | null;
+  }[];
+  detected_entities?: {
+    name: string;
+    type: string;
+    confidence: number;
+    existing_id?: string;
+    action: string;
+  }[];
+  decisions: string[];
+  action_items: {
+    task?: string;
+    title?: string;
+    owner?: string | null;
+    assignee?: string | null;
+    due_date?: string | null;
+    deadline?: string | null;
+    priority: 'low' | 'medium' | 'high' | 'urgent';
+    linked_entity?: { type: string; id: string; name: string } | null;
+  }[];
+  risks_blockers: string[];
+  questions_open: string[];
+  next_steps?: {
+    action: string;
+    owner?: string | null;
+    deadline?: string | null;
+  }[];
+  financial_data?: {
+    amount: number;
+    currency?: string;
+    context: string;
+  }[];
+  dates_mentioned?: {
+    original: string;
+    normalized: string;
+    context: string;
+  }[];
+  sentiment?: 'positive' | 'neutral' | 'negative';
+  quality_score?: number;
+  // Legacy fields (backward compat)
+  context?: {
     date: string | null;
     participants: string[];
     company: string | null;
     lead_intent: string | null;
   };
-  executive_summary: string;
-  key_points: string[];
-  decisions: string[];
-  action_items: {
-    task: string;
-    owner: string | null;
-    due_date: string | null;
-    priority: 'low' | 'medium' | 'high';
-  }[];
-  risks_blockers: string[];
-  questions_open: string[];
-  // next_steps is now merged into action_items via normalizeSummary
-  crm_enrichment: {
+  crm_enrichment?: {
     suggested_lead_score_delta: number | null;
     suggested_stage_change: string | null;
     suggested_tags: string[];
   };
-  extraction_quality: {
+  extraction_quality?: {
     confidence: number;
     uncertainties: string[];
   };
+  // Fallback indicator
+  _fallback?: string;
 }
 
 export interface CreateTranscriptionInput {
