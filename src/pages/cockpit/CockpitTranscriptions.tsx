@@ -208,7 +208,14 @@ export default function CockpitTranscriptions() {
           await processTranscription.mutateAsync({ jobId: t.id, forceRetranscribe: true });
         }
         successCount++;
-      } catch (err) {
+      } catch (err: any) {
+        const msg = err?.message || '';
+        // Ignore navigation-induced aborts (user left the page)
+        if (msg.includes('Failed to send a request') || msg.includes('AbortError') || msg.includes('Failed to fetch')) {
+          console.warn(`[Batch] Job ${t.id} aborted (navigation), skipping remaining`);
+          toast.info('Traitement interrompu (changement de page). Les jobs déjà traités sont sauvegardés.');
+          break;
+        }
         errorCount++;
         console.error(`[Batch] Job ${t.id} failed:`, err);
       }
