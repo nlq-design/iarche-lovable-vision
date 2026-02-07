@@ -285,38 +285,6 @@ export default function CockpitTranscriptions() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {assemblyaiStats.brokenSummaries > 0 && (
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="h-8 text-sm border-amber-500/50 text-amber-700 dark:text-amber-400"
-                onClick={() => handleBatchProcess('repair_broken')}
-                disabled={isReanalyzing}
-              >
-                {isReanalyzing ? (
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                ) : (
-                  <AlertCircle className="h-3.5 w-3.5 mr-1.5" />
-                )}
-                Réparer ({assemblyaiStats.brokenSummaries})
-              </Button>
-            )}
-            {assemblyaiStats.needsRetranscribe > 0 && (
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="h-8 text-sm"
-                onClick={() => handleBatchProcess('retranscribe_only')}
-                disabled={isReanalyzing}
-              >
-                {isReanalyzing ? (
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                )}
-                Transcrire ({assemblyaiStats.needsRetranscribe})
-              </Button>
-            )}
             {stats.done > 0 && (
               <Button 
                 size="sm" 
@@ -330,7 +298,7 @@ export default function CockpitTranscriptions() {
                 ) : (
                   <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                 )}
-                Ré-analyser toutes
+                Re-transcrire tout ({stats.done})
               </Button>
             )}
             <Button size="sm" className="h-8 text-sm w-fit" onClick={() => setCreateModalOpen(true)}>
@@ -402,23 +370,12 @@ export default function CockpitTranscriptions() {
             <span className="font-semibold text-destructive">{stats.errors}</span>
           </div>
           <div className="h-4 w-px bg-border hidden sm:block" />
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">🎙 AssemblyAI</span>
-            <span className="font-semibold">{assemblyaiStats.withAssemblyAI}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">📝 Legacy</span>
-            <span className="font-semibold">{assemblyaiStats.withoutAssemblyAI + assemblyaiStats.noFile}</span>
-            {assemblyaiStats.noFile > 0 && (
-              <span className="text-xs text-muted-foreground">({assemblyaiStats.noFile} sans audio)</span>
-            )}
-          </div>
-          {assemblyaiStats.brokenSummaries > 0 && (
+          {assemblyaiStats.noFile > 0 && (
             <>
               <div className="h-4 w-px bg-border hidden sm:block" />
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">⚠️ Résumé cassé</span>
-                <span className="font-semibold text-amber-600">{assemblyaiStats.brokenSummaries}</span>
+                <span className="text-muted-foreground">Sans audio</span>
+                <span className="font-semibold">{assemblyaiStats.noFile}</span>
               </div>
             </>
           )}
@@ -501,18 +458,10 @@ export default function CockpitTranscriptions() {
                               </>
                             )}
                           </Badge>
-                          {(transcription.ai_metadata as any)?.source === 'assemblyai' ? (
-                            <Badge variant="outline" className="text-xs border-green-500/50 text-green-700 dark:text-green-400">
-                              🎙 AssemblyAI
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-xs border-dashed text-muted-foreground">
-                              Legacy
-                            </Badge>
-                          )}
-                          {hasBrokenSummary(transcription) && (
-                            <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-600">
-                              ⚠️ Résumé cassé
+                          {transcription.duration_seconds && (
+                            <Badge variant="outline" className="text-xs">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {Math.round(transcription.duration_seconds / 60)} min
                             </Badge>
                           )}
                         </div>
