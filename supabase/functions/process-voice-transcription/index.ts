@@ -1095,6 +1095,255 @@ async function fetchLLMModel(supabase: any, modelId: string | null): Promise<LLM
   
   return data as LLMModel | null;
 }
+// ============= ASSEMBLYAI-NATIVE ANALYSIS (v12.0) =============
+
+/**
+ * Map AssemblyAI entity_type to CRM entity type
+ */
+function mapAssemblyAIEntityType(aaiType: string): string {
+  switch (aaiType) {
+    case "person_name": return "person";
+    case "organization": return "company";
+    case "location": return "location";
+    case "date": return "date";
+    case "phone_number": return "phone";
+    case "email_address": return "email";
+    default: return aaiType;
+  }
+}
+
+/**
+ * Build base analysis from AssemblyAI native enriched data.
+ * Returns null if no enriched data is available (fallback to full LLM).
+ */
+function buildBaseAnalysisFromAssemblyAI(segments: Record<string, unknown>): Record<string, unknown> | null {
+  const chapters = segments.chapters as Array<{ summary: string; gist: string; headline: string; start: number; end: number }> | undefined;
+  const sentiments = segments.sentiment_analysis as Array<{ sentiment: string; confidence: number; text: string }> | undefined;
+  const entities = segments.entities as Array<{ entity_type: string; text: string; start: number; end: number }> | undefined;
+  const utterances = segments.utterances as Array<{ speaker: string; text: string; start_ms: number; end_ms: number; confidence: number }> | undefined;
+  const words = segments.words as Array<{ confidence: number }> | undefined;
+
+  // Need at least chapters OR entities to build a useful base analysis
+  if (!chapters?.length && !entities?.length) {
+    return null;
+  }
+
+  // Title from first chapter headline
+  const title = chapters?.[0]?.headline ?? null;
+
+  // Executive summary from all chapter summaries
+  const executive_summary = chapters?.map(c => c.summary).join(' ') ?? null;
+
+  // Topics from chapter headlines
+  const topics = chapters?.map(c => c.headline) ?? [];
+
+  // Key points from chapter gists
+  const key_points = chapters?.map(c => c.gist).filter(Boolean) ?? [];
+
+  // Sentiment aggregate from AssemblyAI sentiment analysis
+  let sentiment: string = "neutral";
+  if (sentiments?.length) {
+    const pos = sentiments.filter(s => s.sentiment === "POSITIVE").length;
+    const neg = sentiments.filter(s => s.sentiment === "NEGATIVE").length;
+    if (pos > neg * 1.5) sentiment = "positive";
+    else if (neg > pos * 1.5) sentiment = "negative";
+  }
+
+  // Deduplicate entities by text (case-insensitive)
+  const uniqueEntityNames = new Set<string>();
+  const detected_entities = (entities ?? [])
+    .filter(e => {
+      const key = e.text.toLowerCase();
+      if (uniqueEntityNames.has(key)) return false;
+      uniqueEntityNames.add(key);
+      return true;
+    })
+    .map(e => ({
+      name: e.text,
+      type: mapAssemblyAIEntityType(e.entity_type),
+      confidence: 0.9,
+      action: "verify" as const,
+    }));
+
+  // Participants from speaker diarization
+  const speakers = utterances ? [...new Set(utterances.map(u => u.speaker))] : [];
+  const participants = speakers.map(s => ({
+    name: `Intervenant ${s}`,
+    role: "participant",
+  }));
+
+  // Quality score from average word confidence
+  const avgConfidence = words?.length
+    ? words.reduce((sum, w) => sum + (w.confidence ?? 0), 0) / words.length
+    : 0.85;
+
+  return {
+    title,
+    executive_summary,
+    topics,
+    participants,
+    key_points,
+    sentiment,
+    detected_entities,
+    quality_score: Math.round(avgConfidence * 100),
+    // Will be filled by minimal LLM call
+    decisions: [],
+    risks_blockers: [],
+    questions_open: [],
+    next_steps: [],
+    action_items: [],
+    financial_data: [],
+    dates_mentioned: [],
+    _source: "assemblyai_native",
+  };
+}
+
+/**
+ * Minimal CRM-matching system prompt (v12.0)
+ * LLM only does CRM matching + action extraction, NOT summarization.
+ */
+function getCRMMatchingSystemPrompt(): string {
+  return `# CRM Matching & Action Extraction v12.0
+
+Tu reçois des données PRÉ-ANALYSÉES par AssemblyAI (chapitres, entités, sentiment).
+
+## TA SEULE MISSION
+1. **MATCHER les entités CRM** : Compare les noms/entreprises des champs assemblyai_entities et chapter_summaries avec existing_entities. Si match fuzzy → action="link" + existing_id=UUID exact. Si nouveau → "create". Si incertain → "verify".
+2. **EXTRAIRE les actions** : Tâches à faire avec responsable (@Qui), deadline (YYYY-MM-DD), priorité.
+3. **IDENTIFIER les décisions** prises.
+4. **DÉTECTER les données financières** (montants, %).
+5. **NORMALISER les dates** relatives → YYYY-MM-DD.
+6. **IDENTIFIER risques/blocages et questions ouvertes.**
+7. **ENRICHIR les participants** : Résoudre "Intervenant A/B/C" vers noms réels si identifiables.
+
+## CE QUE TU NE FAIS PAS
+- PAS de résumé (AssemblyAI l'a fait)
+- PAS d'analyse de sentiment (AssemblyAI l'a fait)
+- PAS de liste de sujets (AssemblyAI l'a fait)
+
+## NORMALISATION PHONÉTIQUE
+Utilise le dictionary_context pour normaliser les variations.
+
+Retourne UNIQUEMENT un JSON valide.`;
+}
+
+function getCRMMatchingOutputSchema(): Record<string, unknown> {
+  return {
+    type: "object",
+    properties: {
+      title_override: {
+        type: "string",
+        description: "Titre amélioré avec noms CRM résolus (max 80 chars). Null si le titre AssemblyAI est suffisant."
+      },
+      detected_entities: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            type: { type: "string", enum: ["lead", "project", "solution", "partner", "company", "person"] },
+            confidence: { type: "number", minimum: 0, maximum: 1 },
+            existing_id: { type: "string" },
+            action: { type: "string", enum: ["link", "create", "verify"] }
+          },
+          required: ["name", "type", "confidence", "action"]
+        }
+      },
+      participants_enriched: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            role: { type: "string" },
+            company: { type: "string" },
+            crm_match: {
+              type: "object",
+              properties: {
+                type: { type: "string", enum: ["lead", "partner"] },
+                id: { type: "string" },
+                confidence: { type: "number" }
+              }
+            }
+          },
+          required: ["name", "role"]
+        }
+      },
+      action_items: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            assignee: { type: "string" },
+            due_date: { type: "string", description: "Format YYYY-MM-DD" },
+            priority: { type: "string", enum: ["low", "medium", "high", "urgent"] },
+            linked_entity: {
+              type: "object",
+              properties: {
+                type: { type: "string", enum: ["lead", "project", "solution", "partner"] },
+                id: { type: "string" },
+                name: { type: "string" }
+              }
+            }
+          },
+          required: ["title", "assignee", "priority"]
+        }
+      },
+      decisions: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            content: { type: "string" },
+            owner: { type: "string" },
+            date_mentioned: { type: "string" }
+          },
+          required: ["content"]
+        }
+      },
+      risks_blockers: { type: "array", items: { type: "string" } },
+      questions_open: { type: "array", items: { type: "string" } },
+      next_steps: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            action: { type: "string" },
+            owner: { type: "string" },
+            deadline: { type: "string", description: "Format YYYY-MM-DD" }
+          },
+          required: ["action"]
+        }
+      },
+      financial_data: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            amount: { type: "number" },
+            currency: { type: "string", default: "EUR" },
+            context: { type: "string" }
+          },
+          required: ["amount", "context"]
+        }
+      },
+      dates_mentioned: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            original: { type: "string" },
+            normalized: { type: "string", description: "Format YYYY-MM-DD" },
+            context: { type: "string" }
+          },
+          required: ["original", "normalized", "context"]
+        }
+      }
+    },
+    required: ["detected_entities", "action_items", "decisions"]
+  };
+}
 
 // ============= DATE/TIME PARSING =============
 
@@ -1519,10 +1768,21 @@ serve(async (req) => {
     const aiMeta = vjob.ai_metadata ?? {};
 
     let rawText: string;
+    let parsedSegments: Record<string, unknown> | null = null;
 
     if (existingRawTranscript && existingRawTranscript.trim().length > 0 && !forceRetranscribe) {
       console.log("[Process] Using existing raw_transcript (skip transcription)");
       rawText = existingRawTranscript;
+
+      // Load enriched segments from DB if available (from previous AssemblyAI transcription)
+      try {
+        const segmentsRaw = (job as Record<string, unknown>).segments;
+        if (segmentsRaw) {
+          parsedSegments = typeof segmentsRaw === 'string' ? JSON.parse(segmentsRaw) : segmentsRaw as Record<string, unknown>;
+          const hasChapters = Array.isArray((parsedSegments as any)?.chapters) && (parsedSegments as any).chapters.length > 0;
+          console.log(`[Segments] Loaded from DB: chapters=${hasChapters}, entities=${Array.isArray((parsedSegments as any)?.entities) ? (parsedSegments as any).entities.length : 0}`);
+        }
+      } catch { /* segments not available or not parseable */ }
 
       await supabase
         .from("voice_transcriptions")
@@ -1535,6 +1795,9 @@ serve(async (req) => {
           },
         })
         .eq("id", jobId);
+
+      // Make enriched segments available for analysis
+      parsedSegments = enrichedSegments;
     } else {
       // Need to transcribe the audio via AssemblyAI
       if (!ASSEMBLYAI_API_KEY) {
@@ -1725,241 +1988,256 @@ serve(async (req) => {
     const ctx = await fetchEntityContext(supabase, vjob, rawText);
     console.log(`[Context] lead=${ctx.leadId}, project=${ctx.project?.id ?? null}, rag=${ctx.autoDetectionUsed}`);
 
-    // LLM processing
-    const profile = await loadPromptProfile(supabase, vjob.prompt_profile_id, vjob, jobId);
-    const systemPrompt = profile?.system_prompt ?? "Return JSON only.";
-    const userPrompt = profile?.user_prompt ?? null;
-    const outputSchema = profile?.output_schema ?? null;
+    // ============= ANALYSIS: AssemblyAI-first or Legacy LLM =============
+    const analysisContext = (job as Record<string, unknown>).analysis_context as string | null;
+    const baseAnalysis = parsedSegments ? buildBaseAnalysisFromAssemblyAI(parsedSegments) : null;
 
+    let summary: Record<string, unknown>;
     let provider: LLMProvider = "lovable";
     let modelId = "google/gemini-2.5-flash";
     let supportsTools = true;
     let resolvedLLMModelId: string | null = null;
-
-    const profileModelConfig = profile?.model_config as Record<string, unknown> | null;
-    const configuredLLMModelId = profileModelConfig?.llm_model_id as string | undefined;
-
-    if (configuredLLMModelId) {
-      const llmModel = await fetchLLMModel(supabase, configuredLLMModelId);
-      if (llmModel) {
-        provider = llmModel.provider as LLMProvider;
-        modelId = llmModel.model_id;
-        supportsTools = llmModel.supports_tools;
-        resolvedLLMModelId = llmModel.id;
-      }
-    } else if (profileModelConfig?.model) {
-      const profileModel = profileModelConfig.model as string;
-      modelId = profileModel;
-      if (profileModel.startsWith("gpt-")) provider = "openai";
-      else if (profileModel.startsWith("claude-")) provider = "anthropic";
-    }
-
-    const analysisContext = (job as Record<string, unknown>).analysis_context as string | null;
-
-    // For very long transcriptions, use a fast 2-step pipeline to avoid LLM timeouts:
-    // 1) compress transcript -> 2) generate structured summary from compressed version
-    const isLongTranscript = rawText.length > MAX_TRANSCRIPTION_CHARS;
-    let analysisText = rawText;
     let fastPipelineUsed = false;
     let chunkedProcessing = false;
 
-    if (isLongTranscript) {
-      fastPipelineUsed = true;
-      console.log(`[LongTranscript] Detected: ${rawText.length} chars (>${MAX_TRANSCRIPTION_CHARS}). Using chunked compression.`);
+    if (baseAnalysis) {
+      // ===== NEW FLOW v12.0: AssemblyAI-first, minimal LLM =====
+      console.log(`[v12.0] AssemblyAI-first flow: chapters=${(parsedSegments as any)?.chapters?.length ?? 0}, entities=${(parsedSegments as any)?.entities?.length ?? 0}`);
 
-      // Force Lovable gateway + Gemini Flash for reliability on long inputs
-      provider = "lovable";
-      modelId = "google/gemini-2.5-flash";
-      supportsTools = true;
-      resolvedLLMModelId = null;
+      // Build condensed CRM matching input (much smaller than full transcript)
+      const chapterSummaries = ((parsedSegments as any)?.chapters ?? [])
+        .map((c: any) => `[${c.headline}] ${c.summary}`)
+        .join('\n');
+      const assemblyEntities = ((parsedSegments as any)?.entities ?? [])
+        .map((e: any) => `${e.entity_type}: ${e.text}`)
+        .join(', ');
 
-      // Strategy: Chunk the transcript, compress each chunk, then merge
-      const chunks: string[] = [];
-      let remaining = rawText;
-      while (remaining.length > 0 && chunks.length < MAX_CHUNKS) {
-        // Try to split at sentence boundary near CHUNK_SIZE_CHARS
-        let splitPoint = Math.min(CHUNK_SIZE_CHARS, remaining.length);
-        if (remaining.length > CHUNK_SIZE_CHARS) {
-          // Look for sentence end (. ! ?) within last 500 chars of chunk
-          const searchStart = Math.max(0, CHUNK_SIZE_CHARS - 500);
-          const searchArea = remaining.slice(searchStart, CHUNK_SIZE_CHARS);
-          const lastSentenceEnd = Math.max(
-            searchArea.lastIndexOf('. '),
-            searchArea.lastIndexOf('! '),
-            searchArea.lastIndexOf('? '),
-            searchArea.lastIndexOf('.\n'),
-            searchArea.lastIndexOf('!\n'),
-            searchArea.lastIndexOf('?\n')
-          );
-          if (lastSentenceEnd > 0) {
-            splitPoint = searchStart + lastSentenceEnd + 2;
-          }
-        }
-        chunks.push(remaining.slice(0, splitPoint));
-        remaining = remaining.slice(splitPoint).trim();
-      }
+      // Dictionary context for normalization
+      const dictionaryContext = ctx.aliasMap && ctx.aliasMap.size > 0
+        ? Array.from(ctx.aliasMap.entries()).slice(0, 50).map(([alias, canonical]) => ({ alias, canonical }))
+        : [];
 
-      console.log(`[LongTranscript] Split into ${chunks.length} chunks`);
-
-      if (chunks.length > 1) {
-        chunkedProcessing = true;
-        const chunkSummaries: string[] = [];
-
-        const compressionSchema: Record<string, unknown> = {
-          type: "object",
-          properties: {
-            chunk_summary: { type: "string", description: "Résumé détaillé et fidèle de cette partie du transcript" },
-            participants_mentioned: { type: "array", items: { type: "string" }, description: "Noms propres mentionnés" },
-            key_facts: { type: "array", items: { type: "string" }, description: "Faits clés, montants, dates" },
-          },
-          required: ["chunk_summary", "participants_mentioned", "key_facts"],
-          additionalProperties: false,
-        };
-
-        const compressionSys = `Tu es un expert en prise de notes. Ta tâche est de résumer fidèlement UN SEGMENT d'une conversation plus longue.
-
-RÈGLES CRITIQUES:
-- ZÉRO invention : ne note que ce qui est explicitement dit
-- Préserve TOUS les noms propres, entreprises, montants, dates
-- Si une date relative est mentionnée ("demain", "vendredi"), note-la telle quelle
-- Garde les nuances et le contexte des discussions
-- Ce segment fait partie d'une conversation plus longue (partie ${chunks.length} au total)`;
-
-        for (let i = 0; i < chunks.length; i++) {
-          const chunkUsr = `## Contexte utilisateur\n${analysisContext ?? "(aucun)"}\n\n## Segment ${i + 1}/${chunks.length}\n${chunks[i]}`;
-
-          try {
-            console.log(`[LongTranscript] Processing chunk ${i + 1}/${chunks.length} (${chunks[i].length} chars)`);
-            const compressed = await callLLM(
-              "lovable",
-              "google/gemini-2.5-flash", // Use flash, not flash-lite, for better quality
-              compressionSys,
-              chunkUsr,
-              compressionSchema,
-              true
-            );
-
-            const chunkResult = compressed as { chunk_summary?: string; participants_mentioned?: string[]; key_facts?: string[] };
-            if (chunkResult.chunk_summary) {
-              let summary = `### Segment ${i + 1}\n${chunkResult.chunk_summary}`;
-              if (chunkResult.participants_mentioned?.length) {
-                summary += `\n**Personnes:** ${chunkResult.participants_mentioned.join(', ')}`;
-              }
-              if (chunkResult.key_facts?.length) {
-                summary += `\n**Faits clés:** ${chunkResult.key_facts.join(' | ')}`;
-              }
-              chunkSummaries.push(summary);
-            }
-          } catch (chunkErr) {
-            logError(`Chunk_${i}`, chunkErr);
-            // Include raw chunk excerpt as fallback
-            chunkSummaries.push(`### Segment ${i + 1} (non compressé)\n${chunks[i].slice(0, 2000)}...`);
-          }
-        }
-
-        // Merge all chunk summaries
-        analysisText = chunkSummaries.join('\n\n---\n\n');
-        console.log(`[LongTranscript] Merged ${chunkSummaries.length} chunk summaries (${analysisText.length} chars)`);
-      } else {
-        // Single chunk but still long - use improved compression
-        const compressionSchema: Record<string, unknown> = {
-          type: "object",
-          properties: {
-            compressed_transcript: { type: "string", description: "Condensé structuré et fidèle du transcript" },
-          },
-          required: ["compressed_transcript"],
-          additionalProperties: false,
-        };
-
-        const compressionSys =
-          "Tu es un expert en prise de notes et synthèse de réunions. Ta tâche est de compresser un verbatim long en notes structurées et fidèles. Réponds UNIQUEMENT via l'outil fourni, sans texte hors JSON.";
-
-        const compressionUsr =
-          `## CONTEXTE D'ANALYSE (fourni par l'utilisateur)\n${analysisContext ?? "(aucun contexte spécifique)"}\n\n` +
-          "## TÂCHE\n" +
-          "Compresse fidèlement ce transcript en notes structurées en français.\n\n" +
-          "## FORMAT ATTENDU\n" +
-          "**Titre suggéré:** [Résume le sujet]\n" +
-          "**Participants:** [Liste]\n" +
-          "**Contexte:** [De quoi parle cette réunion]\n" +
-          "**Points clés:** (liste détaillée)\n" +
-          "**Décisions:** (liste)\n" +
-          "**Actions:** [Action] - Responsable - Échéance\n" +
-          "**Questions ouvertes:**\n\n" +
-          "## CONTRAINTES\n" +
-          "- ZÉRO invention\n" +
-          "- Préserve noms, entreprises, dates, montants\n\n" +
-          `## TRANSCRIPT\n${rawText}`;
-
-        try {
-          const compressed = await callLLM(
-            "lovable",
-            "google/gemini-2.5-flash", // Use flash instead of flash-lite
-            compressionSys,
-            compressionUsr,
-            compressionSchema,
-            true
-          );
-
-          const c = (compressed as any)?.compressed_transcript;
-          if (typeof c === "string" && c.trim().length > 0) {
-            analysisText = c.trim();
-          }
-        } catch (compressErr) {
-          logError("Compress", compressErr);
-          analysisText = rawText;
-        }
-      }
-    }
-
-    const { sys, usr } = buildLLM(
-      systemPrompt,
-      userPrompt,
-      analysisText,
-      ctx,
-      outputSchema as Record<string, unknown> | null,
-      analysisContext
-    );
-
-    // CRITICAL: Mark as analyzing_llm before LLM call
-    await supabase
-      .from("voice_transcriptions")
-      .update({
-        ai_metadata: {
-          ...(vjob.ai_metadata ?? {}),
-          llm_call_started_at: new Date().toISOString(),
-          llm_model: `${provider}/${modelId}`,
-          fast_pipeline: fastPipelineUsed,
-          chunked_processing: chunkedProcessing,
-          original_transcript_length: rawText.length,
-          compressed_text_length: analysisText.length,
-          analysis_context_used: !!(analysisContext && analysisContext.trim()),
+      const crmInput = {
+        chapter_summaries: chapterSummaries,
+        assemblyai_entities: assemblyEntities,
+        existing_entities: {
+          leads: ctx.existingEntities?.leads?.slice(0, 30) ?? [],
+          projects: ctx.existingEntities?.projects?.slice(0, 20) ?? [],
+          solutions: ctx.existingEntities?.solutions ?? [],
+          partners: ctx.existingEntities?.partners?.slice(0, 20) ?? [],
         },
-      })
-      .eq("id", jobId);
+        crm_context: {
+          lead: ctx.lead ? { id: ctx.lead.id, name: ctx.lead.name, company: ctx.lead.company } : null,
+          project: ctx.project ? { id: ctx.project.id, name: ctx.project.name } : null,
+        },
+        // Include transcript excerpt for action items extraction (decisions, dates, etc.)
+        transcript_excerpt: rawText.slice(0, 10000),
+        analysis_context: analysisContext,
+        dictionary_context: dictionaryContext,
+        today_date: new Date().toISOString().split('T')[0],
+      };
 
-    let summary: Record<string, unknown>;
-    try {
-      summary = await callLLM(provider, modelId, sys, usr, outputSchema as Record<string, unknown> | null, supportsTools);
-    } catch (llmErr) {
-      const llmErrMsg = llmErr instanceof Error ? llmErr.message : String(llmErr);
-      console.error(`[LLM] Failed: ${llmErrMsg.slice(0, 300)}`);
-
+      // Mark as analyzing
       await supabase
         .from("voice_transcriptions")
         .update({
-          status: "error",
           ai_metadata: {
             ...(vjob.ai_metadata ?? {}),
-            last_error: llmErrMsg.slice(0, 1000),
-            last_error_at: new Date().toISOString(),
+            llm_call_started_at: new Date().toISOString(),
             llm_model: `${provider}/${modelId}`,
-            fast_pipeline: fastPipelineUsed,
+            analysis_mode: "assemblyai_first_v12",
+            assemblyai_chapters: (parsedSegments as any)?.chapters?.length ?? 0,
+            assemblyai_entities: (parsedSegments as any)?.entities?.length ?? 0,
+            analysis_context_used: !!(analysisContext && analysisContext.trim()),
           },
         })
         .eq("id", jobId);
 
-      throw llmErr;
+      try {
+        const crmResult = await callLLM(
+          provider, modelId,
+          getCRMMatchingSystemPrompt(),
+          JSON.stringify(crmInput),
+          getCRMMatchingOutputSchema(),
+          supportsTools
+        );
+
+        // Merge: AssemblyAI base + LLM CRM enrichment
+        summary = {
+          ...baseAnalysis,
+          // Override with LLM results (CRM-specific fields)
+          detected_entities: crmResult.detected_entities ?? baseAnalysis.detected_entities,
+          action_items: crmResult.action_items ?? [],
+          decisions: crmResult.decisions ?? [],
+          risks_blockers: crmResult.risks_blockers ?? [],
+          questions_open: crmResult.questions_open ?? [],
+          next_steps: crmResult.next_steps ?? [],
+          financial_data: crmResult.financial_data ?? [],
+          dates_mentioned: crmResult.dates_mentioned ?? [],
+          // Title: use LLM override if available, otherwise AssemblyAI
+          title: (crmResult.title_override as string) || baseAnalysis.title,
+          // Keep AssemblyAI native data (NOT overridden by LLM)
+          executive_summary: baseAnalysis.executive_summary,
+          topics: baseAnalysis.topics,
+          key_points: baseAnalysis.key_points,
+          sentiment: baseAnalysis.sentiment,
+          quality_score: baseAnalysis.quality_score,
+          // Enrich participants if LLM resolved speaker identities
+          participants: (crmResult.participants_enriched as any[])?.length
+            ? crmResult.participants_enriched
+            : baseAnalysis.participants,
+          _analysis_sources: ["assemblyai_native", "llm_crm_matching"],
+        };
+
+        console.log(`[v12.0] Merged: AssemblyAI base + LLM CRM matching. Entities: ${(summary.detected_entities as any[])?.length ?? 0}, Actions: ${(summary.action_items as any[])?.length ?? 0}`);
+      } catch (llmErr) {
+        // LLM failed but we still have AssemblyAI data - use base analysis
+        const llmErrMsg = llmErr instanceof Error ? llmErr.message : String(llmErr);
+        console.warn(`[v12.0] LLM CRM matching failed, using AssemblyAI-only: ${llmErrMsg.slice(0, 200)}`);
+        summary = {
+          ...baseAnalysis,
+          _analysis_sources: ["assemblyai_native_only"],
+          _llm_error: llmErrMsg.slice(0, 500),
+        };
+      }
+    } else {
+      // ===== LEGACY FLOW: Full LLM analysis (no AssemblyAI enriched data) =====
+      console.log(`[Legacy] No AssemblyAI enriched data available, using full LLM analysis`);
+
+      const profile = await loadPromptProfile(supabase, vjob.prompt_profile_id, vjob, jobId);
+      const systemPrompt = profile?.system_prompt ?? "Return JSON only.";
+      const userPrompt = profile?.user_prompt ?? null;
+      const outputSchema = profile?.output_schema ?? null;
+
+      const profileModelConfig = profile?.model_config as Record<string, unknown> | null;
+      const configuredLLMModelId = profileModelConfig?.llm_model_id as string | undefined;
+
+      if (configuredLLMModelId) {
+        const llmModel = await fetchLLMModel(supabase, configuredLLMModelId);
+        if (llmModel) {
+          provider = llmModel.provider as LLMProvider;
+          modelId = llmModel.model_id;
+          supportsTools = llmModel.supports_tools;
+          resolvedLLMModelId = llmModel.id;
+        }
+      } else if (profileModelConfig?.model) {
+        const profileModel = profileModelConfig.model as string;
+        modelId = profileModel;
+        if (profileModel.startsWith("gpt-")) provider = "openai";
+        else if (profileModel.startsWith("claude-")) provider = "anthropic";
+      }
+
+      // Long transcript chunking (legacy - needed without AssemblyAI chapters)
+      const isLongTranscript = rawText.length > MAX_TRANSCRIPTION_CHARS;
+      let analysisText = rawText;
+
+      if (isLongTranscript) {
+        fastPipelineUsed = true;
+        console.log(`[LongTranscript] Detected: ${rawText.length} chars (>${MAX_TRANSCRIPTION_CHARS}). Using chunked compression.`);
+        provider = "lovable";
+        modelId = "google/gemini-2.5-flash";
+        supportsTools = true;
+        resolvedLLMModelId = null;
+
+        const chunks: string[] = [];
+        let remaining = rawText;
+        while (remaining.length > 0 && chunks.length < MAX_CHUNKS) {
+          let splitPoint = Math.min(CHUNK_SIZE_CHARS, remaining.length);
+          if (remaining.length > CHUNK_SIZE_CHARS) {
+            const searchStart = Math.max(0, CHUNK_SIZE_CHARS - 500);
+            const searchArea = remaining.slice(searchStart, CHUNK_SIZE_CHARS);
+            const lastSentenceEnd = Math.max(
+              searchArea.lastIndexOf('. '), searchArea.lastIndexOf('! '),
+              searchArea.lastIndexOf('? '), searchArea.lastIndexOf('.\n'),
+              searchArea.lastIndexOf('!\n'), searchArea.lastIndexOf('?\n')
+            );
+            if (lastSentenceEnd > 0) splitPoint = searchStart + lastSentenceEnd + 2;
+          }
+          chunks.push(remaining.slice(0, splitPoint));
+          remaining = remaining.slice(splitPoint).trim();
+        }
+
+        console.log(`[LongTranscript] Split into ${chunks.length} chunks`);
+
+        if (chunks.length > 1) {
+          chunkedProcessing = true;
+          const chunkSummaries: string[] = [];
+          const compressionSchema: Record<string, unknown> = {
+            type: "object",
+            properties: {
+              chunk_summary: { type: "string" },
+              participants_mentioned: { type: "array", items: { type: "string" } },
+              key_facts: { type: "array", items: { type: "string" } },
+            },
+            required: ["chunk_summary", "participants_mentioned", "key_facts"],
+            additionalProperties: false,
+          };
+          const compressionSys = `Tu es un expert en prise de notes. Résume fidèlement UN SEGMENT d'une conversation plus longue.\nRÈGLES: ZÉRO invention, préserve noms/montants/dates, ce segment fait partie de ${chunks.length} au total.`;
+
+          for (let i = 0; i < chunks.length; i++) {
+            const chunkUsr = `## Segment ${i + 1}/${chunks.length}\n${chunks[i]}`;
+            try {
+              console.log(`[LongTranscript] Processing chunk ${i + 1}/${chunks.length} (${chunks[i].length} chars)`);
+              const compressed = await callLLM("lovable", "google/gemini-2.5-flash", compressionSys, chunkUsr, compressionSchema, true);
+              const chunkResult = compressed as { chunk_summary?: string; participants_mentioned?: string[]; key_facts?: string[] };
+              if (chunkResult.chunk_summary) {
+                let chunkSummary = `### Segment ${i + 1}\n${chunkResult.chunk_summary}`;
+                if (chunkResult.participants_mentioned?.length) chunkSummary += `\n**Personnes:** ${chunkResult.participants_mentioned.join(', ')}`;
+                if (chunkResult.key_facts?.length) chunkSummary += `\n**Faits clés:** ${chunkResult.key_facts.join(' | ')}`;
+                chunkSummaries.push(chunkSummary);
+              }
+            } catch (chunkErr) {
+              logError(`Chunk_${i}`, chunkErr);
+              chunkSummaries.push(`### Segment ${i + 1} (non compressé)\n${chunks[i].slice(0, 2000)}...`);
+            }
+          }
+          analysisText = chunkSummaries.join('\n\n---\n\n');
+          console.log(`[LongTranscript] Merged ${chunkSummaries.length} chunk summaries (${analysisText.length} chars)`);
+        } else {
+          // Single long chunk - truncate
+          analysisText = rawText.slice(0, MAX_TRANSCRIPTION_CHARS) + "\n[...TRUNCATED...]";
+        }
+      }
+
+      const { sys, usr } = buildLLM(systemPrompt, userPrompt, analysisText, ctx, outputSchema as Record<string, unknown> | null, analysisContext);
+
+      await supabase
+        .from("voice_transcriptions")
+        .update({
+          ai_metadata: {
+            ...(vjob.ai_metadata ?? {}),
+            llm_call_started_at: new Date().toISOString(),
+            llm_model: `${provider}/${modelId}`,
+            analysis_mode: "legacy_full_llm",
+            fast_pipeline: fastPipelineUsed,
+            chunked_processing: chunkedProcessing,
+            original_transcript_length: rawText.length,
+            compressed_text_length: analysisText.length,
+            analysis_context_used: !!(analysisContext && analysisContext.trim()),
+          },
+        })
+        .eq("id", jobId);
+
+      try {
+        summary = await callLLM(provider, modelId, sys, usr, outputSchema as Record<string, unknown> | null, supportsTools);
+      } catch (llmErr) {
+        const llmErrMsg = llmErr instanceof Error ? llmErr.message : String(llmErr);
+        console.error(`[LLM] Failed: ${llmErrMsg.slice(0, 300)}`);
+        await supabase
+          .from("voice_transcriptions")
+          .update({
+            status: "error",
+            ai_metadata: {
+              ...(vjob.ai_metadata ?? {}),
+              last_error: llmErrMsg.slice(0, 1000),
+              last_error_at: new Date().toISOString(),
+              llm_model: `${provider}/${modelId}`,
+              fast_pipeline: fastPipelineUsed,
+            },
+          })
+          .eq("id", jobId);
+        throw llmErr;
+      }
     }
 
     // Tasks
