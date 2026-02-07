@@ -1966,7 +1966,13 @@ serve(async (req) => {
         content_safety: transcriptionResult.content_safety_labels ?? null,
       };
 
-      // Update with full transcription result
+      // Use speaker-formatted text for LLM analysis if available (richer context)
+      // IMPORTANT: Save this enriched text to raw_transcript so Phase 2 gets it
+      if (speakerFormattedText) {
+        rawText = speakerFormattedText;
+      }
+
+      // Update with full transcription result (speaker-formatted text persisted for Phase 2)
       await supabase
         .from("voice_transcriptions")
         .update({
@@ -1981,31 +1987,39 @@ serve(async (req) => {
         })
         .eq("id", jobId);
 
-      // Use speaker-formatted text for LLM analysis if available (richer context)
-      if (speakerFormattedText) {
-        rawText = speakerFormattedText;
-      }
-
       // ===== 2-PHASE ARCHITECTURE =====
       // If this was a force_retranscribe call, the transcription phase is now complete.
       // To avoid 504 timeouts, we return immediately and self-invoke for the analysis phase.
       if (forceRetranscribe) {
         console.log(`[2-Phase] Transcription complete. Self-invoking for analysis phase...`);
         
-        // Fire-and-forget: self-invoke for analysis
-        const selfUrl = `${SUPABASE_URL}/functions/v1/process-voice-transcription`;
-        fetch(selfUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          },
-          body: JSON.stringify({
-            job_id: jobId,
-            force_reanalyze: true,
-            // NOT force_retranscribe — we just did that
-          }),
-        }).catch(e => console.error(`[2-Phase] Self-invoke failed: ${e}`));
+        // Anti-duplicate guard: check if another analysis is already running (status set < 2 min ago)
+        const { data: currentJob } = await supabase
+          .from("voice_transcriptions")
+          .select("status, updated_at")
+          .eq("id", jobId)
+          .maybeSingle();
+        
+        const updatedAt = currentJob?.updated_at ? new Date(currentJob.updated_at).getTime() : 0;
+        const isRecentlyAnalyzing = currentJob?.status === "analyzing" && (Date.now() - updatedAt) < 2 * 60 * 1000;
+        
+        if (isRecentlyAnalyzing) {
+          console.log(`[2-Phase] Skipping self-invoke — already analyzing since ${currentJob?.updated_at}`);
+        } else {
+          // Fire-and-forget: self-invoke for analysis
+          const selfUrl = `${SUPABASE_URL}/functions/v1/process-voice-transcription`;
+          fetch(selfUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            },
+            body: JSON.stringify({
+              job_id: jobId,
+              force_reanalyze: true,
+            }),
+          }).catch(e => console.error(`[2-Phase] Self-invoke failed: ${e}`));
+        }
 
         return new Response(JSON.stringify({
           ok: true,

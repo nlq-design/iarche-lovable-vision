@@ -105,32 +105,51 @@ export default function CockpitTranscriptions() {
   const { transcriptions, isLoading, stats, refetch, processTranscription } = useCockpitVoiceTranscriptions();
 
   // Batch re-transcribe + re-analyze all completed transcriptions via AssemblyAI
+  // Sorted newest→oldest. _no_file items get reanalyze-only, others get full retranscribe.
   const handleBatchReanalyze = async () => {
-    const doneTranscriptions = transcriptions.filter(t => t.status === 'done');
+    const doneTranscriptions = [...transcriptions]
+      .filter(t => t.status === 'done')
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
     if (doneTranscriptions.length === 0) {
       toast.info('Aucune transcription terminée à ré-analyser');
       return;
     }
 
+    // Split populations: _no_file (reanalyze only) vs real audio (retranscribe)
+    const noFileItems = doneTranscriptions.filter(t => t.storage_path?.endsWith('_no_file'));
+    const audioItems = doneTranscriptions.filter(t => !t.storage_path?.endsWith('_no_file'));
+    
+    console.log(`[Batch] ${audioItems.length} audio (retranscribe) + ${noFileItems.length} _no_file (reanalyze-only)`);
+
+    const allItems = [...audioItems, ...noFileItems]; // Audio first, then _no_file
     setIsReanalyzing(true);
-    setReanalyzeProgress({ current: 0, total: doneTranscriptions.length });
+    setReanalyzeProgress({ current: 0, total: allItems.length });
 
     let successCount = 0;
     let errorCount = 0;
 
-    for (let i = 0; i < doneTranscriptions.length; i++) {
-      const t = doneTranscriptions[i];
+    for (let i = 0; i < allItems.length; i++) {
+      const t = allItems[i];
+      const isNoFile = t.storage_path?.endsWith('_no_file');
+
       try {
-        await processTranscription.mutateAsync({ jobId: t.id, forceRetranscribe: true });
+        // _no_file → reanalyze only; real audio → full retranscribe via AssemblyAI
+        if (isNoFile) {
+          await processTranscription.mutateAsync({ jobId: t.id, forceReanalyze: true });
+        } else {
+          await processTranscription.mutateAsync({ jobId: t.id, forceRetranscribe: true });
+        }
         successCount++;
       } catch {
         errorCount++;
       }
-      setReanalyzeProgress({ current: i + 1, total: doneTranscriptions.length });
+      setReanalyzeProgress({ current: i + 1, total: allItems.length });
       
-      // Wait between items to respect AssemblyAI rate limits and let self-invoked analysis run
-      if (i < doneTranscriptions.length - 1) {
-        await new Promise(r => setTimeout(r, 5000));
+      // Wait between items: 5s for audio (AssemblyAI rate limits), 2s for _no_file (lighter)
+      if (i < allItems.length - 1) {
+        const nextIsNoFile = allItems[i + 1]?.storage_path?.endsWith('_no_file');
+        await new Promise(r => setTimeout(r, nextIsNoFile ? 2000 : 5000));
       }
     }
 
@@ -139,7 +158,7 @@ export default function CockpitTranscriptions() {
     refetch();
     
     if (errorCount === 0) {
-      toast.success(`${successCount} transcription(s) envoyée(s) à AssemblyAI. L'analyse se poursuit en arrière-plan.`);
+      toast.success(`${successCount} transcription(s) traitée(s). ${audioItems.length} via AssemblyAI, ${noFileItems.length} ré-analysée(s).`);
     } else {
       toast.warning(`${successCount} succès, ${errorCount} erreur(s)`);
     }
