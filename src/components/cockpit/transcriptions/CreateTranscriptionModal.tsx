@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -55,6 +55,7 @@ interface CreateTranscriptionModalProps {
   defaultProjectId?: string;
   defaultSolutionId?: string;
   defaultMeetingNoteId?: string;
+  defaultFiles?: File[];
 }
 
 const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
@@ -69,6 +70,7 @@ export function CreateTranscriptionModal({
   defaultProjectId,
   defaultSolutionId,
   defaultMeetingNoteId,
+  defaultFiles,
 }: CreateTranscriptionModalProps) {
   const [activeTab, setActiveTab] = useState<'upload' | 'record'>('upload');
   const [isUploading, setIsUploading] = useState(false);
@@ -77,7 +79,15 @@ export function CreateTranscriptionModal({
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  
+
+  // Set files from drag & drop
+  useEffect(() => {
+    if (defaultFiles && defaultFiles.length > 0 && open) {
+      setSelectedFiles(defaultFiles);
+      setActiveTab('upload');
+    }
+  }, [defaultFiles, open]);
+
   const [entityType, setEntityType] = useState<'lead' | 'project' | 'solution' | 'meeting_note' | 'none'>(
     defaultLeadId ? 'lead' : defaultProjectId ? 'project' : defaultSolutionId ? 'solution' : defaultMeetingNoteId ? 'meeting_note' : 'none'
   );
