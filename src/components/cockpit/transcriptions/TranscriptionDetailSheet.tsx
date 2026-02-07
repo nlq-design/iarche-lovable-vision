@@ -52,6 +52,7 @@ import {
   SimpleTranscript,
   TranscriptionEntityLinks,
   TranscriptionEmailDialog,
+  TranscriptionParticipantsSection,
   normalizeSummary,
 } from './shared';
 
@@ -287,6 +288,13 @@ export function TranscriptionDetailSheet({
                   onUpdate={handleEntityUpdate}
                   onNavigate={navigate}
                   onClose={() => onOpenChange(false)}
+                />
+
+                {/* Participants */}
+                <TranscriptionParticipantsSection
+                  transcriptionId={transcriptionId}
+                  normalizedSummary={normalizedSummary}
+                  compact
                 />
 
                 {/* Partners Section */}
