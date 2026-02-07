@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -52,6 +52,55 @@ export default function CockpitTranscriptions() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [isReanalyzing, setIsReanalyzing] = useState(false);
   const [reanalyzeProgress, setReanalyzeProgress] = useState({ current: 0, total: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [droppedFiles, setDroppedFiles] = useState<File[]>([]);
+  const dragCounterRef = useRef(0);
+
+  const AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/webm', 'audio/x-m4a', 'audio/flac', 'audio/aac'];
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounterRef.current = 0;
+
+    const files = Array.from(e.dataTransfer.files);
+    const audioFiles = files.filter(f => 
+      AUDIO_TYPES.includes(f.type) || 
+      /\.(mp3|wav|ogg|m4a|webm|flac|aac|mp4)$/i.test(f.name)
+    );
+
+    if (audioFiles.length === 0) {
+      toast.error('Aucun fichier audio détecté. Formats acceptés : MP3, WAV, M4A, OGG, FLAC, AAC');
+      return;
+    }
+
+    setDroppedFiles(audioFiles);
+    setCreateModalOpen(true);
+  }, []);
 
   const { transcriptions, isLoading, stats, refetch, processTranscription } = useCockpitVoiceTranscriptions();
 
@@ -113,7 +162,21 @@ export default function CockpitTranscriptions() {
 
   return (
     <CockpitLayout>
-      <div className="p-5 space-y-5">
+      <div 
+        className="p-5 space-y-5 relative"
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        {/* Drag & Drop Overlay */}
+        {isDragging && (
+          <div className="absolute inset-0 z-50 bg-primary/5 border-2 border-dashed border-primary rounded-lg flex flex-col items-center justify-center pointer-events-none backdrop-blur-sm">
+            <Upload className="h-12 w-12 text-primary mb-3 animate-bounce" />
+            <p className="text-lg font-semibold text-primary">Déposez vos fichiers audio ici</p>
+            <p className="text-sm text-muted-foreground mt-1">MP3, WAV, M4A, OGG, FLAC, AAC</p>
+          </div>
+        )}
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
@@ -416,11 +479,16 @@ export default function CockpitTranscriptions() {
       {/* Create Modal */}
       <CreateTranscriptionModal
         open={createModalOpen}
-        onOpenChange={setCreateModalOpen}
+        onOpenChange={(open) => {
+          setCreateModalOpen(open);
+          if (!open) setDroppedFiles([]);
+        }}
         onSuccess={() => {
           refetch();
           setCreateModalOpen(false);
+          setDroppedFiles([]);
         }}
+        defaultFiles={droppedFiles.length > 0 ? droppedFiles : undefined}
       />
     </CockpitLayout>
   );
