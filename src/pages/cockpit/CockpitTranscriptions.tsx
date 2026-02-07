@@ -104,7 +104,7 @@ export default function CockpitTranscriptions() {
 
   const { transcriptions, isLoading, stats, refetch, processTranscription } = useCockpitVoiceTranscriptions();
 
-  // Batch re-analyze all completed transcriptions
+  // Batch re-transcribe + re-analyze all completed transcriptions via AssemblyAI
   const handleBatchReanalyze = async () => {
     const doneTranscriptions = transcriptions.filter(t => t.status === 'done');
     if (doneTranscriptions.length === 0) {
@@ -127,6 +127,11 @@ export default function CockpitTranscriptions() {
         errorCount++;
       }
       setReanalyzeProgress({ current: i + 1, total: doneTranscriptions.length });
+      
+      // Wait between items to respect AssemblyAI rate limits and let self-invoked analysis run
+      if (i < doneTranscriptions.length - 1) {
+        await new Promise(r => setTimeout(r, 5000));
+      }
     }
 
     setIsReanalyzing(false);
@@ -134,7 +139,7 @@ export default function CockpitTranscriptions() {
     refetch();
     
     if (errorCount === 0) {
-      toast.success(`${successCount} transcription(s) ré-analysée(s) avec succès`);
+      toast.success(`${successCount} transcription(s) envoyée(s) à AssemblyAI. L'analyse se poursuit en arrière-plan.`);
     } else {
       toast.warning(`${successCount} succès, ${errorCount} erreur(s)`);
     }
@@ -226,7 +231,7 @@ export default function CockpitTranscriptions() {
               className="h-2"
             />
             <p className="text-xs text-muted-foreground">
-              Environ {Math.ceil((reanalyzeProgress.total - reanalyzeProgress.current) * 0.5)} min restantes
+              Environ {Math.ceil((reanalyzeProgress.total - reanalyzeProgress.current) * 0.1)} min restantes (transcription + analyse en arrière-plan)
             </p>
           </div>
         )}

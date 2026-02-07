@@ -1978,6 +1978,37 @@ serve(async (req) => {
       if (speakerFormattedText) {
         rawText = speakerFormattedText;
       }
+
+      // ===== 2-PHASE ARCHITECTURE =====
+      // If this was a force_retranscribe call, the transcription phase is now complete.
+      // To avoid 504 timeouts, we return immediately and self-invoke for the analysis phase.
+      if (forceRetranscribe) {
+        console.log(`[2-Phase] Transcription complete. Self-invoking for analysis phase...`);
+        
+        // Fire-and-forget: self-invoke for analysis
+        const selfUrl = `${SUPABASE_URL}/functions/v1/process-voice-transcription`;
+        fetch(selfUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify({
+            job_id: jobId,
+            force_reanalyze: true,
+            // NOT force_retranscribe — we just did that
+          }),
+        }).catch(e => console.error(`[2-Phase] Self-invoke failed: ${e}`));
+
+        return new Response(JSON.stringify({
+          ok: true,
+          phase: "transcription_complete",
+          message: "Transcription AssemblyAI terminée. Analyse en cours...",
+          job: { id: jobId, status: "analyzing" },
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     logPreview("Transcription", rawText);
