@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import FunctionModelSelector from "@/components/admin/FunctionModelSelector";
 import APIGovernanceManager from "@/components/admin/APIGovernanceManager";
+import BatchTranscriptionReanalysis from "@/components/admin/BatchTranscriptionReanalysis";
 
 // Provider icons and colors
 const PROVIDER_CONFIG: Record<string, { icon: React.ReactNode; color: string; description: string }> = {
@@ -732,6 +733,8 @@ export default function AdminAPILibrary() {
 
           {/* ============ FUNCTIONS TAB ============ */}
           <TabsContent value="functions" className="space-y-4">
+            {/* Batch Reanalysis */}
+            <BatchTranscriptionReanalysis />
             {/* Stats cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card>
