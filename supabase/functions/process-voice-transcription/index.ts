@@ -1770,6 +1770,13 @@ serve(async (req) => {
     let rawText: string;
     let parsedSegments: Record<string, unknown> | null = null;
 
+    // If storage path ends with _no_file, audio doesn't exist — force reanalyze-only even if retranscribe was requested
+    const hasNoFile = vjob.storage_path?.endsWith("_no_file");
+    if (hasNoFile && forceRetranscribe) {
+      console.log(`[Process] _no_file detected — downgrading to reanalyze-only (no audio to retranscribe)`);
+      forceRetranscribe = false;
+    }
+
     if (existingRawTranscript && existingRawTranscript.trim().length > 0 && !forceRetranscribe) {
       console.log("[Process] Using existing raw_transcript (skip transcription)");
       rawText = existingRawTranscript;
