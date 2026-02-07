@@ -58,6 +58,7 @@ import {
   TranscriptionEntityLinks,
   TranscriptionEmailDialog,
   TranscriptionEnrichedTab,
+  TranscriptionParticipantsSection,
 } from '@/components/cockpit/transcriptions/shared';
 
 // Parse segments JSON (stored as stringified JSON or object)
@@ -536,6 +537,12 @@ export default function CockpitTranscriptionDetail() {
           leadContacts={leadContacts}
           onUpdate={handleUpdateTranscription}
           onNavigate={navigate}
+        />
+
+        {/* Participants */}
+        <TranscriptionParticipantsSection
+          transcriptionId={transcriptionId}
+          normalizedSummary={summary}
         />
 
         {/* Partners */}

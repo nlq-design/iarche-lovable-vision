@@ -4798,6 +4798,59 @@ export type Database = {
         }
         Relationships: []
       }
+      transcription_participants: {
+        Row: {
+          ai_suggested_match: Json | null
+          confidence_score: number | null
+          created_at: string
+          id: string
+          linked_entity_id: string | null
+          linked_entity_type: string | null
+          name: string
+          presence_status: string
+          role_in_meeting: string | null
+          speaker_label: string | null
+          transcription_id: string
+          updated_at: string
+        }
+        Insert: {
+          ai_suggested_match?: Json | null
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          linked_entity_id?: string | null
+          linked_entity_type?: string | null
+          name: string
+          presence_status?: string
+          role_in_meeting?: string | null
+          speaker_label?: string | null
+          transcription_id: string
+          updated_at?: string
+        }
+        Update: {
+          ai_suggested_match?: Json | null
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          linked_entity_id?: string | null
+          linked_entity_type?: string | null
+          name?: string
+          presence_status?: string
+          role_in_meeting?: string | null
+          speaker_label?: string | null
+          transcription_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transcription_participants_transcription_id_fkey"
+            columns: ["transcription_id"]
+            isOneToOne: false
+            referencedRelation: "voice_transcriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transcription_partners: {
         Row: {
           created_at: string | null

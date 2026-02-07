@@ -6,3 +6,4 @@ export { normalizeSummary, type NormalizedSummary } from './normalizeSummary';
 export { TranscriptionEntityLinks } from './TranscriptionEntityLinks';
 export { TranscriptionEmailDialog } from './TranscriptionEmailDialog';
 export { TranscriptionEnrichedTab } from './TranscriptionEnrichedTab';
+export { TranscriptionParticipantsSection } from './TranscriptionParticipantsSection';
