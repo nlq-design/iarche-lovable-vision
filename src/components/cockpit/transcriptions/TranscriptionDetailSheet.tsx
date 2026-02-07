@@ -340,7 +340,7 @@ export function TranscriptionDetailSheet({
                     <CardContent className="p-6 text-center">
                       <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
                       <h3 className="font-medium mb-2">Erreur de traitement</h3>
-                      {((transcription.ai_metadata as any)?.last_error || '').includes('WHISPER_MAX_SIZE') || ((transcription.ai_metadata as any)?.last_error || '').includes('too_large') ? (
+                      {((transcription.ai_metadata as any)?.last_error || '').includes('file_too_large') || ((transcription.ai_metadata as any)?.last_error || '').includes('too_large') ? (
                         <>
                           <p className="text-sm text-muted-foreground mb-2">
                             <strong>Fichier trop volumineux</strong> — La limite est de 500 MB.
