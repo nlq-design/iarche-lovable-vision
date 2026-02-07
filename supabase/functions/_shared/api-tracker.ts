@@ -40,7 +40,7 @@ export type APICategory =
   | 'calendar'     // Google Calendar, Zoom
   | 'messaging'    // Telegram, SMS
   | 'storage'      // Supabase Storage, S3
-  | 'transcription' // Whisper, Deepgram
+  | 'transcription' // AssemblyAI
   | 'analytics'    // Internal analytics
   | 'other';
 
@@ -175,8 +175,8 @@ const DEFAULT_PRICING: Record<string, { perRequest?: number; per1kTokens?: numbe
   // Messaging
   'telegram:send': { perRequest: 0 },
   
-  // Transcription (per minute)
-  'whisper:transcribe': { perRequest: 1.0 }, // ~$0.01/min
+  // Transcription (AssemblyAI — ~$0.37/hour)
+  'assemblyai:transcribe': { perRequest: 0.62 }, // ~$0.0062/min
   
   // Default for unknown
   'default': { perRequest: 0.1 },

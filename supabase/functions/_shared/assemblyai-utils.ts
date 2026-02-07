@@ -1,6 +1,5 @@
 /**
  * Shared AssemblyAI transcription utilities
- * Replaces whisper-utils.ts
  * Used by: process-voice-transcription, transcribe-audio-chunk
  */
 
@@ -136,7 +135,6 @@ export async function pollTranscription(
 
 /**
  * Full transcription pipeline: upload → start → poll
- * Replaces transcribeWithWhisperBlob
  */
 export async function transcribeWithAssemblyAI(
   audioData: Uint8Array | ArrayBuffer,

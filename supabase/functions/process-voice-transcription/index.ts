@@ -1567,7 +1567,7 @@ serve(async (req) => {
 
       console.log(`[Audio] size=${fileSizeMB ? fileSizeMB.toFixed(2) + " MB" : "unknown"}`);
 
-      // AssemblyAI can handle files up to ~2GB, no 25MB limit like Whisper
+      // AssemblyAI can handle files up to ~2GB, safety cap for extreme files
       // Just a safety cap for extreme files
       const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
       if (typeof sizeBytes === "number" && sizeBytes > MAX_FILE_SIZE) {

@@ -317,7 +317,7 @@ export function CreateTranscriptionModal({
                 analysis_context: analysisContext.trim() || null,
               });
 
-              // Process for AI synthesis (skip Whisper, go straight to LLM)
+              // Process for AI synthesis (AssemblyAI transcription + LLM analysis)
               processTranscription.mutate({ jobId: job.id });
               successCount++;
               setChunkingProgress(null);

@@ -235,16 +235,16 @@ export function useCockpitVoiceTranscriptions(
     onError: (error: Error) => {
       const msg = error.message || '';
 
-      if (msg.includes('WHISPER_TIMEOUT') || msg === 'timeout') {
-        toast.error("Transcription audio trop longue (timeout Whisper). Clique sur 'Réessayer (découpage)' pour traiter l'audio en segments.", { duration: 8000 });
+      if (msg.includes('ASSEMBLYAI_TIMEOUT') || msg.includes('WHISPER_TIMEOUT') || msg === 'timeout') {
+        toast.error("Transcription audio trop longue (timeout). Clique sur 'Réessayer (découpage)' pour traiter l'audio en segments.", { duration: 8000 });
       } else if (msg.includes('LLM_TIMEOUT')) {
         toast.error("Analyse IA trop longue (timeout LLM). Ajoute un contexte court puis ré-essaie.", { duration: 6000 });
       } else if (msg.includes('rate_limited')) {
         toast.error('Limite de requêtes atteinte, réessayez dans quelques minutes');
       } else if (msg.includes('credits_exhausted')) {
         toast.error('Crédits IA épuisés, veuillez recharger');
-      } else if (msg.includes('WHISPER_MAX_SIZE')) {
-        toast.error("Fichier trop volumineux (>25MB). Utilisez le découpage automatique lors de l'upload.");
+      } else if (msg.includes('WHISPER_MAX_SIZE') || msg.includes('too_large')) {
+        toast.error("Fichier trop volumineux. Utilisez le découpage automatique lors de l'upload.");
       } else {
         toast.error(`Erreur de traitement: ${msg.slice(0, 150)}`);
       }
