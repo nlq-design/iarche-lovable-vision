@@ -1461,11 +1461,15 @@ serve(async (req) => {
   let jobId: string | null = null;
   let initialStatus: string | null = null;
   let forceReanalyze = false;
+  let forceRetranscribe = false;
 
   try {
     const body = await req.json();
     jobId = body.job_id;
     forceReanalyze = body?.force_reanalyze === true;
+    forceRetranscribe = body?.force_retranscribe === true;
+    // force_retranscribe implies force_reanalyze
+    if (forceRetranscribe) forceReanalyze = true;
 
     if (!jobId) {
       return new Response(JSON.stringify({ error: "missing_job_id" }), {
@@ -1501,12 +1505,13 @@ serve(async (req) => {
     }
 
     if (forceReanalyze && vjob.status === "done") {
-      console.log(`[Job] Force re-analyzing completed transcription ${jobId}`);
+      console.log(`[Job] Force re-analyzing completed transcription ${jobId} (retranscribe=${forceRetranscribe})`);
     }
 
     console.log(`[Job] Processing ${jobId}`);
 
     // If raw transcript already exists, skip transcription and go straight to analysis.
+    // UNLESS force_retranscribe is set — then re-submit audio to AssemblyAI for enriched data.
     // This covers:
     // - client-side chunking flow (pre_transcribed_text)
     // - retries where transcription already completed
@@ -1515,7 +1520,7 @@ serve(async (req) => {
 
     let rawText: string;
 
-    if (existingRawTranscript && existingRawTranscript.trim().length > 0) {
+    if (existingRawTranscript && existingRawTranscript.trim().length > 0 && !forceRetranscribe) {
       console.log("[Process] Using existing raw_transcript (skip transcription)");
       rawText = existingRawTranscript;
 
