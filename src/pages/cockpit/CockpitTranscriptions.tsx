@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useNavigate, useBlocker } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useCockpitVoiceTranscriptions, TRANSCRIPTION_STATUSES } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { CreateTranscriptionModal } from '@/components/cockpit/transcriptions/CreateTranscriptionModal';
 import { toast } from 'sonner';
@@ -67,8 +67,27 @@ export default function CockpitTranscriptions() {
   const [droppedFiles, setDroppedFiles] = useState<File[]>([]);
   const dragCounterRef = useRef(0);
 
-  // Block navigation when batch is running
-  const blocker = useBlocker(isReanalyzing);
+  // Block navigation (back/forward) when batch is running
+  const isReanalyzingRef = useRef(isReanalyzing);
+  isReanalyzingRef.current = isReanalyzing;
+
+  useEffect(() => {
+    const onPopState = (e: PopStateEvent) => {
+      if (isReanalyzingRef.current) {
+        // Push state back to prevent leaving
+        window.history.pushState(null, '', window.location.href);
+        const leave = window.confirm(
+          'La ré-analyse est en cours. Si vous quittez, le traitement sera interrompu. Quitter quand même ?'
+        );
+        if (leave) {
+          setIsReanalyzing(false);
+          window.history.back();
+        }
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   // Block browser close/refresh when batch is running
   useEffect(() => {
@@ -557,35 +576,6 @@ export default function CockpitTranscriptions() {
         defaultFiles={droppedFiles.length > 0 ? droppedFiles : undefined}
       />
 
-      {/* Navigation blocker dialog */}
-      <AlertDialog open={blocker.state === 'blocked'}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-amber-500" />
-              Traitement en cours
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              La ré-analyse est en cours ({reanalyzeProgress.current}/{reanalyzeProgress.total}).
-              Si vous quittez maintenant, le traitement sera interrompu et les transcriptions restantes ne seront pas traitées.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => blocker.reset?.()}>
-              Rester sur la page
-            </AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                setIsReanalyzing(false);
-                blocker.proceed?.();
-              }}
-            >
-              Quitter et interrompre
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </CockpitLayout>
   );
 }
