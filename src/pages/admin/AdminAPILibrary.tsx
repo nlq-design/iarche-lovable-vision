@@ -113,11 +113,10 @@ const EDGE_FUNCTION_AI_MAP: Array<{
   { name: "extract-entities", description: "Extraction d'entités nommées", provider: "lovable_ai", category: "chat", migrated: true },
   { 
     name: "transcribe-audio-chunk", 
-    description: "Transcription audio Whisper", 
-    provider: "openai", 
+    description: "Transcription audio AssemblyAI", 
+    provider: "assemblyai", 
     category: "speech", 
-    migrated: false,
-    legacyNote: "Utilise directement l'API OpenAI Whisper pour la transcription audio (speech-to-text)."
+    migrated: true,
   },
 ];
 

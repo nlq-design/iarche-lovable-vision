@@ -1,18 +1,16 @@
 /**
  * Audio Chunking Utilities
  *
- * Client-side audio file splitting for Whisper API compatibility.
- * Whisper has a 25MB per-request limit, so large files are split
- * into chunks with overlap to prevent word cutoffs.
+ * Client-side audio file splitting for AssemblyAI transcription.
+ * Large files are split into chunks with overlap to prevent word cutoffs.
+ * AssemblyAI supports up to 500MB, but edge function body limits apply.
  */
 
 import { supabase } from '@/integrations/supabase/client';
 
-const WHISPER_MAX_SIZE_BYTES = 24 * 1024 * 1024; // 24MB (safety margin)
-// Edge functions have a stricter request body limit than Whisper itself.
-// Keep chunks well under that limit to avoid "The object exceeded the maximum allowed size".
+// Edge functions have a request body limit — keep chunks well under it.
 const EDGE_FUNCTION_MAX_BODY_BYTES = 9 * 1024 * 1024; // ~9MB
-const CHUNK_UPLOAD_MAX_BYTES = Math.min(WHISPER_MAX_SIZE_BYTES, EDGE_FUNCTION_MAX_BODY_BYTES);
+const CHUNK_UPLOAD_MAX_BYTES = EDGE_FUNCTION_MAX_BODY_BYTES;
 
 const OVERLAP_SECONDS = 8; // 8 second overlap between chunks (increased for better merge accuracy)
 const MIN_OVERLAP_WORDS = 2; // Minimum words to consider for overlap detection
@@ -45,14 +43,13 @@ export interface TranscriptionProgress {
 
 /**
  * Check if a file needs chunking based on size OR duration.
- * Files > 24MB OR duration > 15 minutes should be chunked.
- * FIXED: Lowered from 20min to 15min to prevent Whisper timeouts on edge cases.
+ * Files > edge function limit OR duration > 15 minutes should be chunked.
  */
 export function needsChunking(file: File | Blob, durationSeconds?: number | null): boolean {
-  // Size-based check (original)
-  if (file.size > WHISPER_MAX_SIZE_BYTES) return true;
+  // Size-based check: exceeds edge function body limit
+  if (file.size > CHUNK_UPLOAD_MAX_BYTES) return true;
   
-  // Duration-based check: > 15 minutes → chunk to avoid Whisper timeout
+  // Duration-based check: > 15 minutes → chunk for reliability
   if (durationSeconds && durationSeconds > 15 * 60) return true;
   
   // File size heuristic: files > 15MB often contain 20-40min audio, chunk them too
@@ -65,8 +62,8 @@ export function needsChunking(file: File | Blob, durationSeconds?: number | null
  * Estimate number of chunks needed for a file (rough estimate based on bytes)
  */
 export function estimateChunks(fileSizeBytes: number): number {
-  if (fileSizeBytes <= WHISPER_MAX_SIZE_BYTES) return 1;
-  return Math.ceil(fileSizeBytes / WHISPER_MAX_SIZE_BYTES);
+  if (fileSizeBytes <= CHUNK_UPLOAD_MAX_BYTES) return 1;
+  return Math.ceil(fileSizeBytes / CHUNK_UPLOAD_MAX_BYTES);
 }
 
 /**
@@ -101,8 +98,7 @@ export async function splitAudioIntoChunks(
     // PCM bitrate (16-bit): sampleRate * channels * 2 bytes
     const pcmBytesPerSecond = sampleRate * numberOfChannels * 2;
 
-    // Safety margin: 90% of allowed size
-    // NOTE: We cap by edge-function request body size (CHUNK_UPLOAD_MAX_BYTES), not Whisper's 25MB.
+    // Safety margin: 90% of allowed size (capped by edge function body limit)
     const maxChunkDuration = (CHUNK_UPLOAD_MAX_BYTES / pcmBytesPerSecond) * 0.9;
 
     // Keep chunk duration within the computed max to avoid oversized WAV chunks.

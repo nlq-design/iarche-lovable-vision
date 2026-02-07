@@ -108,7 +108,7 @@ export default function CockpitTranscriptionDetail() {
   const [editingContext, setEditingContext] = useState(false);
   const [contextDraft, setContextDraft] = useState('');
 
-  // Chunking retry state (for WHISPER_TIMEOUT recovery)
+  // Chunking retry state (for transcription timeout recovery)
   const [isChunkingRetry, setIsChunkingRetry] = useState(false);
   const [chunkingProgress, setChunkingProgress] = useState<TranscriptionProgress | null>(null);
 
@@ -662,21 +662,21 @@ function ErrorCard({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const lastError = String(((transcription.ai_metadata as any)?.last_error || '') as string);
 
-  if (lastError.includes('WHISPER_MAX_SIZE')) {
+  if (lastError.includes('WHISPER_MAX_SIZE') || lastError.includes('too_large')) {
     return (
       <Card className="border-destructive">
         <CardContent className="p-6 text-center">
           <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
           <h3 className="font-medium mb-2">Fichier trop volumineux</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            La limite Whisper est de 25 MB. Compressez le fichier ou découpez-le en segments plus courts.
+            Le fichier dépasse la limite autorisée (500 MB). Compressez-le ou découpez-le en segments plus courts.
           </p>
         </CardContent>
       </Card>
     );
   }
 
-  if (lastError.includes('WHISPER_TIMEOUT') || lastError === 'timeout') {
+  if (lastError.includes('ASSEMBLYAI_TIMEOUT') || lastError.includes('WHISPER_TIMEOUT') || lastError === 'timeout') {
     return (
       <Card className="border-destructive">
         <CardContent className="p-6 text-center">
