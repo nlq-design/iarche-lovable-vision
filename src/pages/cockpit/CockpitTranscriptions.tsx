@@ -138,31 +138,37 @@ export default function CockpitTranscriptions() {
 
   const { transcriptions, isLoading, stats, refetch, processTranscription } = useCockpitVoiceTranscriptions();
 
+  // Helper: detect broken summary (has error key instead of real data)
+  const hasBrokenSummary = (t: typeof transcriptions[0]) => {
+    if (!t.summary) return false;
+    const s = t.summary as any;
+    return !!s.error || !s.executive_summary;
+  };
+
   // Compute AssemblyAI-aware stats
   const assemblyaiStats = {
     withAssemblyAI: transcriptions.filter(t => (t.ai_metadata as any)?.source === 'assemblyai').length,
     withoutAssemblyAI: transcriptions.filter(t => (t.ai_metadata as any)?.source !== 'assemblyai' && !t.storage_path?.endsWith('_no_file')).length,
     noFile: transcriptions.filter(t => t.storage_path?.endsWith('_no_file')).length,
-    // Done but not yet processed by AssemblyAI (have audio file)
     needsRetranscribe: transcriptions.filter(t => t.status === 'done' && (t.ai_metadata as any)?.source !== 'assemblyai' && !t.storage_path?.endsWith('_no_file')).length,
-    // Done with AssemblyAI Phase 1 but could benefit from re-analysis
     needsReanalyze: transcriptions.filter(t => t.status === 'done' && (t.ai_metadata as any)?.source === 'assemblyai').length,
+    brokenSummaries: transcriptions.filter(t => t.status === 'done' && hasBrokenSummary(t)).length,
   };
 
   // Batch re-transcribe + re-analyze all completed transcriptions via AssemblyAI
   // Sorted newest→oldest. _no_file items get reanalyze-only, others get full retranscribe.
   // Generic batch handler with mode selection
-  const handleBatchProcess = async (mode: 'all' | 'retranscribe_only' | 'reanalyze_only') => {
+  const handleBatchProcess = async (mode: 'all' | 'retranscribe_only' | 'reanalyze_only' | 'repair_broken') => {
     let targets = [...transcriptions]
       .filter(t => t.status === 'done')
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     if (mode === 'retranscribe_only') {
-      // Only those NOT yet processed by AssemblyAI and WITH audio
       targets = targets.filter(t => (t.ai_metadata as any)?.source !== 'assemblyai' && !t.storage_path?.endsWith('_no_file'));
     } else if (mode === 'reanalyze_only') {
-      // Only those already processed by AssemblyAI — just re-run LLM analysis
       targets = targets.filter(t => (t.ai_metadata as any)?.source === 'assemblyai');
+    } else if (mode === 'repair_broken') {
+      targets = targets.filter(t => hasBrokenSummary(t));
     }
 
     if (targets.length === 0) {
@@ -272,6 +278,22 @@ export default function CockpitTranscriptions() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {assemblyaiStats.brokenSummaries > 0 && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-8 text-sm border-amber-500/50 text-amber-700 dark:text-amber-400"
+                onClick={() => handleBatchProcess('repair_broken')}
+                disabled={isReanalyzing}
+              >
+                {isReanalyzing ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <AlertCircle className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                Réparer ({assemblyaiStats.brokenSummaries})
+              </Button>
+            )}
             {assemblyaiStats.needsRetranscribe > 0 && (
               <Button 
                 size="sm" 
@@ -384,6 +406,15 @@ export default function CockpitTranscriptions() {
               <span className="text-xs text-muted-foreground">({assemblyaiStats.noFile} sans audio)</span>
             )}
           </div>
+          {assemblyaiStats.brokenSummaries > 0 && (
+            <>
+              <div className="h-4 w-px bg-border hidden sm:block" />
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">⚠️ Résumé cassé</span>
+                <span className="font-semibold text-amber-600">{assemblyaiStats.brokenSummaries}</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Filters */}
@@ -470,6 +501,11 @@ export default function CockpitTranscriptions() {
                           ) : (
                             <Badge variant="outline" className="text-xs border-dashed text-muted-foreground">
                               Legacy
+                            </Badge>
+                          )}
+                          {hasBrokenSummary(transcription) && (
+                            <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-600">
+                              ⚠️ Résumé cassé
                             </Badge>
                           )}
                         </div>
