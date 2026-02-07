@@ -36,16 +36,6 @@ import { useNavigate } from 'react-router-dom';
 import { useCockpitVoiceTranscriptions, TRANSCRIPTION_STATUSES } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { CreateTranscriptionModal } from '@/components/cockpit/transcriptions/CreateTranscriptionModal';
 import { toast } from 'sonner';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   queued: <Clock className="h-4 w-4" />,
@@ -148,25 +138,47 @@ export default function CockpitTranscriptions() {
 
   const { transcriptions, isLoading, stats, refetch, processTranscription } = useCockpitVoiceTranscriptions();
 
+  // Compute AssemblyAI-aware stats
+  const assemblyaiStats = {
+    withAssemblyAI: transcriptions.filter(t => (t.ai_metadata as any)?.source === 'assemblyai').length,
+    withoutAssemblyAI: transcriptions.filter(t => (t.ai_metadata as any)?.source !== 'assemblyai' && !t.storage_path?.endsWith('_no_file')).length,
+    noFile: transcriptions.filter(t => t.storage_path?.endsWith('_no_file')).length,
+    // Done but not yet processed by AssemblyAI (have audio file)
+    needsRetranscribe: transcriptions.filter(t => t.status === 'done' && (t.ai_metadata as any)?.source !== 'assemblyai' && !t.storage_path?.endsWith('_no_file')).length,
+    // Done with AssemblyAI Phase 1 but could benefit from re-analysis
+    needsReanalyze: transcriptions.filter(t => t.status === 'done' && (t.ai_metadata as any)?.source === 'assemblyai').length,
+  };
+
   // Batch re-transcribe + re-analyze all completed transcriptions via AssemblyAI
   // Sorted newest→oldest. _no_file items get reanalyze-only, others get full retranscribe.
-  const handleBatchReanalyze = async () => {
-    const doneTranscriptions = [...transcriptions]
+  // Generic batch handler with mode selection
+  const handleBatchProcess = async (mode: 'all' | 'retranscribe_only' | 'reanalyze_only') => {
+    let targets = [...transcriptions]
       .filter(t => t.status === 'done')
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    if (doneTranscriptions.length === 0) {
-      toast.info('Aucune transcription terminée à ré-analyser');
+    if (mode === 'retranscribe_only') {
+      // Only those NOT yet processed by AssemblyAI and WITH audio
+      targets = targets.filter(t => (t.ai_metadata as any)?.source !== 'assemblyai' && !t.storage_path?.endsWith('_no_file'));
+    } else if (mode === 'reanalyze_only') {
+      // Only those already processed by AssemblyAI — just re-run LLM analysis
+      targets = targets.filter(t => (t.ai_metadata as any)?.source === 'assemblyai');
+    }
+
+    if (targets.length === 0) {
+      toast.info('Aucune transcription à traiter pour ce mode');
       return;
     }
 
-    // Split populations: _no_file (reanalyze only) vs real audio (retranscribe)
-    const noFileItems = doneTranscriptions.filter(t => t.storage_path?.endsWith('_no_file'));
-    const audioItems = doneTranscriptions.filter(t => !t.storage_path?.endsWith('_no_file'));
-    
-    console.log(`[Batch] ${audioItems.length} audio (retranscribe) + ${noFileItems.length} _no_file (reanalyze-only)`);
+    // Split populations
+    const noFileItems = targets.filter(t => t.storage_path?.endsWith('_no_file'));
+    const audioWithoutAAI = targets.filter(t => !t.storage_path?.endsWith('_no_file') && (t.ai_metadata as any)?.source !== 'assemblyai');
+    const audioWithAAI = targets.filter(t => !t.storage_path?.endsWith('_no_file') && (t.ai_metadata as any)?.source === 'assemblyai');
 
-    const allItems = [...audioItems, ...noFileItems]; // Audio first, then _no_file
+    console.log(`[Batch ${mode}] ${audioWithoutAAI.length} need retranscribe, ${audioWithAAI.length} need reanalyze, ${noFileItems.length} _no_file`);
+
+    // Process order: retranscribe first, then reanalyze, then _no_file
+    const allItems = [...audioWithoutAAI, ...audioWithAAI, ...noFileItems];
     setIsReanalyzing(true);
     setReanalyzeProgress({ current: 0, total: allItems.length, successCount: 0, errorCount: 0, currentJobTitle: '', startedAt: Date.now() });
 
@@ -176,36 +188,39 @@ export default function CockpitTranscriptions() {
     for (let i = 0; i < allItems.length; i++) {
       const t = allItems[i];
       const isNoFile = t.storage_path?.endsWith('_no_file');
+      const hasAAI = (t.ai_metadata as any)?.source === 'assemblyai';
       const jobTitle = t.title || t.summary?.title || t.original_filename || `#${i + 1}`;
 
       setReanalyzeProgress(prev => ({ ...prev, current: i, currentJobTitle: typeof jobTitle === 'string' ? jobTitle : String(jobTitle) }));
 
       try {
-        if (isNoFile) {
+        if (isNoFile || hasAAI) {
+          // Already has AssemblyAI data or no file → just re-run LLM
           await processTranscription.mutateAsync({ jobId: t.id, forceReanalyze: true });
         } else {
+          // Needs full AssemblyAI transcription
           await processTranscription.mutateAsync({ jobId: t.id, forceRetranscribe: true });
         }
         successCount++;
       } catch (err) {
         errorCount++;
-        console.error(`[Batch] Job ${t.id} failed (${isNoFile ? 'reanalyze' : 'retranscribe'}):`, err);
+        console.error(`[Batch] Job ${t.id} failed:`, err);
       }
       setReanalyzeProgress(prev => ({ ...prev, current: i + 1, successCount, errorCount }));
-      
-      // Wait between items: 5s for audio (AssemblyAI rate limits), 2s for _no_file (lighter)
+
       if (i < allItems.length - 1) {
-        const nextIsNoFile = allItems[i + 1]?.storage_path?.endsWith('_no_file');
-        await new Promise(r => setTimeout(r, nextIsNoFile ? 2000 : 5000));
+        const next = allItems[i + 1];
+        const nextIsLight = next.storage_path?.endsWith('_no_file') || (next.ai_metadata as any)?.source === 'assemblyai';
+        await new Promise(r => setTimeout(r, nextIsLight ? 2000 : 5000));
       }
     }
 
     setIsReanalyzing(false);
     setReanalyzeProgress({ current: 0, total: 0, successCount: 0, errorCount: 0, currentJobTitle: '', startedAt: 0 });
     refetch();
-    
+
     if (errorCount === 0) {
-      toast.success(`${successCount} transcription(s) traitée(s). ${audioItems.length} via AssemblyAI, ${noFileItems.length} ré-analysée(s).`);
+      toast.success(`${successCount} transcription(s) traitée(s) avec succès`);
     } else {
       toast.warning(`${successCount} succès, ${errorCount} erreur(s)`);
     }
@@ -257,12 +272,28 @@ export default function CockpitTranscriptions() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {assemblyaiStats.needsRetranscribe > 0 && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-8 text-sm"
+                onClick={() => handleBatchProcess('retranscribe_only')}
+                disabled={isReanalyzing}
+              >
+                {isReanalyzing ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                Transcrire ({assemblyaiStats.needsRetranscribe})
+              </Button>
+            )}
             {stats.done > 0 && (
               <Button 
                 size="sm" 
                 variant="outline" 
                 className="h-8 text-sm"
-                onClick={handleBatchReanalyze}
+                onClick={() => handleBatchProcess('all')}
                 disabled={isReanalyzing}
               >
                 {isReanalyzing ? (
@@ -340,6 +371,18 @@ export default function CockpitTranscriptions() {
             <AlertCircle className="h-4 w-4 text-destructive" />
             <span className="text-muted-foreground">Erreurs</span>
             <span className="font-semibold text-destructive">{stats.errors}</span>
+          </div>
+          <div className="h-4 w-px bg-border hidden sm:block" />
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">🎙 AssemblyAI</span>
+            <span className="font-semibold">{assemblyaiStats.withAssemblyAI}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">📝 Legacy</span>
+            <span className="font-semibold">{assemblyaiStats.withoutAssemblyAI + assemblyaiStats.noFile}</span>
+            {assemblyaiStats.noFile > 0 && (
+              <span className="text-xs text-muted-foreground">({assemblyaiStats.noFile} sans audio)</span>
+            )}
           </div>
         </div>
 
@@ -420,6 +463,15 @@ export default function CockpitTranscriptions() {
                               </>
                             )}
                           </Badge>
+                          {(transcription.ai_metadata as any)?.source === 'assemblyai' ? (
+                            <Badge variant="outline" className="text-xs border-green-500/50 text-green-700 dark:text-green-400">
+                              🎙 AssemblyAI
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs border-dashed text-muted-foreground">
+                              Legacy
+                            </Badge>
+                          )}
                         </div>
                         
                          <h3 className="font-medium truncate">
@@ -559,23 +611,22 @@ export default function CockpitTranscriptions() {
             })}
           </div>
         )}
+
+        {/* Create Modal */}
+        <CreateTranscriptionModal
+          open={createModalOpen}
+          onOpenChange={(open) => {
+            setCreateModalOpen(open);
+            if (!open) setDroppedFiles([]);
+          }}
+          onSuccess={() => {
+            refetch();
+            setCreateModalOpen(false);
+            setDroppedFiles([]);
+          }}
+          defaultFiles={droppedFiles.length > 0 ? droppedFiles : undefined}
+        />
       </div>
-
-      {/* Create Modal */}
-      <CreateTranscriptionModal
-        open={createModalOpen}
-        onOpenChange={(open) => {
-          setCreateModalOpen(open);
-          if (!open) setDroppedFiles([]);
-        }}
-        onSuccess={() => {
-          refetch();
-          setCreateModalOpen(false);
-          setDroppedFiles([]);
-        }}
-        defaultFiles={droppedFiles.length > 0 ? droppedFiles : undefined}
-      />
-
     </CockpitLayout>
   );
 }
