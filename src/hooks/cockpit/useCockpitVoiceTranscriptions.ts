@@ -207,11 +207,11 @@ export function useCockpitVoiceTranscriptions(
     },
   });
 
-  // Process transcription (or re-analyze if force_reanalyze=true)
+  // Process transcription (or re-analyze/re-transcribe)
   const processTranscription = useMutation({
-    mutationFn: async ({ jobId, forceReanalyze = false }: { jobId: string; forceReanalyze?: boolean }) => {
+    mutationFn: async ({ jobId, forceReanalyze = false, forceRetranscribe = false }: { jobId: string; forceReanalyze?: boolean; forceRetranscribe?: boolean }) => {
       const { data, error } = await supabase.functions.invoke('process-voice-transcription', {
-        body: { job_id: jobId, force_reanalyze: forceReanalyze },
+        body: { job_id: jobId, force_reanalyze: forceReanalyze, force_retranscribe: forceRetranscribe },
       });
 
       // When the function returns non-2xx, Supabase wraps it as a FunctionsHttpError.
