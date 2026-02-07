@@ -1,13 +1,114 @@
 /**
- * Shared AssemblyAI transcription utilities
+ * Shared AssemblyAI transcription utilities (v11.0)
  * Used by: process-voice-transcription, transcribe-audio-chunk
+ * 
+ * Features enabled:
+ * - speech_model: "best" (high-precision)
+ * - Speaker Diarization
+ * - Auto Language Detection
+ * - Sentiment Analysis
+ * - Entity Detection
+ * - Auto Chapters
+ * - Content Safety (Moderation)
+ * - Word-level Timestamps
+ * - Custom Vocabulary (word_boost)
+ * - Multichannel Audio
  */
 
 const ASSEMBLYAI_API_URL = "https://api.assemblyai.com/v2";
 
-/**
- * Upload audio data to AssemblyAI and get an upload URL
- */
+// ============= TYPES =============
+
+export interface AssemblyAITranscriptionOptions {
+  language_code?: string | null; // null = auto-detect
+  speech_model?: string; // "best" | "nano" | default
+  speaker_labels?: boolean;
+  sentiment_analysis?: boolean;
+  entity_detection?: boolean;
+  auto_chapters?: boolean;
+  content_safety?: boolean;
+  word_boost?: string[];
+  boost_param?: "low" | "default" | "high";
+  multichannel?: boolean;
+  language_detection?: boolean; // auto-detect language
+  maxWaitMs?: number;
+  pollIntervalMs?: number;
+}
+
+export interface AssemblyAIWord {
+  text: string;
+  start: number;
+  end: number;
+  confidence: number;
+  speaker?: string;
+}
+
+export interface AssemblyAISentiment {
+  text: string;
+  start: number;
+  end: number;
+  sentiment: "POSITIVE" | "NEGATIVE" | "NEUTRAL";
+  confidence: number;
+  speaker?: string;
+}
+
+export interface AssemblyAIEntity {
+  entity_type: string;
+  text: string;
+  start: number;
+  end: number;
+}
+
+export interface AssemblyAIChapter {
+  summary: string;
+  gist: string;
+  headline: string;
+  start: number;
+  end: number;
+}
+
+export interface AssemblyAIContentSafetyLabel {
+  label: string;
+  confidence: number;
+  severity: number;
+}
+
+export interface AssemblyAIContentSafetyResult {
+  text: string;
+  labels: AssemblyAIContentSafetyLabel[];
+  sentences_idx_start: number;
+  sentences_idx_end: number;
+  timestamp: { start: number; end: number };
+}
+
+export interface AssemblyAIUtterance {
+  speaker: string;
+  text: string;
+  start: number;
+  end: number;
+  confidence: number;
+  words: AssemblyAIWord[];
+}
+
+export interface AssemblyAIFullResult {
+  text: string;
+  audio_duration: number | null;
+  language_code: string | null;
+  words: AssemblyAIWord[];
+  utterances: AssemblyAIUtterance[] | null;
+  sentiment_analysis_results: AssemblyAISentiment[] | null;
+  entities: AssemblyAIEntity[] | null;
+  chapters: AssemblyAIChapter[] | null;
+  content_safety_labels: {
+    status: string;
+    results: AssemblyAIContentSafetyResult[];
+    summary: Record<string, number>;
+    severity_score_summary: Record<string, { low: number; medium: number; high: number }>;
+  } | null;
+}
+
+// ============= UPLOAD =============
+
 export async function uploadToAssemblyAI(
   audioData: Uint8Array | ArrayBuffer,
   apiKey: string,
@@ -40,32 +141,72 @@ export async function uploadToAssemblyAI(
   }
 }
 
-/**
- * Start a transcription job on AssemblyAI
- */
+// ============= START TRANSCRIPTION =============
+
 export async function startTranscription(
   audioUrl: string,
   apiKey: string,
-  options?: {
-    language_code?: string;
-    speech_model?: string;
-    speaker_labels?: boolean;
-  },
+  options?: AssemblyAITranscriptionOptions,
 ): Promise<string> {
   const body: Record<string, unknown> = {
     audio_url: audioUrl,
-    language_code: options?.language_code ?? "fr",
+    // Use "best" speech model by default for highest accuracy
+    speech_model: options?.speech_model ?? "best",
   };
 
-  // Use best model if specified
-  if (options?.speech_model) {
-    body.speech_model = options.speech_model;
+  // Language: null/undefined = auto-detect, string = specific language
+  if (options?.language_detection || options?.language_code === null || options?.language_code === undefined) {
+    // Omit language_code to let AssemblyAI auto-detect
+    body.language_detection = true;
+    console.log(`[AssemblyAI] Language: auto-detect`);
+  } else {
+    body.language_code = options.language_code;
+    console.log(`[AssemblyAI] Language: ${options.language_code}`);
   }
 
-  // Enable speaker diarization if requested
+  // Speaker Diarization
   if (options?.speaker_labels) {
     body.speaker_labels = true;
   }
+
+  // Sentiment Analysis
+  if (options?.sentiment_analysis) {
+    body.sentiment_analysis = true;
+  }
+
+  // Entity Detection
+  if (options?.entity_detection) {
+    body.entity_detection = true;
+  }
+
+  // Auto Chapters
+  if (options?.auto_chapters) {
+    body.auto_chapters = true;
+  }
+
+  // Content Safety / Moderation
+  if (options?.content_safety) {
+    body.content_safety = true;
+  }
+
+  // Custom Vocabulary (word boost)
+  if (options?.word_boost && options.word_boost.length > 0) {
+    body.word_boost = options.word_boost;
+    body.boost_param = options.boost_param ?? "high";
+    console.log(`[AssemblyAI] Custom vocabulary: ${options.word_boost.length} terms, boost=${body.boost_param}`);
+  }
+
+  // Multichannel Audio
+  if (options?.multichannel) {
+    body.multichannel = true;
+    console.log(`[AssemblyAI] Multichannel audio enabled`);
+  }
+
+  const features = Object.entries(body)
+    .filter(([k]) => ['speaker_labels', 'sentiment_analysis', 'entity_detection', 'auto_chapters', 'content_safety', 'language_detection', 'multichannel'].includes(k))
+    .filter(([, v]) => v === true)
+    .map(([k]) => k);
+  console.log(`[AssemblyAI] Features: speech_model=${body.speech_model}, ${features.join(', ') || 'none'}`);
 
   const response = await fetch(`${ASSEMBLYAI_API_URL}/transcript`, {
     method: "POST",
@@ -86,9 +227,8 @@ export async function startTranscription(
   return data.id;
 }
 
-/**
- * Poll for transcription completion
- */
+// ============= POLL =============
+
 export async function pollTranscription(
   transcriptId: string,
   apiKey: string,
@@ -96,7 +236,7 @@ export async function pollTranscription(
     pollIntervalMs?: number;
     maxWaitMs?: number;
   },
-): Promise<{ text: string; audio_duration: number | null; words: unknown[]; utterances: unknown[] | null }> {
+): Promise<AssemblyAIFullResult> {
   const { pollIntervalMs = 3000, maxWaitMs = 300_000 } = options ?? {};
   const deadline = Date.now() + maxWaitMs;
 
@@ -113,12 +253,29 @@ export async function pollTranscription(
     const data = await response.json();
 
     if (data.status === "completed") {
-      console.log(`[AssemblyAI] Transcription completed: ${data.text?.length ?? 0} chars, duration=${data.audio_duration}s, utterances=${data.utterances?.length ?? 0}`);
+      const featureLog = [
+        `chars=${data.text?.length ?? 0}`,
+        `duration=${data.audio_duration}s`,
+        `lang=${data.language_code}`,
+        data.utterances?.length ? `utterances=${data.utterances.length}` : null,
+        data.sentiment_analysis_results?.length ? `sentiments=${data.sentiment_analysis_results.length}` : null,
+        data.entities?.length ? `entities=${data.entities.length}` : null,
+        data.chapters?.length ? `chapters=${data.chapters.length}` : null,
+        data.content_safety_labels?.results?.length ? `safety=${data.content_safety_labels.results.length}` : null,
+      ].filter(Boolean).join(', ');
+      
+      console.log(`[AssemblyAI] Completed: ${featureLog}`);
+      
       return {
         text: data.text ?? "",
         audio_duration: data.audio_duration ?? null,
+        language_code: data.language_code ?? null,
         words: data.words ?? [],
         utterances: data.utterances ?? null,
+        sentiment_analysis_results: data.sentiment_analysis_results ?? null,
+        entities: data.entities ?? null,
+        chapters: data.chapters ?? null,
+        content_safety_labels: data.content_safety_labels ?? null,
       };
     }
 
@@ -126,77 +283,67 @@ export async function pollTranscription(
       throw new Error(`assemblyai_transcription_error: ${data.error ?? "Unknown error"}`);
     }
 
-    // status is "queued" or "processing" — wait and retry
     await new Promise((r) => setTimeout(r, pollIntervalMs));
   }
 
   throw new Error(`ASSEMBLYAI_TIMEOUT: Transcription did not complete within ${Math.round(maxWaitMs / 1000)}s.`);
 }
 
-/**
- * Full transcription pipeline: upload → start → poll
- */
+// ============= FULL PIPELINE =============
+
 export async function transcribeWithAssemblyAI(
   audioData: Uint8Array | ArrayBuffer,
   apiKey: string,
-  options?: {
-    language_code?: string;
-    speech_model?: string;
-    speaker_labels?: boolean;
-    maxWaitMs?: number;
-    pollIntervalMs?: number;
-  },
-): Promise<{ text: string; audio_duration: number | null; utterances: unknown[] | null }> {
+  options?: AssemblyAITranscriptionOptions,
+): Promise<AssemblyAIFullResult> {
   const sizeKB = (audioData instanceof ArrayBuffer ? audioData.byteLength : audioData.length) / 1024;
-  console.log(`[AssemblyAI] Full pipeline: size=${sizeKB.toFixed(1)} KB, speakers=${!!options?.speaker_labels}`);
+  console.log(`[AssemblyAI] Full pipeline: size=${sizeKB.toFixed(1)} KB`);
 
-  // 1) Upload
   const uploadUrl = await uploadToAssemblyAI(audioData, apiKey);
-
-  // 2) Start transcription
-  const transcriptId = await startTranscription(uploadUrl, apiKey, {
-    language_code: options?.language_code,
-    speech_model: options?.speech_model,
-    speaker_labels: options?.speaker_labels,
-  });
-
-  // 3) Poll for result
-  const result = await pollTranscription(transcriptId, apiKey, {
+  const transcriptId = await startTranscription(uploadUrl, apiKey, options);
+  return await pollTranscription(transcriptId, apiKey, {
     maxWaitMs: options?.maxWaitMs ?? 300_000,
     pollIntervalMs: options?.pollIntervalMs ?? 3000,
   });
-
-  return { text: result.text, audio_duration: result.audio_duration, utterances: result.utterances };
 }
 
-/**
- * Transcribe from a public/signed audio URL (no upload needed)
- * AssemblyAI can fetch directly from URLs
- */
+// ============= URL PIPELINE =============
+
 export async function transcribeFromUrl(
   audioUrl: string,
   apiKey: string,
-  options?: {
-    language_code?: string;
-    speech_model?: string;
-    speaker_labels?: boolean;
-    maxWaitMs?: number;
-    pollIntervalMs?: number;
-  },
-): Promise<{ text: string; audio_duration: number | null; utterances: unknown[] | null }> {
-  console.log(`[AssemblyAI] URL pipeline: ${audioUrl.slice(0, 60)}... speakers=${!!options?.speaker_labels}`);
+  options?: AssemblyAITranscriptionOptions,
+): Promise<AssemblyAIFullResult> {
+  console.log(`[AssemblyAI] URL pipeline: ${audioUrl.slice(0, 60)}...`);
 
-  // Start transcription directly from URL (no upload step)
-  const transcriptId = await startTranscription(audioUrl, apiKey, {
-    language_code: options?.language_code,
-    speech_model: options?.speech_model,
-    speaker_labels: options?.speaker_labels,
-  });
-
-  const result = await pollTranscription(transcriptId, apiKey, {
+  const transcriptId = await startTranscription(audioUrl, apiKey, options);
+  return await pollTranscription(transcriptId, apiKey, {
     maxWaitMs: options?.maxWaitMs ?? 300_000,
     pollIntervalMs: options?.pollIntervalMs ?? 3000,
   });
+}
 
-  return { text: result.text, audio_duration: result.audio_duration, utterances: result.utterances };
+// ============= DEFAULT OPTIONS (all features enabled) =============
+
+/**
+ * Returns the standard set of AssemblyAI options with all features enabled.
+ * Custom vocabulary can be appended per-workspace.
+ */
+export function getDefaultTranscriptionOptions(overrides?: Partial<AssemblyAITranscriptionOptions>): AssemblyAITranscriptionOptions {
+  return {
+    speech_model: "best",
+    language_code: null, // auto-detect
+    language_detection: true,
+    speaker_labels: true,
+    sentiment_analysis: true,
+    entity_detection: true,
+    auto_chapters: true,
+    content_safety: true,
+    multichannel: false, // Enable only when explicitly needed (stereo audio)
+    word_boost: [],
+    boost_param: "high",
+    maxWaitMs: 300_000,
+    pollIntervalMs: 3000,
+    ...overrides,
+  };
 }
