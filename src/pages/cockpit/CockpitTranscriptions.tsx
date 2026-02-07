@@ -145,15 +145,6 @@ export default function CockpitTranscriptions() {
     return !!s.error || !s.executive_summary;
   };
 
-  // Compute AssemblyAI-aware stats
-  const assemblyaiStats = {
-    withAssemblyAI: transcriptions.filter(t => (t.ai_metadata as any)?.source === 'assemblyai').length,
-    withoutAssemblyAI: transcriptions.filter(t => (t.ai_metadata as any)?.source !== 'assemblyai' && !t.storage_path?.endsWith('_no_file')).length,
-    noFile: transcriptions.filter(t => t.storage_path?.endsWith('_no_file')).length,
-    needsRetranscribe: transcriptions.filter(t => t.status === 'done' && (t.ai_metadata as any)?.source !== 'assemblyai' && !t.storage_path?.endsWith('_no_file')).length,
-    needsReanalyze: transcriptions.filter(t => t.status === 'done' && (t.ai_metadata as any)?.source === 'assemblyai').length,
-    brokenSummaries: transcriptions.filter(t => t.status === 'done' && hasBrokenSummary(t)).length,
-  };
 
   // Batch re-transcribe + re-analyze all completed transcriptions via AssemblyAI
   // Sorted newest→oldest. _no_file items get reanalyze-only, others get full retranscribe.
@@ -176,15 +167,7 @@ export default function CockpitTranscriptions() {
       return;
     }
 
-    // Split populations
-    const noFileItems = targets.filter(t => t.storage_path?.endsWith('_no_file'));
-    const audioWithoutAAI = targets.filter(t => !t.storage_path?.endsWith('_no_file') && (t.ai_metadata as any)?.source !== 'assemblyai');
-    const audioWithAAI = targets.filter(t => !t.storage_path?.endsWith('_no_file') && (t.ai_metadata as any)?.source === 'assemblyai');
-
-    console.log(`[Batch ${mode}] ${audioWithoutAAI.length} need retranscribe, ${audioWithAAI.length} need reanalyze, ${noFileItems.length} _no_file`);
-
-    // Process order: retranscribe first, then reanalyze, then _no_file
-    const allItems = [...audioWithoutAAI, ...audioWithAAI, ...noFileItems];
+    const allItems = targets;
     setIsReanalyzing(true);
     setReanalyzeProgress({ current: 0, total: allItems.length, successCount: 0, errorCount: 0, currentJobTitle: '', startedAt: Date.now() });
 
@@ -193,19 +176,17 @@ export default function CockpitTranscriptions() {
 
     for (let i = 0; i < allItems.length; i++) {
       const t = allItems[i];
-      const isNoFile = t.storage_path?.endsWith('_no_file');
-      const hasAAI = (t.ai_metadata as any)?.source === 'assemblyai';
+      const hasAudio = !t.storage_path?.endsWith('_no_file');
       const jobTitle = t.title || t.summary?.title || t.original_filename || `#${i + 1}`;
 
       setReanalyzeProgress(prev => ({ ...prev, current: i, currentJobTitle: typeof jobTitle === 'string' ? jobTitle : String(jobTitle) }));
 
       try {
-        if (isNoFile || hasAAI) {
-          // Already has AssemblyAI data or no file → just re-run LLM
-          await processTranscription.mutateAsync({ jobId: t.id, forceReanalyze: true });
-        } else {
-          // Needs full AssemblyAI transcription
+        if (hasAudio) {
           await processTranscription.mutateAsync({ jobId: t.id, forceRetranscribe: true });
+        } else {
+          // No audio file → re-run LLM analysis only
+          await processTranscription.mutateAsync({ jobId: t.id, forceReanalyze: true });
         }
         successCount++;
       } catch (err: any) {
@@ -222,9 +203,8 @@ export default function CockpitTranscriptions() {
       setReanalyzeProgress(prev => ({ ...prev, current: i + 1, successCount, errorCount }));
 
       if (i < allItems.length - 1) {
-        const next = allItems[i + 1];
-        const nextIsLight = next.storage_path?.endsWith('_no_file') || (next.ai_metadata as any)?.source === 'assemblyai';
-        await new Promise(r => setTimeout(r, nextIsLight ? 2000 : 5000));
+        const nextHasAudio = !allItems[i + 1].storage_path?.endsWith('_no_file');
+        await new Promise(r => setTimeout(r, nextHasAudio ? 5000 : 2000));
       }
     }
 
@@ -369,16 +349,6 @@ export default function CockpitTranscriptions() {
             <span className="text-muted-foreground">Erreurs</span>
             <span className="font-semibold text-destructive">{stats.errors}</span>
           </div>
-          <div className="h-4 w-px bg-border hidden sm:block" />
-          {assemblyaiStats.noFile > 0 && (
-            <>
-              <div className="h-4 w-px bg-border hidden sm:block" />
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Sans audio</span>
-                <span className="font-semibold">{assemblyaiStats.noFile}</span>
-              </div>
-            </>
-          )}
         </div>
 
         {/* Filters */}
