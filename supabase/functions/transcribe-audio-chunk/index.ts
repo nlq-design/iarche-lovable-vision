@@ -1,17 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { trackAPIUsage } from "../_shared/api-tracker.ts";
-import { transcribeWithAssemblyAI } from "../_shared/assemblyai-utils.ts";
+import { transcribeWithAssemblyAI, getDefaultTranscriptionOptions } from "../_shared/assemblyai-utils.ts";
 
 /**
- * Transcribe Audio Chunk
+ * Transcribe Audio Chunk (v11.0)
  * 
- * Transcribes a single audio chunk using AssemblyAI.
+ * Transcribes a single audio chunk using AssemblyAI with all features enabled.
  * Used by the client-side chunking system for large files.
  * 
  * Expected body: FormData with:
  * - file: Audio blob
- * - language: (optional) Language code, default 'fr'
+ * - language: (optional) Language code, null for auto-detect
  * - chunk_index: (optional) Index of the chunk for ordering
+ * - word_boost: (optional) JSON array of custom vocabulary terms
  */
 
 const corsHeaders = {
@@ -41,8 +42,9 @@ serve(async (req) => {
   try {
     const formData = await req.formData();
     const audioFile = formData.get("file") as File | null;
-    const language = (formData.get("language") as string) || "fr";
+    const language = formData.get("language") as string | null;
     const chunkIndex = parseInt((formData.get("chunk_index") as string) || "0", 10);
+    const wordBoostRaw = formData.get("word_boost") as string | null;
 
     if (!audioFile) {
       return new Response(
@@ -51,29 +53,32 @@ serve(async (req) => {
       );
     }
 
+    // Parse custom vocabulary if provided
+    let wordBoost: string[] = [];
+    if (wordBoostRaw) {
+      try { wordBoost = JSON.parse(wordBoostRaw); } catch { /* ignore */ }
+    }
+
     const fileSizeMB = audioFile.size / (1024 * 1024);
     console.log(`[transcribe-audio-chunk] Processing chunk ${chunkIndex}, size: ${fileSizeMB.toFixed(2)} MB, type: ${audioFile.type}`);
 
-    // Read the full file into memory
     const audioData = await audioFile.arrayBuffer();
-
     const startTime = Date.now();
 
-    const result = await transcribeWithAssemblyAI(
-      audioData,
-      ASSEMBLYAI_API_KEY,
-      {
-        language_code: language,
-        maxWaitMs: 300_000, // 5 min max for a chunk
-      }
-    );
+    // Use all AssemblyAI features
+    const options = getDefaultTranscriptionOptions({
+      language_code: language === "auto" || !language ? null : language,
+      word_boost: wordBoost.length > 0 ? wordBoost : undefined,
+      maxWaitMs: 300_000,
+    });
+
+    const result = await transcribeWithAssemblyAI(audioData, ASSEMBLYAI_API_KEY, options);
 
     const processingTime = Date.now() - startTime;
-    console.log(`[transcribe-audio-chunk] Chunk ${chunkIndex} transcribed in ${processingTime}ms: ${result.text.length} chars`);
+    console.log(`[transcribe-audio-chunk] Chunk ${chunkIndex} transcribed in ${processingTime}ms: ${result.text.length} chars, lang=${result.language_code}`);
 
-    // Track API usage for AssemblyAI
+    // Track API usage
     try {
-      // AssemblyAI pricing: ~$0.37/hour ($0.00617/min)
       const durationMin = (result.audio_duration ?? 60) / 60;
       await trackAPIUsage({
         workspaceId: '00000000-0000-0000-0000-000000000001',
@@ -81,11 +86,25 @@ serve(async (req) => {
         apiName: 'assemblyai',
         providerName: 'assemblyai',
         operationType: 'transcription',
-        modelId: 'assemblyai-default',
+        modelId: 'assemblyai-best',
         success: true,
         latencyMs: processingTime,
         estimatedCostCents: Math.max(0.6, durationMin * 0.617),
-        metadata: { chunk_index: chunkIndex, file_size_mb: fileSizeMB, transcript_length: result.text.length, audio_duration_s: result.audio_duration },
+        metadata: {
+          chunk_index: chunkIndex,
+          file_size_mb: fileSizeMB,
+          transcript_length: result.text.length,
+          audio_duration_s: result.audio_duration,
+          language_detected: result.language_code,
+          features: {
+            speech_model: "best",
+            sentiment_analysis: !!result.sentiment_analysis_results?.length,
+            entity_detection: !!result.entities?.length,
+            auto_chapters: !!result.chapters?.length,
+            content_safety: !!result.content_safety_labels,
+            speaker_labels: !!result.utterances?.length,
+          },
+        },
       });
     } catch (e) {
       console.error('[transcribe-audio-chunk] Tracking error (non-blocking):', e);
@@ -99,6 +118,14 @@ serve(async (req) => {
         processing_time_ms: processingTime,
         file_size_bytes: audioFile.size,
         audio_duration: result.audio_duration,
+        language_code: result.language_code,
+        // Enriched data
+        words: result.words,
+        utterances: result.utterances,
+        sentiment_analysis_results: result.sentiment_analysis_results,
+        entities: result.entities,
+        chapters: result.chapters,
+        content_safety_labels: result.content_safety_labels,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

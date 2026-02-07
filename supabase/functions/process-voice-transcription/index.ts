@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // Centralized AI client for provider switching and fallback
 import { callLLMWithFallback } from "../_shared/ai-legacy-bridge.ts";
-import { transcribeFromUrl } from "../_shared/assemblyai-utils.ts";
+import { transcribeFromUrl, getDefaultTranscriptionOptions, type AssemblyAIFullResult } from "../_shared/assemblyai-utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1592,24 +1592,38 @@ serve(async (req) => {
         });
       }
 
-      // AssemblyAI can transcribe directly from a URL — no need to download/re-upload
-      // Speaker diarization enabled to identify different speakers
-      console.log(`[AssemblyAI] Transcribing from signed URL with speaker diarization...`);
-      const transcriptionResult = await transcribeFromUrl(
+      // Load custom vocabulary for this workspace
+      let wordBoost: string[] = [];
+      try {
+        const { data: aliases } = await supabase
+          .from("keyword_aliases")
+          .select("canonical_name")
+          .eq("is_active", true)
+          .limit(100);
+        if (aliases?.length) {
+          wordBoost = aliases.map((a: any) => a.canonical_name).filter(Boolean);
+          console.log(`[Vocabulary] Loaded ${wordBoost.length} custom terms for word boost`);
+        }
+      } catch { /* non-blocking */ }
+
+      // AssemblyAI: all features enabled (v11.0)
+      console.log(`[AssemblyAI] Transcribing with ALL features enabled (best model, auto-lang, sentiment, entities, chapters, safety)...`);
+      const options = getDefaultTranscriptionOptions({
+        word_boost: wordBoost.length > 0 ? wordBoost : undefined,
+        maxWaitMs: ASSEMBLYAI_MAX_WAIT_MS,
+      });
+      
+      const transcriptionResult: AssemblyAIFullResult = await transcribeFromUrl(
         signed.signedUrl,
         ASSEMBLYAI_API_KEY,
-        {
-          language_code: "fr",
-          speaker_labels: true,
-          maxWaitMs: ASSEMBLYAI_MAX_WAIT_MS,
-        }
+        options
       );
 
       rawText = transcriptionResult.text;
 
       // Format transcript with speaker labels if utterances are available
       let speakerFormattedText: string | null = null;
-      const utterances = transcriptionResult.utterances as Array<{ speaker: string; text: string; start: number; end: number }> | null;
+      const utterances = transcriptionResult.utterances;
       
       if (utterances && utterances.length > 0) {
         const uniqueSpeakers = [...new Set(utterances.map(u => u.speaker))];
@@ -1620,26 +1634,74 @@ serve(async (req) => {
           .join('\n');
       }
 
-      // Update with transcription result
+      // Build enriched metadata from all AssemblyAI features
+      const assemblyaiEnrichedData: Record<string, unknown> = {
+        source: "assemblyai",
+        speech_model: "best",
+        transcribed_at: new Date().toISOString(),
+        audio_duration_s: transcriptionResult.audio_duration,
+        language_detected: transcriptionResult.language_code,
+        speaker_diarization: !!(utterances && utterances.length > 0),
+        speakers_count: utterances ? [...new Set(utterances.map(u => u.speaker))].length : 0,
+        // Sentiment Analysis summary
+        sentiment_summary: transcriptionResult.sentiment_analysis_results?.length
+          ? {
+              total: transcriptionResult.sentiment_analysis_results.length,
+              positive: transcriptionResult.sentiment_analysis_results.filter(s => s.sentiment === "POSITIVE").length,
+              negative: transcriptionResult.sentiment_analysis_results.filter(s => s.sentiment === "NEGATIVE").length,
+              neutral: transcriptionResult.sentiment_analysis_results.filter(s => s.sentiment === "NEUTRAL").length,
+            }
+          : null,
+        // Entity Detection summary
+        entities_detected: transcriptionResult.entities?.length
+          ? {
+              total: transcriptionResult.entities.length,
+              types: [...new Set(transcriptionResult.entities.map(e => e.entity_type))],
+            }
+          : null,
+        // Auto Chapters count
+        chapters_count: transcriptionResult.chapters?.length ?? 0,
+        // Content Safety summary
+        content_safety_summary: transcriptionResult.content_safety_labels?.summary ?? null,
+        // Custom vocabulary used
+        word_boost_count: wordBoost.length,
+        // Features enabled
+        features_enabled: ["best_model", "auto_language", "speaker_labels", "sentiment_analysis", "entity_detection", "auto_chapters", "content_safety", "word_boost"],
+      };
+
+      // Store enriched AssemblyAI data as a structured JSON field in segments
+      const enrichedSegments: Record<string, unknown> = {
+        utterances: utterances?.map(u => ({
+          speaker: u.speaker,
+          text: u.text,
+          start_ms: u.start,
+          end_ms: u.end,
+          confidence: u.confidence,
+        })) ?? [],
+        words: transcriptionResult.words?.map(w => ({
+          text: w.text,
+          start_ms: w.start,
+          end_ms: w.end,
+          confidence: w.confidence,
+          speaker: w.speaker,
+        })) ?? [],
+        sentiment_analysis: transcriptionResult.sentiment_analysis_results ?? [],
+        entities: transcriptionResult.entities ?? [],
+        chapters: transcriptionResult.chapters ?? [],
+        content_safety: transcriptionResult.content_safety_labels ?? null,
+      };
+
+      // Update with full transcription result
       await supabase
         .from("voice_transcriptions")
         .update({
           raw_transcript: rawText,
-          segments: utterances ? JSON.stringify(utterances.map(u => ({
-            speaker: u.speaker,
-            text: u.text,
-            start_ms: u.start,
-            end_ms: u.end,
-          }))) : null,
+          segments: JSON.stringify(enrichedSegments),
           status: "analyzing",
           duration_seconds: transcriptionResult.audio_duration,
           ai_metadata: {
             ...aiMeta,
-            source: "assemblyai",
-            transcribed_at: new Date().toISOString(),
-            audio_duration_s: transcriptionResult.audio_duration,
-            speaker_diarization: !!(utterances && utterances.length > 0),
-            speakers_count: utterances ? [...new Set(utterances.map(u => u.speaker))].length : 0,
+            ...assemblyaiEnrichedData,
           },
         })
         .eq("id", jobId);

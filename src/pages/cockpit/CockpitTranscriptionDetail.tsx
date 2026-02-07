@@ -57,7 +57,18 @@ import {
   normalizeSummary,
   TranscriptionEntityLinks,
   TranscriptionEmailDialog,
+  TranscriptionEnrichedTab,
 } from '@/components/cockpit/transcriptions/shared';
+
+// Parse segments JSON (stored as stringified JSON or object)
+function parseEnrichedSegments(segments: unknown): Record<string, unknown> | null {
+  if (!segments) return null;
+  if (typeof segments === 'string') {
+    try { return JSON.parse(segments); } catch { return null; }
+  }
+  if (typeof segments === 'object') return segments as Record<string, unknown>;
+  return null;
+}
 
 export default function CockpitTranscriptionDetail() {
   const navigate = useNavigate();
@@ -536,9 +547,10 @@ export default function CockpitTranscriptionDetail() {
         {/* Content Tabs */}
         {(transcription.status === 'done' || transcription.status === 'analyzing') && summary ? (
           <Tabs defaultValue="summary" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="summary">Résumé</TabsTrigger>
               <TabsTrigger value="actions">Actions ({summary.action_items?.length || 0})</TabsTrigger>
+              <TabsTrigger value="enriched">Enrichi</TabsTrigger>
               <TabsTrigger value="transcript">Transcription</TabsTrigger>
               <TabsTrigger value="consulte">Consulte</TabsTrigger>
             </TabsList>
@@ -554,6 +566,21 @@ export default function CockpitTranscriptionDetail() {
                 leadId={transcription.lead_id}
                 projectId={transcription.project_id}
                 onCreateTask={(task) => createTask.mutate(task)}
+              />
+            </TabsContent>
+
+            <TabsContent value="enriched" className="space-y-4 pt-4">
+              <TranscriptionEnrichedTab
+                segments={parseEnrichedSegments(transcription.segments)}
+                languageDetected={(transcription.ai_metadata as any)?.language_detected}
+                onSeekTo={(timeMs) => {
+                  // Seek audio player to timestamp
+                  const audioEl = document.querySelector('audio');
+                  if (audioEl) {
+                    audioEl.currentTime = timeMs / 1000;
+                    audioEl.play();
+                  }
+                }}
               />
             </TabsContent>
 
@@ -662,7 +689,7 @@ function ErrorCard({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const lastError = String(((transcription.ai_metadata as any)?.last_error || '') as string);
 
-  if (lastError.includes('WHISPER_MAX_SIZE') || lastError.includes('too_large')) {
+  if (lastError.includes('too_large') || lastError.includes('file_too_large')) {
     return (
       <Card className="border-destructive">
         <CardContent className="p-6 text-center">
@@ -676,7 +703,7 @@ function ErrorCard({
     );
   }
 
-  if (lastError.includes('ASSEMBLYAI_TIMEOUT') || lastError.includes('WHISPER_TIMEOUT') || lastError === 'timeout') {
+  if (lastError.includes('ASSEMBLYAI_TIMEOUT') || lastError === 'timeout') {
     return (
       <Card className="border-destructive">
         <CardContent className="p-6 text-center">
