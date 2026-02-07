@@ -1215,11 +1215,12 @@ Tu reçois des données PRÉ-ANALYSÉES par AssemblyAI (chapitres, entités, sen
 5. **NORMALISER les dates** relatives → YYYY-MM-DD.
 6. **IDENTIFIER risques/blocages et questions ouvertes.**
 7. **ENRICHIR les participants** : Résoudre "Intervenant A/B/C" vers noms réels si identifiables.
+8. **RÉSUMÉ EXÉCUTIF** : TOUJOURS fournir un executive_summary de 3-5 phrases, même si AssemblyAI a déjà des chapitres. C'est le texte qui apparaît en aperçu dans l'interface.
+9. **POINTS CLÉS** : TOUJOURS fournir une liste de key_points (3-8 éléments) résumant les informations importantes.
+10. **SUJETS** : TOUJOURS fournir une liste de topics (2-5 sujets) abordés dans la conversation.
 
 ## CE QUE TU NE FAIS PAS
-- PAS de résumé (AssemblyAI l'a fait)
 - PAS d'analyse de sentiment (AssemblyAI l'a fait)
-- PAS de liste de sujets (AssemblyAI l'a fait)
 
 ## NORMALISATION PHONÉTIQUE
 Utilise le dictionary_context pour normaliser les variations.
@@ -1234,6 +1235,20 @@ function getCRMMatchingOutputSchema(): Record<string, unknown> {
       title_override: {
         type: "string",
         description: "Titre amélioré avec noms CRM résolus (max 80 chars). Null si le titre AssemblyAI est suffisant."
+      },
+      executive_summary: {
+        type: "string",
+        description: "Résumé exécutif en 3-5 phrases. Synthèse complète du contenu discuté. OBLIGATOIRE."
+      },
+      key_points: {
+        type: "array",
+        items: { type: "string" },
+        description: "Points clés (3-8 éléments) résumant les informations importantes à retenir."
+      },
+      topics: {
+        type: "array",
+        items: { type: "string" },
+        description: "Liste des sujets/thèmes évoqués (2-5 éléments)."
       },
       detected_entities: {
         type: "array",
@@ -1341,7 +1356,7 @@ function getCRMMatchingOutputSchema(): Record<string, unknown> {
         }
       }
     },
-    required: ["detected_entities", "action_items", "decisions"]
+    required: ["detected_entities", "action_items", "decisions", "executive_summary", "key_points", "topics"]
   };
 }
 
@@ -2128,10 +2143,16 @@ serve(async (req) => {
           dates_mentioned: crmResult.dates_mentioned ?? [],
           // Title: use LLM override if available, otherwise AssemblyAI
           title: (crmResult.title_override as string) || baseAnalysis.title,
-          // Keep AssemblyAI native data (NOT overridden by LLM)
-          executive_summary: baseAnalysis.executive_summary,
-          topics: baseAnalysis.topics,
-          key_points: baseAnalysis.key_points,
+          // Use LLM executive_summary as fallback when AssemblyAI has no chapters
+          executive_summary: (baseAnalysis.executive_summary && String(baseAnalysis.executive_summary).trim())
+            ? baseAnalysis.executive_summary
+            : (crmResult.executive_summary as string) || baseAnalysis.executive_summary,
+          topics: (baseAnalysis.topics as string[])?.length
+            ? baseAnalysis.topics
+            : (crmResult.topics as string[]) || baseAnalysis.topics,
+          key_points: (baseAnalysis.key_points as string[])?.length
+            ? baseAnalysis.key_points
+            : (crmResult.key_points as string[]) || baseAnalysis.key_points,
           sentiment: baseAnalysis.sentiment,
           quality_score: baseAnalysis.quality_score,
           // Enrich participants if LLM resolved speaker identities
