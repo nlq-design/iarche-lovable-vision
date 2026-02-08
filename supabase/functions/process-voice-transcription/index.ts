@@ -763,6 +763,78 @@ serve(async (req) => {
           .upsert(participantRows, { onConflict: 'transcription_id,name', ignoreDuplicates: true });
         log("Participants", `Seeded ${participantRows.length} participants`);
       }
+
+      // Phase P3: AI matching — compare unlinked participants against CRM entities
+      try {
+        const unlinked = participantRows.filter(p => !p.linked_entity_id);
+        if (unlinked.length > 0) {
+          // Fetch CRM entities for fuzzy matching
+          const [{ data: partners }, { data: contacts }, { data: leads }] = await Promise.all([
+            supabase.from('partners').select('id, name, company, slug').eq('workspace_id', job.workspace_id).limit(100),
+            supabase.from('lead_contacts').select('id, name, email').limit(100),
+            supabase.from('leads').select('id, name, company').eq('workspace_id', job.workspace_id).limit(100),
+          ]);
+
+          const crmEntities: Array<{ type: string; id: string; name: string; extra?: string }> = [];
+          partners?.forEach(p => crmEntities.push({ type: 'partner', id: p.id, name: p.name, extra: p.company || undefined }));
+          contacts?.forEach(c => crmEntities.push({ type: 'lead_contact', id: c.id, name: c.name, extra: c.email || undefined }));
+          leads?.forEach(l => crmEntities.push({ type: 'lead', id: l.id, name: l.name, extra: l.company || undefined }));
+
+          if (crmEntities.length > 0) {
+            // Simple fuzzy matching: normalize names and check for substring/exact matches
+            const normalize = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+            
+            const updates: Array<{ name: string; match: any; score: number }> = [];
+            for (const p of unlinked) {
+              const pNorm = normalize(p.name);
+              const pParts = pNorm.split(/\s+/);
+              
+              let bestMatch: typeof crmEntities[0] | null = null;
+              let bestScore = 0;
+
+              for (const entity of crmEntities) {
+                const eNorm = normalize(entity.name);
+                const eParts = eNorm.split(/\s+/);
+                
+                // Exact match
+                if (pNorm === eNorm) { bestMatch = entity; bestScore = 1.0; break; }
+                
+                // Full name contained
+                if (eNorm.includes(pNorm) || pNorm.includes(eNorm)) {
+                  const score = 0.85;
+                  if (score > bestScore) { bestMatch = entity; bestScore = score; }
+                  continue;
+                }
+                
+                // Surname match (last word)
+                const pLast = pParts[pParts.length - 1];
+                const eLast = eParts[eParts.length - 1];
+                if (pLast.length >= 3 && pLast === eLast) {
+                  const score = pParts.length === 1 ? 0.6 : 0.75;
+                  if (score > bestScore) { bestMatch = entity; bestScore = score; }
+                }
+              }
+
+              if (bestMatch && bestScore >= 0.6) {
+                updates.push({
+                  name: p.name,
+                  match: { type: bestMatch.type, id: bestMatch.id, name: bestMatch.name, confidence: bestScore },
+                  score: bestScore,
+                });
+              }
+            }
+
+            // Update participants with AI suggestions
+            for (const u of updates) {
+              await supabase.from('transcription_participants')
+                .update({ ai_suggested_match: u.match, confidence_score: u.score })
+                .eq('transcription_id', jobId)
+                .eq('name', u.name);
+            }
+            if (updates.length > 0) log("AI Matching", `Suggested ${updates.length} CRM matches`);
+          }
+        }
+      } catch (e) { logErr("AI participant matching", e); }
     } catch (e) { logErr("Participants seeding", e); }
 
     // Activity log

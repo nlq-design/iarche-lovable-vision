@@ -29,6 +29,7 @@ import {
   UserCheck,
   MessageSquare,
   Eye,
+  ExternalLink,
 } from 'lucide-react';
 import {
   useTranscriptionParticipants,
@@ -169,6 +170,7 @@ function ParticipantRow({
   searchEntities,
   historyCount,
   linkedEntityName,
+  linkedEntitySlug,
 }: {
   participant: TranscriptionParticipant;
   onUpdate: (id: string, updates: Partial<TranscriptionParticipant>) => void;
@@ -177,16 +179,18 @@ function ParticipantRow({
   searchEntities: (q: string) => Promise<Array<{ type: LinkedEntityType; id: string; name: string; subtitle?: string }>>;
   historyCount?: number;
   linkedEntityName?: string;
+  linkedEntitySlug?: string;
 }) {
   const navigate = useNavigate();
 
   const getEntityUrl = (): string | null => {
     if (!participant.linked_entity_type || !participant.linked_entity_id) return null;
+    const slug = linkedEntitySlug || participant.linked_entity_id;
     switch (participant.linked_entity_type) {
-      case 'partner': return `/cockpit/partenaires/${participant.linked_entity_id}`;
-      case 'lead': return `/cockpit/leads/${participant.linked_entity_id}`;
-      case 'lead_contact': return null; // contacts don't have their own page
-      case 'project': return `/cockpit/projets/${participant.linked_entity_id}`;
+      case 'partner': return `/cockpit/partenaires/${slug}`;
+      case 'lead': return `/cockpit/leads/${slug}`;
+      case 'lead_contact': return null;
+      case 'project': return `/cockpit/projets/${slug}`;
       default: return null;
     }
   };
@@ -214,7 +218,7 @@ function ParticipantRow({
             )}
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">
-            {participant.linked_entity_type && participant.linked_entity_id && (
+            {participant.linked_entity_type && participant.linked_entity_id ? (
               <Badge 
                 variant="secondary" 
                 className={`text-[10px] h-4 ${entityUrl ? 'cursor-pointer hover:bg-primary/20 transition-colors' : ''}`}
@@ -222,9 +226,24 @@ function ParticipantRow({
               >
                 {ENTITY_TYPE_LABELS[participant.linked_entity_type]}
                 {linkedEntityName && (
-                  <span className="ml-1 font-normal">{linkedEntityName}</span>
+                  <span className="ml-1 font-normal">· {linkedEntityName}</span>
                 )}
+                {entityUrl && <ExternalLink className="h-2.5 w-2.5 ml-1 inline" />}
               </Badge>
+            ) : participant.ai_suggested_match ? (
+              <button
+                className="inline-flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors"
+                onClick={() => {
+                  const match = participant.ai_suggested_match as { type: string; id: string; name: string; confidence: number };
+                  onLink(participant.id, match.type as LinkedEntityType, match.id);
+                }}
+                title={`Suggestion IA : ${(participant.ai_suggested_match as any).name} (${Math.round((participant.ai_suggested_match as any).confidence * 100)}%)`}
+              >
+                <Sparkles className="h-3 w-3" />
+                Lier à « {(participant.ai_suggested_match as any).name} » ?
+              </button>
+            ) : (
+              <span className="text-[10px] text-muted-foreground italic">Non lié</span>
             )}
             {participant.role_in_meeting && (
               <Badge variant="outline" className="text-[10px] h-4">
@@ -267,7 +286,7 @@ function ParticipantRow({
           </SelectContent>
         </Select>
 
-        {/* Link button */}
+        {/* Link button — always visible */}
         <EntitySearchPopover
           participant={participant}
           onLink={(type, id) => onLink(participant.id, type, id)}
@@ -365,6 +384,7 @@ export function TranscriptionParticipantsSection({
 
   const [historyCounts, setHistoryCounts] = useState<Record<string, number>>({});
   const [entityNames, setEntityNames] = useState<Record<string, string>>({});
+  const [entitySlugs, setEntitySlugs] = useState<Record<string, string>>({});
   const [seeded, setSeeded] = useState(false);
 
   // Auto-seed from summary if no participants exist yet
@@ -381,31 +401,42 @@ export function TranscriptionParticipantsSection({
     }
   }, [transcriptionId, participants.length, isLoading, normalizedSummary, seeded]); // eslint-disable-line
 
-  // Load history counts + entity names for linked participants
+  // Load history counts + entity names + slugs for linked participants
   useEffect(() => {
     if (participants.length === 0) return;
     const load = async () => {
       const counts: Record<string, number> = {};
       const names: Record<string, string> = {};
+      const slugs: Record<string, string> = {};
       await Promise.all(
         participants.map(async (p) => {
           counts[p.id] = await getParticipantHistory(p.name);
-          // Fetch linked entity name
-          if (p.linked_entity_type && p.linked_entity_id && !entityNames[p.id]) {
+          // Fetch linked entity name + slug
+          if (p.linked_entity_type && p.linked_entity_id) {
             try {
-              const table = p.linked_entity_type === 'partner' ? 'partners'
-                : p.linked_entity_type === 'lead_contact' ? 'lead_contacts'
-                : p.linked_entity_type === 'lead' ? 'leads'
-                : 'projects';
-              const nameCol = table === 'projects' ? 'name' : 'name';
-              const { data } = await supabase.from(table).select(nameCol).eq('id', p.linked_entity_id).single();
-              if (data?.name) names[p.id] = data.name;
+              let entityData: any = null;
+              if (p.linked_entity_type === 'partner') {
+                const { data } = await supabase.from('partners').select('name, slug').eq('id', p.linked_entity_id).single();
+                entityData = data;
+              } else if (p.linked_entity_type === 'lead_contact') {
+                const { data } = await supabase.from('lead_contacts').select('name').eq('id', p.linked_entity_id).single();
+                entityData = data;
+              } else if (p.linked_entity_type === 'lead') {
+                const { data } = await supabase.from('leads').select('name').eq('id', p.linked_entity_id).single();
+                entityData = data;
+              } else if (p.linked_entity_type === 'project') {
+                const { data } = await supabase.from('projects').select('name, slug').eq('id', p.linked_entity_id).single();
+                entityData = data;
+              }
+              if (entityData?.name) names[p.id] = entityData.name;
+              if (entityData?.slug) slugs[p.id] = entityData.slug;
             } catch { /* ignore */ }
           }
         })
       );
       setHistoryCounts(counts);
       setEntityNames(prev => ({ ...prev, ...names }));
+      setEntitySlugs(prev => ({ ...prev, ...slugs }));
     };
     load();
   }, [participants]); // eslint-disable-line
@@ -465,6 +496,7 @@ export function TranscriptionParticipantsSection({
                   searchEntities={searchEntities}
                   historyCount={historyCounts[p.id]}
                   linkedEntityName={entityNames[p.id]}
+                  linkedEntitySlug={entitySlugs[p.id]}
                 />
               ))}
             </div>
