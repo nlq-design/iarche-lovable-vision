@@ -153,8 +153,9 @@ Résous "Intervenant A/B/C" vers noms réels si identifiables via le contexte CR
 Utilise dictionary_context pour normaliser les variations (ex: "bérécos" → "Beerecos").
 
 ## RÈGLES
+- RÉPONDS TOUJOURS EN FRANÇAIS. Tous les champs textuels (executive_summary, key_points, topics, decisions, action_items, risks_blockers, questions_open, next_steps, financial_data.context, dates_mentioned.context) DOIVENT être rédigés en français, même si la transcription est en anglais ou multilingue.
 - ZÉRO invention, ZÉRO hallucination
-- Préserve TOUS les montants, dates, noms propres
+- Préserve TOUS les montants, dates, noms propres (garder les noms propres dans leur langue d'origine)
 - Retourne UNIQUEMENT un JSON valide selon le schéma`;
 }
 
