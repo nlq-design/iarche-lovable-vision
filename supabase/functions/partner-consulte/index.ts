@@ -19,10 +19,13 @@ interface PartnerContext {
     budget?: number;
     client?: string;
     role?: string;
+    contextNotes: string[];
+    vocabulary: string[];
     transcriptions: Array<{
       title: string;
       date: string;
       summary?: string;
+      participants?: string[];
     }>;
     documents: Array<{
       title: string;
@@ -35,11 +38,21 @@ interface PartnerContext {
     name: string;
     company?: string;
     role?: string;
+    contextNotes: string[];
+    vocabulary: string[];
     transcriptions: Array<{
       title: string;
       date: string;
       summary?: string;
+      participants?: string[];
     }>;
+  }>;
+  partnerContextNotes: string[];
+  partnerVocabulary: string[];
+  knownParticipantMappings: Array<{
+    speakerLabel: string;
+    entityName: string;
+    entityType: string;
   }>;
   totalTranscriptions: number;
   totalDocuments: number;
@@ -53,91 +66,98 @@ function formatDate(dateStr: string): string {
   });
 }
 
-function getPartnerSystemPrompt(partnerType: string): string {
-  const typeContext = partnerType === 'expert_ia' 
-    ? "Vous interagissez avec un Expert IA, qui intervient sur des missions techniques d'IA."
-    : partnerType === 'independant'
-    ? "Vous interagissez avec un Indépendant, qui réalise des missions en sous-traitance."
-    : partnerType === 'apporteur'
-    ? "Vous interagissez avec un Apporteur d'affaires, qui recommande des clients."
-    : "Vous interagissez avec un partenaire externe.";
+// ---- Helper fetchers ----
 
-  return `Tu es l'assistant IA contextuel de l'espace partenaire IArche.
-
-## CONTEXTE PARTENAIRE
-${typeContext}
-
-## MISSION
-Fournir une synthèse claire et actionable des missions, leads et informations auxquelles ce partenaire a accès.
-Ton rôle est d'aider le partenaire à avoir une vision 360° de son activité avec IArche.
-
-## RÈGLES CRITIQUES
-1. **CONFIDENTIALITÉ** : Ne jamais mentionner d'informations sur des projets/leads auxquels le partenaire n'est pas lié
-2. **PRÉCISION** : Citer les sources (transcriptions, documents) pour chaque information
-3. **STRUCTURE** : Organiser l'information par mission/projet pour faciliter la lecture
-4. **PERTINENCE** : Prioriser les informations récentes et les actions en cours
-
-## FORMAT DE SORTIE
-
-### 📊 Vue d'ensemble
-Résumé en 2-3 phrases de l'activité du partenaire.
-
-### 🎯 Missions en cours
-Pour chaque projet actif :
-- Nom du projet et client
-- Rôle du partenaire
-- Points clés des dernières interactions
-- Prochaines étapes identifiées
-
-### 💼 Leads associés
-Pour chaque lead :
-- Nom et entreprise
-- Contexte de la relation
-- Actions récentes
-
-### 📅 Événements récents
-Timeline des dernières interactions (transcriptions, documents).
-
-### ⚠️ Points d'attention
-Éléments nécessitant une action ou un suivi.
-
-## STYLE
-- Professionnel mais accessible
-- Bullet points clairs
-- Dates au format français (DD/MM/YYYY)
-`;
+async function fetchContextNotes(supabase: any, entityType: string, entityId: string): Promise<string[]> {
+  try {
+    const { data } = await supabase
+      .from('entity_context_notes')
+      .select('content, updated_at')
+      .eq('entity_type', entityType)
+      .eq('entity_id', entityId)
+      .order('updated_at', { ascending: false })
+      .limit(10);
+    return (data || []).map((n: any) => n.content);
+  } catch { return []; }
 }
+
+async function fetchVocabulary(supabase: any, entityType: string, entityId: string): Promise<string[]> {
+  try {
+    const { data } = await supabase
+      .from('entity_vocabulary')
+      .select('term, category')
+      .eq('entity_type', entityType)
+      .eq('entity_id', entityId)
+      .order('category');
+    return (data || []).map((v: any) => `${v.term} (${v.category || 'général'})`);
+  } catch { return []; }
+}
+
+async function fetchParticipantMappings(supabase: any, workspaceTranscriptionIds: string[]): Promise<PartnerContext['knownParticipantMappings']> {
+  if (!workspaceTranscriptionIds.length) return [];
+  try {
+    const { data } = await supabase
+      .from('participant_entity_mappings')
+      .select('speaker_label, entity_name, entity_type')
+      .in('transcription_id', workspaceTranscriptionIds);
+    // Deduplicate by speaker_label+entity_name
+    const seen = new Set<string>();
+    return (data || []).filter((m: any) => {
+      const key = `${m.speaker_label}::${m.entity_name}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  } catch { return []; }
+}
+
+async function fetchTranscriptionParticipants(supabase: any, transcriptionId: string): Promise<string[]> {
+  try {
+    const { data } = await supabase
+      .from('transcription_participants')
+      .select('name, linked_entity_type, role_in_meeting')
+      .eq('transcription_id', transcriptionId)
+      .eq('presence_status', 'present');
+    return (data || []).map((p: any) => {
+      let label = p.name;
+      if (p.linked_entity_type) label += ` [${p.linked_entity_type}]`;
+      if (p.role_in_meeting) label += ` (${p.role_in_meeting})`;
+      return label;
+    });
+  } catch { return []; }
+}
+
+// ---- Main context collector ----
 
 async function collectPartnerContext(
   supabase: any,
   partnerId: string
 ): Promise<PartnerContext> {
-  console.log(`[partner-consulte] Collecting context for partner ${partnerId}`);
+  console.log(`[partner-consulte] Collecting enriched context for partner ${partnerId}`);
 
-  // 1. Get partner info
+  // 1. Partner info
   const { data: partner } = await supabase
     .from('partners')
     .select('id, name, partner_type, company')
     .eq('id', partnerId)
     .single();
 
-  if (!partner) {
-    throw new Error('Partner not found');
-  }
+  if (!partner) throw new Error('Partner not found');
 
-  // 2. Get linked projects with transcriptions and documents
+  // 2. Partner-level context notes & vocabulary (parallel)
+  const [partnerContextNotes, partnerVocabulary] = await Promise.all([
+    fetchContextNotes(supabase, 'partner', partnerId),
+    fetchVocabulary(supabase, 'partner', partnerId),
+  ]);
+
+  // 3. Linked projects
   const { data: projectLinks } = await supabase
     .from('project_partners')
     .select(`
       role,
       project:projects(
-        id, 
-        name, 
-        status, 
-        budget_amount,
-        opportunity:opportunities(
-          lead:leads(id, name, company)
-        )
+        id, name, status, budget_amount,
+        opportunity:opportunities(lead:leads(id, name, company))
       )
     `)
     .eq('partner_id', partnerId);
@@ -145,59 +165,43 @@ async function collectPartnerContext(
   const projects: PartnerContext['projects'] = [];
   let totalTranscriptions = 0;
   let totalDocuments = 0;
+  const allTranscriptionIds: string[] = [];
 
   for (const link of projectLinks || []) {
     if (!link.project) continue;
-    
     const project = link.project as any;
-    
-    // Get transcriptions for this project
-    const { data: transcriptions } = await supabase
-      .from('voice_transcriptions')
-      .select('id, title, transcription_date, ai_summary')
-      .eq('project_id', project.id)
-      .eq('status', 'done')
-      .order('transcription_date', { ascending: false })
-      .limit(5);
 
-    // Get documents for this project
-    const { data: documents } = await supabase
-      .from('generated_documents')
-      .select('id, title, document_type, created_at')
-      .eq('project_id', project.id)
-      .order('created_at', { ascending: false })
-      .limit(5);
+    // Parallel: transcriptions, documents, context notes, vocabulary
+    const [transcriptionsRes, documentsRes, projNotes, projVocab] = await Promise.all([
+      supabase.from('voice_transcriptions')
+        .select('id, title, transcription_date, ai_summary')
+        .eq('project_id', project.id).eq('status', 'done')
+        .order('transcription_date', { ascending: false }).limit(5),
+      supabase.from('generated_documents')
+        .select('id, title, document_type, created_at')
+        .eq('project_id', project.id)
+        .order('created_at', { ascending: false }).limit(5),
+      fetchContextNotes(supabase, 'project', project.id),
+      fetchVocabulary(supabase, 'project', project.id),
+    ]);
 
-    // Enrich transcriptions with participants
-    const projectTranscriptions: PartnerContext['projects'][0]['transcriptions'] = [];
-    for (const t of transcriptions || []) {
-      let summary = t.ai_summary?.substring(0, 500) || undefined;
-      try {
-        const { data: parts } = await supabase
-          .from('transcription_participants')
-          .select('name, linked_entity_type, role_in_meeting')
-          .eq('transcription_id', t.id)
-          .eq('presence_status', 'present');
-        if (parts?.length) {
-          const names = parts.map((p: any) => p.name + (p.linked_entity_type ? ` (${p.linked_entity_type})` : '')).join(', ');
-          summary = `Participants: ${names}\n${summary || ''}`;
-        }
-      } catch { /* non-blocking */ }
-      projectTranscriptions.push({
+    const transcriptions = transcriptionsRes.data || [];
+    const documents = documentsRes.data || [];
+
+    // Enrich transcriptions with participants (parallel)
+    const enriched = await Promise.all(transcriptions.map(async (t: any) => {
+      allTranscriptionIds.push(t.id);
+      const participants = await fetchTranscriptionParticipants(supabase, t.id);
+      return {
         title: t.title || 'Transcription',
         date: formatDate(t.transcription_date || t.created_at),
-        summary,
-      });
-    }
-
-    const projectDocuments = (documents || []).map((d: any) => ({
-      title: d.title,
-      type: d.document_type,
-      date: formatDate(d.created_at)
+        summary: t.ai_summary?.substring(0, 500) || undefined,
+        participants,
+      };
     }));
 
-    totalTranscriptions += projectTranscriptions.length;
-    totalDocuments += projectDocuments.length;
+    totalTranscriptions += enriched.length;
+    totalDocuments += documents.length;
 
     const leadInfo = project.opportunity?.lead;
 
@@ -208,70 +212,67 @@ async function collectPartnerContext(
       budget: project.budget_amount,
       client: leadInfo?.company || leadInfo?.name,
       role: link.role,
-      transcriptions: projectTranscriptions,
-      documents: projectDocuments
+      contextNotes: projNotes,
+      vocabulary: projVocab,
+      transcriptions: enriched,
+      documents: documents.map((d: any) => ({
+        title: d.title, type: d.document_type, date: formatDate(d.created_at)
+      })),
     });
   }
 
-  // 3. Get linked leads with transcriptions
+  // 4. Linked leads
   const { data: leadLinks } = await supabase
     .from('lead_partners')
-    .select(`
-      role,
-      lead:leads(id, name, company)
-    `)
+    .select('role, lead:leads(id, name, company)')
     .eq('partner_id', partnerId);
 
   const leads: PartnerContext['leads'] = [];
 
   for (const link of leadLinks || []) {
     if (!link.lead) continue;
-    
     const lead = link.lead as any;
 
-    // Get transcriptions for this lead
-    const { data: transcriptions } = await supabase
-      .from('voice_transcriptions')
-      .select('id, title, transcription_date, ai_summary')
-      .eq('lead_id', lead.id)
-      .eq('status', 'done')
-      .order('transcription_date', { ascending: false })
-      .limit(3);
+    // Skip leads already covered by projects
+    if (projects.some(p => p.client === (lead.company || lead.name))) continue;
 
-    // Enrich lead transcriptions with participants
-    const leadTranscriptions: PartnerContext['leads'][0]['transcriptions'] = [];
-    for (const t of transcriptions || []) {
-      let summary: string | undefined;
-      try {
-        const { data: parts } = await supabase
-          .from('transcription_participants')
-          .select('name, linked_entity_type')
-          .eq('transcription_id', t.id)
-          .eq('presence_status', 'present');
-        if (parts?.length) {
-          const names = parts.map((p: any) => p.name).join(', ');
-          summary = `Participants: ${names}`;
-        }
-      } catch { /* non-blocking */ }
-      leadTranscriptions.push({
+    const [transcriptionsRes, leadNotes, leadVocab] = await Promise.all([
+      supabase.from('voice_transcriptions')
+        .select('id, title, transcription_date, ai_summary')
+        .eq('lead_id', lead.id).eq('status', 'done')
+        .order('transcription_date', { ascending: false }).limit(3),
+      fetchContextNotes(supabase, 'lead', lead.id),
+      fetchVocabulary(supabase, 'lead', lead.id),
+    ]);
+
+    const transcriptions = transcriptionsRes.data || [];
+
+    const enriched = await Promise.all(transcriptions.map(async (t: any) => {
+      allTranscriptionIds.push(t.id);
+      const participants = await fetchTranscriptionParticipants(supabase, t.id);
+      return {
         title: t.title || 'Transcription',
         date: formatDate(t.transcription_date || t.created_at),
-        summary,
-      });
-    }
+        summary: t.ai_summary?.substring(0, 500) || undefined,
+        participants,
+      };
+    }));
 
-    // Only add leads not already covered by projects
-    if (!projects.some(p => p.client === (lead.company || lead.name))) {
-      totalTranscriptions += leadTranscriptions.length;
-      leads.push({
-        id: lead.id,
-        name: lead.name,
-        company: lead.company,
-        role: link.role,
-        transcriptions: leadTranscriptions
-      });
-    }
+    totalTranscriptions += enriched.length;
+
+    leads.push({
+      id: lead.id,
+      name: lead.name,
+      company: lead.company,
+      role: link.role,
+      contextNotes: leadNotes,
+      vocabulary: leadVocab,
+      transcriptions: enriched,
+    });
   }
+
+  // 5. Known participant mappings across all transcriptions
+  const knownParticipantMappings = await fetchParticipantMappings(supabase, allTranscriptionIds);
 
   return {
     partnerId: partner.id,
@@ -279,18 +280,128 @@ async function collectPartnerContext(
     partnerType: partner.partner_type || 'partner',
     projects,
     leads,
+    partnerContextNotes: partnerContextNotes,
+    partnerVocabulary: partnerVocabulary,
+    knownParticipantMappings,
     totalTranscriptions,
-    totalDocuments
+    totalDocuments,
   };
 }
 
+// ---- Prompts ----
+
+function getPartnerSystemPrompt(partnerType: string): string {
+  const typeContext = partnerType === 'expert_ia'
+    ? "Expert IA intervenant sur des missions techniques d'IA."
+    : partnerType === 'independant'
+    ? "Indépendant réalisant des missions en sous-traitance."
+    : partnerType === 'apporteur'
+    ? "Apporteur d'affaires recommandant des clients."
+    : "Partenaire externe.";
+
+  return `Tu es l'assistant IA contextuel de l'espace partenaire IArche.
+
+## PROFIL PARTENAIRE
+${typeContext}
+
+## MISSION
+Fournir une synthèse 360° claire, précise et actionable de l'activité de ce partenaire avec IArche.
+Tu combines les données de projets, leads, transcriptions, documents, notes de contexte et vocabulaire métier.
+
+## HIÉRARCHIE DES SOURCES (par poids décroissant)
+1. **Notes de contexte** (rédigées manuellement par l'équipe, fiabilité maximale)
+2. **Résumés de transcriptions** (synthèses IA validées)
+3. **Participants identifiés** (liens CRM confirmés speaker → entité)
+4. **Documents et métadonnées projet** (budgets, statuts, rôles)
+
+## INTELLIGENCE RELATIONNELLE
+Tu disposes d'un historique de **correspondances speaker ↔ entité CRM** issues de transcriptions précédentes.
+Utilise-les pour enrichir ta compréhension des interlocuteurs récurrents et de leur rôle dans l'écosystème.
+
+## VOCABULAIRE MÉTIER
+Des termes techniques, acronymes et jargon propres à chaque entité te sont fournis.
+Utilise-les naturellement dans ta synthèse pour montrer ta compréhension du contexte métier.
+
+## RÈGLES CRITIQUES
+1. **CONFIDENTIALITÉ** : Ne jamais mentionner d'informations sur des projets/leads auxquels le partenaire n'est pas lié
+2. **SOURCING** : Citer les sources (transcriptions, documents, notes) pour chaque insight
+3. **STRUCTURE** : Organiser par mission/projet pour faciliter la lecture
+4. **RÉCENCE** : Prioriser les informations récentes ; signaler les données obsolètes
+5. **CONNEXIONS** : Mettre en évidence les liens entre projets, leads et interlocuteurs
+
+## FORMAT DE SORTIE
+
+### 📊 Vue d'ensemble
+Résumé en 2-3 phrases de l'activité du partenaire et de sa dynamique actuelle.
+
+### 🎯 Missions en cours
+Pour chaque projet actif :
+- Nom du projet et client
+- Rôle du partenaire
+- **Contexte clé** (issu des notes de contexte si disponibles)
+- Points saillants des dernières interactions
+- Prochaines étapes identifiées
+
+### 💼 Leads associés
+Pour chaque lead :
+- Nom et entreprise
+- Historique relationnel (interlocuteurs récurrents)
+- Actions récentes et statut
+
+### 🔗 Réseau relationnel
+Interlocuteurs récurrents identifiés à travers les transcriptions :
+- Qui intervient dans quels projets
+- Rôles et patterns de collaboration
+
+### 📅 Événements récents
+Timeline des 5 dernières interactions significatives.
+
+### ⚠️ Points d'attention
+Éléments nécessitant une action, un suivi ou signalant un risque.
+
+## STYLE
+- Professionnel mais accessible
+- Bullet points clairs
+- Dates au format français (DD/MM/YYYY)
+- Utiliser le vocabulaire métier fourni quand pertinent
+`;
+}
+
 function buildUserPrompt(context: PartnerContext): string {
+  // ---- Partner-level enrichment ----
+  const partnerNotesBlock = context.partnerContextNotes.length > 0
+    ? `\n## 📝 Notes de contexte (Partenaire)\n${context.partnerContextNotes.map(n => `> ${n}`).join('\n')}\n`
+    : '';
+
+  const partnerVocabBlock = context.partnerVocabulary.length > 0
+    ? `\n## 📖 Vocabulaire métier (Partenaire)\n${context.partnerVocabulary.join(', ')}\n`
+    : '';
+
+  // ---- Participant mappings ----
+  const mappingsBlock = context.knownParticipantMappings.length > 0
+    ? `\n## 🔗 Correspondances speaker ↔ CRM connues\n${context.knownParticipantMappings.map(m => `- "${m.speakerLabel}" → ${m.entityName} (${m.entityType})`).join('\n')}\n`
+    : '';
+
+  // ---- Projects ----
   const projectsSection = context.projects.length > 0
     ? context.projects.map(p => {
+        const notesBlock = p.contextNotes.length > 0
+          ? `\n**Notes de contexte:**\n${p.contextNotes.map(n => `> ${n}`).join('\n')}`
+          : '';
+
+        const vocabBlock = p.vocabulary.length > 0
+          ? `\n**Vocabulaire:** ${p.vocabulary.join(', ')}`
+          : '';
+
         const transcriptionsText = p.transcriptions.length > 0
-          ? p.transcriptions.map(t => `  - [${t.date}] ${t.title}${t.summary ? `\n    Résumé: ${t.summary}` : ''}`).join('\n')
+          ? p.transcriptions.map(t => {
+              let line = `  - [${t.date}] ${t.title}`;
+              if (t.participants?.length) line += `\n    👥 ${t.participants.join(', ')}`;
+              if (t.summary) line += `\n    Résumé: ${t.summary}`;
+              return line;
+            }).join('\n')
           : '  Aucune transcription récente';
-        
+
         const documentsText = p.documents.length > 0
           ? p.documents.map(d => `  - [${d.date}] ${d.title} (${d.type})`).join('\n')
           : '  Aucun document récent';
@@ -300,6 +411,7 @@ function buildUserPrompt(context: PartnerContext): string {
 - Statut: ${p.status}
 - Rôle partenaire: ${p.role || 'Non défini'}
 ${p.budget ? `- Budget: ${p.budget.toLocaleString('fr-FR')} €` : ''}
+${notesBlock}${vocabBlock}
 
 **Transcriptions récentes:**
 ${transcriptionsText}
@@ -309,14 +421,29 @@ ${documentsText}`;
       }).join('\n\n---\n\n')
     : 'Aucun projet assigné';
 
+  // ---- Leads ----
   const leadsSection = context.leads.length > 0
     ? context.leads.map(l => {
+        const notesBlock = l.contextNotes.length > 0
+          ? `\n**Notes de contexte:**\n${l.contextNotes.map(n => `> ${n}`).join('\n')}`
+          : '';
+
+        const vocabBlock = l.vocabulary.length > 0
+          ? `\n**Vocabulaire:** ${l.vocabulary.join(', ')}`
+          : '';
+
         const transcriptionsText = l.transcriptions.length > 0
-          ? l.transcriptions.map(t => `  - [${t.date}] ${t.title}`).join('\n')
+          ? l.transcriptions.map(t => {
+              let line = `  - [${t.date}] ${t.title}`;
+              if (t.participants?.length) line += `\n    👥 ${t.participants.join(', ')}`;
+              if (t.summary) line += `\n    Résumé: ${t.summary}`;
+              return line;
+            }).join('\n')
           : '  Aucune transcription';
 
         return `### Lead: ${l.name}${l.company ? ` (${l.company})` : ''}
 - Rôle: ${l.role || 'Non défini'}
+${notesBlock}${vocabBlock}
 
 **Transcriptions:**
 ${transcriptionsText}`;
@@ -327,12 +454,12 @@ ${transcriptionsText}`;
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
 
-  return `# Synthèse contextuelle pour ${context.partnerName}
+  return `# Synthèse contextuelle enrichie pour ${context.partnerName}
 *Générée le ${synthesisDate}*
 *${context.projects.length} projets | ${context.leads.length} leads | ${context.totalTranscriptions} transcriptions | ${context.totalDocuments} documents*
 
 ---
-
+${partnerNotesBlock}${partnerVocabBlock}${mappingsBlock}
 ## Projets assignés
 
 ${projectsSection}
@@ -347,9 +474,12 @@ ${leadsSection}
 
 ## Instructions
 
-Génère une synthèse complète et structurée de l'activité de ce partenaire en suivant le format défini dans les instructions système. 
-Mets en avant les informations les plus récentes et les points nécessitant une attention particulière.`;
+Génère une synthèse complète et structurée de l'activité de ce partenaire en suivant le format défini dans les instructions système.
+Exploite les notes de contexte (priorité haute), le vocabulaire métier et les correspondances speaker-CRM pour une synthèse riche et précise.
+Mets en avant les connexions relationnelles entre interlocuteurs et projets.`;
 }
+
+// ---- Main handler ----
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -359,9 +489,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    // API key validation is now handled by centralized ai-client
 
-    // Authenticate user
     const authHeader = req.headers.get('Authorization');
     const apiKeyHeader = req.headers.get('apikey');
 
@@ -385,7 +513,6 @@ serve(async (req) => {
 
     const token = authHeader.replace('Bearer ', '');
 
-    // Verify JWT with signing keys and extract claims
     const supabaseAuth = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
       auth: { persistSession: false },
       global: { headers: { Authorization: authHeader } }
@@ -393,9 +520,7 @@ serve(async (req) => {
 
     const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
     if (claimsError || !claimsData?.claims) {
-      console.warn('[partner-consulte] JWT verification failed', {
-        message: claimsError?.message,
-      });
+      console.warn('[partner-consulte] JWT verification failed', { message: claimsError?.message });
       return new Response(
         JSON.stringify({ error: 'Non autorisé', details: claimsError?.message || 'invalid_token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -409,7 +534,6 @@ serve(async (req) => {
 
     console.log(`[partner-consulte] User authenticated: ${userId}, email: ${userEmail}`);
 
-    // Get partner_id from user (exclude soft-deleted)
     const { data: partner, error: partnerError } = await supabase
       .from('partners')
       .select('id, name, partner_type')
@@ -417,38 +541,30 @@ serve(async (req) => {
       .is('deleted_at', null)
       .single();
 
-    console.log(`[partner-consulte] Partner lookup result:`, { partner, partnerError });
-
     if (!partner) {
-      console.error(`[partner-consulte] Partner not found for user ${userId}. Error:`, partnerError);
+      console.error(`[partner-consulte] Partner not found for user ${userId}.`, partnerError);
       return new Response(
         JSON.stringify({ error: 'Partenaire non trouvé', details: partnerError?.message }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`[partner-consulte] Generating synthesis for partner ${partner.name} (${partner.id})`);
+    console.log(`[partner-consulte] Generating enriched synthesis for ${partner.name} (${partner.id})`);
 
-    // Collect context
     const context = await collectPartnerContext(supabase, partner.id);
 
     if (context.projects.length === 0 && context.leads.length === 0) {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: 'Aucune donnée disponible pour générer une synthèse' 
-        }),
+        JSON.stringify({ success: false, message: 'Aucune donnée disponible pour générer une synthèse' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Build prompts
     const systemPrompt = getPartnerSystemPrompt(partner.partner_type || 'partner');
     const userPrompt = buildUserPrompt(context);
 
-    console.log(`[partner-consulte] Calling centralized AI client with ${context.totalTranscriptions} transcriptions...`);
+    console.log(`[partner-consulte] Calling AI with enriched context: ${context.totalTranscriptions} transcriptions, ${context.partnerContextNotes.length} partner notes, ${context.knownParticipantMappings.length} mappings`);
 
-    // Use centralized AI client with automatic DB config lookup
     const synthesis = await callLLM(
       [
         { role: 'system', content: systemPrompt },
@@ -457,29 +573,28 @@ serve(async (req) => {
       { functionName: 'partner-consulte' }
     );
 
-    if (!synthesis) {
-      throw new Error('No synthesis generated');
-    }
+    if (!synthesis) throw new Error('No synthesis generated');
 
-    console.log(`[partner-consulte] Generated synthesis (${synthesis.length} chars)`);
+    console.log(`[partner-consulte] Generated enriched synthesis (${synthesis.length} chars)`);
 
-    // Log activity
     await supabase.from('activity_log').insert({
       workspace_id: '00000000-0000-0000-0000-000000000001',
       entity_type: 'partner',
       entity_id: partner.id,
       activity_type: 'partner_consulte_generated',
-      title: `Synthèse Partner-Consulte générée pour ${partner.name}`,
-      content: `Synthèse de ${context.projects.length} projets, ${context.leads.length} leads, ${context.totalTranscriptions} transcriptions`,
+      title: `Synthèse Partner-Consulte enrichie pour ${partner.name}`,
+      content: `Synthèse de ${context.projects.length} projets, ${context.leads.length} leads, ${context.totalTranscriptions} transcriptions, ${context.partnerContextNotes.length} notes contexte, ${context.knownParticipantMappings.length} mappings participants`,
       is_ai_generated: true,
       ai_metadata: {
-        version: 'v1',
+        version: 'v2-enriched',
         projects_count: context.projects.length,
         leads_count: context.leads.length,
         transcriptions_count: context.totalTranscriptions,
         documents_count: context.totalDocuments,
+        context_notes_count: context.partnerContextNotes.length,
+        vocabulary_terms: context.partnerVocabulary.length,
+        participant_mappings: context.knownParticipantMappings.length,
         synthesis_length: synthesis.length,
-        model: 'google/gemini-2.5-flash'
       }
     });
 
@@ -501,7 +616,7 @@ serve(async (req) => {
     console.error('[partner-consulte] Error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: message }),
+      JSON.stringify({ error: 'Erreur serveur', message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
