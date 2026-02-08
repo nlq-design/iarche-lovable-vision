@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   Brain, Zap, Shield, Sun, ArrowRight, CheckCircle2, AlertTriangle,
   Clock, Sparkles, Plus, Loader2, Calendar, BarChart3, Target, MessageSquare,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, TrendingUp, GitBranch,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,12 +20,13 @@ interface AICopilotPanelProps {
   compact?: boolean;
 }
 
-type TabKey = 'brief' | 'tasks' | 'alerts' | 'health' | 'scoring' | 'meeting';
+type TabKey = 'brief' | 'tasks' | 'alerts' | 'health' | 'scoring' | 'winloss' | 'deadlines';
 
 export function AICopilotPanel({ workspaceId, entityType, entityId, compact = false }: AICopilotPanelProps) {
   const {
     suggestTasks, detectInactivity, healthCheck, morningBrief,
-    suggestNextStep, meetingPrep, opportunityScore, createTasksFromSuggestions,
+    suggestNextStep, meetingPrep, opportunityScore, winLossAnalysis,
+    deadlineCascade, createTasksFromSuggestions,
   } = useCockpitAICopilot(workspaceId);
 
   const [selectedSuggestions, setSelectedSuggestions] = useState<number[]>([]);
@@ -155,6 +156,7 @@ export function AICopilotPanel({ workspaceId, entityType, entityId, compact = fa
     { key: 'brief', label: 'Briefing', icon: Sun, action: () => morningBrief.mutate(), loading: morningBrief.isPending },
     { key: 'tasks', label: 'Suggestions', icon: Sparkles, action: () => suggestTasks.mutate({}), loading: suggestTasks.isPending },
     { key: 'scoring', label: 'Pipeline', icon: BarChart3, action: () => opportunityScore.mutate(), loading: opportunityScore.isPending },
+    { key: 'winloss', label: 'Win/Loss', icon: TrendingUp, action: () => winLossAnalysis.mutate(), loading: winLossAnalysis.isPending },
     { key: 'alerts', label: 'Alertes', icon: Zap, action: () => detectInactivity.mutate(), loading: detectInactivity.isPending },
     { key: 'health', label: 'Santé', icon: Shield, action: () => healthCheck.mutate(), loading: healthCheck.isPending },
   ];
@@ -350,6 +352,130 @@ export function AICopilotPanel({ workspaceId, entityType, entityId, compact = fa
               )}
             </div>
           )}
+
+          {/* WIN/LOSS ANALYSIS (Phase 3) */}
+          {activeTab === 'winloss' && (
+            <div className="space-y-3">
+              {winLossAnalysis.isPending && <LoadingState text="Analyse win/loss en cours..." />}
+              {winLossAnalysis.data?.message && !winLossAnalysis.data.analysis && (
+                <EmptyState text={winLossAnalysis.data.message} />
+              )}
+              {winLossAnalysis.data?.stats && winLossAnalysis.data.analysis && (
+                <>
+                  {/* Stats summary */}
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    <div className="p-3 rounded-lg border border-border text-center">
+                      <div className="text-2xl font-bold text-primary">{winLossAnalysis.data.stats.win_rate}%</div>
+                      <div className="text-xs text-muted-foreground">Taux de conversion</div>
+                    </div>
+                    <div className="p-3 rounded-lg border border-border text-center">
+                      <div className="text-2xl font-bold text-foreground">{winLossAnalysis.data.stats.won}</div>
+                      <div className="text-xs text-muted-foreground">Gagnées</div>
+                    </div>
+                    <div className="p-3 rounded-lg border border-border text-center">
+                      <div className="text-2xl font-bold text-destructive">{winLossAnalysis.data.stats.lost}</div>
+                      <div className="text-xs text-muted-foreground">Perdues</div>
+                    </div>
+                  </div>
+
+                  {/* Win patterns */}
+                  <CollapsibleSection title="✅ Patterns de victoire" items={winLossAnalysis.data.analysis.win_patterns} />
+                  <CollapsibleSection title="❌ Patterns de perte" items={winLossAnalysis.data.analysis.loss_patterns} />
+                  <CollapsibleSection title="🔑 Différenciateurs clés" items={winLossAnalysis.data.analysis.key_differentiators} />
+                  <CollapsibleSection title="🎯 Sources performantes" items={winLossAnalysis.data.analysis.best_sources} />
+                  <CollapsibleSection title="💡 Recommandations" items={winLossAnalysis.data.analysis.recommendations} />
+
+                  {winLossAnalysis.data.analysis.critical_stage && (
+                    <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                      <span className="text-xs font-medium">Stage critique : </span>
+                      <Badge variant="secondary">{winLossAnalysis.data.analysis.critical_stage}</Badge>
+                    </div>
+                  )}
+                </>
+              )}
+              {!winLossAnalysis.data && !winLossAnalysis.isPending && (
+                <EmptyState text="Cliquez sur Win/Loss pour analyser vos patterns de conversion" />
+              )}
+            </div>
+          )}
+
+          {/* DEADLINE CASCADE (Phase 3) — available in compact/project mode */}
+          {activeTab === 'deadlines' && (
+            <div className="space-y-3">
+              {deadlineCascade.isPending && <LoadingState text="Analyse des deadlines..." />}
+              {deadlineCascade.data?.cascade && (
+                <>
+                  <div className="p-3 rounded-lg border border-border">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Badge variant={
+                        deadlineCascade.data.cascade.deadline_feasibility === 'on_track' ? 'default' :
+                        deadlineCascade.data.cascade.deadline_feasibility === 'at_risk' ? 'secondary' : 'destructive'
+                      }>
+                        {deadlineCascade.data.cascade.deadline_feasibility === 'on_track' ? 'Tenable' :
+                         deadlineCascade.data.cascade.deadline_feasibility === 'at_risk' ? 'À risque' : 'Impossible'}
+                      </Badge>
+                      {deadlineCascade.data.cascade.days_at_risk > 0 && (
+                        <span className="text-xs text-destructive font-medium">+{deadlineCascade.data.cascade.days_at_risk}j de retard estimé</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{deadlineCascade.data.cascade.overall_status}</p>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-4 gap-2">
+                    <div className="text-center p-2 rounded-lg bg-muted/50">
+                      <div className="text-lg font-bold">{deadlineCascade.data.stats.total_tasks}</div>
+                      <div className="text-xs text-muted-foreground">Total</div>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-primary/10">
+                      <div className="text-lg font-bold text-primary">{deadlineCascade.data.stats.completed}</div>
+                      <div className="text-xs text-muted-foreground">Faites</div>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-muted/50">
+                      <div className="text-lg font-bold">{deadlineCascade.data.stats.pending}</div>
+                      <div className="text-xs text-muted-foreground">En cours</div>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-destructive/10">
+                      <div className="text-lg font-bold text-destructive">{deadlineCascade.data.stats.overdue}</div>
+                      <div className="text-xs text-muted-foreground">Retard</div>
+                    </div>
+                  </div>
+
+                  <CollapsibleSection title="🔴 Chemin critique" items={deadlineCascade.data.cascade.critical_path} />
+
+                  {/* Tasks to reschedule */}
+                  {deadlineCascade.data.cascade.tasks_to_reschedule?.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium flex items-center gap-1"><Calendar className="h-3 w-3" /> Tâches à replanifier</h4>
+                      {deadlineCascade.data.cascade.tasks_to_reschedule.map((t, i) => (
+                        <div key={i} className="p-2 rounded-md border border-border text-xs">
+                          <div className="font-medium">{t.task_title}</div>
+                          <div className="flex items-center gap-2 mt-1 text-muted-foreground">
+                            <span className="line-through">{t.current_due}</span>
+                            <ArrowRight className="h-3 w-3" />
+                            <span className="text-primary font-medium">{t.suggested_due}</span>
+                          </div>
+                          <p className="text-muted-foreground/70 mt-1">{t.reason}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {deadlineCascade.data.cascade.impact_on_opportunities && (
+                    <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                      <span className="text-xs font-medium">Impact opportunités : </span>
+                      <span className="text-xs text-muted-foreground">{deadlineCascade.data.cascade.impact_on_opportunities}</span>
+                    </div>
+                  )}
+
+                  <CollapsibleSection title="💡 Recommandations" items={deadlineCascade.data.cascade.recommendations} />
+                </>
+              )}
+              {!deadlineCascade.data && !deadlineCascade.isPending && (
+                <EmptyState text="Sélectionnez un projet pour analyser les deadlines" />
+              )}
+            </div>
+          )}
         </ScrollArea>
       </CardContent>
     </Card>
@@ -414,6 +540,30 @@ function MeetingPrepCard({ briefing, booking }: { briefing: any; booking: any })
         })}
       </CardContent>
     </Card>
+  );
+}
+
+function CollapsibleSection({ title, items }: { title: string; items?: string[] }) {
+  const [open, setOpen] = useState(false);
+  if (!items?.length) return null;
+  return (
+    <div className="border border-border rounded-md">
+      <button className="w-full flex items-center justify-between p-2 text-left text-sm font-medium hover:bg-muted/50 transition-colors"
+        onClick={() => setOpen(!open)}>
+        <span>{title}</span>
+        {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+      </button>
+      {open && (
+        <ul className="px-3 pb-2 text-xs text-muted-foreground space-y-1">
+          {items.map((item, i) => (
+            <li key={i} className="flex items-start gap-1.5">
+              <span className="text-primary mt-0.5">•</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
