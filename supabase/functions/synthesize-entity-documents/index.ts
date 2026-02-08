@@ -528,26 +528,38 @@ async function collectTasks(supabase: any, entityType: EntityType, entityId: str
   } else if (entityType === 'project') {
     const { data } = await supabase.from('tasks').select('*').eq('project_id', entityId);
     tasks = data || [];
+  } else if (entityType === 'partner') {
+    // Partner: fetch tasks from all projects they're linked to
+    try {
+      const { data: links } = await supabase.from('project_partners').select('project_id').eq('partner_id', entityId);
+      if (links?.length) {
+        const { data } = await supabase.from('tasks').select('*').in('project_id', links.map((l: any) => l.project_id)).limit(30);
+        tasks = data || [];
+      }
+    } catch { /* non-blocking */ }
   }
   tasks.forEach(t => {
+    const sourceLabel = entityType === 'partner' ? ' (via Projet)' : '';
     events.push({
       date: formatDate(t.due_date || t.created_at),
       dateObj: new Date(t.due_date || t.created_at),
-      type: 'Tâche',
+      type: `Tâche${sourceLabel}`,
       title: t.title,
       content: `Statut: ${t.status}, Priorité: ${t.priority}${t.description ? `. ${t.description}` : ''}`
     });
   });
 }
 
-async function collectBookings(supabase: any, entityType: EntityType, entityId: string, events: ChronologicalEvent[]) {
-  if (entityType !== 'lead') return;
-  const { data } = await supabase.from('bookings').select('*').eq('lead_id', entityId);
+async function collectBookings(supabase: any, entityType: EntityType, entityId: string, events: ChronologicalEvent[], enrichLeadId?: string | null) {
+  const leadId = entityType === 'lead' ? entityId : enrichLeadId;
+  if (!leadId) return;
+  const { data } = await supabase.from('bookings').select('*').eq('lead_id', leadId);
   (data || []).forEach((b: any) => {
+    const sourceLabel = entityType !== 'lead' ? ' (via Lead)' : '';
     events.push({
       date: formatDate(b.start_time),
       dateObj: new Date(b.start_time),
-      type: 'RDV',
+      type: `RDV${sourceLabel}`,
       title: `RDV avec ${b.name}`,
       content: `Statut: ${b.status}${b.message ? `. ${b.message}` : ''}`
     });
@@ -563,12 +575,22 @@ async function collectGeneratedDocuments(supabase: any, entityType: EntityType, 
   } else if (entityType === 'project') {
     const { data } = await supabase.from('generated_documents').select('*').eq('project_id', entityId);
     docs = data || [];
+  } else if (entityType === 'partner') {
+    // Partner: fetch documents via document_partners junction
+    try {
+      const { data: links } = await supabase.from('document_partners').select('document_id').eq('partner_id', entityId);
+      if (links?.length) {
+        const { data } = await supabase.from('generated_documents').select('*').in('id', links.map((l: any) => l.document_id));
+        docs = data || [];
+      }
+    } catch { /* non-blocking */ }
   }
   docs.forEach(d => {
+    const sourceLabel = entityType === 'partner' ? ' (via Partenaire)' : '';
     events.push({
       date: formatDate(d.created_at),
       dateObj: new Date(d.created_at),
-      type: 'Document généré',
+      type: `Document généré${sourceLabel}`,
       title: d.title,
       content: `Type: ${d.document_type}, Version: ${d.version || '1.0'}, Statut: ${d.status}`
     });
@@ -713,6 +735,36 @@ async function collectLeads(supabase: any, entityType: EntityType, entityId: str
       });
     }
   }
+}
+
+// Collect email communication history
+async function collectEmailHistory(supabase: any, entityType: EntityType, entityId: string, events: ChronologicalEvent[], enrichLeadId?: string | null) {
+  try {
+    // Get lead email for matching
+    const leadId = entityType === 'lead' ? entityId : enrichLeadId;
+    if (!leadId) return;
+    
+    const { data: lead } = await supabase.from('leads').select('email').eq('id', leadId).maybeSingle();
+    if (!lead?.email) return;
+
+    const { data: emails } = await supabase
+      .from('email_logs')
+      .select('email_type, subject, status, sent_at, source_type, created_at')
+      .eq('recipient_email', lead.email)
+      .order('created_at', { ascending: false })
+      .limit(15);
+
+    for (const e of emails || []) {
+      const sourceLabel = entityType !== 'lead' ? ' (via Lead)' : '';
+      events.push({
+        date: formatDate(e.sent_at || e.created_at),
+        dateObj: new Date(e.sent_at || e.created_at),
+        type: `Email${sourceLabel}`,
+        title: e.subject,
+        content: `Type: ${e.email_type}, Statut: ${e.status}, Source: ${e.source_type}`
+      });
+    }
+  } catch { /* non-blocking */ }
 }
 
 // Collect context notes (user-provided context for AI synthesis)
@@ -960,29 +1012,49 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
   }
   const enrichProjectId = entityType === 'transcription' ? entityData?.project_id : (entityType === 'project' ? entityId : null);
 
-  // Collect all data in parallel (including Phase A-C enrichments + new sources)
-  const [, , , , , , , , , , , contextNotes, vocabulary, participantMappings, relationalNetwork, leadContacts, meetingNotes, activityLog] = await Promise.all([
+  // Collect all data in parallel (including Phase A-C enrichments + new sources + Phase 3 completeness)
+  const [, , , , , , , , , , , , contextNotes, vocabulary, participantMappings, relationalNetwork, leadContacts, meetingNotes, projectMeetingNotes, activityLog, linkedActivityLog] = await Promise.all([
     collectUploadedFiles(supabase, entityType, entityId, events, linkedEntities),
     collectTranscriptions(supabase, entityType, entityId, events, linkedEntities),
     collectPartners(supabase, entityType, entityId, events, linkedEntities),
     collectTasks(supabase, entityType, entityId, events),
-    collectBookings(supabase, entityType, entityId, events),
+    collectBookings(supabase, entityType, entityId, events, enrichLeadId),
     collectGeneratedDocuments(supabase, entityType, entityId, events, linkedEntities),
     collectOpportunities(supabase, entityType, entityId, events, linkedEntities),
     collectProjects(supabase, entityType, entityId, events, linkedEntities),
     collectSolutions(supabase, entityType, entityId, events, linkedEntities),
     collectLeads(supabase, entityType, entityId, events, linkedEntities),
-    // Phase 2: entity_name_references — auto-detected links
     collectEntityNameReferences(supabase, entityType, entityId, linkedEntities),
+    // Phase 3: Email history cascading via enrichLeadId
+    collectEmailHistory(supabase, entityType, entityId, events, enrichLeadId),
     collectContextNotes(supabase, entityType, entityId),
     collectVocabulary(supabase, entityType, entityId),
     collectParticipantMappings(supabase),
     collectRelationalNetwork(supabase, entityType, entityId),
-    // New enrichment sources - use cross-entity IDs for transcriptions
     enrichLeadId ? fetchLeadContacts(supabase, enrichLeadId) : Promise.resolve([]),
-    fetchMeetingNotes(supabase, enrichLeadId ? 'lead' : entityType, enrichLeadId || entityId),
+    // Phase 3: Meeting notes — fetch for lead AND project separately
+    enrichLeadId ? fetchMeetingNotes(supabase, 'lead', enrichLeadId) : Promise.resolve([]),
+    enrichProjectId ? fetchMeetingNotes(supabase, 'project', enrichProjectId) : Promise.resolve([]),
     fetchActivityLog(supabase, entityType, entityId),
+    // Phase 3: Activity log for linked lead (if different from current entity)
+    (enrichLeadId && entityType !== 'lead') ? fetchActivityLog(supabase, 'lead', enrichLeadId) : Promise.resolve([]),
   ]);
+
+  // Merge meeting notes from lead + project (deduplicate by created_at)
+  const allMeetingNotes = [...meetingNotes];
+  for (const pn of projectMeetingNotes) {
+    if (!allMeetingNotes.find(m => m.created_at === pn.created_at)) {
+      allMeetingNotes.push(pn);
+    }
+  }
+
+  // Merge activity logs (deduplicate by created_at + activity_type)
+  const allActivityLog = [...activityLog];
+  for (const la of linkedActivityLog) {
+    if (!allActivityLog.find(a => a.created_at === la.created_at && a.activity_type === la.activity_type)) {
+      allActivityLog.push(la);
+    }
+  }
 
   // ====== Phase 1: Cross-enrichissement des entités liées ======
   const linkedSyntheses: GraphData['linkedSyntheses'] = [];
@@ -1081,9 +1153,9 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
   // Merge cross-vocabulary into main vocabulary
   const mergedVocabulary = [...vocabulary, ...crossVocabulary];
 
-  console.log(`[synthesize-v2] Enrichment: ${contextNotes.length} notes, ${mergedVocabulary.length} vocab (${crossVocabulary.length} croisé), ${participantMappings.length} mappings, ${relationalNetwork.length} network nodes, ${leadContacts.length} contacts, ${meetingNotes.length} meeting notes, ${activityLog.length} activities, ${linkedSyntheses.length} synthèses liées, ${crossContextNotes.length} notes croisées`);
+  console.log(`[synthesize-v2] Enrichment: ${contextNotes.length} notes, ${mergedVocabulary.length} vocab (${crossVocabulary.length} croisé), ${participantMappings.length} mappings, ${relationalNetwork.length} network nodes, ${leadContacts.length} contacts, ${allMeetingNotes.length} meeting notes, ${allActivityLog.length} activities (${linkedActivityLog.length} liées), ${linkedSyntheses.length} synthèses liées, ${crossContextNotes.length} notes croisées`);
 
-  return { entityName, entityInfo, events, linkedEntities, provenance, contextNotes, vocabulary: mergedVocabulary, participantMappings, relationalNetwork, leadContacts, meetingNotes, activityLog, linkedSyntheses, crossContextNotes };
+  return { entityName, entityInfo, events, linkedEntities, provenance, contextNotes, vocabulary: mergedVocabulary, participantMappings, relationalNetwork, leadContacts, meetingNotes: allMeetingNotes, activityLog: allActivityLog, linkedSyntheses, crossContextNotes };
 }
 
 // ============= MAIN HANDLER =============
