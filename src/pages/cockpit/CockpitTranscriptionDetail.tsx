@@ -124,18 +124,10 @@ export default function CockpitTranscriptionDetail() {
   // Chunking retry state (for transcription timeout recovery)
   const [isChunkingRetry, setIsChunkingRetry] = useState(false);
   const [chunkingProgress, setChunkingProgress] = useState<TranscriptionProgress | null>(null);
-
-  // Auto-start processing for queued transcriptions
-  const autoStartForIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!transcription?.id) return;
-    if (transcription.status !== 'queued') return;
-    if (autoStartForIdRef.current === transcription.id) return;
-
-    autoStartForIdRef.current = transcription.id;
-    toast.info('Lancement du traitement de la transcription...');
-    processTranscription.mutate({ jobId: transcription.id }, { onSuccess: () => refetch() });
-  }, [transcription?.id, transcription?.status]);
+  // Auto-start removed: the worker handles queued jobs automatically.
+  // The old useEffect was causing infinite re-queue loops by calling processTranscription.mutate
+  // on every render when status was 'queued', which reset the flags and confused the worker.
+  // on every render when status was 'queued', which reset the flags and confused the worker.
 
   useEffect(() => {
     if (transcription) {

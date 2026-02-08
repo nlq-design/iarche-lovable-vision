@@ -188,7 +188,8 @@ export function useCockpitVoiceTranscriptions(
           partners:transcription_partners(partner:partners(id, name, slug, partner_type))
         `)
         .eq('workspace_id', workspaceId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(200);
 
       if (entityType === 'lead' && entityId) {
         query = query.eq('lead_id', entityId);
@@ -204,14 +205,17 @@ export function useCockpitVoiceTranscriptions(
     },
     staleTime: 60 * 1000,
     refetchOnWindowFocus: false,
-    // Auto-poll when any job is processing
+    // Auto-poll when any job is processing, but stop on errors to prevent flooding
     refetchInterval: (query) => {
+      // Stop polling if the query is in error state
+      if (query.state.status === 'error') return false;
       const list = query.state.data as VoiceTranscription[] | undefined;
       const hasProcessing = list?.some(t => 
         t.status === 'queued' || t.status === 'transcribing' || t.status === 'analyzing'
       );
-      return hasProcessing ? 10_000 : false;
+      return hasProcessing ? 15_000 : false; // 15s to reduce DB load
     },
+    retry: 1, // Don't retry too many times on 500s
   });
 
   // Fetch single transcription — auto-polls when job is processing
@@ -236,14 +240,16 @@ export function useCockpitVoiceTranscriptions(
         return data as unknown as VoiceTranscription;
       },
       enabled: !!id,
-      // Auto-poll every 10s when job is in a processing state
+      // Auto-poll every 15s when job is in a processing state, stop on errors
       refetchInterval: (query) => {
+        if (query.state.status === 'error') return false;
         const status = query.state.data?.status;
         if (status === 'queued' || status === 'transcribing' || status === 'analyzing') {
-          return 10_000; // 10 seconds
+          return 15_000;
         }
-        return false; // stop polling when done/error
+        return false;
       },
+      retry: 1,
     });
     return query;
   };
