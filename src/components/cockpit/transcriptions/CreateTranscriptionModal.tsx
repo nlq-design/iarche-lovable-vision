@@ -34,8 +34,9 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { Upload, Mic, MicOff, Loader2, User, FolderOpen, Package, Check, ChevronsUpDown, FileText, CalendarIcon, Scissors } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useCockpitVoiceTranscriptions, useAIPromptProfiles } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
+import { useCockpitVoiceTranscriptions, useAIPromptProfiles, type ExpectedParticipant } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { useCockpitLeads, useCockpitProjects, useCockpitMeetingNotes } from '@/hooks/cockpit';
+import { ParticipantPicker } from './ParticipantPicker';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -99,6 +100,7 @@ export function CreateTranscriptionModal({
   const [entitySearchOpen, setEntitySearchOpen] = useState(false);
   const [transcriptionDate, setTranscriptionDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [analysisContext, setAnalysisContext] = useState<string>('');
+  const [expectedParticipants, setExpectedParticipants] = useState<ExpectedParticipant[]>([]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -133,6 +135,7 @@ export function CreateTranscriptionModal({
     setAutoCreateTasks(true);
     setTranscriptionDate(format(new Date(), 'yyyy-MM-dd'));
     setAnalysisContext('');
+    setExpectedParticipants([]);
     setUploadProgress({ current: 0, total: 0 });
     setChunkingProgress(null);
   }, []);
@@ -315,6 +318,7 @@ export function CreateTranscriptionModal({
                 duration_seconds: audioMeta.duration,
                 audio_format: audioMeta.format,
                 analysis_context: analysisContext.trim() || null,
+                expected_participants: expectedParticipants.length > 0 ? expectedParticipants : null,
               });
 
               // Process for AI synthesis (AssemblyAI transcription + LLM analysis)
@@ -351,6 +355,7 @@ export function CreateTranscriptionModal({
               duration_seconds: audioMeta.duration,
               audio_format: audioMeta.format,
               analysis_context: analysisContext.trim() || null,
+              expected_participants: expectedParticipants.length > 0 ? expectedParticipants : null,
             });
 
             processTranscription.mutate({ jobId: job.id });
@@ -622,6 +627,9 @@ export function CreateTranscriptionModal({
               </SelectContent>
             </Select>
           </div>
+
+          {/* Participants attendus */}
+          <ParticipantPicker value={expectedParticipants} onChange={setExpectedParticipants} />
 
           {/* Contexte d'analyse */}
           <div className="space-y-2">

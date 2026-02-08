@@ -306,6 +306,8 @@ function buildLLMInput(
   // deno-lint-ignore no-explicit-any
   ctx: any,
   analysisContext: string | null,
+  // deno-lint-ignore no-explicit-any
+  expectedParticipants: any[] = [],
 ): string {
   const chapterSummaries = segments?.chapters
     // deno-lint-ignore no-explicit-any
@@ -322,6 +324,7 @@ function buildLLMInput(
     chapter_summaries: chapterSummaries,
     assemblyai_entities: assemblyEntities,
     existing_entities: ctx.existingEntities,
+    expected_participants: expectedParticipants.length > 0 ? expectedParticipants : undefined,
     crm_context: {
       lead: ctx.lead ? { id: ctx.lead.id, name: ctx.lead.name, company: ctx.lead.company } : null,
       project: ctx.project ? { id: ctx.project.id, name: ctx.project.name } : null,
@@ -521,13 +524,26 @@ serve(async (req) => {
         .from(bucket).createSignedUrl(storagePath, 600);
       if (signErr || !signed?.signedUrl) throw new Error(`signed_url_failed: ${signErr?.message ?? "no_url"}`);
 
-      // Custom vocabulary
+      // Custom vocabulary: keyword aliases + expected participant names
       let wordBoost: string[] = [];
       try {
         const { data: aliases } = await supabase.from("keyword_aliases")
           .select("canonical_name").eq("is_active", true).limit(100);
         if (aliases?.length) wordBoost = aliases.map((a: any) => a.canonical_name).filter(Boolean);
       } catch { /* non-blocking */ }
+
+      // Add expected participant names to word_boost for better recognition
+      const expectedParticipants = (aiMeta?.expected_participants as any[]) || [];
+      if (expectedParticipants.length) {
+        const participantNames = expectedParticipants
+          .map((p: any) => p.name)
+          .filter(Boolean);
+        const participantCompanies = expectedParticipants
+          .map((p: any) => p.company)
+          .filter(Boolean);
+        wordBoost = [...wordBoost, ...participantNames, ...participantCompanies];
+        log("WordBoost", `Added ${participantNames.length} participant names + ${participantCompanies.length} companies`);
+      }
 
       // Transcribe with all features
       log("AssemblyAI", `Transcribing with ALL features (best model, auto-lang, diarization, chapters, entities, sentiment)...`);
@@ -591,7 +607,8 @@ serve(async (req) => {
 
     const ctx = await fetchContext(supabase, job);
     const analysisContext = job.analysis_context as string | null;
-    const llmInput = buildLLMInput(rawText, segments, ctx, analysisContext);
+    const expectedParticipants = (aiMeta?.expected_participants as any[]) || [];
+    const llmInput = buildLLMInput(rawText, segments, ctx, analysisContext, expectedParticipants);
 
     await supabase.from("voice_transcriptions").update({
       ai_metadata: {
@@ -656,6 +673,45 @@ serve(async (req) => {
     try {
       entityStats = await processEntities(supabase, jobId!, summary.detected_entities as any[]);
     } catch (e) { logErr("Entities", e); }
+
+    // Seed transcription_participants from expected + LLM-detected participants
+    try {
+      const expectedParts = (aiMeta?.expected_participants as any[]) || [];
+      const llmParts = (summary.participants as any[]) || [];
+      const participantRows: any[] = [];
+
+      // Expected participants (pre-selected by user)
+      for (const ep of expectedParts) {
+        if (!ep.name) continue;
+        const linkedType = ep.type === 'manual' ? null : ep.type;
+        participantRows.push({
+          transcription_id: jobId,
+          name: ep.name,
+          presence_status: 'present',
+          linked_entity_type: linkedType,
+          linked_entity_id: ep.entity_id || null,
+        });
+      }
+
+      // LLM-detected participants (merge, don't overwrite expected)
+      const existingNames = new Set(participantRows.map(p => p.name.toLowerCase()));
+      for (const lp of llmParts) {
+        if (!lp.name || existingNames.has(lp.name.toLowerCase())) continue;
+        participantRows.push({
+          transcription_id: jobId,
+          name: lp.name,
+          presence_status: 'present',
+          ai_suggested_match: lp.crm_match || null,
+          confidence_score: lp.crm_match?.confidence || null,
+        });
+      }
+
+      if (participantRows.length > 0) {
+        await supabase.from("transcription_participants")
+          .upsert(participantRows, { onConflict: 'transcription_id,name', ignoreDuplicates: true });
+        log("Participants", `Seeded ${participantRows.length} participants`);
+      }
+    } catch (e) { logErr("Participants seeding", e); }
 
     // Activity log
     await supabase.from("activity_log").insert({

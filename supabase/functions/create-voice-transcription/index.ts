@@ -65,6 +65,7 @@ serve(async (req) => {
       duration_seconds = null,
       audio_format = null,
       analysis_context = null,
+      expected_participants = null,
     } = body;
 
     // Convert empty strings to null for UUID fields
@@ -88,6 +89,10 @@ serve(async (req) => {
     if (pre_transcribed_text) {
       initialMetadata.chunked_client_side = true;
       initialMetadata.pre_transcribed = true;
+    }
+
+    if (expected_participants?.length) {
+      initialMetadata.expected_participants = expected_participants;
     }
 
     const { data, error } = await supabase
