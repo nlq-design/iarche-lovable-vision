@@ -29,8 +29,8 @@ export const useLeads = () => {
       if (error) throw error;
       return data as Lead[];
     },
-    staleTime: 60 * 1000, // 1 minute cache
-    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
   });
 
   // Default workspace ID (IArche Interne) - Phase 1.5 multi-tenant

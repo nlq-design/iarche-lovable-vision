@@ -1,4 +1,4 @@
-// Cockpit Dashboard v3.0 — Intelligent & Clean
+// Cockpit Dashboard v4.0 — Fully Dynamic & Realtime
 import { useState } from 'react';
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import {
   Users, Target, Calendar, FolderKanban, TrendingUp, Clock,
   AlertCircle, CheckCircle2, Plus, FileText, Mail, Phone,
@@ -16,6 +16,7 @@ import {
   useCockpitLeads, useCockpitOpportunities, useCockpitTasks,
   useCockpitBookings, useCockpitMeetingNotes, useCockpitActivityLog,
 } from '@/hooks/cockpit';
+import { useDashboardRealtime } from '@/hooks/cockpit/useDashboardRealtime';
 import { CreateTaskDialog } from '@/components/cockpit/dialogs';
 import { HarvestInterviewPanel } from '@/components/cockpit/HarvestInterviewPanel';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -28,6 +29,9 @@ export default function CockpitDashboard() {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [harvestOpen, setHarvestOpen] = useState(false);
   const navigate = useNavigate();
+
+  // Enable realtime subscriptions for all dashboard data
+  useDashboardRealtime();
 
   const { stats: leadStats, isLoading: leadsLoading } = useCockpitLeads();
   const { stats: oppStats, isLoading: oppsLoading } = useCockpitOpportunities();
@@ -113,6 +117,9 @@ export default function CockpitDashboard() {
                   <Wheat className="h-5 w-5" />
                   Récolte des tâches IA
                 </SheetTitle>
+                <SheetDescription>
+                  Transformez les tâches IA en retard en connaissance ou nouvelles actions
+                </SheetDescription>
               </SheetHeader>
               <div className="mt-4">
                 <HarvestInterviewPanel />
@@ -355,8 +362,8 @@ function StagnantWidget() {
         .limit(4);
       return data || [];
     },
-    staleTime: 2 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
   });
 
   if (isLoading || stagnant.length === 0) return null;
