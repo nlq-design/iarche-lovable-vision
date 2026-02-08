@@ -1279,12 +1279,101 @@ Réponds en français.`,
       break;
   }
 
+  // =========================================================================
+  // CASCADE: Propagate staleness to linked entities (transcription → lead → project)
+  // =========================================================================
+  await propagateHarvestCascade(supabase, tasks, resolvedWorkspaceId, action, response);
+
   return {
     processed: taskIds.length,
     action,
     new_tasks: newTasks,
     message: `${taskIds.length} tâche(s) traitée(s) avec l'action "${action}".`,
   };
+}
+
+/**
+ * Post-harvest cascade: marks linked entities as stale and propagates up the chain.
+ * Transcription → Lead → Project (full parent cascade)
+ */
+async function propagateHarvestCascade(supabase: any, tasks: any[], workspaceId: string, action: string, response: string) {
+  const entitySet = new Map<string, string>();
+  for (const t of tasks) {
+    if (t.entity_id && t.entity_type) {
+      entitySet.set(t.entity_id, t.entity_type);
+    }
+  }
+
+  const staleUpdates: Array<{ table: string; id: string }> = [];
+  const activityInserts: Array<Record<string, unknown>> = [];
+
+  for (const [entityId, entityType] of entitySet) {
+    const directTable = entityTypeToTable(entityType);
+    if (directTable) {
+      staleUpdates.push({ table: directTable, id: entityId });
+    }
+
+    activityInserts.push({
+      workspace_id: workspaceId,
+      entity_type: entityType,
+      entity_id: entityId,
+      activity_type: "ai_harvest_cascade",
+      title: `Récolte terminée: ${tasks.filter(t => t.entity_id === entityId).length} tâche(s) traitée(s)`,
+      content: response ? `Action: ${action}. Note: ${response}` : `Action: ${action}`,
+      is_ai_generated: true,
+    });
+
+    if (entityType === "voice_transcription") {
+      const { data: transcription } = await supabase
+        .from("voice_transcriptions").select("lead_id, project_id").eq("id", entityId).single();
+      if (transcription?.lead_id) {
+        staleUpdates.push({ table: "leads", id: transcription.lead_id });
+        activityInserts.push({
+          workspace_id: workspaceId, entity_type: "lead", entity_id: transcription.lead_id,
+          activity_type: "ai_harvest_cascade", title: `Récolte propagée depuis transcription`, is_ai_generated: true,
+        });
+        const { data: leadProjects } = await supabase
+          .from("projects").select("id").eq("lead_id", transcription.lead_id).limit(10);
+        for (const p of leadProjects || []) {
+          staleUpdates.push({ table: "projects", id: p.id });
+        }
+      }
+      if (transcription?.project_id) {
+        staleUpdates.push({ table: "projects", id: transcription.project_id });
+      }
+    } else if (entityType === "lead") {
+      const { data: leadProjects } = await supabase
+        .from("projects").select("id").eq("lead_id", entityId).limit(10);
+      for (const p of leadProjects || []) {
+        staleUpdates.push({ table: "projects", id: p.id });
+      }
+    } else if (entityType === "project") {
+      const { data: project } = await supabase
+        .from("projects").select("lead_id").eq("id", entityId).single();
+      if (project?.lead_id) {
+        staleUpdates.push({ table: "leads", id: project.lead_id });
+      }
+    }
+  }
+
+  const uniqueStale = [...new Map(staleUpdates.map(s => [`${s.table}:${s.id}`, s])).values()];
+  await Promise.all(
+    uniqueStale.map(({ table, id }) =>
+      supabase.from(table).update({ synthesis_stale: true }).eq("id", id)
+    )
+  );
+
+  if (activityInserts.length > 0) {
+    await supabase.from("activity_log").insert(activityInserts);
+  }
+}
+
+function entityTypeToTable(entityType: string): string | null {
+  const map: Record<string, string> = {
+    voice_transcription: "voice_transcriptions", lead: "leads", project: "projects",
+    opportunity: "opportunities", partner: "partners",
+  };
+  return map[entityType] || null;
 }
 
 // =============================================================================
