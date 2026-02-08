@@ -95,7 +95,7 @@ serve(async (req) => {
 
     console.log(`[worker] Processing job ${nextJob.id} (created ${nextJob.created_at})`);
 
-    // 4. Determine if this is a pre-transcribed job (has raw_transcript already)
+    // 4. Determine transcription strategy based on source
     const { data: fullJob } = await supabase
       .from("voice_transcriptions")
       .select("raw_transcript, ai_metadata")
@@ -104,20 +104,22 @@ serve(async (req) => {
 
     const hasPreTranscript = !!fullJob?.raw_transcript?.trim();
     const isNoFile = nextJob.storage_path?.endsWith("_no_file");
+    const isAssemblyAI = (fullJob?.ai_metadata as any)?.source === 'assemblyai';
 
     // 5. Invoke process-voice-transcription
     const invokeBody: Record<string, unknown> = { job_id: nextJob.id };
     
-    if (hasPreTranscript && !isNoFile) {
-      // Has pre-transcribed text (from client chunking or text input)
-      // Just needs LLM analysis
+    if (isNoFile) {
+      // No audio file — LLM analysis only on existing text
       invokeBody.force_reanalyze = true;
-    } else if (!isNoFile) {
-      // Needs full pipeline: AssemblyAI transcription + LLM analysis
-      invokeBody.force_retranscribe = true;
+    } else if (isAssemblyAI && hasPreTranscript) {
+      // Already transcribed by AssemblyAI — just re-analyze with LLM
+      invokeBody.force_reanalyze = true;
     } else {
-      // No file, just LLM analysis on existing text
-      invokeBody.force_reanalyze = true;
+      // New job OR legacy transcript (Whisper/other) — full AssemblyAI pipeline
+      // This ensures all non-AssemblyAI transcripts get properly re-transcribed
+      invokeBody.force_retranscribe = true;
+      console.log(`[worker] Job ${nextJob.id}: ${hasPreTranscript ? 'legacy transcript detected, forcing AssemblyAI re-transcription' : 'new job, full pipeline'}`);
     }
 
     console.log(`[worker] Invoking process-voice-transcription: ${JSON.stringify(invokeBody)}`);

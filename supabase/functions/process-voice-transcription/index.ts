@@ -26,7 +26,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ASSEMBLYAI_API_KEY = Deno.env.get("ASSEMBLYAI_API_KEY");
 
 const LLM_TIMEOUT_MS = 90_000;
-const ASSEMBLYAI_MAX_WAIT_MS = 300_000;
+const ASSEMBLYAI_MAX_WAIT_MS = 600_000; // 10 min — enough for files up to ~2h
 const MAX_TRANSCRIPT_FOR_LLM = 25_000;
 
 // ============= HELPERS =============
