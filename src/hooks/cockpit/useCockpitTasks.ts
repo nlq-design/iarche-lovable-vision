@@ -15,7 +15,7 @@ export function useCockpitTasks(workspaceId?: string, entityType?: string, entit
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch tasks
+  // Fetch tasks — exclude harvested/cancelled, apply sensible limit
   const { data: tasks, isLoading, error, refetch } = useQuery({
     queryKey: ['cockpit-tasks', workspaceId, entityType, entityId],
     queryFn: async () => {
@@ -27,6 +27,7 @@ export function useCockpitTasks(workspaceId?: string, entityType?: string, entit
           opportunities:opportunity_id (id, title),
           projects:project_id (id, name)
         `)
+        .not('status', 'in', '("harvested","cancelled")')
         .order('due_date', { ascending: true, nullsFirst: false })
         .order('priority', { ascending: false });
 
@@ -38,7 +39,8 @@ export function useCockpitTasks(workspaceId?: string, entityType?: string, entit
         query = query.eq('entity_type', entityType).eq('entity_id', entityId);
       }
 
-      const { data, error } = await query;
+      // Paginate to avoid Supabase 1000-row default limit
+      const { data, error } = await query.limit(2000);
       if (error) throw error;
       return data;
     },
