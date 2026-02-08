@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   Brain, Zap, Shield, Sun, ArrowRight, CheckCircle2, AlertTriangle,
   Clock, Sparkles, Plus, Loader2, Calendar, BarChart3, Target, MessageSquare,
-  ChevronDown, ChevronUp, TrendingUp, GitBranch,
+  ChevronDown, ChevronUp, TrendingUp, GitBranch, Wheat,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { useCockpitAICopilot } from '@/hooks/cockpit/useCockpitAICopilot';
+import { HarvestInterviewPanel } from './HarvestInterviewPanel';
 import ReactMarkdown from 'react-markdown';
 
 interface AICopilotPanelProps {
@@ -20,7 +21,7 @@ interface AICopilotPanelProps {
   compact?: boolean;
 }
 
-type TabKey = 'brief' | 'tasks' | 'alerts' | 'health' | 'scoring' | 'winloss' | 'deadlines';
+type TabKey = 'brief' | 'tasks' | 'alerts' | 'health' | 'scoring' | 'winloss' | 'deadlines' | 'harvest';
 
 export function AICopilotPanel({ workspaceId, entityType, entityId, compact = false }: AICopilotPanelProps) {
   const {
@@ -159,6 +160,7 @@ export function AICopilotPanel({ workspaceId, entityType, entityId, compact = fa
     { key: 'winloss', label: 'Win/Loss', icon: TrendingUp, action: () => winLossAnalysis.mutate(), loading: winLossAnalysis.isPending },
     { key: 'alerts', label: 'Alertes', icon: Zap, action: () => detectInactivity.mutate(), loading: detectInactivity.isPending },
     { key: 'health', label: 'Santé', icon: Shield, action: () => healthCheck.mutate(), loading: healthCheck.isPending },
+    { key: 'harvest', label: 'Récolte', icon: Wheat, action: () => {}, loading: false },
   ];
 
   return (
@@ -475,6 +477,11 @@ export function AICopilotPanel({ workspaceId, entityType, entityId, compact = fa
                 <EmptyState text="Sélectionnez un projet pour analyser les deadlines" />
               )}
             </div>
+          )}
+
+          {/* HARVEST INTERVIEW */}
+          {activeTab === 'harvest' && (
+            <HarvestInterviewPanel workspaceId={workspaceId} />
           )}
         </ScrollArea>
       </CardContent>
