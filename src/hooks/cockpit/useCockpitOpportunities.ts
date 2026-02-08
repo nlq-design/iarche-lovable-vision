@@ -33,8 +33,8 @@ export function useCockpitOpportunities(workspaceId?: string) {
       if (error) throw error;
       return data;
     },
-    staleTime: 60 * 1000, // 1 minute cache
-    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
   });
 
   // Fetch opportunities by stage
@@ -187,15 +187,17 @@ export function useCockpitOpportunities(workspaceId?: string) {
     },
   });
 
-  // Stats
+  // Stats — only active opportunities (exclude won/lost)
+  const activeOpps = opportunities?.filter(o => o.stage !== 'closed_won' && o.stage !== 'closed_lost') || [];
   const stats = {
-    total: opportunities?.length || 0,
-    totalValue: opportunities?.reduce((sum, o) => sum + (Number(o.value_amount) || 0), 0) || 0,
-    weightedValue: opportunities?.reduce((sum, o) => {
+    total: activeOpps.length,
+    totalAll: opportunities?.length || 0,
+    totalValue: activeOpps.reduce((sum, o) => sum + (Number(o.value_amount) || 0), 0),
+    weightedValue: activeOpps.reduce((sum, o) => {
       const value = Number(o.value_amount) || 0;
       const probability = (o.probability || 50) / 100;
       return sum + (value * probability);
-    }, 0) || 0,
+    }, 0),
     byStage: PIPELINE_STAGES.reduce((acc, stage) => {
       const stageOpps = opportunities?.filter(o => o.stage === stage) || [];
       acc[stage] = {

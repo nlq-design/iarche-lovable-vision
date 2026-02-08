@@ -42,8 +42,8 @@ export function useCockpitTasks(workspaceId?: string, entityType?: string, entit
       if (error) throw error;
       return data;
     },
-    staleTime: 60 * 1000, // 1 minute cache
-    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
   });
 
   // Fetch today's tasks
