@@ -946,8 +946,17 @@ serve(async (req) => {
 
     if (graphData.events.length <= 1 && graphData.linkedEntities.length === 0) {
       await clearStaleFlag(supabase, entity_type, entity_id);
+      const hints: Record<string, string> = {
+        lead: 'Liez des transcriptions, créez des opportunités ou ajoutez des notes de contexte à ce lead.',
+        project: 'Liez des transcriptions, des partenaires ou ajoutez des tâches à ce projet.',
+        partner: 'Liez ce partenaire à des transcriptions, projets ou leads via les onglets dédiés.',
+        solution: 'Liez des leads intéressés ou des partenaires experts à cette solution.',
+        transcription: 'Rattachez cette transcription à un lead ou un projet pour enrichir le contexte.',
+        document: 'Rattachez ce document à un lead ou un projet pour enrichir le contexte.',
+      };
+      const hint = hints[entity_type] || 'Ajoutez des liaisons ou des notes de contexte.';
       return new Response(
-        JSON.stringify({ success: false, message: 'Pas assez de données liées pour générer une synthèse' }),
+        JSON.stringify({ success: false, message: `Pas assez de données pour générer une synthèse. ${hint}` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
