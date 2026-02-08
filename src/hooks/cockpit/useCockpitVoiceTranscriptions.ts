@@ -175,21 +175,23 @@ export function useCockpitVoiceTranscriptions(
   const { data: transcriptions = [], isLoading, error, refetch } = useQuery({
     queryKey: [QUERY_KEY, workspaceId, entityType, entityId],
     queryFn: async () => {
+      // Lightweight query for list view — only essential joins to prevent DB timeouts
       let query = supabase
         .from('voice_transcriptions')
         .select(`
-          *,
+          id, workspace_id, storage_path, source, status, title, slug,
+          lead_id, lead_contact_id, project_id, solution_id, meeting_note_id,
+          raw_transcript, summary, ai_metadata, segments,
+          created_at, updated_at, created_by, transcription_date,
+          original_filename, file_size_bytes, duration_seconds, audio_format,
+          auto_create_tasks, prompt_profile_id, analysis_context,
+          ai_documents_summary, synthesis_stale,
           lead:leads(id, name, company),
-          lead_contact:lead_contacts(id, name, email, position),
-          project:projects(id, name),
-          solution:articles(id, title),
-          meeting_note:meeting_notes(id, objectives, booking_id),
-          prompt_profile:ai_prompts(id, name),
-          partners:transcription_partners(partner:partners(id, name, slug, partner_type))
+          project:projects(id, name)
         `)
         .eq('workspace_id', workspaceId)
         .order('created_at', { ascending: false })
-        .limit(200);
+        .limit(100);
 
       if (entityType === 'lead' && entityId) {
         query = query.eq('lead_id', entityId);
@@ -205,17 +207,15 @@ export function useCockpitVoiceTranscriptions(
     },
     staleTime: 60 * 1000,
     refetchOnWindowFocus: false,
-    // Auto-poll when any job is processing, but stop on errors to prevent flooding
     refetchInterval: (query) => {
-      // Stop polling if the query is in error state
       if (query.state.status === 'error') return false;
       const list = query.state.data as VoiceTranscription[] | undefined;
       const hasProcessing = list?.some(t => 
         t.status === 'queued' || t.status === 'transcribing' || t.status === 'analyzing'
       );
-      return hasProcessing ? 15_000 : false; // 15s to reduce DB load
+      return hasProcessing ? 15_000 : false;
     },
-    retry: 1, // Don't retry too many times on 500s
+    retry: 1,
   });
 
   // Fetch single transcription — auto-polls when job is processing
