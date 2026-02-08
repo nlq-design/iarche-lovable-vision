@@ -258,10 +258,18 @@ serve(async (req) => {
     const hasPreTranscript = !!fullJob?.raw_transcript?.trim();
     const isNoFile = nextJob.storage_path?.endsWith("_no_file");
     const isAssemblyAI = (fullJob?.ai_metadata as any)?.source === 'assemblyai';
+    const metaFlags = (fullJob?.ai_metadata ?? {}) as Record<string, unknown>;
 
     const invokeBody: Record<string, unknown> = { job_id: nextJob.id };
 
-    if (isNoFile) {
+    // Respect explicit user flags from ai_metadata (set by frontend)
+    if (metaFlags.force_retranscribe === true) {
+      invokeBody.force_retranscribe = true;
+      log(`Job ${nextJob.id}: user requested force_retranscribe`);
+    } else if (metaFlags.force_reanalyze === true) {
+      invokeBody.force_reanalyze = true;
+      log(`Job ${nextJob.id}: user requested force_reanalyze`);
+    } else if (isNoFile) {
       invokeBody.force_reanalyze = true;
     } else if (isAssemblyAI && hasPreTranscript) {
       invokeBody.force_reanalyze = true;

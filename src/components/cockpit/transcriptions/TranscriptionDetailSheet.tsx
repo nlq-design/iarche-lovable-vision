@@ -133,7 +133,7 @@ export function TranscriptionDetailSheet({
 
   const handleReanalyze = () => {
     if (transcriptionId) {
-      processTranscription.mutate({ jobId: transcriptionId, forceRetranscribe: true }, { onSuccess: () => refetch() });
+      processTranscription.mutate({ jobId: transcriptionId, forceReanalyze: true }, { onSuccess: () => refetch() });
     }
   };
 
