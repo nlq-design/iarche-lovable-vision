@@ -265,7 +265,7 @@ async function fetchContext(supabase: any, job: any) {
   // Parallel fetch of all context data
   const [leadsRes, projectsRes, solutionsRes, partnersRes, aliasesRes] = await Promise.all([
     supabase.from("leads").select("id, name, company").order("created_at", { ascending: false }).limit(100),
-    supabase.from("projects").select("id, name, slug").order("created_at", { ascending: false }).limit(50),
+    supabase.from("projects").select("id, name").order("created_at", { ascending: false }).limit(50),
     supabase.from("articles").select("id, title, slug").eq("resource_type", "solution").eq("published", true),
     supabase.from("partners").select("id, name, company, partner_type").is("deleted_at", null).limit(50),
     supabase.from("keyword_aliases").select("canonical_name, alias").eq("is_active", true).limit(100),
@@ -273,7 +273,7 @@ async function fetchContext(supabase: any, job: any) {
 
   const existingEntities = {
     leads: (leadsRes.data || []).map((l: any) => ({ id: l.id, name: l.name, company: l.company })),
-    projects: (projectsRes.data || []).map((p: any) => ({ id: p.id, name: p.name, slug: p.slug })),
+    projects: (projectsRes.data || []).map((p: any) => ({ id: p.id, name: p.name })),
     solutions: (solutionsRes.data || []).map((s: any) => ({ id: s.id, title: s.title, slug: s.slug })),
     partners: (partnersRes.data || []).map((p: any) => ({ id: p.id, name: p.name, company: p.company, type: p.partner_type })),
   };
@@ -290,7 +290,7 @@ async function fetchContext(supabase: any, job: any) {
     lead = data;
   }
   if (projectId) {
-    const { data } = await supabase.from("projects").select("id, name, slug, status").eq("id", projectId).maybeSingle();
+    const { data } = await supabase.from("projects").select("id, name, status").eq("id", projectId).maybeSingle();
     project = data;
   }
 

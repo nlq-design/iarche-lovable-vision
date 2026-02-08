@@ -30,7 +30,6 @@ import {
   X,
   ArrowLeft,
   MessageSquareText,
-  Scissors,
   RefreshCw,
   AlertTriangle,
 } from 'lucide-react';
@@ -46,7 +45,7 @@ import { toast } from 'sonner';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
 import { ConsulteTab } from '@/components/cockpit/ConsulteTab';
 import { useQuery } from '@tanstack/react-query';
-import { transcribeLargeAudio, type TranscriptionProgress } from '@/lib/audioChunking';
+
 
 // Shared components
 import {
@@ -121,13 +120,7 @@ export default function CockpitTranscriptionDetail() {
   const [editingContext, setEditingContext] = useState(false);
   const [contextDraft, setContextDraft] = useState('');
 
-  // Chunking retry state (for transcription timeout recovery)
-  const [isChunkingRetry, setIsChunkingRetry] = useState(false);
-  const [chunkingProgress, setChunkingProgress] = useState<TranscriptionProgress | null>(null);
   // Auto-start removed: the worker handles queued jobs automatically.
-  // The old useEffect was causing infinite re-queue loops by calling processTranscription.mutate
-  // on every render when status was 'queued', which reset the flags and confused the worker.
-  // on every render when status was 'queued', which reset the flags and confused the worker.
 
   useEffect(() => {
     if (transcription) {
@@ -226,58 +219,6 @@ export default function CockpitTranscriptionDetail() {
     }
   };
 
-  const handleRetryWithChunking = async () => {
-    if (!transcription || !audioUrl) {
-      toast.error('Audio non disponible');
-      return;
-    }
-
-    setIsChunkingRetry(true);
-    setChunkingProgress({ phase: 'loading', message: 'Téléchargement de l\'audio...' });
-
-    try {
-      const audioRes = await fetch(audioUrl);
-      if (!audioRes.ok) throw new Error('Impossible de récupérer le fichier audio');
-      const audioBlob = await audioRes.blob();
-
-      const transcriptText = await transcribeLargeAudio(
-        audioBlob,
-        'fr',
-        (progress) => setChunkingProgress(progress)
-      );
-
-      const { error: updateError } = await supabase
-        .from('voice_transcriptions')
-        .update({
-          raw_transcript: transcriptText,
-          status: 'analyzing',
-          ai_metadata: {
-            ...(transcription.ai_metadata || {}),
-            chunked_client_side: true,
-            retry_with_chunking: true,
-            chunked_at: new Date().toISOString(),
-            last_error: null,
-          },
-        })
-        .eq('id', transcription.id);
-
-      if (updateError) throw updateError;
-
-      processTranscription.mutate({ jobId: transcription.id }, {
-        onSuccess: () => {
-          refetch();
-          toast.success('Transcription découpée avec succès, analyse en cours...');
-        },
-      });
-
-    } catch (err) {
-      console.error('Chunking retry error:', err);
-      toast.error(`Erreur: ${err instanceof Error ? err.message : 'Échec du découpage'}`);
-    } finally {
-      setIsChunkingRetry(false);
-      setChunkingProgress(null);
-    }
-  };
 
   const handleDelete = () => {
     if (transcriptionId) {
@@ -612,11 +553,9 @@ export default function CockpitTranscriptionDetail() {
           <ErrorCard
             transcription={transcription}
             onRetry={handleRetry}
-            onRetryWithChunking={handleRetryWithChunking}
             isProcessing={processTranscription.isPending}
-            isChunkingRetry={isChunkingRetry}
-            chunkingProgress={chunkingProgress}
           />
+
         ) : transcription.status === 'done' && !summary ? (
           <Card>
             <CardContent className="p-6 text-center space-y-4">
@@ -695,105 +634,33 @@ export default function CockpitTranscriptionDetail() {
   );
 }
 
-// Error card component for error state
+// Simplified error card — chunking removed (async architecture handles all sizes)
 interface ErrorCardProps {
-  transcription: {
-    ai_metadata?: unknown;
-  };
+  transcription: { ai_metadata?: unknown };
   onRetry: () => void;
-  onRetryWithChunking: () => void;
   isProcessing: boolean;
-  isChunkingRetry: boolean;
-  chunkingProgress: TranscriptionProgress | null;
 }
 
-function ErrorCard({
-  transcription,
-  onRetry,
-  onRetryWithChunking,
-  isProcessing,
-  isChunkingRetry,
-  chunkingProgress,
-}: ErrorCardProps) {
+function ErrorCard({ transcription, onRetry, isProcessing }: ErrorCardProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lastError = String(((transcription.ai_metadata as any)?.last_error || '') as string);
+  const meta = (transcription.ai_metadata as any) ?? {};
+  const lastError = String(meta.last_error || meta.assemblyai_error || meta.reason || '');
 
-  if (lastError.includes('too_large') || lastError.includes('file_too_large')) {
-    return (
-      <Card className="border-destructive">
-        <CardContent className="p-6 text-center">
-          <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <h3 className="font-medium mb-2">Fichier trop volumineux</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Le fichier dépasse la limite autorisée (500 MB). Compressez-le ou découpez-le en segments plus courts.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const errorMessages: Record<string, { title: string; description: string }> = {
+    too_large: { title: 'Fichier trop volumineux', description: 'Le fichier dépasse la limite autorisée (500 MB).' },
+    timeout: { title: 'Traitement expiré', description: 'Le traitement a dépassé le délai. Réessayez — le worker relancera automatiquement.' },
+    stale: { title: 'Traitement bloqué', description: 'Le job est resté inactif trop longtemps et a été marqué en erreur.' },
+  };
 
-  if (lastError.includes('ASSEMBLYAI_TIMEOUT') || lastError === 'timeout') {
-    return (
-      <Card className="border-destructive">
-        <CardContent className="p-6 text-center">
-          <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <h3 className="font-medium mb-2">Transcription trop longue</h3>
-          <p className="text-sm text-muted-foreground mb-2">
-            Le traitement audio a dépassé le délai.
-          </p>
-          {chunkingProgress ? (
-            <div className="mb-4 space-y-2">
-              <p className="text-xs text-muted-foreground">{chunkingProgress.message}</p>
-              {chunkingProgress.currentChunk && chunkingProgress.totalChunks && (
-                <div className="flex items-center gap-2 max-w-xs mx-auto">
-                  <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-primary transition-all duration-300"
-                      style={{ width: `${(chunkingProgress.currentChunk / chunkingProgress.totalChunks) * 100}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {chunkingProgress.currentChunk}/{chunkingProgress.totalChunks}
-                  </span>
-                </div>
-              )}
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground mb-4">
-              Essayez le <strong>mode découpage</strong> pour transcriber par segments.
-            </p>
-          )}
-          <div className="flex gap-2 justify-center">
-            <Button onClick={onRetryWithChunking} disabled={isChunkingRetry || isProcessing}>
-              {isChunkingRetry ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Scissors className="h-4 w-4 mr-2" />
-              )}
-              Réessayer (découpage)
-            </Button>
-            <Button variant="outline" onClick={onRetry} disabled={isChunkingRetry || isProcessing}>
-              {isProcessing ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
-              )}
-              Réessayer (normal)
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const matchedKey = Object.keys(errorMessages).find(k => lastError.toLowerCase().includes(k));
+  const msg = matchedKey ? errorMessages[matchedKey] : { title: 'Erreur de traitement', description: lastError || 'Une erreur est survenue' };
 
   return (
     <Card className="border-destructive">
       <CardContent className="p-6 text-center">
         <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-        <h3 className="font-medium mb-2">Erreur de traitement</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          {lastError || 'Une erreur est survenue'}
-        </p>
+        <h3 className="font-medium mb-2">{msg.title}</h3>
+        <p className="text-sm text-muted-foreground mb-4">{msg.description}</p>
         <Button onClick={onRetry} disabled={isProcessing}>
           {isProcessing ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
