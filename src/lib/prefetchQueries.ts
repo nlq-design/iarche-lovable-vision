@@ -5,7 +5,7 @@
 
 import { QueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-
+import { LEADS_QUERY_KEY } from '@/hooks/shared/useLeads';
 type PrefetchFn = (queryClient: QueryClient) => Promise<void>;
 
 // Prefetch functions for each module
@@ -42,7 +42,7 @@ const prefetchFunctions: Record<string, PrefetchFn> = {
 
   '/cockpit/leads': async (queryClient) => {
     await queryClient.prefetchQuery({
-      queryKey: ['leads'],
+      queryKey: [LEADS_QUERY_KEY],
       queryFn: async () => {
         const { data } = await supabase
           .from('leads')
