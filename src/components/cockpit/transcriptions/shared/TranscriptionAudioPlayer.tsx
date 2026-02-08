@@ -24,6 +24,7 @@ interface TranscriptionAudioPlayerProps {
   audioFormat?: string | null;
   status: string;
   createdAt?: string;
+  updatedAt?: string;
   onRetry: () => void;
   onReanalyze: () => void;
   isProcessing: boolean;
@@ -55,6 +56,7 @@ export function TranscriptionAudioPlayer({
   audioFormat,
   status,
   createdAt,
+  updatedAt,
   onRetry,
   onReanalyze,
   isProcessing,
@@ -101,9 +103,12 @@ export function TranscriptionAudioPlayer({
 
   // Check if stuck (analyzing for >3 minutes)
   const isStuck = (() => {
-    if ((status !== 'analyzing' && status !== 'transcribing') || !createdAt) return false;
-    const diffMinutes = (Date.now() - new Date(createdAt).getTime()) / (1000 * 60);
-    return diffMinutes > 3;
+    if (status !== 'analyzing' && status !== 'transcribing') return false;
+    // Use updatedAt (status change timestamp) instead of createdAt to avoid false positives on old records
+    const referenceTime = updatedAt || createdAt;
+    if (!referenceTime) return false;
+    const diffMinutes = (Date.now() - new Date(referenceTime).getTime()) / (1000 * 60);
+    return diffMinutes > 10; // Match worker's STALE_TIMEOUT_MINUTES (10 min)
   })();
 
   return (

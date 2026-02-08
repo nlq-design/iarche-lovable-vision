@@ -465,6 +465,7 @@ export default function CockpitTranscriptionDetail() {
           audioFormat={transcription.audio_format}
           status={transcription.status}
           createdAt={transcription.created_at || undefined}
+          updatedAt={transcription.updated_at || undefined}
           onRetry={handleRetry}
           onReanalyze={handleReanalyze}
           isProcessing={processTranscription.isPending}
