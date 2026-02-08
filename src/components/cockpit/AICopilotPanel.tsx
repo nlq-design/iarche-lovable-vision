@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   Brain, Zap, Shield, Sun, ArrowRight, CheckCircle2, AlertTriangle,
   Clock, Sparkles, Plus, Loader2, Calendar, BarChart3, Target, MessageSquare,
-  ChevronDown, ChevronUp, TrendingUp, GitBranch, Wheat,
+  ChevronDown, ChevronUp, TrendingUp, GitBranch, Wheat, RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,8 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { useCockpitAICopilot } from '@/hooks/cockpit/useCockpitAICopilot';
 import { HarvestInterviewPanel } from './HarvestInterviewPanel';
+import { AIFeedbackButtons } from './AIFeedbackButtons';
+import { useAutoConsulte } from '@/hooks/cockpit/useAutoConsulte';
 import ReactMarkdown from 'react-markdown';
 
 interface AICopilotPanelProps {
@@ -29,6 +31,7 @@ export function AICopilotPanel({ workspaceId, entityType, entityId, compact = fa
     suggestNextStep, meetingPrep, opportunityScore, winLossAnalysis,
     deadlineCascade, createTasksFromSuggestions,
   } = useCockpitAICopilot(workspaceId);
+  const { isRunning: isAutoRunning, triggerAutoConsulte, triggerAutoHarvest } = useAutoConsulte();
 
   const [selectedSuggestions, setSelectedSuggestions] = useState<number[]>([]);
   const [activeTab, setActiveTab] = useState<TabKey>('brief');
@@ -169,6 +172,12 @@ export function AICopilotPanel({ workspaceId, entityType, entityId, compact = fa
         <div className="flex items-center gap-2">
           <Brain className="h-5 w-5 text-primary" />
           <CardTitle className="text-lg">Copilote IA</CardTitle>
+          <div className="ml-auto flex items-center gap-1">
+            <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => triggerAutoConsulte()} disabled={isAutoRunning}>
+              {isAutoRunning ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+              Sync
+            </Button>
+          </div>
         </div>
         <CardDescription>Intelligence commerciale proactive</CardDescription>
       </CardHeader>
@@ -192,8 +201,13 @@ export function AICopilotPanel({ workspaceId, entityType, entityId, compact = fa
             <div>
               {morningBrief.isPending && <LoadingState text="Préparation du briefing..." />}
               {morningBrief.data?.brief && (
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <ReactMarkdown>{morningBrief.data.brief}</ReactMarkdown>
+                <div>
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <ReactMarkdown>{morningBrief.data.brief}</ReactMarkdown>
+                  </div>
+                  <div className="flex justify-end mt-3">
+                    <AIFeedbackButtons workspaceId={workspaceId} entityType="morning_brief" sourceFunction="cockpit-ai-copilot" mode="morning-brief" />
+                  </div>
                 </div>
               )}
               {!morningBrief.data && !morningBrief.isPending && (
