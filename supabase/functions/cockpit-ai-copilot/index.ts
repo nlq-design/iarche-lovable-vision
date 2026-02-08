@@ -91,6 +91,12 @@ serve(async (req) => {
       case "deadline-cascade":
         result = await deadlineCascade(supabase, entityId);
         break;
+      case "harvest":
+        result = await harvestOverdueTasks(supabase, workspaceId, entityId);
+        break;
+      case "harvest-respond":
+        result = await harvestRespond(supabase, workspaceId, body.taskIds, body.response, body.action);
+        break;
       default:
         return new Response(JSON.stringify({ error: `Mode inconnu: ${mode}` }), {
           status: 400,
@@ -970,6 +976,306 @@ Réponds en français.`,
       pending: pendingTasks.length,
       completed: (tasks?.length || 0) - pendingTasks.length,
     },
+  };
+}
+
+// =============================================================================
+// MODE 10: HARVEST - Interview overdue AI tasks
+// =============================================================================
+
+async function harvestOverdueTasks(supabase: any, workspaceId: string, entityId?: string) {
+  const today = new Date().toISOString().split("T")[0];
+
+  // Fetch overdue AI tasks, optionally filtered by entity
+  let query = supabase
+    .from("tasks")
+    .select("id, title, description, priority, task_type, due_date, entity_type, entity_id, status, ai_generated, created_at")
+    .eq("workspace_id", workspaceId)
+    .eq("ai_generated", true)
+    .lt("due_date", today)
+    .not("status", "in", "(completed,cancelled,harvested)")
+    .order("entity_id")
+    .order("due_date", { ascending: true })
+    .limit(200);
+
+  if (entityId) {
+    query = query.eq("entity_id", entityId);
+  }
+
+  const { data: overdueTasks } = await query;
+
+  if (!overdueTasks?.length) {
+    return { groups: [], total: 0, message: "Aucune tâche IA en retard à récolter." };
+  }
+
+  // Group by entity
+  const entityGroups: Record<string, { entity_type: string; entity_id: string; entity_name: string; tasks: any[] }> = {};
+
+  for (const task of overdueTasks) {
+    const key = `${task.entity_type || "none"}_${task.entity_id || "none"}`;
+    if (!entityGroups[key]) {
+      entityGroups[key] = {
+        entity_type: task.entity_type || "general",
+        entity_id: task.entity_id || "",
+        entity_name: "",
+        tasks: [],
+      };
+    }
+    entityGroups[key].tasks.push(task);
+  }
+
+  // Resolve entity names
+  for (const group of Object.values(entityGroups)) {
+    if (group.entity_id && group.entity_type) {
+      const tableMap: Record<string, { table: string; nameCol: string }> = {
+        lead: { table: "leads", nameCol: "name" },
+        opportunity: { table: "opportunities", nameCol: "title" },
+        project: { table: "projects", nameCol: "name" },
+      };
+      const mapping = tableMap[group.entity_type];
+      if (mapping) {
+        const { data } = await supabase.from(mapping.table).select(`${mapping.nameCol}, slug`).eq("id", group.entity_id).maybeSingle();
+        group.entity_name = data?.[mapping.nameCol] || group.entity_id;
+      }
+    }
+  }
+
+  // Sort groups: most tasks first
+  const sortedGroups = Object.values(entityGroups).sort((a, b) => b.tasks.length - a.tasks.length);
+
+  // Generate interview questions for the top group (or specified entity)
+  const targetGroup = sortedGroups[0];
+  const taskList = targetGroup.tasks.map((t: any) => 
+    `- "${t.title}" (${t.task_type}, priorité: ${t.priority}, créée le ${t.created_at?.slice(0, 10)}, échéance: ${t.due_date})`
+  ).join("\n");
+
+  const questions = await extractStructured<{
+    entity_summary: string;
+    questions: Array<{
+      question: string;
+      related_task_ids: string[];
+      context: string;
+      suggested_actions: string[];
+    }>;
+  }>(
+    [
+      {
+        role: "system",
+        content: `Tu es un assistant de direction qui aide à trier et valoriser des tâches IA accumulées.
+Tu dois poser des questions intelligentes et regroupées pour comprendre l'état actuel de chaque sujet.
+Ne pose PAS une question par tâche — regroupe les tâches par thème et pose une question synthétique.
+Propose 2 à 4 questions maximum. Chaque question doit permettre de :
+1. Savoir si le sujet est toujours d'actualité
+2. Recueillir de l'information utile pour enrichir la base de connaissances
+3. Proposer des actions concrètes (nouvelle tâche, archivage enrichi, mise à jour contexte)
+Réponds en français.`,
+      },
+      {
+        role: "user",
+        content: `Entité: ${targetGroup.entity_type} — "${targetGroup.entity_name}"
+${targetGroup.tasks.length} tâches IA en retard:
+${taskList}`,
+      },
+    ],
+    {
+      name: "harvest_questions",
+      description: "Questions de récolte pour les tâches IA en retard",
+      parameters: {
+        type: "object",
+        properties: {
+          entity_summary: { type: "string", description: "Résumé de la situation de l'entité en 1-2 phrases" },
+          questions: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                question: { type: "string", description: "Question synthétique à poser à l'utilisateur" },
+                related_task_ids: { type: "array", items: { type: "string" }, description: "IDs des tâches concernées" },
+                context: { type: "string", description: "Contexte pour comprendre pourquoi cette question" },
+                suggested_actions: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "Actions possibles: 'keep_update', 'new_task', 'archive_enriched', 'done_offplatform'",
+                },
+              },
+              required: ["question", "related_task_ids", "context", "suggested_actions"],
+              additionalProperties: false,
+            },
+          },
+        },
+        required: ["entity_summary", "questions"],
+        additionalProperties: false,
+      },
+    },
+    { functionName: FUNCTION_NAME, workspaceId }
+  );
+
+  return {
+    groups: sortedGroups.map((g) => ({
+      entity_type: g.entity_type,
+      entity_id: g.entity_id,
+      entity_name: g.entity_name,
+      task_count: g.tasks.length,
+      oldest_task_date: g.tasks[0]?.due_date,
+      tasks: g.tasks,
+    })),
+    total: overdueTasks.length,
+    current_interview: {
+      entity_type: targetGroup.entity_type,
+      entity_id: targetGroup.entity_id,
+      entity_name: targetGroup.entity_name,
+      summary: questions?.entity_summary || "",
+      questions: questions?.questions || [],
+      task_ids: targetGroup.tasks.map((t: any) => t.id),
+    },
+  };
+}
+
+// =============================================================================
+// MODE 11: HARVEST RESPOND - Process user answers
+// =============================================================================
+
+async function harvestRespond(supabase: any, workspaceId: string, taskIds: string[], response: string, action: string) {
+  // Fetch the tasks being responded to
+  const { data: tasks } = await supabase
+    .from("tasks")
+    .select("id, title, description, entity_type, entity_id, task_type, priority")
+    .in("id", taskIds);
+
+  if (!tasks?.length) {
+    return { error: "Tâches non trouvées" };
+  }
+
+  const entityType = tasks[0].entity_type;
+  const entityId = tasks[0].entity_id;
+
+  // Store the response as context knowledge
+  if (entityId && response) {
+    await supabase.from("entity_context_notes").insert({
+      workspace_id: workspaceId,
+      entity_type: entityType || "general",
+      entity_id: entityId,
+      content: `[Récolte IA] ${response}`,
+    });
+  }
+
+  // Log the harvest activity
+  for (const task of tasks) {
+    await supabase.from("activity_log").insert({
+      workspace_id: workspaceId,
+      entity_type: task.entity_type || "task",
+      entity_id: task.entity_id || task.id,
+      activity_type: "ai_harvest",
+      title: `Récolte IA: ${task.title}`,
+      content: `Action: ${action}. Réponse: ${response}`,
+      is_ai_generated: true,
+      task_id: task.id,
+    });
+  }
+
+  let newTasks: any[] = [];
+
+  switch (action) {
+    case "harvested":
+      // Mark as harvested — knowledge captured, task done
+      await supabase.from("tasks").update({ status: "harvested" }).in("id", taskIds);
+      break;
+
+    case "done_offplatform":
+      // Was done outside the platform
+      await supabase.from("tasks").update({ status: "completed" }).in("id", taskIds);
+      break;
+
+    case "new_task": {
+      // Generate fresh replacement tasks based on the response
+      const freshTasks = await extractStructured<{
+        tasks: Array<{ title: string; description: string; priority: string; task_type: string; due_in_days: number }>;
+      }>(
+        [
+          {
+            role: "system",
+            content: `Génère 1 à 3 nouvelles tâches actionnables basées sur la réponse de l'utilisateur. 
+Ces tâches remplacent les anciennes périmées. Elles doivent être concrètes, avec des échéances réalistes.
+Réponds en français.`,
+          },
+          {
+            role: "user",
+            content: `Anciennes tâches:\n${tasks.map((t: any) => `- ${t.title}: ${t.description || ""}`).join("\n")}\n\nRéponse utilisateur: ${response}`,
+          },
+        ],
+        {
+          name: "generate_fresh_tasks",
+          description: "Générer des tâches fraîches",
+          parameters: {
+            type: "object",
+            properties: {
+              tasks: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    description: { type: "string" },
+                    priority: { type: "string", enum: ["low", "medium", "high", "urgent"] },
+                    task_type: { type: "string", enum: ["follow_up", "call", "email", "meeting", "proposal", "other"] },
+                    due_in_days: { type: "number" },
+                  },
+                  required: ["title", "description", "priority", "task_type", "due_in_days"],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ["tasks"],
+            additionalProperties: false,
+          },
+        },
+        { functionName: FUNCTION_NAME, workspaceId }
+      );
+
+      // Mark old tasks as harvested
+      await supabase.from("tasks").update({ status: "harvested" }).in("id", taskIds);
+
+      // Create new tasks
+      if (freshTasks?.tasks?.length) {
+        const insertData = freshTasks.tasks.map((t) => {
+          const dueDate = new Date();
+          dueDate.setDate(dueDate.getDate() + t.due_in_days);
+          return {
+            title: t.title,
+            description: t.description,
+            priority: t.priority,
+            task_type: t.task_type,
+            status: "pending",
+            due_date: dueDate.toISOString().split("T")[0],
+            workspace_id: workspaceId,
+            entity_type: entityType,
+            entity_id: entityId,
+            ai_generated: true,
+          };
+        });
+
+        const { data: created } = await supabase.from("tasks").insert(insertData).select();
+        newTasks = created || [];
+      }
+      break;
+    }
+
+    case "keep_update":
+      // Keep tasks but update with new context, reset due date to +7 days
+      const newDue = new Date();
+      newDue.setDate(newDue.getDate() + 7);
+      await supabase.from("tasks").update({
+        due_date: newDue.toISOString().split("T")[0],
+        description: tasks.map((t: any) => t.description || "").join(". ") + ` [MAJ Récolte: ${response}]`,
+      }).in("id", taskIds);
+      break;
+  }
+
+  return {
+    processed: taskIds.length,
+    action,
+    new_tasks: newTasks,
+    message: `${taskIds.length} tâche(s) traitée(s) avec l'action "${action}".`,
   };
 }
 
