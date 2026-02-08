@@ -116,6 +116,13 @@ export interface TranscriptionSummary {
   _fallback?: string;
 }
 
+export interface ExpectedParticipant {
+  name: string;
+  type: 'partner' | 'lead_contact' | 'lead' | 'project' | 'manual';
+  entity_id?: string;
+  company?: string;
+}
+
 export interface CreateTranscriptionInput {
   storage_path: string;
   source: 'upload' | 'recording';
@@ -133,6 +140,7 @@ export interface CreateTranscriptionInput {
   duration_seconds?: number | null;
   audio_format?: string | null;
   analysis_context?: string | null; // Context to guide AI analysis
+  expected_participants?: ExpectedParticipant[] | null; // Pre-selected participants
 }
 
 export interface LLMModel {
