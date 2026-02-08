@@ -154,15 +154,22 @@ export function useTranscriptionParticipants(transcriptionId: string | null) {
 
   // Search entities across partners, lead_contacts, leads, projects
   const searchEntities = async (query: string): Promise<Array<{ type: LinkedEntityType; id: string; name: string; subtitle?: string }>> => {
-    if (!query || query.length < 2) return [];
-    const q = `%${query}%`;
+    const limit = 10;
+    
+    let partnersQ = supabase.from('partners').select('id, name, company').order('name').limit(limit);
+    let contactsQ = supabase.from('lead_contacts').select('id, name, email').order('name').limit(limit);
+    let leadsQ = supabase.from('leads').select('id, name, company').order('name').limit(limit);
+    let projectsQ = supabase.from('projects').select('id, name').order('name').limit(limit);
 
-    const [partners, contacts, leads, projects] = await Promise.all([
-      supabase.from('partners').select('id, name, company').ilike('name', q).limit(5),
-      supabase.from('lead_contacts').select('id, name, email').ilike('name', q).limit(5),
-      supabase.from('leads').select('id, name, company').ilike('name', q).limit(5),
-      supabase.from('projects').select('id, name').ilike('name', q).limit(5),
-    ]);
+    if (query && query.length >= 2) {
+      const q = `%${query}%`;
+      partnersQ = supabase.from('partners').select('id, name, company').ilike('name', q).limit(limit);
+      contactsQ = supabase.from('lead_contacts').select('id, name, email').ilike('name', q).limit(limit);
+      leadsQ = supabase.from('leads').select('id, name, company').ilike('name', q).limit(limit);
+      projectsQ = supabase.from('projects').select('id, name').ilike('name', q).limit(limit);
+    }
+
+    const [partners, contacts, leads, projects] = await Promise.all([partnersQ, contactsQ, leadsQ, projectsQ]);
 
     const results: Array<{ type: LinkedEntityType; id: string; name: string; subtitle?: string }> = [];
 
