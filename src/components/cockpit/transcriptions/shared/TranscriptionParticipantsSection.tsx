@@ -63,12 +63,17 @@ function EntitySearchPopover({
   searchEntities: (q: string) => Promise<Array<{ type: LinkedEntityType; id: string; name: string; subtitle?: string }>>;
 }) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState(participant.name);
+  const [query, setQuery] = useState('');
   const [results, setResults] = useState<Array<{ type: LinkedEntityType; id: string; name: string; subtitle?: string }>>([]);
   const [loading, setLoading] = useState(false);
+  const [allEntities, setAllEntities] = useState<Array<{ type: LinkedEntityType; id: string; name: string; subtitle?: string }>>([]);
 
   const doSearch = useCallback(async (q: string) => {
-    if (q.length < 2) { setResults([]); return; }
+    if (q.length < 2) {
+      // Show all preloaded entities when query is empty/short
+      setResults(allEntities);
+      return;
+    }
     setLoading(true);
     try {
       const r = await searchEntities(q);
@@ -76,10 +81,25 @@ function EntitySearchPopover({
     } finally {
       setLoading(false);
     }
-  }, [searchEntities]);
+  }, [searchEntities, allEntities]);
 
+  // On open: preload recent entities so user sees results immediately
   useEffect(() => {
-    if (open) doSearch(query);
+    if (!open) return;
+    setQuery('');
+    setLoading(true);
+    // Load a broad set of entities (search with single char "%" to get all)
+    searchEntities('a').then((r1) => {
+      searchEntities('e').then((r2) => {
+        // Merge and deduplicate
+        const map = new Map<string, typeof r1[0]>();
+        [...r1, ...r2].forEach(e => map.set(`${e.type}-${e.id}`, e));
+        const merged = Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+        setAllEntities(merged);
+        setResults(merged);
+        setLoading(false);
+      });
+    }).catch(() => setLoading(false));
   }, [open]); // eslint-disable-line
 
   return (
@@ -91,6 +111,9 @@ function EntitySearchPopover({
       </PopoverTrigger>
       <PopoverContent className="w-80 p-3" align="end">
         <div className="space-y-2">
+          <p className="text-xs text-muted-foreground font-medium">
+            Lier « {participant.name} » à :
+          </p>
           <div className="flex items-center gap-2">
             <Search className="h-4 w-4 text-muted-foreground shrink-0" />
             <Input
@@ -104,9 +127,9 @@ function EntitySearchPopover({
               autoFocus
             />
           </div>
-          <div className="max-h-48 overflow-y-auto space-y-1">
+          <div className="max-h-60 overflow-y-auto space-y-1">
             {loading && <div className="flex justify-center py-2"><Loader2 className="h-4 w-4 animate-spin" /></div>}
-            {!loading && results.length === 0 && query.length >= 2 && (
+            {!loading && results.length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-2">Aucun résultat</p>
             )}
             {results.map((r) => (
