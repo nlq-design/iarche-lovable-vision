@@ -269,6 +269,56 @@ export type Database = {
           },
         ]
       }
+      ai_feedback: {
+        Row: {
+          ai_metadata: Json | null
+          comment: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          mode: string | null
+          rating: number
+          source_function: string
+          user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          ai_metadata?: Json | null
+          comment?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          mode?: string | null
+          rating: number
+          source_function: string
+          user_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          ai_metadata?: Json | null
+          comment?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          mode?: string | null
+          rating?: number
+          source_function?: string
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_feedback_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_models: {
         Row: {
           capabilities: string[] | null
