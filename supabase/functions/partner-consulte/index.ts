@@ -93,21 +93,26 @@ async function fetchVocabulary(supabase: any, entityType: string, entityId: stri
   } catch { return []; }
 }
 
-async function fetchParticipantMappings(supabase: any, workspaceTranscriptionIds: string[]): Promise<PartnerContext['knownParticipantMappings']> {
-  if (!workspaceTranscriptionIds.length) return [];
+async function fetchParticipantMappings(supabase: any, _workspaceTranscriptionIds: string[]): Promise<PartnerContext['knownParticipantMappings']> {
   try {
     const { data } = await supabase
       .from('participant_entity_mappings')
-      .select('speaker_label, entity_name, entity_type')
-      .in('transcription_id', workspaceTranscriptionIds);
-    // Deduplicate by speaker_label+entity_name
+      .select('participant_name, linked_entity_name, linked_entity_type')
+      .eq('workspace_id', '00000000-0000-0000-0000-000000000001')
+      .order('last_used_at', { ascending: false })
+      .limit(50);
+    // Deduplicate by participant_name+linked_entity_type
     const seen = new Set<string>();
     return (data || []).filter((m: any) => {
-      const key = `${m.speaker_label}::${m.entity_name}`;
+      const key = `${m.participant_name}::${m.linked_entity_type}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
-    });
+    }).map((m: any) => ({
+      speakerLabel: m.participant_name,
+      entityName: m.linked_entity_name || m.participant_name,
+      entityType: m.linked_entity_type,
+    }));
   } catch { return []; }
 }
 
