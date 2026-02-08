@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { handleAIError } from '@/lib/ai-error-handler';
 import { toast as sonnerToast } from 'sonner';
 
-type CopilotMode = 'suggest-tasks' | 'detect-inactivity' | 'health-check' | 'morning-brief' | 'next-step' | 'meeting-prep' | 'opportunity-score' | 'win-loss-analysis' | 'deadline-cascade';
+type CopilotMode = 'suggest-tasks' | 'detect-inactivity' | 'health-check' | 'morning-brief' | 'next-step' | 'meeting-prep' | 'opportunity-score' | 'win-loss-analysis' | 'deadline-cascade' | 'harvest' | 'harvest-respond';
 
 interface TaskSuggestion {
   title: string;
@@ -95,12 +95,51 @@ interface MorningBriefData {
   pipeline_scores: OpportunityScoreItem[];
 }
 
+interface HarvestQuestion {
+  question: string;
+  related_task_ids: string[];
+  context: string;
+  suggested_actions: string[];
+}
+
+interface HarvestGroup {
+  entity_type: string;
+  entity_id: string;
+  entity_name: string;
+  task_count: number;
+  oldest_task_date: string;
+  tasks: any[];
+}
+
+interface HarvestInterview {
+  entity_type: string;
+  entity_id: string;
+  entity_name: string;
+  summary: string;
+  questions: HarvestQuestion[];
+  task_ids: string[];
+}
+
+interface HarvestResult {
+  groups: HarvestGroup[];
+  total: number;
+  current_interview?: HarvestInterview;
+  message?: string;
+}
+
+interface HarvestRespondResult {
+  processed: number;
+  action: string;
+  new_tasks: any[];
+  message: string;
+}
+
 export function useCockpitAICopilot(workspaceId?: string) {
   const queryClient = useQueryClient();
 
-  const callCopilot = async (mode: CopilotMode, entityType?: string, entityId?: string) => {
+  const callCopilot = async (mode: CopilotMode, entityType?: string, entityId?: string, extra?: Record<string, unknown>) => {
     const { data, error } = await supabase.functions.invoke('cockpit-ai-copilot', {
-      body: { mode, workspaceId, entityType, entityId },
+      body: { mode, workspaceId, entityType, entityId, ...extra },
     });
 
     if (error) {
@@ -260,6 +299,26 @@ export function useCockpitAICopilot(workspaceId?: string) {
     },
   });
 
+  // Harvest: interview overdue AI tasks
+  const harvest = useMutation({
+    mutationFn: async (entityId?: string) => {
+      const result = await callCopilot('harvest', undefined, entityId);
+      return result as HarvestResult;
+    },
+  });
+
+  // Harvest respond: process user answer
+  const harvestRespond = useMutation({
+    mutationFn: async ({ taskIds, response, action }: { taskIds: string[]; response: string; action: string }) => {
+      const result = await callCopilot('harvest-respond', undefined, undefined, { taskIds, response, action });
+      return result as HarvestRespondResult;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['cockpit-tasks'] });
+      sonnerToast.success(data.message);
+    },
+  });
+
   return {
     suggestTasks,
     detectInactivity,
@@ -271,5 +330,7 @@ export function useCockpitAICopilot(workspaceId?: string) {
     winLossAnalysis,
     deadlineCascade,
     createTasksFromSuggestions,
+    harvest,
+    harvestRespond,
   };
 }
