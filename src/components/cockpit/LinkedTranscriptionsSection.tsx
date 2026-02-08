@@ -26,42 +26,76 @@ export function LinkedTranscriptionsSection({
     queryFn: async () => {
       if (!entityId) return [];
       
-      let query = supabase
-        .from('voice_transcriptions')
-        .select('id, title, slug, source, status, created_at, transcription_date, summary')
-        .eq('status', 'done')
-        .order('created_at', { ascending: false });
-
-      // Filter by entity type
-      if (entityType === 'lead') {
-        query = query.eq('lead_id', entityId);
-      } else if (entityType === 'project') {
-        query = query.eq('project_id', entityId);
-      } else if (entityType === 'solution') {
-        query = query.eq('solution_id', entityId);
-      } else if (entityType === 'partner') {
+      // 1. Direct FK-based transcriptions
+      let directTranscriptions: any[] = [];
+      
+      if (entityType === 'partner') {
         // Partners use junction table
         const { data: links } = await supabase
           .from('transcription_partners')
           .select('transcription_id')
           .eq('partner_id', entityId);
         
-        if (!links || links.length === 0) return [];
-        
-        const { data, error } = await supabase
+        if (links && links.length > 0) {
+          const { data } = await supabase
+            .from('voice_transcriptions')
+            .select('id, title, slug, source, status, created_at, transcription_date, summary')
+            .in('id', links.map(l => l.transcription_id))
+            .eq('status', 'done')
+            .order('created_at', { ascending: false });
+          directTranscriptions = data || [];
+        }
+      } else {
+        const col = entityType === 'lead' ? 'lead_id' : entityType === 'project' ? 'project_id' : 'solution_id';
+        const { data } = await supabase
           .from('voice_transcriptions')
           .select('id, title, slug, source, status, created_at, transcription_date, summary')
-          .in('id', links.map(l => l.transcription_id))
+          .eq(col, entityId)
           .eq('status', 'done')
           .order('created_at', { ascending: false });
-        
-        if (error) return [];
-        return data;
+        directTranscriptions = data || [];
       }
 
-      const { data, error } = await query;
-      if (error) return [];
-      return data;
+      // 2. Participant-based transcriptions (where this entity is linked as a participant)
+      const participantEntityType = entityType === 'partner' ? 'partner' 
+        : entityType === 'lead' ? 'lead' 
+        : entityType === 'project' ? 'project' 
+        : null;
+
+      let participantTranscriptionIds: string[] = [];
+      if (participantEntityType) {
+        const { data: parts } = await supabase
+          .from('transcription_participants')
+          .select('transcription_id')
+          .eq('linked_entity_type', participantEntityType)
+          .eq('linked_entity_id', entityId);
+        if (parts?.length) {
+          participantTranscriptionIds = parts.map(p => p.transcription_id);
+        }
+      }
+
+      // 3. Merge and deduplicate
+      const existingIds = new Set(directTranscriptions.map((t: any) => t.id));
+      const missingIds = participantTranscriptionIds.filter(id => !existingIds.has(id));
+
+      if (missingIds.length > 0) {
+        const { data: extra } = await supabase
+          .from('voice_transcriptions')
+          .select('id, title, slug, source, status, created_at, transcription_date, summary')
+          .in('id', missingIds)
+          .eq('status', 'done')
+          .order('created_at', { ascending: false });
+        if (extra?.length) {
+          directTranscriptions = [...directTranscriptions, ...extra];
+        }
+      }
+
+      // Sort by date descending
+      directTranscriptions.sort((a: any, b: any) => 
+        new Date(b.transcription_date || b.created_at).getTime() - new Date(a.transcription_date || a.created_at).getTime()
+      );
+
+      return directTranscriptions;
     },
     enabled: !!entityId,
   });
