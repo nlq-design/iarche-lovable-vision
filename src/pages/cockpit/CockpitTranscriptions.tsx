@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -630,9 +631,9 @@ export default function CockpitTranscriptions() {
           </div>
         )}
 
-        {/* Floating selection toolbar */}
-        {someSelected && !isProcessingBatch && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 bg-card border rounded-xl shadow-xl">
+        {/* Floating selection toolbar - rendered via portal to escape overflow:auto */}
+        {someSelected && !isProcessingBatch && createPortal(
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3 bg-card border rounded-xl shadow-xl">
             <CheckSquare className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium">{selectedIds.size} sélectionnée{selectedIds.size > 1 ? 's' : ''}</span>
             <div className="h-4 w-px bg-border" />
@@ -644,7 +645,8 @@ export default function CockpitTranscriptions() {
               <X className="h-3 w-3 mr-1" />
               Annuler
             </Button>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Create Modal */}
