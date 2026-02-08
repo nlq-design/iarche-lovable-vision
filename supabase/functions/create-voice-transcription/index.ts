@@ -80,7 +80,7 @@ serve(async (req) => {
 
     console.log(`Creating voice transcription job for workspace: ${workspace_id}`);
 
-    // If pre_transcribed_text is provided, skip to analyzing phase
+    // Always start as queued — the transcription-worker or direct call will process
     const initialStatus = pre_transcribed_text ? "analyzing" : "queued";
     const initialMetadata: Record<string, unknown> = {
       autonomy_level: "N0",
