@@ -582,7 +582,6 @@ export default function CockpitTranscriptionDetail() {
                 segments={parseEnrichedSegments(transcription.segments)}
                 languageDetected={(transcription.ai_metadata as any)?.language_detected}
                 onSeekTo={(timeMs) => {
-                  // Seek audio player to timestamp
                   const audioEl = document.querySelector('audio');
                   if (audioEl) {
                     audioEl.currentTime = timeMs / 1000;
@@ -625,6 +624,35 @@ export default function CockpitTranscriptionDetail() {
             isChunkingRetry={isChunkingRetry}
             chunkingProgress={chunkingProgress}
           />
+        ) : transcription.status === 'done' && !summary ? (
+          <Card>
+            <CardContent className="p-6 text-center space-y-4">
+              <FileText className="h-8 w-8 mx-auto text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                Pas de résumé disponible. Le texte brut est accessible ci-dessous.
+              </p>
+              <Button size="sm" onClick={handleReanalyze} disabled={processTranscription.isPending}>
+                {processTranscription.isPending ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Analyse en cours...</>
+                ) : (
+                  <><RefreshCw className="h-4 w-4 mr-2" />Ré-analyser</>
+                )}
+              </Button>
+              {transcription.raw_transcript && (
+                <Card className="mt-4 text-left">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Transcription complète
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <SimpleTranscript text={transcription.raw_transcript} />
+                  </CardContent>
+                </Card>
+              )}
+            </CardContent>
+          </Card>
         ) : (
           <Card>
             <CardContent className="p-6 text-center">
