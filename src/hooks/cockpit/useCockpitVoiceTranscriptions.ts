@@ -118,7 +118,7 @@ export interface TranscriptionSummary {
 
 export interface ExpectedParticipant {
   name: string;
-  type: 'partner' | 'lead_contact' | 'lead' | 'project' | 'manual';
+  type: 'partner' | 'lead_contact' | 'manual';
   entity_id?: string;
   company?: string;
 }
@@ -127,6 +127,7 @@ export interface CreateTranscriptionInput {
   storage_path: string;
   source: 'upload' | 'recording';
   lead_id?: string | null;
+  lead_contact_id?: string | null;
   project_id?: string | null;
   solution_id?: string | null;
   meeting_note_id?: string | null;
@@ -134,13 +135,13 @@ export interface CreateTranscriptionInput {
   prompt_profile_id?: string | null;
   llm_model_id?: string | null;
   transcription_date?: string | null;
-  pre_transcribed_text?: string | null; // For chunked transcription done client-side
+  pre_transcribed_text?: string | null;
   original_filename?: string | null;
   file_size_bytes?: number | null;
   duration_seconds?: number | null;
   audio_format?: string | null;
-  analysis_context?: string | null; // Context to guide AI analysis
-  expected_participants?: ExpectedParticipant[] | null; // Pre-selected participants
+  analysis_context?: string | null;
+  expected_participants?: ExpectedParticipant[] | null;
 }
 
 export interface LLMModel {

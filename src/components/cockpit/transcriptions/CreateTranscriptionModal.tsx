@@ -18,25 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import { Progress } from '@/components/ui/progress';
-import { Upload, Mic, MicOff, Loader2, User, FolderOpen, Package, Check, ChevronsUpDown, FileText, CalendarIcon, Scissors } from 'lucide-react';
+import { Upload, Mic, MicOff, Loader2, Check, FileText, CalendarIcon, Scissors } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCockpitVoiceTranscriptions, useAIPromptProfiles, type ExpectedParticipant } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { useCockpitLeads, useCockpitProjects, useCockpitMeetingNotes } from '@/hooks/cockpit';
 import { ParticipantPicker } from './ParticipantPicker';
+import { TranscriptionEntityLinker, type EntitySelection } from './TranscriptionEntityLinker';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -89,15 +77,16 @@ export function CreateTranscriptionModal({
     }
   }, [defaultFiles, open]);
 
-  const [entityType, setEntityType] = useState<'lead' | 'project' | 'solution' | 'meeting_note' | 'none'>(
-    defaultLeadId ? 'lead' : defaultProjectId ? 'project' : defaultSolutionId ? 'solution' : defaultMeetingNoteId ? 'meeting_note' : 'none'
-  );
-  const [selectedEntityId, setSelectedEntityId] = useState<string>(
-    defaultLeadId || defaultProjectId || defaultSolutionId || defaultMeetingNoteId || ''
-  );
+  // Multi-entity selection (replaces old single entityType/selectedEntityId)
+  const [entitySelection, setEntitySelection] = useState<EntitySelection>({
+    leadId: defaultLeadId || null,
+    leadContactId: null,
+    projectId: defaultProjectId || null,
+    solutionId: defaultSolutionId || null,
+    meetingNoteId: defaultMeetingNoteId || null,
+  });
   const [promptProfileId, setPromptProfileId] = useState<string>('');
   const [autoCreateTasks, setAutoCreateTasks] = useState(true);
-  const [entitySearchOpen, setEntitySearchOpen] = useState(false);
   const [transcriptionDate, setTranscriptionDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [analysisContext, setAnalysisContext] = useState<string>('');
   const [expectedParticipants, setExpectedParticipants] = useState<ExpectedParticipant[]>([]);
@@ -126,11 +115,22 @@ export function CreateTranscriptionModal({
     },
   });
 
+  const { data: leadContacts = [] } = useQuery({
+    queryKey: ['lead-contacts-for-transcription'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('lead_contacts')
+        .select('id, name, email, position')
+        .order('name')
+        .limit(200);
+      return data ?? [];
+    },
+  });
+
   const resetForm = useCallback(() => {
     setSelectedFiles([]);
     setRecordedBlob(null);
-    setEntityType('none');
-    setSelectedEntityId('');
+    setEntitySelection({ leadId: null, leadContactId: null, projectId: null, solutionId: null, meetingNoteId: null });
     setPromptProfileId('');
     setAutoCreateTasks(true);
     setTranscriptionDate(format(new Date(), 'yyyy-MM-dd'));
@@ -305,10 +305,11 @@ export function CreateTranscriptionModal({
               const job = await createTranscription.mutateAsync({
                 storage_path: finalStoragePath,
                 source: activeTab === 'upload' ? 'upload' : 'recording',
-                lead_id: entityType === 'lead' ? selectedEntityId : null,
-                project_id: entityType === 'project' ? selectedEntityId : null,
-                solution_id: entityType === 'solution' ? selectedEntityId : null,
-                meeting_note_id: entityType === 'meeting_note' ? selectedEntityId : null,
+                lead_id: entitySelection.leadId || null,
+                lead_contact_id: entitySelection.leadContactId || null,
+                project_id: entitySelection.projectId || null,
+                solution_id: entitySelection.solutionId || null,
+                meeting_note_id: entitySelection.meetingNoteId || null,
                 auto_create_tasks: true,
                 prompt_profile_id: promptProfileId || null,
                 transcription_date: transcriptionDate || null,
@@ -343,10 +344,11 @@ export function CreateTranscriptionModal({
             const job = await createTranscription.mutateAsync({
               storage_path: storagePath,
               source: activeTab === 'upload' ? 'upload' : 'recording',
-              lead_id: entityType === 'lead' ? selectedEntityId : null,
-              project_id: entityType === 'project' ? selectedEntityId : null,
-              solution_id: entityType === 'solution' ? selectedEntityId : null,
-              meeting_note_id: entityType === 'meeting_note' ? selectedEntityId : null,
+              lead_id: entitySelection.leadId || null,
+              lead_contact_id: entitySelection.leadContactId || null,
+              project_id: entitySelection.projectId || null,
+              solution_id: entitySelection.solutionId || null,
+              meeting_note_id: entitySelection.meetingNoteId || null,
               auto_create_tasks: true,
               prompt_profile_id: promptProfileId || null,
               transcription_date: transcriptionDate || null,
@@ -386,25 +388,6 @@ export function CreateTranscriptionModal({
     }
   };
 
-  const getEntityOptions = () => {
-    switch (entityType) {
-      case 'lead':
-        return leads.map(l => ({ id: l.id, label: `${l.name}${l.company ? ` - ${l.company}` : ''}` }));
-      case 'project':
-        return projects.map(p => ({ id: p.id, label: p.name }));
-      case 'solution':
-        return solutions.map(s => ({ id: s.id, label: s.title }));
-      case 'meeting_note':
-        return (meetingNotes || []).map(m => ({ 
-          id: m.id, 
-          label: m.objectives ? m.objectives.substring(0, 50) + (m.objectives.length > 50 ? '...' : '') : `CR du ${new Date(m.created_at!).toLocaleDateString('fr-FR')}`
-        }));
-      default:
-        return [];
-    }
-  };
-
-  const selectedEntityLabel = getEntityOptions().find(e => e.id === selectedEntityId)?.label;
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) resetForm(); onOpenChange(o); }}>
@@ -540,75 +523,16 @@ export function CreateTranscriptionModal({
             </p>
           </div>
 
-          <div className="space-y-2">
-            <Label>Lier à une entité (optionnel)</Label>
-            <Select value={entityType} onValueChange={(v) => { setEntityType(v as any); setSelectedEntityId(''); }}>
-              <SelectTrigger>
-                <SelectValue placeholder="Aucune" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Aucune</SelectItem>
-                <SelectItem value="lead">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Lead
-                  </div>
-                </SelectItem>
-                <SelectItem value="project">
-                  <div className="flex items-center gap-2">
-                    <FolderOpen className="h-4 w-4" />
-                    Projet
-                  </div>
-                </SelectItem>
-                <SelectItem value="solution">
-                  <div className="flex items-center gap-2">
-                    <Package className="h-4 w-4" />
-                    Solution
-                  </div>
-                </SelectItem>
-                <SelectItem value="meeting_note">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Compte-rendu (CR)
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {entityType !== 'none' && (
-            <Popover open={entitySearchOpen} onOpenChange={setEntitySearchOpen}>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-between">
-                  {selectedEntityLabel || `Sélectionner ${entityType === 'lead' ? 'un lead' : entityType === 'project' ? 'un projet' : entityType === 'solution' ? 'une solution' : 'un CR'}...`}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Rechercher..." />
-                  <CommandList>
-                    <CommandEmpty>Aucun résultat</CommandEmpty>
-                    <CommandGroup>
-                      {getEntityOptions().map(option => (
-                        <CommandItem
-                          key={option.id}
-                          value={option.label}
-                          onSelect={() => {
-                            setSelectedEntityId(option.id);
-                            setEntitySearchOpen(false);
-                          }}
-                        >
-                          <Check className={cn("mr-2 h-4 w-4", selectedEntityId === option.id ? "opacity-100" : "opacity-0")} />
-                          {option.label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          )}
+          {/* Multi-entity linking */}
+          <TranscriptionEntityLinker
+            value={entitySelection}
+            onChange={setEntitySelection}
+            leads={leads}
+            leadContacts={leadContacts}
+            projects={projects}
+            solutions={solutions}
+            meetingNotes={meetingNotes}
+          />
 
           {/* Prompt profile */}
           <div className="space-y-2">

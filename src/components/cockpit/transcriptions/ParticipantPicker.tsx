@@ -26,7 +26,7 @@ interface ParticipantPickerProps {
 }
 
 interface SearchResult {
-  type: 'partner' | 'lead_contact' | 'lead';
+  type: 'partner' | 'lead_contact';
   id: string;
   name: string;
   company?: string;
@@ -44,16 +44,14 @@ export function ParticipantPicker({ value, onChange }: ParticipantPickerProps) {
     setLoading(true);
     try {
       const pattern = `%${q}%`;
-      const [partners, contacts, leads] = await Promise.all([
+      const [partners, contacts] = await Promise.all([
         supabase.from('partners').select('id, name, company').ilike('name', pattern).is('deleted_at', null).limit(5),
         supabase.from('lead_contacts').select('id, name, email').ilike('name', pattern).limit(5),
-        supabase.from('leads').select('id, name, company').ilike('name', pattern).limit(5),
       ]);
 
       const r: SearchResult[] = [];
       partners.data?.forEach(p => r.push({ type: 'partner', id: p.id, name: p.name, company: p.company ?? undefined }));
       contacts.data?.forEach(c => r.push({ type: 'lead_contact', id: c.id, name: c.name }));
-      leads.data?.forEach(l => r.push({ type: 'lead', id: l.id, name: l.name, company: l.company ?? undefined }));
       setResults(r);
     } finally {
       setLoading(false);
@@ -176,7 +174,7 @@ export function ParticipantPicker({ value, onChange }: ParticipantPickerProps) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Pré-sélectionner les participants améliore la reconnaissance vocale et le matching CRM.
+        Identifiez les personnes présentes à la réunion (partenaires, contacts) pour améliorer la reconnaissance vocale.
       </p>
     </div>
   );
