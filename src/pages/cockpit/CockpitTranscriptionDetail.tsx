@@ -85,8 +85,9 @@ export default function CockpitTranscriptionDetail() {
 
   const { useTranscription, deleteTranscription, processTranscription, updateTranscription, transcriptions, isLoading: listLoading } = useCockpitVoiceTranscriptions();
 
-  // Find transcription id from slug or id
-  const transcriptionId = transcriptions.find(t => t.slug === slug || t.id === slug)?.id || slug || '';
+  // Find transcription id from slug or id — wait for list to load to avoid passing slug as UUID
+  const resolvedId = transcriptions.find(t => t.slug === slug || t.id === slug)?.id;
+  const transcriptionId = resolvedId || '';
   const { data: transcription, isLoading, refetch } = useTranscription(transcriptionId);
 
   const { leads } = useCockpitLeads();
@@ -543,8 +544,6 @@ export default function CockpitTranscriptionDetail() {
         <TranscriptionParticipantsSection
           transcriptionId={transcriptionId}
           normalizedSummary={summary}
-          onReanalyze={handleReanalyze}
-          isReanalyzing={processTranscription.isPending}
         />
 
         {/* Partners */}
