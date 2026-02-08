@@ -122,7 +122,7 @@ export default function CockpitDashboard() {
                 </SheetDescription>
               </SheetHeader>
               <div className="mt-4">
-                <HarvestInterviewPanel />
+                <HarvestInterviewPanel autoStart />
               </div>
             </SheetContent>
           </Sheet>
