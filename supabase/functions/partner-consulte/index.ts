@@ -8,6 +8,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface RelationalNode {
+  name: string;
+  entityType: string | null;
+  projects: string[];
+  meetingCount: number;
+  lastSeen: string;
+  coParticipants: string[];
+}
+
 interface PartnerContext {
   partnerId: string;
   partnerName: string;
@@ -54,6 +63,7 @@ interface PartnerContext {
     entityName: string;
     entityType: string;
   }>;
+  relationalNetwork: RelationalNode[];
   totalTranscriptions: number;
   totalDocuments: number;
 }
@@ -132,6 +142,87 @@ async function fetchTranscriptionParticipants(supabase: any, transcriptionId: st
   } catch { return []; }
 }
 
+// Build relational network: who meets whom across transcriptions
+async function buildRelationalNetwork(supabase: any, transcriptionIds: string[], projectNames: Map<string, string>): Promise<RelationalNode[]> {
+  if (!transcriptionIds.length) return [];
+  try {
+    // Fetch all participants across all relevant transcriptions
+    const { data: allParticipants } = await supabase
+      .from('transcription_participants')
+      .select('name, transcription_id, linked_entity_type, presence_status, updated_at')
+      .in('transcription_id', transcriptionIds)
+      .eq('presence_status', 'present');
+
+    if (!allParticipants?.length) return [];
+
+    // Fetch transcription→project mapping
+    const { data: transcriptions } = await supabase
+      .from('voice_transcriptions')
+      .select('id, project_id, transcription_date')
+      .in('id', transcriptionIds);
+
+    const transcriptionProjectMap = new Map<string, string>();
+    const transcriptionDateMap = new Map<string, string>();
+    for (const t of transcriptions || []) {
+      if (t.project_id && projectNames.has(t.project_id)) {
+        transcriptionProjectMap.set(t.id, projectNames.get(t.project_id)!);
+      }
+      transcriptionDateMap.set(t.id, t.transcription_date || '');
+    }
+
+    // Group participants by transcription for co-participant detection
+    const byTranscription = new Map<string, string[]>();
+    for (const p of allParticipants) {
+      const list = byTranscription.get(p.transcription_id) || [];
+      list.push(p.name);
+      byTranscription.set(p.transcription_id, list);
+    }
+
+    // Build per-person nodes
+    const nodeMap = new Map<string, RelationalNode>();
+    for (const p of allParticipants) {
+      const existing = nodeMap.get(p.name) || {
+        name: p.name,
+        entityType: p.linked_entity_type || null,
+        projects: [],
+        meetingCount: 0,
+        lastSeen: '',
+        coParticipants: [],
+      };
+
+      existing.meetingCount++;
+
+      // Track projects
+      const projName = transcriptionProjectMap.get(p.transcription_id);
+      if (projName && !existing.projects.includes(projName)) {
+        existing.projects.push(projName);
+      }
+
+      // Track last seen
+      const date = transcriptionDateMap.get(p.transcription_id) || p.updated_at || '';
+      if (date > existing.lastSeen) existing.lastSeen = date;
+
+      // Track co-participants
+      const coParticipants = byTranscription.get(p.transcription_id) || [];
+      for (const co of coParticipants) {
+        if (co !== p.name && !existing.coParticipants.includes(co)) {
+          existing.coParticipants.push(co);
+        }
+      }
+
+      nodeMap.set(p.name, existing);
+    }
+
+    // Sort by meeting count descending, limit to top 20
+    return [...nodeMap.values()]
+      .sort((a, b) => b.meetingCount - a.meetingCount)
+      .slice(0, 20);
+  } catch (e) {
+    console.warn('[partner-consulte] Relational network build failed:', e);
+    return [];
+  }
+}
+
 // ---- Main context collector ----
 
 async function collectPartnerContext(
@@ -171,10 +262,12 @@ async function collectPartnerContext(
   let totalTranscriptions = 0;
   let totalDocuments = 0;
   const allTranscriptionIds: string[] = [];
+  const projectNameMap = new Map<string, string>(); // id → name for relational network
 
   for (const link of projectLinks || []) {
     if (!link.project) continue;
     const project = link.project as any;
+    projectNameMap.set(project.id, project.name);
 
     // Parallel: transcriptions, documents, context notes, vocabulary
     const [transcriptionsRes, documentsRes, projNotes, projVocab] = await Promise.all([
@@ -276,8 +369,13 @@ async function collectPartnerContext(
     });
   }
 
-  // 5. Known participant mappings across all transcriptions
-  const knownParticipantMappings = await fetchParticipantMappings(supabase, allTranscriptionIds);
+  // 5. Known participant mappings + relational network (parallel)
+  const [knownParticipantMappings, relationalNetwork] = await Promise.all([
+    fetchParticipantMappings(supabase, allTranscriptionIds),
+    buildRelationalNetwork(supabase, allTranscriptionIds, projectNameMap),
+  ]);
+
+  console.log(`[partner-consulte] Relational network: ${relationalNetwork.length} nodes from ${allTranscriptionIds.length} transcriptions`);
 
   return {
     partnerId: partner.id,
@@ -288,6 +386,7 @@ async function collectPartnerContext(
     partnerContextNotes: partnerContextNotes,
     partnerVocabulary: partnerVocabulary,
     knownParticipantMappings,
+    relationalNetwork,
     totalTranscriptions,
     totalDocuments,
   };
@@ -387,6 +486,21 @@ function buildUserPrompt(context: PartnerContext): string {
     ? `\n## 🔗 Correspondances speaker ↔ CRM connues\n${context.knownParticipantMappings.map(m => `- "${m.speakerLabel}" → ${m.entityName} (${m.entityType})`).join('\n')}\n`
     : '';
 
+  // ---- Relational network ----
+  const networkBlock = context.relationalNetwork.length > 0
+    ? `\n## 🕸️ Réseau relationnel (graphe de contacts)\n${context.relationalNetwork.map(n => {
+        let line = `- **${n.name}**`;
+        if (n.entityType) line += ` [${n.entityType}]`;
+        line += ` — ${n.meetingCount} réunion(s)`;
+        if (n.projects.length) line += `, projets: ${n.projects.join(', ')}`;
+        if (n.lastSeen) line += `, dernier: ${formatDate(n.lastSeen)}`;
+        if (n.coParticipants.length > 0) {
+          line += `\n  ↔ Co-participants fréquents: ${n.coParticipants.slice(0, 5).join(', ')}`;
+        }
+        return line;
+      }).join('\n')}\n`
+    : '';
+
   // ---- Projects ----
   const projectsSection = context.projects.length > 0
     ? context.projects.map(p => {
@@ -464,7 +578,7 @@ ${transcriptionsText}`;
 *${context.projects.length} projets | ${context.leads.length} leads | ${context.totalTranscriptions} transcriptions | ${context.totalDocuments} documents*
 
 ---
-${partnerNotesBlock}${partnerVocabBlock}${mappingsBlock}
+${partnerNotesBlock}${partnerVocabBlock}${mappingsBlock}${networkBlock}
 ## Projets assignés
 
 ${projectsSection}
@@ -591,7 +705,7 @@ serve(async (req) => {
       content: `Synthèse de ${context.projects.length} projets, ${context.leads.length} leads, ${context.totalTranscriptions} transcriptions, ${context.partnerContextNotes.length} notes contexte, ${context.knownParticipantMappings.length} mappings participants`,
       is_ai_generated: true,
       ai_metadata: {
-        version: 'v2-enriched',
+        version: 'v3-relational',
         projects_count: context.projects.length,
         leads_count: context.leads.length,
         transcriptions_count: context.totalTranscriptions,
@@ -599,6 +713,7 @@ serve(async (req) => {
         context_notes_count: context.partnerContextNotes.length,
         vocabulary_terms: context.partnerVocabulary.length,
         participant_mappings: context.knownParticipantMappings.length,
+        relational_network_nodes: context.relationalNetwork.length,
         synthesis_length: synthesis.length,
       }
     });
