@@ -60,6 +60,9 @@ interface GraphData {
   leadContacts: Array<{ name: string; position: string | null; email: string | null; is_primary: boolean }>;
   meetingNotes: Array<{ objectives: string | null; notes: string | null; ai_summary: string | null; next_steps: string | null; created_at: string }>;
   activityLog: Array<{ activity_type: string; title: string | null; content: string | null; created_at: string }>;
+  // Phase 1: Cross-enrichissement
+  linkedSyntheses: Array<{ type: string; name: string; summary: string }>;
+  crossContextNotes: Array<{ type: string; name: string; notes: string[] }>;
 }
 
 // ============= HELPERS (defined first) =============
@@ -892,9 +895,106 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
     fetchActivityLog(supabase, entityType, entityId),
   ]);
 
-  console.log(`[synthesize-v2] Enrichment: ${contextNotes.length} notes, ${vocabulary.length} vocab, ${participantMappings.length} mappings, ${relationalNetwork.length} network nodes, ${leadContacts.length} contacts, ${meetingNotes.length} meeting notes, ${activityLog.length} activities`);
+  // ====== Phase 1: Cross-enrichissement des entités liées ======
+  const linkedSyntheses: GraphData['linkedSyntheses'] = [];
+  const crossContextNotes: GraphData['crossContextNotes'] = [];
+  const crossVocabulary: string[] = [];
 
-  return { entityName, entityInfo, events, linkedEntities, provenance, contextNotes, vocabulary, participantMappings, relationalNetwork, leadContacts, meetingNotes, activityLog };
+  if (linkedEntities.length > 0) {
+    const tableMap: Record<string, string> = {
+      lead: 'leads', project: 'projects', partner: 'partners',
+      solution: 'articles', transcription: 'voice_transcriptions', document: 'generated_documents'
+    };
+
+    // Batch fetch by entity type to minimize queries
+    const byType = new Map<string, LinkedEntity[]>();
+    for (const le of linkedEntities) {
+      const list = byType.get(le.type) || [];
+      list.push(le);
+      byType.set(le.type, list);
+    }
+
+    const crossPromises: Promise<void>[] = [];
+
+    for (const [type, entities] of byType.entries()) {
+      const table = tableMap[type];
+      if (!table) continue;
+      const ids = entities.map(e => e.id);
+
+      // 1. Fetch existing AI syntheses from linked entities
+      crossPromises.push((async () => {
+        try {
+          const { data } = await supabase
+            .from(table)
+            .select('id, ai_documents_summary')
+            .in('id', ids)
+            .not('ai_documents_summary', 'is', null);
+          for (const row of data || []) {
+            const entity = entities.find(e => e.id === row.id);
+            if (row.ai_documents_summary && entity) {
+              // Truncate to avoid token explosion — keep first 1500 chars
+              const summary = typeof row.ai_documents_summary === 'string'
+                ? row.ai_documents_summary.substring(0, 1500)
+                : JSON.stringify(row.ai_documents_summary).substring(0, 1500);
+              linkedSyntheses.push({ type, name: entity.name, summary });
+            }
+          }
+        } catch (e) { console.warn(`[cross-enrich] syntheses for ${type} failed:`, e); }
+      })());
+
+      // 2. Fetch context notes from linked entities
+      crossPromises.push((async () => {
+        try {
+          const { data } = await supabase
+            .from('entity_context_notes')
+            .select('entity_id, content')
+            .eq('entity_type', type)
+            .in('entity_id', ids)
+            .order('updated_at', { ascending: false })
+            .limit(20);
+          // Group by entity
+          const grouped = new Map<string, string[]>();
+          for (const row of data || []) {
+            const list = grouped.get(row.entity_id) || [];
+            list.push(row.content);
+            grouped.set(row.entity_id, list);
+          }
+          for (const [eid, notes] of grouped.entries()) {
+            const entity = entities.find(e => e.id === eid);
+            if (entity) {
+              crossContextNotes.push({ type, name: entity.name, notes });
+            }
+          }
+        } catch (e) { console.warn(`[cross-enrich] context notes for ${type} failed:`, e); }
+      })());
+
+      // 3. Fetch vocabulary from linked entities
+      crossPromises.push((async () => {
+        try {
+          const { data } = await supabase
+            .from('entity_vocabulary')
+            .select('term, category')
+            .eq('entity_type', type)
+            .in('entity_id', ids);
+          for (const v of data || []) {
+            const term = `${v.term} (${v.category || 'général'})`;
+            if (!vocabulary.includes(term) && !crossVocabulary.includes(term)) {
+              crossVocabulary.push(term);
+            }
+          }
+        } catch (e) { console.warn(`[cross-enrich] vocabulary for ${type} failed:`, e); }
+      })());
+    }
+
+    await Promise.all(crossPromises);
+  }
+
+  // Merge cross-vocabulary into main vocabulary
+  const mergedVocabulary = [...vocabulary, ...crossVocabulary];
+
+  console.log(`[synthesize-v2] Enrichment: ${contextNotes.length} notes, ${mergedVocabulary.length} vocab (${crossVocabulary.length} croisé), ${participantMappings.length} mappings, ${relationalNetwork.length} network nodes, ${leadContacts.length} contacts, ${meetingNotes.length} meeting notes, ${activityLog.length} activities, ${linkedSyntheses.length} synthèses liées, ${crossContextNotes.length} notes croisées`);
+
+  return { entityName, entityInfo, events, linkedEntities, provenance, contextNotes, vocabulary: mergedVocabulary, participantMappings, relationalNetwork, leadContacts, meetingNotes, activityLog, linkedSyntheses, crossContextNotes };
 }
 
 // ============= MAIN HANDLER =============
@@ -1008,6 +1108,19 @@ serve(async (req) => {
     const meetingNotesSection = buildMeetingNotesBlock(graphData.meetingNotes);
     const activityLogSection = buildActivityLogBlock(graphData.activityLog);
 
+    // Phase 1: Cross-enrichissement blocks
+    const linkedSynthesesSection = graphData.linkedSyntheses.length > 0
+      ? graphData.linkedSyntheses.map(ls => 
+          `### ${capitalizeFirst(ls.type)} : ${ls.name}\n${ls.summary}`
+        ).join('\n\n---\n\n')
+      : 'Aucune synthèse liée disponible.';
+
+    const crossContextNotesSection = graphData.crossContextNotes.length > 0
+      ? graphData.crossContextNotes.map(cn =>
+          `### ${capitalizeFirst(cn.type)} : ${cn.name}\n${cn.notes.map((n, i) => `> Note ${i + 1}: ${n}`).join('\n')}`
+        ).join('\n\n')
+      : 'Aucune note croisée disponible.';
+
     const synthesisDate = new Date().toLocaleDateString('fr-FR', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
@@ -1024,12 +1137,14 @@ serve(async (req) => {
       .replace('{{lead_contacts}}', leadContactsSection || 'Aucun contact associé.')
       .replace('{{meeting_notes}}', meetingNotesSection || 'Aucun CR de réunion.')
       .replace('{{activity_log}}', activityLogSection || 'Aucune activité récente.')
+      .replace('{{linked_syntheses}}', linkedSynthesesSection)
+      .replace('{{cross_context_notes}}', crossContextNotesSection)
       .replace('{{chronological_context}}', chronologicalContext + linkedEntitiesContext)
       .replace('{{linked_count}}', String(graphData.linkedEntities.length))
       .replace('{{events_count}}', String(graphData.events.length))
       .replace('{{context_notes_count}}', String(graphData.contextNotes.length));
 
-    console.log(`[synthesize-v2] Calling AI with enrichment: ${graphData.contextNotes.length} notes, ${graphData.vocabulary.length} vocab, ${graphData.participantMappings.length} mappings, ${graphData.relationalNetwork.length} network nodes`);
+    console.log(`[synthesize-v2] Calling AI with enrichment: ${graphData.contextNotes.length} notes, ${graphData.vocabulary.length} vocab, ${graphData.participantMappings.length} mappings, ${graphData.relationalNetwork.length} network, ${graphData.linkedSyntheses.length} synthèses liées, ${graphData.crossContextNotes.length} notes croisées`);
 
     // 5. Generate synthesis - Use centralized AI client with automatic DB config lookup
     const synthesis = await callLLM(
