@@ -13,6 +13,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { EmailDraftsSheet } from './EmailDraftsSheet';
+import { AISentinelNotification } from './AISentinelNotification';
 
 export function CockpitHeader() {
   const [emailDraftsOpen, setEmailDraftsOpen] = useState(false);
@@ -71,6 +72,9 @@ export function CockpitHeader() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* AI Sentinel */}
+          <AISentinelNotification />
+
           {/* Email Drafts Button */}
           <Tooltip>
             <TooltipTrigger asChild>
