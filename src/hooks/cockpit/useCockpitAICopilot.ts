@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { handleAIError } from '@/lib/ai-error-handler';
 import { toast as sonnerToast } from 'sonner';
 
-type CopilotMode = 'suggest-tasks' | 'detect-inactivity' | 'health-check' | 'morning-brief' | 'next-step' | 'meeting-prep' | 'opportunity-score';
+type CopilotMode = 'suggest-tasks' | 'detect-inactivity' | 'health-check' | 'morning-brief' | 'next-step' | 'meeting-prep' | 'opportunity-score' | 'win-loss-analysis' | 'deadline-cascade';
 
 interface TaskSuggestion {
   title: string;
@@ -173,6 +173,48 @@ export function useCockpitAICopilot(workspaceId?: string) {
     },
   });
 
+  // Phase 3: Win/Loss analysis
+  const winLossAnalysis = useMutation({
+    mutationFn: async () => {
+      const result = await callCopilot('win-loss-analysis');
+      return result as {
+        analysis: {
+          win_patterns: string[];
+          loss_patterns: string[];
+          avg_win_cycle_days?: number;
+          avg_loss_cycle_days?: number;
+          best_sources: string[];
+          critical_stage: string;
+          recommendations: string[];
+          key_differentiators: string[];
+        } | null;
+        stats: { total: number; won: number; lost: number; win_rate: number; total_won_value?: number; total_lost_value?: number };
+        message?: string;
+      };
+    },
+  });
+
+  // Phase 3: Deadline cascade
+  const deadlineCascade = useMutation({
+    mutationFn: async (projectId: string) => {
+      const result = await callCopilot('deadline-cascade', undefined, projectId);
+      return result as {
+        cascade: {
+          overall_status: string;
+          deadline_feasibility: string;
+          days_at_risk: number;
+          critical_path: string[];
+          tasks_to_reschedule: Array<{ task_title: string; current_due: string; suggested_due: string; reason: string }>;
+          blocked_milestones?: string[];
+          impact_on_opportunities?: string;
+          recommendations: string[];
+        };
+        project: { id: string; name: string; planned_end_date: string; days_remaining: number | null };
+        stats: { total_tasks: number; overdue: number; pending: number; completed: number };
+      };
+    },
+  });
+
   // Create tasks from suggestions
   const createTasksFromSuggestions = useMutation({
     mutationFn: async (suggestions: TaskSuggestion[]) => {
@@ -226,6 +268,8 @@ export function useCockpitAICopilot(workspaceId?: string) {
     suggestNextStep,
     meetingPrep,
     opportunityScore,
+    winLossAnalysis,
+    deadlineCascade,
     createTasksFromSuggestions,
   };
 }

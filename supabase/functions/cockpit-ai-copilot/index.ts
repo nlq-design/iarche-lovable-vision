@@ -9,6 +9,8 @@
  *   - next-step: Suggest optimal next action for an opportunity stage
  *   - meeting-prep: Pre-meeting briefing with context & talking points
  *   - opportunity-score: Predictive conversion scoring for pipeline
+ *   - win-loss-analysis: Patterns from closed opportunities to improve pipeline
+ *   - deadline-cascade: Impact analysis when project deadlines shift
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -82,6 +84,12 @@ serve(async (req) => {
         break;
       case "opportunity-score":
         result = await opportunityScore(supabase, workspaceId);
+        break;
+      case "win-loss-analysis":
+        result = await winLossAnalysis(supabase, workspaceId);
+        break;
+      case "deadline-cascade":
+        result = await deadlineCascade(supabase, entityId);
         break;
       default:
         return new Response(JSON.stringify({ error: `Mode inconnu: ${mode}` }), {
@@ -738,6 +746,229 @@ async function opportunityScore(supabase: any, workspaceId: string) {
       high_risk: scores.filter((s) => s.risk_level === "critical" || s.risk_level === "high").length,
       pipeline_value: scores.reduce((sum, s) => sum + s.value_amount, 0),
       weighted_value: Math.round(scores.reduce((sum, s) => sum + s.value_amount * (s.conversion_score / 100), 0)),
+    },
+  };
+}
+
+// =============================================================================
+// MODE 8: WIN/LOSS ANALYSIS (Phase 3)
+// =============================================================================
+
+async function winLossAnalysis(supabase: any, workspaceId: string) {
+  // Fetch closed opportunities (last 6 months)
+  const sixMonthsAgo = new Date(Date.now() - 180 * 86400000).toISOString();
+
+  const { data: closedOpps } = await supabase.from("opportunities")
+    .select(`*, leads:lead_id(name, company, source, lead_score, qualification_status, budget, needs)`)
+    .eq("workspace_id", workspaceId)
+    .in("stage", ["closed_won", "closed_lost"])
+    .gte("updated_at", sixMonthsAgo)
+    .order("updated_at", { ascending: false })
+    .limit(50);
+
+  if (!closedOpps?.length) {
+    return { analysis: null, stats: { total: 0, won: 0, lost: 0, win_rate: 0 }, message: "Pas assez de données (aucune opportunité clôturée sur 6 mois)" };
+  }
+
+  const won = closedOpps.filter((o: any) => o.stage === "closed_won");
+  const lost = closedOpps.filter((o: any) => o.stage === "closed_lost");
+
+  // Collect activity stats per opportunity
+  const oppContexts: string[] = [];
+  for (const opp of closedOpps.slice(0, 30)) {
+    const [{ count: activityCount }, { count: taskCount }, { count: meetingCount }] = await Promise.all([
+      supabase.from("activity_log").select("id", { count: "exact", head: true }).eq("entity_id", opp.id),
+      supabase.from("tasks").select("id", { count: "exact", head: true }).or(`entity_id.eq.${opp.id},opportunity_id.eq.${opp.id}`),
+      supabase.from("meeting_notes").select("id", { count: "exact", head: true }).eq("lead_id", opp.lead_id),
+    ]);
+
+    const lifecycle = daysBetween(opp.created_at) - daysBetween(opp.updated_at);
+    oppContexts.push(
+      `[${opp.stage === "closed_won" ? "WON" : "LOST"}] "${opp.title || opp.leads?.name || "?"}" | ` +
+      `Source: ${opp.leads?.source || "?"} | Valeur: ${opp.value_amount || 0}€ | ` +
+      `Score lead: ${opp.leads?.lead_score || "?"} | Qualif: ${opp.leads?.qualification_status || "?"} | ` +
+      `Durée cycle: ${lifecycle}j | Activités: ${activityCount || 0} | Tâches: ${taskCount || 0} | Meetings: ${meetingCount || 0} | ` +
+      `Budget client: ${opp.leads?.budget || "?"} | Raison perte: ${opp.loss_reason || "non renseignée"}`
+    );
+  }
+
+  const analysis = await extractStructured<{
+    win_patterns: string[];
+    loss_patterns: string[];
+    avg_win_cycle_days: number;
+    avg_loss_cycle_days: number;
+    best_sources: string[];
+    critical_stage: string;
+    recommendations: string[];
+    key_differentiators: string[];
+  }>(
+    [
+      {
+        role: "system",
+        content: `Tu es un analyste commercial B2B expert. Analyse les opportunités gagnées et perdues pour identifier des patterns récurrents.
+Cherche des corrélations entre : source du lead, score, qualification, durée du cycle, nombre d'interactions, budget client, et le résultat (won/lost).
+Sois factuel et actionnable. Réponds en français.`,
+      },
+      {
+        role: "user",
+        content: `Analyse Win/Loss — ${won.length} gagnées, ${lost.length} perdues:\n\n${oppContexts.join("\n")}`,
+      },
+    ],
+    {
+      name: "win_loss_analysis",
+      description: "Analyse des patterns de conversion commerciale",
+      parameters: {
+        type: "object",
+        properties: {
+          win_patterns: { type: "array", items: { type: "string" }, description: "3-5 patterns des opportunités gagnées" },
+          loss_patterns: { type: "array", items: { type: "string" }, description: "3-5 patterns des opportunités perdues" },
+          avg_win_cycle_days: { type: "number", description: "Durée moyenne du cycle pour les wins" },
+          avg_loss_cycle_days: { type: "number", description: "Durée moyenne du cycle pour les losses" },
+          best_sources: { type: "array", items: { type: "string" }, description: "Sources les plus performantes" },
+          critical_stage: { type: "string", description: "Le stage où se jouent le plus de deals" },
+          recommendations: { type: "array", items: { type: "string" }, description: "3-5 recommandations d'amélioration" },
+          key_differentiators: { type: "array", items: { type: "string" }, description: "Facteurs qui distinguent un win d'un loss" },
+        },
+        required: ["win_patterns", "loss_patterns", "best_sources", "critical_stage", "recommendations", "key_differentiators"],
+        additionalProperties: false,
+      },
+    },
+    { functionName: FUNCTION_NAME, workspaceId }
+  );
+
+  return {
+    analysis,
+    stats: {
+      total: closedOpps.length,
+      won: won.length,
+      lost: lost.length,
+      win_rate: Math.round((won.length / closedOpps.length) * 100),
+      total_won_value: won.reduce((s: number, o: any) => s + (o.value_amount || 0), 0),
+      total_lost_value: lost.reduce((s: number, o: any) => s + (o.value_amount || 0), 0),
+    },
+  };
+}
+
+// =============================================================================
+// MODE 9: DEADLINE CASCADE (Phase 3)
+// =============================================================================
+
+async function deadlineCascade(supabase: any, projectId: string) {
+  if (!projectId) return { error: "projectId requis pour deadline-cascade" };
+
+  const { data: project } = await supabase.from("projects")
+    .select("*").eq("id", projectId).single();
+
+  if (!project) return { error: "Projet introuvable" };
+
+  // Get all project tasks with dependencies
+  const { data: tasks } = await supabase.from("tasks")
+    .select("id, title, status, priority, due_date, due_time, task_type, entity_type, entity_id")
+    .eq("project_id", projectId)
+    .neq("status", "cancelled")
+    .order("due_date", { ascending: true, nullsFirst: false });
+
+  // Get project milestones / specs
+  const { data: specs } = await supabase.from("specifications")
+    .select("id, title, status, estimated_budget, complexity, deadline")
+    .eq("project_id", projectId)
+    .limit(20);
+
+  // Get linked opportunities
+  const { data: opps } = await supabase.from("opportunities")
+    .select("id, title, stage, value_amount, expected_close_date")
+    .eq("project_id", projectId)
+    .limit(10);
+
+  const today = new Date().toISOString().split("T")[0];
+  const endDate = project.planned_end_date;
+  const daysRemaining = endDate ? Math.floor((new Date(endDate).getTime() - Date.now()) / 86400000) : null;
+
+  // Compute cascade impact
+  const pendingTasks = tasks?.filter((t: any) => t.status !== "completed") || [];
+  const overdueTasks = pendingTasks.filter((t: any) => t.due_date && t.due_date < today);
+  const futureTasks = pendingTasks.filter((t: any) => t.due_date && t.due_date >= today);
+
+  const context = `
+## Projet: ${project.name}
+- Statut: ${project.status} | Santé: ${project.health_status || "?"}
+- Date début: ${project.start_date || "?"} | Date fin prévue: ${endDate || "Non définie"}
+- Jours restants: ${daysRemaining !== null ? daysRemaining : "N/A"}
+- Budget: ${project.consumed_amount || 0}/${project.budget_amount || 0}€
+
+## Tâches (${tasks?.length || 0} total, ${overdueTasks.length} en retard)
+${pendingTasks.map((t: any) => `- [${t.status}/${t.priority}] ${t.title} — échéance: ${t.due_date || "aucune"}`).join("\n") || "Aucune"}
+
+## Cahiers des charges (${specs?.length || 0})
+${specs?.map((s: any) => `- ${s.title} [${s.status}] deadline: ${s.deadline || "?"}`).join("\n") || "Aucun"}
+
+## Opportunités liées (${opps?.length || 0})
+${opps?.map((o: any) => `- ${o.title} (${o.stage}, close prévu: ${o.expected_close_date || "?"}, ${o.value_amount || 0}€)`).join("\n") || "Aucune"}
+`;
+
+  const cascade = await extractStructured<{
+    overall_status: string;
+    deadline_feasibility: string;
+    days_at_risk: number;
+    critical_path: string[];
+    tasks_to_reschedule: Array<{ task_title: string; current_due: string; suggested_due: string; reason: string }>;
+    blocked_milestones: string[];
+    impact_on_opportunities: string;
+    recommendations: string[];
+  }>(
+    [
+      {
+        role: "system",
+        content: `Tu es un chef de projet expert. Analyse l'état d'avancement du projet, évalue la faisabilité de la deadline, et propose un plan de cascade des échéances.
+Pour chaque tâche à replanifier, donne une nouvelle date réaliste.
+Identifie le chemin critique et les jalons bloqués.
+Réponds en français.`,
+      },
+      { role: "user", content: context },
+    ],
+    {
+      name: "deadline_cascade",
+      description: "Analyse d'impact et cascade des deadlines",
+      parameters: {
+        type: "object",
+        properties: {
+          overall_status: { type: "string", description: "Résumé en 1 phrase de l'état du projet" },
+          deadline_feasibility: { type: "string", enum: ["on_track", "at_risk", "impossible"], description: "La deadline est-elle tenable ?" },
+          days_at_risk: { type: "number", description: "Nombre de jours de retard estimé" },
+          critical_path: { type: "array", items: { type: "string" }, description: "Tâches sur le chemin critique" },
+          tasks_to_reschedule: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                task_title: { type: "string" },
+                current_due: { type: "string" },
+                suggested_due: { type: "string" },
+                reason: { type: "string" },
+              },
+              required: ["task_title", "current_due", "suggested_due", "reason"],
+              additionalProperties: false,
+            },
+          },
+          blocked_milestones: { type: "array", items: { type: "string" }, description: "Jalons bloqués" },
+          impact_on_opportunities: { type: "string", description: "Impact sur les opportunités liées" },
+          recommendations: { type: "array", items: { type: "string" }, description: "3-5 recommandations" },
+        },
+        required: ["overall_status", "deadline_feasibility", "days_at_risk", "critical_path", "tasks_to_reschedule", "recommendations"],
+        additionalProperties: false,
+      },
+    },
+    { functionName: FUNCTION_NAME, workspaceId: project.workspace_id }
+  );
+
+  return {
+    cascade,
+    project: { id: project.id, name: project.name, planned_end_date: endDate, days_remaining: daysRemaining },
+    stats: {
+      total_tasks: tasks?.length || 0,
+      overdue: overdueTasks.length,
+      pending: pendingTasks.length,
+      completed: (tasks?.length || 0) - pendingTasks.length,
     },
   };
 }
