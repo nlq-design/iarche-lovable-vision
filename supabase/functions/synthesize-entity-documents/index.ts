@@ -2,6 +2,19 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { callLLM } from "../_shared/ai-client.ts";
+import {
+  fetchContextNotes as fetchContextNotesShared,
+  fetchVocabulary as fetchVocabularyShared,
+  fetchParticipantMappings as fetchParticipantMappingsShared,
+  fetchLeadContacts,
+  fetchMeetingNotes,
+  fetchActivityLog,
+  formatDateFR,
+  FRENCH_INSTRUCTION,
+  buildLeadContactsBlock,
+  buildMeetingNotesBlock,
+  buildActivityLogBlock,
+} from "../_shared/consulte-helpers.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -44,6 +57,9 @@ interface GraphData {
   vocabulary: string[];
   participantMappings: Array<{ name: string; entityName: string; entityType: string }>;
   relationalNetwork: Array<{ name: string; entityType: string | null; projects: string[]; meetingCount: number; coParticipants: string[] }>;
+  leadContacts: Array<{ name: string; position: string | null; email: string | null; is_primary: boolean }>;
+  meetingNotes: Array<{ objectives: string | null; notes: string | null; ai_summary: string | null; next_steps: string | null; created_at: string }>;
+  activityLog: Array<{ activity_type: string; title: string | null; content: string | null; created_at: string }>;
 }
 
 // ============= HELPERS (defined first) =============
@@ -71,6 +87,7 @@ function countSources(events: ChronologicalEvent[]): Record<string, number> {
 
 function getDefaultSystemPrompt(): string {
   return `Tu es un expert en synthèse commerciale pour IArche (conseil IA B2B).
+${FRENCH_INSTRUCTION}
 
 ## MISSION CRITIQUE
 Produire une MÉMOIRE CONTEXTUELLE EXHAUSTIVE pour le suivi commercial.
@@ -796,8 +813,8 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
     provenance.push({ type: entityType, id: entityId, name: entityName, date: formatDate(entityData.created_at) });
   }
 
-  // Collect all data in parallel (including Phase A-C enrichments)
-  const [, , , , , , , , , , contextNotes, vocabulary, participantMappings, relationalNetwork] = await Promise.all([
+  // Collect all data in parallel (including Phase A-C enrichments + new sources)
+  const [, , , , , , , , , , contextNotes, vocabulary, participantMappings, relationalNetwork, leadContacts, meetingNotes, activityLog] = await Promise.all([
     collectUploadedFiles(supabase, entityType, entityId, events, linkedEntities),
     collectTranscriptions(supabase, entityType, entityId, events, linkedEntities),
     collectPartners(supabase, entityType, entityId, events, linkedEntities),
@@ -812,11 +829,15 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
     collectVocabulary(supabase, entityType, entityId),
     collectParticipantMappings(supabase),
     collectRelationalNetwork(supabase, entityType, entityId),
+    // New enrichment sources
+    entityType === 'lead' ? fetchLeadContacts(supabase, entityId) : Promise.resolve([]),
+    fetchMeetingNotes(supabase, entityType, entityId),
+    fetchActivityLog(supabase, entityType, entityId),
   ]);
 
-  console.log(`[synthesize-v2] Enrichment: ${contextNotes.length} notes, ${vocabulary.length} vocab, ${participantMappings.length} mappings, ${relationalNetwork.length} network nodes`);
+  console.log(`[synthesize-v2] Enrichment: ${contextNotes.length} notes, ${vocabulary.length} vocab, ${participantMappings.length} mappings, ${relationalNetwork.length} network nodes, ${leadContacts.length} contacts, ${meetingNotes.length} meeting notes, ${activityLog.length} activities`);
 
-  return { entityName, entityInfo, events, linkedEntities, provenance, contextNotes, vocabulary, participantMappings, relationalNetwork };
+  return { entityName, entityInfo, events, linkedEntities, provenance, contextNotes, vocabulary, participantMappings, relationalNetwork, leadContacts, meetingNotes, activityLog };
 }
 
 // ============= MAIN HANDLER =============
@@ -916,6 +937,11 @@ serve(async (req) => {
         }).join('\n')
       : 'Pas assez de données pour construire le réseau.';
 
+    // New enrichment blocks
+    const leadContactsSection = buildLeadContactsBlock(graphData.leadContacts);
+    const meetingNotesSection = buildMeetingNotesBlock(graphData.meetingNotes);
+    const activityLogSection = buildActivityLogBlock(graphData.activityLog);
+
     const synthesisDate = new Date().toLocaleDateString('fr-FR', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
@@ -929,6 +955,9 @@ serve(async (req) => {
       .replace('{{vocabulary}}', vocabularySection)
       .replace('{{participant_mappings}}', mappingsSection)
       .replace('{{relational_network}}', networkSection)
+      .replace('{{lead_contacts}}', leadContactsSection || 'Aucun contact associé.')
+      .replace('{{meeting_notes}}', meetingNotesSection || 'Aucun CR de réunion.')
+      .replace('{{activity_log}}', activityLogSection || 'Aucune activité récente.')
       .replace('{{chronological_context}}', chronologicalContext + linkedEntitiesContext)
       .replace('{{linked_count}}', String(graphData.linkedEntities.length))
       .replace('{{events_count}}', String(graphData.events.length))

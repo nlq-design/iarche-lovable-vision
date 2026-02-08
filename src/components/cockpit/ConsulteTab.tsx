@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { handleAIError } from '@/lib/ai-error-handler';
 import { Link } from 'react-router-dom';
-import DOMPurify from 'dompurify';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { 
   Sparkles, 
   RefreshCw, 
@@ -18,7 +16,6 @@ import {
   FileText,
   User,
   ChevronRight,
-  Clock,
   Loader2,
   AlertCircle,
   Link2,
@@ -29,11 +26,12 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useEntityLinks, EntityType, ExtendedEntityType, LinkedEntity } from '@/hooks/cockpit/useEntityLinks';
 import { ContextNotesTab } from './ContextNotesTab';
 import type { ContextNoteEntityType } from '@/hooks/cockpit/useEntityContextNotes';
+import ReactMarkdown from 'react-markdown';
 
 interface ConsulteTabProps {
   entityType: EntityType;
@@ -87,10 +85,8 @@ export function ConsulteTab({
   const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'history' | 'context'>('overview');
   const { links, totalCount, isLoading, refetch, isStale } = useEntityLinks(entityType, entityId);
   
-  // Map EntityType to ContextNoteEntityType
   const contextEntityType: ContextNoteEntityType = entityType as ContextNoteEntityType;
 
-  // Auto-refresh when stale
   useEffect(() => {
     if (isStale) {
       toast.info('Nouvelles liaisons détectées', { 
@@ -107,7 +103,7 @@ export function ConsulteTab({
         body: { 
           entity_type: entityType, 
           entity_id: entityId,
-          use_consulte_prompt: true // Signal to use entity-specific prompt
+          use_consulte_prompt: true
         }
       });
 
@@ -129,15 +125,12 @@ export function ConsulteTab({
 
   const getEntityLink = (entity: LinkedEntity): string => {
     const baseRoute = ENTITY_ROUTES[entity.type];
-    if (entity.slug) {
-      return `${baseRoute}/${entity.slug}`;
-    }
+    if (entity.slug) return `${baseRoute}/${entity.slug}`;
     return `${baseRoute}/${entity.id}`;
   };
 
   const renderLinkedEntities = (entities: LinkedEntity[], type: ExtendedEntityType) => {
     if (entities.length === 0) return null;
-
     return (
       <div className="space-y-1">
         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-2">
@@ -242,21 +235,23 @@ export function ConsulteTab({
             {summary ? (
               <ScrollArea className="h-[300px]">
                 <div className="prose prose-sm max-w-none dark:prose-invert">
-                <div 
-                    className="text-sm text-muted-foreground whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{ 
-                      __html: DOMPurify.sanitize(
-                        summary
-                          .replace(/^### (.+)$/gm, '<h4 class="text-sm font-medium mt-3 mb-1">$1</h4>')
-                          .replace(/^## (.+)$/gm, '<h3 class="text-sm font-semibold mt-4 mb-2">$1</h3>')
-                          .replace(/^# (.+)$/gm, '<h2 class="text-base font-semibold mt-4 mb-2">$1</h2>')
-                          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                          .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                          .replace(/^- (.+)$/gm, '<li class="ml-4">$1</li>'),
-                        { ADD_TAGS: ['h2', 'h3', 'h4', 'strong', 'em', 'li'], ADD_ATTR: ['class'] }
-                      )
+                  <ReactMarkdown
+                    components={{
+                      h1: ({ children }) => <h2 className="text-base font-semibold mt-4 mb-2">{children}</h2>,
+                      h2: ({ children }) => <h3 className="text-sm font-semibold mt-4 mb-2">{children}</h3>,
+                      h3: ({ children }) => <h4 className="text-sm font-medium mt-3 mb-1">{children}</h4>,
+                      p: ({ children }) => <p className="text-sm text-muted-foreground mb-2">{children}</p>,
+                      li: ({ children }) => <li className="text-sm text-muted-foreground ml-4">{children}</li>,
+                      strong: ({ children }) => <strong className="text-foreground">{children}</strong>,
+                      table: ({ children }) => <table className="w-full text-xs border-collapse my-2">{children}</table>,
+                      th: ({ children }) => <th className="border border-border px-2 py-1 bg-muted text-left font-medium">{children}</th>,
+                      td: ({ children }) => <td className="border border-border px-2 py-1">{children}</td>,
+                      hr: () => <hr className="my-3 border-border" />,
+                      blockquote: ({ children }) => <blockquote className="border-l-2 border-primary/30 pl-3 my-2 italic text-muted-foreground">{children}</blockquote>,
                     }}
-                  />
+                  >
+                    {summary}
+                  </ReactMarkdown>
                 </div>
               </ScrollArea>
             ) : (
@@ -358,7 +353,6 @@ export function ConsulteTab({
             )}
           </TabsContent>
 
-          {/* Context Notes Tab */}
           <TabsContent value="context" className="mt-3">
             <ContextNotesTab entityType={contextEntityType} entityId={entityId} />
           </TabsContent>

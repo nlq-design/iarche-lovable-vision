@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Bot, 
@@ -18,7 +17,7 @@ import {
 } from 'lucide-react';
 import { usePartnerConsulte } from '@/hooks/partner/usePartnerConsulte';
 import { toast } from 'sonner';
-import DOMPurify from 'dompurify';
+import ReactMarkdown from 'react-markdown';
 
 export function PartnerConsulteSection() {
   const { 
@@ -40,30 +39,6 @@ export function PartnerConsulteSection() {
     } else {
       toast.error('Échec de la génération');
     }
-  };
-
-  const formatMarkdownToHtml = (markdown: string): string => {
-    // Simple markdown to HTML conversion
-    let html = markdown
-      // Headers
-      .replace(/^### (.+)$/gm, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
-      .replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold mt-6 mb-3">$1</h2>')
-      .replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold mt-6 mb-4">$1</h1>')
-      // Bold
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      // Italic
-      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      // Lists
-      .replace(/^- (.+)$/gm, '<li class="ml-4">$1</li>')
-      // Line breaks
-      .replace(/\n\n/g, '</p><p class="mb-2">')
-      // Horizontal rules
-      .replace(/^---$/gm, '<hr class="my-4 border-border">');
-    
-    // Wrap in paragraph
-    html = `<div class="prose prose-sm max-w-none dark:prose-invert"><p class="mb-2">${html}</p></div>`;
-    
-    return DOMPurify.sanitize(html);
   };
 
   return (
@@ -132,10 +107,10 @@ export function PartnerConsulteSection() {
       <CardContent>
         {isLoading && (
           <div className="space-y-3">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-5/6" />
-            <Skeleton className="h-4 w-2/3" />
+            <div className="h-4 w-full bg-muted animate-pulse rounded" />
+            <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
+            <div className="h-4 w-5/6 bg-muted animate-pulse rounded" />
+            <div className="h-4 w-2/3 bg-muted animate-pulse rounded" />
           </div>
         )}
 
@@ -151,7 +126,7 @@ export function PartnerConsulteSection() {
             <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>Cliquez sur "Générer la synthèse" pour obtenir une vue 360° de vos missions</p>
             <p className="text-sm mt-1">
-              L'IA analysera vos projets, leads et transcriptions associés
+              L'IA analysera vos projets, leads, transcriptions, contacts et CR de réunion
             </p>
           </div>
         )}
@@ -183,10 +158,25 @@ export function PartnerConsulteSection() {
             {/* Synthesis Content */}
             {isExpanded && (
               <ScrollArea className="max-h-[500px] pr-4">
-                <div 
-                  className="text-sm leading-relaxed"
-                  dangerouslySetInnerHTML={{ __html: formatMarkdownToHtml(synthesis) }}
-                />
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <ReactMarkdown
+                    components={{
+                      h1: ({ children }) => <h2 className="text-lg font-semibold mt-4 mb-2">{children}</h2>,
+                      h2: ({ children }) => <h3 className="text-base font-semibold mt-4 mb-2">{children}</h3>,
+                      h3: ({ children }) => <h4 className="text-sm font-medium mt-3 mb-1">{children}</h4>,
+                      p: ({ children }) => <p className="text-sm mb-2">{children}</p>,
+                      li: ({ children }) => <li className="text-sm ml-4">{children}</li>,
+                      strong: ({ children }) => <strong className="text-foreground">{children}</strong>,
+                      table: ({ children }) => <table className="w-full text-xs border-collapse my-2">{children}</table>,
+                      th: ({ children }) => <th className="border border-border px-2 py-1 bg-muted text-left font-medium">{children}</th>,
+                      td: ({ children }) => <td className="border border-border px-2 py-1">{children}</td>,
+                      hr: () => <hr className="my-3 border-border" />,
+                      blockquote: ({ children }) => <blockquote className="border-l-2 border-primary/30 pl-3 my-2 italic text-muted-foreground">{children}</blockquote>,
+                    }}
+                  >
+                    {synthesis}
+                  </ReactMarkdown>
+                </div>
               </ScrollArea>
             )}
 
