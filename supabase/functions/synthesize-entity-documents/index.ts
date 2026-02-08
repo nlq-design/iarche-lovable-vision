@@ -392,9 +392,30 @@ async function collectTranscriptions(supabase: any, entityType: EntityType, enti
     }
   }
 
-  transcriptions.forEach(t => {
+  // Enrich transcriptions with participant data
+  for (const t of transcriptions) {
     const eventDate = t.transcription_date || t.created_at;
-    const content = t.ai_summary || t.content?.substring(0, 2000) || '';
+    let content = t.ai_summary || t.content?.substring(0, 2000) || '';
+    
+    // Fetch participants for this transcription
+    try {
+      const { data: participants } = await supabase
+        .from('transcription_participants')
+        .select('name, presence_status, linked_entity_type, linked_entity_id, role_in_meeting')
+        .eq('transcription_id', t.id)
+        .eq('presence_status', 'present');
+      
+      if (participants?.length) {
+        const participantsList = participants.map((p: any) => {
+          let label = p.name;
+          if (p.linked_entity_type) label += ` (${p.linked_entity_type})`;
+          if (p.role_in_meeting) label += ` [${p.role_in_meeting}]`;
+          return label;
+        }).join(', ');
+        content = `**Participants**: ${participantsList}\n${content}`;
+      }
+    } catch { /* non-blocking */ }
+    
     events.push({
       date: formatDate(eventDate),
       dateObj: new Date(eventDate),
@@ -402,7 +423,7 @@ async function collectTranscriptions(supabase: any, entityType: EntityType, enti
       title: t.title || 'Transcription audio',
       content
     });
-  });
+  }
 }
 
 async function collectPartners(supabase: any, entityType: EntityType, entityId: string, events: ChronologicalEvent[], linkedEntities: LinkedEntity[]) {

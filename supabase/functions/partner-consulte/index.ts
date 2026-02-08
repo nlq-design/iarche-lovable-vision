@@ -168,11 +168,27 @@ async function collectPartnerContext(
       .order('created_at', { ascending: false })
       .limit(5);
 
-    const projectTranscriptions = (transcriptions || []).map((t: any) => ({
-      title: t.title || 'Transcription',
-      date: formatDate(t.transcription_date || t.created_at),
-      summary: t.ai_summary?.substring(0, 500) || undefined
-    }));
+    // Enrich transcriptions with participants
+    const projectTranscriptions: PartnerContext['projects'][0]['transcriptions'] = [];
+    for (const t of transcriptions || []) {
+      let summary = t.ai_summary?.substring(0, 500) || undefined;
+      try {
+        const { data: parts } = await supabase
+          .from('transcription_participants')
+          .select('name, linked_entity_type, role_in_meeting')
+          .eq('transcription_id', t.id)
+          .eq('presence_status', 'present');
+        if (parts?.length) {
+          const names = parts.map((p: any) => p.name + (p.linked_entity_type ? ` (${p.linked_entity_type})` : '')).join(', ');
+          summary = `Participants: ${names}\n${summary || ''}`;
+        }
+      } catch { /* non-blocking */ }
+      projectTranscriptions.push({
+        title: t.title || 'Transcription',
+        date: formatDate(t.transcription_date || t.created_at),
+        summary,
+      });
+    }
 
     const projectDocuments = (documents || []).map((d: any) => ({
       title: d.title,
@@ -222,11 +238,27 @@ async function collectPartnerContext(
       .order('transcription_date', { ascending: false })
       .limit(3);
 
-    const leadTranscriptions = (transcriptions || []).map((t: any) => ({
-      title: t.title || 'Transcription',
-      date: formatDate(t.transcription_date || t.created_at),
-      summary: t.ai_summary?.substring(0, 300) || undefined
-    }));
+    // Enrich lead transcriptions with participants
+    const leadTranscriptions: PartnerContext['leads'][0]['transcriptions'] = [];
+    for (const t of transcriptions || []) {
+      let summary: string | undefined;
+      try {
+        const { data: parts } = await supabase
+          .from('transcription_participants')
+          .select('name, linked_entity_type')
+          .eq('transcription_id', t.id)
+          .eq('presence_status', 'present');
+        if (parts?.length) {
+          const names = parts.map((p: any) => p.name).join(', ');
+          summary = `Participants: ${names}`;
+        }
+      } catch { /* non-blocking */ }
+      leadTranscriptions.push({
+        title: t.title || 'Transcription',
+        date: formatDate(t.transcription_date || t.created_at),
+        summary,
+      });
+    }
 
     // Only add leads not already covered by projects
     if (!projects.some(p => p.client === (lead.company || lead.name))) {
