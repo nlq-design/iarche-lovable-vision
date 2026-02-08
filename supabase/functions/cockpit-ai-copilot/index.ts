@@ -1031,11 +1031,14 @@ async function harvestOverdueTasks(supabase: any, workspaceId: string, entityId?
         lead: { table: "leads", nameCol: "name" },
         opportunity: { table: "opportunities", nameCol: "title" },
         project: { table: "projects", nameCol: "name" },
+        voice_transcription: { table: "voice_transcriptions", nameCol: "title" },
       };
       const mapping = tableMap[group.entity_type];
       if (mapping) {
         const { data } = await supabase.from(mapping.table).select(`${mapping.nameCol}, slug`).eq("id", group.entity_id).maybeSingle();
         group.entity_name = data?.[mapping.nameCol] || group.entity_id;
+      } else {
+        group.entity_name = `${group.entity_type} (${group.entity_id.slice(0, 8)})`;
       }
     }
   }
@@ -1046,7 +1049,7 @@ async function harvestOverdueTasks(supabase: any, workspaceId: string, entityId?
   // Generate interview questions for the top group (or specified entity)
   const targetGroup = sortedGroups[0];
   const taskList = targetGroup.tasks.map((t: any) => 
-    `- "${t.title}" (${t.task_type}, priorité: ${t.priority}, créée le ${t.created_at?.slice(0, 10)}, échéance: ${t.due_date})`
+    `- [ID:${t.id}] "${t.title}" (${t.task_type}, priorité: ${t.priority}, créée le ${t.created_at?.slice(0, 10)}, échéance: ${t.due_date})`
   ).join("\n");
 
   const questions = await extractStructured<{
@@ -1068,6 +1071,7 @@ Propose 2 à 4 questions maximum. Chaque question doit permettre de :
 1. Savoir si le sujet est toujours d'actualité
 2. Recueillir de l'information utile pour enrichir la base de connaissances
 3. Proposer des actions concrètes (nouvelle tâche, archivage enrichi, mise à jour contexte)
+IMPORTANT: Pour related_task_ids, utilise les IDs UUID exacts fournis après [ID:...] dans la liste des tâches. Ne mets JAMAIS des numéros séquentiels.
 Réponds en français.`,
       },
       {
