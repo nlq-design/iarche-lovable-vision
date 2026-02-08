@@ -170,3 +170,6 @@ verify_jwt = false
 
 [functions.partner-consulte]
 verify_jwt = false
+
+[functions.cockpit-ai-copilot]
+verify_jwt = false
