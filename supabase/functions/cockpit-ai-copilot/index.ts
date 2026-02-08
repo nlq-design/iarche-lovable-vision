@@ -990,13 +990,16 @@ async function harvestOverdueTasks(supabase: any, workspaceId: string, entityId?
   let query = supabase
     .from("tasks")
     .select("id, title, description, priority, task_type, due_date, entity_type, entity_id, status, ai_generated, created_at")
-    .eq("workspace_id", workspaceId)
     .eq("ai_generated", true)
     .lt("due_date", today)
     .not("status", "in", "(completed,cancelled,harvested)")
     .order("entity_id")
     .order("due_date", { ascending: true })
     .limit(200);
+
+  if (workspaceId) {
+    query = query.eq("workspace_id", workspaceId);
+  }
 
   if (entityId) {
     query = query.eq("entity_id", entityId);
@@ -1143,7 +1146,7 @@ async function harvestRespond(supabase: any, workspaceId: string, taskIds: strin
   // Fetch the tasks being responded to
   const { data: tasks } = await supabase
     .from("tasks")
-    .select("id, title, description, entity_type, entity_id, task_type, priority")
+    .select("id, title, description, entity_type, entity_id, task_type, priority, workspace_id")
     .in("id", taskIds);
 
   if (!tasks?.length) {
@@ -1152,11 +1155,12 @@ async function harvestRespond(supabase: any, workspaceId: string, taskIds: strin
 
   const entityType = tasks[0].entity_type;
   const entityId = tasks[0].entity_id;
+  const resolvedWorkspaceId = workspaceId || tasks[0].workspace_id;
 
   // Store the response as context knowledge
   if (entityId && response) {
     await supabase.from("entity_context_notes").insert({
-      workspace_id: workspaceId,
+      workspace_id: resolvedWorkspaceId,
       entity_type: entityType || "general",
       entity_id: entityId,
       content: `[Récolte IA] ${response}`,
@@ -1166,7 +1170,7 @@ async function harvestRespond(supabase: any, workspaceId: string, taskIds: strin
   // Log the harvest activity
   for (const task of tasks) {
     await supabase.from("activity_log").insert({
-      workspace_id: workspaceId,
+      workspace_id: resolvedWorkspaceId,
       entity_type: task.entity_type || "task",
       entity_id: task.entity_id || task.id,
       activity_type: "ai_harvest",
@@ -1251,7 +1255,7 @@ Réponds en français.`,
             task_type: t.task_type,
             status: "pending",
             due_date: dueDate.toISOString().split("T")[0],
-            workspace_id: workspaceId,
+            workspace_id: resolvedWorkspaceId,
             entity_type: entityType,
             entity_id: entityId,
             ai_generated: true,
