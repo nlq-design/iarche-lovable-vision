@@ -190,10 +190,11 @@ export default function CockpitTranscriptions() {
     return `#${index + 1}`;
   };
 
-  // Batch process selected transcriptions
-  const handleBatchProcess = async () => {
+  // Batch process: selected or all
+  const handleBatchProcess = async (ids?: Set<string>) => {
+    const filterIds = ids ?? selectedIds;
     const targets = transcriptions
-      .filter(t => selectedIds.has(t.id) && t.status === 'done')
+      .filter(t => (filterIds.size > 0 ? filterIds.has(t.id) : false) && t.status === 'done')
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     if (targets.length === 0) {
@@ -283,10 +284,28 @@ export default function CockpitTranscriptions() {
               Enregistrements audio en comptes-rendus
             </p>
           </div>
-          <Button size="sm" className="h-8 text-sm w-fit" onClick={() => setCreateModalOpen(true)}>
-            <Mic className="h-3.5 w-3.5 mr-1.5" />
-            Nouvelle transcription
-          </Button>
+          <div className="flex items-center gap-2">
+            {stats.done > 0 && (
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="h-8 text-sm"
+                onClick={() => handleBatchProcess(new Set(transcriptions.filter(t => t.status === 'done').map(t => t.id)))}
+                disabled={isProcessingBatch}
+              >
+                {isProcessingBatch ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                Re-transcrire tout ({stats.done})
+              </Button>
+            )}
+            <Button size="sm" className="h-8 text-sm w-fit" onClick={() => setCreateModalOpen(true)}>
+              <Mic className="h-3.5 w-3.5 mr-1.5" />
+              Nouvelle transcription
+            </Button>
+          </div>
         </div>
 
         {/* Batch progress bar */}
@@ -617,7 +636,7 @@ export default function CockpitTranscriptions() {
             <CheckSquare className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium">{selectedIds.size} sélectionnée{selectedIds.size > 1 ? 's' : ''}</span>
             <div className="h-4 w-px bg-border" />
-            <Button size="sm" className="h-7 text-xs" onClick={handleBatchProcess}>
+            <Button size="sm" className="h-7 text-xs" onClick={() => handleBatchProcess()}>
               <RefreshCw className="h-3 w-3 mr-1" />
               Re-transcrire la sélection
             </Button>
