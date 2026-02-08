@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { callLLMWithFallback } from "../_shared/ai-legacy-bridge.ts";
-import { transcribeFromUrl, getDefaultTranscriptionOptions, type AssemblyAIFullResult } from "../_shared/assemblyai-utils.ts";
+import { startTranscription, getDefaultTranscriptionOptions, type AssemblyAIFullResult } from "../_shared/assemblyai-utils.ts";
 
 /**
  * process-voice-transcription v13.0 — Clean Rewrite
@@ -26,7 +26,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ASSEMBLYAI_API_KEY = Deno.env.get("ASSEMBLYAI_API_KEY");
 
 const LLM_TIMEOUT_MS = 90_000;
-const ASSEMBLYAI_MAX_WAIT_MS = 600_000; // 10 min — enough for files up to ~2h
+// ASSEMBLYAI_MAX_WAIT_MS removed — async architecture, worker polls instead
 const MAX_TRANSCRIPT_FOR_LLM = 25_000;
 
 // ============= HELPERS =============
@@ -521,7 +521,7 @@ serve(async (req) => {
       log("Audio", `bucket=${bucket}, path=${storagePath}`);
 
       const { data: signed, error: signErr } = await supabase.storage
-        .from(bucket).createSignedUrl(storagePath, 600);
+        .from(bucket).createSignedUrl(storagePath, 3600); // 1h for long processing
       if (signErr || !signed?.signedUrl) throw new Error(`signed_url_failed: ${signErr?.message ?? "no_url"}`);
 
       // Custom vocabulary: keyword aliases + expected participant names
@@ -566,44 +566,34 @@ serve(async (req) => {
         }
       }
 
-      // Transcribe with all features
-      log("AssemblyAI", `Transcribing with ALL features (best model, auto-lang, diarization, chapters, entities, sentiment)...`);
+      // Submit to AssemblyAI — ASYNC: return immediately, worker will poll
+      log("AssemblyAI", `Submitting to AssemblyAI (async mode)...`);
       const options = getDefaultTranscriptionOptions({
         word_boost: wordBoost.length > 0 ? wordBoost : undefined,
-        maxWaitMs: ASSEMBLYAI_MAX_WAIT_MS,
       });
 
-      const result: AssemblyAIFullResult = await transcribeFromUrl(signed.signedUrl, ASSEMBLYAI_API_KEY, options);
-      rawText = formatSpeakerTranscript(result);
-      segments = buildSegmentsData(result);
-      const assemblyMeta = buildAssemblyAIMetadata(result);
+      const assemblyaiTranscriptId = await startTranscription(signed.signedUrl, ASSEMBLYAI_API_KEY, options);
 
-      log("AssemblyAI", `Done: ${result.text.length} chars, lang=${result.language_code}, speakers=${assemblyMeta.speakers_count}, chapters=${assemblyMeta.chapters_count}`);
-
-      // Save Phase 1 results
+      // Store the AssemblyAI job ID so the worker can poll for it
       await supabase.from("voice_transcriptions").update({
-        raw_transcript: rawText,
-        status: "analyzing",
-        duration_seconds: result.audio_duration ?? job.duration_seconds,
-        segments,
-        ai_metadata: { ...aiMeta, ...assemblyMeta },
+        status: "transcribing",
+        ai_metadata: {
+          ...aiMeta,
+          source: "assemblyai",
+          assemblyai_transcript_id: assemblyaiTranscriptId,
+          transcription_started_at: new Date().toISOString(),
+        },
       }).eq("id", jobId);
 
-      // 2-Phase: if retranscribing, return and self-invoke for analysis
-      if (forceRetranscribe) {
-        log("2-Phase", "Transcription complete. Self-invoking for analysis...");
-        fetch(`${SUPABASE_URL}/functions/v1/process-voice-transcription`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
-          body: JSON.stringify({ job_id: jobId, force_reanalyze: true }),
-        }).catch(e => console.error(`[2-Phase] Self-invoke failed: ${e}`));
+      log("AssemblyAI", `Job submitted: assemblyai_id=${assemblyaiTranscriptId}. Worker will poll.`);
 
-        return new Response(JSON.stringify({
-          ok: true, phase: "transcription_complete",
-          message: "Transcription terminée. Analyse en cours...",
-          job: { id: jobId, status: "analyzing" },
-        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
+      // Return immediately — the worker cron will poll for completion
+      return new Response(JSON.stringify({
+        ok: true,
+        phase: "transcription_submitted",
+        message: "Transcription soumise à AssemblyAI. Le worker va vérifier l'avancement.",
+        job: { id: jobId, status: "transcribing", assemblyai_id: assemblyaiTranscriptId },
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     } else {
       // Use existing transcript
       rawText = existingTranscript || "";

@@ -289,6 +289,51 @@ export async function pollTranscription(
   throw new Error(`ASSEMBLYAI_TIMEOUT: Transcription did not complete within ${Math.round(maxWaitMs / 1000)}s.`);
 }
 
+// ============= SINGLE STATUS CHECK (no polling loop) =============
+
+/**
+ * Check the status of an AssemblyAI transcription once (no loop).
+ * Returns the full result if completed, or { status, id } if still processing.
+ */
+export async function checkTranscriptionOnce(
+  transcriptId: string,
+  apiKey: string,
+): Promise<{ status: 'completed'; result: AssemblyAIFullResult } | { status: 'queued' | 'processing' | 'error'; id: string; error?: string }> {
+  const response = await fetch(`${ASSEMBLYAI_API_URL}/transcript/${transcriptId}`, {
+    headers: { Authorization: apiKey },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`assemblyai_check_error: ${response.status} - ${errorText.slice(0, 500)}`);
+  }
+
+  const data = await response.json();
+
+  if (data.status === "completed") {
+    return {
+      status: 'completed',
+      result: {
+        text: data.text ?? "",
+        audio_duration: data.audio_duration ?? null,
+        language_code: data.language_code ?? null,
+        words: data.words ?? [],
+        utterances: data.utterances ?? null,
+        sentiment_analysis_results: data.sentiment_analysis_results ?? null,
+        entities: data.entities ?? null,
+        chapters: data.chapters ?? null,
+        content_safety_labels: data.content_safety_labels ?? null,
+      },
+    };
+  }
+
+  if (data.status === "error") {
+    return { status: 'error', id: transcriptId, error: data.error ?? "Unknown AssemblyAI error" };
+  }
+
+  return { status: data.status as 'queued' | 'processing', id: transcriptId };
+}
+
 // ============= FULL PIPELINE =============
 
 export async function transcribeWithAssemblyAI(
