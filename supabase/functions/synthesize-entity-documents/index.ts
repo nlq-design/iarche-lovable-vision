@@ -415,7 +415,8 @@ async function collectTranscriptions(supabase: any, entityType: EntityType, enti
   // Enrich transcriptions with participant data
   for (const t of transcriptions) {
     const eventDate = t.transcription_date || t.created_at;
-    let content = t.ai_summary || t.content?.substring(0, 2000) || '';
+    const summaryText = t.summary ? (typeof t.summary === 'string' ? t.summary : JSON.stringify(t.summary)) : '';
+    let content = summaryText || t.content?.substring(0, 2000) || '';
     
     // Fetch participants for this transcription
     try {
@@ -813,6 +814,62 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
     provenance.push({ type: entityType, id: entityId, name: entityName, date: formatDate(entityData.created_at) });
   }
 
+  // For transcription type: inject the transcript's own content + linked entity context
+  if (entityType === 'transcription' && entityData) {
+    // Add the transcription's own summary/content as a primary event
+    const tDate = entityData.transcription_date || entityData.created_at;
+    const rawSummary = entityData.summary ? (typeof entityData.summary === 'string' ? entityData.summary : JSON.stringify(entityData.summary)) : '';
+    const tContent = rawSummary || entityData.content?.substring(0, 4000) || '';
+    if (tContent) {
+      events.push({
+        date: formatDate(tDate),
+        dateObj: new Date(tDate),
+        type: 'Contenu transcription',
+        title: entityName,
+        content: tContent
+      });
+    }
+    // Link lead & project as linked entities
+    if (entityData.lead) {
+      linkedEntities.push({ type: 'lead', id: entityData.lead.id, name: entityData.lead.company || entityData.lead.name, context: 'Lead lié à cette transcription' });
+    }
+    if (entityData.project) {
+      linkedEntities.push({ type: 'project', id: entityData.project.id, name: entityData.project.name, context: 'Projet lié à cette transcription' });
+    }
+    // Fetch sibling transcriptions from the same lead/project for cross-context
+    const siblingIds: string[] = [];
+    if (entityData.lead_id) {
+      const { data: siblings } = await supabase.from('voice_transcriptions').select('id, title, summary, transcription_date, created_at').eq('lead_id', entityData.lead_id).eq('status', 'done').neq('id', entityId).order('transcription_date', { ascending: false }).limit(10);
+      for (const s of siblings || []) {
+        if (!siblingIds.includes(s.id)) {
+          siblingIds.push(s.id);
+          const sDate = s.transcription_date || s.created_at;
+          events.push({
+            date: formatDate(sDate), dateObj: new Date(sDate), type: 'Transcription liée (Lead)',
+            title: s.title || 'Transcription', content: (typeof s.summary === 'string' ? s.summary : JSON.stringify(s.summary || ''))?.substring(0, 1500) || '[pas de résumé]'
+          });
+        }
+      }
+    }
+    if (entityData.project_id) {
+      const { data: siblings } = await supabase.from('voice_transcriptions').select('id, title, summary, transcription_date, created_at').eq('project_id', entityData.project_id).eq('status', 'done').neq('id', entityId).order('transcription_date', { ascending: false }).limit(10);
+      for (const s of siblings || []) {
+        if (!siblingIds.includes(s.id)) {
+          siblingIds.push(s.id);
+          const sDate = s.transcription_date || s.created_at;
+          events.push({
+            date: formatDate(sDate), dateObj: new Date(sDate), type: 'Transcription liée (Projet)',
+            title: s.title || 'Transcription', content: (typeof s.summary === 'string' ? s.summary : JSON.stringify(s.summary || ''))?.substring(0, 1500) || '[pas de résumé]'
+          });
+        }
+      }
+    }
+  }
+
+  // Determine enrichment entity for cross-references (transcription uses its linked lead/project)
+  const enrichLeadId = entityType === 'transcription' ? entityData?.lead_id : (entityType === 'lead' ? entityId : null);
+  const enrichProjectId = entityType === 'transcription' ? entityData?.project_id : (entityType === 'project' ? entityId : null);
+
   // Collect all data in parallel (including Phase A-C enrichments + new sources)
   const [, , , , , , , , , , contextNotes, vocabulary, participantMappings, relationalNetwork, leadContacts, meetingNotes, activityLog] = await Promise.all([
     collectUploadedFiles(supabase, entityType, entityId, events, linkedEntities),
@@ -829,9 +886,9 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
     collectVocabulary(supabase, entityType, entityId),
     collectParticipantMappings(supabase),
     collectRelationalNetwork(supabase, entityType, entityId),
-    // New enrichment sources
-    entityType === 'lead' ? fetchLeadContacts(supabase, entityId) : Promise.resolve([]),
-    fetchMeetingNotes(supabase, entityType, entityId),
+    // New enrichment sources - use cross-entity IDs for transcriptions
+    enrichLeadId ? fetchLeadContacts(supabase, enrichLeadId) : Promise.resolve([]),
+    fetchMeetingNotes(supabase, enrichLeadId ? 'lead' : entityType, enrichLeadId || entityId),
     fetchActivityLog(supabase, entityType, entityId),
   ]);
 
