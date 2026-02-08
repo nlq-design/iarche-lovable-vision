@@ -295,6 +295,8 @@ export function TranscriptionDetailSheet({
                   transcriptionId={transcriptionId}
                   normalizedSummary={normalizedSummary}
                   compact
+                  onReanalyze={handleReanalyze}
+                  isReanalyzing={processTranscription.isPending}
                 />
 
                 {/* Partners Section */}

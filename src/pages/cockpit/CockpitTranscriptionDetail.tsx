@@ -543,6 +543,8 @@ export default function CockpitTranscriptionDetail() {
         <TranscriptionParticipantsSection
           transcriptionId={transcriptionId}
           normalizedSummary={summary}
+          onReanalyze={handleReanalyze}
+          isReanalyzing={processTranscription.isPending}
         />
 
         {/* Partners */}
