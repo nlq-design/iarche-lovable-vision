@@ -1,10 +1,11 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -29,11 +30,13 @@ import {
   RefreshCw,
   Handshake,
   ShieldAlert,
+  X,
+  CheckSquare,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
-import { useCockpitVoiceTranscriptions, TRANSCRIPTION_STATUSES } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
+import { useCockpitVoiceTranscriptions, TRANSCRIPTION_STATUSES, type VoiceTranscription } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { CreateTranscriptionModal } from '@/components/cockpit/transcriptions/CreateTranscriptionModal';
 import { toast } from 'sonner';
 
@@ -51,26 +54,26 @@ export default function CockpitTranscriptions() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [isReanalyzing, setIsReanalyzing] = useState(false);
-  const [reanalyzeProgress, setReanalyzeProgress] = useState({ current: 0, total: 0, successCount: 0, errorCount: 0, currentJobTitle: '', startedAt: 0 });
+  const [isProcessingBatch, setIsProcessingBatch] = useState(false);
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, successCount: 0, errorCount: 0, currentJobId: '', currentJobTitle: '', startedAt: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [droppedFiles, setDroppedFiles] = useState<File[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const dragCounterRef = useRef(0);
 
-  // Block navigation (back/forward) when batch is running
-  const isReanalyzingRef = useRef(isReanalyzing);
-  isReanalyzingRef.current = isReanalyzing;
+  // Block navigation when batch is running
+  const isProcessingRef = useRef(isProcessingBatch);
+  isProcessingRef.current = isProcessingBatch;
 
   useEffect(() => {
     const onPopState = (e: PopStateEvent) => {
-      if (isReanalyzingRef.current) {
-        // Push state back to prevent leaving
+      if (isProcessingRef.current) {
         window.history.pushState(null, '', window.location.href);
         const leave = window.confirm(
-          'La ré-analyse est en cours. Si vous quittez, le traitement sera interrompu. Quitter quand même ?'
+          'Le traitement est en cours. Si vous quittez, il sera interrompu. Quitter quand même ?'
         );
         if (leave) {
-          setIsReanalyzing(false);
+          setIsProcessingBatch(false);
           window.history.back();
         }
       }
@@ -79,16 +82,15 @@ export default function CockpitTranscriptions() {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  // Block browser close/refresh when batch is running
   useEffect(() => {
-    if (!isReanalyzing) return;
+    if (!isProcessingBatch) return;
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       e.returnValue = '';
     };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
-  }, [isReanalyzing]);
+  }, [isProcessingBatch]);
 
   const AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/webm', 'audio/x-m4a', 'audio/flac', 'audio/aac'];
 
@@ -138,81 +140,110 @@ export default function CockpitTranscriptions() {
 
   const { transcriptions, isLoading, stats, refetch, processTranscription } = useCockpitVoiceTranscriptions();
 
-  // Helper: detect broken summary (has error key instead of real data)
-  const hasBrokenSummary = (t: typeof transcriptions[0]) => {
-    if (!t.summary) return false;
-    const s = t.summary as any;
-    return !!s.error || !s.executive_summary;
+  const filteredTranscriptions = useMemo(() => {
+    return transcriptions.filter(t => {
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = searchQuery === '' || 
+        t.title?.toLowerCase().includes(searchLower) ||
+        (typeof t.summary?.title === 'string' && t.summary.title.toLowerCase().includes(searchLower)) ||
+        t.lead?.name?.toLowerCase().includes(searchLower) ||
+        t.lead?.company?.toLowerCase().includes(searchLower) ||
+        t.project?.name?.toLowerCase().includes(searchLower) ||
+        t.solution?.title?.toLowerCase().includes(searchLower) ||
+        t.lead_contact?.name?.toLowerCase().includes(searchLower);
+      
+      const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [transcriptions, searchQuery, statusFilter]);
+
+  // Selection helpers
+  const selectableIds = useMemo(() => new Set(filteredTranscriptions.filter(t => t.status === 'done').map(t => t.id)), [filteredTranscriptions]);
+  const allSelected = selectableIds.size > 0 && [...selectableIds].every(id => selectedIds.has(id));
+  const someSelected = selectedIds.size > 0;
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(selectableIds));
+    }
+  };
 
-  // Batch re-transcribe + re-analyze all completed transcriptions via AssemblyAI
-  // Sorted newest→oldest. _no_file items get reanalyze-only, others get full retranscribe.
-  // Generic batch handler with mode selection
-  const handleBatchProcess = async (mode: 'all' | 'retranscribe_only' | 'reanalyze_only' | 'repair_broken') => {
-    let targets = [...transcriptions]
-      .filter(t => t.status === 'done')
+  const clearSelection = () => setSelectedIds(new Set());
+
+  // Get display title for a transcription
+  const getJobTitle = (t: VoiceTranscription, index: number) => {
+    if (t.title) return t.title;
+    if (typeof t.summary?.title === 'string') return t.summary.title;
+    if (t.original_filename) return t.original_filename;
+    return `#${index + 1}`;
+  };
+
+  // Batch process selected transcriptions
+  const handleBatchProcess = async () => {
+    const targets = transcriptions
+      .filter(t => selectedIds.has(t.id) && t.status === 'done')
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-    if (mode === 'retranscribe_only') {
-      targets = targets.filter(t => (t.ai_metadata as any)?.source !== 'assemblyai' && !t.storage_path?.endsWith('_no_file'));
-    } else if (mode === 'reanalyze_only') {
-      targets = targets.filter(t => (t.ai_metadata as any)?.source === 'assemblyai');
-    } else if (mode === 'repair_broken') {
-      targets = targets.filter(t => hasBrokenSummary(t));
-    }
-
     if (targets.length === 0) {
-      toast.info('Aucune transcription à traiter pour ce mode');
+      toast.info('Aucune transcription sélectionnée à traiter');
       return;
     }
 
-    const allItems = targets;
-    setIsReanalyzing(true);
-    setReanalyzeProgress({ current: 0, total: allItems.length, successCount: 0, errorCount: 0, currentJobTitle: '', startedAt: Date.now() });
+    setIsProcessingBatch(true);
+    setBatchProgress({ current: 0, total: targets.length, successCount: 0, errorCount: 0, currentJobId: '', currentJobTitle: '', startedAt: Date.now() });
 
     let successCount = 0;
     let errorCount = 0;
 
-    for (let i = 0; i < allItems.length; i++) {
-      const t = allItems[i];
+    for (let i = 0; i < targets.length; i++) {
+      const t = targets[i];
       const hasAudio = !t.storage_path?.endsWith('_no_file');
-      const jobTitle = t.title || t.summary?.title || t.original_filename || `#${i + 1}`;
+      const jobTitle = getJobTitle(t, i);
 
-      setReanalyzeProgress(prev => ({ ...prev, current: i, currentJobTitle: typeof jobTitle === 'string' ? jobTitle : String(jobTitle) }));
+      setBatchProgress(prev => ({ ...prev, current: i, currentJobId: t.id, currentJobTitle: jobTitle }));
 
       try {
         const alreadyAssemblyAI = (t.ai_metadata as any)?.source === 'assemblyai';
         if (!hasAudio || alreadyAssemblyAI) {
-          // No audio file or already transcribed by AssemblyAI → re-run LLM analysis only
           await processTranscription.mutateAsync({ jobId: t.id, forceReanalyze: true });
         } else {
-          // Has audio but not yet AssemblyAI → full re-transcription
           await processTranscription.mutateAsync({ jobId: t.id, forceRetranscribe: true });
         }
         successCount++;
       } catch (err: any) {
         const msg = err?.message || '';
-        // Ignore navigation-induced aborts (user left the page)
         if (msg.includes('Failed to send a request') || msg.includes('AbortError') || msg.includes('Failed to fetch')) {
-          console.warn(`[Batch] Job ${t.id} aborted (navigation), skipping remaining`);
-          toast.info('Traitement interrompu (changement de page). Les jobs déjà traités sont sauvegardés.');
+          console.warn(`[Batch] Job ${t.id} aborted (navigation), stopping`);
+          toast.info('Traitement interrompu. Les jobs déjà traités sont sauvegardés.');
           break;
         }
         errorCount++;
         console.error(`[Batch] Job ${t.id} failed:`, err);
       }
-      setReanalyzeProgress(prev => ({ ...prev, current: i + 1, successCount, errorCount }));
+      setBatchProgress(prev => ({ ...prev, current: i + 1, successCount, errorCount }));
 
-      if (i < allItems.length - 1) {
-        const nextItem = allItems[i + 1];
+      if (i < targets.length - 1) {
+        const nextItem = targets[i + 1];
         const nextIsLight = nextItem.storage_path?.endsWith('_no_file') || (nextItem.ai_metadata as any)?.source === 'assemblyai';
         await new Promise(r => setTimeout(r, nextIsLight ? 2000 : 5000));
       }
     }
 
-    setIsReanalyzing(false);
-    setReanalyzeProgress({ current: 0, total: 0, successCount: 0, errorCount: 0, currentJobTitle: '', startedAt: 0 });
+    setIsProcessingBatch(false);
+    setBatchProgress({ current: 0, total: 0, successCount: 0, errorCount: 0, currentJobId: '', currentJobTitle: '', startedAt: 0 });
+    setSelectedIds(new Set());
     refetch();
 
     if (errorCount === 0) {
@@ -221,22 +252,6 @@ export default function CockpitTranscriptions() {
       toast.warning(`${successCount} succès, ${errorCount} erreur(s)`);
     }
   };
-
-  const filteredTranscriptions = transcriptions.filter(t => {
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch = searchQuery === '' || 
-      t.title?.toLowerCase().includes(searchLower) ||
-      (typeof t.summary?.title === 'string' && t.summary.title.toLowerCase().includes(searchLower)) ||
-      t.lead?.name?.toLowerCase().includes(searchLower) ||
-      t.lead?.company?.toLowerCase().includes(searchLower) ||
-      t.project?.name?.toLowerCase().includes(searchLower) ||
-      t.solution?.title?.toLowerCase().includes(searchLower) ||
-      t.lead_contact?.name?.toLowerCase().includes(searchLower);
-    
-    const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
 
   const getStatusConfig = (status: string) => {
     return TRANSCRIPTION_STATUSES.find(s => s.value === status) || TRANSCRIPTION_STATUSES[0];
@@ -259,6 +274,7 @@ export default function CockpitTranscriptions() {
             <p className="text-sm text-muted-foreground mt-1">MP3, WAV, M4A, OGG, FLAC, AAC</p>
           </div>
         )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
@@ -267,36 +283,18 @@ export default function CockpitTranscriptions() {
               Enregistrements audio en comptes-rendus
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            {stats.done > 0 && (
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="h-8 text-sm"
-                onClick={() => handleBatchProcess('all')}
-                disabled={isReanalyzing}
-              >
-                {isReanalyzing ? (
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                )}
-                Re-transcrire tout ({stats.done})
-              </Button>
-            )}
-            <Button size="sm" className="h-8 text-sm w-fit" onClick={() => setCreateModalOpen(true)}>
-              <Mic className="h-3.5 w-3.5 mr-1.5" />
-              Nouvelle transcription
-            </Button>
-          </div>
+          <Button size="sm" className="h-8 text-sm w-fit" onClick={() => setCreateModalOpen(true)}>
+            <Mic className="h-3.5 w-3.5 mr-1.5" />
+            Nouvelle transcription
+          </Button>
         </div>
 
-        {/* Progress bar for batch re-analyze */}
-        {isReanalyzing && reanalyzeProgress.total > 0 && (() => {
-          const elapsed = (Date.now() - reanalyzeProgress.startedAt) / 1000;
-          const avgPerJob = reanalyzeProgress.current > 0 ? elapsed / reanalyzeProgress.current : 5;
-          const remaining = Math.ceil((reanalyzeProgress.total - reanalyzeProgress.current) * avgPerJob / 60);
-          const pct = Math.round((reanalyzeProgress.current / reanalyzeProgress.total) * 100);
+        {/* Batch progress bar */}
+        {isProcessingBatch && batchProgress.total > 0 && (() => {
+          const elapsed = (Date.now() - batchProgress.startedAt) / 1000;
+          const avgPerJob = batchProgress.current > 0 ? elapsed / batchProgress.current : 5;
+          const remaining = Math.ceil((batchProgress.total - batchProgress.current) * avgPerJob / 60);
+          const pct = Math.round((batchProgress.current / batchProgress.total) * 100);
           return (
             <div className="space-y-2 p-4 bg-primary/5 rounded-lg border border-primary/20">
               <div className="flex items-center justify-between text-sm">
@@ -305,20 +303,20 @@ export default function CockpitTranscriptions() {
                   <span className="font-medium">⚠️ Ne quittez pas cette page — traitement en cours</span>
                 </div>
                 <span className="font-mono text-foreground">
-                  {reanalyzeProgress.current}/{reanalyzeProgress.total} ({pct}%)
+                  {batchProgress.current}/{batchProgress.total} ({pct}%)
                 </span>
               </div>
               <Progress value={pct} className="h-2.5" />
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="truncate max-w-[50%]">
-                  En cours : <span className="font-medium text-foreground">{reanalyzeProgress.currentJobTitle}</span>
+                  En cours : <span className="font-medium text-foreground">{batchProgress.currentJobTitle}</span>
                 </span>
                 <div className="flex items-center gap-3">
-                  {reanalyzeProgress.successCount > 0 && (
-                    <span className="text-green-600">✓ {reanalyzeProgress.successCount}</span>
+                  {batchProgress.successCount > 0 && (
+                    <span className="text-green-600">✓ {batchProgress.successCount}</span>
                   )}
-                  {reanalyzeProgress.errorCount > 0 && (
-                    <span className="text-destructive">✗ {reanalyzeProgress.errorCount}</span>
+                  {batchProgress.errorCount > 0 && (
+                    <span className="text-destructive">✗ {batchProgress.errorCount}</span>
                   )}
                   <span>~{remaining > 0 ? `${remaining} min` : '< 1 min'} restantes</span>
                 </div>
@@ -380,6 +378,22 @@ export default function CockpitTranscriptions() {
           </Select>
         </div>
 
+        {/* Select all / Selection toolbar */}
+        {selectableIds.size > 0 && (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={allSelected}
+                onCheckedChange={toggleSelectAll}
+                aria-label="Tout sélectionner"
+              />
+              <span className="text-sm text-muted-foreground">
+                {allSelected ? 'Tout désélectionner' : `Tout sélectionner (${selectableIds.size})`}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Transcriptions List */}
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -401,19 +415,47 @@ export default function CockpitTranscriptions() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {filteredTranscriptions.map(transcription => {
+            {filteredTranscriptions.map((transcription, idx) => {
               const statusConfig = getStatusConfig(transcription.status);
+              const isSelectable = transcription.status === 'done';
+              const isSelected = selectedIds.has(transcription.id);
+              const isCurrentlyProcessing = isProcessingBatch && batchProgress.currentJobId === transcription.id;
               
               return (
                 <Card
                   key={transcription.id}
-                  className="cursor-pointer hover:border-primary/50 transition-colors"
+                  className={`cursor-pointer transition-all ${
+                    isCurrentlyProcessing
+                      ? 'border-primary ring-2 ring-primary/30 bg-primary/5'
+                      : isSelected
+                        ? 'border-primary/50 bg-primary/5'
+                        : 'hover:border-primary/50'
+                  }`}
                   onClick={() => navigate(`/cockpit/transcriptions/${transcription.slug || transcription.id}`)}
                 >
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      {/* Checkbox */}
+                      {isSelectable && (
+                        <div className="pt-0.5" onClick={e => e.stopPropagation()}>
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleSelect(transcription.id)}
+                            disabled={isProcessingBatch}
+                            aria-label={`Sélectionner ${getJobTitle(transcription, idx)}`}
+                          />
+                        </div>
+                      )}
+                      {!isSelectable && <div className="w-4" />}
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
+                          {isCurrentlyProcessing && (
+                            <Badge variant="default" className="flex items-center gap-1 bg-primary animate-pulse">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              En cours
+                            </Badge>
+                          )}
                           <Badge variant={statusConfig.variant} className="flex items-center gap-1">
                             {STATUS_ICONS[transcription.status]}
                             {statusConfig.label}
@@ -456,10 +498,9 @@ export default function CockpitTranscriptions() {
                              : format(new Date(transcription.created_at), 'dd MMM yyyy', { locale: fr })}
                          </p>
 
-                         {/* Liens entités - TOUJOURS AFFICHÉ */}
+                         {/* Entity links */}
                          <div className="flex flex-wrap items-center gap-2 mt-2">
-                           {/* Lead */}
-                           {transcription.lead ? (
+                           {transcription.lead && (
                              <Badge 
                                variant="secondary" 
                                className="text-xs h-5 cursor-pointer hover:bg-primary/20"
@@ -471,9 +512,8 @@ export default function CockpitTranscriptions() {
                                <User className="h-3 w-3 mr-1" />
                                {transcription.lead.name}
                              </Badge>
-                           ) : null}
+                           )}
                            
-                           {/* Contact */}
                            {transcription.lead_contact && (
                              <Badge variant="outline" className="text-xs h-5">
                                <Users className="h-3 w-3 mr-1" />
@@ -481,8 +521,7 @@ export default function CockpitTranscriptions() {
                              </Badge>
                            )}
                            
-                           {/* Project */}
-                           {transcription.project ? (
+                           {transcription.project && (
                              <Badge 
                                variant="secondary" 
                                className="text-xs h-5 cursor-pointer hover:bg-primary/20"
@@ -494,9 +533,8 @@ export default function CockpitTranscriptions() {
                                <FolderOpen className="h-3 w-3 mr-1" />
                                {transcription.project.name}
                              </Badge>
-                           ) : null}
+                           )}
                            
-                           {/* Solution */}
                            {transcription.solution && (
                              <Badge 
                                variant="outline" 
@@ -511,7 +549,6 @@ export default function CockpitTranscriptions() {
                              </Badge>
                            )}
 
-                           {/* Partners */}
                            {transcription.partners && transcription.partners.length > 0 && (
                              transcription.partners.map((p) => (
                                p.partner && (
@@ -531,7 +568,6 @@ export default function CockpitTranscriptions() {
                              ))
                            )}
 
-                           {/* Placeholder si aucun lien */}
                            {!transcription.lead && !transcription.project && !transcription.solution && !transcription.lead_contact && (!transcription.partners || transcription.partners.length === 0) && (
                              <Badge variant="outline" className="text-xs h-5 text-muted-foreground border-dashed">
                                Non lié
@@ -539,7 +575,7 @@ export default function CockpitTranscriptions() {
                            )}
                          </div>
 
-                         {/* Description - TOUJOURS AFFICHÉE */}
+                         {/* Summary */}
                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                            {transcription.summary?.executive_summary
                              ? (typeof transcription.summary.executive_summary === 'string'
@@ -548,9 +584,8 @@ export default function CockpitTranscriptions() {
                              : 'Pas de résumé disponible'}
                          </p>
 
-                         {/* Footer - TOUJOURS AFFICHÉ */}
+                         {/* Footer */}
                          <div className="flex items-center gap-3 mt-3">
-                           {/* Actions count - toujours affiché */}
                            <Badge 
                              variant={transcription.summary?.action_items && transcription.summary.action_items.length > 0 ? "default" : "outline"} 
                              className={`text-xs h-5 ${transcription.summary?.action_items && transcription.summary.action_items.length > 0 ? 'bg-primary/80' : 'text-muted-foreground border-dashed'}`}
@@ -559,7 +594,6 @@ export default function CockpitTranscriptions() {
                              {transcription.summary?.action_items?.length || 0} action{(transcription.summary?.action_items?.length || 0) !== 1 ? 's' : ''}
                            </Badge>
 
-                           {/* Confiance - toujours affiché */}
                            <span className="text-xs text-muted-foreground ml-auto">
                              Confiance : {transcription.summary?.extraction_quality?.confidence != null
                                ? `${transcription.summary.extraction_quality.confidence <= 1 
@@ -574,6 +608,23 @@ export default function CockpitTranscriptions() {
                 </Card>
               );
             })}
+          </div>
+        )}
+
+        {/* Floating selection toolbar */}
+        {someSelected && !isProcessingBatch && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 bg-card border rounded-xl shadow-xl">
+            <CheckSquare className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">{selectedIds.size} sélectionnée{selectedIds.size > 1 ? 's' : ''}</span>
+            <div className="h-4 w-px bg-border" />
+            <Button size="sm" className="h-7 text-xs" onClick={handleBatchProcess}>
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Re-transcrire la sélection
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={clearSelection}>
+              <X className="h-3 w-3 mr-1" />
+              Annuler
+            </Button>
           </div>
         )}
 
