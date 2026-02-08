@@ -39,6 +39,7 @@ import {
   type MeetingRole,
 } from '@/hooks/cockpit/useTranscriptionParticipants';
 import type { NormalizedSummary } from './normalizeSummary';
+import { EntityVocabularyEditor } from './EntityVocabularyEditor';
 
 // ============= PRESENCE ICON =============
 
@@ -151,87 +152,102 @@ function ParticipantRow({
   historyCount?: number;
 }) {
   return (
-    <div className="flex items-center gap-2 p-2 rounded-lg border bg-card hover:bg-accent/30 transition-colors group">
-      {/* Presence icon */}
-      <PresenceIcon status={participant.presence_status} />
+    <div className="space-y-1">
+      <div className="flex items-center gap-2 p-2 rounded-lg border bg-card hover:bg-accent/30 transition-colors group">
+        {/* Presence icon */}
+        <PresenceIcon status={participant.presence_status} />
 
-      {/* Name */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm font-medium truncate">{participant.name}</span>
-          {participant.ai_suggested_match && !participant.linked_entity_id && (
-            <Sparkles className="h-3 w-3 text-primary shrink-0" />
-          )}
-          {historyCount !== undefined && historyCount > 0 && (
-            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-              <History className="h-2.5 w-2.5" />
-              {historyCount}
-            </span>
-          )}
+        {/* Name */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-medium truncate">{participant.name}</span>
+            {participant.ai_suggested_match && !participant.linked_entity_id && (
+              <Sparkles className="h-3 w-3 text-primary shrink-0" />
+            )}
+            {historyCount !== undefined && historyCount > 0 && (
+              <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                <History className="h-2.5 w-2.5" />
+                {historyCount}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            {participant.linked_entity_type && participant.linked_entity_id && (
+              <Badge variant="secondary" className="text-[10px] h-4">
+                {ENTITY_TYPE_LABELS[participant.linked_entity_type]}
+              </Badge>
+            )}
+            {participant.role_in_meeting && (
+              <Badge variant="outline" className="text-[10px] h-4">
+                {MEETING_ROLES.find(r => r.value === participant.role_in_meeting)?.label}
+              </Badge>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          {participant.linked_entity_type && participant.linked_entity_id && (
-            <Badge variant="secondary" className="text-[10px] h-4">
-              {ENTITY_TYPE_LABELS[participant.linked_entity_type]}
-            </Badge>
-          )}
-          {participant.role_in_meeting && (
-            <Badge variant="outline" className="text-[10px] h-4">
-              {MEETING_ROLES.find(r => r.value === participant.role_in_meeting)?.label}
-            </Badge>
-          )}
-        </div>
+
+        {/* Presence selector */}
+        <Select
+          value={participant.presence_status}
+          onValueChange={(v) => onUpdate(participant.id, { presence_status: v as PresenceStatus })}
+        >
+          <SelectTrigger className="h-7 w-24 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PRESENCE_STATUSES.map(s => (
+              <SelectItem key={s.value} value={s.value} className="text-xs">
+                {s.emoji} {s.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Role selector */}
+        <Select
+          value={participant.role_in_meeting ?? 'none'}
+          onValueChange={(v) => onUpdate(participant.id, { role_in_meeting: v === 'none' ? null : v as MeetingRole })}
+        >
+          <SelectTrigger className="h-7 w-28 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+            <SelectValue placeholder="Rôle" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none" className="text-xs">Aucun rôle</SelectItem>
+            {MEETING_ROLES.map(r => (
+              <SelectItem key={r.value} value={r.value} className="text-xs">{r.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Link button */}
+        <EntitySearchPopover
+          participant={participant}
+          onLink={(type, id) => onLink(participant.id, type, id)}
+          searchEntities={searchEntities}
+        />
+
+        {/* Delete */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={() => onDelete(participant.id)}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
       </div>
 
-      {/* Presence selector */}
-      <Select
-        value={participant.presence_status}
-        onValueChange={(v) => onUpdate(participant.id, { presence_status: v as PresenceStatus })}
-      >
-        <SelectTrigger className="h-7 w-24 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {PRESENCE_STATUSES.map(s => (
-            <SelectItem key={s.value} value={s.value} className="text-xs">
-              {s.emoji} {s.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* Role selector */}
-      <Select
-        value={participant.role_in_meeting ?? 'none'}
-        onValueChange={(v) => onUpdate(participant.id, { role_in_meeting: v === 'none' ? null : v as MeetingRole })}
-      >
-        <SelectTrigger className="h-7 w-28 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-          <SelectValue placeholder="Rôle" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none" className="text-xs">Aucun rôle</SelectItem>
-          {MEETING_ROLES.map(r => (
-            <SelectItem key={r.value} value={r.value} className="text-xs">{r.label}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* Link button */}
-      <EntitySearchPopover
-        participant={participant}
-        onLink={(type, id) => onLink(participant.id, type, id)}
-        searchEntities={searchEntities}
-      />
-
-      {/* Delete */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-        onClick={() => onDelete(participant.id)}
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
+      {/* Vocabulary editor - shown when linked to a CRM entity */}
+      {participant.linked_entity_type && participant.linked_entity_id &&
+       ['partner', 'lead', 'lead_contact'].includes(participant.linked_entity_type) && (
+        <div className="ml-6 pl-2 border-l-2 border-muted">
+          <EntityVocabularyEditor
+            entityType={participant.linked_entity_type as 'partner' | 'lead' | 'lead_contact'}
+            entityId={participant.linked_entity_id}
+            entityName={participant.name}
+            compact
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -7,3 +7,4 @@ export { TranscriptionEntityLinks } from './TranscriptionEntityLinks';
 export { TranscriptionEmailDialog } from './TranscriptionEmailDialog';
 export { TranscriptionEnrichedTab } from './TranscriptionEnrichedTab';
 export { TranscriptionParticipantsSection } from './TranscriptionParticipantsSection';
+export { EntityVocabularyEditor } from './EntityVocabularyEditor';
