@@ -19,7 +19,8 @@ import {
   FileText,
   Mail,
   Phone,
-  Activity
+  Activity,
+  Bot
 } from 'lucide-react';
 import { 
   useCockpitLeads, 
@@ -30,6 +31,7 @@ import {
   useCockpitActivityLog
 } from '@/hooks/cockpit';
 import { CreateTaskDialog } from '@/components/cockpit/dialogs';
+import { AICopilotPanel } from '@/components/cockpit/AICopilotPanel';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
@@ -305,6 +307,20 @@ export default function CockpitDashboard() {
 
         {/* Stagnant entities alert */}
         <StagnantEntitiesWidget />
+
+        {/* AI Copilot */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bot className="h-5 w-5" />
+              Copilot IA
+            </CardTitle>
+            <CardDescription>Briefing, récolte et alertes intelligentes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AICopilotPanel compact />
+          </CardContent>
+        </Card>
 
         <CreateTaskDialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen} />
       </div>
