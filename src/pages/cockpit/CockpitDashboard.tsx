@@ -130,7 +130,7 @@ export default function CockpitDashboard() {
 
         {/* KPIs — compact row */}
         <div className="grid gap-2 grid-cols-3 lg:grid-cols-6">
-          <KpiCard icon={Users} value={leadStats.qualified} label="Leads" loading={isLoading} onClick={() => navigate('/cockpit/leads')} />
+          <KpiCard icon={Users} value={leadStats.total} label="Leads" loading={isLoading} onClick={() => navigate('/cockpit/leads')} />
           <KpiCard icon={Target} value={oppStats.total} label="Opportunités" loading={isLoading} onClick={() => navigate('/cockpit/pipeline')} />
           <KpiCard icon={Calendar} value={todayBookings?.length || 0} label="RDV" loading={isLoading} onClick={() => navigate('/cockpit/agenda')} />
           <KpiCard icon={FolderKanban} value={formatCurrency(oppStats.totalValue)} label="Pipeline" loading={isLoading} onClick={() => navigate('/cockpit/pipeline')} />
