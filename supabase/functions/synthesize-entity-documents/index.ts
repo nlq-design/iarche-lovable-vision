@@ -378,7 +378,9 @@ async function collectUploadedFiles(supabase: any, entityType: EntityType, entit
 
 async function collectTranscriptions(supabase: any, entityType: EntityType, entityId: string, events: ChronologicalEvent[], linkedEntities: LinkedEntity[]) {
   let transcriptions: any[] = [];
+  const collectedIds = new Set<string>();
 
+  // --- A. Direct FK-based collection ---
   if (entityType === 'lead') {
     const { data } = await supabase.from('voice_transcriptions').select('*').eq('lead_id', entityId).eq('status', 'done');
     transcriptions = data || [];
@@ -395,7 +397,6 @@ async function collectTranscriptions(supabase: any, entityType: EntityType, enti
       transcriptions = data || [];
     }
   } else if (entityType === 'document') {
-    // For documents, get transcriptions via lead_id and project_id
     const { data: doc } = await supabase.from('generated_documents').select('lead_id, project_id').eq('id', entityId).single();
     if (doc) {
       const allTrans: any[] = [];
@@ -413,6 +414,43 @@ async function collectTranscriptions(supabase: any, entityType: EntityType, enti
       }
       transcriptions = allTrans;
     }
+  }
+
+  // Track collected IDs to avoid duplicates from bidirectional search
+  for (const t of transcriptions) collectedIds.add(t.id);
+
+  // --- B. Bidirectional: transcriptions where a participant is linked to this entity ---
+  if (['lead', 'project', 'partner', 'solution'].includes(entityType)) {
+    try {
+      const { data: participantLinks } = await supabase
+        .from('transcription_participants')
+        .select('transcription_id')
+        .eq('linked_entity_type', entityType)
+        .eq('linked_entity_id', entityId)
+        .eq('presence_status', 'present');
+      
+      if (participantLinks?.length) {
+        const newIds = participantLinks
+          .map((p: any) => p.transcription_id)
+          .filter((id: string) => !collectedIds.has(id));
+        
+        if (newIds.length > 0) {
+          const uniqueIds = [...new Set(newIds)];
+          const { data: biTranscriptions } = await supabase
+            .from('voice_transcriptions')
+            .select('*')
+            .in('id', uniqueIds)
+            .eq('status', 'done');
+          
+          for (const t of biTranscriptions || []) {
+            if (!collectedIds.has(t.id)) {
+              collectedIds.add(t.id);
+              transcriptions.push(t);
+            }
+          }
+        }
+      }
+    } catch (e) { console.warn('[collectTranscriptions] Bidirectional search failed:', e); }
   }
 
   // Enrich transcriptions with participant data
@@ -795,6 +833,44 @@ async function collectRelationalNetwork(supabase: any, entityType: EntityType, e
   }
 }
 
+// Phase 2: Collect auto-detected entity links from entity_name_references
+async function collectEntityNameReferences(supabase: any, entityType: EntityType, entityId: string, linkedEntities: LinkedEntity[]) {
+  try {
+    // Get references where this entity is source OR target
+    const [{ data: asSource }, { data: asTarget }] = await Promise.all([
+      supabase.from('entity_name_references')
+        .select('target_entity_id, target_entity_type, confidence_score, context')
+        .eq('source_entity_id', entityId)
+        .eq('source_entity_type', entityType)
+        .gte('confidence_score', 0.6)
+        .limit(20),
+      supabase.from('entity_name_references')
+        .select('source_entity_id, source_entity_type, confidence_score, context')
+        .eq('target_entity_id', entityId)
+        .eq('target_entity_type', entityType)
+        .gte('confidence_score', 0.6)
+        .limit(20),
+    ]);
+
+    const refs = [
+      ...(asSource || []).map((r: any) => ({ id: r.target_entity_id, type: r.target_entity_type, score: r.confidence_score, context: r.context })),
+      ...(asTarget || []).map((r: any) => ({ id: r.source_entity_id, type: r.source_entity_type, score: r.confidence_score, context: r.context })),
+    ];
+
+    for (const ref of refs) {
+      if (!linkedEntities.find(e => e.id === ref.id)) {
+        const confidence = ref.score >= 0.9 ? '✅' : ref.score >= 0.7 ? '🔶' : '❓';
+        linkedEntities.push({
+          type: ref.type as EntityType,
+          id: ref.id,
+          name: ref.context || `[${ref.type}]`,
+          context: `Détecté auto (${confidence} ${Math.round(ref.score * 100)}%)`
+        });
+      }
+    }
+  } catch (e) { console.warn('[collectEntityNameReferences] failed:', e); }
+}
+
 // ============= GRAPH DATA COLLECTION =============
 
 async function collectGraphData(supabase: any, entityType: EntityType, entityId: string): Promise<GraphData> {
@@ -869,12 +945,23 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
     }
   }
 
-  // Determine enrichment entity for cross-references (transcription uses its linked lead/project)
-  const enrichLeadId = entityType === 'transcription' ? entityData?.lead_id : (entityType === 'lead' ? entityId : null);
+  // Determine enrichment entity for cross-references
+  // Extended to project (via opportunity→lead) and document (via lead_id/project_id)
+  let enrichLeadId: string | null = null;
+  if (entityType === 'lead') {
+    enrichLeadId = entityId;
+  } else if (entityType === 'transcription') {
+    enrichLeadId = entityData?.lead_id || null;
+  } else if (entityType === 'project') {
+    // Project → opportunity → lead
+    enrichLeadId = entityData?.opportunity?.lead?.id || null;
+  } else if (entityType === 'document') {
+    enrichLeadId = entityData?.lead?.id || entityData?.lead_id || null;
+  }
   const enrichProjectId = entityType === 'transcription' ? entityData?.project_id : (entityType === 'project' ? entityId : null);
 
   // Collect all data in parallel (including Phase A-C enrichments + new sources)
-  const [, , , , , , , , , , contextNotes, vocabulary, participantMappings, relationalNetwork, leadContacts, meetingNotes, activityLog] = await Promise.all([
+  const [, , , , , , , , , , , contextNotes, vocabulary, participantMappings, relationalNetwork, leadContacts, meetingNotes, activityLog] = await Promise.all([
     collectUploadedFiles(supabase, entityType, entityId, events, linkedEntities),
     collectTranscriptions(supabase, entityType, entityId, events, linkedEntities),
     collectPartners(supabase, entityType, entityId, events, linkedEntities),
@@ -885,6 +972,8 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
     collectProjects(supabase, entityType, entityId, events, linkedEntities),
     collectSolutions(supabase, entityType, entityId, events, linkedEntities),
     collectLeads(supabase, entityType, entityId, events, linkedEntities),
+    // Phase 2: entity_name_references — auto-detected links
+    collectEntityNameReferences(supabase, entityType, entityId, linkedEntities),
     collectContextNotes(supabase, entityType, entityId),
     collectVocabulary(supabase, entityType, entityId),
     collectParticipantMappings(supabase),
