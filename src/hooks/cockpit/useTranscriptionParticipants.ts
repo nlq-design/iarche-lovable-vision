@@ -101,6 +101,43 @@ export function useTranscriptionParticipants(transcriptionId: string | null) {
         .update(updates)
         .eq('id', id);
       if (error) throw error;
+
+      // P1: Persist link in cross-transcription memory
+      if (updates.linked_entity_type && updates.linked_entity_id) {
+        const participant = participants.find(p => p.id === id);
+        if (participant) {
+          try {
+            // Fetch entity name for cache
+            let entityName: string | null = null;
+            if (updates.linked_entity_type === 'partner') {
+              const { data } = await supabase.from('partners').select('name').eq('id', updates.linked_entity_id).single();
+              entityName = data?.name ?? null;
+            } else if (updates.linked_entity_type === 'lead_contact') {
+              const { data } = await supabase.from('lead_contacts').select('name').eq('id', updates.linked_entity_id).single();
+              entityName = data?.name ?? null;
+            } else if (updates.linked_entity_type === 'lead') {
+              const { data } = await supabase.from('leads').select('name').eq('id', updates.linked_entity_id).single();
+              entityName = data?.name ?? null;
+            } else if (updates.linked_entity_type === 'project') {
+              const { data } = await supabase.from('projects').select('name').eq('id', updates.linked_entity_id).single();
+              entityName = data?.name ?? null;
+            }
+
+            await supabase.from('participant_entity_mappings').upsert({
+              workspace_id: '00000000-0000-0000-0000-000000000001',
+              participant_name: participant.name,
+              linked_entity_type: updates.linked_entity_type,
+              linked_entity_id: updates.linked_entity_id,
+              linked_entity_name: entityName,
+              last_used_at: new Date().toISOString(),
+            }, { onConflict: 'workspace_id,participant_name,linked_entity_type,linked_entity_id' });
+
+            // Increment usage_count via raw SQL not available, use rpc or just ignore for now
+          } catch (e) {
+            console.warn('[useTranscriptionParticipants] Memory save failed:', e);
+          }
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });

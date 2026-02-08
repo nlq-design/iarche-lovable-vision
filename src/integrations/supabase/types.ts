@@ -3189,6 +3189,45 @@ export type Database = {
           },
         ]
       }
+      participant_entity_mappings: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          last_used_at: string
+          linked_entity_id: string
+          linked_entity_name: string | null
+          linked_entity_type: string
+          participant_name: string
+          usage_count: number
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_used_at?: string
+          linked_entity_id: string
+          linked_entity_name?: string | null
+          linked_entity_type: string
+          participant_name: string
+          usage_count?: number
+          workspace_id?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_used_at?: string
+          linked_entity_id?: string
+          linked_entity_name?: string | null
+          linked_entity_type?: string
+          participant_name?: string
+          usage_count?: number
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       partner_announcements: {
         Row: {
           content: string

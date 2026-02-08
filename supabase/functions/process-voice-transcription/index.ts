@@ -727,6 +727,37 @@ serve(async (req) => {
         });
       }
 
+      // Phase P1: Auto-link from cross-transcription memory (participant_entity_mappings)
+      try {
+        const unlinkedNames = participantRows
+          .filter(p => !p.linked_entity_id)
+          .map(p => p.name.toLowerCase());
+        
+        if (unlinkedNames.length > 0) {
+          const { data: mappings } = await supabase
+            .from('participant_entity_mappings')
+            .select('participant_name, linked_entity_type, linked_entity_id, linked_entity_name, usage_count')
+            .eq('workspace_id', job.workspace_id)
+            .order('usage_count', { ascending: false });
+
+          if (mappings?.length) {
+            let autoLinked = 0;
+            for (const row of participantRows) {
+              if (row.linked_entity_id) continue;
+              const match = mappings.find(
+                (m: any) => m.participant_name.toLowerCase() === row.name.toLowerCase()
+              );
+              if (match) {
+                row.linked_entity_type = match.linked_entity_type;
+                row.linked_entity_id = match.linked_entity_id;
+                autoLinked++;
+              }
+            }
+            if (autoLinked > 0) log("Participants", `Auto-linked ${autoLinked} from memory`);
+          }
+        }
+      } catch (e) { logErr("Participant memory lookup", e); }
+
       if (participantRows.length > 0) {
         await supabase.from("transcription_participants")
           .upsert(participantRows, { onConflict: 'transcription_id,name', ignoreDuplicates: true });

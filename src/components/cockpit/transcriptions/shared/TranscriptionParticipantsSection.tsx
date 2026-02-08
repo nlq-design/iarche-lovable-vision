@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -166,6 +168,7 @@ function ParticipantRow({
   onLink,
   searchEntities,
   historyCount,
+  linkedEntityName,
 }: {
   participant: TranscriptionParticipant;
   onUpdate: (id: string, updates: Partial<TranscriptionParticipant>) => void;
@@ -173,7 +176,23 @@ function ParticipantRow({
   onLink: (id: string, type: LinkedEntityType, entityId: string) => void;
   searchEntities: (q: string) => Promise<Array<{ type: LinkedEntityType; id: string; name: string; subtitle?: string }>>;
   historyCount?: number;
+  linkedEntityName?: string;
 }) {
+  const navigate = useNavigate();
+
+  const getEntityUrl = (): string | null => {
+    if (!participant.linked_entity_type || !participant.linked_entity_id) return null;
+    switch (participant.linked_entity_type) {
+      case 'partner': return `/cockpit/partenaires/${participant.linked_entity_id}`;
+      case 'lead': return `/cockpit/leads/${participant.linked_entity_id}`;
+      case 'lead_contact': return null; // contacts don't have their own page
+      case 'project': return `/cockpit/projets/${participant.linked_entity_id}`;
+      default: return null;
+    }
+  };
+
+  const entityUrl = getEntityUrl();
+
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2 p-2 rounded-lg border bg-card hover:bg-accent/30 transition-colors group">
@@ -196,8 +215,15 @@ function ParticipantRow({
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">
             {participant.linked_entity_type && participant.linked_entity_id && (
-              <Badge variant="secondary" className="text-[10px] h-4">
+              <Badge 
+                variant="secondary" 
+                className={`text-[10px] h-4 ${entityUrl ? 'cursor-pointer hover:bg-primary/20 transition-colors' : ''}`}
+                onClick={entityUrl ? () => navigate(entityUrl) : undefined}
+              >
                 {ENTITY_TYPE_LABELS[participant.linked_entity_type]}
+                {linkedEntityName && (
+                  <span className="ml-1 font-normal">{linkedEntityName}</span>
+                )}
               </Badge>
             )}
             {participant.role_in_meeting && (
@@ -338,6 +364,7 @@ export function TranscriptionParticipantsSection({
   } = useTranscriptionParticipants(transcriptionId);
 
   const [historyCounts, setHistoryCounts] = useState<Record<string, number>>({});
+  const [entityNames, setEntityNames] = useState<Record<string, string>>({});
   const [seeded, setSeeded] = useState(false);
 
   // Auto-seed from summary if no participants exist yet
@@ -354,19 +381,33 @@ export function TranscriptionParticipantsSection({
     }
   }, [transcriptionId, participants.length, isLoading, normalizedSummary, seeded]); // eslint-disable-line
 
-  // Load history counts
+  // Load history counts + entity names for linked participants
   useEffect(() => {
     if (participants.length === 0) return;
-    const loadHistory = async () => {
+    const load = async () => {
       const counts: Record<string, number> = {};
+      const names: Record<string, string> = {};
       await Promise.all(
         participants.map(async (p) => {
           counts[p.id] = await getParticipantHistory(p.name);
+          // Fetch linked entity name
+          if (p.linked_entity_type && p.linked_entity_id && !entityNames[p.id]) {
+            try {
+              const table = p.linked_entity_type === 'partner' ? 'partners'
+                : p.linked_entity_type === 'lead_contact' ? 'lead_contacts'
+                : p.linked_entity_type === 'lead' ? 'leads'
+                : 'projects';
+              const nameCol = table === 'projects' ? 'name' : 'name';
+              const { data } = await supabase.from(table).select(nameCol).eq('id', p.linked_entity_id).single();
+              if (data?.name) names[p.id] = data.name;
+            } catch { /* ignore */ }
+          }
         })
       );
       setHistoryCounts(counts);
+      setEntityNames(prev => ({ ...prev, ...names }));
     };
-    loadHistory();
+    load();
   }, [participants]); // eslint-disable-line
 
   const handleUpdate = (id: string, updates: Partial<TranscriptionParticipant>) => {
@@ -423,6 +464,7 @@ export function TranscriptionParticipantsSection({
                   onLink={handleLink}
                   searchEntities={searchEntities}
                   historyCount={historyCounts[p.id]}
+                  linkedEntityName={entityNames[p.id]}
                 />
               ))}
             </div>
