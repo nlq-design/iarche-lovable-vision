@@ -1,0 +1,324 @@
+import { useState } from 'react';
+import { Brain, Zap, Shield, Sun, ArrowRight, CheckCircle2, AlertTriangle, Clock, Sparkles, Plus, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { useCockpitAICopilot } from '@/hooks/cockpit/useCockpitAICopilot';
+import ReactMarkdown from 'react-markdown';
+
+interface AICopilotPanelProps {
+  workspaceId?: string;
+  entityType?: string;
+  entityId?: string;
+  compact?: boolean;
+}
+
+export function AICopilotPanel({ workspaceId, entityType, entityId, compact = false }: AICopilotPanelProps) {
+  const {
+    suggestTasks,
+    detectInactivity,
+    healthCheck,
+    morningBrief,
+    suggestNextStep,
+    createTasksFromSuggestions,
+  } = useCockpitAICopilot(workspaceId);
+
+  const [selectedSuggestions, setSelectedSuggestions] = useState<number[]>([]);
+  const [activeTab, setActiveTab] = useState<'brief' | 'tasks' | 'alerts' | 'health'>('brief');
+
+  const toggleSuggestion = (index: number) => {
+    setSelectedSuggestions((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
+  };
+
+  const handleCreateSelected = () => {
+    if (!suggestTasks.data) return;
+    const selected = selectedSuggestions.map((i) => suggestTasks.data[i]);
+    createTasksFromSuggestions.mutate(selected);
+    setSelectedSuggestions([]);
+  };
+
+  const priorityColor = (p: string) => {
+    switch (p) {
+      case 'urgent': return 'destructive';
+      case 'high': return 'default';
+      case 'medium': return 'secondary';
+      default: return 'outline';
+    }
+  };
+
+  const severityIcon = (s: string) => s === 'high' ? <AlertTriangle className="h-4 w-4 text-destructive" /> : <Clock className="h-4 w-4 text-muted-foreground" />;
+
+  const healthIcon = (h: string) => {
+    switch (h) {
+      case 'on_track': return <CheckCircle2 className="h-4 w-4 text-primary" />;
+      case 'at_risk': return <AlertTriangle className="h-4 w-4 text-accent-foreground" />;
+      case 'off_track': return <AlertTriangle className="h-4 w-4 text-destructive" />;
+      default: return null;
+    }
+  };
+
+  if (compact) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => suggestTasks.mutate({ entityType, entityId })}
+            disabled={suggestTasks.isPending}
+          >
+            {suggestTasks.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
+            Suggestions IA
+          </Button>
+          {entityType === 'opportunity' && entityId && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => suggestNextStep.mutate(entityId)}
+              disabled={suggestNextStep.isPending}
+            >
+              {suggestNextStep.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <ArrowRight className="h-3 w-3 mr-1" />}
+              Next step
+            </Button>
+          )}
+        </div>
+
+        {/* Task suggestions inline */}
+        {suggestTasks.data && (
+          <div className="space-y-2 mt-3">
+            {suggestTasks.data.map((s, i) => (
+              <div
+                key={i}
+                className={`p-2 rounded-md border cursor-pointer transition-colors ${selectedSuggestions.includes(i) ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                onClick={() => toggleSuggestion(i)}
+              >
+                <div className="flex items-center gap-2">
+                  <Badge variant={priorityColor(s.priority)} className="text-xs">{s.priority}</Badge>
+                  <span className="text-sm font-medium">{s.title}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">{s.reasoning}</p>
+              </div>
+            ))}
+            {selectedSuggestions.length > 0 && (
+              <Button size="sm" onClick={handleCreateSelected} disabled={createTasksFromSuggestions.isPending}>
+                <Plus className="h-3 w-3 mr-1" />
+                Créer {selectedSuggestions.length} tâche(s)
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Next step inline */}
+        {suggestNextStep.data?.suggestion && (
+          <Card className="mt-3">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <ArrowRight className="h-4 w-4 text-primary" />
+                <span className="font-medium text-sm">{suggestNextStep.data.suggestion.next_action}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">{suggestNextStep.data.suggestion.reasoning}</p>
+              {suggestNextStep.data.suggestion.talking_points?.length > 0 && (
+                <ul className="mt-2 text-xs space-y-1">
+                  {suggestNextStep.data.suggestion.talking_points.map((tp, i) => (
+                    <li key={i} className="flex items-start gap-1">
+                      <span className="text-primary">•</span> {tp}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
+  // Full panel (dashboard view)
+  return (
+    <Card className="h-full">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Brain className="h-5 w-5 text-primary" />
+            <CardTitle className="text-lg">Copilote IA</CardTitle>
+          </div>
+        </div>
+        <CardDescription>Intelligence commerciale proactive</CardDescription>
+      </CardHeader>
+
+      {/* Tab buttons */}
+      <div className="px-6 flex gap-1 flex-wrap">
+        {([
+          { key: 'brief', label: 'Briefing', icon: Sun, action: () => morningBrief.mutate(), loading: morningBrief.isPending },
+          { key: 'tasks', label: 'Suggestions', icon: Sparkles, action: () => suggestTasks.mutate({}), loading: suggestTasks.isPending },
+          { key: 'alerts', label: 'Alertes', icon: Zap, action: () => detectInactivity.mutate(), loading: detectInactivity.isPending },
+          { key: 'health', label: 'Santé', icon: Shield, action: () => healthCheck.mutate(), loading: healthCheck.isPending },
+        ] as const).map(({ key, label, icon: Icon, action, loading }) => (
+          <Button
+            key={key}
+            variant={activeTab === key ? 'default' : 'ghost'}
+            size="sm"
+            className="gap-1"
+            onClick={() => { setActiveTab(key); action(); }}
+            disabled={loading}
+          >
+            {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Icon className="h-3 w-3" />}
+            {label}
+          </Button>
+        ))}
+      </div>
+
+      <Separator className="my-3" />
+
+      <CardContent className="pt-0">
+        <ScrollArea className="h-[500px]">
+          {/* MORNING BRIEF */}
+          {activeTab === 'brief' && (
+            <div>
+              {morningBrief.isPending && <LoadingState text="Préparation du briefing..." />}
+              {morningBrief.data?.brief && (
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <ReactMarkdown>{morningBrief.data.brief}</ReactMarkdown>
+                </div>
+              )}
+              {!morningBrief.data && !morningBrief.isPending && (
+                <EmptyState text="Cliquez sur Briefing pour générer votre synthèse du jour" />
+              )}
+            </div>
+          )}
+
+          {/* TASK SUGGESTIONS */}
+          {activeTab === 'tasks' && (
+            <div className="space-y-3">
+              {suggestTasks.isPending && <LoadingState text="Analyse du contexte..." />}
+              {suggestTasks.data?.map((s, i) => (
+                <div
+                  key={i}
+                  className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedSuggestions.includes(i) ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/50'}`}
+                  onClick={() => toggleSuggestion(i)}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={priorityColor(s.priority)} className="text-xs">{s.priority}</Badge>
+                      <Badge variant="outline" className="text-xs">{s.task_type}</Badge>
+                    </div>
+                    <span className="text-xs text-muted-foreground">J+{s.due_in_days}</span>
+                  </div>
+                  <h4 className="font-medium text-sm">{s.title}</h4>
+                  <p className="text-xs text-muted-foreground mt-1">{s.description}</p>
+                  <p className="text-xs text-muted-foreground/70 italic mt-1">💡 {s.reasoning}</p>
+                </div>
+              ))}
+              {selectedSuggestions.length > 0 && (
+                <Button onClick={handleCreateSelected} disabled={createTasksFromSuggestions.isPending} className="w-full">
+                  {createTasksFromSuggestions.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                  Créer {selectedSuggestions.length} tâche(s) sélectionnée(s)
+                </Button>
+              )}
+              {!suggestTasks.data && !suggestTasks.isPending && (
+                <EmptyState text="Cliquez sur Suggestions pour obtenir des recommandations" />
+              )}
+            </div>
+          )}
+
+          {/* INACTIVITY ALERTS */}
+          {activeTab === 'alerts' && (
+            <div className="space-y-2">
+              {detectInactivity.isPending && <LoadingState text="Scan d'inactivité..." />}
+              {detectInactivity.data?.alerts.map((a, i) => (
+                <div key={i} className="flex items-start gap-3 p-3 rounded-lg border border-border">
+                  {severityIcon(a.severity)}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="outline" className="text-xs">{a.entity_type}</Badge>
+                      <span className="font-medium text-sm truncate">{a.entity_name}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{a.suggestion}</p>
+                    <span className="text-xs text-muted-foreground/60">{a.days_inactive}j d'inactivité</span>
+                  </div>
+                </div>
+              ))}
+              {detectInactivity.data?.total === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                  <p className="text-sm">Aucune alerte d'inactivité</p>
+                </div>
+              )}
+              {!detectInactivity.data && !detectInactivity.isPending && (
+                <EmptyState text="Cliquez sur Alertes pour scanner l'inactivité" />
+              )}
+            </div>
+          )}
+
+          {/* HEALTH CHECK */}
+          {activeTab === 'health' && (
+            <div className="space-y-3">
+              {healthCheck.isPending && <LoadingState text="Diagnostic projets..." />}
+              {healthCheck.data?.summary && (
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="text-center p-2 rounded-lg bg-primary/10">
+                    <div className="text-lg font-bold text-primary">{healthCheck.data.summary.on_track}</div>
+                    <div className="text-xs text-muted-foreground">En bonne voie</div>
+                  </div>
+                  <div className="text-center p-2 rounded-lg bg-secondary">
+                    <div className="text-lg font-bold text-secondary-foreground">{healthCheck.data.summary.at_risk}</div>
+                    <div className="text-xs text-muted-foreground">À risque</div>
+                  </div>
+                  <div className="text-center p-2 rounded-lg bg-destructive/10">
+                    <div className="text-lg font-bold text-destructive">{healthCheck.data.summary.off_track}</div>
+                    <div className="text-xs text-muted-foreground">En danger</div>
+                  </div>
+                </div>
+              )}
+              {healthCheck.data?.projects.map((p, i) => (
+                <div key={i} className="p-3 rounded-lg border border-border">
+                  <div className="flex items-center gap-2 mb-2">
+                    {healthIcon(p.computed_health)}
+                    <span className="font-medium text-sm">{p.project_name}</span>
+                  </div>
+                  {p.risk_factors.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {p.risk_factors.map((r, j) => (
+                        <Badge key={j} variant="outline" className="text-xs">{r}</Badge>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-4 text-xs text-muted-foreground">
+                    <span>Budget: {p.budget_status.consumed_pct}%</span>
+                    <span>Tâches: {p.task_status.completed}/{p.task_status.total}</span>
+                    <span>Retard: {p.task_status.overdue}</span>
+                  </div>
+                </div>
+              ))}
+              {!healthCheck.data && !healthCheck.isPending && (
+                <EmptyState text="Cliquez sur Santé pour diagnostiquer vos projets" />
+              )}
+            </div>
+          )}
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LoadingState({ text }: { text: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12">
+      <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
+      <p className="text-sm text-muted-foreground">{text}</p>
+    </div>
+  );
+}
+
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <Brain className="h-8 w-8 text-muted-foreground/40 mb-3" />
+      <p className="text-sm text-muted-foreground">{text}</p>
+    </div>
+  );
+}
