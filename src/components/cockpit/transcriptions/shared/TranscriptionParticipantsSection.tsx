@@ -27,7 +27,6 @@ import {
   UserCheck,
   MessageSquare,
   Eye,
-  RefreshCw,
 } from 'lucide-react';
 import {
   useTranscriptionParticipants,
@@ -297,16 +296,12 @@ interface TranscriptionParticipantsSectionProps {
   transcriptionId: string | null;
   normalizedSummary?: NormalizedSummary | null;
   compact?: boolean;
-  onReanalyze?: () => void;
-  isReanalyzing?: boolean;
 }
 
 export function TranscriptionParticipantsSection({
   transcriptionId,
   normalizedSummary,
   compact = false,
-  onReanalyze,
-  isReanalyzing = false,
 }: TranscriptionParticipantsSectionProps) {
   const {
     participants,
@@ -321,7 +316,6 @@ export function TranscriptionParticipantsSection({
 
   const [historyCounts, setHistoryCounts] = useState<Record<string, number>>({});
   const [seeded, setSeeded] = useState(false);
-  const [hasParticipantChanges, setHasParticipantChanges] = useState(false);
 
   // Auto-seed from summary if no participants exist yet
   useEffect(() => {
@@ -354,7 +348,6 @@ export function TranscriptionParticipantsSection({
 
   const handleUpdate = (id: string, updates: Partial<TranscriptionParticipant>) => {
     updateParticipant.mutate({ id, ...updates });
-    setHasParticipantChanges(true);
   };
 
   const handleLink = (participantId: string, type: LinkedEntityType, entityId: string) => {
@@ -363,19 +356,10 @@ export function TranscriptionParticipantsSection({
       linked_entity_type: type,
       linked_entity_id: entityId,
     });
-    setHasParticipantChanges(true);
   };
 
   const handleAdd = (name: string, status: PresenceStatus) => {
     upsertParticipant.mutate({ name, presence_status: status });
-    setHasParticipantChanges(true);
-  };
-
-  const handleReanalyzeClick = () => {
-    if (onReanalyze) {
-      onReanalyze();
-      setHasParticipantChanges(false);
-    }
   };
 
   const presentCount = participants.filter(p => p.presence_status === 'present').length;
@@ -430,24 +414,6 @@ export function TranscriptionParticipantsSection({
                 <Sparkles className="h-3 w-3" />
                 Des suggestions IA sont disponibles — cliquez sur <Link2 className="h-3 w-3 inline" /> pour lier
               </p>
-            )}
-
-            {/* Re-analyze button when participants have been modified */}
-            {onReanalyze && hasParticipantChanges && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full mt-3 text-xs border-primary/30 text-primary hover:bg-primary/10"
-                onClick={handleReanalyzeClick}
-                disabled={isReanalyzing}
-              >
-                {isReanalyzing ? (
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                )}
-                Ré-analyser avec les participants mis à jour
-              </Button>
             )}
           </>
         )}
