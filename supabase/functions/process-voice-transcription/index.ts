@@ -25,7 +25,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ASSEMBLYAI_API_KEY = Deno.env.get("ASSEMBLYAI_API_KEY");
 
-const LLM_TIMEOUT_MS = 55_000;
+const LLM_TIMEOUT_MS = 90_000;
 const ASSEMBLYAI_MAX_WAIT_MS = 300_000;
 const MAX_TRANSCRIPT_FOR_LLM = 25_000;
 
@@ -646,9 +646,15 @@ serve(async (req) => {
       const llmResult = await callLLMWithFallback(
         getAnalysisSystemPrompt(),
         llmInput,
-        getAnalysisOutputSchema(),
-        { category: 'reasoning', timeoutMs: LLM_TIMEOUT_MS, maxTokens: 4096 }
+        null, // No tool calling — use json_object mode for reliability with Gemini
+        { category: 'reasoning', timeoutMs: LLM_TIMEOUT_MS, maxTokens: 16384 }
       );
+      
+      // Validate the LLM actually returned useful data
+      if (llmResult.error === "empty_response" || llmResult._parse_fallback) {
+        throw new Error("LLM returned empty or unparseable response");
+      }
+      
       summary = llmResult;
       log("LLM", `Analysis complete: title="${summary.title}", entities=${(summary.detected_entities as any[])?.length ?? 0}`);
     } catch (llmErr) {

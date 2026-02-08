@@ -180,23 +180,38 @@ CRITICAL OUTPUT RULES:
   );
 
   try {
-    const response = await client.complete(request);
+    // Retry logic for empty responses (up to 2 attempts)
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const response = await client.complete(request);
+      
+      console.log(`[AILegacyBridge] Attempt ${attempt}: model=${response.model}, finish=${response.finish_reason}, content_len=${response.content?.length ?? 0}, tool_calls=${response.tool_calls?.length ?? 0}, tokens=${JSON.stringify(response.usage)}`);
 
-    // Parse tool call response
-    if (response.tool_calls?.[0]?.function?.arguments) {
-      try {
-        return JSON.parse(response.tool_calls[0].function.arguments);
-      } catch {
-        return extractJsonFromText(response.tool_calls[0].function.arguments);
+      // Parse tool call response
+      if (response.tool_calls?.[0]?.function?.arguments) {
+        try {
+          return JSON.parse(response.tool_calls[0].function.arguments);
+        } catch {
+          return extractJsonFromText(response.tool_calls[0].function.arguments);
+        }
+      }
+
+      // Parse content response
+      if (response.content && response.content.trim().length > 0) {
+        return extractJsonFromText(response.content);
+      }
+
+      // Empty response — retry once with a simpler request (no tool calling)
+      if (attempt === 1) {
+        console.warn(`[AILegacyBridge] Empty response on attempt ${attempt}, retrying without tool_choice...`);
+        // On retry: drop tool calling, use plain JSON mode
+        delete request.tools;
+        delete request.tool_choice;
+        request.response_format = { type: 'json_object' };
+        await new Promise(r => setTimeout(r, 1000));
       }
     }
 
-    // Parse content response
-    if (response.content) {
-      return extractJsonFromText(response.content);
-    }
-
-    return { error: "empty_response" };
+    throw new Error("LLM returned empty response after 2 attempts");
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (msg.includes("timeout") || msg.includes("abort")) {
