@@ -40,7 +40,10 @@ interface GraphData {
   events: ChronologicalEvent[];
   linkedEntities: LinkedEntity[];
   provenance: { type: EntityType; id: string; name: string; date: string }[];
-  contextNotes: string[]; // User-provided context notes for synthesis enrichment
+  contextNotes: string[];
+  vocabulary: string[];
+  participantMappings: Array<{ name: string; entityName: string; entityType: string }>;
+  relationalNetwork: Array<{ name: string; entityType: string | null; projects: string[]; meetingCount: number; coParticipants: string[] }>;
 }
 
 // ============= HELPERS (defined first) =============
@@ -655,18 +658,120 @@ async function collectLeads(supabase: any, entityType: EntityType, entityId: str
 
 // Collect context notes (user-provided context for AI synthesis)
 async function collectContextNotes(supabase: any, entityType: EntityType, entityId: string): Promise<string[]> {
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from('entity_context_notes')
     .select('content, created_at')
     .eq('entity_type', entityType)
     .eq('entity_id', entityId)
     .order('created_at', { ascending: true });
+  return (data || []).map((note: any) => note.content);
+}
 
-  if (error || !data || data.length === 0) {
+// Collect vocabulary terms for the entity
+async function collectVocabulary(supabase: any, entityType: EntityType, entityId: string): Promise<string[]> {
+  try {
+    const { data } = await supabase
+      .from('entity_vocabulary')
+      .select('term, category')
+      .eq('entity_type', entityType)
+      .eq('entity_id', entityId)
+      .order('category');
+    return (data || []).map((v: any) => `${v.term} (${v.category || 'général'})`);
+  } catch { return []; }
+}
+
+// Collect known participant-entity mappings from workspace memory
+async function collectParticipantMappings(supabase: any): Promise<GraphData['participantMappings']> {
+  try {
+    const { data } = await supabase
+      .from('participant_entity_mappings')
+      .select('participant_name, linked_entity_name, linked_entity_type')
+      .eq('workspace_id', '00000000-0000-0000-0000-000000000001')
+      .order('last_used_at', { ascending: false })
+      .limit(50);
+    const seen = new Set<string>();
+    return (data || []).filter((m: any) => {
+      const key = `${m.participant_name}::${m.linked_entity_type}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).map((m: any) => ({
+      name: m.participant_name,
+      entityName: m.linked_entity_name || m.participant_name,
+      entityType: m.linked_entity_type,
+    }));
+  } catch { return []; }
+}
+
+// Build relational network from transcription participants
+async function collectRelationalNetwork(supabase: any, entityType: EntityType, entityId: string): Promise<GraphData['relationalNetwork']> {
+  try {
+    // Get transcription IDs relevant to this entity
+    let transcriptionIds: string[] = [];
+    if (entityType === 'lead') {
+      const { data } = await supabase.from('voice_transcriptions').select('id').eq('lead_id', entityId).eq('status', 'done');
+      transcriptionIds = (data || []).map((t: any) => t.id);
+    } else if (entityType === 'project') {
+      const { data } = await supabase.from('voice_transcriptions').select('id').eq('project_id', entityId).eq('status', 'done');
+      transcriptionIds = (data || []).map((t: any) => t.id);
+    } else if (entityType === 'partner') {
+      const { data: links } = await supabase.from('transcription_partners').select('transcription_id').eq('partner_id', entityId);
+      transcriptionIds = (links || []).map((l: any) => l.transcription_id);
+    } else if (entityType === 'transcription') {
+      transcriptionIds = [entityId];
+    }
+    
+    if (!transcriptionIds.length) return [];
+
+    const { data: allParticipants } = await supabase
+      .from('transcription_participants')
+      .select('name, transcription_id, linked_entity_type, presence_status')
+      .in('transcription_id', transcriptionIds)
+      .eq('presence_status', 'present');
+
+    if (!allParticipants?.length) return [];
+
+    // Get project names for transcriptions
+    const { data: transcriptions } = await supabase
+      .from('voice_transcriptions')
+      .select('id, project_id, project:projects(name)')
+      .in('id', transcriptionIds);
+
+    const transcriptionProjectMap = new Map<string, string>();
+    for (const t of transcriptions || []) {
+      if ((t as any).project?.name) transcriptionProjectMap.set(t.id, (t as any).project.name);
+    }
+
+    // Group participants by transcription
+    const byTranscription = new Map<string, string[]>();
+    for (const p of allParticipants) {
+      const list = byTranscription.get(p.transcription_id) || [];
+      list.push(p.name);
+      byTranscription.set(p.transcription_id, list);
+    }
+
+    // Build per-person nodes
+    const nodeMap = new Map<string, GraphData['relationalNetwork'][0]>();
+    for (const p of allParticipants) {
+      const existing = nodeMap.get(p.name) || {
+        name: p.name, entityType: p.linked_entity_type || null,
+        projects: [], meetingCount: 0, coParticipants: [],
+      };
+      existing.meetingCount++;
+      const projName = transcriptionProjectMap.get(p.transcription_id);
+      if (projName && !existing.projects.includes(projName)) existing.projects.push(projName);
+      const coP = byTranscription.get(p.transcription_id) || [];
+      for (const co of coP) {
+        if (co !== p.name && !existing.coParticipants.includes(co)) existing.coParticipants.push(co);
+      }
+      nodeMap.set(p.name, existing);
+    }
+
+    return [...nodeMap.values()].sort((a, b) => b.meetingCount - a.meetingCount).slice(0, 20);
+  } catch (e) {
+    console.warn('[synthesize-v2] Relational network failed:', e);
     return [];
   }
-
-  return data.map((note: any) => note.content);
 }
 
 // ============= GRAPH DATA COLLECTION =============
@@ -691,8 +796,8 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
     provenance.push({ type: entityType, id: entityId, name: entityName, date: formatDate(entityData.created_at) });
   }
 
-  // Collect all data in parallel
-  const [, , , , , , , , , , contextNotes] = await Promise.all([
+  // Collect all data in parallel (including Phase A-C enrichments)
+  const [, , , , , , , , , , contextNotes, vocabulary, participantMappings, relationalNetwork] = await Promise.all([
     collectUploadedFiles(supabase, entityType, entityId, events, linkedEntities),
     collectTranscriptions(supabase, entityType, entityId, events, linkedEntities),
     collectPartners(supabase, entityType, entityId, events, linkedEntities),
@@ -704,9 +809,14 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
     collectSolutions(supabase, entityType, entityId, events, linkedEntities),
     collectLeads(supabase, entityType, entityId, events, linkedEntities),
     collectContextNotes(supabase, entityType, entityId),
+    collectVocabulary(supabase, entityType, entityId),
+    collectParticipantMappings(supabase),
+    collectRelationalNetwork(supabase, entityType, entityId),
   ]);
 
-  return { entityName, entityInfo, events, linkedEntities, provenance, contextNotes };
+  console.log(`[synthesize-v2] Enrichment: ${contextNotes.length} notes, ${vocabulary.length} vocab, ${participantMappings.length} mappings, ${relationalNetwork.length} network nodes`);
+
+  return { entityName, entityInfo, events, linkedEntities, provenance, contextNotes, vocabulary, participantMappings, relationalNetwork };
 }
 
 // ============= MAIN HANDLER =============
@@ -782,10 +892,29 @@ serve(async (req) => {
         ).join('\n')}`
       : '';
 
-    // Context notes from user (added as final enrichment source)
+    // Phase A-C enrichment blocks
     const contextNotesSection = graphData.contextNotes.length > 0
-      ? `\n\n## Contexte additionnel (notes utilisateur):\n_Ces notes sont fournies par l'utilisateur pour enrichir la synthèse. Elles représentent des informations non capturées ailleurs (rencontres, impressions, contexte oral...)._\n\n${graphData.contextNotes.map((note, idx) => `**Note ${idx + 1}:** ${note}`).join('\n\n')}`
-      : '';
+      ? graphData.contextNotes.map((note, idx) => `**Note ${idx + 1}:** ${note}`).join('\n\n')
+      : 'Aucune note de contexte disponible.';
+
+    const vocabularySection = graphData.vocabulary.length > 0
+      ? graphData.vocabulary.join(', ')
+      : 'Aucun vocabulaire spécifique.';
+
+    const mappingsSection = graphData.participantMappings.length > 0
+      ? graphData.participantMappings.map(m => `- "${m.name}" → ${m.entityName} (${m.entityType})`).join('\n')
+      : 'Aucune correspondance connue.';
+
+    const networkSection = graphData.relationalNetwork.length > 0
+      ? graphData.relationalNetwork.map(n => {
+          let line = `- **${n.name}**`;
+          if (n.entityType) line += ` [${n.entityType}]`;
+          line += ` — ${n.meetingCount} réunion(s)`;
+          if (n.projects.length) line += `, projets: ${n.projects.join(', ')}`;
+          if (n.coParticipants.length > 0) line += `\n  ↔ Co-participants: ${n.coParticipants.slice(0, 5).join(', ')}`;
+          return line;
+        }).join('\n')
+      : 'Pas assez de données pour construire le réseau.';
 
     const synthesisDate = new Date().toLocaleDateString('fr-FR', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -796,12 +925,16 @@ serve(async (req) => {
       .replace('{{entity_name}}', graphData.entityName)
       .replace('{{entity_type}}', entity_type)
       .replace('{{entity_info}}', JSON.stringify(graphData.entityInfo, null, 2))
-      .replace('{{chronological_context}}', chronologicalContext + linkedEntitiesContext + contextNotesSection)
+      .replace('{{context_notes}}', contextNotesSection)
+      .replace('{{vocabulary}}', vocabularySection)
+      .replace('{{participant_mappings}}', mappingsSection)
+      .replace('{{relational_network}}', networkSection)
+      .replace('{{chronological_context}}', chronologicalContext + linkedEntitiesContext)
       .replace('{{linked_count}}', String(graphData.linkedEntities.length))
       .replace('{{events_count}}', String(graphData.events.length))
       .replace('{{context_notes_count}}', String(graphData.contextNotes.length));
 
-    console.log(`[synthesize-v2] Calling centralized AI client with ${graphData.contextNotes.length} context notes...`);
+    console.log(`[synthesize-v2] Calling AI with enrichment: ${graphData.contextNotes.length} notes, ${graphData.vocabulary.length} vocab, ${graphData.participantMappings.length} mappings, ${graphData.relationalNetwork.length} network nodes`);
 
     // 5. Generate synthesis - Use centralized AI client with automatic DB config lookup
     const synthesis = await callLLM(
@@ -833,11 +966,15 @@ serve(async (req) => {
       content: `Synthèse de ${graphData.events.length} événements, ${graphData.linkedEntities.length} entités liées`,
       is_ai_generated: true,
       ai_metadata: {
-        version: 'v2',
+        version: 'v3-relational',
         events_count: graphData.events.length,
         linked_entities_count: graphData.linkedEntities.length,
         source_counts: sourceCounts,
         synthesis_length: synthesis.length,
+        context_notes_count: graphData.contextNotes.length,
+        vocabulary_count: graphData.vocabulary.length,
+        participant_mappings_count: graphData.participantMappings.length,
+        relational_network_nodes: graphData.relationalNetwork.length,
         model: modelConfig.model || 'google/gemini-2.5-flash',
         synthesis_date: synthesisDate,
         provenance: graphData.provenance

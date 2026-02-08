@@ -110,7 +110,7 @@ const EDGE_FUNCTION_AI_MAP: Array<{
   { name: "vivier-ai-search", description: "Recherche IA viviers", provider: "lovable_ai", category: "chat", migrated: true },
   { name: "vivier-insights", description: "Insights viviers", provider: "lovable_ai", category: "reasoning", migrated: true },
   { name: "score-viviers-batch", description: "Scoring batch viviers", provider: "lovable_ai", category: "chat", migrated: true },
-  { name: "synthesize-entity-documents", description: "Synthèse documents entités", provider: "lovable_ai", category: "reasoning", migrated: true },
+  { name: "synthesize-entity-documents", description: "Synthèse documents entités (v3 — intelligence relationnelle, vocabulaire, mappings)", provider: "lovable_ai", category: "reasoning", migrated: true },
   { name: "extract-entities", description: "Extraction d'entités nommées", provider: "lovable_ai", category: "chat", migrated: true },
   { 
     name: "transcribe-audio-chunk", 
