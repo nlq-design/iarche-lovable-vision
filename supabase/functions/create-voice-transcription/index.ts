@@ -52,6 +52,7 @@ serve(async (req) => {
       storage_path,
       source,
       lead_id: rawLeadId,
+      lead_contact_id: rawLeadContactId,
       project_id: rawProjectId,
       solution_id: rawSolutionId,
       meeting_note_id: rawMeetingNoteId,
@@ -70,6 +71,7 @@ serve(async (req) => {
 
     // Convert empty strings to null for UUID fields
     const lead_id = toUuidOrNull(rawLeadId);
+    const lead_contact_id = toUuidOrNull(rawLeadContactId);
     const project_id = toUuidOrNull(rawProjectId);
     const solution_id = toUuidOrNull(rawSolutionId);
     const meeting_note_id = toUuidOrNull(rawMeetingNoteId);
@@ -102,6 +104,7 @@ serve(async (req) => {
         storage_path,
         source,
         lead_id,
+        lead_contact_id,
         project_id,
         solution_id,
         meeting_note_id,
