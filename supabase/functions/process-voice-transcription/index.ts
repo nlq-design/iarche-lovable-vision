@@ -764,11 +764,10 @@ serve(async (req) => {
         log("Participants", `Seeded ${participantRows.length} participants`);
       }
 
-      // Phase P3: AI matching — compare unlinked participants against CRM entities
+      // Phase P3: Advanced AI matching — Levenshtein + phonetic + company context
       try {
         const unlinked = participantRows.filter(p => !p.linked_entity_id);
         if (unlinked.length > 0) {
-          // Fetch CRM entities for fuzzy matching
           const [{ data: partners }, { data: contacts }, { data: leads }] = await Promise.all([
             supabase.from('partners').select('id, name, company, slug').eq('workspace_id', job.workspace_id).limit(100),
             supabase.from('lead_contacts').select('id, name, email').limit(100),
@@ -781,41 +780,138 @@ serve(async (req) => {
           leads?.forEach(l => crmEntities.push({ type: 'lead', id: l.id, name: l.name, extra: l.company || undefined }));
 
           if (crmEntities.length > 0) {
-            // Simple fuzzy matching: normalize names and check for substring/exact matches
             const normalize = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-            
+
+            // Levenshtein distance
+            const levenshtein = (a: string, b: string): number => {
+              if (a.length === 0) return b.length;
+              if (b.length === 0) return a.length;
+              const matrix: number[][] = [];
+              for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+              for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+              for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                  const cost = b[i - 1] === a[j - 1] ? 0 : 1;
+                  matrix[i][j] = Math.min(
+                    matrix[i - 1][j] + 1,
+                    matrix[i][j - 1] + 1,
+                    matrix[i - 1][j - 1] + cost
+                  );
+                }
+              }
+              return matrix[b.length][a.length];
+            };
+
+            // Simple French phonetic normalization
+            const phonetic = (s: string): string => {
+              return normalize(s)
+                .replace(/ph/g, 'f')
+                .replace(/qu/g, 'k')
+                .replace(/gu(?=[ei])/g, 'g')
+                .replace(/eau|aux|au/g, 'o')
+                .replace(/ou/g, 'u')
+                .replace(/ai|ei/g, 'e')
+                .replace(/oi/g, 'wa')
+                .replace(/an|en|am|em/g, 'an')
+                .replace(/in|im|ain|ein|un/g, 'in')
+                .replace(/on|om/g, 'on')
+                .replace(/th/g, 't')
+                .replace(/ch/g, 'sh')
+                .replace(/gn/g, 'ny')
+                .replace(/ll|l$/g, 'l')
+                .replace(/ss|c(?=[ei])/g, 's')
+                .replace(/([a-z])\1+/g, '$1') // deduplicate consecutive chars
+                .replace(/[hx]/g, '')
+                .replace(/e$/g, '');
+            };
+
             const updates: Array<{ name: string; match: any; score: number }> = [];
             for (const p of unlinked) {
               const pNorm = normalize(p.name);
               const pParts = pNorm.split(/\s+/);
-              
+              const pPhonetic = phonetic(p.name);
+
               let bestMatch: typeof crmEntities[0] | null = null;
               let bestScore = 0;
 
               for (const entity of crmEntities) {
                 const eNorm = normalize(entity.name);
                 const eParts = eNorm.split(/\s+/);
-                
-                // Exact match
+                let score = 0;
+
+                // 1. Exact match
                 if (pNorm === eNorm) { bestMatch = entity; bestScore = 1.0; break; }
-                
-                // Full name contained
+
+                // 2. Full name containment
                 if (eNorm.includes(pNorm) || pNorm.includes(eNorm)) {
-                  const score = 0.85;
-                  if (score > bestScore) { bestMatch = entity; bestScore = score; }
-                  continue;
+                  score = Math.max(score, 0.88);
                 }
-                
-                // Surname match (last word)
+
+                // 3. Levenshtein similarity on full name
+                const maxLen = Math.max(pNorm.length, eNorm.length);
+                if (maxLen > 0) {
+                  const dist = levenshtein(pNorm, eNorm);
+                  const sim = 1 - dist / maxLen;
+                  if (sim >= 0.75) score = Math.max(score, sim * 0.9);
+                }
+
+                // 4. Phonetic similarity
+                const ePhonetic = phonetic(entity.name);
+                if (pPhonetic === ePhonetic) {
+                  score = Math.max(score, 0.85);
+                } else if (pPhonetic.length > 2 && ePhonetic.length > 2) {
+                  const pDist = levenshtein(pPhonetic, ePhonetic);
+                  const pMaxLen = Math.max(pPhonetic.length, ePhonetic.length);
+                  const pSim = 1 - pDist / pMaxLen;
+                  if (pSim >= 0.8) score = Math.max(score, pSim * 0.82);
+                }
+
+                // 5. Surname match (last word)
                 const pLast = pParts[pParts.length - 1];
                 const eLast = eParts[eParts.length - 1];
                 if (pLast.length >= 3 && pLast === eLast) {
-                  const score = pParts.length === 1 ? 0.6 : 0.75;
-                  if (score > bestScore) { bestMatch = entity; bestScore = score; }
+                  const surnameScore = pParts.length === 1 ? 0.6 : 0.78;
+                  score = Math.max(score, surnameScore);
                 }
+                // Phonetic surname match
+                if (pLast.length >= 3 && phonetic(pLast) === phonetic(eLast)) {
+                  score = Math.max(score, 0.7);
+                }
+
+                // 6. First name cross-match (e.g. "Mme Guyou" vs "Isabelle Guyou")
+                if (pParts.length >= 2 && eParts.length >= 2) {
+                  const pSurname = pParts[pParts.length - 1];
+                  const eSurname = eParts[eParts.length - 1];
+                  if (pSurname === eSurname || phonetic(pSurname) === phonetic(eSurname)) {
+                    // Surnames match, check if first part is a title/abbreviation
+                    const titles = ['mme', 'mr', 'mlle', 'dr', 'pr', 'me', 'madame', 'monsieur', 'mademoiselle'];
+                    const pFirst = pParts[0];
+                    if (titles.includes(pFirst) || pFirst.length <= 2) {
+                      score = Math.max(score, 0.8);
+                    }
+                  }
+                }
+
+                // 7. Company context boost: if participant company context matches entity company
+                if (entity.extra && p.name) {
+                  // Check if the transcript has company context from LLM participants
+                  const participantObj = (summary as any)?.participants?.find(
+                    (lp: any) => normalize(lp.name || '') === pNorm || normalize(lp.name || '').includes(pNorm)
+                  );
+                  if (participantObj?.company && entity.extra) {
+                    const companyMatch = normalize(participantObj.company) === normalize(entity.extra) ||
+                      normalize(entity.extra).includes(normalize(participantObj.company)) ||
+                      normalize(participantObj.company).includes(normalize(entity.extra));
+                    if (companyMatch && score >= 0.5) {
+                      score = Math.min(score + 0.15, 0.95); // Boost score with company confirmation
+                    }
+                  }
+                }
+
+                if (score > bestScore) { bestMatch = entity; bestScore = score; }
               }
 
-              if (bestMatch && bestScore >= 0.6) {
+              if (bestMatch && bestScore >= 0.55) {
                 updates.push({
                   name: p.name,
                   match: { type: bestMatch.type, id: bestMatch.id, name: bestMatch.name, confidence: bestScore },
@@ -824,14 +920,30 @@ serve(async (req) => {
               }
             }
 
-            // Update participants with AI suggestions
+            // Auto-link high-confidence matches, suggest the rest
             for (const u of updates) {
-              await supabase.from('transcription_participants')
-                .update({ ai_suggested_match: u.match, confidence_score: u.score })
-                .eq('transcription_id', jobId)
-                .eq('name', u.name);
+              if (u.score >= 0.9) {
+                // High confidence: auto-link
+                await supabase.from('transcription_participants')
+                  .update({
+                    linked_entity_type: u.match.type,
+                    linked_entity_id: u.match.id,
+                    ai_suggested_match: u.match,
+                    confidence_score: u.score,
+                  })
+                  .eq('transcription_id', jobId)
+                  .eq('name', u.name);
+              } else {
+                // Medium confidence: suggest only
+                await supabase.from('transcription_participants')
+                  .update({ ai_suggested_match: u.match, confidence_score: u.score })
+                  .eq('transcription_id', jobId)
+                  .eq('name', u.name);
+              }
             }
-            if (updates.length > 0) log("AI Matching", `Suggested ${updates.length} CRM matches`);
+            const autoLinkedCount = updates.filter(u => u.score >= 0.9).length;
+            const suggestedCount = updates.filter(u => u.score < 0.9).length;
+            if (updates.length > 0) log("AI Matching", `Auto-linked ${autoLinkedCount}, suggested ${suggestedCount} CRM matches (Levenshtein+phonetic)`);
           }
         }
       } catch (e) { logErr("AI participant matching", e); }
