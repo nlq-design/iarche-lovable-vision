@@ -76,17 +76,17 @@ const EDGE_FUNCTION_AI_MAP: Array<{
   linesOfCode?: number;
   multiProvider?: boolean;
 }> = [
-  { name: "partner-consulte", description: "Synthèse IA 360° partenaires", provider: "lovable_ai", category: "reasoning", migrated: true },
+  { name: "partner-consulte", description: "Synthèse IA 360° partenaires (v3 — intelligence relationnelle, graphe contacts, matching avancé)", provider: "lovable_ai", category: "reasoning", migrated: true, legacyNote: "✅ v3-relational: notes contextuelles, vocabulaire métier, Levenshtein+phonétique, graphe co-participants." },
   { name: "suggest-tags", description: "Suggestion automatique de tags", provider: "lovable_ai", category: "chat", migrated: true },
   { name: "search-embeddings", description: "Recherche RAG sémantique", provider: "openai", category: "embedding", migrated: true },
   { name: "generate-embeddings", description: "Génération d'embeddings", provider: "openai", category: "embedding", migrated: true },
   { 
     name: "process-voice-transcription", 
-    description: "Post-processing transcription audio", 
+    description: "Post-processing transcription audio (v13 — matching Levenshtein+phonétique+contexte entreprise)", 
     provider: "lovable_ai", 
     category: "reasoning", 
     migrated: true,
-    legacyNote: "✅ Migré vers ai-client.ts - Utilise callLLMWithFallback pour le fallback automatique.",
+    legacyNote: "✅ Phase B: 7 algorithmes de matching (exact, containment, Levenshtein, phonétique FR, surname, titre+nom, company boost). Auto-link ≥0.9.",
     linesOfCode: 2540,
     multiProvider: true
   },
