@@ -1,10 +1,15 @@
 import { useState } from 'react';
-import { Brain, Zap, Shield, Sun, ArrowRight, CheckCircle2, AlertTriangle, Clock, Sparkles, Plus, Loader2 } from 'lucide-react';
+import {
+  Brain, Zap, Shield, Sun, ArrowRight, CheckCircle2, AlertTriangle,
+  Clock, Sparkles, Plus, Loader2, Calendar, BarChart3, Target, MessageSquare,
+  ChevronDown, ChevronUp,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { useCockpitAICopilot } from '@/hooks/cockpit/useCockpitAICopilot';
 import ReactMarkdown from 'react-markdown';
 
@@ -15,18 +20,17 @@ interface AICopilotPanelProps {
   compact?: boolean;
 }
 
+type TabKey = 'brief' | 'tasks' | 'alerts' | 'health' | 'scoring' | 'meeting';
+
 export function AICopilotPanel({ workspaceId, entityType, entityId, compact = false }: AICopilotPanelProps) {
   const {
-    suggestTasks,
-    detectInactivity,
-    healthCheck,
-    morningBrief,
-    suggestNextStep,
-    createTasksFromSuggestions,
+    suggestTasks, detectInactivity, healthCheck, morningBrief,
+    suggestNextStep, meetingPrep, opportunityScore, createTasksFromSuggestions,
   } = useCockpitAICopilot(workspaceId);
 
   const [selectedSuggestions, setSelectedSuggestions] = useState<number[]>([]);
-  const [activeTab, setActiveTab] = useState<'brief' | 'tasks' | 'alerts' | 'health'>('brief');
+  const [activeTab, setActiveTab] = useState<TabKey>('brief');
+  const [meetingBookingId, setMeetingBookingId] = useState('');
 
   const toggleSuggestion = (index: number) => {
     setSelectedSuggestions((prev) =>
@@ -61,28 +65,40 @@ export function AICopilotPanel({ workspaceId, entityType, entityId, compact = fa
     }
   };
 
+  const riskColor = (level: string) => {
+    switch (level) {
+      case 'critical': return 'destructive';
+      case 'high': return 'destructive';
+      case 'medium': return 'secondary';
+      default: return 'outline';
+    }
+  };
+
+  const scoreColor = (score: number) => {
+    if (score >= 70) return 'text-primary';
+    if (score >= 50) return 'text-accent-foreground';
+    if (score >= 30) return 'text-secondary-foreground';
+    return 'text-destructive';
+  };
+
   if (compact) {
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => suggestTasks.mutate({ entityType, entityId })}
-            disabled={suggestTasks.isPending}
-          >
+          <Button size="sm" variant="outline" onClick={() => suggestTasks.mutate({ entityType, entityId })} disabled={suggestTasks.isPending}>
             {suggestTasks.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
             Suggestions IA
           </Button>
           {entityType === 'opportunity' && entityId && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => suggestNextStep.mutate(entityId)}
-              disabled={suggestNextStep.isPending}
-            >
+            <Button size="sm" variant="outline" onClick={() => suggestNextStep.mutate(entityId)} disabled={suggestNextStep.isPending}>
               {suggestNextStep.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <ArrowRight className="h-3 w-3 mr-1" />}
               Next step
+            </Button>
+          )}
+          {entityType === 'booking' && entityId && (
+            <Button size="sm" variant="outline" onClick={() => meetingPrep.mutate(entityId)} disabled={meetingPrep.isPending}>
+              {meetingPrep.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Calendar className="h-3 w-3 mr-1" />}
+              Préparer le RDV
             </Button>
           )}
         </div>
@@ -91,11 +107,7 @@ export function AICopilotPanel({ workspaceId, entityType, entityId, compact = fa
         {suggestTasks.data && (
           <div className="space-y-2 mt-3">
             {suggestTasks.data.map((s, i) => (
-              <div
-                key={i}
-                className={`p-2 rounded-md border cursor-pointer transition-colors ${selectedSuggestions.includes(i) ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                onClick={() => toggleSuggestion(i)}
-              >
+              <div key={i} className={`p-2 rounded-md border cursor-pointer transition-colors ${selectedSuggestions.includes(i) ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`} onClick={() => toggleSuggestion(i)}>
                 <div className="flex items-center gap-2">
                   <Badge variant={priorityColor(s.priority)} className="text-xs">{s.priority}</Badge>
                   <span className="text-sm font-medium">{s.title}</span>
@@ -124,48 +136,43 @@ export function AICopilotPanel({ workspaceId, entityType, entityId, compact = fa
               {suggestNextStep.data.suggestion.talking_points?.length > 0 && (
                 <ul className="mt-2 text-xs space-y-1">
                   {suggestNextStep.data.suggestion.talking_points.map((tp, i) => (
-                    <li key={i} className="flex items-start gap-1">
-                      <span className="text-primary">•</span> {tp}
-                    </li>
+                    <li key={i} className="flex items-start gap-1"><span className="text-primary">•</span> {tp}</li>
                   ))}
                 </ul>
               )}
             </CardContent>
           </Card>
         )}
+
+        {/* Meeting prep inline */}
+        {meetingPrep.data?.briefing && <MeetingPrepCard briefing={meetingPrep.data.briefing} booking={meetingPrep.data.booking} />}
       </div>
     );
   }
 
   // Full panel (dashboard view)
+  const tabs: Array<{ key: TabKey; label: string; icon: any; action: () => void; loading: boolean }> = [
+    { key: 'brief', label: 'Briefing', icon: Sun, action: () => morningBrief.mutate(), loading: morningBrief.isPending },
+    { key: 'tasks', label: 'Suggestions', icon: Sparkles, action: () => suggestTasks.mutate({}), loading: suggestTasks.isPending },
+    { key: 'scoring', label: 'Pipeline', icon: BarChart3, action: () => opportunityScore.mutate(), loading: opportunityScore.isPending },
+    { key: 'alerts', label: 'Alertes', icon: Zap, action: () => detectInactivity.mutate(), loading: detectInactivity.isPending },
+    { key: 'health', label: 'Santé', icon: Shield, action: () => healthCheck.mutate(), loading: healthCheck.isPending },
+  ];
+
   return (
     <Card className="h-full">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Brain className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Copilote IA</CardTitle>
-          </div>
+        <div className="flex items-center gap-2">
+          <Brain className="h-5 w-5 text-primary" />
+          <CardTitle className="text-lg">Copilote IA</CardTitle>
         </div>
         <CardDescription>Intelligence commerciale proactive</CardDescription>
       </CardHeader>
 
-      {/* Tab buttons */}
       <div className="px-6 flex gap-1 flex-wrap">
-        {([
-          { key: 'brief', label: 'Briefing', icon: Sun, action: () => morningBrief.mutate(), loading: morningBrief.isPending },
-          { key: 'tasks', label: 'Suggestions', icon: Sparkles, action: () => suggestTasks.mutate({}), loading: suggestTasks.isPending },
-          { key: 'alerts', label: 'Alertes', icon: Zap, action: () => detectInactivity.mutate(), loading: detectInactivity.isPending },
-          { key: 'health', label: 'Santé', icon: Shield, action: () => healthCheck.mutate(), loading: healthCheck.isPending },
-        ] as const).map(({ key, label, icon: Icon, action, loading }) => (
-          <Button
-            key={key}
-            variant={activeTab === key ? 'default' : 'ghost'}
-            size="sm"
-            className="gap-1"
-            onClick={() => { setActiveTab(key); action(); }}
-            disabled={loading}
-          >
+        {tabs.map(({ key, label, icon: Icon, action, loading }) => (
+          <Button key={key} variant={activeTab === key ? 'default' : 'ghost'} size="sm" className="gap-1"
+            onClick={() => { setActiveTab(key); action(); }} disabled={loading}>
             {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Icon className="h-3 w-3" />}
             {label}
           </Button>
@@ -196,11 +203,7 @@ export function AICopilotPanel({ workspaceId, entityType, entityId, compact = fa
             <div className="space-y-3">
               {suggestTasks.isPending && <LoadingState text="Analyse du contexte..." />}
               {suggestTasks.data?.map((s, i) => (
-                <div
-                  key={i}
-                  className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedSuggestions.includes(i) ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/50'}`}
-                  onClick={() => toggleSuggestion(i)}
-                >
+                <div key={i} className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedSuggestions.includes(i) ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/50'}`} onClick={() => toggleSuggestion(i)}>
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
                       <Badge variant={priorityColor(s.priority)} className="text-xs">{s.priority}</Badge>
@@ -225,6 +228,54 @@ export function AICopilotPanel({ workspaceId, entityType, entityId, compact = fa
             </div>
           )}
 
+          {/* OPPORTUNITY SCORING (Phase 2) */}
+          {activeTab === 'scoring' && (
+            <div className="space-y-3">
+              {opportunityScore.isPending && <LoadingState text="Scoring du pipeline..." />}
+              {opportunityScore.data?.summary && (
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className="p-3 rounded-lg border border-border">
+                    <div className="text-2xl font-bold text-foreground">{opportunityScore.data.summary.avg_score}<span className="text-sm font-normal text-muted-foreground">/100</span></div>
+                    <div className="text-xs text-muted-foreground">Score moyen</div>
+                  </div>
+                  <div className="p-3 rounded-lg border border-border">
+                    <div className="text-2xl font-bold text-destructive">{opportunityScore.data.summary.high_risk}</div>
+                    <div className="text-xs text-muted-foreground">À risque</div>
+                  </div>
+                  <div className="p-3 rounded-lg border border-border">
+                    <div className="text-2xl font-bold text-foreground">{(opportunityScore.data.summary.pipeline_value || 0).toLocaleString('fr-FR')}€</div>
+                    <div className="text-xs text-muted-foreground">Pipeline total</div>
+                  </div>
+                  <div className="p-3 rounded-lg border border-border">
+                    <div className="text-2xl font-bold text-primary">{(opportunityScore.data.summary.weighted_value || 0).toLocaleString('fr-FR')}€</div>
+                    <div className="text-xs text-muted-foreground">Valeur pondérée</div>
+                  </div>
+                </div>
+              )}
+              {opportunityScore.data?.scores.map((s, i) => (
+                <div key={i} className="p-3 rounded-lg border border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-lg font-bold ${scoreColor(s.conversion_score)}`}>{s.conversion_score}</span>
+                      <div>
+                        <h4 className="font-medium text-sm">{s.opportunity_title}</h4>
+                        <span className="text-xs text-muted-foreground">{s.stage} · {s.days_in_stage}j</span>
+                      </div>
+                    </div>
+                    <Badge variant={riskColor(s.risk_level)} className="text-xs">{s.risk_level}</Badge>
+                  </div>
+                  <Progress value={s.conversion_score} className="h-1.5 mb-2" />
+                  {s.primary_risk && <p className="text-xs text-muted-foreground">⚠️ {s.primary_risk}</p>}
+                  <p className="text-xs text-muted-foreground mt-1">→ {s.recommended_action}</p>
+                  {s.value_amount > 0 && <span className="text-xs text-muted-foreground/60">{s.value_amount.toLocaleString('fr-FR')}€</span>}
+                </div>
+              ))}
+              {!opportunityScore.data && !opportunityScore.isPending && (
+                <EmptyState text="Cliquez sur Pipeline pour scorer vos opportunités" />
+              )}
+            </div>
+          )}
+
           {/* INACTIVITY ALERTS */}
           {activeTab === 'alerts' && (
             <div className="space-y-2">
@@ -244,7 +295,7 @@ export function AICopilotPanel({ workspaceId, entityType, entityId, compact = fa
               ))}
               {detectInactivity.data?.total === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
-                  <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                  <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-primary" />
                   <p className="text-sm">Aucune alerte d'inactivité</p>
                 </div>
               )}
@@ -300,6 +351,67 @@ export function AICopilotPanel({ workspaceId, entityType, entityId, compact = fa
             </div>
           )}
         </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+}
+
+// =============================================================================
+// Meeting Prep Card (used in both compact and full modes)
+// =============================================================================
+
+function MeetingPrepCard({ briefing, booking }: { briefing: any; booking: any }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const sections = [
+    { key: 'summary', label: '📋 Résumé', content: briefing.summary, type: 'text' as const },
+    { key: 'key_facts', label: '🔑 Faits clés', content: briefing.key_facts, type: 'list' as const },
+    { key: 'objectives', label: '🎯 Objectifs', content: briefing.objectives, type: 'list' as const },
+    { key: 'talking_points', label: '💬 Points à aborder', content: briefing.talking_points, type: 'list' as const },
+    { key: 'questions_to_ask', label: '❓ Questions stratégiques', content: briefing.questions_to_ask, type: 'list' as const },
+    { key: 'risks', label: '⚠️ Vigilance', content: briefing.risks, type: 'list' as const },
+    { key: 'preparation_checklist', label: '✅ Check-list', content: briefing.preparation_checklist, type: 'list' as const },
+  ];
+
+  return (
+    <Card>
+      <CardHeader className="p-3 pb-2">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-primary" />
+          <CardTitle className="text-sm">Briefing : {booking?.name || 'RDV'}</CardTitle>
+        </div>
+        {booking?.company && <CardDescription className="text-xs">{booking.company} · {booking.type || ''}</CardDescription>}
+      </CardHeader>
+      <CardContent className="p-3 pt-0 space-y-1">
+        {sections.map(({ key, label, content, type }) => {
+          if (!content || (Array.isArray(content) && content.length === 0)) return null;
+          const isOpen = expanded === key;
+          return (
+            <div key={key} className="border border-border rounded-md">
+              <button className="w-full flex items-center justify-between p-2 text-left text-sm font-medium hover:bg-muted/50 transition-colors"
+                onClick={() => setExpanded(isOpen ? null : key)}>
+                <span>{label}</span>
+                {isOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </button>
+              {isOpen && (
+                <div className="px-3 pb-2">
+                  {type === 'text' ? (
+                    <p className="text-xs text-muted-foreground">{content}</p>
+                  ) : (
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      {(content as string[]).map((item, i) => (
+                        <li key={i} className="flex items-start gap-1.5">
+                          <span className="text-primary mt-0.5">•</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </CardContent>
     </Card>
   );

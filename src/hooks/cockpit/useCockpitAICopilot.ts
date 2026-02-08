@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { handleAIError } from '@/lib/ai-error-handler';
 import { toast as sonnerToast } from 'sonner';
 
-type CopilotMode = 'suggest-tasks' | 'detect-inactivity' | 'health-check' | 'morning-brief' | 'next-step';
+type CopilotMode = 'suggest-tasks' | 'detect-inactivity' | 'health-check' | 'morning-brief' | 'next-step' | 'meeting-prep' | 'opportunity-score';
 
 interface TaskSuggestion {
   title: string;
@@ -54,6 +54,36 @@ interface NextStepSuggestion {
   talking_points: string[];
 }
 
+interface MeetingBriefing {
+  summary: string;
+  key_facts: string[];
+  objectives: string[];
+  talking_points: string[];
+  questions_to_ask: string[];
+  risks: string[];
+  preparation_checklist: string[];
+}
+
+interface OpportunityScoreItem {
+  opportunity_id: string;
+  opportunity_title: string;
+  stage: string;
+  conversion_score: number;
+  risk_level: string;
+  primary_risk: string;
+  recommended_action: string;
+  days_in_stage: number;
+  value_amount: number;
+}
+
+interface OpportunityScoreSummary {
+  total: number;
+  avg_score: number;
+  high_risk: number;
+  pipeline_value: number;
+  weighted_value: number;
+}
+
 interface MorningBriefData {
   today_tasks: any[];
   overdue_tasks: any[];
@@ -61,6 +91,8 @@ interface MorningBriefData {
   inactivity_alerts: InactivityAlert[];
   health_summary: HealthSummary;
   project_checks: ProjectHealthCheck[];
+  upcoming_deadlines: any[];
+  pipeline_scores: OpportunityScoreItem[];
 }
 
 export function useCockpitAICopilot(workspaceId?: string) {
@@ -84,7 +116,6 @@ export function useCockpitAICopilot(workspaceId?: string) {
     return data;
   };
 
-  // Suggest tasks mutation
   const suggestTasks = useMutation({
     mutationFn: async ({ entityType, entityId }: { entityType?: string; entityId?: string } = {}) => {
       const result = await callCopilot('suggest-tasks', entityType, entityId);
@@ -92,7 +123,6 @@ export function useCockpitAICopilot(workspaceId?: string) {
     },
   });
 
-  // Detect inactivity
   const detectInactivity = useMutation({
     mutationFn: async () => {
       const result = await callCopilot('detect-inactivity');
@@ -100,19 +130,16 @@ export function useCockpitAICopilot(workspaceId?: string) {
     },
   });
 
-  // Health check projects
   const healthCheck = useMutation({
     mutationFn: async () => {
       const result = await callCopilot('health-check');
       return result as { projects: ProjectHealthCheck[]; summary: HealthSummary };
     },
     onSuccess: () => {
-      // Refresh projects after health update
       queryClient.invalidateQueries({ queryKey: ['cockpit-projects'] });
     },
   });
 
-  // Morning brief
   const morningBrief = useMutation({
     mutationFn: async () => {
       const result = await callCopilot('morning-brief');
@@ -120,11 +147,29 @@ export function useCockpitAICopilot(workspaceId?: string) {
     },
   });
 
-  // Next step for opportunity
   const suggestNextStep = useMutation({
     mutationFn: async (entityId: string) => {
       const result = await callCopilot('next-step', undefined, entityId);
       return result as { suggestion: NextStepSuggestion; opportunity: { id: string; title: string; stage: string } };
+    },
+  });
+
+  // Phase 2: Meeting prep
+  const meetingPrep = useMutation({
+    mutationFn: async (bookingId: string) => {
+      const result = await callCopilot('meeting-prep', undefined, bookingId);
+      return result as {
+        briefing: MeetingBriefing;
+        booking: { id: string; name: string; company: string; start_time: string; type: string };
+      };
+    },
+  });
+
+  // Phase 2: Opportunity scoring
+  const opportunityScore = useMutation({
+    mutationFn: async () => {
+      const result = await callCopilot('opportunity-score');
+      return result as { scores: OpportunityScoreItem[]; summary: OpportunityScoreSummary };
     },
   });
 
@@ -150,7 +195,6 @@ export function useCockpitAICopilot(workspaceId?: string) {
       const { data, error } = await supabase.from('tasks').insert(tasks).select();
       if (error) throw error;
 
-      // Log AI action in activity
       for (const task of data || []) {
         await supabase.from('activity_log').insert({
           workspace_id: workspaceId!,
@@ -180,6 +224,8 @@ export function useCockpitAICopilot(workspaceId?: string) {
     healthCheck,
     morningBrief,
     suggestNextStep,
+    meetingPrep,
+    opportunityScore,
     createTasksFromSuggestions,
   };
 }
