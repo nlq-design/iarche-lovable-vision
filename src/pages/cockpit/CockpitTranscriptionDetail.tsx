@@ -222,11 +222,11 @@ export default function CockpitTranscriptionDetail() {
 
   const handleReanalyze = () => {
     if (transcription?.id) {
-      toast.info('Ré-analyse en cours...');
-      processTranscription.mutate({ jobId: transcription.id, forceRetranscribe: true }, {
+      toast.info('Ré-analyse mise en file d\'attente...');
+      processTranscription.mutate({ jobId: transcription.id, forceReanalyze: true }, {
         onSuccess: () => {
           refetch();
-          toast.success('Synthèse et actions régénérées');
+          toast.success('Ré-analyse planifiée — le worker la traitera sous peu');
         },
       });
     } else {

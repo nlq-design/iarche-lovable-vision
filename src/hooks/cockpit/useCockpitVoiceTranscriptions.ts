@@ -253,47 +253,45 @@ export function useCockpitVoiceTranscriptions(
     },
   });
 
-  // Process transcription (or re-analyze/re-transcribe)
+  // Process transcription (or re-analyze/re-transcribe) — fully async via DB
+  // Sets status to "queued" with flags; the background worker picks it up.
   const processTranscription = useMutation({
     mutationFn: async ({ jobId, forceReanalyze = false, forceRetranscribe = false }: { jobId: string; forceReanalyze?: boolean; forceRetranscribe?: boolean }) => {
-      const { data, error } = await supabase.functions.invoke('process-voice-transcription', {
-        body: { job_id: jobId, force_reanalyze: forceReanalyze, force_retranscribe: forceRetranscribe },
-      });
+      // Read current ai_metadata to merge flags
+      const { data: current, error: fetchErr } = await supabase
+        .from('voice_transcriptions')
+        .select('ai_metadata')
+        .eq('id', jobId)
+        .single();
+      if (fetchErr) throw new Error(`Impossible de charger la transcription: ${fetchErr.message}`);
 
-      // When the function returns non-2xx, Supabase wraps it as a FunctionsHttpError.
-      // Convert it to a regular Error message to avoid hard UI failures.
-      if (error) {
-        const msg = (error as any)?.message || 'Erreur de traitement (backend)';
-        throw new Error(msg);
-      }
+      const meta = (current?.ai_metadata ?? {}) as Record<string, unknown>;
+      // Remove skip flags that might block processing
+      delete meta.skip_auto_retry;
 
-      if (!data?.ok && !data?.already_done) {
-        const msg = (data as any)?.message || data?.error || 'Processing failed';
-        throw new Error(msg);
-      }
+      const { error } = await supabase
+        .from('voice_transcriptions')
+        .update({
+          status: 'queued',
+          ai_metadata: {
+            ...meta,
+            ...(forceRetranscribe ? { force_retranscribe: true } : {}),
+            ...(forceReanalyze ? { force_reanalyze: true } : {}),
+            queued_at: new Date().toISOString(),
+            queued_by: 'user',
+          },
+        })
+        .eq('id', jobId);
 
-      return data;
+      if (error) throw new Error(`Erreur de mise en file: ${error.message}`);
+      return { ok: true, phase: 'queued' };
     },
-    onSuccess: (_, jobId) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, 'detail', jobId] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, 'detail', variables.jobId] });
     },
     onError: (error: Error) => {
-      const msg = error.message || '';
-
-      if (msg.includes('ASSEMBLYAI_TIMEOUT') || msg === 'timeout') {
-        toast.error("Transcription audio trop longue (timeout). Clique sur 'Réessayer (découpage)' pour traiter l'audio en segments.", { duration: 8000 });
-      } else if (msg.includes('LLM_TIMEOUT')) {
-        toast.error("Analyse IA trop longue (timeout LLM). Ajoute un contexte court puis ré-essaie.", { duration: 6000 });
-      } else if (msg.includes('rate_limited')) {
-        toast.error('Limite de requêtes atteinte, réessayez dans quelques minutes');
-      } else if (msg.includes('credits_exhausted')) {
-        toast.error('Crédits IA épuisés, veuillez recharger');
-      } else if (msg.includes('too_large') || msg.includes('file_too_large')) {
-        toast.error("Fichier trop volumineux. Utilisez le découpage automatique lors de l'upload.");
-      } else {
-        toast.error(`Erreur de traitement: ${msg.slice(0, 150)}`);
-      }
+      toast.error(`Erreur: ${error.message.slice(0, 150)}`);
     },
   });
 
