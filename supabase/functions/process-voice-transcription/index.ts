@@ -988,6 +988,16 @@ serve(async (req) => {
       body: JSON.stringify({ mode: "scan_entity", entity_type: "voice_transcription", entity_id: jobId }),
     }).catch(() => {});
 
+    // Fire-and-forget: auto-consulte for linked stale entities (pipeline post-transcription)
+    // The extract-entities function already marks entities as stale, so trigger recalculation
+    setTimeout(() => {
+      fetch(`${SUPABASE_URL}/functions/v1/auto-consulte-stale`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }).catch(() => {});
+    }, 10000); // Delay 10s to let entity extraction mark entities as stale first
+
     return new Response(JSON.stringify({ ok: true, job_id: jobId, tasks_created: tasksCreated }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
