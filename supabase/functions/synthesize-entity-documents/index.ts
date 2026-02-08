@@ -3,12 +3,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { callLLM } from "../_shared/ai-client.ts";
 import {
-  fetchContextNotes as fetchContextNotesShared,
-  fetchVocabulary as fetchVocabularyShared,
-  fetchParticipantMappings as fetchParticipantMappingsShared,
+  fetchContextNotes,
+  fetchVocabulary,
+  fetchParticipantMappings,
   fetchLeadContacts,
   fetchMeetingNotes,
   fetchActivityLog,
+  buildRelationalNetwork,
   formatDateFR,
   FRENCH_INSTRUCTION,
   buildLeadContactsBlock,
@@ -65,15 +66,10 @@ interface GraphData {
   crossContextNotes: Array<{ type: string; name: string; notes: string[] }>;
 }
 
-// ============= HELPERS (defined first) =============
+// ============= HELPERS =============
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
-}
+// Alias for backward compat — delegates to shared helper
+const formatDate = formatDateFR;
 
 function capitalizeFirst(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
@@ -212,72 +208,32 @@ Pour chaque événement important :
 Liste des inputs analysés avec leur poids.`;
 }
 
-// ============= STORAGE FUNCTIONS =============
+// ============= STORAGE & STALE HELPERS =============
+
+const ENTITY_TABLE_MAP: Record<EntityType, string> = {
+  lead: 'leads',
+  project: 'projects',
+  solution: 'articles',
+  partner: 'partners',
+  transcription: 'voice_transcriptions',
+  document: 'generated_documents'
+};
 
 async function storeSynthesis(supabase: any, entityType: EntityType, entityId: string, synthesis: string) {
-  const updateData = { 
-    ai_documents_summary: synthesis, 
-    synthesis_stale: false 
-  };
-
-  let error = null;
-
-  switch (entityType) {
-    case 'lead':
-      ({ error } = await supabase.from('leads').update(updateData).eq('id', entityId));
-      break;
-    case 'project':
-      ({ error } = await supabase.from('projects').update(updateData).eq('id', entityId));
-      break;
-    case 'solution':
-      ({ error } = await supabase.from('articles').update(updateData).eq('id', entityId));
-      break;
-    case 'partner':
-      ({ error } = await supabase.from('partners').update(updateData).eq('id', entityId));
-      break;
-    case 'transcription':
-      ({ error } = await supabase.from('voice_transcriptions').update(updateData).eq('id', entityId));
-      break;
-    case 'document':
-      ({ error } = await supabase.from('generated_documents').update(updateData).eq('id', entityId));
-      break;
-  }
-
+  const { error } = await supabase
+    .from(ENTITY_TABLE_MAP[entityType])
+    .update({ ai_documents_summary: synthesis, synthesis_stale: false })
+    .eq('id', entityId);
   if (error) {
     console.error('[synthesize-v2] Storage error:', error);
     throw error;
   }
 }
 
-async function clearStaleFlag(supabase: any, entityType: EntityType, entityId: string) {
-  const tables: Record<EntityType, string> = {
-    lead: 'leads',
-    project: 'projects',
-    solution: 'articles',
-    partner: 'partners',
-    transcription: 'voice_transcriptions',
-    document: 'generated_documents'
-  };
-
+async function setStaleFlag(supabase: any, entityType: EntityType, entityId: string, stale: boolean) {
   await supabase
-    .from(tables[entityType])
-    .update({ synthesis_stale: false })
-    .eq('id', entityId);
-}
-
-async function markEntityStale(supabase: any, entityType: EntityType, entityId: string) {
-  const tables: Record<EntityType, string> = {
-    lead: 'leads',
-    project: 'projects',
-    solution: 'articles',
-    partner: 'partners',
-    transcription: 'voice_transcriptions',
-    document: 'generated_documents'
-  };
-
-  await supabase
-    .from(tables[entityType])
-    .update({ synthesis_stale: true })
+    .from(ENTITY_TABLE_MAP[entityType])
+    .update({ synthesis_stale: stale })
     .eq('id', entityId);
 }
 
@@ -767,57 +723,9 @@ async function collectEmailHistory(supabase: any, entityType: EntityType, entity
   } catch { /* non-blocking */ }
 }
 
-// Collect context notes (user-provided context for AI synthesis)
-async function collectContextNotes(supabase: any, entityType: EntityType, entityId: string): Promise<string[]> {
-  const { data } = await supabase
-    .from('entity_context_notes')
-    .select('content, created_at')
-    .eq('entity_type', entityType)
-    .eq('entity_id', entityId)
-    .order('created_at', { ascending: true });
-  return (data || []).map((note: any) => note.content);
-}
-
-// Collect vocabulary terms for the entity
-async function collectVocabulary(supabase: any, entityType: EntityType, entityId: string): Promise<string[]> {
-  try {
-    const { data } = await supabase
-      .from('entity_vocabulary')
-      .select('term, category')
-      .eq('entity_type', entityType)
-      .eq('entity_id', entityId)
-      .order('category');
-    return (data || []).map((v: any) => `${v.term} (${v.category || 'général'})`);
-  } catch { return []; }
-}
-
-// Collect known participant-entity mappings from workspace memory
-async function collectParticipantMappings(supabase: any): Promise<GraphData['participantMappings']> {
-  try {
-    const { data } = await supabase
-      .from('participant_entity_mappings')
-      .select('participant_name, linked_entity_name, linked_entity_type')
-      .eq('workspace_id', '00000000-0000-0000-0000-000000000001')
-      .order('last_used_at', { ascending: false })
-      .limit(50);
-    const seen = new Set<string>();
-    return (data || []).filter((m: any) => {
-      const key = `${m.participant_name}::${m.linked_entity_type}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }).map((m: any) => ({
-      name: m.participant_name,
-      entityName: m.linked_entity_name || m.participant_name,
-      entityType: m.linked_entity_type,
-    }));
-  } catch { return []; }
-}
-
-// Build relational network from transcription participants
+// Wrapper: fetch transcription IDs for an entity, then delegate to shared buildRelationalNetwork
 async function collectRelationalNetwork(supabase: any, entityType: EntityType, entityId: string): Promise<GraphData['relationalNetwork']> {
   try {
-    // Get transcription IDs relevant to this entity
     let transcriptionIds: string[] = [];
     if (entityType === 'lead') {
       const { data } = await supabase.from('voice_transcriptions').select('id').eq('lead_id', entityId).eq('status', 'done');
@@ -831,54 +739,21 @@ async function collectRelationalNetwork(supabase: any, entityType: EntityType, e
     } else if (entityType === 'transcription') {
       transcriptionIds = [entityId];
     }
-    
     if (!transcriptionIds.length) return [];
 
-    const { data: allParticipants } = await supabase
-      .from('transcription_participants')
-      .select('name, transcription_id, linked_entity_type, presence_status')
-      .in('transcription_id', transcriptionIds)
-      .eq('presence_status', 'present');
-
-    if (!allParticipants?.length) return [];
-
-    // Get project names for transcriptions
+    // Build projectNames map for shared helper
     const { data: transcriptions } = await supabase
       .from('voice_transcriptions')
-      .select('id, project_id, project:projects(name)')
+      .select('id, project_id, project:projects(id, name)')
       .in('id', transcriptionIds);
-
-    const transcriptionProjectMap = new Map<string, string>();
+    const projectNames = new Map<string, string>();
     for (const t of transcriptions || []) {
-      if ((t as any).project?.name) transcriptionProjectMap.set(t.id, (t as any).project.name);
-    }
-
-    // Group participants by transcription
-    const byTranscription = new Map<string, string[]>();
-    for (const p of allParticipants) {
-      const list = byTranscription.get(p.transcription_id) || [];
-      list.push(p.name);
-      byTranscription.set(p.transcription_id, list);
-    }
-
-    // Build per-person nodes
-    const nodeMap = new Map<string, GraphData['relationalNetwork'][0]>();
-    for (const p of allParticipants) {
-      const existing = nodeMap.get(p.name) || {
-        name: p.name, entityType: p.linked_entity_type || null,
-        projects: [], meetingCount: 0, coParticipants: [],
-      };
-      existing.meetingCount++;
-      const projName = transcriptionProjectMap.get(p.transcription_id);
-      if (projName && !existing.projects.includes(projName)) existing.projects.push(projName);
-      const coP = byTranscription.get(p.transcription_id) || [];
-      for (const co of coP) {
-        if (co !== p.name && !existing.coParticipants.includes(co)) existing.coParticipants.push(co);
+      if ((t as any).project?.id && (t as any).project?.name) {
+        projectNames.set((t as any).project.id, (t as any).project.name);
       }
-      nodeMap.set(p.name, existing);
     }
 
-    return [...nodeMap.values()].sort((a, b) => b.meetingCount - a.meetingCount).slice(0, 20);
+    return await buildRelationalNetwork(supabase, transcriptionIds, projectNames);
   } catch (e) {
     console.warn('[synthesize-v2] Relational network failed:', e);
     return [];
@@ -1012,8 +887,8 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
   }
   const enrichProjectId = entityType === 'transcription' ? entityData?.project_id : (entityType === 'project' ? entityId : null);
 
-  // Collect all data in parallel (including Phase A-C enrichments + new sources + Phase 3 completeness)
-  const [, , , , , , , , , , , , contextNotes, vocabulary, participantMappings, relationalNetwork, leadContacts, meetingNotes, projectMeetingNotes, activityLog, linkedActivityLog] = await Promise.all([
+  // Collect all data in parallel — uses shared helpers for context/vocab/mappings
+  const [, , , , , , , , , , , , contextNotes, vocabulary, participantMappingsRaw, relationalNetwork, leadContacts, meetingNotes, projectMeetingNotes, activityLog, linkedActivityLog] = await Promise.all([
     collectUploadedFiles(supabase, entityType, entityId, events, linkedEntities),
     collectTranscriptions(supabase, entityType, entityId, events, linkedEntities),
     collectPartners(supabase, entityType, entityId, events, linkedEntities),
@@ -1025,11 +900,11 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
     collectSolutions(supabase, entityType, entityId, events, linkedEntities),
     collectLeads(supabase, entityType, entityId, events, linkedEntities),
     collectEntityNameReferences(supabase, entityType, entityId, linkedEntities),
-    // Phase 3: Email history cascading via enrichLeadId
     collectEmailHistory(supabase, entityType, entityId, events, enrichLeadId),
-    collectContextNotes(supabase, entityType, entityId),
-    collectVocabulary(supabase, entityType, entityId),
-    collectParticipantMappings(supabase),
+    // Shared helpers — no more local duplicates
+    fetchContextNotes(supabase, entityType, entityId),
+    fetchVocabulary(supabase, entityType, entityId),
+    fetchParticipantMappings(supabase),
     collectRelationalNetwork(supabase, entityType, entityId),
     enrichLeadId ? fetchLeadContacts(supabase, enrichLeadId) : Promise.resolve([]),
     // Phase 3: Meeting notes — fetch for lead AND project separately
@@ -1062,11 +937,6 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
   const crossVocabulary: string[] = [];
 
   if (linkedEntities.length > 0) {
-    const tableMap: Record<string, string> = {
-      lead: 'leads', project: 'projects', partner: 'partners',
-      solution: 'articles', transcription: 'voice_transcriptions', document: 'generated_documents'
-    };
-
     // Batch fetch by entity type to minimize queries
     const byType = new Map<string, LinkedEntity[]>();
     for (const le of linkedEntities) {
@@ -1078,7 +948,7 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
     const crossPromises: Promise<void>[] = [];
 
     for (const [type, entities] of byType.entries()) {
-      const table = tableMap[type];
+      const table = ENTITY_TABLE_MAP[type as EntityType];
       if (!table) continue;
       const ids = entities.map(e => e.id);
 
@@ -1153,6 +1023,13 @@ async function collectGraphData(supabase: any, entityType: EntityType, entityId:
   // Merge cross-vocabulary into main vocabulary
   const mergedVocabulary = [...vocabulary, ...crossVocabulary];
 
+  // Map shared participantMappings (speakerLabel → name for GraphData compat)
+  const participantMappings = participantMappingsRaw.map(m => ({
+    name: m.speakerLabel,
+    entityName: m.entityName,
+    entityType: m.entityType,
+  }));
+
   console.log(`[synthesize-v2] Enrichment: ${contextNotes.length} notes, ${mergedVocabulary.length} vocab (${crossVocabulary.length} croisé), ${participantMappings.length} mappings, ${relationalNetwork.length} network nodes, ${leadContacts.length} contacts, ${allMeetingNotes.length} meeting notes, ${allActivityLog.length} activities (${linkedActivityLog.length} liées), ${linkedSyntheses.length} synthèses liées, ${crossContextNotes.length} notes croisées`);
 
   return { entityName, entityInfo, events, linkedEntities, provenance, contextNotes, vocabulary: mergedVocabulary, participantMappings, relationalNetwork, leadContacts, meetingNotes: allMeetingNotes, activityLog: allActivityLog, linkedSyntheses, crossContextNotes };
@@ -1206,7 +1083,7 @@ serve(async (req) => {
     console.log(`[synthesize-v2] Collected ${graphData.events.length} events, ${graphData.linkedEntities.length} linked entities`);
 
     if (graphData.events.length <= 1 && graphData.linkedEntities.length === 0) {
-      await clearStaleFlag(supabase, entity_type, entity_id);
+      await setStaleFlag(supabase, entity_type, entity_id, false);
       const hints: Record<string, string> = {
         lead: 'Liez des transcriptions, créez des opportunités ou ajoutez des notes de contexte à ce lead.',
         project: 'Liez des transcriptions, des partenaires ou ajoutez des tâches à ce projet.',
@@ -1358,7 +1235,7 @@ serve(async (req) => {
       console.log(`[synthesize-v2] Cascading to ${graphData.linkedEntities.length} linked entities...`);
       for (const linked of graphData.linkedEntities) {
         try {
-          await markEntityStale(supabase, linked.type, linked.id);
+          await setStaleFlag(supabase, linked.type, linked.id, true);
           cascadeResults.push({ entity: `${linked.type}:${linked.id}`, success: true });
         } catch (e) {
           cascadeResults.push({ entity: `${linked.type}:${linked.id}`, success: false });
