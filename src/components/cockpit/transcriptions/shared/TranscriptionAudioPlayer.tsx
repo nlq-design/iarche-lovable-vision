@@ -101,14 +101,16 @@ export function TranscriptionAudioPlayer({
     }
   };
 
-  // Check if stuck (analyzing for >3 minutes)
+  // Check if stuck — different thresholds per status
   const isStuck = (() => {
     if (status !== 'analyzing' && status !== 'transcribing') return false;
-    // Use updatedAt (status change timestamp) instead of createdAt to avoid false positives on old records
     const referenceTime = updatedAt || createdAt;
     if (!referenceTime) return false;
     const diffMinutes = (Date.now() - new Date(referenceTime).getTime()) / (1000 * 60);
-    return diffMinutes > 10; // Match worker's STALE_TIMEOUT_MINUTES (10 min)
+    // Transcribing can take 15+ min for long files (async polling by worker)
+    // Analyzing (LLM) shouldn't take >10 min
+    const threshold = status === 'transcribing' ? 30 : 10;
+    return diffMinutes > threshold;
   })();
 
   return (
