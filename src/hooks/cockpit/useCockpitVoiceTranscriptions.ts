@@ -202,13 +202,21 @@ export function useCockpitVoiceTranscriptions(
       if (error) throw error;
       return (data ?? []) as unknown as VoiceTranscription[];
     },
-    staleTime: 60 * 1000, // 1 minute cache
+    staleTime: 60 * 1000,
     refetchOnWindowFocus: false,
+    // Auto-poll when any job is processing
+    refetchInterval: (query) => {
+      const list = query.state.data as VoiceTranscription[] | undefined;
+      const hasProcessing = list?.some(t => 
+        t.status === 'queued' || t.status === 'transcribing' || t.status === 'analyzing'
+      );
+      return hasProcessing ? 10_000 : false;
+    },
   });
 
-  // Fetch single transcription
+  // Fetch single transcription — auto-polls when job is processing
   const useTranscription = (id: string) => {
-    return useQuery({
+    const query = useQuery({
       queryKey: [QUERY_KEY, 'detail', id],
       queryFn: async () => {
         const { data, error } = await supabase
@@ -228,7 +236,16 @@ export function useCockpitVoiceTranscriptions(
         return data as unknown as VoiceTranscription;
       },
       enabled: !!id,
+      // Auto-poll every 10s when job is in a processing state
+      refetchInterval: (query) => {
+        const status = query.state.data?.status;
+        if (status === 'queued' || status === 'transcribing' || status === 'analyzing') {
+          return 10_000; // 10 seconds
+        }
+        return false; // stop polling when done/error
+      },
     });
+    return query;
   };
 
   // Create transcription job
