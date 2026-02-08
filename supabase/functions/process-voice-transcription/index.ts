@@ -543,6 +543,27 @@ serve(async (req) => {
           .filter(Boolean);
         wordBoost = [...wordBoost, ...participantNames, ...participantCompanies];
         log("WordBoost", `Added ${participantNames.length} participant names + ${participantCompanies.length} companies`);
+
+        // Fetch custom vocabulary for linked CRM entities
+        const entityIds = expectedParticipants
+          .filter((p: any) => p.entity_id && p.type && p.type !== 'manual')
+          .map((p: any) => p.entity_id);
+        if (entityIds.length) {
+          try {
+            const { data: vocabTerms } = await supabase
+              .from("entity_vocabulary")
+              .select("term")
+              .in("entity_id", entityIds)
+              .limit(200);
+            if (vocabTerms?.length) {
+              const terms = vocabTerms.map((v: any) => v.term).filter(Boolean);
+              wordBoost = [...wordBoost, ...terms];
+              log("WordBoost", `Added ${terms.length} custom vocabulary terms from entity_vocabulary`);
+            }
+          } catch (e) {
+            log("WordBoost", `entity_vocabulary fetch failed (non-blocking): ${e}`);
+          }
+        }
       }
 
       // Transcribe with all features
