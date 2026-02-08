@@ -357,7 +357,7 @@ function StagnantWidget() {
         .from('opportunities')
         .select('id, title, stage, updated_at')
         .lt('updated_at', ago.toISOString())
-        .not('stage', 'in', '(won,lost)')
+        .not('stage', 'in', '(closed_won,closed_lost)')
         .order('updated_at', { ascending: true })
         .limit(4);
       return data || [];
