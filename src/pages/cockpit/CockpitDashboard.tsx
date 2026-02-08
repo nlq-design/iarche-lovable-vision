@@ -308,19 +308,8 @@ export default function CockpitDashboard() {
         {/* Stagnant entities alert */}
         <StagnantEntitiesWidget />
 
-        {/* AI Copilot */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5" />
-              Copilot IA
-            </CardTitle>
-            <CardDescription>Briefing, récolte et alertes intelligentes</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AICopilotPanel compact />
-          </CardContent>
-        </Card>
+        {/* AI Copilot - Full panel with tabs */}
+        <AICopilotPanel />
 
         <CreateTaskDialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen} />
       </div>
