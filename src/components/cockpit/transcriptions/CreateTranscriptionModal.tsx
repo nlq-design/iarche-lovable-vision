@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Upload, Mic, MicOff, Loader2, Check, FileText, CalendarIcon, Scissors } from 'lucide-react';
+import { Upload, Mic, MicOff, Loader2, Check, CalendarIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCockpitVoiceTranscriptions, useAIPromptProfiles, type ExpectedParticipant } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { useCockpitLeads, useCockpitProjects, useCockpitMeetingNotes } from '@/hooks/cockpit';
@@ -29,12 +29,7 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { 
-  needsChunking, 
-  estimateChunks, 
-  transcribeLargeAudio, 
-  type TranscriptionProgress 
-} from '@/lib/audioChunking';
+// Audio chunking no longer needed client-side — transcription-worker handles it server-side
 
 interface CreateTranscriptionModalProps {
   open: boolean;
@@ -48,8 +43,7 @@ interface CreateTranscriptionModalProps {
 }
 
 const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
-const MAX_SINGLE_FILE_SIZE = 24 * 1024 * 1024; // 24MB for direct upload
-const MAX_TOTAL_FILE_SIZE = 500 * 1024 * 1024; // 500MB max with chunking
+const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB — server handles large files via signed URL
 
 export function CreateTranscriptionModal({
   open,
@@ -64,7 +58,7 @@ export function CreateTranscriptionModal({
   const [activeTab, setActiveTab] = useState<'upload' | 'record'>('upload');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
-  const [chunkingProgress, setChunkingProgress] = useState<TranscriptionProgress | null>(null);
+  // Chunking progress removed — server-side processing
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -137,7 +131,7 @@ export function CreateTranscriptionModal({
     setAnalysisContext('');
     setExpectedParticipants([]);
     setUploadProgress({ current: 0, total: 0 });
-    setChunkingProgress(null);
+    // chunking progress removed
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -231,11 +225,11 @@ export function CreateTranscriptionModal({
       return;
     }
 
-    // Check for files that are too large even for chunking
-    const tooLarge = filesToUpload.find((f) => f.size > MAX_TOTAL_FILE_SIZE);
+    // Check for files that are too large
+    const tooLarge = filesToUpload.find((f) => f.size > MAX_FILE_SIZE);
     if (tooLarge) {
       const name = tooLarge instanceof File ? tooLarge.name : 'audio';
-      toast.error(`Fichier trop volumineux (max ${(MAX_TOTAL_FILE_SIZE / (1024 * 1024)).toFixed(0)}MB) : ${name}`);
+      toast.error(`Fichier trop volumineux (max ${(MAX_FILE_SIZE / (1024 * 1024)).toFixed(0)}MB) : ${name}`);
       return;
     }
 
@@ -264,105 +258,37 @@ export function CreateTranscriptionModal({
           // Get audio metadata first to determine if chunking is needed
           const audioMeta = await getAudioMetadata(audioBlob);
           
-          // Check if file needs chunking (> 24MB OR duration > 20 min)
-          const requiresChunking = needsChunking(audioBlob, audioMeta.duration);
-          
-          if (requiresChunking) {
-            // Large/long file: chunk + transcribe client-side, then create job with transcript
-            const estimatedChunks = estimateChunks(audioBlob.size);
-            const reason = audioMeta.duration && audioMeta.duration > 20 * 60 
-              ? `Audio long (${Math.round(audioMeta.duration / 60)} min)`
-              : `Fichier volumineux (${(audioBlob.size / (1024 * 1024)).toFixed(1)} MB)`;
-            toast.info(`${reason} - Découpage en ~${estimatedChunks} segments...`);
-            
-            try {
-              // Upload original file to storage AND transcribe in parallel
-              const uploadPromise = supabase.storage
-                .from('voice-transcriptions')
-                .upload(storagePath, audioBlob);
-              
-              // Transcribe with chunking (audioMeta already fetched above)
-              const transcriptPromise = transcribeLargeAudio(
-                audioBlob,
-                'fr',
-                (progress) => setChunkingProgress(progress)
-              );
-              
-              // Wait for both operations
-              const [uploadResult, transcriptText] = await Promise.all([
-                uploadPromise,
-                transcriptPromise
-              ]);
-              
-              // Determine final storage path: use real path if upload succeeded, fallback otherwise
-              let finalStoragePath = storagePath;
-              if (uploadResult.error) {
-                console.warn('[Chunked Upload] Storage upload failed, audio will be unavailable:', uploadResult.error.message);
-                finalStoragePath = `${DEFAULT_WORKSPACE_ID}/${userId}/chunked_${fileName}_no_file`;
-              }
+          // Upload file to storage (server-side worker will handle transcription)
+          const { error: uploadError } = await supabase.storage
+            .from('voice-transcriptions')
+            .upload(storagePath, audioBlob);
 
-              // Create job with pre-transcribed text and metadata
-              const job = await createTranscription.mutateAsync({
-                storage_path: finalStoragePath,
-                source: activeTab === 'upload' ? 'upload' : 'recording',
-                lead_id: entitySelection.leadId || null,
-                lead_contact_id: entitySelection.leadContactId || null,
-                project_id: entitySelection.projectId || null,
-                solution_id: entitySelection.solutionId || null,
-                meeting_note_id: entitySelection.meetingNoteId || null,
-                auto_create_tasks: true,
-                prompt_profile_id: promptProfileId || null,
-                transcription_date: transcriptionDate || null,
-                pre_transcribed_text: transcriptText,
-                original_filename: audioBlob instanceof File ? audioBlob.name : null,
-                file_size_bytes: audioBlob.size,
-                duration_seconds: audioMeta.duration,
-                audio_format: audioMeta.format,
-                analysis_context: analysisContext.trim() || null,
-                expected_participants: expectedParticipants.length > 0 ? expectedParticipants : null,
-              });
+          if (uploadError) throw uploadError;
 
-              // Process for AI synthesis (AssemblyAI transcription + LLM analysis)
-              processTranscription.mutate({ jobId: job.id });
-              successCount++;
-              setChunkingProgress(null);
-              
-            } catch (chunkError) {
-              console.error(`Chunking error for file ${i + 1}:`, chunkError);
-              setChunkingProgress(null);
-              toast.error(`Erreur de découpage: ${chunkError instanceof Error ? chunkError.message : 'Échec'}`);
-              errorCount++;
-            }
-          } else {
-            // Small/short file: standard flow (audioMeta already fetched above)
-            const { error: uploadError } = await supabase.storage
-              .from('voice-transcriptions')
-              .upload(storagePath, audioBlob);
+          // Create job as "queued" — the transcription-worker cron will pick it up
+          const job = await createTranscription.mutateAsync({
+            storage_path: storagePath,
+            source: activeTab === 'upload' ? 'upload' : 'recording',
+            lead_id: entitySelection.leadId || null,
+            lead_contact_id: entitySelection.leadContactId || null,
+            project_id: entitySelection.projectId || null,
+            solution_id: entitySelection.solutionId || null,
+            meeting_note_id: entitySelection.meetingNoteId || null,
+            auto_create_tasks: true,
+            prompt_profile_id: promptProfileId || null,
+            transcription_date: transcriptionDate || null,
+            original_filename: audioBlob instanceof File ? audioBlob.name : null,
+            file_size_bytes: audioBlob.size,
+            duration_seconds: audioMeta.duration,
+            audio_format: audioMeta.format,
+            analysis_context: analysisContext.trim() || null,
+            expected_participants: expectedParticipants.length > 0 ? expectedParticipants : null,
+          });
 
-            if (uploadError) throw uploadError;
-
-            const job = await createTranscription.mutateAsync({
-              storage_path: storagePath,
-              source: activeTab === 'upload' ? 'upload' : 'recording',
-              lead_id: entitySelection.leadId || null,
-              lead_contact_id: entitySelection.leadContactId || null,
-              project_id: entitySelection.projectId || null,
-              solution_id: entitySelection.solutionId || null,
-              meeting_note_id: entitySelection.meetingNoteId || null,
-              auto_create_tasks: true,
-              prompt_profile_id: promptProfileId || null,
-              transcription_date: transcriptionDate || null,
-              original_filename: audioBlob instanceof File ? audioBlob.name : null,
-              file_size_bytes: audioBlob.size,
-              duration_seconds: audioMeta.duration,
-              audio_format: audioMeta.format,
-              analysis_context: analysisContext.trim() || null,
-              expected_participants: expectedParticipants.length > 0 ? expectedParticipants : null,
-            });
-
-            processTranscription.mutate({ jobId: job.id });
-            successCount++;
-          }
+          // Fire-and-forget: also trigger processing immediately for fast results
+          // If user navigates away, the worker cron will pick it up
+          processTranscription.mutate({ jobId: job.id });
+          successCount++;
         } catch (error) {
           console.error(`Error uploading file ${i + 1}:`, error);
           errorCount++;
@@ -384,7 +310,7 @@ export function CreateTranscriptionModal({
     } finally {
       setIsUploading(false);
       setUploadProgress({ current: 0, total: 0 });
-      setChunkingProgress(null);
+      // chunking progress removed
     }
   };
 
@@ -557,8 +483,7 @@ export function CreateTranscriptionModal({
 
           {/* Contexte d'analyse */}
           <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
+            <Label>
               Contexte d'analyse (optionnel)
             </Label>
             <textarea
@@ -588,21 +513,7 @@ export function CreateTranscriptionModal({
           </div>
         </div>
 
-        {/* Chunking Progress */}
-        {chunkingProgress && (
-          <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-center gap-2 text-sm">
-              <Scissors className="h-4 w-4 animate-pulse text-primary" />
-              <span className="font-medium">{chunkingProgress.message}</span>
-            </div>
-            {chunkingProgress.totalChunks && chunkingProgress.currentChunk && (
-              <Progress 
-                value={(chunkingProgress.currentChunk / chunkingProgress.totalChunks) * 100} 
-                className="h-2"
-              />
-            )}
-          </div>
-        )}
+        {/* Server-side processing — no client-side progress needed */}
 
         {/* Actions */}
         <div className="flex justify-end gap-2 pt-4">
@@ -616,11 +527,9 @@ export function CreateTranscriptionModal({
             {isUploading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {chunkingProgress 
-                  ? 'Découpage...'
-                  : uploadProgress.total > 1 
-                    ? `${uploadProgress.current}/${uploadProgress.total}...`
-                    : 'Traitement...'}
+                {uploadProgress.total > 1 
+                  ? `Upload ${uploadProgress.current}/${uploadProgress.total}...`
+                  : 'Upload en cours...'}
               </>
             ) : (
               selectedFiles.length > 1 
