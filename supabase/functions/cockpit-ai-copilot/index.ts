@@ -17,6 +17,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { extractStructured, callLLM } from "../_shared/ai-client.ts";
 import { loadPrompt } from "../_shared/prompt-loader.ts";
+import { buildMaxContext, formatContextSummary } from "../_shared/context-maximizer.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -1362,58 +1363,112 @@ function daysBetween(dateStr: string): number {
 }
 
 async function collectEntityContext(supabase: any, entityType: string, entityId: string): Promise<string> {
-  const parts: string[] = [];
-  const tableMap: Record<string, string> = { lead: "leads", opportunity: "opportunities", project: "projects" };
-  const table = tableMap[entityType];
-  if (table) {
-    const { data } = await supabase.from(table).select("*").eq("id", entityId).single();
-    if (data) parts.push(`Entité (${entityType}): ${JSON.stringify(data, null, 2)}`);
-  }
+  // Use context-maximizer for rich 128k-aware context assembly
+  try {
+    const maxCtx = await buildMaxContext(supabase, {
+      entityType,
+      entityId,
+      tokenBudget: 60000,
+      crossEntity: true,
+      includeTranscriptions: true,
+      includeDocuments: true,
+      includeEmails: true,
+    });
+    
+    console.log(`[cockpit-copilot] ${formatContextSummary(maxCtx)}`);
+    
+    const tableMap: Record<string, string> = { lead: "leads", opportunity: "opportunities", project: "projects" };
+    const table = tableMap[entityType];
+    let entityBlock = '';
+    if (table) {
+      const { data } = await supabase.from(table).select("*").eq("id", entityId).single();
+      if (data) entityBlock = `## Entité (${entityType})\n${JSON.stringify(data, null, 2)}\n\n`;
+    }
 
-  const [{ data: tasks }, { data: activity }] = await Promise.all([
-    supabase.from("tasks").select("title, status, priority, due_date, task_type")
+    const { data: tasks } = await supabase.from("tasks")
+      .select("title, status, priority, due_date, task_type, description, assignee_name")
       .or(`entity_id.eq.${entityId},lead_id.eq.${entityId},opportunity_id.eq.${entityId},project_id.eq.${entityId}`)
-      .order("created_at", { ascending: false }).limit(10),
-    supabase.from("activity_log").select("activity_type, title, content, created_at")
-      .eq("entity_id", entityId).order("created_at", { ascending: false }).limit(15),
-  ]);
+      .order("created_at", { ascending: false }).limit(30);
 
-  if (tasks?.length) parts.push(`Tâches:\n${tasks.map((t: any) => `- [${t.status}] ${t.title} (${t.priority}, échéance: ${t.due_date || "?"})`).join("\n")}`);
-  if (activity?.length) parts.push(`Activité:\n${activity.map((a: any) => `- ${a.created_at?.slice(0, 10)}: ${a.activity_type} - ${a.title || ""}`).join("\n")}`);
+    let tasksBlock = '';
+    if (tasks?.length) {
+      tasksBlock = `\n## 📋 Tâches (${tasks.length})\n${tasks.map((t: any) => {
+        let line = `- [${t.status}] **${t.title}** (${t.priority}, échéance: ${t.due_date || "?"})`;
+        if (t.assignee_name) line += ` — ${t.assignee_name}`;
+        if (t.description) line += `\n  ${t.description.substring(0, 300)}`;
+        return line;
+      }).join("\n")}\n`;
+    }
 
-  const fkColumn = entityType === "lead" ? "lead_id" : entityType === "project" ? "project_id" : null;
-  if (fkColumn) {
-    const { data: notes } = await supabase.from("meeting_notes").select("title, summary, meeting_date")
-      .eq(fkColumn, entityId).order("meeting_date", { ascending: false }).limit(5);
-    if (notes?.length) parts.push(`Comptes-rendus:\n${notes.map((n: any) => `- ${n.meeting_date}: ${n.title} — ${n.summary?.slice(0, 100) || ""}`).join("\n")}`);
+    return entityBlock + tasksBlock + maxCtx.blocks;
+  } catch (e) {
+    console.warn('[cockpit-copilot] Context maximizer failed, falling back:', e);
+    const parts: string[] = [];
+    const tableMap: Record<string, string> = { lead: "leads", opportunity: "opportunities", project: "projects" };
+    const table = tableMap[entityType];
+    if (table) {
+      const { data } = await supabase.from(table).select("*").eq("id", entityId).single();
+      if (data) parts.push(`Entité (${entityType}): ${JSON.stringify(data, null, 2)}`);
+    }
+    return parts.join("\n\n");
   }
-
-  return parts.join("\n\n");
 }
 
 async function collectGlobalContext(supabase: any, workspaceId: string): Promise<string> {
   const today = new Date().toISOString().split("T")[0];
   const parts: string[] = [];
 
-  const [{ data: pendingTasks }, { data: activeOpps }, { data: activeProjects }, { data: recentActivity }] = await Promise.all([
-    supabase.from("tasks").select("title, status, priority, due_date, entity_type")
+  const [{ data: pendingTasks }, { data: activeOpps }, { data: activeProjects }, { data: recentActivity }, { data: recentTranscriptions }] = await Promise.all([
+    supabase.from("tasks").select("title, status, priority, due_date, entity_type, description, assignee_name")
       .eq("workspace_id", workspaceId).in("status", ["pending", "in_progress"])
-      .order("due_date", { ascending: true, nullsFirst: false }).limit(20),
-    supabase.from("opportunities").select("title, stage, value_amount, updated_at, leads:lead_id(name)")
+      .order("due_date", { ascending: true, nullsFirst: false }).limit(40),
+    supabase.from("opportunities").select("title, stage, value_amount, probability, updated_at, expected_close_date, leads:lead_id(name, company)")
       .eq("workspace_id", workspaceId).not("stage", "in", "(closed_won,closed_lost)")
-      .order("updated_at", { ascending: false }).limit(15),
-    supabase.from("projects").select("name, status, health_status, budget_amount, consumed_amount")
-      .eq("workspace_id", workspaceId).in("status", ["active", "planning"]).limit(10),
-    supabase.from("activity_log").select("activity_type, entity_type, title, created_at")
+      .order("updated_at", { ascending: false }).limit(25),
+    supabase.from("projects").select("name, status, health_status, budget_amount, consumed_amount, planned_end_date, description")
+      .eq("workspace_id", workspaceId).in("status", ["active", "planning"]).limit(20),
+    supabase.from("activity_log").select("activity_type, entity_type, title, content, created_at")
       .eq("workspace_id", workspaceId).gte("created_at", new Date(Date.now() - 7 * 86400000).toISOString())
-      .order("created_at", { ascending: false }).limit(20),
+      .order("created_at", { ascending: false }).limit(50),
+    supabase.from("voice_transcriptions").select("title, transcription_date, ai_summary, lead_id, project_id")
+      .eq("status", "done")
+      .gte("transcription_date", new Date(Date.now() - 14 * 86400000).toISOString())
+      .order("transcription_date", { ascending: false }).limit(15),
   ]);
 
   parts.push(`Date: ${today}`);
-  parts.push(`Tâches en cours (${pendingTasks?.length || 0}):\n${pendingTasks?.map((t: any) => `- [${t.priority}] ${t.title} (${t.entity_type}, échéance: ${t.due_date || "?"})`).join("\n") || "Aucune"}`);
-  parts.push(`Pipeline actif (${activeOpps?.length || 0}):\n${activeOpps?.map((o: any) => `- ${o.title || o.leads?.name || "?"} (${o.stage}, ${o.value_amount || 0}€)`).join("\n") || "Aucune"}`);
-  parts.push(`Projets actifs (${activeProjects?.length || 0}):\n${activeProjects?.map((p: any) => `- ${p.name} [${p.health_status || "?"}] budget: ${p.consumed_amount || 0}/${p.budget_amount || 0}€`).join("\n") || "Aucun"}`);
-  parts.push(`Activité récente (7j):\n${recentActivity?.map((a: any) => `- ${a.created_at?.slice(0, 10)}: ${a.activity_type} ${a.entity_type}`).join("\n") || "Aucune"}`);
+  parts.push(`## 📋 Tâches en cours (${pendingTasks?.length || 0})\n${pendingTasks?.map((t: any) => {
+    let line = `- [${t.priority}] **${t.title}** (${t.entity_type}, échéance: ${t.due_date || "?"})`;
+    if (t.assignee_name) line += ` — ${t.assignee_name}`;
+    if (t.description) line += `\n  ${t.description.substring(0, 200)}`;
+    return line;
+  }).join("\n") || "Aucune"}`);
+  parts.push(`## 💼 Pipeline actif (${activeOpps?.length || 0})\n${activeOpps?.map((o: any) => {
+    let line = `- **${o.title || o.leads?.name || "?"}** (${o.stage}, ${o.value_amount?.toLocaleString('fr-FR') || 0}€)`;
+    if (o.probability) line += ` — proba: ${o.probability}%`;
+    if (o.expected_close_date) line += ` — clôture: ${o.expected_close_date}`;
+    if (o.leads?.company) line += ` — ${o.leads.company}`;
+    return line;
+  }).join("\n") || "Aucune"}`);
+  parts.push(`## 🏗️ Projets actifs (${activeProjects?.length || 0})\n${activeProjects?.map((p: any) => {
+    let line = `- **${p.name}** [${p.health_status || "?"}] budget: ${p.consumed_amount?.toLocaleString('fr-FR') || 0}/${p.budget_amount?.toLocaleString('fr-FR') || 0}€`;
+    if (p.planned_end_date) line += ` — fin: ${p.planned_end_date}`;
+    if (p.description) line += `\n  ${p.description.substring(0, 150)}`;
+    return line;
+  }).join("\n") || "Aucun"}`);
+  if (recentTranscriptions?.length) {
+    parts.push(`## 🎙️ Transcriptions récentes (14j)\n${recentTranscriptions.map((t: any) => {
+      let line = `- **${t.title || 'Réunion'}** (${t.transcription_date})`;
+      if (t.ai_summary) line += `\n  ${t.ai_summary.substring(0, 500)}`;
+      return line;
+    }).join("\n")}`);
+  }
+  parts.push(`## 📊 Activité récente (7j, ${recentActivity?.length || 0} événements)\n${recentActivity?.map((a: any) => {
+    let line = `- ${a.created_at?.slice(0, 10)}: **${a.activity_type}** ${a.entity_type}`;
+    if (a.title) line += ` — ${a.title}`;
+    if (a.content) line += `\n  ${a.content.substring(0, 200)}`;
+    return line;
+  }).join("\n") || "Aucune"}`);
 
   return parts.join("\n\n");
 }

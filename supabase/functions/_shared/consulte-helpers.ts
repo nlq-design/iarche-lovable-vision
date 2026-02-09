@@ -62,7 +62,7 @@ export async function fetchContextNotes(
       .eq('entity_type', entityType)
       .eq('entity_id', entityId)
       .order('updated_at', { ascending: false })
-      .limit(10);
+      .limit(30);
     return (data || []).map((n: any) => n.content);
   } catch { return []; }
 }
@@ -244,7 +244,7 @@ export async function fetchMeetingNotes(
       .from('meeting_notes')
       .select('objectives, notes, ai_summary, next_steps, created_at')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(30);
 
     if (entityType === 'project') {
       query = query.eq('project_id', entityId);
@@ -289,11 +289,11 @@ export async function fetchActivityLog(
       .eq('entity_type', entityType)
       .eq('entity_id', entityId)
       .order('created_at', { ascending: false })
-      .limit(15);
+      .limit(50);
     return (data || []).map((a: any) => ({
       activity_type: a.activity_type,
       title: a.title,
-      content: a.content?.substring(0, 500) || null,
+      content: a.content?.substring(0, 2000) || null,
       created_at: a.created_at,
     }));
   } catch { return []; }
@@ -356,7 +356,7 @@ export function buildMeetingNotesBlock(notes: Awaited<ReturnType<typeof fetchMee
     let block = `### CR du ${formatDateFR(n.created_at)}`;
     if (n.objectives) block += `\n**Objectifs:** ${n.objectives}`;
     if (n.ai_summary) block += `\n**Résumé:** ${n.ai_summary}`;
-    else if (n.notes) block += `\n**Notes:** ${n.notes.substring(0, 500)}`;
+    else if (n.notes) block += `\n**Notes:** ${n.notes.substring(0, 2000)}`;
     if (n.next_steps) block += `\n**Prochaines étapes:** ${n.next_steps}`;
     return block;
   }).join('\n\n')}\n`;
@@ -367,7 +367,7 @@ export function buildActivityLogBlock(activities: Awaited<ReturnType<typeof fetc
   return `\n## 📊 Historique d'activité récent\n${activities.map(a => {
     let line = `- [${formatDateFR(a.created_at)}] **${a.activity_type}**`;
     if (a.title) line += `: ${a.title}`;
-    if (a.content) line += `\n  ${a.content.substring(0, 200)}`;
+    if (a.content) line += `\n  ${a.content.substring(0, 1000)}`;
     return line;
   }).join('\n')}\n`;
 }
