@@ -4321,6 +4321,44 @@ export type Database = {
         }
         Relationships: []
       }
+      sentinel_trigger_queue: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          processed_at: string | null
+          trigger_source: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          processed_at?: string | null
+          trigger_source: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          processed_at?: string | null
+          trigger_source?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sentinel_trigger_queue_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       solution_leads: {
         Row: {
           created_at: string | null
