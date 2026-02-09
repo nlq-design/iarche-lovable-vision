@@ -1075,7 +1075,7 @@ serve(async (req) => {
 
     const systemPrompt = finalPromptData?.system_prompt || getDefaultSystemPrompt();
     const userPromptTemplate = finalPromptData?.user_prompt || getDefaultUserPrompt();
-    const modelConfig = finalPromptData?.model_config || { model: 'google/gemini-2.5-flash' };
+    const modelConfig = (finalPromptData?.model_config as Record<string, any>) || { model: 'google/gemini-2.5-flash', max_tokens: 16384, temperature: 0.5 };
 
     // 2. Collect full graph data for the entity
     const graphData = await collectGraphData(supabase, entity_type, entity_id);
@@ -1190,7 +1190,11 @@ serve(async (req) => {
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      { functionName: 'synthesize-entity-documents' }
+      { 
+        functionName: 'synthesize-entity-documents',
+        maxTokens: (modelConfig as any).max_tokens || 16384,
+        temperature: (modelConfig as any).temperature ?? 0.5,
+      }
     );
 
     if (!synthesis) {
