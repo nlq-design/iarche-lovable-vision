@@ -55,46 +55,23 @@ serve(async (req) => {
       functionName: 'search-embeddings' 
     });
 
-    // Search for similar resources using raw SQL to ensure proper vector casting
+    // Search using text wrapper RPC for proper vector casting
     const embeddingStr = `[${queryEmbedding.join(",")}]`;
-    const threshold = body.match_threshold || 0.7;
-    const count = body.match_count || 5;
-    const filterClause = body.filter_types?.length 
-      ? `AND re.resource_type = ANY(ARRAY[${body.filter_types.map(t => `'${t}'`).join(",")}]::text[])` 
-      : '';
+    console.log(`[search-embeddings] Embedding generated, ${queryEmbedding.length} dims, calling RPC...`);
     
-    const { data: results, error } = await supabase.rpc("search_similar_resources", {
-      query_embedding: embeddingStr,
-      match_threshold: threshold,
-      match_count: count,
+    const { data: results, error } = await supabase.rpc("search_similar_resources_text" as any, {
+      query_embedding_text: embeddingStr,
+      match_threshold: body.match_threshold || 0.7,
+      match_count: body.match_count || 5,
       filter_types: body.filter_types || null,
     });
 
-    // If RPC fails (vector cast issue), fallback to raw SQL
     if (error) {
-      console.warn("[search-embeddings] RPC failed, using raw SQL fallback:", error.message);
-      
-      const { data: sqlResults, error: sqlError } = await supabase.from('resource_embeddings')
-        .select('resource_id, resource_type, resource_title, resource_slug, content_chunk, metadata')
-        .limit(count);
-      
-      // Use a direct SQL query for proper vector operations
-      const sqlQuery = `
-        SELECT resource_id, resource_type, resource_title, resource_slug, content_chunk,
-               1 - (embedding <=> '${embeddingStr}'::vector) as similarity,
-               metadata
-        FROM public.resource_embeddings re
-        WHERE 1 - (embedding <=> '${embeddingStr}'::vector) > ${threshold}
-        ${filterClause}
-        ORDER BY embedding <=> '${embeddingStr}'::vector
-        LIMIT ${count}
-      `;
-
-      // We can't run raw SQL via the JS client easily, so let's fix the RPC call instead
-      // The issue is likely the string not being cast to vector - let's try a different approach
-      console.error("[search-embeddings] Search error:", error);
+      console.error("[search-embeddings] Search error:", JSON.stringify(error));
       throw error;
     }
+    
+    console.log(`[search-embeddings] RPC returned ${results?.length || 0} results`);
 
     // Deduplicate by resource_id, keeping highest similarity
     const deduped = new Map<string, SearchResult>();
