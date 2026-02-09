@@ -56,11 +56,11 @@ serve(async (req) => {
       { data: projectsNoBudget },
     ] = await Promise.all([
       supabase.from("leads").select("id, name, company")
-        .is("email", null).eq("workspace_id", ws.id).not("status", "eq", "lost").limit(5),
+        .is("email", null).eq("workspace_id", ws.id).not("qualification_status", "eq", "lost").limit(5),
       supabase.from("opportunities").select("id, title, stage")
-        .is("amount", null).eq("workspace_id", ws.id).not("stage", "eq", "lost").limit(5),
+        .is("value_amount", null).eq("workspace_id", ws.id).not("stage", "eq", "lost").limit(5),
       supabase.from("projects").select("id, name, status")
-        .is("budget", null).eq("workspace_id", ws.id).in("status", ["active", "planning"]).limit(5),
+        .is("budget_amount", null).eq("workspace_id", ws.id).in("status", ["active", "planning"]).limit(5),
     ]);
 
     for (const l of leadsNoEmail || []) {
@@ -95,8 +95,8 @@ serve(async (req) => {
     if (wonOpps?.length) {
       const leadIds = [...new Set(wonOpps.map((o) => o.lead_id).filter(Boolean))];
       const { data: leads } = await supabase
-        .from("leads").select("id, name, company, status")
-        .in("id", leadIds).not("status", "eq", "won");
+        .from("leads").select("id, name, company, qualification_status")
+        .in("id", leadIds).not("qualification_status", "eq", "won");
 
       const problemLeadMap = new Map((leads || []).map((l) => [l.id, l]));
       for (const o of wonOpps) {
@@ -105,7 +105,7 @@ serve(async (req) => {
           anomalies.push({
             category: "inconsistency", entity_type: "opportunity", entity_id: o.id,
             entity_name: o.title || "Opportunité",
-            raw_issue: `Opportunité marquée "won" mais lead "${lead.company || lead.name}" est en statut "${lead.status}"`,
+            raw_issue: `Opportunité marquée "won" mais lead "${lead.company || lead.name}" est en statut "${lead.qualification_status}"`,
           });
         }
       }
@@ -116,8 +116,8 @@ serve(async (req) => {
     const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
 
     const [{ data: hotLeads }, { data: staleProjects }] = await Promise.all([
-      supabase.from("leads").select("id, name, company, status, updated_at")
-        .eq("workspace_id", ws.id).in("status", ["r1", "r2", "negotiation"])
+      supabase.from("leads").select("id, name, company, qualification_status, updated_at")
+        .eq("workspace_id", ws.id).in("qualification_status", ["r1", "r2", "negotiation"])
         .lt("updated_at", sevenDaysAgo).limit(5),
       supabase.from("projects").select("id, name, updated_at")
         .eq("workspace_id", ws.id).eq("status", "active")
@@ -129,7 +129,7 @@ serve(async (req) => {
       anomalies.push({
         category: "inactivity", entity_type: "lead", entity_id: l.id,
         entity_name: l.company || l.name || "Lead",
-        raw_issue: `Lead en phase "${l.status}" sans interaction depuis ${daysSince} jours`,
+        raw_issue: `Lead en phase "${l.qualification_status}" sans interaction depuis ${daysSince} jours`,
       });
     }
 
