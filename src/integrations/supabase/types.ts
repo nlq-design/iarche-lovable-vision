@@ -6907,6 +6907,23 @@ export type Database = {
           similarity: number
         }[]
       }
+      search_similar_resources_text: {
+        Args: {
+          filter_types?: string[]
+          match_count?: number
+          match_threshold?: number
+          query_embedding_text: string
+        }
+        Returns: {
+          content_chunk: string
+          metadata: Json
+          resource_id: string
+          resource_slug: string
+          resource_title: string
+          resource_type: string
+          similarity: number
+        }[]
+      }
       search_viviers_cities: {
         Args: { p_limit?: number; p_search: string }
         Returns: {
