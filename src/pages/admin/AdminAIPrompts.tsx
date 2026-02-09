@@ -238,10 +238,10 @@ function PromptAccordions({ masterPrompt, onMasterChange }: PromptAccordionsProp
               <span className="text-muted-foreground">Budget tokens système :</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className={totalTokens > 6000 ? "text-destructive font-medium" : "text-muted-foreground"}>
-                ~{totalTokens.toLocaleString()} / 8,000 tokens
+              <span className={totalTokens > 100000 ? "text-destructive font-medium" : totalTokens > 80000 ? "text-warning font-medium" : "text-muted-foreground"}>
+                ~{totalTokens.toLocaleString()} / 128,000 tokens
               </span>
-              <Progress value={(totalTokens / 8000) * 100} className="w-24 h-2" />
+              <Progress value={(totalTokens / 128000) * 100} className="w-24 h-2" />
             </div>
           </div>
         </CardContent>
