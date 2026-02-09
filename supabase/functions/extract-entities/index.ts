@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { callLLM } from "../_shared/ai-client.ts";
+import { loadPrompt } from "../_shared/prompt-loader.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -224,38 +225,18 @@ serve(async (req) => {
       .join("\n---\n")
       .slice(0, 50000);
 
-    // System and user prompts for entity extraction
-    const systemPrompt = `Tu es un expert en extraction d'entités nommées pour un CRM B2B.
+    const prompt = await loadPrompt(supabase, "entity-extraction", {
+      system_prompt: `Tu es un expert en extraction d'entités nommées pour un CRM B2B.
 
-OBJECTIF: Extraire les noms propres récurrents des textes fournis pour alimenter un dictionnaire de normalisation.
-
-TYPES D'ENTITÉS À EXTRAIRE:
-- client: Noms d'entreprises clientes (ex: Datalia, Acme Corp)
-- solution: Produits/services mentionnés (ex: ChatGPT, Salesforce)
-- outil: Outils techniques (ex: Notion, Slack, Figma)
-- concurrent: Entreprises concurrentes
-- service: Services IArche ou partenaires
-
-RÈGLES:
+TYPES : client, solution, outil, concurrent, service
+RÈGLES :
 1. Extraire UNIQUEMENT les noms propres qui apparaissent PLUSIEURS FOIS
-2. Détecter les variations orthographiques et phonétiques (ex: "Datalia" vs "Data Lia" vs "Atalia")
-3. Le nom canonique est la version correcte/officielle
-4. Les aliases sont les variantes détectées
-5. Ignorer les noms génériques (dates, lieux communs, mots du dictionnaire)
-6. Minimum 2 occurrences pour être extrait
+2. Détecter les variations orthographiques (ex: "Datalia" vs "Data Lia")
+3. Minimum 2 occurrences pour être extrait
+4. Ignorer les noms génériques
 
-FORMAT DE SORTIE (JSON strict):
-{
-  "entities": [
-    {
-      "name": "Nom canonique officiel",
-      "type": "client|solution|outil|concurrent|service|autre",
-      "aliases": ["variante1", "variante2"],
-      "confidence": 0.85,
-      "source_count": 3
-    }
-  ]
-}`;
+FORMAT JSON : {"entities": [{"name": "...", "type": "...", "aliases": [...], "confidence": 0.85, "source_count": 3}]}`
+    });
 
     const userPrompt = `Analyse ces textes extraits du CRM et identifie les entités nommées récurrentes avec leurs variantes:
 
@@ -268,8 +249,8 @@ Retourne UNIQUEMENT le JSON des entités extraites.`;
     // Use centralized AI client with automatic DB config lookup
     const llmContent = await callLLM(
       [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
+        { role: "system", content: prompt.system_prompt },
+        { role: "user", content: `Analyse ces textes du CRM et identifie les entités récurrentes :\n\n${batchedText}\n\nRetourne UNIQUEMENT le JSON.` }
       ],
       { functionName: 'extract-entities' }
     );

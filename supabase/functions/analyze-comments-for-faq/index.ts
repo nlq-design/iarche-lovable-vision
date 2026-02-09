@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { callLLM } from "../_shared/ai-client.ts";
+import { loadPrompt } from "../_shared/prompt-loader.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -69,25 +70,12 @@ serve(async (req) => {
       );
     }
 
-    // Construire le prompt d'analyse
-    const systemPrompt = `Tu es un expert en analyse de contenu et en génération de FAQ.
-Ton rôle : analyser les commentaires des utilisateurs sur un article pour identifier les questions implicites ou préoccupations récurrentes.
-
-Règles strictes :
-- Identifier les questions posées directement OU implicitement dans les commentaires
-- Détecter les points de confusion récurrents
-- Anticiper les questions logiques non posées mais suggérées par les commentaires
-- Générer des réponses empathiques et claires (2-3 phrases max)
-- Ignorer les commentaires non pertinents (remerciements, spam, etc.)
-
-Génère entre 3 et 6 questions uniques.
-
-Format de réponse UNIQUEMENT en JSON :
-[
-  {"question": "...", "answer": "...", "frequency": 1-5},
-]
-
-frequency = score de pertinence (1=rare, 5=très fréquent)`;
+    const prompt = await loadPrompt(supabase, "content-comments-faq", {
+      system_prompt: `Tu es un expert en analyse de contenu et génération de FAQ.
+Analyse les commentaires pour identifier questions implicites et préoccupations récurrentes.
+Règles : questions du LECTEUR, réponses courtes (2-3 phrases), ignorer spam.
+Génère 3-6 questions. Format JSON : [{"question": "...", "answer": "...", "frequency": 1-5}]`
+    });
 
     const commentsText = comments
       .map((c, i) => `Commentaire ${i + 1} (${c.author_name}, ${new Date(c.created_at).toLocaleDateString('fr-FR')}):\n${c.content}`)
@@ -106,7 +94,7 @@ Analyse ces commentaires et génère une FAQ pertinente basée sur les préoccup
     // Use centralized AI client with automatic DB config lookup
     const generatedText = await callLLM(
       [
-        { role: "system", content: systemPrompt },
+        { role: "system", content: prompt.system_prompt },
         { role: "user", content: userPrompt }
       ],
       { functionName: 'analyze-comments-for-faq' }

@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { callLLM } from "../_shared/ai-client.ts";
+import { loadPrompt } from "../_shared/prompt-loader.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -33,9 +35,13 @@ serve(async (req) => {
   try {
     const { brief, tone, length, templateId }: RequestBody = await req.json();
     
-    console.log(`[generate-article-gpt] Generating article via centralized AI client - tone: ${tone}, length: ${length}, template: ${templateId || 'custom'}`);
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
 
-    const systemPrompt = `Tu es un rédacteur expert pour IArche, une agence IA basée à Bayonne. 
+    const prompt = await loadPrompt(supabase, "content-article-b2b", {
+      system_prompt: `Tu es un rédacteur expert pour IArche, une agence IA basée à Bayonne. 
 Tu rédiges des articles de blog professionnels sur l'IA pour les PME françaises.
 
 Style IArche :
@@ -49,15 +55,14 @@ Format de sortie OBLIGATOIRE (JSON) :
   "title": "Titre accrocheur (60-70 caractères)",
   "excerpt": "Résumé en 2 phrases (150-160 caractères)",
   "content": "Contenu Markdown complet avec H2, H3, listes, etc.",
-  "faq": [
-    {"question": "Question 1", "answer": "Réponse 1"},
-    {"question": "Question 2", "answer": "Réponse 2"},
-    {"question": "Question 3", "answer": "Réponse 3"}
-  ],
+  "faq": [{"question": "...", "answer": "..."}],
   "metaTitle": "Title SEO (55-60 caractères)",
   "metaDescription": "Description SEO (150-160 caractères)",
   "tags": ["tag1", "tag2", "tag3"]
-}`;
+}`
+    });
+
+    const temperature = (prompt.model_config?.temperature as number) ?? 0.7;
 
     let templateInstruction = '';
     if (templateId && templateId !== 'custom') {
@@ -77,32 +82,21 @@ CONTRAINTES :
 
 Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
 
-    // Use centralized AI client with automatic DB config lookup
-    // The provider/model is now controlled via edge_function_model_config table
     const content = await callLLM(
       [
-        { role: 'system', content: systemPrompt },
+        { role: 'system', content: prompt.system_prompt },
         { role: 'user', content: userPrompt }
       ],
-      {
-        functionName: 'generate-article-gpt', // <-- Auto-lookup from DB
-        maxTokens: 4096
-      }
+      { functionName: 'generate-article-gpt', maxTokens: 4096, temperature }
     );
 
-    console.log('[generate-article-gpt] Response received via centralized client');
-    
-    // Nettoyer la réponse pour extraire le JSON pur
     let cleanedContent = content.trim();
-    
-    // Supprimer les balises markdown si présentes
     if (cleanedContent.startsWith('```json')) {
       cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/```\s*$/, '');
     } else if (cleanedContent.startsWith('```')) {
       cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/```\s*$/, '');
     }
     
-    // Parser le JSON nettoyé
     const article = JSON.parse(cleanedContent.trim());
 
     return new Response(JSON.stringify(article), {
@@ -111,16 +105,10 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
 
   } catch (error) {
     console.error('[generate-article-gpt] Error:', error);
-    
-    // Handle specific AI errors
     const errorMessage = (error as Error).message;
     let statusCode = 500;
-    
-    if (errorMessage.includes('429') || errorMessage.includes('rate limit')) {
-      statusCode = 429;
-    } else if (errorMessage.includes('402') || errorMessage.includes('quota')) {
-      statusCode = 402;
-    }
+    if (errorMessage.includes('429') || errorMessage.includes('rate limit')) statusCode = 429;
+    else if (errorMessage.includes('402') || errorMessage.includes('quota')) statusCode = 402;
     
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: statusCode,
