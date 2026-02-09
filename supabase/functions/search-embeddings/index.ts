@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { generateEmbedding } from "../_shared/ai-client.ts";
+import { generateEmbedding, callLLM } from "../_shared/ai-client.ts";
+import { loadPrompt } from "../_shared/prompt-loader.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,6 +16,11 @@ interface SearchRequest {
   filter_types?: string[];
   match_threshold?: number;
   match_count?: number;
+  // NEW: RAG synthesis options
+  synthesize?: boolean; // If true, pass chunks through LLM for synthesis
+  conversation_context?: string; // Last 3 messages from conversation
+  entity_context?: string; // Lead/project/partner context
+  mode?: 'short' | 'detailed'; // Response format
 }
 
 interface SearchResult {
@@ -42,9 +48,9 @@ serve(async (req) => {
 
     console.log("[search-embeddings] Query:", body.query);
     console.log("[search-embeddings] Filter types:", body.filter_types);
+    console.log("[search-embeddings] Synthesize:", body.synthesize);
 
     // Generate embedding using centralized AI client
-    // Config is fetched from edge_function_model_config if available
     const queryEmbedding = await generateEmbedding(body.query, { 
       functionName: 'search-embeddings' 
     });
@@ -77,9 +83,83 @@ serve(async (req) => {
 
     console.log(`[search-embeddings] Found ${dedupedResults.length} unique results`);
 
+    // =============================================
+    // RAG SYNTHESIS: If requested, pass through LLM
+    // =============================================
+    if (body.synthesize && dedupedResults.length > 0) {
+      try {
+        // Load keyword aliases for query normalization
+        let keywordAliases = "";
+        try {
+          const { data: aliases } = await supabase
+            .from("keyword_aliases")
+            .select("term, canonical, category")
+            .limit(50);
+          if (aliases?.length) {
+            keywordAliases = aliases.map((a: { term: string; canonical: string; category: string | null }) => 
+              `${a.term} → ${a.canonical}${a.category ? ` (${a.category})` : ''}`
+            ).join("\n");
+          }
+        } catch { /* non-blocking */ }
+
+        // Format chunks for LLM
+        const chunksFormatted = dedupedResults.map((r, i) => 
+          `### Chunk ${i + 1}\n- **Titre**: ${r.resource_title}\n- **Type**: ${r.resource_type}\n- **Slug**: ${r.resource_slug}\n- **Similarity**: ${(r.similarity * 100).toFixed(1)}%\n- **Contenu**:\n${r.content_chunk}`
+        ).join("\n\n---\n\n");
+
+        // Load RAG prompt from DB with hardcoded fallback
+        const ragPrompt = await loadPrompt(supabase, "rag-knowledge-search", {
+          system_prompt: "Tu es un moteur de synthèse RAG. Synthétise les chunks fournis en une réponse sourcée et concise. Chaque affirmation doit citer sa source [Source: Titre (type)]. Ne jamais inventer d'information.",
+          user_prompt: "Chunks:\n{chunks}\n\nRequête: {query}\n\nSynthétise.",
+        });
+
+        // Build user prompt with variables
+        const userPrompt = (ragPrompt.user_prompt || "Chunks:\n{chunks}\n\nRequête: {query}")
+          .replace("{query}", body.query)
+          .replace("{chunks}", chunksFormatted)
+          .replace("{conversation_context}", body.conversation_context || "Aucun")
+          .replace("{entity_context}", body.entity_context || "Aucun")
+          .replace("{keyword_aliases}", keywordAliases || "Aucun");
+
+        // Call LLM via centralized client
+        const synthesizedResponse = await callLLM(
+          [
+            { role: "system", content: ragPrompt.system_prompt },
+            { role: "user", content: userPrompt },
+          ],
+          {
+            functionName: 'search-embeddings-rag',
+            maxTokens: (ragPrompt.model_config?.max_tokens as number) || 2048,
+            temperature: (ragPrompt.model_config?.temperature as number) || 0.3,
+          }
+        );
+
+        console.log(`[search-embeddings] RAG synthesis complete (${synthesizedResponse.length} chars)`);
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            synthesized: true,
+            synthesis: synthesizedResponse,
+            results: dedupedResults,
+            query: body.query,
+            sources_count: dedupedResults.length,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      } catch (synthError) {
+        console.error("[search-embeddings] Synthesis error, falling back to raw results:", synthError);
+        // Fall through to raw results below
+      }
+    }
+
+    // Return raw results (backward compatible)
     return new Response(
       JSON.stringify({
         success: true,
+        synthesized: false,
         results: dedupedResults,
         query: body.query,
       }),

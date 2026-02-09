@@ -647,7 +647,7 @@ const AGENT_TOOLS = [
     type: "function",
     function: {
       name: "search_knowledge_base",
-      description: "Recherche sémantique dans la base de connaissances IArche (articles, solutions, cas clients) via RAG.",
+      description: "Recherche sémantique dans la base de connaissances IArche (articles, solutions, cas clients) via RAG. Retourne une synthèse sourcée et exploitable.",
       parameters: {
         type: "object",
         properties: {
@@ -655,8 +655,9 @@ const AGENT_TOOLS = [
           filter_types: { 
             type: "array", 
             items: { type: "string" },
-            description: "Filtrer par types de ressources" 
+            description: "Filtrer par types de ressources (solution, cas-client, article, livre-blanc, etc.)" 
           },
+          entity_context: { type: "string", description: "Contexte de l'entité liée (ex: 'Lead: Marie Pecot - Beerecos - recherche chatbot')" },
         },
         required: ["query"],
       },
@@ -2619,7 +2620,8 @@ interface TranscriptionRow {
 async function executeTool(
   supabase: any,
   toolName: string,
-  args: Record<string, unknown>
+  args: Record<string, unknown>,
+  conversationHistory?: Array<{ role: string; content: string }>
 ): Promise<unknown> {
   console.log(`Executing tool: ${toolName}`, args);
 
@@ -4047,7 +4049,16 @@ async function executeTool(
     }
 
     case "search_knowledge_base": {
-      // Call the existing search-embeddings function
+      // Build conversation context from recent messages (last 3)
+      let conversationContext = "";
+      if (conversationHistory && conversationHistory.length > 0) {
+        const recentMessages = conversationHistory.slice(-3);
+        conversationContext = recentMessages
+          .map((m: { role: string; content: string }) => `[${m.role}]: ${m.content}`)
+          .join("\n");
+      }
+
+      // Call search-embeddings with RAG synthesis enabled
       const searchResponse = await fetch(`${SUPABASE_URL}/functions/v1/search-embeddings`, {
         method: "POST",
         headers: {
@@ -4057,8 +4068,11 @@ async function executeTool(
         body: JSON.stringify({
           query: args.query,
           filter_types: args.filter_types,
-          match_count: 5,
-          match_threshold: 0.7,
+          match_count: 8,
+          match_threshold: 0.65,
+          synthesize: true,
+          conversation_context: conversationContext,
+          entity_context: args.entity_context || null,
         }),
       });
 
@@ -4067,6 +4081,23 @@ async function executeTool(
       }
 
       const searchResult = await searchResponse.json();
+      
+      // If synthesis succeeded, return synthesized response
+      if (searchResult.synthesized && searchResult.synthesis) {
+        return {
+          synthesis: searchResult.synthesis,
+          sources: searchResult.results?.map((r: any) => ({
+            title: r.resource_title,
+            type: r.resource_type,
+            slug: r.resource_slug,
+            similarity: (r.similarity * 100).toFixed(1) + "%",
+          })) || [],
+          sources_count: searchResult.sources_count || 0,
+          query: args.query,
+        };
+      }
+
+      // Fallback: raw results
       return {
         results: searchResult.results?.map((r: any) => ({
           title: r.resource_title,
@@ -9148,7 +9179,7 @@ ${calendarRef.join('\n')}
         const toolStartTime = Date.now();
 
         try {
-          const toolResult = await executeTool(supabase, toolName, toolArgs);
+          const toolResult = await executeTool(supabase, toolName, toolArgs, messages);
           const toolDuration = Date.now() - toolStartTime;
           
           allToolCalls.push({ name: toolName, result: toolResult, duration_ms: toolDuration });
