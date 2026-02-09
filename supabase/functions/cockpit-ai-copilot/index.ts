@@ -439,31 +439,59 @@ async function suggestNextStep(supabase: any, entityId: string) {
 
   if (!opp) return { error: "Opportunité introuvable" };
 
+  // Use context-maximizer for rich context (Axe 3: multi-pass unified)
+  let richContext = '';
+  try {
+    const leadId = opp.lead_id;
+    if (leadId) {
+      const maxCtx = await buildMaxContext(supabase, {
+        entityType: 'lead',
+        entityId: leadId,
+        tokenBudget: 40000,
+        crossEntity: true,
+        includeTranscriptions: true,
+        includeDocuments: true,
+        includeEmails: true,
+      });
+      richContext = maxCtx.blocks;
+      console.log(`[next-step] ${formatContextSummary(maxCtx)}`);
+    }
+  } catch (e) {
+    console.warn('[next-step] Context maximizer failed:', e);
+  }
+
+  // Also fetch tasks and activity for the opportunity itself
   const [{ data: tasks }, { data: activity }] = await Promise.all([
-    supabase.from("tasks").select("title, status, priority, due_date, task_type")
+    supabase.from("tasks").select("title, status, priority, due_date, task_type, description")
       .or(`entity_id.eq.${entityId},opportunity_id.eq.${entityId}`)
-      .order("created_at", { ascending: false }).limit(10),
+      .order("created_at", { ascending: false }).limit(20),
     supabase.from("activity_log").select("activity_type, title, content, created_at")
-      .eq("entity_id", entityId).order("created_at", { ascending: false }).limit(10),
+      .eq("entity_id", entityId).order("created_at", { ascending: false }).limit(30),
   ]);
 
   const context = `
-Opportunité: ${opp.title || "Sans titre"}
-Stage: ${opp.stage}
-Valeur: ${opp.value_amount || 0}€
-Probabilité: ${opp.probability || 0}%
-Lead: ${opp.leads?.name || "?"} (${opp.leads?.company || "?"})
-Source: ${opp.leads?.source || "?"}
-Créée le: ${opp.created_at}
-Dernière MàJ: ${opp.updated_at}
+## Opportunité
+- **${opp.title || "Sans titre"}** — Stage: ${opp.stage}
+- Valeur: ${opp.value_amount?.toLocaleString('fr-FR') || 0}€ | Probabilité: ${opp.probability || 0}%
+- Lead: ${opp.leads?.name || "?"} (${opp.leads?.company || "?"})
+- Source: ${opp.leads?.source || "?"} | Créée: ${opp.created_at} | MàJ: ${opp.updated_at}
 
-Tâches (${tasks?.length || 0}):
-${tasks?.map((t: any) => `- [${t.status}/${t.priority}] ${t.title} (${t.task_type}, échéance: ${t.due_date || "aucune"})`).join("\n") || "Aucune"}
+## Tâches opportunité (${tasks?.length || 0})
+${tasks?.map((t: any) => {
+  let line = `- [${t.status}/${t.priority}] ${t.title} (${t.task_type}, échéance: ${t.due_date || "aucune"})`;
+  if (t.description) line += `\n  ${t.description.substring(0, 300)}`;
+  return line;
+}).join("\n") || "Aucune"}
 
-Historique (${activity?.length || 0}):
-${activity?.map((a: any) => `- ${a.created_at}: ${a.activity_type} - ${a.title || a.content || ""}`).join("\n") || "Aucun"}
+## Historique opportunité (${activity?.length || 0})
+${activity?.map((a: any) => {
+  let line = `- ${a.created_at}: ${a.activity_type} — ${a.title || ""}`;
+  if (a.content) line += `\n  ${a.content.substring(0, 300)}`;
+  return line;
+}).join("\n") || "Aucun"}
+
+${richContext}
 `;
-
   const nextStepPrompt = await loadPrompt(supabase, "copilot-next-step", {
     system_prompt: `Tu es un expert en vente B2B. Recommande la prochaine action. Réponds en français.`,
   });
@@ -512,46 +540,34 @@ async function meetingPrep(supabase: any, bookingId: string) {
 
   if (!booking) return { error: "Rendez-vous introuvable" };
 
-  // Parallel context collection
+  // Use context-maximizer for deep CRM data (Axe 3: multi-pass)
   const leadId = booking.lead_id;
-  const queries: Promise<any>[] = [];
-
-  // Previous meetings with this contact
-  queries.push(supabase.from("bookings").select("id, start_time, end_time, notes, meeting_type")
-    .eq("email", booking.email).neq("id", bookingId).order("start_time", { ascending: false }).limit(5));
-
-  // Meeting notes from previous meetings
+  let richContext = '';
   if (leadId) {
-    queries.push(supabase.from("meeting_notes").select("title, summary, action_items, meeting_date, meeting_type")
-      .eq("lead_id", leadId).order("meeting_date", { ascending: false }).limit(5));
-    // Opportunities linked to lead
-    queries.push(supabase.from("opportunities").select("title, stage, value_amount, probability, updated_at")
-      .eq("lead_id", leadId).order("updated_at", { ascending: false }).limit(5));
-    // Recent activity on this lead
-    queries.push(supabase.from("activity_log").select("activity_type, title, content, created_at")
-      .eq("entity_id", leadId).order("created_at", { ascending: false }).limit(10));
-    // Context notes
-    queries.push(supabase.from("entity_context_notes").select("content, updated_at")
-      .eq("entity_id", leadId).eq("entity_type", "lead").order("updated_at", { ascending: false }).limit(5));
-    // Specifications
-    queries.push(supabase.from("specifications").select("title, status, estimated_budget, complexity")
-      .eq("lead_id", leadId).limit(5));
-  } else {
-    queries.push(Promise.resolve({ data: [] }));
-    queries.push(Promise.resolve({ data: [] }));
-    queries.push(Promise.resolve({ data: [] }));
-    queries.push(Promise.resolve({ data: [] }));
-    queries.push(Promise.resolve({ data: [] }));
+    try {
+      const maxCtx = await buildMaxContext(supabase, {
+        entityType: 'lead',
+        entityId: leadId,
+        tokenBudget: 50000,
+        crossEntity: true,
+        includeTranscriptions: true,
+        includeDocuments: true,
+        includeEmails: true,
+      });
+      richContext = maxCtx.blocks;
+      console.log(`[meeting-prep] ${formatContextSummary(maxCtx)}`);
+    } catch (e) {
+      console.warn('[meeting-prep] Context maximizer failed:', e);
+    }
   }
 
-  const [
-    { data: previousBookings },
-    { data: meetingNotes },
-    { data: opportunities },
-    { data: activity },
-    { data: contextNotes },
-    { data: specs },
-  ] = await Promise.all(queries);
+  // Also fetch booking-specific data
+  const [{ data: previousBookings }, { data: specs }] = await Promise.all([
+    supabase.from("bookings").select("id, start_time, end_time, notes, meeting_type")
+      .eq("email", booking.email).neq("id", bookingId).order("start_time", { ascending: false }).limit(10),
+    leadId ? supabase.from("specifications").select("title, status, estimated_budget, complexity")
+      .eq("lead_id", leadId).limit(5) : Promise.resolve({ data: [] }),
+  ]);
 
   const context = `
 ## Rendez-vous à préparer
@@ -572,22 +588,12 @@ async function meetingPrep(supabase: any, bookingId: string) {
 - Timeline: ${booking.leads?.timeline || "Non renseignée"}
 
 ## Historique des rendez-vous (${previousBookings?.length || 0})
-${previousBookings?.map((b: any) => `- ${b.start_time?.slice(0, 10)}: ${b.meeting_type || "rdv"}${b.notes ? ` — ${b.notes.slice(0, 100)}` : ""}`).join("\n") || "Premier rendez-vous"}
-
-## Comptes-rendus précédents (${meetingNotes?.length || 0})
-${meetingNotes?.map((n: any) => `- ${n.meeting_date}: ${n.title}\n  Résumé: ${n.summary?.slice(0, 150) || "?"}\n  Actions: ${JSON.stringify(n.action_items || [])}`).join("\n") || "Aucun"}
-
-## Opportunités liées (${opportunities?.length || 0})
-${opportunities?.map((o: any) => `- ${o.title} (${o.stage}, ${o.value_amount || 0}€, proba: ${o.probability || 0}%)`).join("\n") || "Aucune"}
-
-## Notes de contexte
-${contextNotes?.map((n: any) => n.content).join("\n---\n") || "Aucune"}
+${previousBookings?.map((b: any) => `- ${b.start_time?.slice(0, 10)}: ${b.meeting_type || "rdv"}${b.notes ? ` — ${b.notes.slice(0, 300)}` : ""}`).join("\n") || "Premier rendez-vous"}
 
 ## Cahiers des charges (${specs?.length || 0})
 ${specs?.map((s: any) => `- ${s.title} [${s.status}] — Budget estimé: ${s.estimated_budget || "?"}, Complexité: ${s.complexity || "?"}`).join("\n") || "Aucun"}
 
-## Activité récente
-${activity?.map((a: any) => `- ${a.created_at?.slice(0, 10)}: ${a.activity_type} — ${a.title || a.content || ""}`).join("\n") || "Aucune"}
+${richContext}
 `;
 
   const meetingPrompt = await loadPrompt(supabase, "copilot-meeting-prep", {

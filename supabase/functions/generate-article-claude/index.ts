@@ -86,7 +86,7 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
       ],
       {
         functionName: 'generate-article-claude', // <-- Auto-lookup from DB
-        maxTokens: 4096
+        maxTokens: 8192
       }
     );
 
