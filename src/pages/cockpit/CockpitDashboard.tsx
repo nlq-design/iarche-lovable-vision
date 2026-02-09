@@ -68,10 +68,11 @@ export default function CockpitDashboard() {
     t.due_date && t.due_date < today && !t.ai_generated
   ).length;
 
-  // Filter activity: exclude bulk AI task_created
+  // Filter activity: exclude auto-generated noise (task creation, bulk logs)
+  const NOISE_ACTIVITY_TYPES = ['new_task', 'task_created'];
   const meaningfulActivities = activities.filter(a =>
-    !(a.activity_type === 'task_created' && a.is_ai_generated)
-  ).slice(0, 6);
+    !NOISE_ACTIVITY_TYPES.includes(a.activity_type) && !a.is_ai_generated
+  ).slice(0, 8);
 
   return (
     <CockpitLayout>
