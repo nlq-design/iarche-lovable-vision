@@ -346,6 +346,7 @@ async function morningBrief(supabase: any, workspaceId: string) {
     { data: todayTasks }, { data: overdueTasks }, { data: todayBookings },
     { data: recentActivity }, inactivityResult, healthResult,
     { data: upcomingDeadlines }, scoringResult,
+    { data: activeLeads }, { data: activeOpportunities }, { data: activePartners },
   ] = await Promise.all([
     supabase.from("tasks").select("id, title, priority, entity_type, entity_id, due_time")
       .eq("workspace_id", workspaceId).eq("due_date", today).neq("status", "completed").neq("status", "cancelled")
@@ -361,15 +362,42 @@ async function morningBrief(supabase: any, workspaceId: string) {
       .order("created_at", { ascending: false }).limit(20),
     detectInactivity(supabase, workspaceId),
     healthCheckProjects(supabase, workspaceId),
-    // Phase 2: upcoming deadlines (next 7 days)
     supabase.from("projects").select("id, name, planned_end_date, status, health_status")
       .eq("workspace_id", workspaceId).in("status", ["active", "planning"])
       .gte("planned_end_date", today)
       .lte("planned_end_date", new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0])
       .order("planned_end_date"),
-    // Phase 2: pipeline scoring
     opportunityScore(supabase, workspaceId),
+    // NEW: Active leads with synthesis
+    supabase.from("leads").select("id, name, company, status, lead_score, source, ai_documents_summary, updated_at")
+      .eq("workspace_id", workspaceId).in("status", ["new", "contacted", "qualified", "proposal"])
+      .order("lead_score", { ascending: false, nullsFirst: false }).limit(15),
+    // NEW: Active opportunities with linked lead/project
+    supabase.from("opportunities").select("id, title, stage, expected_revenue, probability, expected_close_date, lead_id, project_id, updated_at")
+      .eq("workspace_id", workspaceId).in("stage", ["discovery", "proposal", "negotiation", "qualification"])
+      .order("expected_revenue", { ascending: false, nullsFirst: false }).limit(10),
+    // NEW: Active partners with synthesis
+    supabase.from("partners").select("id, name, partner_type, expertise, ai_documents_summary, updated_at")
+      .eq("workspace_id", workspaceId).eq("is_active", true)
+      .order("updated_at", { ascending: false }).limit(10),
   ]);
+
+  // Build lead→opportunity mapping for cross-referencing
+  const leadIds = (activeLeads || []).map((l: any) => l.id);
+  const leadNameMap: Record<string, string> = {};
+  for (const l of activeLeads || []) {
+    leadNameMap[l.id] = l.company || l.name || "Lead";
+  }
+
+  // Build partner involvement from today's bookings
+  const bookingIds = (todayBookings || []).map((b: any) => b.id);
+  let bookingPartners: any[] = [];
+  if (bookingIds.length > 0) {
+    const { data: bp } = await supabase.from("booking_partners")
+      .select("booking_id, partner_id, partners:partner_id(name, partner_type)")
+      .in("booking_id", bookingIds);
+    bookingPartners = bp || [];
+  }
 
   const briefContext = `
 ## Données du jour (${today})
@@ -381,7 +409,29 @@ ${todayTasks?.map((t: any) => `- [${t.priority}] ${t.title}${t.due_time ? ` à $
 ${overdueTasks?.map((t: any) => `- [${t.priority}] ${t.title} (échéance: ${t.due_date})`).join("\n") || "Aucune"}
 
 ### Rendez-vous du jour (${todayBookings?.length || 0})
-${todayBookings?.map((b: any) => `- ${new Date(b.start_time).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} : ${b.name} (${b.company || b.email})`).join("\n") || "Aucun"}
+${todayBookings?.map((b: any) => {
+  const time = new Date(b.start_time).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const partners = bookingPartners.filter((bp: any) => bp.booking_id === b.id).map((bp: any) => bp.partners?.name).filter(Boolean);
+  return `- ${time} : ${b.name} (${b.company || b.email})${partners.length ? ` — Partenaires: ${partners.join(", ")}` : ""}`;
+}).join("\n") || "Aucun"}
+
+### Leads actifs (${activeLeads?.length || 0})
+${activeLeads?.map((l: any) => {
+  const summary = l.ai_documents_summary ? ` | Synthèse: ${l.ai_documents_summary.slice(0, 200)}…` : "";
+  return `- ${l.company || l.name} [${l.status}] score:${l.lead_score || "?"} src:${l.source || "?"}${summary}`;
+}).join("\n") || "Aucun"}
+
+### Opportunités actives (${activeOpportunities?.length || 0})
+${activeOpportunities?.map((o: any) => {
+  const lead = o.lead_id ? leadNameMap[o.lead_id] || "" : "";
+  return `- ${o.title} [${o.stage}] ${o.expected_revenue ? `${o.expected_revenue}€` : ""} proba:${o.probability || "?"}% close:${o.expected_close_date || "?"}${lead ? ` — Lead: ${lead}` : ""}`;
+}).join("\n") || "Aucune"}
+
+### Partenaires impliqués (${activePartners?.length || 0})
+${activePartners?.map((p: any) => {
+  const summary = p.ai_documents_summary ? ` | Synthèse: ${p.ai_documents_summary.slice(0, 150)}…` : "";
+  return `- ${p.name} [${p.partner_type || "?"}] ${p.expertise || ""}${summary}`;
+}).join("\n") || "Aucun"}
 
 ### Alertes d'inactivité (${inactivityResult.total})
 ${inactivityResult.alerts.slice(0, 5).map((a: any) => `- [${a.severity}] ${a.entity_type}: "${a.entity_name}" inactif depuis ${a.days_inactive}j`).join("\n") || "Aucune"}
@@ -400,7 +450,12 @@ ${recentActivity?.map((a: any) => `- ${a.activity_type}: ${a.title || a.entity_t
 `;
 
   const briefPrompt = await loadPrompt(supabase, "copilot-morning-brief", {
-    system_prompt: `Tu es un assistant de direction commerciale. Génère un briefing matinal concis. Réponds en français. Max 400 mots.`,
+    system_prompt: `Tu es un assistant de direction commerciale. Génère un briefing matinal complet et narratif. 
+Intègre TOUS les contextes fournis : leads, opportunités, partenaires, projets, tâches, RDV.
+Croise les données pour identifier les connexions (ex: un RDV aujourd'hui avec un lead qui a une opportunité en cours).
+Mentionne les synthèses Consulte quand elles apportent du contexte actionnable.
+Priorise : 🔴 Urgences > 🟡 Actions du jour > 🟢 Opportunités à saisir.
+Réponds en français. Max 600 mots.`,
   });
 
   const aiSummary = await callLLM(
@@ -422,6 +477,9 @@ ${recentActivity?.map((a: any) => `- ${a.activity_type}: ${a.title || a.entity_t
       project_checks: healthResult.projects,
       upcoming_deadlines: upcomingDeadlines || [],
       pipeline_scores: scoringResult.scores?.slice(0, 10) || [],
+      active_leads: activeLeads || [],
+      active_opportunities: activeOpportunities || [],
+      active_partners: activePartners || [],
     },
   };
 }
