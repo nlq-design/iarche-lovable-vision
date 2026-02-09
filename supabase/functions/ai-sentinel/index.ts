@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { callLLM } from "../_shared/ai-client.ts";
+import { loadPrompt } from "../_shared/prompt-loader.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -49,55 +50,38 @@ serve(async (req) => {
     const anomalies: RawAnomaly[] = [];
 
     // --- INCOMPLETE DATA ---
-    const { data: leadsNoEmail } = await supabase
-      .from("leads")
-      .select("id, name, company")
-      .is("email", null)
-      .eq("workspace_id", ws.id)
-      .not("status", "eq", "lost")
-      .limit(5);
+    const [
+      { data: leadsNoEmail },
+      { data: oppsNoAmount },
+      { data: projectsNoBudget },
+    ] = await Promise.all([
+      supabase.from("leads").select("id, name, company")
+        .is("email", null).eq("workspace_id", ws.id).not("status", "eq", "lost").limit(5),
+      supabase.from("opportunities").select("id, title, stage")
+        .is("amount", null).eq("workspace_id", ws.id).not("stage", "eq", "lost").limit(5),
+      supabase.from("projects").select("id, name, status")
+        .is("budget", null).eq("workspace_id", ws.id).in("status", ["active", "planning"]).limit(5),
+    ]);
 
     for (const l of leadsNoEmail || []) {
       anomalies.push({
-        category: "incomplete",
-        entity_type: "lead",
-        entity_id: l.id,
+        category: "incomplete", entity_type: "lead", entity_id: l.id,
         entity_name: l.company || l.name || "Lead",
         raw_issue: `Lead sans email — statut actif`,
       });
     }
 
-    const { data: oppsNoAmount } = await supabase
-      .from("opportunities")
-      .select("id, title, stage")
-      .is("amount", null)
-      .eq("workspace_id", ws.id)
-      .not("stage", "eq", "lost")
-      .limit(5);
-
     for (const o of oppsNoAmount || []) {
       anomalies.push({
-        category: "incomplete",
-        entity_type: "opportunity",
-        entity_id: o.id,
+        category: "incomplete", entity_type: "opportunity", entity_id: o.id,
         entity_name: o.title || "Opportunité",
         raw_issue: `Opportunité en étape "${o.stage}" sans montant estimé`,
       });
     }
 
-    const { data: projectsNoBudget } = await supabase
-      .from("projects")
-      .select("id, name, status")
-      .is("budget", null)
-      .eq("workspace_id", ws.id)
-      .in("status", ["active", "planning"])
-      .limit(5);
-
     for (const p of projectsNoBudget || []) {
       anomalies.push({
-        category: "incomplete",
-        entity_type: "project",
-        entity_id: p.id,
+        category: "incomplete", entity_type: "project", entity_id: p.id,
         entity_name: p.name || "Projet",
         raw_issue: `Projet "${p.status}" sans budget défini`,
       });
@@ -105,29 +89,21 @@ serve(async (req) => {
 
     // --- LOGICAL INCONSISTENCIES ---
     const { data: wonOpps } = await supabase
-      .from("opportunities")
-      .select("id, title, lead_id")
-      .eq("stage", "won")
-      .eq("workspace_id", ws.id)
-      .not("lead_id", "is", null)
-      .limit(10);
+      .from("opportunities").select("id, title, lead_id")
+      .eq("stage", "won").eq("workspace_id", ws.id).not("lead_id", "is", null).limit(10);
 
     if (wonOpps?.length) {
       const leadIds = [...new Set(wonOpps.map((o) => o.lead_id).filter(Boolean))];
       const { data: leads } = await supabase
-        .from("leads")
-        .select("id, name, company, status")
-        .in("id", leadIds)
-        .not("status", "eq", "won");
+        .from("leads").select("id, name, company, status")
+        .in("id", leadIds).not("status", "eq", "won");
 
       const problemLeadMap = new Map((leads || []).map((l) => [l.id, l]));
       for (const o of wonOpps) {
         if (o.lead_id && problemLeadMap.has(o.lead_id)) {
           const lead = problemLeadMap.get(o.lead_id)!;
           anomalies.push({
-            category: "inconsistency",
-            entity_type: "opportunity",
-            entity_id: o.id,
+            category: "inconsistency", entity_type: "opportunity", entity_id: o.id,
             entity_name: o.title || "Opportunité",
             raw_issue: `Opportunité marquée "won" mais lead "${lead.company || lead.name}" est en statut "${lead.status}"`,
           });
@@ -139,75 +115,50 @@ serve(async (req) => {
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: hotLeads } = await supabase
-      .from("leads")
-      .select("id, name, company, status, updated_at")
-      .eq("workspace_id", ws.id)
-      .in("status", ["r1", "r2", "negotiation"])
-      .lt("updated_at", sevenDaysAgo)
-      .limit(5);
+    const [{ data: hotLeads }, { data: staleProjects }] = await Promise.all([
+      supabase.from("leads").select("id, name, company, status, updated_at")
+        .eq("workspace_id", ws.id).in("status", ["r1", "r2", "negotiation"])
+        .lt("updated_at", sevenDaysAgo).limit(5),
+      supabase.from("projects").select("id, name, updated_at")
+        .eq("workspace_id", ws.id).eq("status", "active")
+        .lt("updated_at", fourteenDaysAgo).limit(5),
+    ]);
 
     for (const l of hotLeads || []) {
       const daysSince = Math.floor((now.getTime() - new Date(l.updated_at).getTime()) / (1000 * 60 * 60 * 24));
       anomalies.push({
-        category: "inactivity",
-        entity_type: "lead",
-        entity_id: l.id,
+        category: "inactivity", entity_type: "lead", entity_id: l.id,
         entity_name: l.company || l.name || "Lead",
         raw_issue: `Lead en phase "${l.status}" sans interaction depuis ${daysSince} jours`,
       });
     }
 
-    const { data: staleProjects } = await supabase
-      .from("projects")
-      .select("id, name, updated_at")
-      .eq("workspace_id", ws.id)
-      .eq("status", "active")
-      .lt("updated_at", fourteenDaysAgo)
-      .limit(5);
-
     for (const p of staleProjects || []) {
       const daysSince = Math.floor((now.getTime() - new Date(p.updated_at).getTime()) / (1000 * 60 * 60 * 24));
       anomalies.push({
-        category: "inactivity",
-        entity_type: "project",
-        entity_id: p.id,
+        category: "inactivity", entity_type: "project", entity_id: p.id,
         entity_name: p.name || "Projet",
         raw_issue: `Projet actif stagnant depuis ${daysSince} jours`,
       });
     }
 
-    // If no anomalies, return empty
     if (!anomalies.length) {
       return new Response(JSON.stringify({ alerts: [], total: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Shuffle and pick max 6 for LLM processing (cost control)
     const shuffled = anomalies.sort(() => Math.random() - 0.5).slice(0, 6);
 
     // ============================================================
     // PHASE 2: LLM generates smart, contextual questions
+    // Load prompt dynamically from ai_prompts table
     // ============================================================
-    const systemPrompt = `Tu es l'IA Sentinelle d'un CRM commercial. Ton rôle est de transformer des anomalies détectées en questions pertinentes, naturelles et actionnables pour le dirigeant.
+    const prompt = await loadPrompt(supabase, "sentinel-analysis", {
+      system_prompt: `Tu es l'IA Sentinelle d'un CRM commercial. Transforme des anomalies en questions actionnables. Réponds en JSON valide.`,
+    });
 
-Règles :
-- Chaque question doit être formulée de façon conversationnelle, comme un assistant proactif
-- Attribue une severity : "critical" (bloquant/incohérent), "warning" (risque), "info" (amélioration)
-- Le "detail" doit expliquer le risque concret en 1-2 phrases
-- Sois direct, concis, orienté action
-- Réponds UNIQUEMENT en JSON valide, un tableau d'objets
-
-Format attendu :
-[
-  {
-    "index": 0,
-    "severity": "warning",
-    "question": "Le lead Acme Corp n'a pas d'email...",
-    "detail": "Sans email, impossible d'envoyer..."
-  }
-]`;
+    const temperature = (prompt.model_config?.temperature as number) ?? 0.7;
 
     const userPrompt = `Voici ${shuffled.length} anomalies détectées dans le CRM. Transforme-les en questions pour le dirigeant :
 
@@ -218,16 +169,12 @@ ${shuffled.map((a, i) => `[${i}] ${a.category} | ${a.entity_type} "${a.entity_na
     try {
       const llmResponse = await callLLM(
         [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: prompt.system_prompt },
           { role: "user", content: userPrompt },
         ],
-        {
-          functionName: "ai-sentinel",
-          temperature: 0.7, // Some creativity for varied questions
-        }
+        { functionName: "ai-sentinel", temperature }
       );
 
-      // Parse LLM response
       const cleaned = llmResponse.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
       const parsed = JSON.parse(cleaned);
 
@@ -248,21 +195,16 @@ ${shuffled.map((a, i) => `[${i}] ${a.category} | ${a.entity_type} "${a.entity_na
         }).filter(Boolean) as SentinelAlert[];
       }
     } catch (llmErr) {
-      // Fallback: use raw anomalies without LLM enrichment
       console.warn("[ai-sentinel] LLM enrichment failed, using raw fallback:", llmErr);
       alerts = shuffled.map((a) => ({
         id: `sentinel-${a.category}-${a.entity_type}-${a.entity_id}`,
         severity: a.category === "inconsistency" ? "critical" as const : "warning" as const,
         category: a.category as SentinelAlert["category"],
-        entity_type: a.entity_type,
-        entity_id: a.entity_id,
-        entity_name: a.entity_name,
-        question: a.raw_issue,
-        detail: "",
+        entity_type: a.entity_type, entity_id: a.entity_id, entity_name: a.entity_name,
+        question: a.raw_issue, detail: "",
       }));
     }
 
-    // Sort: critical first
     alerts.sort((a, b) => {
       const order = { critical: 0, warning: 1, info: 2 };
       return order[a.severity] - order[b.severity];
@@ -275,8 +217,7 @@ ${shuffled.map((a, i) => `[${i}] ${a.category} | ${a.entity_type} "${a.entity_na
   } catch (err) {
     console.error("[ai-sentinel] Error:", err);
     return new Response(JSON.stringify({ error: String(err), alerts: [] }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
