@@ -87,7 +87,7 @@ Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
         { role: 'system', content: prompt.system_prompt },
         { role: 'user', content: userPrompt }
       ],
-      { functionName: 'generate-article-gpt', maxTokens: 4096, temperature }
+      { functionName: 'generate-article-gpt', maxTokens: 8192, temperature }
     );
 
     let cleanedContent = content.trim();
