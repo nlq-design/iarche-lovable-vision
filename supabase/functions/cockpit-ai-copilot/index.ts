@@ -16,6 +16,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { extractStructured, callLLM } from "../_shared/ai-client.ts";
+import { loadPrompt } from "../_shared/prompt-loader.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -142,6 +143,10 @@ async function suggestTasks(supabase: any, workspaceId: string, entityType?: str
     context = await collectGlobalContext(supabase, workspaceId);
   }
 
+  const prompt = await loadPrompt(supabase, "copilot-suggest-tasks", {
+    system_prompt: `Tu es un assistant commercial expert. Suggère 3-5 tâches actionnables. Réponds en français.`,
+  });
+
   const suggestions = await extractStructured<{
     suggestions: Array<{
       title: string;
@@ -155,15 +160,7 @@ async function suggestTasks(supabase: any, workspaceId: string, entityType?: str
     }>;
   }>(
     [
-      {
-        role: "system",
-        content: `Tu es un assistant commercial expert en gestion de pipeline B2B. 
-Analyse le contexte fourni et suggère 3 à 5 tâches concrètes et actionnables.
-Chaque tâche doit être spécifique, pas générique. Utilise les noms des contacts et entités.
-Priorité: urgent (action immédiate), high (cette semaine), medium (sous 10 jours), low (planification).
-Types: follow_up, call, email, meeting, proposal, other.
-Réponds en français.`,
-      },
+      { role: "system", content: prompt.system_prompt },
       { role: "user", content: `Contexte commercial:\n${context}` },
     ],
     {
@@ -401,18 +398,13 @@ ${scoringResult.scores?.slice(0, 5).map((s: any) => `- ${s.opportunity_title}: $
 ${recentActivity?.map((a: any) => `- ${a.activity_type}: ${a.title || a.entity_type}`).join("\n") || "Aucune"}
 `;
 
+  const briefPrompt = await loadPrompt(supabase, "copilot-morning-brief", {
+    system_prompt: `Tu es un assistant de direction commerciale. Génère un briefing matinal concis. Réponds en français. Max 400 mots.`,
+  });
+
   const aiSummary = await callLLM(
     [
-      {
-        role: "system",
-        content: `Tu es un assistant de direction commerciale. Génère un briefing matinal concis et actionnable.
-Structure : 
-1. 🎯 Priorités du jour (3 max)
-2. ⚠️ Points d'attention (risques, retards, deadlines proches)
-3. 📊 Pipeline (opportunités à risque, scores faibles)
-4. 💡 Recommandations (actions à fort impact)
-Sois direct, utilise les noms des contacts/projets. Réponds en français. Max 400 mots.`,
-      },
+      { role: "system", content: briefPrompt.system_prompt },
       { role: "user", content: briefContext },
     ],
     { functionName: FUNCTION_NAME, workspaceId }
@@ -471,17 +463,16 @@ Historique (${activity?.length || 0}):
 ${activity?.map((a: any) => `- ${a.created_at}: ${a.activity_type} - ${a.title || a.content || ""}`).join("\n") || "Aucun"}
 `;
 
+  const nextStepPrompt = await loadPrompt(supabase, "copilot-next-step", {
+    system_prompt: `Tu es un expert en vente B2B. Recommande la prochaine action. Réponds en français.`,
+  });
+
   const suggestion = await extractStructured<{
     next_action: string; action_type: string; reasoning: string;
     suggested_stage: string | null; urgency: string; talking_points: string[];
   }>(
     [
-      {
-        role: "system",
-        content: `Tu es un expert en vente B2B. Analyse l'état de cette opportunité et recommande la meilleure prochaine action.
-Pipeline: lead → r1 → r2 → pause/closed_won/closed_lost.
-Sois spécifique et actionnable. Réponds en français.`,
-      },
+      { role: "system", content: nextStepPrompt.system_prompt },
       { role: "user", content: context },
     ],
     {
@@ -598,6 +589,10 @@ ${specs?.map((s: any) => `- ${s.title} [${s.status}] — Budget estimé: ${s.est
 ${activity?.map((a: any) => `- ${a.created_at?.slice(0, 10)}: ${a.activity_type} — ${a.title || a.content || ""}`).join("\n") || "Aucune"}
 `;
 
+  const meetingPrompt = await loadPrompt(supabase, "copilot-meeting-prep", {
+    system_prompt: `Tu es un expert en préparation de réunions B2B. Génère un briefing structuré. Réponds en français.`,
+  });
+
   const briefing = await extractStructured<{
     summary: string;
     key_facts: string[];
@@ -608,11 +603,7 @@ ${activity?.map((a: any) => `- ${a.created_at?.slice(0, 10)}: ${a.activity_type}
     preparation_checklist: string[];
   }>(
     [
-      {
-        role: "system",
-        content: `Tu es un expert en préparation de réunions commerciales B2B. Analyse le contexte et génère un briefing structuré pour bien préparer ce rendez-vous.
-Sois spécifique, utilise les noms et données réels. Réponds en français.`,
-      },
+      { role: "system", content: meetingPrompt.system_prompt },
       { role: "user", content: context },
     ],
     {
@@ -798,6 +789,10 @@ async function winLossAnalysis(supabase: any, workspaceId: string) {
     );
   }
 
+  const winLossPrompt = await loadPrompt(supabase, "copilot-win-loss", {
+    system_prompt: `Tu es un analyste commercial B2B. Identifie les patterns win/loss. Réponds en français.`,
+  });
+
   const analysis = await extractStructured<{
     win_patterns: string[];
     loss_patterns: string[];
@@ -809,16 +804,8 @@ async function winLossAnalysis(supabase: any, workspaceId: string) {
     key_differentiators: string[];
   }>(
     [
-      {
-        role: "system",
-        content: `Tu es un analyste commercial B2B expert. Analyse les opportunités gagnées et perdues pour identifier des patterns récurrents.
-Cherche des corrélations entre : source du lead, score, qualification, durée du cycle, nombre d'interactions, budget client, et le résultat (won/lost).
-Sois factuel et actionnable. Réponds en français.`,
-      },
-      {
-        role: "user",
-        content: `Analyse Win/Loss — ${won.length} gagnées, ${lost.length} perdues:\n\n${oppContexts.join("\n")}`,
-      },
+      { role: "system", content: winLossPrompt.system_prompt },
+      { role: "user", content: `Analyse Win/Loss — ${won.length} gagnées, ${lost.length} perdues:\n\n${oppContexts.join("\n")}` },
     ],
     {
       name: "win_loss_analysis",
@@ -912,6 +899,10 @@ ${specs?.map((s: any) => `- ${s.title} [${s.status}] deadline: ${s.deadline || "
 ${opps?.map((o: any) => `- ${o.title} (${o.stage}, close prévu: ${o.expected_close_date || "?"}, ${o.value_amount || 0}€)`).join("\n") || "Aucune"}
 `;
 
+  const cascadePrompt = await loadPrompt(supabase, "copilot-deadline-cascade", {
+    system_prompt: `Tu es un chef de projet expert. Évalue la faisabilité de la deadline. Réponds en français.`,
+  });
+
   const cascade = await extractStructured<{
     overall_status: string;
     deadline_feasibility: string;
@@ -923,13 +914,7 @@ ${opps?.map((o: any) => `- ${o.title} (${o.stage}, close prévu: ${o.expected_cl
     recommendations: string[];
   }>(
     [
-      {
-        role: "system",
-        content: `Tu es un chef de projet expert. Analyse l'état d'avancement du projet, évalue la faisabilité de la deadline, et propose un plan de cascade des échéances.
-Pour chaque tâche à replanifier, donne une nouvelle date réaliste.
-Identifie le chemin critique et les jalons bloqués.
-Réponds en français.`,
-      },
+      { role: "system", content: cascadePrompt.system_prompt },
       { role: "user", content: context },
     ],
     {
@@ -1055,6 +1040,10 @@ async function harvestOverdueTasks(supabase: any, workspaceId: string, entityId?
     `- [ID:${t.id}] "${t.title}" (${t.task_type}, priorité: ${t.priority}, créée le ${t.created_at?.slice(0, 10)}, échéance: ${t.due_date})`
   ).join("\n");
 
+  const harvestPrompt = await loadPrompt(supabase, "copilot-harvest-interview", {
+    system_prompt: `Tu es un assistant de direction. Regroupe les tâches par thème et pose 2-4 questions synthétiques. Réponds en français.`,
+  });
+
   const questions = await extractStructured<{
     entity_summary: string;
     questions: Array<{
@@ -1065,18 +1054,7 @@ async function harvestOverdueTasks(supabase: any, workspaceId: string, entityId?
     }>;
   }>(
     [
-      {
-        role: "system",
-        content: `Tu es un assistant de direction qui aide à trier et valoriser des tâches IA accumulées.
-Tu dois poser des questions intelligentes et regroupées pour comprendre l'état actuel de chaque sujet.
-Ne pose PAS une question par tâche — regroupe les tâches par thème et pose une question synthétique.
-Propose 2 à 4 questions maximum. Chaque question doit permettre de :
-1. Savoir si le sujet est toujours d'actualité
-2. Recueillir de l'information utile pour enrichir la base de connaissances
-3. Proposer des actions concrètes (nouvelle tâche, archivage enrichi, mise à jour contexte)
-IMPORTANT: Pour related_task_ids, utilise les IDs UUID exacts fournis après [ID:...] dans la liste des tâches. Ne mets JAMAIS des numéros séquentiels.
-Réponds en français.`,
-      },
+      { role: "system", content: harvestPrompt.system_prompt },
       {
         role: "user",
         content: `Entité: ${targetGroup.entity_type} — "${targetGroup.entity_name}"
@@ -1196,16 +1174,15 @@ async function harvestRespond(supabase: any, workspaceId: string, taskIds: strin
 
     case "new_task": {
       // Generate fresh replacement tasks based on the response
+      const harvestNewPrompt = await loadPrompt(supabase, "copilot-harvest-new-tasks", {
+        system_prompt: `Génère 1-3 nouvelles tâches actionnables basées sur la réponse utilisateur. Réponds en français.`,
+      });
+
       const freshTasks = await extractStructured<{
         tasks: Array<{ title: string; description: string; priority: string; task_type: string; due_in_days: number }>;
       }>(
         [
-          {
-            role: "system",
-            content: `Génère 1 à 3 nouvelles tâches actionnables basées sur la réponse de l'utilisateur. 
-Ces tâches remplacent les anciennes périmées. Elles doivent être concrètes, avec des échéances réalistes.
-Réponds en français.`,
-          },
+          { role: "system", content: harvestNewPrompt.system_prompt },
           {
             role: "user",
             content: `Anciennes tâches:\n${tasks.map((t: any) => `- ${t.title}: ${t.description || ""}`).join("\n")}\n\nRéponse utilisateur: ${response}`,
