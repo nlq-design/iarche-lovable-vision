@@ -169,7 +169,17 @@ export function TranscriptionSummaryTab({ summary }: TranscriptionSummaryTabProp
                 <div key={i} className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">{f.context}</span>
                   <span className="font-semibold">
-                    {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: f.currency === '€' ? 'EUR' : f.currency || 'EUR' }).format(f.amount)}
+                    {(() => {
+                      const currencyMap: Record<string, string> = { '€': 'EUR', '$': 'USD', '£': 'GBP', '%': '' };
+                      const mapped = currencyMap[f.currency] ?? f.currency;
+                      const isValidCurrency = mapped && /^[A-Z]{3}$/.test(mapped);
+                      if (isValidCurrency) {
+                        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: mapped }).format(f.amount);
+                      }
+                      // Fallback: plain number + symbol
+                      const suffix = f.currency === '%' ? ' %' : f.currency ? ` ${f.currency}` : ' €';
+                      return new Intl.NumberFormat('fr-FR').format(f.amount) + suffix;
+                    })()}
                   </span>
                 </div>
               ))}
