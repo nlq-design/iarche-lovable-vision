@@ -1,4 +1,4 @@
-// Cockpit Dashboard v6.0 — Dynamic AI Command Center
+// Cockpit Dashboard v7.0 — Fully Dynamic & Interconnected Command Center
 import { useState, useEffect } from 'react';
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +16,8 @@ import {
   Activity, Wheat, ArrowRight, Sparkles, AlertCircle,
   ChevronRight, Radar, Brain, RefreshCw, Loader2,
   AlertTriangle, Info, XCircle, X, Shield, Zap,
-  Database,
+  Database, Mic, FolderOpen, BarChart3, Trophy,
+  ArrowUpRight, ArrowDownRight, ExternalLink, Eye,
 } from 'lucide-react';
 import {
   useCockpitLeads, useCockpitOpportunities, useCockpitTasks,
@@ -58,17 +59,71 @@ export default function CockpitDashboard() {
   useDashboardRealtime();
 
   // ─── Data hooks ───
-  const { stats: leadStats, isLoading: leadsLoading } = useCockpitLeads();
-  const { stats: oppStats, isLoading: oppsLoading } = useCockpitOpportunities();
+  const { leads, stats: leadStats, isLoading: leadsLoading } = useCockpitLeads();
+  const { opportunities, stats: oppStats, isLoading: oppsLoading } = useCockpitOpportunities();
   const { tasks, stats: taskStats, isLoading: tasksLoading } = useCockpitTasks();
-  const { todayBookings, isLoading: bookingsLoading } = useCockpitBookings();
+  const { todayBookings, upcomingBookings, isLoading: bookingsLoading } = useCockpitBookings();
   const { stats: noteStats } = useCockpitMeetingNotes();
   const { activities, isLoading: activitiesLoading } = useCockpitActivityLog();
 
   // ─── AI hooks ───
-  const { morningBrief, opportunityScore, healthCheck, suggestNextStep } = useCockpitAICopilot();
+  const { morningBrief, opportunityScore, healthCheck, suggestNextStep, suggestTasks, winLossAnalysis } = useCockpitAICopilot();
   const { alerts: sentinelAlerts, isLoading: sentinelLoading, refresh: refreshSentinel, dismissAlert, lastFetched: sentinelLastFetched } = useAISentinel();
   const { isRunning: isAutoRunning, triggerAutoConsulte, triggerAutoHarvest } = useAutoConsulte();
+
+  // ─── Recent transcriptions (dynamic) ───
+  const { data: recentTranscriptions = [] } = useQuery({
+    queryKey: ['dashboard-recent-transcriptions'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('voice_transcriptions')
+        .select('id, title, original_filename, status, created_at, lead_id, project_id, summary, lead:leads(id, name, company), project:projects(id, name)')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      return data || [];
+    },
+    staleTime: 30_000,
+  });
+
+  // ─── Recent projects (dynamic) ───
+  const { data: recentProjects = [] } = useQuery({
+    queryKey: ['dashboard-recent-projects'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('projects')
+        .select('id, name, status, health_status, budget_amount, planned_end_date, lead_id, leads:lead_id(id, name, company)')
+        .in('status', ['active', 'planning'])
+        .order('updated_at', { ascending: false })
+        .limit(5);
+      return data || [];
+    },
+    staleTime: 30_000,
+  });
+
+  // ─── Win/Loss stats (dynamic) ───
+  const { data: winLossStats } = useQuery({
+    queryKey: ['dashboard-win-loss'],
+    queryFn: async () => {
+      const { data: won } = await supabase
+        .from('opportunities')
+        .select('id, value_amount', { count: 'exact', head: false })
+        .eq('stage', 'closed_won');
+      const { data: lost } = await supabase
+        .from('opportunities')
+        .select('id', { count: 'exact', head: false })
+        .eq('stage', 'closed_lost');
+      const wonCount = won?.length || 0;
+      const lostCount = lost?.length || 0;
+      const total = wonCount + lostCount;
+      const wonValue = won?.reduce((s, o) => s + (Number(o.value_amount) || 0), 0) || 0;
+      return {
+        won: wonCount, lost: lostCount, total,
+        winRate: total > 0 ? Math.round((wonCount / total) * 100) : 0,
+        wonValue,
+      };
+    },
+    staleTime: 60_000,
+  });
 
   // ─── Synthesis stale queue count ───
   const { data: staleCount = 0, refetch: refetchStale } = useQuery({
@@ -147,16 +202,22 @@ export default function CockpitDashboard() {
     }
   }, [healthFetched, healthCheck]);
 
+  // Auto-trigger opportunity scoring
+  const [scoreFetched, setScoreFetched] = useState(false);
+  useEffect(() => {
+    if (!scoreFetched && !opportunityScore.isPending && !opportunityScore.data) {
+      const timer = setTimeout(() => {
+        opportunityScore.mutate();
+        setScoreFetched(true);
+      }, 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [scoreFetched, opportunityScore]);
+
   const handleAutoConsulte = async () => {
     try {
       await triggerAutoConsulte();
       refetchStale();
-    } catch {}
-  };
-
-  const handleAutoHarvest = async () => {
-    try {
-      await triggerAutoHarvest();
     } catch {}
   };
 
@@ -191,6 +252,8 @@ export default function CockpitDashboard() {
                       todayBookings: todayBookings?.length || 0,
                       overdueAi: overdueAiCount,
                       staleQueue: staleCount,
+                      recentTranscriptions: recentTranscriptions.length,
+                      activeProjects: recentProjects.length,
                     })}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
@@ -203,8 +266,8 @@ export default function CockpitDashboard() {
                     <span className="cursor-pointer hover:text-foreground" onClick={() => navigate('/cockpit/pipeline')}>
                       {oppStats.total} opps · {formatCurrency(oppStats.totalValue)}
                     </span>
-                    {oppStats.weightedValue > 0 && (
-                      <span className="text-muted-foreground"> ({formatCurrency(oppStats.weightedValue)} pond.)</span>
+                    {winLossStats && winLossStats.total > 0 && (
+                      <span className="text-muted-foreground"> · {winLossStats.winRate}% win</span>
                     )}
                   </p>
                 </div>
@@ -230,7 +293,7 @@ export default function CockpitDashboard() {
                         <span className="text-xs font-semibold">{staleCount}</span>
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>{staleCount} entités à re-synthétiser — Cliquez pour lancer</TooltipContent>
+                    <TooltipContent side="bottom">{staleCount} entités à re-synthétiser — Cliquez pour lancer</TooltipContent>
                   </Tooltip>
                 )}
 
@@ -252,7 +315,7 @@ export default function CockpitDashboard() {
                       )}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Morning Brief IA</TooltipContent>
+                  <TooltipContent side="bottom">Morning Brief IA — Résumé narratif quotidien</TooltipContent>
                 </Tooltip>
 
                 {/* Sentinel */}
@@ -275,7 +338,7 @@ export default function CockpitDashboard() {
                             <span className="text-xs font-semibold">{overdueAiCount}</span>
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>{overdueAiCount} tâches IA à récolter</TooltipContent>
+                        <TooltipContent side="bottom">{overdueAiCount} tâches IA en retard — Cliquez pour récolter et traiter</TooltipContent>
                       </Tooltip>
                     </SheetTrigger>
                     <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
@@ -283,7 +346,7 @@ export default function CockpitDashboard() {
                         <SheetTitle className="flex items-center gap-2">
                           <Wheat className="h-5 w-5" /> Récolte IA
                         </SheetTitle>
-                        <SheetDescription>Transformez les tâches IA en retard en actions</SheetDescription>
+                        <SheetDescription>Transformez les tâches IA en retard en actions concrètes</SheetDescription>
                       </SheetHeader>
                       <div className="mt-4"><HarvestInterviewPanel autoStart /></div>
                     </SheetContent>
@@ -304,22 +367,27 @@ export default function CockpitDashboard() {
               <div className="max-w-[1600px] mx-auto flex items-center gap-2">
                 <Sparkles className="h-3 w-3 text-primary flex-shrink-0" />
                 <p className="text-xs text-muted-foreground truncate">
-                  {morningBrief.data.brief.split('\n').filter(l => l.trim()).slice(0, 2).join(' · ').slice(0, 150)}...
+                  {morningBrief.data.brief.split('\n').filter((l: string) => l.trim()).slice(0, 2).join(' · ').slice(0, 150)}...
                 </p>
                 <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
               </div>
             </div>
           )}
 
-          {/* Row 2b: Morning Brief expanded (conditional) */}
+          {/* Row 2b: Morning Brief expanded */}
           {briefOpen && (
             <div className="border-t bg-card/50 px-4 py-3">
               <div className="max-w-[1600px] mx-auto">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Morning Brief</span>
-                  <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setBriefOpen(false)}>
-                    <X className="h-3 w-3" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => morningBrief.mutate()} disabled={morningBrief.isPending}>
+                      <RefreshCw className={cn("h-3 w-3", morningBrief.isPending && "animate-spin")} />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setBriefOpen(false)}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
                 {morningBrief.isPending ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -351,14 +419,7 @@ export default function CockpitDashboard() {
                   <button
                     key={alert.id}
                     className="text-xs text-destructive hover:underline truncate flex-shrink-0"
-                    onClick={() => {
-                      const routes: Record<string, string> = {
-                        lead: `/cockpit/leads/${alert.entity_id}`,
-                        opportunity: `/cockpit/leads`,
-                        project: `/cockpit/projects/${alert.entity_id}`,
-                      };
-                      navigate(routes[alert.entity_type] || '/cockpit');
-                    }}
+                    onClick={() => navigateToEntity(navigate, alert)}
                   >
                     {alert.entity_name}: {alert.question}
                   </button>
@@ -369,13 +430,14 @@ export default function CockpitDashboard() {
         </div>
 
         {/* ─── COMMAND CENTER GRID ─── */}
-        <div className="flex-1 overflow-hidden p-3 sm:p-4">
-          <div className="h-full max-w-[1600px] mx-auto grid gap-3 grid-cols-1 lg:grid-cols-12">
+        <div className="flex-1 overflow-auto p-3 sm:p-4">
+          <div className="max-w-[1600px] mx-auto grid gap-3 grid-cols-1 lg:grid-cols-12">
 
             {/* ─── COL 1: Tâches + RDV ─── */}
-            <div className="lg:col-span-4 flex flex-col gap-3 min-h-0">
-              <Card className="flex flex-col min-h-0 flex-1">
-                <CardHeader className="pb-1.5 pt-3 px-3 flex-shrink-0 flex flex-row items-center justify-between">
+            <div className="lg:col-span-4 flex flex-col gap-3">
+              {/* Today tasks */}
+              <Card>
+                <CardHeader className="pb-1.5 pt-3 px-3 flex flex-row items-center justify-between">
                   <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <Clock className="h-3.5 w-3.5" />
                     Aujourd'hui
@@ -383,59 +445,81 @@ export default function CockpitDashboard() {
                     {humanOverdue > 0 && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">{humanOverdue} retard</Badge>}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0 px-3 pb-2 flex-1 min-h-0">
-                  <ScrollArea className="h-full">
-                    {tasksLoading ? (
-                      <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div>
-                    ) : todayTasks.length === 0 ? (
-                      <p className="text-xs text-muted-foreground py-6 text-center">Aucune tâche pour aujourd'hui</p>
-                    ) : (
-                      <div className="space-y-0.5">{todayTasks.map(task => <TaskRow key={task.id} task={task} />)}</div>
-                    )}
-                  </ScrollArea>
+                <CardContent className="pt-0 px-3 pb-2">
+                  {tasksLoading ? (
+                    <div className="space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div>
+                  ) : todayTasks.length === 0 ? (
+                    <div className="py-4 text-center">
+                      <p className="text-xs text-muted-foreground mb-2">Aucune tâche pour aujourd'hui</p>
+                      <Button variant="outline" size="sm" className="text-xs h-7"
+                        onClick={() => suggestTasks.mutate({})}
+                        disabled={suggestTasks.isPending}>
+                        {suggestTasks.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
+                        Suggestions IA
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-0.5">{todayTasks.map(task => <TaskRow key={task.id} task={task} navigate={navigate} />)}</div>
+                  )}
                 </CardContent>
               </Card>
 
-              <Card className="flex flex-col min-h-0 flex-1">
-                <CardHeader className="pb-1.5 pt-3 px-3 flex-shrink-0">
+              {/* Upcoming tasks */}
+              <Card>
+                <CardHeader className="pb-1.5 pt-3 px-3">
                   <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <Sparkles className="h-3.5 w-3.5" />
-                    À venir
+                    À venir (7j)
                     {upcomingTasks.length > 0 && <Badge variant="outline" className="text-[10px] px-1.5 py-0 ml-1">{upcomingTasks.length}</Badge>}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0 px-3 pb-2 flex-1 min-h-0">
-                  <ScrollArea className="h-full">
-                    {upcomingTasks.length === 0 ? (
-                      <p className="text-xs text-muted-foreground py-4 text-center">RAS</p>
-                    ) : (
-                      <div className="space-y-0.5">{upcomingTasks.map(task => <TaskRow key={task.id} task={task} showDate />)}</div>
-                    )}
-                  </ScrollArea>
+                <CardContent className="pt-0 px-3 pb-2">
+                  {upcomingTasks.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-3 text-center">RAS — votre agenda est clair</p>
+                  ) : (
+                    <div className="space-y-0.5">{upcomingTasks.map(task => <TaskRow key={task.id} task={task} showDate navigate={navigate} />)}</div>
+                  )}
                 </CardContent>
               </Card>
 
-              <Card className="flex-shrink-0">
+              {/* Bookings */}
+              <Card>
                 <CardHeader className="pb-1.5 pt-3 px-3">
                   <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <Calendar className="h-3.5 w-3.5" /> Rendez-vous
                     {(todayBookings?.length || 0) > 0 && <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-1">{todayBookings!.length}</Badge>}
+                    <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px] ml-auto" onClick={() => navigate('/cockpit/agenda')}>
+                      Agenda <ChevronRight className="h-2.5 w-2.5 ml-0.5" />
+                    </Button>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0 px-3 pb-2">
                   {bookingsLoading ? <Skeleton className="h-10 w-full" /> : !todayBookings || todayBookings.length === 0 ? (
-                    <p className="text-xs text-muted-foreground py-3 text-center">Aucun RDV</p>
+                    <div className="py-3 text-center">
+                      <p className="text-xs text-muted-foreground mb-1.5">Aucun RDV aujourd'hui</p>
+                      {upcomingBookings && upcomingBookings.length > 0 && (
+                        <p className="text-[10px] text-primary cursor-pointer hover:underline" onClick={() => navigate('/cockpit/agenda')}>
+                          → {upcomingBookings.length} RDV à venir
+                        </p>
+                      )}
+                    </div>
                   ) : (
                     <div className="space-y-1">
-                      {todayBookings.slice(0, 3).map((b: any) => (
-                        <div key={b.id} className="flex items-center justify-between py-1">
+                      {todayBookings.slice(0, 4).map((b: any) => (
+                        <div key={b.id} className="flex items-center justify-between py-1.5 px-1 rounded hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => navigate('/cockpit/agenda')}>
                           <div className="min-w-0">
                             <p className="text-xs font-medium truncate">{b.name}</p>
                             <p className="text-[10px] text-muted-foreground truncate">{b.company || b.email}</p>
                           </div>
-                          <Badge variant="outline" className="text-[10px] flex-shrink-0 font-mono">
-                            {format(new Date(b.start_time), 'HH:mm')}
-                          </Badge>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <Badge variant="outline" className="text-[10px] font-mono">
+                              {format(new Date(b.start_time), 'HH:mm')}
+                            </Badge>
+                            {b.booking_types?.name && (
+                              <span className="text-[9px] text-muted-foreground">{b.booking_types.name}</span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -444,9 +528,10 @@ export default function CockpitDashboard() {
               </Card>
             </div>
 
-            {/* ─── COL 2: Pipeline + Health ─── */}
-            <div className="lg:col-span-4 flex flex-col gap-3 min-h-0">
-              <Card className="flex-shrink-0 cursor-pointer hover:border-primary/30 transition-colors" onClick={() => navigate('/cockpit/pipeline')}>
+            {/* ─── COL 2: Pipeline + Projects + Scoring ─── */}
+            <div className="lg:col-span-4 flex flex-col gap-3">
+              {/* Pipeline */}
+              <Card className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => navigate('/cockpit/pipeline')}>
                 <CardHeader className="pb-1.5 pt-3 px-3">
                   <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <TrendingUp className="h-3.5 w-3.5" /> Pipeline
@@ -489,31 +574,152 @@ export default function CockpitDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Health Check Widget */}
-              <HealthCheckWidget healthCheck={healthCheck} />
+              {/* Opportunity Scoring (dynamic from AI) */}
+              <OpportunityScoringWidget opportunityScore={opportunityScore} navigate={navigate} />
 
-              <div className="grid grid-cols-3 gap-2 flex-shrink-0">
+              {/* Health Check Widget */}
+              <HealthCheckWidget healthCheck={healthCheck} navigate={navigate} />
+
+              {/* Win/Loss quick stats */}
+              {winLossStats && winLossStats.total > 0 && (
+                <Card>
+                  <CardContent className="pt-3 px-3 pb-2">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <Trophy className="h-3.5 w-3.5" /> Conversion
+                      </span>
+                      <span className="text-lg font-bold text-primary">{winLossStats.winRate}%</span>
+                    </div>
+                    <div className="flex gap-2 text-[11px]">
+                      <div className="flex-1 text-center p-1 rounded bg-emerald-500/10">
+                        <span className="font-semibold text-emerald-600">{winLossStats.won}</span>
+                        <span className="text-muted-foreground ml-1">gagnées</span>
+                      </div>
+                      <div className="flex-1 text-center p-1 rounded bg-destructive/10">
+                        <span className="font-semibold text-destructive">{winLossStats.lost}</span>
+                        <span className="text-muted-foreground ml-1">perdues</span>
+                      </div>
+                      {winLossStats.wonValue > 0 && (
+                        <div className="flex-1 text-center p-1 rounded bg-primary/10">
+                          <span className="font-semibold text-primary">{formatCurrency(winLossStats.wonValue)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Mini Stats */}
+              <div className="grid grid-cols-3 gap-2">
                 <MiniStat icon={Users} label="Leads" value={leadStats.total} loading={leadsLoading} onClick={() => navigate('/cockpit/leads')} />
                 <MiniStat icon={Target} label="Opps" value={oppStats.total} loading={oppsLoading} onClick={() => navigate('/cockpit/pipeline')} />
                 <MiniStat icon={FileText} label="Notes" value={noteStats.thisWeek} subtitle="sem." loading={false} onClick={() => navigate('/cockpit/transcriptions')} />
               </div>
 
+              {/* Stagnant Widget */}
               <StagnantWidget onSuggestFollowUp={(entityId) => suggestNextStep.mutate(entityId)} suggestNextStep={suggestNextStep} />
             </div>
 
-            {/* ─── COL 3: Activité + Sentinel Widget ─── */}
-            <div className="lg:col-span-4 flex flex-col gap-3 min-h-0">
+            {/* ─── COL 3: Transcriptions + Projets + Activité + Sentinel ─── */}
+            <div className="lg:col-span-4 flex flex-col gap-3">
               {/* Sentinel summary widget */}
               <SentinelWidget alerts={sentinelAlerts} lastFetched={sentinelLastFetched} />
 
-              <Card className="flex flex-col flex-1 min-h-0">
-                <CardHeader className="pb-1.5 pt-3 px-3 flex-shrink-0">
+              {/* Recent Transcriptions — NEW dynamic widget */}
+              <Card>
+                <CardHeader className="pb-1.5 pt-3 px-3">
+                  <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Mic className="h-3.5 w-3.5" /> Transcriptions récentes
+                    <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px] ml-auto" onClick={() => navigate('/cockpit/transcriptions')}>
+                      Tout <ChevronRight className="h-2.5 w-2.5 ml-0.5" />
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 px-3 pb-2">
+                  {recentTranscriptions.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-3 text-center">Aucune transcription récente</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {recentTranscriptions.map((t: any) => (
+                        <div key={t.id}
+                          className="flex items-start gap-2 py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => navigate(`/cockpit/transcriptions/${t.id}`)}>
+                          <Mic className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0",
+                            t.status === 'done' ? 'text-emerald-500' :
+                            t.status === 'error' ? 'text-destructive' : 'text-primary'
+                          )} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">
+                              {t.title || t.summary?.title || t.original_filename || 'Sans titre'}
+                            </p>
+                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                              {t.lead?.name && <span className="truncate">🎯 {t.lead.name}</span>}
+                              {t.project?.name && <span className="truncate">📁 {t.project.name}</span>}
+                              <span>{formatDistanceToNow(new Date(t.created_at), { addSuffix: true, locale: fr })}</span>
+                            </div>
+                          </div>
+                          {t.status !== 'done' && (
+                            <Badge variant={t.status === 'error' ? 'destructive' : 'secondary'} className="text-[9px] px-1 py-0">
+                              {t.status}
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Active Projects — NEW dynamic widget */}
+              <Card>
+                <CardHeader className="pb-1.5 pt-3 px-3">
+                  <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <FolderOpen className="h-3.5 w-3.5" /> Projets actifs
+                    <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px] ml-auto" onClick={() => navigate('/cockpit/projects')}>
+                      Tout <ChevronRight className="h-2.5 w-2.5 ml-0.5" />
+                    </Button>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 px-3 pb-2">
+                  {recentProjects.length === 0 ? (
+                    <p className="text-xs text-muted-foreground py-3 text-center">Aucun projet actif</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {recentProjects.map((p: any) => (
+                        <div key={p.id}
+                          className="flex items-center justify-between py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => navigate(`/cockpit/projects/${p.id}`)}>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium truncate">{p.name}</p>
+                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                              {p.leads?.name && <span className="truncate">🎯 {p.leads.name}</span>}
+                              {p.budget_amount > 0 && <span>{formatCurrency(p.budget_amount)}</span>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            {p.health_status && (
+                              <span className="text-[10px]">
+                                {p.health_status === 'on_track' ? '🟢' : p.health_status === 'at_risk' ? '🟡' : '🔴'}
+                              </span>
+                            )}
+                            <Badge variant="outline" className="text-[9px] px-1 py-0 capitalize">{p.status}</Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Activity Feed */}
+              <Card className="flex-1 min-h-0">
+                <CardHeader className="pb-1.5 pt-3 px-3">
                   <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <Activity className="h-3.5 w-3.5" /> Activité récente
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-0 px-3 pb-2 flex-1 min-h-0">
-                  <ScrollArea className="h-full">
+                <CardContent className="pt-0 px-3 pb-2">
+                  <ScrollArea className="max-h-[300px]">
                     {activitiesLoading ? (
                       <div className="space-y-2">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div>
                     ) : meaningfulActivities.length === 0 ? (
@@ -521,18 +727,35 @@ export default function CockpitDashboard() {
                     ) : (
                       <div className="space-y-0.5">
                         {meaningfulActivities.map(a => (
-                          <div key={a.id} className={cn(
-                            "flex items-start gap-2 py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors",
-                            a.is_ai_generated && "border-l-2 border-primary/30 pl-2.5"
-                          )}>
+                          <div key={a.id}
+                            className={cn(
+                              "flex items-start gap-2 py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer",
+                              a.is_ai_generated && "border-l-2 border-primary/30 pl-2.5"
+                            )}
+                            onClick={() => {
+                              // Navigate to the related entity
+                              const entityRoutes: Record<string, string> = {
+                                lead: `/cockpit/leads/${a.entity_id}`,
+                                opportunity: `/cockpit/pipeline`,
+                                project: `/cockpit/projects/${a.entity_id}`,
+                                transcription: `/cockpit/transcriptions/${a.entity_id}`,
+                                partner: `/cockpit/partenaires/${a.entity_id}`,
+                                task: `/cockpit/projects`,
+                              };
+                              const route = entityRoutes[a.entity_type] || '/cockpit';
+                              navigate(route);
+                            }}>
                             <ActivityIcon type={a.activity_type} isAI={!!a.is_ai_generated} />
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-medium truncate">{a.title}</p>
-                              <p className="text-[10px] text-muted-foreground">
-                                {a.is_ai_generated && <span className="text-primary mr-1">🤖</span>}
-                                {formatDistanceToNow(new Date(a.created_at!), { addSuffix: true, locale: fr })}
-                              </p>
+                              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                {a.is_ai_generated && <span className="text-primary">🤖</span>}
+                                <span className="capitalize">{a.entity_type}</span>
+                                <span>·</span>
+                                <span>{formatDistanceToNow(new Date(a.created_at!), { addSuffix: true, locale: fr })}</span>
+                              </div>
                             </div>
+                            <ExternalLink className="h-3 w-3 text-muted-foreground/40 flex-shrink-0 mt-1" />
                           </div>
                         ))}
                       </div>
@@ -550,8 +773,18 @@ export default function CockpitDashboard() {
   );
 }
 
-// ─── AI Smart Headline ───
+// ─── Navigation helper ───
+function navigateToEntity(navigate: ReturnType<typeof useNavigate>, alert: SentinelAlert) {
+  const routes: Record<string, string> = {
+    lead: `/cockpit/leads/${alert.entity_id}`,
+    opportunity: `/cockpit/pipeline`,
+    project: `/cockpit/projects/${alert.entity_id}`,
+    partner: `/cockpit/partenaires/${alert.entity_id}`,
+  };
+  navigate(routes[alert.entity_type] || '/cockpit');
+}
 
+// ─── AI Smart Headline (enriched) ───
 function getSmartHeadline(ctx: {
   humanOverdue: number;
   criticalAlerts: number;
@@ -559,6 +792,8 @@ function getSmartHeadline(ctx: {
   todayBookings: number;
   overdueAi: number;
   staleQueue: number;
+  recentTranscriptions: number;
+  activeProjects: number;
 }): string {
   if (ctx.criticalAlerts > 0) {
     return `⚠️ ${ctx.criticalAlerts} alerte${ctx.criticalAlerts > 1 ? 's' : ''} critique${ctx.criticalAlerts > 1 ? 's' : ''} à traiter`;
@@ -584,16 +819,62 @@ function getSmartHeadline(ctx: {
   if (ctx.todayBookings > 0) {
     return `${ctx.todayBookings} rendez-vous aujourd'hui`;
   }
+  if (ctx.activeProjects > 0) {
+    return `${ctx.activeProjects} projets actifs — tout est calme`;
+  }
   return 'Tout est calme — bon moment pour prospecter';
 }
 
-// ─── Health Check Widget ───
+// ─── Opportunity Scoring Widget (NEW) ───
+function OpportunityScoringWidget({ opportunityScore, navigate }: { opportunityScore: any; navigate: any }) {
+  if (!opportunityScore.data?.scores?.length) return null;
+  const scores = opportunityScore.data.scores as any[];
+  const topScores = scores.sort((a: any, b: any) => b.conversion_score - a.conversion_score).slice(0, 4);
 
-function HealthCheckWidget({ healthCheck }: { healthCheck: any }) {
+  return (
+    <Card>
+      <CardHeader className="pb-1 pt-3 px-3">
+        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <BarChart3 className="h-3.5 w-3.5" /> Scoring Prédictif
+          {opportunityScore.isPending && <Loader2 className="h-3 w-3 animate-spin ml-1" />}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0 px-3 pb-2">
+        <div className="space-y-1.5">
+          {topScores.map((s: any) => (
+            <div key={s.opportunity_id}
+              className="flex items-center gap-2 py-1 px-1.5 rounded hover:bg-muted/50 cursor-pointer transition-colors"
+              onClick={() => navigate('/cockpit/pipeline')}>
+              <div className="flex-shrink-0 w-8 text-center">
+                <span className={cn("text-xs font-bold",
+                  s.conversion_score >= 70 ? "text-emerald-600" :
+                  s.conversion_score >= 40 ? "text-amber-600" : "text-destructive"
+                )}>{s.conversion_score}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs truncate">{s.opportunity_title}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{s.recommended_action}</p>
+              </div>
+              <Badge variant={
+                s.risk_level === 'low' ? 'secondary' :
+                s.risk_level === 'medium' ? 'outline' : 'destructive'
+              } className="text-[9px] px-1 py-0">
+                {s.risk_level === 'low' ? '🟢' : s.risk_level === 'medium' ? '🟡' : '🔴'}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Health Check Widget ───
+function HealthCheckWidget({ healthCheck, navigate }: { healthCheck: any; navigate: any }) {
   if (!healthCheck.data?.summary) return null;
   const { summary } = healthCheck.data;
   return (
-    <Card className="flex-shrink-0">
+    <Card>
       <CardHeader className="pb-1 pt-3 px-3">
         <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
           <Shield className="h-3.5 w-3.5" /> Santé Projets
@@ -615,11 +896,16 @@ function HealthCheckWidget({ healthCheck }: { healthCheck: any }) {
             <p className="text-[10px] text-muted-foreground">🔴 Danger</p>
           </div>
         </div>
-        {healthCheck.data.projects?.filter((p: any) => p.computed_health === 'off_track').slice(0, 2).map((p: any) => (
-          <div key={p.project_id} className="flex items-center gap-2 mt-1.5 text-xs">
-            <AlertTriangle className="h-3 w-3 text-destructive flex-shrink-0" />
+        {healthCheck.data.projects?.filter((p: any) => p.computed_health !== 'on_track').slice(0, 3).map((p: any) => (
+          <div key={p.project_id}
+            className="flex items-center gap-2 mt-1.5 text-xs cursor-pointer hover:bg-muted/30 rounded p-0.5"
+            onClick={() => navigate(`/cockpit/projects/${p.project_id}`)}>
+            {p.computed_health === 'off_track' ?
+              <AlertTriangle className="h-3 w-3 text-destructive flex-shrink-0" /> :
+              <AlertCircle className="h-3 w-3 text-amber-500 flex-shrink-0" />
+            }
             <span className="truncate text-muted-foreground">{p.project_name}</span>
-            <span className="text-[10px] text-destructive flex-shrink-0">{p.risk_factors?.[0]}</span>
+            <span className="text-[10px] text-muted-foreground flex-shrink-0 ml-auto">{p.risk_factors?.[0]}</span>
           </div>
         ))}
       </CardContent>
@@ -628,11 +914,9 @@ function HealthCheckWidget({ healthCheck }: { healthCheck: any }) {
 }
 
 // ─── Sentinel Widget (col 3) ───
-
 function SentinelWidget({ alerts, lastFetched }: { alerts: SentinelAlert[]; lastFetched: Date | null }) {
   const navigate = useNavigate();
   const criticalCount = alerts.filter(a => a.severity === 'critical').length;
-  const warningCount = alerts.filter(a => a.severity === 'warning').length;
 
   if (alerts.length === 0) return null;
 
@@ -662,15 +946,7 @@ function SentinelWidget({ alerts, lastFetched }: { alerts: SentinelAlert[]; last
                   "w-full text-left flex items-start gap-2 p-1.5 rounded text-xs hover:bg-muted/50 transition-colors",
                   isCritical ? "text-destructive" : "text-muted-foreground"
                 )}
-                onClick={() => {
-                  const routes: Record<string, string> = {
-                    lead: `/cockpit/leads/${alert.entity_id}`,
-                    opportunity: '/cockpit/leads',
-                    project: `/cockpit/projects/${alert.entity_id}`,
-                    partner: `/cockpit/partenaires/${alert.entity_id}`,
-                  };
-                  navigate(routes[alert.entity_type] || '/cockpit');
-                }}
+                onClick={() => navigateToEntity(navigate, alert)}
               >
                 {isCritical ? <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" /> : <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0 text-amber-500" />}
                 <span className="truncate">{alert.entity_name}: {alert.question}</span>
@@ -687,7 +963,6 @@ function SentinelWidget({ alerts, lastFetched }: { alerts: SentinelAlert[]; last
 }
 
 // ─── Sentinel Button (inline in header) ───
-
 const severityConfig = {
   critical: { icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10', badge: 'destructive' as const },
   warning: { icon: AlertTriangle, color: 'text-amber-500', bg: 'bg-amber-500/10', badge: 'secondary' as const },
@@ -729,8 +1004,11 @@ function SentinelButton({ alerts, isLoading, onRefresh, onDismiss, lastFetched }
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>
-            {hasAlerts ? `${alerts.length} point${alerts.length > 1 ? 's' : ''} Sentinelle` : 'Sentinelle — RAS'}
+          <TooltipContent side="bottom">
+            {hasAlerts
+              ? `IA Sentinelle : ${alerts.length} anomalie${alerts.length > 1 ? 's' : ''} détectée${alerts.length > 1 ? 's' : ''}`
+              : 'IA Sentinelle — Aucune anomalie'
+            }
           </TooltipContent>
         </Tooltip>
       </PopoverTrigger>
@@ -773,15 +1051,7 @@ function SentinelButton({ alerts, isLoading, onRefresh, onDismiss, lastFetched }
                         <p className="text-[10px] text-muted-foreground mt-0.5">{alert.entity_name} · {alert.entity_type}</p>
                         <div className="flex gap-1 mt-1">
                           <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]"
-                            onClick={() => {
-                              setOpen(false);
-                              const routes: Record<string, string> = {
-                                lead: `/cockpit/leads/${alert.entity_id}`,
-                                opportunity: '/cockpit/leads',
-                                project: `/cockpit/projects/${alert.entity_id}`,
-                              };
-                              navigate(routes[alert.entity_type] || '/cockpit');
-                            }}>
+                            onClick={() => { setOpen(false); navigateToEntity(navigate, alert); }}>
                             Voir <ChevronRight className="w-2.5 h-2.5 ml-0.5" />
                           </Button>
                           <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px] text-muted-foreground"
@@ -822,10 +1092,19 @@ function MiniStat({ icon: Icon, label, value, subtitle, loading, onClick }: {
   );
 }
 
-function TaskRow({ task, showDate }: { task: any; showDate?: boolean }) {
+function TaskRow({ task, showDate, navigate }: { task: any; showDate?: boolean; navigate: any }) {
   const provenance = task.leads?.name || task.leads?.company || task.projects?.name || '';
+  const handleClick = () => {
+    // Navigate to the entity linked to the task
+    if (task.entity_type === 'lead' && task.entity_id) navigate(`/cockpit/leads/${task.entity_id}`);
+    else if (task.entity_type === 'project' && task.entity_id) navigate(`/cockpit/projects/${task.entity_id}`);
+    else if (task.lead_id) navigate(`/cockpit/leads/${task.lead_id}`);
+    else if (task.project_id) navigate(`/cockpit/projects/${task.project_id}`);
+  };
+
   return (
-    <div className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted/50 transition-colors">
+    <div className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
+      onClick={handleClick}>
       <div className="flex-shrink-0">
         {task.priority === 'high' || task.priority === 'urgent' ? (
           <div className="h-2 w-2 rounded-full bg-destructive" />
@@ -847,8 +1126,10 @@ function TaskRow({ task, showDate }: { task: any; showDate?: boolean }) {
             <TooltipTrigger asChild>
               <Badge variant="secondary" className="text-[9px] px-1 py-0 cursor-help">IA</Badge>
             </TooltipTrigger>
-            <TooltipContent className="text-xs">
-              Tâche générée par l'IA{task.ai_source ? ` · Source: ${task.ai_source}` : ''}
+            <TooltipContent className="text-xs max-w-[200px]">
+              Tâche générée par l'IA
+              {task.entity_type && <span> · Liée à: {task.entity_type}</span>}
+              {task.ai_source && <span> · Source: {task.ai_source}</span>}
             </TooltipContent>
           </Tooltip>
         )}
@@ -866,7 +1147,7 @@ function StagnantWidget({ onSuggestFollowUp, suggestNextStep }: { onSuggestFollo
       ago.setDate(ago.getDate() - 7);
       const { data } = await supabase
         .from('opportunities')
-        .select('id, title, stage, updated_at')
+        .select('id, title, stage, updated_at, lead_id, value_amount')
         .lt('updated_at', ago.toISOString())
         .not('stage', 'in', '(closed_won,closed_lost)')
         .order('updated_at', { ascending: true })
@@ -879,47 +1160,48 @@ function StagnantWidget({ onSuggestFollowUp, suggestNextStep }: { onSuggestFollo
   if (isLoading || stagnant.length === 0) return null;
 
   return (
-    <Card className="border-destructive/20 flex-1 min-h-0 flex flex-col">
-      <CardHeader className="pb-1.5 pt-3 px-3 flex-shrink-0">
+    <Card className="border-destructive/20">
+      <CardHeader className="pb-1.5 pt-3 px-3">
         <CardTitle className="text-xs font-semibold uppercase tracking-wider text-destructive flex items-center gap-1.5">
           <AlertCircle className="h-3.5 w-3.5" /> Inactif +7j
           <Badge variant="destructive" className="text-[10px] px-1.5 py-0 ml-auto">{stagnant.length}</Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0 px-3 pb-2 flex-1 min-h-0">
-        <ScrollArea className="h-full">
-          {stagnant.map((opp: any) => (
-            <div key={opp.id}
-              className="flex items-center justify-between py-1.5 px-1.5 rounded transition-colors group">
-              <div className="min-w-0 cursor-pointer hover:bg-muted/50 flex-1" onClick={() => navigate('/cockpit/pipeline')}>
-                <p className="text-xs font-medium truncate">{opp.title}</p>
-                <p className="text-[10px] text-muted-foreground capitalize">{STAGE_LABELS[opp.stage] || opp.stage}</p>
-              </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <span className="text-[10px] text-muted-foreground">
-                  {formatDistanceToNow(new Date(opp.updated_at), { locale: fr })}
-                </span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost" size="sm"
-                      className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => { e.stopPropagation(); onSuggestFollowUp(opp.id); }}
-                      disabled={suggestNextStep.isPending}
-                    >
-                      {suggestNextStep.isPending ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Zap className="h-3 w-3 text-primary" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>💡 Suggestion IA de relance</TooltipContent>
-                </Tooltip>
+      <CardContent className="pt-0 px-3 pb-2">
+        {stagnant.map((opp: any) => (
+          <div key={opp.id}
+            className="flex items-center justify-between py-1.5 px-1.5 rounded transition-colors group">
+            <div className="min-w-0 cursor-pointer hover:bg-muted/50 flex-1" onClick={() => navigate('/cockpit/pipeline')}>
+              <p className="text-xs font-medium truncate">{opp.title}</p>
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span className="capitalize">{STAGE_LABELS[opp.stage] || opp.stage}</span>
+                {opp.value_amount > 0 && <span>· {formatCurrency(opp.value_amount)}</span>}
               </div>
             </div>
-          ))}
-        </ScrollArea>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <span className="text-[10px] text-muted-foreground">
+                {formatDistanceToNow(new Date(opp.updated_at), { locale: fr })}
+              </span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost" size="sm"
+                    className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => { e.stopPropagation(); onSuggestFollowUp(opp.id); }}
+                    disabled={suggestNextStep.isPending}
+                  >
+                    {suggestNextStep.isPending ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Zap className="h-3 w-3 text-primary" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>💡 Suggestion IA de relance</TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+        ))}
       </CardContent>
     </Card>
   );
@@ -935,13 +1217,14 @@ function ActivityIcon({ type, isAI }: { type: string; isAI?: boolean }) {
     meeting_scheduled: <Calendar className="h-3.5 w-3.5 text-primary" />,
     new_lead: <Users className="h-3.5 w-3.5 text-emerald-500" />,
     new_opportunity: <Target className="h-3.5 w-3.5 text-amber-500" />,
-    new_transcription: <FileText className="h-3.5 w-3.5 text-blue-500" />,
+    new_transcription: <Mic className="h-3.5 w-3.5 text-blue-500" />,
     new_booking: <Calendar className="h-3.5 w-3.5 text-violet-500" />,
     new_generated_document: <FileText className="h-3.5 w-3.5 text-orange-500" />,
     new_project: <TrendingUp className="h-3.5 w-3.5 text-teal-500" />,
     note: <FileText className="h-3.5 w-3.5 text-primary" />,
     ai_action: <Brain className="h-3.5 w-3.5 text-primary" />,
     synthesis_generated: <Database className="h-3.5 w-3.5 text-primary" />,
+    email_draft_generated: <Mail className="h-3.5 w-3.5 text-primary" />,
   };
 
   if (isAI && !icons[type]) {
