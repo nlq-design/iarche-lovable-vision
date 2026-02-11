@@ -174,8 +174,5 @@ verify_jwt = false
 [functions.cockpit-ai-copilot]
 verify_jwt = false
 
-[functions.auto-consulte-stale]
-verify_jwt = false
-
-[functions.auto-harvest-daily]
+[functions.cockpit-chatbot-v2]
 verify_jwt = false
