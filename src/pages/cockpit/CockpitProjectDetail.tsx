@@ -82,6 +82,7 @@ import { LinkedGeneratedDocumentsSection } from '@/components/cockpit/LinkedGene
 
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
+import { InterviewModeDialog } from '@/components/cockpit/InterviewModeDialog';
 
 type Project = Database['public']['Tables']['projects']['Row'];
 type Lead = Database['public']['Tables']['leads']['Row'];
@@ -101,6 +102,7 @@ const CockpitProjectDetail = () => {
   const [formData, setFormData] = useState<Partial<Project> & { lead_id?: string | null; solution_id?: string | null }>({});
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [interviewOpen, setInterviewOpen] = useState(false);
   
   // Dialog states for adding items
   const [showAddNoteDialog, setShowAddNoteDialog] = useState(false);
@@ -313,6 +315,15 @@ const CockpitProjectDetail = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-sm gap-1.5"
+              onClick={() => setInterviewOpen(true)}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Enrichir IA</span>
+            </Button>
             <Button
               size="sm"
               className="h-8 text-sm"
@@ -982,6 +993,14 @@ const CockpitProjectDetail = () => {
         onOpenChange={setShowAddTaskDialog}
         defaultEntityType="project"
         defaultEntityId={id}
+      />
+
+      <InterviewModeDialog
+        open={interviewOpen}
+        onOpenChange={setInterviewOpen}
+        entityType="project"
+        entityId={id!}
+        entityName={project.name || 'Projet'}
       />
     </CockpitLayout>
   );

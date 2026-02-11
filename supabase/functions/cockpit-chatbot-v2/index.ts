@@ -168,17 +168,81 @@ async function handleChatMode(
     { role: "user" as const, content: userMessage.content },
   ];
 
-  // Call LLM with correct signature: callLLM(messages, options)
+  // Call LLM with tool calling for action proposals
+  const tools = [
+    {
+      type: "function",
+      function: {
+        name: "propose_action",
+        description: "Propose une action concrète à valider par l'utilisateur (créer tâche, envoyer email, mettre à jour un lead, etc.)",
+        parameters: {
+          type: "object",
+          properties: {
+            action_type: { type: "string", enum: ["create_task", "send_email", "update_lead", "schedule_meeting", "create_note"] },
+            action_label: { type: "string", description: "Description courte de l'action proposée" },
+            action_payload: { type: "object", description: "Données de l'action (titre, contenu, etc.)" },
+            ai_reasoning: { type: "string", description: "Explication courte de pourquoi cette action est pertinente" },
+          },
+          required: ["action_type", "action_label", "action_payload"],
+          additionalProperties: false,
+        },
+      },
+    },
+  ];
+
   const responseContent = await callLLM(llmMessages, {
     functionName: "cockpit-chatbot-v2",
     model: "google/gemini-3-flash-preview",
     temperature: 0.7,
     maxTokens: 1024,
     workspaceId,
+    tools,
   });
 
+  // Check if response contains tool calls (action proposals)
+  let messageText = responseContent;
+  const actionProposals: Array<{ action_type: string; action_label: string; action_payload: unknown; ai_reasoning?: string }> = [];
+
+  // Parse potential JSON tool call responses
+  try {
+    if (typeof responseContent === "object" && responseContent !== null) {
+      const rc = responseContent as Record<string, unknown>;
+      if (rc.tool_calls && Array.isArray(rc.tool_calls)) {
+        for (const tc of rc.tool_calls) {
+          const tcObj = tc as Record<string, unknown>;
+          if (tcObj.function) {
+            const fn = tcObj.function as Record<string, unknown>;
+            if (fn.name === "propose_action") {
+              const args = typeof fn.arguments === "string" ? JSON.parse(fn.arguments) : fn.arguments;
+              actionProposals.push(args);
+            }
+          }
+        }
+        messageText = rc.content as string || "J'ai préparé des actions pour toi.";
+      } else if (rc.content) {
+        messageText = rc.content as string;
+      }
+    }
+  } catch (e) {
+    console.warn("[chatbot-v2] Tool call parsing:", e);
+  }
+
+  // Store action proposals in DB
+  for (const proposal of actionProposals) {
+    await supabase.from("action_proposals").insert({
+      workspace_id: workspaceId,
+      user_id: userId,
+      action_type: proposal.action_type,
+      action_label: proposal.action_label,
+      action_payload: proposal.action_payload as Record<string, unknown>,
+      ai_reasoning: proposal.ai_reasoning || null,
+      status: "pending",
+    });
+  }
+
   // Auto-extract memories from conversation
-  const newMemories = extractMemoriesFromConversation(userMessage.content, responseContent);
+  const finalMessage = typeof messageText === "string" ? messageText : JSON.stringify(messageText);
+  const newMemories = extractMemoriesFromConversation(userMessage.content, finalMessage);
   for (const mem of newMemories) {
     await storeMemory(supabase, workspaceId, userId, {
       ...mem,
@@ -187,8 +251,9 @@ async function handleChatMode(
   }
 
   return {
-    message: responseContent,
+    message: finalMessage,
     session_id: sessionId,
+    action_proposals: actionProposals.length > 0 ? actionProposals : undefined,
   };
 }
 
