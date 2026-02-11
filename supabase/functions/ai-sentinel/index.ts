@@ -155,14 +155,19 @@ serve(async (req) => {
     // Load prompt dynamically from ai_prompts table
     // ============================================================
     const prompt = await loadPrompt(supabase, "sentinel-analysis", {
-      system_prompt: `Tu es l'IA Sentinelle d'un CRM commercial. Transforme des anomalies en questions actionnables. Réponds en JSON valide.`,
+      system_prompt: `Tu es l'IA Sentinelle d'un CRM commercial. Transforme des anomalies en questions actionnables.
+IMPORTANT: Tu DOIS répondre UNIQUEMENT avec un tableau JSON valide, sans texte avant ni après. Pas de markdown, pas de commentaires.
+Format attendu: [{"index":0,"severity":"warning","question":"...","detail":"..."},...]`,
     });
 
     const temperature = (prompt.model_config?.temperature as number) ?? 0.7;
 
-    const userPrompt = `Voici ${shuffled.length} anomalies détectées dans le CRM. Transforme-les en questions pour le dirigeant :
+    const userPrompt = `Voici ${shuffled.length} anomalies détectées dans le CRM. Transforme chacune en question actionnable.
+Réponds UNIQUEMENT avec un tableau JSON valide. Aucun texte en dehors du JSON.
 
-${shuffled.map((a, i) => `[${i}] ${a.category} | ${a.entity_type} "${a.entity_name}" | ${a.raw_issue}`).join("\n")}`;
+${shuffled.map((a, i) => `[${i}] ${a.category} | ${a.entity_type} "${a.entity_name}" | ${a.raw_issue}`).join("\n")}
+
+Réponse (JSON uniquement):`;
 
     let alerts: SentinelAlert[] = [];
 
@@ -172,7 +177,7 @@ ${shuffled.map((a, i) => `[${i}] ${a.category} | ${a.entity_type} "${a.entity_na
           { role: "system", content: prompt.system_prompt },
           { role: "user", content: userPrompt },
         ],
-        { functionName: "ai-sentinel", temperature }
+        { functionName: "ai-sentinel", temperature, workspaceId: ws.id }
       );
 
       const cleaned = llmResponse.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();

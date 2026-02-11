@@ -177,8 +177,51 @@ serve(async (req) => {
       }
 
       case "send_email": {
-        // Placeholder - would integrate with email service
-        executionResult = { type: "email_queued", message: "Email en file d'attente (non implémenté)" };
+        const payload = proposal.action_payload as Record<string, unknown>;
+        const recipientEmail = payload.to as string || payload.email as string;
+        if (!recipientEmail) throw new Error("Adresse email du destinataire manquante");
+
+        const resendKey = Deno.env.get("RESEND_API_KEY");
+        if (!resendKey) throw new Error("RESEND_API_KEY non configurée");
+
+        const emailSubject = payload.subject as string || proposal.action_label;
+        const emailBody = payload.body as string || payload.content as string || "";
+        const fromEmail = payload.from as string || "IArche CRM <crm@iarche.fr>";
+
+        const resendResponse = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${resendKey}`,
+          },
+          body: JSON.stringify({
+            from: fromEmail,
+            to: [recipientEmail],
+            subject: emailSubject,
+            html: emailBody,
+          }),
+        });
+
+        if (!resendResponse.ok) {
+          const errText = await resendResponse.text();
+          throw new Error(`Échec envoi email: ${errText}`);
+        }
+
+        const resendData = await resendResponse.json();
+
+        // Log to email_logs
+        await supabase.from("email_logs").insert({
+          email_type: "ai_action",
+          source_type: "action_proposal",
+          source_id: proposal_id,
+          recipient_email: recipientEmail,
+          subject: emailSubject,
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          metadata: { resend_id: resendData.id, ai_generated: true },
+        });
+
+        executionResult = { type: "email_sent", resend_id: resendData.id, to: recipientEmail };
         break;
       }
 

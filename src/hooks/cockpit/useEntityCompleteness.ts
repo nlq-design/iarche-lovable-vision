@@ -28,7 +28,7 @@ const PROJECT_CRITICAL_FIELDS = [
 ] as const;
 
 const OPPORTUNITY_CRITICAL_FIELDS = [
-  { key: 'estimated_value', label: 'Valeur estimée', weight: 3 },
+  { key: 'value_amount', label: 'Valeur estimée', weight: 3 },
   { key: 'stage', label: 'Étape pipeline', weight: 2 },
   { key: 'expected_close_date', label: 'Date clôture prévue', weight: 2 },
   { key: 'lead_id', label: 'Lead lié', weight: 2 },

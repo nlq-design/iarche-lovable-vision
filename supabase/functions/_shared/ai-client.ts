@@ -436,28 +436,30 @@ export class AIClient {
           },
         }),
         
-        // NEW: Unified API metrics table for cross-API governance
-        this.supabase.from('api_usage_metrics').insert({
-          workspace_id: this.options.workspaceId,
-          user_id: this.options.userId,
-          api_name: response.provider,
-          api_category: 'ai',
-          operation_type: 'completion',
-          provider_name: response.provider,
-          model_id: response.model,
-          input_tokens: response.usage.prompt_tokens,
-          output_tokens: response.usage.completion_tokens,
-          request_count: 1,
-          latency_ms: response.latency_ms,
-          success: true,
-          estimated_cost_cents: estimatedCostCents,
-          metadata: {
-            fallback_used: response.fallback_used,
-            category: request.category,
-            has_tools: !!request.tools,
-            function_name: request.category,
-          },
-        }),
+        // NEW: Unified API metrics table for cross-API governance (skip if no workspaceId)
+        ...(this.options.workspaceId ? [
+          this.supabase.from('api_usage_metrics').insert({
+            workspace_id: this.options.workspaceId,
+            user_id: this.options.userId,
+            api_name: response.provider,
+            api_category: 'ai',
+            operation_type: 'completion',
+            provider_name: response.provider,
+            model_id: response.model,
+            input_tokens: response.usage.prompt_tokens,
+            output_tokens: response.usage.completion_tokens,
+            request_count: 1,
+            latency_ms: response.latency_ms,
+            success: true,
+            estimated_cost_cents: estimatedCostCents,
+            metadata: {
+              fallback_used: response.fallback_used,
+              category: request.category,
+              has_tools: !!request.tools,
+              function_name: request.category,
+            },
+          }),
+        ] : []),
       ]);
       
       // Update workspace quota usage
