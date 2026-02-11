@@ -32,14 +32,24 @@ export const useAuth = () => {
       return;
     }
 
-    const { data, error } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .eq('role', 'admin')
-      .maybeSingle();
+    try {
+      // Add a 10s timeout to prevent infinite loading on DB issues
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 10000)
+      );
+      const query = supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'admin')
+        .maybeSingle();
 
-    setIsAdmin(!error && data !== null);
+      const { data, error } = await Promise.race([query, timeout]);
+      setIsAdmin(!error && data !== null);
+    } catch (err) {
+      console.error('Admin role check failed (timeout or error):', err);
+      setIsAdmin(false);
+    }
     setLoading(false);
   };
 
