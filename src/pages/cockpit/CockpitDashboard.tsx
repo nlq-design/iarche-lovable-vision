@@ -1,4 +1,4 @@
-// Cockpit Dashboard v5.1 — Command Center with AI Logic
+// Cockpit Dashboard v6.0 — Dynamic AI Command Center
 import { useState, useEffect } from 'react';
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,12 +9,14 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTr
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Progress } from '@/components/ui/progress';
 import {
   Users, Target, Calendar, TrendingUp, Clock,
   CheckCircle2, Plus, FileText, Mail, Phone,
   Activity, Wheat, ArrowRight, Sparkles, AlertCircle,
   ChevronRight, Radar, Brain, RefreshCw, Loader2,
-  AlertTriangle, Info, XCircle, X,
+  AlertTriangle, Info, XCircle, X, Shield, Zap,
+  Database,
 } from 'lucide-react';
 import {
   useCockpitLeads, useCockpitOpportunities, useCockpitTasks,
@@ -23,6 +25,7 @@ import {
 import { useDashboardRealtime } from '@/hooks/cockpit/useDashboardRealtime';
 import { useCockpitAICopilot } from '@/hooks/cockpit/useCockpitAICopilot';
 import { useAISentinel, SentinelAlert } from '@/hooks/cockpit/useAISentinel';
+import { useAutoConsulte } from '@/hooks/cockpit/useAutoConsulte';
 import { CreateTaskDialog } from '@/components/cockpit/dialogs';
 import { HarvestInterviewPanel } from '@/components/cockpit/HarvestInterviewPanel';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -63,8 +66,28 @@ export default function CockpitDashboard() {
   const { activities, isLoading: activitiesLoading } = useCockpitActivityLog();
 
   // ─── AI hooks ───
-  const { morningBrief } = useCockpitAICopilot();
-  const { alerts: sentinelAlerts, isLoading: sentinelLoading, refresh: refreshSentinel, dismissAlert } = useAISentinel();
+  const { morningBrief, opportunityScore, healthCheck, suggestNextStep } = useCockpitAICopilot();
+  const { alerts: sentinelAlerts, isLoading: sentinelLoading, refresh: refreshSentinel, dismissAlert, lastFetched: sentinelLastFetched } = useAISentinel();
+  const { isRunning: isAutoRunning, triggerAutoConsulte, triggerAutoHarvest } = useAutoConsulte();
+
+  // ─── Synthesis stale queue count ───
+  const { data: staleCount = 0, refetch: refetchStale } = useQuery({
+    queryKey: ['synthesis-stale-count'],
+    queryFn: async () => {
+      const tables = ['leads', 'projects', 'partners'] as const;
+      let total = 0;
+      for (const table of tables) {
+        const { count } = await supabase
+          .from(table)
+          .select('id', { count: 'exact', head: true })
+          .eq('synthesis_stale', true);
+        total += count || 0;
+      }
+      return total;
+    },
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
 
   const isLoading = leadsLoading || oppsLoading || tasksLoading || bookingsLoading;
 
@@ -93,19 +116,17 @@ export default function CockpitDashboard() {
 
   const NOISE_ACTIVITY_TYPES = ['new_task', 'task_created'];
   const meaningfulActivities = activities.filter(a =>
-    !NOISE_ACTIVITY_TYPES.includes(a.activity_type) && !a.is_ai_generated
+    !NOISE_ACTIVITY_TYPES.includes(a.activity_type)
   ).slice(0, 12);
 
-  // ─── Conditional AI: determine what's important ───
+  // ─── Conditional AI context ───
   const criticalAlerts = sentinelAlerts.filter(a => a.severity === 'critical');
-  const warningAlerts = sentinelAlerts.filter(a => a.severity === 'warning');
   const hasUrgentContext = humanOverdue > 0 || criticalAlerts.length > 0 || overdueAiCount > 10;
 
-  // Auto-fetch morning brief on mount (once per session)
+  // Auto-fetch morning brief on mount
   const [briefFetched, setBriefFetched] = useState(false);
   useEffect(() => {
     if (!briefFetched && !morningBrief.isPending && !morningBrief.data) {
-      // Delay to let dashboard data load first
       const timer = setTimeout(() => {
         morningBrief.mutate();
         setBriefFetched(true);
@@ -113,6 +134,31 @@ export default function CockpitDashboard() {
       return () => clearTimeout(timer);
     }
   }, [briefFetched, morningBrief]);
+
+  // Auto-trigger health check on mount
+  const [healthFetched, setHealthFetched] = useState(false);
+  useEffect(() => {
+    if (!healthFetched && !healthCheck.isPending && !healthCheck.data) {
+      const timer = setTimeout(() => {
+        healthCheck.mutate();
+        setHealthFetched(true);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [healthFetched, healthCheck]);
+
+  const handleAutoConsulte = async () => {
+    try {
+      await triggerAutoConsulte();
+      refetchStale();
+    } catch {}
+  };
+
+  const handleAutoHarvest = async () => {
+    try {
+      await triggerAutoHarvest();
+    } catch {}
+  };
 
   return (
     <CockpitLayout>
@@ -137,7 +183,6 @@ export default function CockpitDashboard() {
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  {/* Smart one-liner based on context */}
                   <p className="text-sm font-semibold truncate">
                     {getSmartHeadline({
                       humanOverdue,
@@ -145,6 +190,7 @@ export default function CockpitDashboard() {
                       todayTasks: todayTasks.length,
                       todayBookings: todayBookings?.length || 0,
                       overdueAi: overdueAiCount,
+                      staleQueue: staleCount,
                     })}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
@@ -166,6 +212,28 @@ export default function CockpitDashboard() {
 
               {/* Right: action buttons */}
               <div className="flex items-center gap-1.5 flex-shrink-0">
+                {/* Auto-Consulte sync */}
+                {staleCount > 0 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline" size="sm"
+                        className="h-8 gap-1.5 border-blue-500/30 text-blue-600 hover:bg-blue-500/10"
+                        onClick={handleAutoConsulte}
+                        disabled={isAutoRunning}
+                      >
+                        {isAutoRunning ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Database className="h-3.5 w-3.5" />
+                        )}
+                        <span className="text-xs font-semibold">{staleCount}</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{staleCount} entités à re-synthétiser — Cliquez pour lancer</TooltipContent>
+                  </Tooltip>
+                )}
+
                 {/* Morning Brief expand */}
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -193,6 +261,7 @@ export default function CockpitDashboard() {
                   isLoading={sentinelLoading}
                   onRefresh={refreshSentinel}
                   onDismiss={dismissAlert}
+                  lastFetched={sentinelLastFetched}
                 />
 
                 {/* Harvest */}
@@ -228,10 +297,30 @@ export default function CockpitDashboard() {
             </div>
           </div>
 
-          {/* Row 2: Morning Brief expanded (conditional) */}
+          {/* Row 2: Condensed brief preview (always visible if data) */}
+          {!briefOpen && morningBrief.data?.brief && (
+            <div className="border-t bg-card/30 px-4 py-1.5 cursor-pointer hover:bg-card/50 transition-colors"
+              onClick={() => setBriefOpen(true)}>
+              <div className="max-w-[1600px] mx-auto flex items-center gap-2">
+                <Sparkles className="h-3 w-3 text-primary flex-shrink-0" />
+                <p className="text-xs text-muted-foreground truncate">
+                  {morningBrief.data.brief.split('\n').filter(l => l.trim()).slice(0, 2).join(' · ').slice(0, 150)}...
+                </p>
+                <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              </div>
+            </div>
+          )}
+
+          {/* Row 2b: Morning Brief expanded (conditional) */}
           {briefOpen && (
             <div className="border-t bg-card/50 px-4 py-3">
               <div className="max-w-[1600px] mx-auto">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Morning Brief</span>
+                  <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setBriefOpen(false)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
                 {morningBrief.isPending ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -244,7 +333,7 @@ export default function CockpitDashboard() {
                 ) : morningBrief.isError ? (
                   <div className="flex items-center gap-2 text-sm text-destructive">
                     <AlertCircle className="h-4 w-4" />
-                    Erreur lors du briefing — <Button variant="link" size="sm" className="px-0 h-auto" onClick={() => morningBrief.mutate()}>Réessayer</Button>
+                    Erreur — <Button variant="link" size="sm" className="px-0 h-auto" onClick={() => morningBrief.mutate()}>Réessayer</Button>
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground">Chargement...</p>
@@ -253,7 +342,7 @@ export default function CockpitDashboard() {
             </div>
           )}
 
-          {/* Row 3: Critical sentinel alerts inline (conditional) */}
+          {/* Row 3: Critical sentinel alerts inline */}
           {criticalAlerts.length > 0 && !briefOpen && (
             <div className="border-t bg-destructive/5 px-4 py-1.5">
               <div className="max-w-[1600px] mx-auto flex items-center gap-3 overflow-x-auto">
@@ -355,7 +444,7 @@ export default function CockpitDashboard() {
               </Card>
             </div>
 
-            {/* ─── COL 2: Pipeline ─── */}
+            {/* ─── COL 2: Pipeline + Health ─── */}
             <div className="lg:col-span-4 flex flex-col gap-3 min-h-0">
               <Card className="flex-shrink-0 cursor-pointer hover:border-primary/30 transition-colors" onClick={() => navigate('/cockpit/pipeline')}>
                 <CardHeader className="pb-1.5 pt-3 px-3">
@@ -400,17 +489,23 @@ export default function CockpitDashboard() {
                 </CardContent>
               </Card>
 
+              {/* Health Check Widget */}
+              <HealthCheckWidget healthCheck={healthCheck} />
+
               <div className="grid grid-cols-3 gap-2 flex-shrink-0">
                 <MiniStat icon={Users} label="Leads" value={leadStats.total} loading={leadsLoading} onClick={() => navigate('/cockpit/leads')} />
                 <MiniStat icon={Target} label="Opps" value={oppStats.total} loading={oppsLoading} onClick={() => navigate('/cockpit/pipeline')} />
                 <MiniStat icon={FileText} label="Notes" value={noteStats.thisWeek} subtitle="sem." loading={false} onClick={() => navigate('/cockpit/transcriptions')} />
               </div>
 
-              <StagnantWidget />
+              <StagnantWidget onSuggestFollowUp={(entityId) => suggestNextStep.mutate(entityId)} suggestNextStep={suggestNextStep} />
             </div>
 
-            {/* ─── COL 3: Activité ─── */}
-            <div className="lg:col-span-4 flex flex-col min-h-0">
+            {/* ─── COL 3: Activité + Sentinel Widget ─── */}
+            <div className="lg:col-span-4 flex flex-col gap-3 min-h-0">
+              {/* Sentinel summary widget */}
+              <SentinelWidget alerts={sentinelAlerts} lastFetched={sentinelLastFetched} />
+
               <Card className="flex flex-col flex-1 min-h-0">
                 <CardHeader className="pb-1.5 pt-3 px-3 flex-shrink-0">
                   <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -426,11 +521,15 @@ export default function CockpitDashboard() {
                     ) : (
                       <div className="space-y-0.5">
                         {meaningfulActivities.map(a => (
-                          <div key={a.id} className="flex items-start gap-2 py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors">
-                            <ActivityIcon type={a.activity_type} />
+                          <div key={a.id} className={cn(
+                            "flex items-start gap-2 py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors",
+                            a.is_ai_generated && "border-l-2 border-primary/30 pl-2.5"
+                          )}>
+                            <ActivityIcon type={a.activity_type} isAI={!!a.is_ai_generated} />
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-medium truncate">{a.title}</p>
                               <p className="text-[10px] text-muted-foreground">
+                                {a.is_ai_generated && <span className="text-primary mr-1">🤖</span>}
                                 {formatDistanceToNow(new Date(a.created_at!), { addSuffix: true, locale: fr })}
                               </p>
                             </div>
@@ -459,8 +558,8 @@ function getSmartHeadline(ctx: {
   todayTasks: number;
   todayBookings: number;
   overdueAi: number;
+  staleQueue: number;
 }): string {
-  // Priority-based conditional logic
   if (ctx.criticalAlerts > 0) {
     return `⚠️ ${ctx.criticalAlerts} alerte${ctx.criticalAlerts > 1 ? 's' : ''} critique${ctx.criticalAlerts > 1 ? 's' : ''} à traiter`;
   }
@@ -477,12 +576,114 @@ function getSmartHeadline(ctx: {
     return `${ctx.todayTasks} tâche${ctx.todayTasks > 1 ? 's' : ''} au programme`;
   }
   if (ctx.overdueAi > 20) {
-    return `🌾 ${ctx.overdueAi} tâches IA à récolter — pensez à les traiter`;
+    return `🌾 ${ctx.overdueAi} tâches IA à récolter`;
+  }
+  if (ctx.staleQueue > 0) {
+    return `🔄 ${ctx.staleQueue} synthèses à mettre à jour`;
   }
   if (ctx.todayBookings > 0) {
     return `${ctx.todayBookings} rendez-vous aujourd'hui`;
   }
   return 'Tout est calme — bon moment pour prospecter';
+}
+
+// ─── Health Check Widget ───
+
+function HealthCheckWidget({ healthCheck }: { healthCheck: any }) {
+  if (!healthCheck.data?.summary) return null;
+  const { summary } = healthCheck.data;
+  return (
+    <Card className="flex-shrink-0">
+      <CardHeader className="pb-1 pt-3 px-3">
+        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <Shield className="h-3.5 w-3.5" /> Santé Projets
+          {healthCheck.isPending && <Loader2 className="h-3 w-3 animate-spin ml-1" />}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0 px-3 pb-2">
+        <div className="flex gap-2">
+          <div className="flex-1 text-center p-1.5 rounded bg-emerald-500/10">
+            <p className="text-lg font-bold text-emerald-600">{summary.on_track}</p>
+            <p className="text-[10px] text-muted-foreground">🟢 OK</p>
+          </div>
+          <div className="flex-1 text-center p-1.5 rounded bg-amber-500/10">
+            <p className="text-lg font-bold text-amber-600">{summary.at_risk}</p>
+            <p className="text-[10px] text-muted-foreground">🟡 Risque</p>
+          </div>
+          <div className="flex-1 text-center p-1.5 rounded bg-destructive/10">
+            <p className="text-lg font-bold text-destructive">{summary.off_track}</p>
+            <p className="text-[10px] text-muted-foreground">🔴 Danger</p>
+          </div>
+        </div>
+        {healthCheck.data.projects?.filter((p: any) => p.computed_health === 'off_track').slice(0, 2).map((p: any) => (
+          <div key={p.project_id} className="flex items-center gap-2 mt-1.5 text-xs">
+            <AlertTriangle className="h-3 w-3 text-destructive flex-shrink-0" />
+            <span className="truncate text-muted-foreground">{p.project_name}</span>
+            <span className="text-[10px] text-destructive flex-shrink-0">{p.risk_factors?.[0]}</span>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Sentinel Widget (col 3) ───
+
+function SentinelWidget({ alerts, lastFetched }: { alerts: SentinelAlert[]; lastFetched: Date | null }) {
+  const navigate = useNavigate();
+  const criticalCount = alerts.filter(a => a.severity === 'critical').length;
+  const warningCount = alerts.filter(a => a.severity === 'warning').length;
+
+  if (alerts.length === 0) return null;
+
+  return (
+    <Card className={cn("flex-shrink-0", criticalCount > 0 ? "border-destructive/30" : "border-amber-500/20")}>
+      <CardHeader className="pb-1 pt-3 px-3">
+        <CardTitle className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
+          <Radar className={cn("h-3.5 w-3.5", criticalCount > 0 ? "text-destructive" : "text-amber-500")} />
+          <span className={criticalCount > 0 ? "text-destructive" : "text-amber-600"}>Sentinelle</span>
+          <Badge variant={criticalCount > 0 ? "destructive" : "secondary"} className="text-[10px] px-1.5 py-0 ml-1">
+            {alerts.length}
+          </Badge>
+          {lastFetched && (
+            <span className="text-[9px] text-muted-foreground ml-auto font-normal">
+              {formatDistanceToNow(lastFetched, { addSuffix: true, locale: fr })}
+            </span>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0 px-3 pb-2">
+        <div className="space-y-1">
+          {alerts.slice(0, 3).map(alert => {
+            const isCritical = alert.severity === 'critical';
+            return (
+              <button key={alert.id}
+                className={cn(
+                  "w-full text-left flex items-start gap-2 p-1.5 rounded text-xs hover:bg-muted/50 transition-colors",
+                  isCritical ? "text-destructive" : "text-muted-foreground"
+                )}
+                onClick={() => {
+                  const routes: Record<string, string> = {
+                    lead: `/cockpit/leads/${alert.entity_id}`,
+                    opportunity: '/cockpit/leads',
+                    project: `/cockpit/projects/${alert.entity_id}`,
+                    partner: `/cockpit/partenaires/${alert.entity_id}`,
+                  };
+                  navigate(routes[alert.entity_type] || '/cockpit');
+                }}
+              >
+                {isCritical ? <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" /> : <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0 text-amber-500" />}
+                <span className="truncate">{alert.entity_name}: {alert.question}</span>
+              </button>
+            );
+          })}
+          {alerts.length > 3 && (
+            <p className="text-[10px] text-muted-foreground text-center">+{alerts.length - 3} autres</p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 // ─── Sentinel Button (inline in header) ───
@@ -493,11 +694,12 @@ const severityConfig = {
   info: { icon: Info, color: 'text-blue-500', bg: 'bg-blue-500/10', badge: 'outline' as const },
 };
 
-function SentinelButton({ alerts, isLoading, onRefresh, onDismiss }: {
+function SentinelButton({ alerts, isLoading, onRefresh, onDismiss, lastFetched }: {
   alerts: SentinelAlert[];
   isLoading: boolean;
   onRefresh: () => void;
   onDismiss: (id: string) => void;
+  lastFetched: Date | null;
 }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -539,9 +741,16 @@ function SentinelButton({ alerts, isLoading, onRefresh, onDismiss }: {
             <span className="font-semibold text-sm">IA Sentinelle</span>
             {alerts.length > 0 && <Badge variant="secondary" className="text-[10px]">{alerts.length}</Badge>}
           </div>
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onRefresh} disabled={isLoading}>
-            <RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} />
-          </Button>
+          <div className="flex items-center gap-1">
+            {lastFetched && (
+              <span className="text-[9px] text-muted-foreground">
+                {formatDistanceToNow(lastFetched, { addSuffix: true, locale: fr })}
+              </span>
+            )}
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onRefresh} disabled={isLoading}>
+              <RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} />
+            </Button>
+          </div>
         </div>
         <ScrollArea className="max-h-[350px]">
           {alerts.length === 0 ? (
@@ -633,13 +842,22 @@ function TaskRow({ task, showDate }: { task: any; showDate?: boolean }) {
       </div>
       <div className="flex items-center gap-1 flex-shrink-0">
         {task.due_time && <span className="text-[10px] text-muted-foreground font-mono">{task.due_time.slice(0, 5)}</span>}
-        {task.ai_generated && <Badge variant="secondary" className="text-[9px] px-1 py-0">IA</Badge>}
+        {task.ai_generated && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="secondary" className="text-[9px] px-1 py-0 cursor-help">IA</Badge>
+            </TooltipTrigger>
+            <TooltipContent className="text-xs">
+              Tâche générée par l'IA{task.ai_source ? ` · Source: ${task.ai_source}` : ''}
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
     </div>
   );
 }
 
-function StagnantWidget() {
+function StagnantWidget({ onSuggestFollowUp, suggestNextStep }: { onSuggestFollowUp: (id: string) => void; suggestNextStep: any }) {
   const navigate = useNavigate();
   const { data: stagnant = [], isLoading } = useQuery({
     queryKey: ['stagnant-opportunities'],
@@ -672,15 +890,33 @@ function StagnantWidget() {
         <ScrollArea className="h-full">
           {stagnant.map((opp: any) => (
             <div key={opp.id}
-              className="flex items-center justify-between py-1.5 px-1.5 cursor-pointer hover:bg-muted/50 rounded transition-colors"
-              onClick={() => navigate('/cockpit/pipeline')}>
-              <div className="min-w-0">
+              className="flex items-center justify-between py-1.5 px-1.5 rounded transition-colors group">
+              <div className="min-w-0 cursor-pointer hover:bg-muted/50 flex-1" onClick={() => navigate('/cockpit/pipeline')}>
                 <p className="text-xs font-medium truncate">{opp.title}</p>
                 <p className="text-[10px] text-muted-foreground capitalize">{STAGE_LABELS[opp.stage] || opp.stage}</p>
               </div>
-              <span className="text-[10px] text-muted-foreground flex-shrink-0">
-                {formatDistanceToNow(new Date(opp.updated_at), { locale: fr })}
-              </span>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <span className="text-[10px] text-muted-foreground">
+                  {formatDistanceToNow(new Date(opp.updated_at), { locale: fr })}
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost" size="sm"
+                      className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => { e.stopPropagation(); onSuggestFollowUp(opp.id); }}
+                      disabled={suggestNextStep.isPending}
+                    >
+                      {suggestNextStep.isPending ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Zap className="h-3 w-3 text-primary" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>💡 Suggestion IA de relance</TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           ))}
         </ScrollArea>
@@ -689,7 +925,7 @@ function StagnantWidget() {
   );
 }
 
-function ActivityIcon({ type }: { type: string }) {
+function ActivityIcon({ type, isAI }: { type: string; isAI?: boolean }) {
   const icons: Record<string, React.ReactNode> = {
     note_added: <FileText className="h-3.5 w-3.5 text-primary" />,
     status_changed: <Activity className="h-3.5 w-3.5 text-accent-foreground" />,
@@ -704,7 +940,13 @@ function ActivityIcon({ type }: { type: string }) {
     new_generated_document: <FileText className="h-3.5 w-3.5 text-orange-500" />,
     new_project: <TrendingUp className="h-3.5 w-3.5 text-teal-500" />,
     note: <FileText className="h-3.5 w-3.5 text-primary" />,
+    ai_action: <Brain className="h-3.5 w-3.5 text-primary" />,
+    synthesis_generated: <Database className="h-3.5 w-3.5 text-primary" />,
   };
+
+  if (isAI && !icons[type]) {
+    return <span className="mt-0.5 flex-shrink-0"><Brain className="h-3.5 w-3.5 text-primary/70" /></span>;
+  }
   return <span className="mt-0.5 flex-shrink-0">{icons[type] || <Activity className="h-3.5 w-3.5 text-muted-foreground" />}</span>;
 }
 
