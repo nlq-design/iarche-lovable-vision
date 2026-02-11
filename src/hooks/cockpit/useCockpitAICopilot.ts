@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { handleAIError } from '@/lib/ai-error-handler';
 import { toast as sonnerToast } from 'sonner';
 
-type CopilotMode = 'suggest-tasks' | 'detect-inactivity' | 'health-check' | 'morning-brief' | 'next-step' | 'meeting-prep' | 'opportunity-score' | 'win-loss-analysis' | 'deadline-cascade' | 'harvest' | 'harvest-respond';
+type CopilotMode = 'suggest-tasks' | 'detect-inactivity' | 'health-check' | 'morning-brief' | 'next-step' | 'meeting-prep' | 'opportunity-score' | 'win-loss-analysis' | 'deadline-cascade' | 'harvest' | 'harvest-respond' | 'intelligence';
 
 interface TaskSuggestion {
   title: string;

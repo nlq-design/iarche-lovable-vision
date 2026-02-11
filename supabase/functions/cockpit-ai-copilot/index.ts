@@ -99,6 +99,9 @@ serve(async (req) => {
       case "harvest-respond":
         result = await harvestRespond(supabase, workspaceId, body.taskIds, body.response, body.action);
         break;
+      case "intelligence":
+        result = await intelligenceAggregator(supabase, workspaceId);
+        break;
       default:
         return new Response(JSON.stringify({ error: `Mode inconnu: ${mode}` }), {
           status: 400,
@@ -1416,6 +1419,309 @@ function entityTypeToTable(entityType: string): string | null {
     opportunity: "opportunities", partner: "partners",
   };
   return map[entityType] || null;
+}
+
+// =============================================================================
+// MODE 12: INTELLIGENCE AGGREGATOR (Command Intelligence Layer)
+// =============================================================================
+
+async function intelligenceAggregator(supabase: any, workspaceId: string) {
+  const today = new Date().toISOString().split("T")[0];
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  const fourteenDaysAgo = new Date(Date.now() - 14 * 86400000).toISOString();
+
+  // Parallel fetch ALL data sources
+  const [
+    { data: leads }, { data: opportunities }, { data: projects },
+    { data: todayTasks }, { data: overdueTasks }, { data: todayBookings },
+    { data: recentActivity }, { data: recentTranscriptions },
+    { data: partners }, { data: staleLeads }, { data: staleProjects }, { data: stalePartners },
+    inactivityResult, healthResult, scoringResult,
+  ] = await Promise.all([
+    supabase.from("leads").select("id, name, company, status, lead_score, source, ai_documents_summary, updated_at, email, phone")
+      .eq("workspace_id", workspaceId).in("status", ["new", "contacted", "qualified", "proposal"])
+      .order("lead_score", { ascending: false, nullsFirst: false }).limit(20),
+    supabase.from("opportunities").select("id, title, stage, expected_revenue, probability, expected_close_date, lead_id, project_id, value_amount, updated_at")
+      .eq("workspace_id", workspaceId).not("stage", "in", "(closed_won,closed_lost)")
+      .order("expected_revenue", { ascending: false, nullsFirst: false }).limit(20),
+    supabase.from("projects").select("id, name, status, health_status, budget_amount, consumed_amount, planned_end_date, updated_at")
+      .eq("workspace_id", workspaceId).in("status", ["active", "planning"]).limit(20),
+    supabase.from("tasks").select("id, title, priority, entity_type, entity_id, due_time, ai_generated")
+      .eq("workspace_id", workspaceId).eq("due_date", today).neq("status", "completed").neq("status", "cancelled"),
+    supabase.from("tasks").select("id, title, priority, due_date, entity_type, ai_generated")
+      .eq("workspace_id", workspaceId).lt("due_date", today).neq("status", "completed").neq("status", "cancelled").neq("status", "harvested"),
+    supabase.from("bookings").select("id, name, email, company, start_time, end_time, lead_id, booking_types:booking_type_id(name)")
+      .eq("workspace_id", workspaceId).gte("start_time", `${today}T00:00:00`).lte("start_time", `${today}T23:59:59`)
+      .eq("status", "confirmed").order("start_time"),
+    supabase.from("activity_log").select("activity_type, entity_type, entity_id, title, content, created_at, is_ai_generated")
+      .eq("workspace_id", workspaceId).gte("created_at", sevenDaysAgo)
+      .order("created_at", { ascending: false }).limit(50),
+    supabase.from("voice_transcriptions").select("id, title, transcription_date, ai_summary, lead_id, project_id, status")
+      .eq("status", "done").gte("transcription_date", fourteenDaysAgo)
+      .order("transcription_date", { ascending: false }).limit(10),
+    supabase.from("partners").select("id, name, partner_type, expertise, ai_documents_summary, is_active")
+      .eq("workspace_id", workspaceId).eq("is_active", true).limit(15),
+    supabase.from("leads").select("id", { count: "exact", head: true }).eq("synthesis_stale", true),
+    supabase.from("projects").select("id", { count: "exact", head: true }).eq("synthesis_stale", true),
+    supabase.from("partners").select("id", { count: "exact", head: true }).eq("synthesis_stale", true),
+    detectInactivity(supabase, workspaceId),
+    healthCheckProjects(supabase, workspaceId),
+    opportunityScore(supabase, workspaceId),
+  ]);
+
+  // Win/loss stats
+  const [{ data: won }, { data: lost }] = await Promise.all([
+    supabase.from("opportunities").select("id, value_amount").eq("workspace_id", workspaceId).eq("stage", "closed_won"),
+    supabase.from("opportunities").select("id").eq("workspace_id", workspaceId).eq("stage", "closed_lost"),
+  ]);
+  const wonCount = won?.length || 0;
+  const lostCount = lost?.length || 0;
+  const winRate = (wonCount + lostCount) > 0 ? Math.round((wonCount / (wonCount + lostCount)) * 100) : 0;
+
+  // Booking-partner cross-reference
+  const bookingIds = (todayBookings || []).map((b: any) => b.id);
+  let bookingPartners: any[] = [];
+  if (bookingIds.length > 0) {
+    const { data: bp } = await supabase.from("booking_partners")
+      .select("booking_id, partner_id, partners:partner_id(name, partner_type)")
+      .in("booking_id", bookingIds);
+    bookingPartners = bp || [];
+  }
+
+  // Build lead name map for cross-referencing
+  const leadNameMap: Record<string, string> = {};
+  for (const l of leads || []) leadNameMap[l.id] = l.company || l.name || "Lead";
+
+  const staleCount = (staleLeads?.count || 0) + (staleProjects?.count || 0) + (stalePartners?.count || 0);
+  const overdueAiCount = (overdueTasks || []).filter((t: any) => t.ai_generated).length;
+  const pipelineValue = (opportunities || []).reduce((s: number, o: any) => s + (Number(o.value_amount || o.expected_revenue) || 0), 0);
+  const weightedValue = (opportunities || []).reduce((s: number, o: any) => s + ((Number(o.value_amount || o.expected_revenue) || 0) * (Number(o.probability) || 0) / 100), 0);
+
+  // Build massive context for LLM
+  const llmContext = `
+## Date: ${today}
+## Vue d'ensemble: ${leads?.length || 0} leads actifs, ${opportunities?.length || 0} opportunités, ${projects?.length || 0} projets
+
+### Pipeline (${pipelineValue.toLocaleString('fr-FR')}€ total, ${Math.round(weightedValue).toLocaleString('fr-FR')}€ pondéré, win rate: ${winRate}%)
+${(opportunities || []).map((o: any) => {
+  const lead = o.lead_id ? leadNameMap[o.lead_id] || "" : "";
+  const daysInStage = daysBetween(o.updated_at);
+  return `- ${o.title} [${o.stage}] ${Number(o.value_amount || o.expected_revenue || 0).toLocaleString('fr-FR')}€ proba:${o.probability || "?"}% close:${o.expected_close_date || "?"} inactif:${daysInStage}j${lead ? ` — ${lead}` : ""}`;
+}).join("\n") || "Aucune"}
+
+### Leads actifs (top 15 par score)
+${(leads || []).slice(0, 15).map((l: any) => {
+  const daysInactive = daysBetween(l.updated_at);
+  const synthExcerpt = l.ai_documents_summary ? ` | Synthèse: ${l.ai_documents_summary.slice(0, 150)}…` : " | Pas de synthèse";
+  return `- ${l.company || l.name} [${l.status}] score:${l.lead_score || "?"} inactif:${daysInactive}j${synthExcerpt}`;
+}).join("\n") || "Aucun"}
+
+### Tâches du jour (${todayTasks?.length || 0}) + En retard (${overdueTasks?.length || 0}, dont ${overdueAiCount} IA)
+${(todayTasks || []).map((t: any) => `- [AUJOURD'HUI] ${t.title} (${t.priority})`).join("\n") || "Aucune"}
+${(overdueTasks || []).slice(0, 10).map((t: any) => `- [RETARD ${t.due_date}] ${t.title} (${t.priority})${t.ai_generated ? " [IA]" : ""}`).join("\n") || ""}
+
+### RDV du jour (${todayBookings?.length || 0})
+${(todayBookings || []).map((b: any) => {
+  const time = new Date(b.start_time).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const bpNames = bookingPartners.filter((bp: any) => bp.booking_id === b.id).map((bp: any) => bp.partners?.name).filter(Boolean);
+  const linkedLead = b.lead_id ? leadNameMap[b.lead_id] : null;
+  return `- ${time}: ${b.name} (${b.company || b.email})${bpNames.length ? ` — Partenaires: ${bpNames.join(", ")}` : ""}${linkedLead ? ` — Lead: ${linkedLead}` : ""}`;
+}).join("\n") || "Aucun"}
+
+### Santé projets (${healthResult.summary.on_track}🟢 ${healthResult.summary.at_risk}🟡 ${healthResult.summary.off_track}🔴)
+${healthResult.projects.filter((p: any) => p.computed_health !== 'on_track').map((p: any) => 
+  `- ${p.project_name}: ${p.computed_health} — ${p.risk_factors.join(", ")} (budget: ${p.budget_status.consumed_pct}%)`
+).join("\n") || "Tous OK"}
+
+### Alertes d'inactivité (${inactivityResult.total})
+${inactivityResult.alerts.slice(0, 8).map((a: any) => `- [${a.severity}] ${a.entity_type}: "${a.entity_name}" inactif ${a.days_inactive}j — ${a.suggestion}`).join("\n") || "Aucune"}
+
+### Scoring prédictif pipeline
+${(scoringResult.scores || []).slice(0, 8).map((s: any) => `- ${s.opportunity_title}: ${s.conversion_score}/100 [${s.risk_level}] — ${s.primary_risk || "RAS"} → ${s.recommended_action}`).join("\n") || "Aucune"}
+
+### Transcriptions récentes (14j)
+${(recentTranscriptions || []).map((t: any) => {
+  const linked = [t.lead_id ? `Lead:${leadNameMap[t.lead_id] || t.lead_id}` : null].filter(Boolean).join(", ");
+  return `- ${t.title || "Réunion"} (${t.transcription_date})${linked ? ` — ${linked}` : ""}${t.ai_summary ? `\n  Résumé: ${t.ai_summary.slice(0, 300)}` : ""}`;
+}).join("\n") || "Aucune"}
+
+### Partenaires actifs (${partners?.length || 0})
+${(partners || []).map((p: any) => {
+  const synthExcerpt = p.ai_documents_summary ? ` | ${p.ai_documents_summary.slice(0, 100)}…` : "";
+  return `- ${p.name} [${p.partner_type || "?"}] ${p.expertise || ""}${synthExcerpt}`;
+}).join("\n") || "Aucun"}
+
+### Synthèses obsolètes: ${staleCount} entités en attente de re-synthèse
+
+### Activité récente (7j, ${recentActivity?.length || 0} événements)
+${(recentActivity || []).slice(0, 15).map((a: any) => `- ${a.created_at?.slice(0, 10)}: ${a.activity_type} ${a.entity_type}${a.title ? ` — ${a.title}` : ""}${a.is_ai_generated ? " [IA]" : ""}`).join("\n") || "Aucune"}
+`;
+
+  // Load prompt from DB
+  const prompt = await loadPrompt(supabase, "cockpit-intelligence-aggregator", {
+    system_prompt: `Tu es le cerveau analytique du Command Center. Analyse TOUTES les données et produis une intelligence structurée. Français uniquement.`,
+  });
+
+  // Single LLM call with structured output
+  const result = await extractStructured<{
+    top_actions: Array<{
+      action: string;
+      urgency: string;
+      entity_type: string;
+      entity_id: string;
+      entity_name: string;
+      reasoning: string;
+      impact_value: number;
+    }>;
+    cross_signals: Array<{
+      signal: string;
+      entities: Array<{ type: string; id: string; name: string }>;
+      severity: string;
+    }>;
+    predictions: Array<{
+      prediction: string;
+      confidence: number;
+      timeframe: string;
+      entities: Array<{ type: string; id: string; name: string }>;
+      risk_type: string;
+    }>;
+    health_overview: {
+      global_score: number;
+      pipeline_momentum: string;
+      critical_count: number;
+      improving: string[];
+      degrading: string[];
+    };
+    narrative_brief: string;
+    stale_synthesis_impact: string;
+  }>(
+    [
+      { role: "system", content: prompt.system_prompt },
+      { role: "user", content: `${prompt.user_prompt || "Analyse le contexte commercial complet:"}\n\n${llmContext}` },
+    ],
+    {
+      name: "intelligence_aggregator",
+      description: "Produire une intelligence commerciale structurée et circulaire à partir de toutes les données CRM",
+      parameters: {
+        type: "object",
+        properties: {
+          top_actions: {
+            type: "array",
+            description: "3-5 actions prioritaires classées par urgence et impact financier",
+            items: {
+              type: "object",
+              properties: {
+                action: { type: "string", description: "Description concrète de l'action avec noms et montants" },
+                urgency: { type: "string", enum: ["critical", "high", "medium", "low"] },
+                entity_type: { type: "string", enum: ["lead", "opportunity", "project", "partner", "task"] },
+                entity_id: { type: "string" },
+                entity_name: { type: "string" },
+                reasoning: { type: "string", description: "Pourquoi cette action est prioritaire (données croisées)" },
+                impact_value: { type: "number", description: "Impact financier estimé en euros (0 si non applicable)" },
+              },
+              required: ["action", "urgency", "entity_type", "entity_id", "entity_name", "reasoning"],
+              additionalProperties: false,
+            },
+          },
+          cross_signals: {
+            type: "array",
+            description: "Connexions cachées entre entités détectées par croisement des données",
+            items: {
+              type: "object",
+              properties: {
+                signal: { type: "string", description: "Description du signal croisé détecté" },
+                entities: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      type: { type: "string" },
+                      id: { type: "string" },
+                      name: { type: "string" },
+                    },
+                    required: ["type", "id", "name"],
+                    additionalProperties: false,
+                  },
+                },
+                severity: { type: "string", enum: ["high", "medium", "low"] },
+              },
+              required: ["signal", "entities", "severity"],
+              additionalProperties: false,
+            },
+          },
+          predictions: {
+            type: "array",
+            description: "Prédictions à 7 jours basées sur les tendances observées",
+            items: {
+              type: "object",
+              properties: {
+                prediction: { type: "string" },
+                confidence: { type: "number", description: "0.0 à 1.0" },
+                timeframe: { type: "string" },
+                entities: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: { type: { type: "string" }, id: { type: "string" }, name: { type: "string" } },
+                    required: ["type", "id", "name"],
+                    additionalProperties: false,
+                  },
+                },
+                risk_type: { type: "string", enum: ["opportunity", "risk"] },
+              },
+              required: ["prediction", "confidence", "timeframe", "entities", "risk_type"],
+              additionalProperties: false,
+            },
+          },
+          health_overview: {
+            type: "object",
+            properties: {
+              global_score: { type: "number", description: "Score de santé global 0-100" },
+              pipeline_momentum: { type: "string", enum: ["accelerating", "stable", "decelerating", "stalled"] },
+              critical_count: { type: "number" },
+              improving: { type: "array", items: { type: "string" } },
+              degrading: { type: "array", items: { type: "string" } },
+            },
+            required: ["global_score", "pipeline_momentum", "critical_count", "improving", "degrading"],
+            additionalProperties: false,
+          },
+          narrative_brief: {
+            type: "string",
+            description: "Résumé exécutif narratif de 10-15 lignes en Markdown. Style direction commerciale. Priorise urgences puis opportunités.",
+          },
+          stale_synthesis_impact: {
+            type: "string",
+            description: "Impact des synthèses obsolètes sur la fiabilité des recommandations",
+          },
+        },
+        required: ["top_actions", "cross_signals", "predictions", "health_overview", "narrative_brief", "stale_synthesis_impact"],
+        additionalProperties: false,
+      },
+    },
+    { functionName: FUNCTION_NAME, workspaceId }
+  );
+
+  return {
+    intelligence: {
+      ...result,
+      generated_at: new Date().toISOString(),
+    },
+    raw: {
+      leads_count: leads?.length || 0,
+      opportunities_count: opportunities?.length || 0,
+      projects_count: projects?.length || 0,
+      today_tasks_count: todayTasks?.length || 0,
+      overdue_tasks_count: overdueTasks?.length || 0,
+      today_bookings_count: todayBookings?.length || 0,
+      stale_count: staleCount,
+      overdue_ai_count: overdueAiCount,
+      health_summary: healthResult.summary,
+      pipeline_value: pipelineValue,
+      weighted_value: weightedValue,
+      win_rate: winRate,
+      scoring: (scoringResult.scores || []).slice(0, 10),
+    },
+  };
 }
 
 // =============================================================================

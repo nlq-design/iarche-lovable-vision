@@ -1,5 +1,5 @@
-// Cockpit Dashboard v7.0 — Fully Dynamic & Interconnected Command Center
-import { useState, useEffect } from 'react';
+// Cockpit Dashboard v8.0 — Command Intelligence Layer
+import { useState } from 'react';
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import {
   AlertTriangle, Info, XCircle, X, Shield, Zap,
   Database, Mic, FolderOpen, BarChart3, Trophy,
   ArrowUpRight, ArrowDownRight, ExternalLink, Eye,
+  Lightbulb, TrendingDown, Crosshair, Gauge,
 } from 'lucide-react';
 import {
   useCockpitLeads, useCockpitOpportunities, useCockpitTasks,
@@ -25,6 +26,7 @@ import {
 } from '@/hooks/cockpit';
 import { useDashboardRealtime } from '@/hooks/cockpit/useDashboardRealtime';
 import { useCockpitAICopilot } from '@/hooks/cockpit/useCockpitAICopilot';
+import { useCockpitIntelligence, IntelligenceAction, CrossSignal, Prediction } from '@/hooks/cockpit/useCockpitIntelligence';
 import { useAISentinel, SentinelAlert } from '@/hooks/cockpit/useAISentinel';
 import { useAutoConsulte } from '@/hooks/cockpit/useAutoConsulte';
 import { CreateTaskDialog } from '@/components/cockpit/dialogs';
@@ -53,7 +55,7 @@ const STAGE_COLORS: Record<string, string> = {
 export default function CockpitDashboard() {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [harvestOpen, setHarvestOpen] = useState(false);
-  const [briefOpen, setBriefOpen] = useState(false);
+  const [briefExpanded, setBriefExpanded] = useState(false);
   const navigate = useNavigate();
 
   useDashboardRealtime();
@@ -66,12 +68,15 @@ export default function CockpitDashboard() {
   const { stats: noteStats } = useCockpitMeetingNotes();
   const { activities, isLoading: activitiesLoading } = useCockpitActivityLog();
 
-  // ─── AI hooks ───
-  const { morningBrief, opportunityScore, healthCheck, suggestNextStep, suggestTasks, winLossAnalysis } = useCockpitAICopilot();
+  // ─── UNIFIED INTELLIGENCE (replaces morningBrief + healthCheck + opportunityScore) ───
+  const { data: intel, isLoading: intelLoading, refresh: refreshIntel } = useCockpitIntelligence();
+
+  // ─── Other AI hooks (kept for specific actions) ───
+  const { suggestNextStep, suggestTasks } = useCockpitAICopilot();
   const { alerts: sentinelAlerts, isLoading: sentinelLoading, refresh: refreshSentinel, dismissAlert, lastFetched: sentinelLastFetched } = useAISentinel();
   const { isRunning: isAutoRunning, triggerAutoConsulte, triggerAutoHarvest } = useAutoConsulte();
 
-  // ─── Recent transcriptions (dynamic) ───
+  // ─── Recent transcriptions ───
   const { data: recentTranscriptions = [] } = useQuery({
     queryKey: ['dashboard-recent-transcriptions'],
     queryFn: async () => {
@@ -85,7 +90,7 @@ export default function CockpitDashboard() {
     staleTime: 30_000,
   });
 
-  // ─── Recent projects (dynamic) ───
+  // ─── Recent projects ───
   const { data: recentProjects = [] } = useQuery({
     queryKey: ['dashboard-recent-projects'],
     queryFn: async () => {
@@ -98,50 +103,6 @@ export default function CockpitDashboard() {
       return data || [];
     },
     staleTime: 30_000,
-  });
-
-  // ─── Win/Loss stats (dynamic) ───
-  const { data: winLossStats } = useQuery({
-    queryKey: ['dashboard-win-loss'],
-    queryFn: async () => {
-      const { data: won } = await supabase
-        .from('opportunities')
-        .select('id, value_amount', { count: 'exact', head: false })
-        .eq('stage', 'closed_won');
-      const { data: lost } = await supabase
-        .from('opportunities')
-        .select('id', { count: 'exact', head: false })
-        .eq('stage', 'closed_lost');
-      const wonCount = won?.length || 0;
-      const lostCount = lost?.length || 0;
-      const total = wonCount + lostCount;
-      const wonValue = won?.reduce((s, o) => s + (Number(o.value_amount) || 0), 0) || 0;
-      return {
-        won: wonCount, lost: lostCount, total,
-        winRate: total > 0 ? Math.round((wonCount / total) * 100) : 0,
-        wonValue,
-      };
-    },
-    staleTime: 60_000,
-  });
-
-  // ─── Synthesis stale queue count ───
-  const { data: staleCount = 0, refetch: refetchStale } = useQuery({
-    queryKey: ['synthesis-stale-count'],
-    queryFn: async () => {
-      const tables = ['leads', 'projects', 'partners'] as const;
-      let total = 0;
-      for (const table of tables) {
-        const { count } = await supabase
-          .from(table)
-          .select('id', { count: 'exact', head: true })
-          .eq('synthesis_stale', true);
-        total += count || 0;
-      }
-      return total;
-    },
-    staleTime: 30_000,
-    refetchInterval: 60_000,
   });
 
   const isLoading = leadsLoading || oppsLoading || tasksLoading || bookingsLoading;
@@ -160,64 +121,27 @@ export default function CockpitDashboard() {
     t.due_date && t.due_date > today && t.due_date <= sevenDaysLimit
   ).slice(0, 5);
 
-  const overdueAiCount = tasks?.filter(t =>
-    t.ai_generated && t.due_date && t.due_date < today &&
-    t.status !== 'completed' && t.status !== 'cancelled' && t.status !== 'harvested'
-  ).length || 0;
-
   const humanOverdue = relevantTasks.filter(t =>
     t.due_date && t.due_date < today && !t.ai_generated
   ).length;
+
+  // Intelligence-derived values
+  const raw = intel?.raw;
+  const intelligence = intel?.intelligence;
+  const staleCount = raw?.stale_count || 0;
+  const overdueAiCount = raw?.overdue_ai_count || 0;
+  const globalScore = intelligence?.health_overview?.global_score ?? null;
+  const criticalAlerts = sentinelAlerts.filter(a => a.severity === 'critical');
+  const hasUrgentContext = humanOverdue > 0 || criticalAlerts.length > 0 || (intelligence?.top_actions?.some(a => a.urgency === 'critical'));
 
   const NOISE_ACTIVITY_TYPES = ['new_task', 'task_created'];
   const meaningfulActivities = activities.filter(a =>
     !NOISE_ACTIVITY_TYPES.includes(a.activity_type)
   ).slice(0, 12);
 
-  // ─── Conditional AI context ───
-  const criticalAlerts = sentinelAlerts.filter(a => a.severity === 'critical');
-  const hasUrgentContext = humanOverdue > 0 || criticalAlerts.length > 0 || overdueAiCount > 10;
-
-  // Auto-fetch morning brief on mount
-  const [briefFetched, setBriefFetched] = useState(false);
-  useEffect(() => {
-    if (!briefFetched && !morningBrief.isPending && !morningBrief.data) {
-      const timer = setTimeout(() => {
-        morningBrief.mutate();
-        setBriefFetched(true);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [briefFetched, morningBrief]);
-
-  // Auto-trigger health check on mount
-  const [healthFetched, setHealthFetched] = useState(false);
-  useEffect(() => {
-    if (!healthFetched && !healthCheck.isPending && !healthCheck.data) {
-      const timer = setTimeout(() => {
-        healthCheck.mutate();
-        setHealthFetched(true);
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [healthFetched, healthCheck]);
-
-  // Auto-trigger opportunity scoring
-  const [scoreFetched, setScoreFetched] = useState(false);
-  useEffect(() => {
-    if (!scoreFetched && !opportunityScore.isPending && !opportunityScore.data) {
-      const timer = setTimeout(() => {
-        opportunityScore.mutate();
-        setScoreFetched(true);
-      }, 6000);
-      return () => clearTimeout(timer);
-    }
-  }, [scoreFetched, opportunityScore]);
-
   const handleAutoConsulte = async () => {
     try {
       await triggerAutoConsulte();
-      refetchStale();
     } catch {}
   };
 
@@ -225,19 +149,28 @@ export default function CockpitDashboard() {
     <CockpitLayout>
       <div className="flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden">
 
-        {/* ─── AI BAND ─── */}
+        {/* ─── AI INTELLIGENCE BAND ─── */}
         <div className="flex-shrink-0 border-b bg-muted/30">
-          {/* Row 1: Main header */}
+          {/* Row 1: Intelligence header */}
           <div className="px-4 py-2.5">
             <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3">
-              {/* Left: AI brain + smart summary */}
+              {/* Left: Intelligence score + smart summary */}
               <div className="flex items-center gap-3 min-w-0 flex-1">
+                {/* Global health gauge */}
                 <div className={cn(
-                  "h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors",
-                  hasUrgentContext ? "bg-destructive/10" : "bg-primary/10"
+                  "h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 relative",
+                  intelLoading ? "bg-muted animate-pulse" :
+                  globalScore !== null && globalScore >= 70 ? "bg-emerald-500/10" :
+                  globalScore !== null && globalScore >= 40 ? "bg-amber-500/10" :
+                  globalScore !== null ? "bg-destructive/10" : "bg-primary/10"
                 )}>
-                  {morningBrief.isPending ? (
+                  {intelLoading ? (
                     <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                  ) : globalScore !== null ? (
+                    <span className={cn("text-sm font-bold",
+                      globalScore >= 70 ? "text-emerald-600" :
+                      globalScore >= 40 ? "text-amber-600" : "text-destructive"
+                    )}>{globalScore}</span>
                   ) : (
                     <Brain className={cn("h-4 w-4", hasUrgentContext ? "text-destructive" : "text-primary")} />
                   )}
@@ -245,16 +178,18 @@ export default function CockpitDashboard() {
 
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold truncate">
-                    {getSmartHeadline({
-                      humanOverdue,
-                      criticalAlerts: criticalAlerts.length,
-                      todayTasks: todayTasks.length,
-                      todayBookings: todayBookings?.length || 0,
-                      overdueAi: overdueAiCount,
-                      staleQueue: staleCount,
-                      recentTranscriptions: recentTranscriptions.length,
-                      activeProjects: recentProjects.length,
-                    })}
+                    {intelLoading ? 'Analyse en cours...' :
+                     intelligence?.top_actions?.[0]
+                       ? `⚡ ${intelligence.top_actions[0].action}`
+                       : getSmartHeadline({
+                           humanOverdue,
+                           criticalAlerts: criticalAlerts.length,
+                           todayTasks: todayTasks.length,
+                           todayBookings: todayBookings?.length || 0,
+                           overdueAi: overdueAiCount,
+                           staleQueue: staleCount,
+                         })
+                    }
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
                     <span className="capitalize">{format(new Date(), 'EEEE d MMMM', { locale: fr })}</span>
@@ -266,8 +201,19 @@ export default function CockpitDashboard() {
                     <span className="cursor-pointer hover:text-foreground" onClick={() => navigate('/cockpit/pipeline')}>
                       {oppStats.total} opps · {formatCurrency(oppStats.totalValue)}
                     </span>
-                    {winLossStats && winLossStats.total > 0 && (
-                      <span className="text-muted-foreground"> · {winLossStats.winRate}% win</span>
+                    {raw && raw.win_rate > 0 && (
+                      <span className="text-muted-foreground"> · {raw.win_rate}% win</span>
+                    )}
+                    {intelligence?.health_overview?.pipeline_momentum && (
+                      <span className={cn("ml-1",
+                        intelligence.health_overview.pipeline_momentum === 'accelerating' ? "text-emerald-600" :
+                        intelligence.health_overview.pipeline_momentum === 'decelerating' ? "text-amber-600" :
+                        intelligence.health_overview.pipeline_momentum === 'stalled' ? "text-destructive" : "text-muted-foreground"
+                      )}>
+                        {intelligence.health_overview.pipeline_momentum === 'accelerating' ? '📈' :
+                         intelligence.health_overview.pipeline_momentum === 'decelerating' ? '📉' :
+                         intelligence.health_overview.pipeline_momentum === 'stalled' ? '⛔' : '➡️'}
+                      </span>
                     )}
                   </p>
                 </div>
@@ -275,7 +221,6 @@ export default function CockpitDashboard() {
 
               {/* Right: action buttons */}
               <div className="flex items-center gap-1.5 flex-shrink-0">
-                {/* Auto-Consulte sync */}
                 {staleCount > 0 && (
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -285,49 +230,36 @@ export default function CockpitDashboard() {
                         onClick={handleAutoConsulte}
                         disabled={isAutoRunning}
                       >
-                        {isAutoRunning ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Database className="h-3.5 w-3.5" />
-                        )}
+                        {isAutoRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
                         <span className="text-xs font-semibold">{staleCount}</span>
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom">{staleCount} entités à re-synthétiser — Cliquez pour lancer</TooltipContent>
+                    <TooltipContent side="bottom">{staleCount} synthèses à mettre à jour</TooltipContent>
                   </Tooltip>
                 )}
 
-                {/* Morning Brief expand */}
+                {/* Refresh Intelligence */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost" size="sm"
-                      className="h-8 px-2"
-                      onClick={() => {
-                        if (!morningBrief.data && !morningBrief.isPending) morningBrief.mutate();
-                        setBriefOpen(!briefOpen);
-                      }}
-                    >
-                      {morningBrief.isPending ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3.5 w-3.5" />
-                      )}
+                    <Button variant="ghost" size="sm" className="h-8 px-2" onClick={refreshIntel} disabled={intelLoading}>
+                      {intelLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom">Morning Brief IA — Résumé narratif quotidien</TooltipContent>
+                  <TooltipContent side="bottom">Rafraîchir l'intelligence</TooltipContent>
                 </Tooltip>
 
-                {/* Sentinel */}
-                <SentinelButton
-                  alerts={sentinelAlerts}
-                  isLoading={sentinelLoading}
-                  onRefresh={refreshSentinel}
-                  onDismiss={dismissAlert}
-                  lastFetched={sentinelLastFetched}
-                />
+                {/* Brief expand */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setBriefExpanded(!briefExpanded)}>
+                      <Sparkles className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Brief IA — Résumé narratif</TooltipContent>
+                </Tooltip>
 
-                {/* Harvest */}
+                <SentinelButton alerts={sentinelAlerts} isLoading={sentinelLoading} onRefresh={refreshSentinel} onDismiss={dismissAlert} lastFetched={sentinelLastFetched} />
+
                 {overdueAiCount > 0 && (
                   <Sheet open={harvestOpen} onOpenChange={setHarvestOpen}>
                     <SheetTrigger asChild>
@@ -338,14 +270,12 @@ export default function CockpitDashboard() {
                             <span className="text-xs font-semibold">{overdueAiCount}</span>
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom">{overdueAiCount} tâches IA en retard — Cliquez pour récolter et traiter</TooltipContent>
+                        <TooltipContent side="bottom">{overdueAiCount} tâches IA en retard — Récolter</TooltipContent>
                       </Tooltip>
                     </SheetTrigger>
                     <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
                       <SheetHeader>
-                        <SheetTitle className="flex items-center gap-2">
-                          <Wheat className="h-5 w-5" /> Récolte IA
-                        </SheetTitle>
+                        <SheetTitle className="flex items-center gap-2"><Wheat className="h-5 w-5" /> Récolte IA</SheetTitle>
                         <SheetDescription>Transformez les tâches IA en retard en actions concrètes</SheetDescription>
                       </SheetHeader>
                       <div className="mt-4"><HarvestInterviewPanel autoStart /></div>
@@ -360,48 +290,37 @@ export default function CockpitDashboard() {
             </div>
           </div>
 
-          {/* Row 2: Condensed brief preview (always visible if data) */}
-          {!briefOpen && morningBrief.data?.brief && (
+          {/* Row 2: Condensed brief preview */}
+          {!briefExpanded && intelligence?.narrative_brief && (
             <div className="border-t bg-card/30 px-4 py-1.5 cursor-pointer hover:bg-card/50 transition-colors"
-              onClick={() => setBriefOpen(true)}>
+              onClick={() => setBriefExpanded(true)}>
               <div className="max-w-[1600px] mx-auto flex items-center gap-2">
                 <Sparkles className="h-3 w-3 text-primary flex-shrink-0" />
                 <p className="text-xs text-muted-foreground truncate">
-                  {morningBrief.data.brief.split('\n').filter((l: string) => l.trim()).slice(0, 2).join(' · ').slice(0, 150)}...
+                  {intelligence.narrative_brief.split('\n').filter(l => l.trim()).slice(0, 2).join(' · ').slice(0, 150)}...
                 </p>
                 <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
               </div>
             </div>
           )}
 
-          {/* Row 2b: Morning Brief expanded */}
-          {briefOpen && (
+          {/* Row 2b: Brief expanded */}
+          {briefExpanded && (
             <div className="border-t bg-card/50 px-4 py-3">
               <div className="max-w-[1600px] mx-auto">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Morning Brief</span>
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => morningBrief.mutate()} disabled={morningBrief.isPending}>
-                      <RefreshCw className={cn("h-3 w-3", morningBrief.isPending && "animate-spin")} />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setBriefOpen(false)}>
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Intelligence Brief</span>
+                  <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => setBriefExpanded(false)}>
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
-                {morningBrief.isPending ? (
+                {intelLoading ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Préparation du briefing IA...
+                    <Loader2 className="h-4 w-4 animate-spin" /> Analyse en cours...
                   </div>
-                ) : morningBrief.data?.brief ? (
+                ) : intelligence?.narrative_brief ? (
                   <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed max-h-40 overflow-y-auto">
-                    <ReactMarkdown>{morningBrief.data.brief}</ReactMarkdown>
-                  </div>
-                ) : morningBrief.isError ? (
-                  <div className="flex items-center gap-2 text-sm text-destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    Erreur — <Button variant="link" size="sm" className="px-0 h-auto" onClick={() => morningBrief.mutate()}>Réessayer</Button>
+                    <ReactMarkdown>{intelligence.narrative_brief}</ReactMarkdown>
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground">Chargement...</p>
@@ -410,17 +329,14 @@ export default function CockpitDashboard() {
             </div>
           )}
 
-          {/* Row 3: Critical sentinel alerts inline */}
-          {criticalAlerts.length > 0 && !briefOpen && (
+          {/* Row 3: Critical alerts */}
+          {criticalAlerts.length > 0 && !briefExpanded && (
             <div className="border-t bg-destructive/5 px-4 py-1.5">
               <div className="max-w-[1600px] mx-auto flex items-center gap-3 overflow-x-auto">
                 <AlertTriangle className="h-3.5 w-3.5 text-destructive flex-shrink-0" />
                 {criticalAlerts.slice(0, 3).map(alert => (
-                  <button
-                    key={alert.id}
-                    className="text-xs text-destructive hover:underline truncate flex-shrink-0"
-                    onClick={() => navigateToEntity(navigate, alert)}
-                  >
+                  <button key={alert.id} className="text-xs text-destructive hover:underline truncate flex-shrink-0"
+                    onClick={() => navigateToEntity(navigate, alert)}>
                     {alert.entity_name}: {alert.question}
                   </button>
                 ))}
@@ -433,14 +349,17 @@ export default function CockpitDashboard() {
         <div className="flex-1 overflow-auto p-3 sm:p-4">
           <div className="max-w-[1600px] mx-auto grid gap-3 grid-cols-1 lg:grid-cols-12">
 
-            {/* ─── COL 1: Tâches + RDV ─── */}
+            {/* ─── COL 1: Actions Prioritaires + Tâches + RDV ─── */}
             <div className="lg:col-span-4 flex flex-col gap-3">
+
+              {/* ⚡ TOP ACTIONS (from Intelligence) */}
+              <TopActionsWidget actions={intelligence?.top_actions} isLoading={intelLoading} navigate={navigate} />
+
               {/* Today tasks */}
               <Card>
                 <CardHeader className="pb-1.5 pt-3 px-3 flex flex-row items-center justify-between">
                   <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5" />
-                    Aujourd'hui
+                    <Clock className="h-3.5 w-3.5" /> Aujourd'hui
                     {todayTasks.length > 0 && <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-1">{todayTasks.length}</Badge>}
                     {humanOverdue > 0 && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">{humanOverdue} retard</Badge>}
                   </CardTitle>
@@ -452,32 +371,13 @@ export default function CockpitDashboard() {
                     <div className="py-4 text-center">
                       <p className="text-xs text-muted-foreground mb-2">Aucune tâche pour aujourd'hui</p>
                       <Button variant="outline" size="sm" className="text-xs h-7"
-                        onClick={() => suggestTasks.mutate({})}
-                        disabled={suggestTasks.isPending}>
+                        onClick={() => suggestTasks.mutate({})} disabled={suggestTasks.isPending}>
                         {suggestTasks.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
                         Suggestions IA
                       </Button>
                     </div>
                   ) : (
                     <div className="space-y-0.5">{todayTasks.map(task => <TaskRow key={task.id} task={task} navigate={navigate} />)}</div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Upcoming tasks */}
-              <Card>
-                <CardHeader className="pb-1.5 pt-3 px-3">
-                  <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    À venir (7j)
-                    {upcomingTasks.length > 0 && <Badge variant="outline" className="text-[10px] px-1.5 py-0 ml-1">{upcomingTasks.length}</Badge>}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0 px-3 pb-2">
-                  {upcomingTasks.length === 0 ? (
-                    <p className="text-xs text-muted-foreground py-3 text-center">RAS — votre agenda est clair</p>
-                  ) : (
-                    <div className="space-y-0.5">{upcomingTasks.map(task => <TaskRow key={task.id} task={task} showDate navigate={navigate} />)}</div>
                   )}
                 </CardContent>
               </Card>
@@ -512,24 +412,36 @@ export default function CockpitDashboard() {
                             <p className="text-xs font-medium truncate">{b.name}</p>
                             <p className="text-[10px] text-muted-foreground truncate">{b.company || b.email}</p>
                           </div>
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            <Badge variant="outline" className="text-[10px] font-mono">
-                              {format(new Date(b.start_time), 'HH:mm')}
-                            </Badge>
-                            {b.booking_types?.name && (
-                              <span className="text-[9px] text-muted-foreground">{b.booking_types.name}</span>
-                            )}
-                          </div>
+                          <Badge variant="outline" className="text-[10px] font-mono">{format(new Date(b.start_time), 'HH:mm')}</Badge>
                         </div>
                       ))}
                     </div>
                   )}
                 </CardContent>
               </Card>
+
+              {/* Upcoming tasks */}
+              {upcomingTasks.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-1.5 pt-3 px-3">
+                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5" /> À venir (7j)
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 ml-1">{upcomingTasks.length}</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 px-3 pb-2">
+                    <div className="space-y-0.5">{upcomingTasks.map(task => <TaskRow key={task.id} task={task} showDate navigate={navigate} />)}</div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
-            {/* ─── COL 2: Pipeline + Projects + Scoring ─── */}
+            {/* ─── COL 2: Signaux Croisés + Pipeline + Prédictions ─── */}
             <div className="lg:col-span-4 flex flex-col gap-3">
+
+              {/* 🔗 CROSS SIGNALS (from Intelligence) */}
+              <CrossSignalsWidget signals={intelligence?.cross_signals} isLoading={intelLoading} navigate={navigate} />
+
               {/* Pipeline */}
               <Card className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => navigate('/cockpit/pipeline')}>
                 <CardHeader className="pb-1.5 pt-3 px-3">
@@ -574,36 +486,74 @@ export default function CockpitDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Opportunity Scoring (dynamic from AI) */}
-              <OpportunityScoringWidget opportunityScore={opportunityScore} navigate={navigate} />
+              {/* 🔮 PREDICTIONS (from Intelligence) */}
+              <PredictionsWidget predictions={intelligence?.predictions} isLoading={intelLoading} navigate={navigate} />
 
-              {/* Health Check Widget */}
-              <HealthCheckWidget healthCheck={healthCheck} navigate={navigate} />
-
-              {/* Win/Loss quick stats */}
-              {winLossStats && winLossStats.total > 0 && (
+              {/* Health overview from intelligence */}
+              {intelligence?.health_overview && (
                 <Card>
-                  <CardContent className="pt-3 px-3 pb-2">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                        <Trophy className="h-3.5 w-3.5" /> Conversion
-                      </span>
-                      <span className="text-lg font-bold text-primary">{winLossStats.winRate}%</span>
+                  <CardHeader className="pb-1 pt-3 px-3">
+                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Shield className="h-3.5 w-3.5" /> Santé Globale
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 px-3 pb-2">
+                    <div className="flex gap-2 mb-2">
+                      <div className="flex-1 text-center p-1.5 rounded bg-emerald-500/10">
+                        <p className="text-lg font-bold text-emerald-600">{raw?.health_summary?.on_track || 0}</p>
+                        <p className="text-[10px] text-muted-foreground">🟢 OK</p>
+                      </div>
+                      <div className="flex-1 text-center p-1.5 rounded bg-amber-500/10">
+                        <p className="text-lg font-bold text-amber-600">{raw?.health_summary?.at_risk || 0}</p>
+                        <p className="text-[10px] text-muted-foreground">🟡 Risque</p>
+                      </div>
+                      <div className="flex-1 text-center p-1.5 rounded bg-destructive/10">
+                        <p className="text-lg font-bold text-destructive">{raw?.health_summary?.off_track || 0}</p>
+                        <p className="text-[10px] text-muted-foreground">🔴 Danger</p>
+                      </div>
                     </div>
-                    <div className="flex gap-2 text-[11px]">
-                      <div className="flex-1 text-center p-1 rounded bg-emerald-500/10">
-                        <span className="font-semibold text-emerald-600">{winLossStats.won}</span>
-                        <span className="text-muted-foreground ml-1">gagnées</span>
+                    {intelligence.health_overview.degrading.length > 0 && (
+                      <div className="text-[10px] text-destructive">
+                        📉 {intelligence.health_overview.degrading.join(', ')}
                       </div>
-                      <div className="flex-1 text-center p-1 rounded bg-destructive/10">
-                        <span className="font-semibold text-destructive">{winLossStats.lost}</span>
-                        <span className="text-muted-foreground ml-1">perdues</span>
+                    )}
+                    {intelligence.health_overview.improving.length > 0 && (
+                      <div className="text-[10px] text-emerald-600">
+                        📈 {intelligence.health_overview.improving.join(', ')}
                       </div>
-                      {winLossStats.wonValue > 0 && (
-                        <div className="flex-1 text-center p-1 rounded bg-primary/10">
-                          <span className="font-semibold text-primary">{formatCurrency(winLossStats.wonValue)}</span>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Scoring from raw intelligence data */}
+              {raw?.scoring && raw.scoring.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-1 pt-3 px-3">
+                    <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <BarChart3 className="h-3.5 w-3.5" /> Scoring Prédictif
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 px-3 pb-2">
+                    <div className="space-y-1.5">
+                      {raw.scoring.slice(0, 4).map((s: any) => (
+                        <div key={s.opportunity_id}
+                          className="flex items-center gap-2 py-1 px-1.5 rounded hover:bg-muted/50 cursor-pointer transition-colors"
+                          onClick={() => navigate('/cockpit/pipeline')}>
+                          <span className={cn("text-xs font-bold w-8 text-center",
+                            s.conversion_score >= 70 ? "text-emerald-600" :
+                            s.conversion_score >= 40 ? "text-amber-600" : "text-destructive"
+                          )}>{s.conversion_score}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs truncate">{s.opportunity_title}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{s.recommended_action}</p>
+                          </div>
+                          <Badge variant={s.risk_level === 'low' ? 'secondary' : s.risk_level === 'medium' ? 'outline' : 'destructive'}
+                            className="text-[9px] px-1 py-0">
+                            {s.risk_level === 'low' ? '🟢' : s.risk_level === 'medium' ? '🟡' : '🔴'}
+                          </Badge>
                         </div>
-                      )}
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
@@ -622,10 +572,30 @@ export default function CockpitDashboard() {
 
             {/* ─── COL 3: Transcriptions + Projets + Activité + Sentinel ─── */}
             <div className="lg:col-span-4 flex flex-col gap-3">
-              {/* Sentinel summary widget */}
+              {/* Sentinel */}
               <SentinelWidget alerts={sentinelAlerts} lastFetched={sentinelLastFetched} />
 
-              {/* Recent Transcriptions — NEW dynamic widget */}
+              {/* Stale synthesis impact */}
+              {intelligence?.stale_synthesis_impact && staleCount > 0 && (
+                <Card className="border-amber-500/20">
+                  <CardContent className="pt-3 px-3 pb-2">
+                    <div className="flex items-start gap-2">
+                      <Database className="h-3.5 w-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-medium text-amber-600 mb-0.5">{staleCount} synthèses obsolètes</p>
+                        <p className="text-[10px] text-muted-foreground">{intelligence.stale_synthesis_impact}</p>
+                        <Button variant="outline" size="sm" className="mt-1.5 h-6 text-[10px] border-amber-500/30 text-amber-600"
+                          onClick={handleAutoConsulte} disabled={isAutoRunning}>
+                          {isAutoRunning ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+                          Re-synthétiser
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Recent Transcriptions */}
               <Card>
                 <CardHeader className="pb-1.5 pt-3 px-3">
                   <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -645,24 +615,16 @@ export default function CockpitDashboard() {
                           className="flex items-start gap-2 py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer"
                           onClick={() => navigate(`/cockpit/transcriptions/${t.id}`)}>
                           <Mic className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0",
-                            t.status === 'done' ? 'text-emerald-500' :
-                            t.status === 'error' ? 'text-destructive' : 'text-primary'
+                            t.status === 'done' ? 'text-emerald-500' : t.status === 'error' ? 'text-destructive' : 'text-primary'
                           )} />
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium truncate">
-                              {t.title || t.summary?.title || t.original_filename || 'Sans titre'}
-                            </p>
+                            <p className="text-xs font-medium truncate">{t.title || t.summary?.title || t.original_filename || 'Sans titre'}</p>
                             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                               {t.lead?.name && <span className="truncate">🎯 {t.lead.name}</span>}
                               {t.project?.name && <span className="truncate">📁 {t.project.name}</span>}
                               <span>{formatDistanceToNow(new Date(t.created_at), { addSuffix: true, locale: fr })}</span>
                             </div>
                           </div>
-                          {t.status !== 'done' && (
-                            <Badge variant={t.status === 'error' ? 'destructive' : 'secondary'} className="text-[9px] px-1 py-0">
-                              {t.status}
-                            </Badge>
-                          )}
                         </div>
                       ))}
                     </div>
@@ -670,7 +632,7 @@ export default function CockpitDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Active Projects — NEW dynamic widget */}
+              {/* Active Projects */}
               <Card>
                 <CardHeader className="pb-1.5 pt-3 px-3">
                   <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -733,7 +695,6 @@ export default function CockpitDashboard() {
                               a.is_ai_generated && "border-l-2 border-primary/30 pl-2.5"
                             )}
                             onClick={() => {
-                              // Navigate to the related entity
                               const entityRoutes: Record<string, string> = {
                                 lead: `/cockpit/leads/${a.entity_id}`,
                                 opportunity: `/cockpit/pipeline`,
@@ -742,8 +703,7 @@ export default function CockpitDashboard() {
                                 partner: `/cockpit/partenaires/${a.entity_id}`,
                                 task: `/cockpit/projects`,
                               };
-                              const route = entityRoutes[a.entity_type] || '/cockpit';
-                              navigate(route);
+                              navigate(entityRoutes[a.entity_type] || '/cockpit');
                             }}>
                             <ActivityIcon type={a.activity_type} isAI={!!a.is_ai_generated} />
                             <div className="flex-1 min-w-0">
@@ -773,94 +733,94 @@ export default function CockpitDashboard() {
   );
 }
 
-// ─── Navigation helper ───
-function navigateToEntity(navigate: ReturnType<typeof useNavigate>, alert: SentinelAlert) {
-  const routes: Record<string, string> = {
-    lead: `/cockpit/leads/${alert.entity_id}`,
-    opportunity: `/cockpit/pipeline`,
-    project: `/cockpit/projects/${alert.entity_id}`,
-    partner: `/cockpit/partenaires/${alert.entity_id}`,
+// ─── NEW: Top Actions Widget ───
+function TopActionsWidget({ actions, isLoading, navigate }: { actions?: IntelligenceAction[]; isLoading: boolean; navigate: any }) {
+  if (isLoading) return (
+    <Card className="border-primary/20">
+      <CardContent className="pt-3 px-3 pb-2">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Calcul des priorités...
+        </div>
+      </CardContent>
+    </Card>
+  );
+  if (!actions?.length) return null;
+
+  const urgencyConfig: Record<string, { bg: string; text: string; icon: string }> = {
+    critical: { bg: 'bg-destructive/10 border-destructive/30', text: 'text-destructive', icon: '🔴' },
+    high: { bg: 'bg-amber-500/10 border-amber-500/30', text: 'text-amber-700 dark:text-amber-400', icon: '🟠' },
+    medium: { bg: 'bg-blue-500/10 border-blue-500/30', text: 'text-blue-700 dark:text-blue-400', icon: '🔵' },
+    low: { bg: 'bg-muted border-border', text: 'text-muted-foreground', icon: '⚪' },
   };
-  navigate(routes[alert.entity_type] || '/cockpit');
-}
-
-// ─── AI Smart Headline (enriched) ───
-function getSmartHeadline(ctx: {
-  humanOverdue: number;
-  criticalAlerts: number;
-  todayTasks: number;
-  todayBookings: number;
-  overdueAi: number;
-  staleQueue: number;
-  recentTranscriptions: number;
-  activeProjects: number;
-}): string {
-  if (ctx.criticalAlerts > 0) {
-    return `⚠️ ${ctx.criticalAlerts} alerte${ctx.criticalAlerts > 1 ? 's' : ''} critique${ctx.criticalAlerts > 1 ? 's' : ''} à traiter`;
-  }
-  if (ctx.humanOverdue >= 3) {
-    return `🔴 ${ctx.humanOverdue} tâches en retard — à prioriser`;
-  }
-  if (ctx.humanOverdue > 0 && ctx.todayBookings > 0) {
-    return `${ctx.humanOverdue} retard · ${ctx.todayBookings} RDV · ${ctx.todayTasks} tâche${ctx.todayTasks > 1 ? 's' : ''}`;
-  }
-  if (ctx.todayBookings > 0 && ctx.todayTasks > 0) {
-    return `${ctx.todayTasks} tâche${ctx.todayTasks > 1 ? 's' : ''} et ${ctx.todayBookings} RDV aujourd'hui`;
-  }
-  if (ctx.todayTasks > 0) {
-    return `${ctx.todayTasks} tâche${ctx.todayTasks > 1 ? 's' : ''} au programme`;
-  }
-  if (ctx.overdueAi > 20) {
-    return `🌾 ${ctx.overdueAi} tâches IA à récolter`;
-  }
-  if (ctx.staleQueue > 0) {
-    return `🔄 ${ctx.staleQueue} synthèses à mettre à jour`;
-  }
-  if (ctx.todayBookings > 0) {
-    return `${ctx.todayBookings} rendez-vous aujourd'hui`;
-  }
-  if (ctx.activeProjects > 0) {
-    return `${ctx.activeProjects} projets actifs — tout est calme`;
-  }
-  return 'Tout est calme — bon moment pour prospecter';
-}
-
-// ─── Opportunity Scoring Widget (NEW) ───
-function OpportunityScoringWidget({ opportunityScore, navigate }: { opportunityScore: any; navigate: any }) {
-  if (!opportunityScore.data?.scores?.length) return null;
-  const scores = opportunityScore.data.scores as any[];
-  const topScores = scores.sort((a: any, b: any) => b.conversion_score - a.conversion_score).slice(0, 4);
 
   return (
-    <Card>
+    <Card className="border-primary/20">
       <CardHeader className="pb-1 pt-3 px-3">
-        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <BarChart3 className="h-3.5 w-3.5" /> Scoring Prédictif
-          {opportunityScore.isPending && <Loader2 className="h-3 w-3 animate-spin ml-1" />}
+        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-primary flex items-center gap-1.5">
+          <Zap className="h-3.5 w-3.5" /> Actions Prioritaires
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0 px-3 pb-2">
         <div className="space-y-1.5">
-          {topScores.map((s: any) => (
-            <div key={s.opportunity_id}
-              className="flex items-center gap-2 py-1 px-1.5 rounded hover:bg-muted/50 cursor-pointer transition-colors"
-              onClick={() => navigate('/cockpit/pipeline')}>
-              <div className="flex-shrink-0 w-8 text-center">
-                <span className={cn("text-xs font-bold",
-                  s.conversion_score >= 70 ? "text-emerald-600" :
-                  s.conversion_score >= 40 ? "text-amber-600" : "text-destructive"
-                )}>{s.conversion_score}</span>
+          {actions.slice(0, 5).map((action, i) => {
+            const cfg = urgencyConfig[action.urgency] || urgencyConfig.medium;
+            const route = entityRoute(action.entity_type, action.entity_id);
+            return (
+              <div key={i}
+                className={cn("p-2 rounded-lg border cursor-pointer hover:opacity-80 transition-opacity", cfg.bg)}
+                onClick={() => navigate(route)}>
+                <div className="flex items-start gap-2">
+                  <span className="text-xs mt-0.5">{cfg.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className={cn("text-xs font-medium", cfg.text)}>{action.action}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{action.reasoning}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <Badge variant="outline" className="text-[9px] px-1 py-0 capitalize">{action.entity_type}</Badge>
+                      <span className="text-[9px] text-muted-foreground">{action.entity_name}</span>
+                      {action.impact_value && action.impact_value > 0 && (
+                        <span className="text-[9px] font-semibold text-primary">{formatCurrency(action.impact_value)}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs truncate">{s.opportunity_title}</p>
-                <p className="text-[10px] text-muted-foreground truncate">{s.recommended_action}</p>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── NEW: Cross Signals Widget ───
+function CrossSignalsWidget({ signals, isLoading, navigate }: { signals?: CrossSignal[]; isLoading: boolean; navigate: any }) {
+  if (isLoading || !signals?.length) return null;
+
+  return (
+    <Card className="border-violet-500/20">
+      <CardHeader className="pb-1 pt-3 px-3">
+        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400 flex items-center gap-1.5">
+          <Crosshair className="h-3.5 w-3.5" /> Signaux Croisés
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0 px-3 pb-2">
+        <div className="space-y-1.5">
+          {signals.slice(0, 4).map((signal, i) => (
+            <div key={i} className={cn(
+              "p-2 rounded-lg border text-xs",
+              signal.severity === 'high' ? 'bg-destructive/5 border-destructive/20' :
+              signal.severity === 'medium' ? 'bg-amber-500/5 border-amber-500/20' : 'bg-muted/50 border-border'
+            )}>
+              <p className="font-medium leading-snug">{signal.signal}</p>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {signal.entities.map((e, j) => (
+                  <button key={j}
+                    className="text-[9px] bg-background/80 border rounded px-1 py-0 hover:bg-primary/10 transition-colors"
+                    onClick={() => navigate(entityRoute(e.type, e.id))}>
+                    {e.name}
+                  </button>
+                ))}
               </div>
-              <Badge variant={
-                s.risk_level === 'low' ? 'secondary' :
-                s.risk_level === 'medium' ? 'outline' : 'destructive'
-              } className="text-[9px] px-1 py-0">
-                {s.risk_level === 'low' ? '🟢' : s.risk_level === 'medium' ? '🟡' : '🔴'}
-              </Badge>
             </div>
           ))}
         </div>
@@ -869,55 +829,80 @@ function OpportunityScoringWidget({ opportunityScore, navigate }: { opportunityS
   );
 }
 
-// ─── Health Check Widget ───
-function HealthCheckWidget({ healthCheck, navigate }: { healthCheck: any; navigate: any }) {
-  if (!healthCheck.data?.summary) return null;
-  const { summary } = healthCheck.data;
+// ─── NEW: Predictions Widget ───
+function PredictionsWidget({ predictions, isLoading, navigate }: { predictions?: Prediction[]; isLoading: boolean; navigate: any }) {
+  if (isLoading || !predictions?.length) return null;
+
   return (
-    <Card>
+    <Card className="border-cyan-500/20">
       <CardHeader className="pb-1 pt-3 px-3">
-        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <Shield className="h-3.5 w-3.5" /> Santé Projets
-          {healthCheck.isPending && <Loader2 className="h-3 w-3 animate-spin ml-1" />}
+        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
+          <Eye className="h-3.5 w-3.5" /> Prédictions 7j
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0 px-3 pb-2">
-        <div className="flex gap-2">
-          <div className="flex-1 text-center p-1.5 rounded bg-emerald-500/10">
-            <p className="text-lg font-bold text-emerald-600">{summary.on_track}</p>
-            <p className="text-[10px] text-muted-foreground">🟢 OK</p>
-          </div>
-          <div className="flex-1 text-center p-1.5 rounded bg-amber-500/10">
-            <p className="text-lg font-bold text-amber-600">{summary.at_risk}</p>
-            <p className="text-[10px] text-muted-foreground">🟡 Risque</p>
-          </div>
-          <div className="flex-1 text-center p-1.5 rounded bg-destructive/10">
-            <p className="text-lg font-bold text-destructive">{summary.off_track}</p>
-            <p className="text-[10px] text-muted-foreground">🔴 Danger</p>
-          </div>
+        <div className="space-y-1.5">
+          {predictions.slice(0, 4).map((pred, i) => (
+            <div key={i} className={cn(
+              "p-2 rounded-lg border text-xs",
+              pred.risk_type === 'risk' ? 'bg-destructive/5 border-destructive/20' : 'bg-emerald-500/5 border-emerald-500/20'
+            )}>
+              <div className="flex items-start gap-2">
+                {pred.risk_type === 'risk' ?
+                  <TrendingDown className="h-3.5 w-3.5 text-destructive flex-shrink-0 mt-0.5" /> :
+                  <TrendingUp className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                }
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium leading-snug">{pred.prediction}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Progress value={pred.confidence * 100} className="h-1 flex-1" />
+                    <span className="text-[9px] text-muted-foreground">{Math.round(pred.confidence * 100)}%</span>
+                    <span className="text-[9px] text-muted-foreground">{pred.timeframe}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-        {healthCheck.data.projects?.filter((p: any) => p.computed_health !== 'on_track').slice(0, 3).map((p: any) => (
-          <div key={p.project_id}
-            className="flex items-center gap-2 mt-1.5 text-xs cursor-pointer hover:bg-muted/30 rounded p-0.5"
-            onClick={() => navigate(`/cockpit/projects/${p.project_id}`)}>
-            {p.computed_health === 'off_track' ?
-              <AlertTriangle className="h-3 w-3 text-destructive flex-shrink-0" /> :
-              <AlertCircle className="h-3 w-3 text-amber-500 flex-shrink-0" />
-            }
-            <span className="truncate text-muted-foreground">{p.project_name}</span>
-            <span className="text-[10px] text-muted-foreground flex-shrink-0 ml-auto">{p.risk_factors?.[0]}</span>
-          </div>
-        ))}
       </CardContent>
     </Card>
   );
 }
 
-// ─── Sentinel Widget (col 3) ───
+// ─── Navigation helpers ───
+function entityRoute(type: string, id: string): string {
+  const routes: Record<string, string> = {
+    lead: `/cockpit/leads/${id}`,
+    opportunity: `/cockpit/pipeline`,
+    project: `/cockpit/projects/${id}`,
+    partner: `/cockpit/partenaires/${id}`,
+    transcription: `/cockpit/transcriptions/${id}`,
+    task: `/cockpit/projects`,
+  };
+  return routes[type] || '/cockpit';
+}
+
+function navigateToEntity(navigate: ReturnType<typeof useNavigate>, alert: SentinelAlert) {
+  navigate(entityRoute(alert.entity_type, alert.entity_id));
+}
+
+function getSmartHeadline(ctx: {
+  humanOverdue: number; criticalAlerts: number; todayTasks: number;
+  todayBookings: number; overdueAi: number; staleQueue: number;
+}): string {
+  if (ctx.criticalAlerts > 0) return `⚠️ ${ctx.criticalAlerts} alerte${ctx.criticalAlerts > 1 ? 's' : ''} critique${ctx.criticalAlerts > 1 ? 's' : ''}`;
+  if (ctx.humanOverdue >= 3) return `🔴 ${ctx.humanOverdue} tâches en retard`;
+  if (ctx.todayBookings > 0 && ctx.todayTasks > 0) return `${ctx.todayTasks} tâche${ctx.todayTasks > 1 ? 's' : ''} et ${ctx.todayBookings} RDV aujourd'hui`;
+  if (ctx.todayTasks > 0) return `${ctx.todayTasks} tâche${ctx.todayTasks > 1 ? 's' : ''} au programme`;
+  if (ctx.overdueAi > 20) return `🌾 ${ctx.overdueAi} tâches IA à récolter`;
+  if (ctx.staleQueue > 0) return `🔄 ${ctx.staleQueue} synthèses à mettre à jour`;
+  return 'Analyse en cours...';
+}
+
+// ─── Sentinel Widget ───
 function SentinelWidget({ alerts, lastFetched }: { alerts: SentinelAlert[]; lastFetched: Date | null }) {
   const navigate = useNavigate();
   const criticalCount = alerts.filter(a => a.severity === 'critical').length;
-
   if (alerts.length === 0) return null;
 
   return (
@@ -926,43 +911,30 @@ function SentinelWidget({ alerts, lastFetched }: { alerts: SentinelAlert[]; last
         <CardTitle className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
           <Radar className={cn("h-3.5 w-3.5", criticalCount > 0 ? "text-destructive" : "text-amber-500")} />
           <span className={criticalCount > 0 ? "text-destructive" : "text-amber-600"}>Sentinelle</span>
-          <Badge variant={criticalCount > 0 ? "destructive" : "secondary"} className="text-[10px] px-1.5 py-0 ml-1">
-            {alerts.length}
-          </Badge>
-          {lastFetched && (
-            <span className="text-[9px] text-muted-foreground ml-auto font-normal">
-              {formatDistanceToNow(lastFetched, { addSuffix: true, locale: fr })}
-            </span>
-          )}
+          <Badge variant={criticalCount > 0 ? "destructive" : "secondary"} className="text-[10px] px-1.5 py-0 ml-1">{alerts.length}</Badge>
+          {lastFetched && <span className="text-[9px] text-muted-foreground ml-auto font-normal">{formatDistanceToNow(lastFetched, { addSuffix: true, locale: fr })}</span>}
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0 px-3 pb-2">
         <div className="space-y-1">
-          {alerts.slice(0, 3).map(alert => {
-            const isCritical = alert.severity === 'critical';
-            return (
-              <button key={alert.id}
-                className={cn(
-                  "w-full text-left flex items-start gap-2 p-1.5 rounded text-xs hover:bg-muted/50 transition-colors",
-                  isCritical ? "text-destructive" : "text-muted-foreground"
-                )}
-                onClick={() => navigateToEntity(navigate, alert)}
-              >
-                {isCritical ? <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" /> : <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0 text-amber-500" />}
-                <span className="truncate">{alert.entity_name}: {alert.question}</span>
-              </button>
-            );
-          })}
-          {alerts.length > 3 && (
-            <p className="text-[10px] text-muted-foreground text-center">+{alerts.length - 3} autres</p>
-          )}
+          {alerts.slice(0, 3).map(alert => (
+            <button key={alert.id}
+              className={cn("w-full text-left flex items-start gap-2 p-1.5 rounded text-xs hover:bg-muted/50 transition-colors",
+                alert.severity === 'critical' ? "text-destructive" : "text-muted-foreground"
+              )}
+              onClick={() => navigateToEntity(navigate, alert)}>
+              {alert.severity === 'critical' ? <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" /> : <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0 text-amber-500" />}
+              <span className="truncate">{alert.entity_name}: {alert.question}</span>
+            </button>
+          ))}
+          {alerts.length > 3 && <p className="text-[10px] text-muted-foreground text-center">+{alerts.length - 3} autres</p>}
         </div>
       </CardContent>
     </Card>
   );
 }
 
-// ─── Sentinel Button (inline in header) ───
+// ─── Sentinel Button ───
 const severityConfig = {
   critical: { icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10', badge: 'destructive' as const },
   warning: { icon: AlertTriangle, color: 'text-amber-500', bg: 'bg-amber-500/10', badge: 'secondary' as const },
@@ -970,11 +942,7 @@ const severityConfig = {
 };
 
 function SentinelButton({ alerts, isLoading, onRefresh, onDismiss, lastFetched }: {
-  alerts: SentinelAlert[];
-  isLoading: boolean;
-  onRefresh: () => void;
-  onDismiss: (id: string) => void;
-  lastFetched: Date | null;
+  alerts: SentinelAlert[]; isLoading: boolean; onRefresh: () => void; onDismiss: (id: string) => void; lastFetched: Date | null;
 }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -986,29 +954,21 @@ function SentinelButton({ alerts, isLoading, onRefresh, onDismiss, lastFetched }
       <PopoverTrigger asChild>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              variant="ghost" size="sm"
+            <Button variant="ghost" size="sm"
               className={cn("h-8 px-2 relative",
                 criticalCount > 0 ? "text-destructive animate-pulse" :
                 hasAlerts ? "text-amber-600" : "text-muted-foreground"
-              )}
-            >
+              )}>
               <Radar className="h-3.5 w-3.5" />
               {hasAlerts && (
-                <span className={cn(
-                  "absolute -top-1 -right-1 text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center",
+                <span className={cn("absolute -top-1 -right-1 text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center",
                   criticalCount > 0 ? "bg-destructive text-destructive-foreground" : "bg-amber-500 text-white"
-                )}>
-                  {alerts.length > 9 ? '9+' : alerts.length}
-                </span>
+                )}>{alerts.length > 9 ? '9+' : alerts.length}</span>
               )}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            {hasAlerts
-              ? `IA Sentinelle : ${alerts.length} anomalie${alerts.length > 1 ? 's' : ''} détectée${alerts.length > 1 ? 's' : ''}`
-              : 'IA Sentinelle — Aucune anomalie'
-            }
+            {hasAlerts ? `Sentinelle : ${alerts.length} anomalie${alerts.length > 1 ? 's' : ''}` : 'Sentinelle — Aucune anomalie'}
           </TooltipContent>
         </Tooltip>
       </PopoverTrigger>
@@ -1020,11 +980,7 @@ function SentinelButton({ alerts, isLoading, onRefresh, onDismiss, lastFetched }
             {alerts.length > 0 && <Badge variant="secondary" className="text-[10px]">{alerts.length}</Badge>}
           </div>
           <div className="flex items-center gap-1">
-            {lastFetched && (
-              <span className="text-[9px] text-muted-foreground">
-                {formatDistanceToNow(lastFetched, { addSuffix: true, locale: fr })}
-              </span>
-            )}
+            {lastFetched && <span className="text-[9px] text-muted-foreground">{formatDistanceToNow(lastFetched, { addSuffix: true, locale: fr })}</span>}
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onRefresh} disabled={isLoading}>
               <RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} />
             </Button>
@@ -1035,7 +991,6 @@ function SentinelButton({ alerts, isLoading, onRefresh, onDismiss, lastFetched }
             <div className="p-6 text-center text-muted-foreground">
               <Radar className="w-8 h-8 mx-auto mb-2 opacity-30" />
               <p className="text-sm font-medium">Aucune anomalie</p>
-              <p className="text-xs mt-1">Vérification toutes les 5 min</p>
             </div>
           ) : (
             <div className="p-2 space-y-1.5">
@@ -1073,7 +1028,6 @@ function SentinelButton({ alerts, isLoading, onRefresh, onDismiss, lastFetched }
 }
 
 // ─── Sub-components ───
-
 function MiniStat({ icon: Icon, label, value, subtitle, loading, onClick }: {
   icon: any; label: string; value: string | number; subtitle?: string; loading: boolean; onClick?: () => void;
 }) {
@@ -1095,7 +1049,6 @@ function MiniStat({ icon: Icon, label, value, subtitle, loading, onClick }: {
 function TaskRow({ task, showDate, navigate }: { task: any; showDate?: boolean; navigate: any }) {
   const provenance = task.leads?.name || task.leads?.company || task.projects?.name || '';
   const handleClick = () => {
-    // Navigate to the entity linked to the task
     if (task.entity_type === 'lead' && task.entity_id) navigate(`/cockpit/leads/${task.entity_id}`);
     else if (task.entity_type === 'project' && task.entity_id) navigate(`/cockpit/projects/${task.entity_id}`);
     else if (task.lead_id) navigate(`/cockpit/leads/${task.lead_id}`);
@@ -1103,8 +1056,7 @@ function TaskRow({ task, showDate, navigate }: { task: any; showDate?: boolean; 
   };
 
   return (
-    <div className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted/50 transition-colors cursor-pointer"
-      onClick={handleClick}>
+    <div className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted/50 transition-colors cursor-pointer" onClick={handleClick}>
       <div className="flex-shrink-0">
         {task.priority === 'high' || task.priority === 'urgent' ? (
           <div className="h-2 w-2 rounded-full bg-destructive" />
@@ -1127,9 +1079,7 @@ function TaskRow({ task, showDate, navigate }: { task: any; showDate?: boolean; 
               <Badge variant="secondary" className="text-[9px] px-1 py-0 cursor-help">IA</Badge>
             </TooltipTrigger>
             <TooltipContent className="text-xs max-w-[200px]">
-              Tâche générée par l'IA
-              {task.entity_type && <span> · Liée à: {task.entity_type}</span>}
-              {task.ai_source && <span> · Source: {task.ai_source}</span>}
+              Tâche IA{task.entity_type && <span> · {task.entity_type}</span>}
             </TooltipContent>
           </Tooltip>
         )}
@@ -1169,8 +1119,7 @@ function StagnantWidget({ onSuggestFollowUp, suggestNextStep }: { onSuggestFollo
       </CardHeader>
       <CardContent className="pt-0 px-3 pb-2">
         {stagnant.map((opp: any) => (
-          <div key={opp.id}
-            className="flex items-center justify-between py-1.5 px-1.5 rounded transition-colors group">
+          <div key={opp.id} className="flex items-center justify-between py-1.5 px-1.5 rounded transition-colors group">
             <div className="min-w-0 cursor-pointer hover:bg-muted/50 flex-1" onClick={() => navigate('/cockpit/pipeline')}>
               <p className="text-xs font-medium truncate">{opp.title}</p>
               <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
@@ -1179,25 +1128,16 @@ function StagnantWidget({ onSuggestFollowUp, suggestNextStep }: { onSuggestFollo
               </div>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
-              <span className="text-[10px] text-muted-foreground">
-                {formatDistanceToNow(new Date(opp.updated_at), { locale: fr })}
-              </span>
+              <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(opp.updated_at), { locale: fr })}</span>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost" size="sm"
-                    className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  <Button variant="ghost" size="sm" className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => { e.stopPropagation(); onSuggestFollowUp(opp.id); }}
-                    disabled={suggestNextStep.isPending}
-                  >
-                    {suggestNextStep.isPending ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Zap className="h-3 w-3 text-primary" />
-                    )}
+                    disabled={suggestNextStep.isPending}>
+                    {suggestNextStep.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3 text-primary" />}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>💡 Suggestion IA de relance</TooltipContent>
+                <TooltipContent>💡 Suggestion IA</TooltipContent>
               </Tooltip>
             </div>
           </div>
@@ -1226,10 +1166,7 @@ function ActivityIcon({ type, isAI }: { type: string; isAI?: boolean }) {
     synthesis_generated: <Database className="h-3.5 w-3.5 text-primary" />,
     email_draft_generated: <Mail className="h-3.5 w-3.5 text-primary" />,
   };
-
-  if (isAI && !icons[type]) {
-    return <span className="mt-0.5 flex-shrink-0"><Brain className="h-3.5 w-3.5 text-primary/70" /></span>;
-  }
+  if (isAI && !icons[type]) return <span className="mt-0.5 flex-shrink-0"><Brain className="h-3.5 w-3.5 text-primary/70" /></span>;
   return <span className="mt-0.5 flex-shrink-0">{icons[type] || <Activity className="h-3.5 w-3.5 text-muted-foreground" />}</span>;
 }
 
