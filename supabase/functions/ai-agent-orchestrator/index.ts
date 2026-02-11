@@ -2694,6 +2694,22 @@ const AGENT_TOOLS = [
       },
     },
   },
+  // ============ PHASE 2 - INTERVIEW MODE ============
+  {
+    type: "function",
+    function: {
+      name: "detect_missing_fields",
+      description: "Détecte les champs critiques manquants d'une entité CRM (lead, opportunity, project). Utilisé quand l'utilisateur consulte une entité ou qu'une action échoue à cause d'un champ manquant. Retourne la liste des champs vides pour guider l'interview.",
+      parameters: {
+        type: "object",
+        properties: {
+          entity_type: { type: "string", enum: ["lead", "opportunity", "project"], description: "Type d'entité à analyser" },
+          entity_id: { type: "string", description: "UUID de l'entité" },
+        },
+        required: ["entity_type", "entity_id"],
+      },
+    },
+  },
 ];
 
 // =============================================================================
@@ -2769,12 +2785,22 @@ async function executeTool(
         return acc;
       }, {});
 
+      // Phase 2: Auto-detect missing critical fields for interview mode
+      const criticalLeadFieldsGet = ["email", "phone", "company", "industry", "budget", "source", "position", "city"];
+      const leadsWithMissingGet = (data || []).map((lead: any) => {
+        const missingFields = criticalLeadFieldsGet.filter(f => !lead[f] || lead[f] === "");
+        return { ...lead, missing_critical_fields: missingFields, completion_rate: Math.round(((criticalLeadFieldsGet.length - missingFields.length) / criticalLeadFieldsGet.length) * 100) };
+      });
+
       return { 
-        leads: data, 
+        leads: leadsWithMissingGet, 
         count: data?.length || 0, 
         by_status: byStatus,
         consulte_available: (data || []).some((l: any) => l.ai_documents_summary),
-        message: `${data?.length || 0} lead(s) récupéré(s)`
+        message: `${data?.length || 0} lead(s) récupéré(s)`,
+        interview_hint: leadsWithMissingGet.some((l: any) => l.missing_critical_fields.length > 0) 
+          ? "⚠️ Certains leads ont des champs critiques manquants. Si l'utilisateur consulte un lead spécifique, pose UNE question sur le premier champ manquant." 
+          : null,
       };
     }
 
@@ -2834,8 +2860,15 @@ async function executeTool(
         }
       }
       
+      // Phase 2: Auto-detect missing critical fields for interview mode
+      const criticalLeadFields = ["email", "phone", "company", "industry", "budget", "source", "position", "city"];
+      const leadsWithMissing = (data || []).map((lead: any) => {
+        const missingFields = criticalLeadFields.filter(f => !lead[f] || lead[f] === "");
+        return { ...lead, missing_critical_fields: missingFields, completion_rate: Math.round(((criticalLeadFields.length - missingFields.length) / criticalLeadFields.length) * 100) };
+      });
+
       return { 
-        leads: data,
+        leads: leadsWithMissing,
         count: data?.length || 0,
         query: searchQuery,
         search_type: "exact",
@@ -8614,6 +8647,78 @@ Génère un contenu HTML pour email avec:
       }
     }
 
+    // ============ PHASE 2 - INTERVIEW MODE ============
+    case "detect_missing_fields": {
+      const entityType = args.entity_type as string;
+      const entityId = sanitizeUUID(args.entity_id as string);
+
+      if (!entityId) {
+        return { success: false, error: "entity_id invalide (UUID requis)" };
+      }
+
+      const criticalFields: Record<string, { table: string; fields: string[] }> = {
+        lead: {
+          table: "leads",
+          fields: ["email", "phone", "company", "industry", "budget", "source", "position", "city"],
+        },
+        opportunity: {
+          table: "opportunities",
+          fields: ["value_amount", "probability", "expected_close_date", "stage"],
+        },
+        project: {
+          table: "projects",
+          fields: ["budget_amount", "start_date", "target_end_date", "health_status"],
+        },
+      };
+
+      const config = criticalFields[entityType];
+      if (!config) {
+        return { success: false, error: `Type d'entité non supporté: ${entityType}` };
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from(config.table)
+          .select(config.fields.join(", ") + ", id, name")
+          .eq("id", entityId)
+          .single();
+
+        if (error || !data) {
+          return { success: false, error: error?.message || "Entité introuvable" };
+        }
+
+        const missingFields: string[] = [];
+        const presentFields: Record<string, unknown> = {};
+
+        for (const field of config.fields) {
+          const value = data[field];
+          if (value === null || value === undefined || value === "") {
+            missingFields.push(field);
+          } else {
+            presentFields[field] = value;
+          }
+        }
+
+        const completionRate = Math.round(((config.fields.length - missingFields.length) / config.fields.length) * 100);
+
+        return {
+          success: true,
+          entity_type: entityType,
+          entity_id: entityId,
+          entity_name: data.name || entityId,
+          missing_fields: missingFields,
+          present_fields: presentFields,
+          completion_rate: completionRate,
+          total_critical_fields: config.fields.length,
+          message: missingFields.length === 0
+            ? `✅ ${entityType} "${data.name}" est complet (${completionRate}%)`
+            : `⚠️ ${missingFields.length} champ(s) manquant(s) sur ${data.name}: ${missingFields.join(", ")} (${completionRate}% complet)`,
+        };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Erreur DB" };
+      }
+    }
+
     default:
       throw new Error(`Unknown tool: ${toolName}`);
   }
@@ -8762,6 +8867,28 @@ Exemples :
 
 **Les décisions des write-tools sont AUTO-LOGGÉES en background** (save_decision automatique)
 Tu n'as rien à faire pour ça. C'est un post-processing qui sauvegarde chaque create/update/send exécuté.
+
+## PHASE 2 - INTERVIEW MODE (Enrichissement progressif)
+
+Les résultats de search_leads et get_leads incluent automatiquement "missing_critical_fields" et "completion_rate" pour chaque lead.
+
+**OBLIGATOIRE - INTERVIEW AUTOMATIQUE** : Quand tu consultes un lead et que "missing_critical_fields" n'est PAS vide :
+1. Présente les données connues de l'entité
+2. Mentionne le taux de complétion
+3. TERMINE TOUJOURS ta réponse par UNE SEULE QUESTION DIRECTE sur le premier champ manquant
+
+Exemples de questions d'interview (à adapter naturellement) :
+- phone manquant → "Quel est le numéro de téléphone de PILEA ?"
+- company manquant → "Quelle est l'entreprise de ce contact ?"  
+- industry manquant → "Dans quel secteur d'activité évolue cette entreprise ?"
+- budget manquant → "Y a-t-il un budget estimé pour ce projet ?"
+
+**PRIORITÉ ACTION** : Si l'utilisateur demande une ACTION (appeler, envoyer email) et qu'un champ manque :
+- Demande UNIQUEMENT ce champ spécifique : "Je n'ai pas le numéro de PILEA. Quel est son téléphone ?"
+- NE PAS lancer un interview complet
+
+Après la réponse de l'utilisateur → mets à jour l'entité (update_lead) puis pose la question suivante sur le prochain champ manquant.
+NE JAMAIS inventer de données pour combler les champs manquants.
 
 ## INTERDIT ABSOLU
 - Demander validation ou confirmation
