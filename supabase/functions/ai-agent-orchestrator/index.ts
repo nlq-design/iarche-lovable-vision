@@ -182,7 +182,7 @@ async function logDecision(
     const decisionText = `${toolName}: ${JSON.stringify(args).substring(0, 100)}`;
 
     await saveMemory(supabase, {
-      memory_type: "decision",
+      memory_type: "context",
       category: "executed_action",
       entity_type: entityType,
       entity_id: entityId,
