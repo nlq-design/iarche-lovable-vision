@@ -10,10 +10,10 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { callLLM, extractStructured } from "../_shared/ai-client.ts";
+import { callLLM } from "../_shared/ai-client.ts";
 import { loadPrompt } from "../_shared/prompt-loader.ts";
-import { buildMaxContext } from "../_shared/context-maximizer.ts";
-import { storeMemory, retrieveMemories, buildMemoryBlock } from "../_shared/memory-enricher.ts";
+import { buildMaxContext, formatContextSummary } from "../_shared/context-maximizer.ts";
+import { storeMemory, retrieveMemories, buildMemoryBlock, extractMemoriesFromConversation } from "../_shared/memory-enricher.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -82,7 +82,6 @@ serve(async (req) => {
     let response: unknown;
 
     if (mode === "interview") {
-      // Interview Mode: proactively gather missing CRM data
       response = await handleInterviewMode(
         supabase,
         wsId,
@@ -91,7 +90,6 @@ serve(async (req) => {
         messages as ConversationMessage[]
       );
     } else {
-      // Standard chat mode with memory
       response = await handleChatMode(
         supabase,
         wsId,
@@ -119,134 +117,77 @@ serve(async (req) => {
  * Standard chat mode with memory enrichment and tool calling
  */
 async function handleChatMode(
-  supabase: any,
+  supabase: ReturnType<typeof createClient>,
   workspaceId: string,
   userId: string,
   sessionId: string,
   messages: ConversationMessage[]
 ): Promise<unknown> {
-  // Retrieve relevant memories from previous conversations
-  const memories = await retrieveMemories(supabase, workspaceId, userId, {
+  // Retrieve relevant memories (correct signature: supabase, workspaceId, options)
+  const memories = await retrieveMemories(supabase, workspaceId, {
     category: "user_preference",
     limit: 10,
   });
 
   const memoryBlock = buildMemoryBlock(memories);
 
-  // Load system prompt
-  const systemPrompt = await loadPrompt(supabase, "cockpit-chatbot-system", "chat");
-  if (!systemPrompt) {
-    throw new Error("System prompt not found");
-  }
+  // Load system prompt with fallback
+  const systemPrompt = await loadPrompt(supabase, "cockpit-chatbot-system", {
+    system_prompt: "Tu es l'assistant commercial IA d'IArche. Tu fournis des réponses précises et actionnables basées sur les données CRM de l'utilisateur.",
+  });
 
-  // Build conversation context (simplified - full context would use buildMaxContext)
   const userMessage = messages[messages.length - 1];
   const conversationHistory = messages.slice(0, -1);
 
-  // Build messages for LLM
-  const llmMessages = [
-    {
-      role: "system",
-      content: `${systemPrompt.system_prompt}\n\n## Mémoire utilisateur:\n${memoryBlock}`,
-    },
-    ...conversationHistory.map((m) => ({
-      role: m.role,
-      content: m.content,
-    })),
-    { role: "user", content: userMessage.content },
-  ];
-
-  // Call LLM with tool definitions
-  const tools = [
-    {
-      type: "function",
-      function: {
-        name: "create_task",
-        description: "Create a new task in the CRM",
-        parameters: {
-          type: "object",
-          properties: {
-            title: { type: "string" },
-            description: { type: "string" },
-            priority: { type: "string", enum: ["low", "medium", "high", "urgent"] },
-            due_date: { type: "string", description: "ISO date string" },
-            entity_type: { type: "string" },
-            entity_id: { type: "string" },
-          },
-          required: ["title", "priority"],
-        },
-      },
-    },
-    {
-      type: "function",
-      function: {
-        name: "update_lead",
-        description: "Update lead information",
-        parameters: {
-          type: "object",
-          properties: {
-            lead_id: { type: "string" },
-            email: { type: "string" },
-            phone: { type: "string" },
-            company: { type: "string" },
-            status: { type: "string" },
-            notes: { type: "string" },
-          },
-          required: ["lead_id"],
-        },
-      },
-    },
-    {
-      type: "function",
-      function: {
-        name: "start_interview",
-        description: "Start data enrichment interview for a CRM entity",
-        parameters: {
-          type: "object",
-          properties: {
-            entity_type: { type: "string", enum: ["lead", "opportunity", "project"] },
-            entity_id: { type: "string" },
-            fields_to_collect: {
-              type: "array",
-              items: { type: "string" },
-            },
-          },
-          required: ["entity_type", "entity_id"],
-        },
-      },
-    },
-  ];
-
-  const llmResponse = await callLLM({
-    messages: llmMessages,
-    model: "google/gemini-3-flash-preview",
-    tools,
-    temperature: 0.7,
-  });
-
-  // Store key facts from user message
-  const userKeywords = extractKeywords(userMessage.content);
-  if (userKeywords.length > 0) {
-    await storeMemory(supabase, workspaceId, userId, sessionId, {
-      content: `Sujet: ${userMessage.content}`,
-      memory_type: "conversation_topic",
-      category: "user_preference",
-      importance_score: 0.6,
-    });
-  }
-
-  // Extract and execute tool calls if any
-  const toolResults = [];
-  if (llmResponse.tool_calls && llmResponse.tool_calls.length > 0) {
-    for (const toolCall of llmResponse.tool_calls) {
-      const result = await executeToolCall(supabase, workspaceId, toolCall);
-      toolResults.push({ tool: toolCall.function.name, result });
+  // Build context from CRM data if user asks about a specific entity
+  let crmContext = "";
+  const entityMention = detectEntityMention(userMessage.content);
+  if (entityMention) {
+    try {
+      const ctx = await buildMaxContext(supabase, {
+        entityType: entityMention.type,
+        entityId: entityMention.id,
+        tokenBudget: 20000, // Keep it reasonable for chat
+      });
+      crmContext = formatContextSummary(ctx);
+    } catch (e) {
+      console.warn("[chatbot-v2] Context build failed:", e);
     }
   }
 
+  // Build LLM messages
+  const llmMessages = [
+    {
+      role: "system" as const,
+      content: `${systemPrompt.system_prompt}\n\n${memoryBlock}${crmContext ? `\n\n## Contexte CRM:\n${crmContext}` : ""}`,
+    },
+    ...conversationHistory.map((m) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    })),
+    { role: "user" as const, content: userMessage.content },
+  ];
+
+  // Call LLM with correct signature: callLLM(messages, options)
+  const responseContent = await callLLM(llmMessages, {
+    functionName: "cockpit-chatbot-v2",
+    model: "google/gemini-3-flash-preview",
+    temperature: 0.7,
+    maxTokens: 1024,
+    workspaceId,
+  });
+
+  // Auto-extract memories from conversation
+  const newMemories = extractMemoriesFromConversation(userMessage.content, responseContent);
+  for (const mem of newMemories) {
+    await storeMemory(supabase, workspaceId, userId, {
+      ...mem,
+      sessionId: sessionId,
+    });
+  }
+
   return {
-    message: llmResponse.content,
-    tool_calls: toolResults.length > 0 ? toolResults : undefined,
+    message: responseContent,
     session_id: sessionId,
   };
 }
@@ -255,7 +196,7 @@ async function handleChatMode(
  * Interview Mode: proactively guide users to fill missing CRM data
  */
 async function handleInterviewMode(
-  supabase: any,
+  supabase: ReturnType<typeof createClient>,
   workspaceId: string,
   userId: string,
   context: InterviewSession | Record<string, unknown>,
@@ -267,53 +208,92 @@ async function handleInterviewMode(
     return { error: "Entity type and ID required for interview mode" };
   }
 
-  // Detect missing fields from current messages
   const missingFields = session.missing_fields || ["email", "phone", "budget"];
   const currentQuestionIdx = session.current_question || 0;
 
-  const systemPrompt = await loadPrompt(supabase, "cockpit-interview-mode", "chat");
-  if (!systemPrompt) {
-    throw new Error("Interview system prompt not found");
-  }
+  // Load prompt with fallback
+  const systemPrompt = await loadPrompt(supabase, "cockpit-interview-mode", {
+    system_prompt: "Tu es un assistant spécialisé dans l'enrichissement de données CRM. Pose des questions naturelles et bienveillantes pour collecter les informations manquantes.",
+  });
 
-  // Build interview-specific context
+  // Fetch current entity state
   const entity = await fetchEntity(supabase, session.entity_type, session.entity_id);
   const questionField = missingFields[currentQuestionIdx];
+
+  if (!questionField) {
+    return {
+      message: "Parfait, toutes les informations ont été collectées ! 🎉",
+      interview_context: {
+        ...session,
+        completed: true,
+      },
+    };
+  }
+
+  // Build context with actual CRM data
+  let entityContext = "";
+  try {
+    const ctx = await buildMaxContext(supabase, {
+      entityType: session.entity_type,
+      entityId: session.entity_id,
+      tokenBudget: 10000,
+    });
+    entityContext = formatContextSummary(ctx);
+  } catch (e) {
+    entityContext = JSON.stringify(entity || {});
+  }
 
   const interviewPrompt = `${systemPrompt.system_prompt}
 
 ## Entité à enrichir:
 - Type: ${session.entity_type}
-- ID: ${session.entity_id}
-- Données actuelles: ${JSON.stringify(entity || {})}
+- Données actuelles:
+${entityContext}
 
-## Champ manquant actuel:
-${questionField}
+## Champ manquant actuel: "${questionField}"
+## Champs restants: ${missingFields.slice(currentQuestionIdx).join(", ")}
 
-Posez une question naturelle et bienveillante pour obtenir cette information.`;
+Pose une question naturelle et conversationnelle pour obtenir "${questionField}". 
+Explique brièvement pourquoi cette information est utile.
+Ne pose qu'UNE seule question à la fois.`;
 
   const llmMessages = [
-    { role: "system", content: interviewPrompt },
+    { role: "system" as const, content: interviewPrompt },
     ...messages.map((m) => ({
-      role: m.role,
+      role: m.role as "user" | "assistant",
       content: m.content,
     })),
   ];
 
-  const llmResponse = await callLLM({
-    messages: llmMessages,
+  // Call LLM with correct signature
+  const responseContent = await callLLM(llmMessages, {
+    functionName: "cockpit-chatbot-v2",
     model: "google/gemini-3-flash-preview",
     temperature: 0.6,
+    workspaceId,
   });
 
-  // If user provided answer, update entity
-  const lastUserMessage = messages.length > 0 ? messages[messages.length - 1].content : "";
-  if (lastUserMessage && lastUserMessage.length > 5) {
-    await updateEntityField(supabase, session.entity_type, session.entity_id, questionField, lastUserMessage);
+  // If user provided answer in last message, update entity field
+  const lastUserMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+  if (lastUserMessage?.role === "user" && lastUserMessage.content.length > 2) {
+    const previousField = currentQuestionIdx > 0 ? missingFields[currentQuestionIdx - 1] : null;
+    if (previousField) {
+      await updateEntityField(supabase, session.entity_type, session.entity_id, previousField, lastUserMessage.content);
+      
+      // Log the enrichment
+      await supabase.from("activity_log").insert({
+        workspace_id: workspaceId,
+        entity_type: session.entity_type,
+        entity_id: session.entity_id,
+        activity_type: "ai_action",
+        title: `Interview IA: "${previousField}" enrichi`,
+        is_ai_generated: true,
+      });
+    }
   }
 
   return {
-    message: llmResponse.content,
+    message: responseContent,
     interview_context: {
       entity_type: session.entity_type,
       entity_id: session.entity_id,
@@ -325,52 +305,38 @@ Posez une question naturelle et bienveillante pour obtenir cette information.`;
 }
 
 /**
- * Execute tool calls from LLM responses
+ * Detect entity mentions in user message (simple heuristic)
  */
-async function executeToolCall(
-  supabase: any,
-  workspaceId: string,
-  toolCall: any
-): Promise<unknown> {
-  const { name, arguments: args } = toolCall.function;
-  const parsedArgs = typeof args === "string" ? JSON.parse(args) : args;
+function detectEntityMention(text: string): { type: string; id: string } | null {
+  // UUID pattern in message
+  const uuidMatch = text.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+  if (!uuidMatch) return null;
 
-  switch (name) {
-    case "create_task":
-      return await supabase.from("tasks").insert({
-        workspace_id: workspaceId,
-        ...parsedArgs,
-        status: "pending",
-      });
+  const lowerText = text.toLowerCase();
+  let type = "lead";
+  if (lowerText.includes("projet") || lowerText.includes("project")) type = "project";
+  else if (lowerText.includes("opportunit")) type = "opportunity";
+  else if (lowerText.includes("partenaire") || lowerText.includes("partner")) type = "partner";
 
-    case "update_lead":
-      return await supabase
-        .from("leads")
-        .update(parsedArgs)
-        .eq("id", parsedArgs.lead_id)
-        .select();
-
-    case "start_interview":
-      return { interview_started: true, context: parsedArgs };
-
-    default:
-      return { error: `Tool ${name} not implemented` };
-  }
+  return { type, id: uuidMatch[1] };
 }
 
 /**
  * Fetch entity details
  */
 async function fetchEntity(
-  supabase: any,
+  supabase: ReturnType<typeof createClient>,
   entityType: string,
   entityId: string
 ): Promise<unknown> {
-  const { data } = await supabase
-    .from(entityType === "lead" ? "leads" : entityType === "opportunity" ? "opportunities" : "projects")
-    .select("*")
-    .eq("id", entityId)
-    .single();
+  const tableMap: Record<string, string> = {
+    lead: "leads",
+    opportunity: "opportunities",
+    project: "projects",
+    partner: "partners",
+  };
+  const tableName = tableMap[entityType] || "leads";
+  const { data } = await supabase.from(tableName).select("*").eq("id", entityId).single();
   return data;
 }
 
@@ -378,24 +344,31 @@ async function fetchEntity(
  * Update entity field with collected data
  */
 async function updateEntityField(
-  supabase: any,
+  supabase: ReturnType<typeof createClient>,
   entityType: string,
   entityId: string,
   fieldName: string,
   value: string
-): Promise<unknown> {
-  const tableName = entityType === "lead" ? "leads" : entityType === "opportunity" ? "opportunities" : "projects";
-  return await supabase
-    .from(tableName)
-    .update({ [fieldName]: value })
-    .eq("id", entityId)
-    .select();
+): Promise<void> {
+  const tableMap: Record<string, string> = {
+    lead: "leads",
+    opportunity: "opportunities",
+    project: "projects",
+    partner: "partners",
+  };
+  const tableName = tableMap[entityType] || "leads";
+
+  try {
+    await supabase.from(tableName).update({ [fieldName]: value }).eq("id", entityId);
+  } catch (e) {
+    console.warn(`[chatbot-v2] Failed to update ${tableName}.${fieldName}:`, e);
+  }
 }
 
 /**
  * Get user's default workspace
  */
-async function getUserWorkspace(supabase: any, userId: string): Promise<string | null> {
+async function getUserWorkspace(supabase: ReturnType<typeof createClient>, userId: string): Promise<string | null> {
   const { data } = await supabase
     .from("workspaces")
     .select("id")
@@ -403,12 +376,4 @@ async function getUserWorkspace(supabase: any, userId: string): Promise<string |
     .limit(1)
     .single();
   return data?.id || null;
-}
-
-/**
- * Extract keywords from user message for memory storage
- */
-function extractKeywords(text: string): string[] {
-  const words = text.toLowerCase().split(/\s+/);
-  return words.filter((w) => w.length > 4 && !["about", "think", "would", "could"].includes(w));
 }

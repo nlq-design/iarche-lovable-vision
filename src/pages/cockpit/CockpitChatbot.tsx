@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -131,13 +132,14 @@ export default function CockpitChatbot() {
         content: m.content,
       }));
 
-      const { data, error } = await supabase.functions.invoke('ai-agent-orchestrator', {
+      const { data, error } = await supabase.functions.invoke('cockpit-chatbot-v2', {
         body: {
           messages: [
             ...conversationHistory,
             { role: 'user', content: userMessage.content },
           ],
           session_id: sessionIdRef.current,
+          mode: 'chat',
         },
       });
 
@@ -276,7 +278,13 @@ export default function CockpitChatbot() {
                         : "bg-muted border"
                     )}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    {message.role === 'assistant' ? (
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    )}
                     
                     {message.toolCalls && message.toolCalls.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-border/50">
