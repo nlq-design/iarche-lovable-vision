@@ -44,6 +44,62 @@ export type Database = {
         }
         Relationships: []
       }
+      action_proposals: {
+        Row: {
+          action_label: string
+          action_payload: Json
+          action_type: string
+          ai_reasoning: string | null
+          created_at: string
+          executed_at: string | null
+          executed_result: Json | null
+          id: string
+          status: string
+          updated_at: string
+          user_id: string | null
+          validation_notes: string | null
+          workspace_id: string
+        }
+        Insert: {
+          action_label: string
+          action_payload: Json
+          action_type: string
+          ai_reasoning?: string | null
+          created_at?: string
+          executed_at?: string | null
+          executed_result?: Json | null
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          validation_notes?: string | null
+          workspace_id: string
+        }
+        Update: {
+          action_label?: string
+          action_payload?: Json
+          action_type?: string
+          ai_reasoning?: string | null
+          created_at?: string
+          executed_at?: string | null
+          executed_result?: Json | null
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          validation_notes?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_proposals_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_log: {
         Row: {
           activity_type: string
