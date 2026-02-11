@@ -14,6 +14,8 @@ interface InterviewModeDialogProps {
   entityId: string;
   entityName: string;
   workspaceId?: string;
+  /** Override default missing fields with dynamic ones from completeness check */
+  missingFields?: string[];
 }
 
 interface Message {
@@ -28,13 +30,16 @@ export function InterviewModeDialog({
   entityId,
   entityName,
   workspaceId,
+  missingFields: propMissingFields,
 }: InterviewModeDialogProps) {
+  const defaultMissing = propMissingFields?.length ? propMissingFields : ['email', 'phone', 'budget', 'decision_date'];
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [interviewContext, setInterviewContext] = useState({
     entity_type: entityType,
     entity_id: entityId,
-    missing_fields: ['email', 'phone', 'budget', 'decision_date'],
+    missing_fields: defaultMissing,
     current_question: 0,
     completed: false,
   });
@@ -44,15 +49,16 @@ export function InterviewModeDialog({
     if (!open) {
       setMessages([]);
       setInput('');
+      const fields = propMissingFields?.length ? propMissingFields : ['email', 'phone', 'budget', 'decision_date'];
       setInterviewContext({
         entity_type: entityType,
         entity_id: entityId,
-        missing_fields: ['email', 'phone', 'budget', 'decision_date'],
+        missing_fields: fields,
         current_question: 0,
         completed: false,
       });
     }
-  }, [open, entityType, entityId]);
+  }, [open, entityType, entityId, propMissingFields]);
 
   const { sendMessage } = useCockpitChatbotV2(workspaceId);
   const isLoading = sendMessage.isPending;

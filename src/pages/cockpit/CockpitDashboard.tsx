@@ -31,6 +31,7 @@ import { useAISentinel, SentinelAlert } from '@/hooks/cockpit/useAISentinel';
 import { useAutoConsulte } from '@/hooks/cockpit/useAutoConsulte';
 import { CreateTaskDialog } from '@/components/cockpit/dialogs';
 import { HarvestInterviewPanel } from '@/components/cockpit/HarvestInterviewPanel';
+import { ActionProposalsList } from '@/components/cockpit/ActionProposalsList';
 import { format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
@@ -354,6 +355,9 @@ export default function CockpitDashboard() {
 
               {/* ⚡ TOP ACTIONS (from Intelligence) */}
               <TopActionsWidget actions={intelligence?.top_actions} isLoading={intelLoading} navigate={navigate} />
+
+              {/* ⚡ ACTION PROPOSALS (from Chatbot AI) */}
+              <ActionProposalsList compact />
 
               {/* Today tasks */}
               <Card>

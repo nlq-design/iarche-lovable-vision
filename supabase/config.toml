@@ -176,3 +176,6 @@ verify_jwt = false
 
 [functions.cockpit-chatbot-v2]
 verify_jwt = false
+
+[functions.execute-action-proposal]
+verify_jwt = false

@@ -87,6 +87,8 @@ import { LeadContactsSection } from '@/components/cockpit/LeadContactsSection';
 import { usePappersLookup } from '@/hooks/cockpit/usePappersLookup';
 import { Users, Loader2 as LoaderIcon } from 'lucide-react';
 import { InterviewModeDialog } from '@/components/cockpit/InterviewModeDialog';
+import { CompletenessIndicator } from '@/components/cockpit/CompletenessIndicator';
+import { useEntityCompleteness } from '@/hooks/cockpit/useEntityCompleteness';
 
 type Lead = Database['public']['Tables']['leads']['Row'];
 
@@ -162,6 +164,9 @@ const CockpitLeadDetail = () => {
   const [linkSolutionOpen, setLinkSolutionOpen] = useState(false);
   const [linkPartnerOpen, setLinkPartnerOpen] = useState(false);
   const [interviewOpen, setInterviewOpen] = useState(false);
+
+  // Entity completeness (after lead data is available)
+  const leadCompleteness = useEntityCompleteness('lead', lead as Record<string, unknown> | null);
 
   // Pappers enrichment
   const { lookupBySiret, isLoading: isPappersLoading } = usePappersLookup();
@@ -409,6 +414,11 @@ const CockpitLeadDetail = () => {
                 <Badge variant="secondary" className="text-xs">
                   {SOURCE_LABELS[lead.source] || lead.source}
                 </Badge>
+                <CompletenessIndicator
+                  completeness={leadCompleteness}
+                  onEnrich={() => setInterviewOpen(true)}
+                  compact
+                />
               </div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
@@ -1291,6 +1301,7 @@ const CockpitLeadDetail = () => {
         entityType="lead"
         entityId={id!}
         entityName={lead.name}
+        missingFields={leadCompleteness.missingFieldKeys}
       />
     </CockpitLayout>
   );

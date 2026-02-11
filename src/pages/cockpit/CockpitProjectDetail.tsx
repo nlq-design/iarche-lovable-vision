@@ -83,6 +83,8 @@ import { LinkedGeneratedDocumentsSection } from '@/components/cockpit/LinkedGene
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 import { InterviewModeDialog } from '@/components/cockpit/InterviewModeDialog';
+import { CompletenessIndicator } from '@/components/cockpit/CompletenessIndicator';
+import { useEntityCompleteness } from '@/hooks/cockpit/useEntityCompleteness';
 
 type Project = Database['public']['Tables']['projects']['Row'];
 type Lead = Database['public']['Tables']['leads']['Row'];
@@ -103,7 +105,9 @@ const CockpitProjectDetail = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [interviewOpen, setInterviewOpen] = useState(false);
-  
+
+  // Dialog states for adding items
+
   // Dialog states for adding items
   const [showAddNoteDialog, setShowAddNoteDialog] = useState(false);
   const [showAddTaskDialog, setShowAddTaskDialog] = useState(false);
@@ -131,6 +135,9 @@ const CockpitProjectDetail = () => {
     },
     enabled: !!id,
   });
+
+  // Entity completeness (after project data is available)
+  const projectCompleteness = useEntityCompleteness('project', project as Record<string, unknown> | null);
 
   // Fetch lead if linked
   const { data: linkedLead } = useQuery({
@@ -308,7 +315,14 @@ const CockpitProjectDetail = () => {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="min-w-0 flex-1">
-              <h1 className="text-lg sm:text-xl font-semibold text-foreground truncate">{project.name || 'Nouveau projet'}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg sm:text-xl font-semibold text-foreground truncate">{project.name || 'Nouveau projet'}</h1>
+                <CompletenessIndicator
+                  completeness={projectCompleteness}
+                  onEnrich={() => setInterviewOpen(true)}
+                  compact
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
                 Créé le {project.created_at && format(new Date(project.created_at), 'dd MMM yyyy', { locale: fr })}
               </p>
@@ -1001,6 +1015,7 @@ const CockpitProjectDetail = () => {
         entityType="project"
         entityId={id!}
         entityName={project.name || 'Projet'}
+        missingFields={projectCompleteness.missingFieldKeys}
       />
     </CockpitLayout>
   );
