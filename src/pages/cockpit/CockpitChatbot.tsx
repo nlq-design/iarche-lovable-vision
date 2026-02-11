@@ -132,14 +132,15 @@ export default function CockpitChatbot() {
         content: m.content,
       }));
 
-      const { data, error } = await supabase.functions.invoke('cockpit-chatbot-v2', {
+      // Route through the full orchestrator — circular architecture
+      // This gives the chatbot access to ALL 40+ CRM tools (bookings, leads, RAG, agenda, etc.)
+      const { data, error } = await supabase.functions.invoke('ai-agent-orchestrator', {
         body: {
           messages: [
             ...conversationHistory,
             { role: 'user', content: userMessage.content },
           ],
           session_id: sessionIdRef.current,
-          mode: 'chat',
         },
       });
 

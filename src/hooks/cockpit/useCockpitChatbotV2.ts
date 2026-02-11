@@ -30,13 +30,12 @@ export function useCockpitChatbotV2(workspaceId?: string) {
       mode?: 'chat' | 'interview';
       interview_context?: InterviewContext;
     }) => {
-      const { data, error } = await supabase.functions.invoke('cockpit-chatbot-v2', {
+      // Route through the full orchestrator for circular architecture
+      const { data, error } = await supabase.functions.invoke('ai-agent-orchestrator', {
         body: {
           messages,
           session_id: sessionId,
           workspace_id: workspaceId,
-          mode,
-          interview_context,
         },
       });
 
