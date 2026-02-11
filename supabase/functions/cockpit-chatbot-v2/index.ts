@@ -434,11 +434,29 @@ async function updateEntityField(
  * Get user's default workspace
  */
 async function getUserWorkspace(supabase: ReturnType<typeof createClient>, userId: string): Promise<string | null> {
+  // Try workspace_members first (most reliable)
+  const { data: member } = await supabase
+    .from("workspace_members")
+    .select("workspace_id")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
+  if (member?.workspace_id) return member.workspace_id;
+
+  // Fallback: workspace created_by
   const { data } = await supabase
     .from("workspaces")
     .select("id")
     .eq("created_by", userId)
     .limit(1)
-    .single();
-  return data?.id || null;
+    .maybeSingle();
+  if (data?.id) return data.id;
+
+  // Last resort: return the default workspace
+  const { data: defaultWs } = await supabase
+    .from("workspaces")
+    .select("id")
+    .limit(1)
+    .maybeSingle();
+  return defaultWs?.id || null;
 }
