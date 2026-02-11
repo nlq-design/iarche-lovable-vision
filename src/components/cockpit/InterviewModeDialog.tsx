@@ -39,6 +39,21 @@ export function InterviewModeDialog({
     completed: false,
   });
 
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setMessages([]);
+      setInput('');
+      setInterviewContext({
+        entity_type: entityType,
+        entity_id: entityId,
+        missing_fields: ['email', 'phone', 'budget', 'decision_date'],
+        current_question: 0,
+        completed: false,
+      });
+    }
+  }, [open, entityType, entityId]);
+
   const { sendMessage } = useCockpitChatbotV2(workspaceId);
   const isLoading = sendMessage.isPending;
 
@@ -161,8 +176,8 @@ export function InterviewModeDialog({
           )}
 
           {interviewContext.completed && (
-            <div className="p-3 rounded-lg bg-emerald-50/50 border border-emerald-200/50 flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" />
+            <div className="p-3 rounded-lg bg-accent/50 border border-border flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
               <p className="text-sm text-foreground">
                 Enrichissement terminé ! Les données ont été mises à jour.
               </p>

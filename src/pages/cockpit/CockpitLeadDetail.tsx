@@ -86,6 +86,7 @@ import type { Database } from '@/integrations/supabase/types';
 import { LeadContactsSection } from '@/components/cockpit/LeadContactsSection';
 import { usePappersLookup } from '@/hooks/cockpit/usePappersLookup';
 import { Users, Loader2 as LoaderIcon } from 'lucide-react';
+import { InterviewModeDialog } from '@/components/cockpit/InterviewModeDialog';
 
 type Lead = Database['public']['Tables']['leads']['Row'];
 
@@ -160,6 +161,7 @@ const CockpitLeadDetail = () => {
   const [linkProjectOpen, setLinkProjectOpen] = useState(false);
   const [linkSolutionOpen, setLinkSolutionOpen] = useState(false);
   const [linkPartnerOpen, setLinkPartnerOpen] = useState(false);
+  const [interviewOpen, setInterviewOpen] = useState(false);
 
   // Pappers enrichment
   const { lookupBySiret, isLoading: isPappersLoading } = usePappersLookup();
@@ -415,6 +417,15 @@ const CockpitLeadDetail = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-sm gap-1.5"
+              onClick={() => setInterviewOpen(true)}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Enrichir IA</span>
+            </Button>
             <Button
               size="sm"
               className="h-8 text-sm"
@@ -1273,6 +1284,14 @@ const CockpitLeadDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <InterviewModeDialog
+        open={interviewOpen}
+        onOpenChange={setInterviewOpen}
+        entityType="lead"
+        entityId={id!}
+        entityName={lead.name}
+      />
     </CockpitLayout>
   );
 };
