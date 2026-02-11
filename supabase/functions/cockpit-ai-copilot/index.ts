@@ -1457,13 +1457,13 @@ async function intelligenceAggregator(supabase: any, workspaceId: string) {
       .eq("workspace_id", workspaceId).gte("created_at", sevenDaysAgo)
       .order("created_at", { ascending: false }).limit(50),
     supabase.from("voice_transcriptions").select("id, title, transcription_date, ai_summary, lead_id, project_id, status")
-      .eq("status", "done").gte("transcription_date", fourteenDaysAgo)
+      .eq("workspace_id", workspaceId).eq("status", "done").gte("transcription_date", fourteenDaysAgo)
       .order("transcription_date", { ascending: false }).limit(10),
     supabase.from("partners").select("id, name, partner_type, expertise, ai_documents_summary, is_active")
       .eq("workspace_id", workspaceId).eq("is_active", true).limit(15),
-    supabase.from("leads").select("id", { count: "exact", head: true }).eq("synthesis_stale", true),
-    supabase.from("projects").select("id", { count: "exact", head: true }).eq("synthesis_stale", true),
-    supabase.from("partners").select("id", { count: "exact", head: true }).eq("synthesis_stale", true),
+    supabase.from("leads").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId).eq("synthesis_stale", true),
+    supabase.from("projects").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId).eq("synthesis_stale", true),
+    supabase.from("partners").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId).eq("synthesis_stale", true),
     detectInactivity(supabase, workspaceId),
     healthCheckProjects(supabase, workspaceId),
     opportunityScore(supabase, workspaceId),

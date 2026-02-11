@@ -74,7 +74,9 @@ export interface IntelligenceResult {
   raw: IntelligenceRawData;
 }
 
-export function useCockpitIntelligence(workspaceId?: string) {
+const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
+
+export function useCockpitIntelligence(workspaceId: string = DEFAULT_WORKSPACE_ID) {
   const queryClient = useQueryClient();
   const [autoFetched, setAutoFetched] = useState(false);
 
