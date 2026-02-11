@@ -58,6 +58,29 @@ function sanitizeUUID(input: string | undefined | null): string {
 }
 
 // =============================================================================
+// MODEL CONTEXT WINDOWS
+// =============================================================================
+
+function getModelContextWindow(modelId: string): number {
+  const contextWindows: Record<string, number> = {
+    "google/gemini-2.5-pro": 1048576,
+    "google/gemini-3-pro-preview": 1048576,
+    "google/gemini-3-flash-preview": 1048576,
+    "google/gemini-2.5-flash": 1048576,
+    "google/gemini-2.5-flash-lite": 131072,
+    "openai/gpt-5": 128000,
+    "openai/gpt-5-mini": 128000,
+    "openai/gpt-5-nano": 128000,
+    "openai/gpt-5.2": 128000,
+  };
+  // Find by exact match or prefix
+  for (const [key, value] of Object.entries(contextWindows)) {
+    if (modelId === key || modelId.startsWith(key)) return value;
+  }
+  return 32000; // Conservative fallback
+}
+
+// =============================================================================
 // MEMORY HELPERS
 // =============================================================================
 
@@ -2702,7 +2725,10 @@ async function executeTool(
   supabase: any,
   toolName: string,
   args: Record<string, unknown>,
-  conversationHistory?: Array<{ role: string; content: string }>
+  conversationHistory?: Array<{ role: string; content: string }>,
+  workspaceId?: string,
+  userId?: string,
+  sessionId?: string
 ): Promise<unknown> {
   console.log(`Executing tool: ${toolName}`, args);
 
@@ -8524,19 +8550,24 @@ Génère un contenu HTML pour email avec:
     case "save_user_preference": {
       const prefText = args.preference_text as string;
       const category = (args.category as string) || "user_preference";
-      const importance = (args.importance_score as number) || 0.8;
+      const importance = (args.importance_score as number) || 0.85;
 
       if (!prefText || prefText.length < 5) {
         return { success: false, error: "preference_text trop court (min 5 chars)" };
       }
 
       try {
+        // Preferences expire after 180 days (CDC v3.1)
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 180);
+
         await saveMemory(supabase, {
           memory_type: "preference",
           category,
           content: prefText,
           importance_score: Math.min(importance, 1.0),
-          metadata: { saved_by: "user_preference_tool", auto_detected: false },
+          expires_at: expiresAt.toISOString(),
+          metadata: { saved_by: "user_preference_tool", auto_detected: false, expiration_days: 180 },
         }, workspaceId, userId, sessionId);
 
         return {
@@ -9342,7 +9373,7 @@ ${calendarRef.join('\n')}
         const toolStartTime = Date.now();
 
         try {
-          const toolResult = await executeTool(supabase, toolName, toolArgs, messages);
+          const toolResult = await executeTool(supabase, toolName, toolArgs, messages, workspace_id, user_id, session_id);
           const toolDuration = Date.now() - toolStartTime;
           
           allToolCalls.push({ name: toolName, result: toolResult, duration_ms: toolDuration });
@@ -9355,23 +9386,33 @@ ${calendarRef.join('\n')}
           // Enhanced logging with execution time
           console.log(`Tool ${toolName} completed in ${toolDuration}ms`);
           
-          // Save tool call to memory with timing data
-          await saveMemory(supabase, {
-            memory_type: "tool_call",
-            category: toolName,
-            content: `Tool ${toolName} appelé avec ${JSON.stringify(toolArgs).slice(0, 200)}`,
-            metadata: { 
-              tool: toolName, 
-              args: toolArgs, 
-              success: true,
-              duration_ms: toolDuration,
-              timestamp: new Date().toISOString(),
-            },
-            importance_score: 0.6,
-            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-          }, workspace_id, user_id, session_id);
+          // Save tool call to memory - skip for write tools (logDecision handles those with higher importance)
+          const writeToolNames = [
+            "create_lead", "update_lead", "create_booking", "update_booking",
+            "create_task", "update_task", "create_project", "update_project",
+            "send_email", "create_meeting_note", "update_meeting_note",
+            "create_opportunity", "update_opportunity", "update_lead_score"
+          ];
+          const isWriteTool = writeToolNames.includes(toolName);
           
-          // Phase 1: Auto-log write decisions (post-processing)
+          if (!isWriteTool) {
+            await saveMemory(supabase, {
+              memory_type: "tool_call",
+              category: toolName,
+              content: `Tool ${toolName} appelé avec ${JSON.stringify(toolArgs).slice(0, 200)}`,
+              metadata: { 
+                tool: toolName, 
+                args: toolArgs, 
+                success: true,
+                duration_ms: toolDuration,
+                timestamp: new Date().toISOString(),
+              },
+              importance_score: 0.6,
+              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            }, workspace_id, user_id, session_id);
+          }
+          
+          // Phase 1: Auto-log write decisions (post-processing, replaces saveMemory for write tools)
           await logDecision(supabase, toolName, toolArgs, toolResult, workspace_id, user_id, session_id);
           
         } catch (toolError) {
@@ -9440,9 +9481,9 @@ ${calendarRef.join('\n')}
       tool_calls: allToolCalls,
       usage: {
         ...aiResponse.usage,
-        max_tokens: selectedModel.includes("gpt-5") ? 128000 : 32000, // Context window based on model
+        max_tokens: getModelContextWindow(selectedModel),
         model_id: selectedModel,
-        tokens_available: (selectedModel.includes("gpt-5") ? 128000 : 32000) - (aiResponse.usage?.total_tokens || 0),
+        tokens_available: getModelContextWindow(selectedModel) - (aiResponse.usage?.total_tokens || 0),
       },
       memory_used: recentMemory.length + relevantMemory.length > 0,
       active_entities_count: activeEntities.length,
