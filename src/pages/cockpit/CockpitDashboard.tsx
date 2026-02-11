@@ -999,7 +999,7 @@ function SentinelButton({ alerts, isLoading, onRefresh, onDismiss, lastFetched }
           ) : (
             <div className="p-2 space-y-1.5">
               {alerts.map(alert => {
-                const config = severityConfig[alert.severity];
+                const config = severityConfig[alert.severity as keyof typeof severityConfig] ?? severityConfig.info;
                 const Icon = config.icon;
                 return (
                   <div key={alert.id} className={cn("p-2.5 rounded-lg border transition-colors hover:bg-muted/50", config.bg)}>
