@@ -10,7 +10,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { callLLM } from "../_shared/ai-client.ts";
+import { createAIClient } from "../_shared/ai-client.ts";
 import { loadPrompt } from "../_shared/prompt-loader.ts";
 import { buildMaxContext, formatContextSummary } from "../_shared/context-maximizer.ts";
 import { storeMemory, retrieveMemories, buildMemoryBlock, extractMemoriesFromConversation } from "../_shared/memory-enricher.ts";
@@ -190,41 +190,45 @@ async function handleChatMode(
     },
   ];
 
-  const responseContent = await callLLM(llmMessages, {
-    functionName: "cockpit-chatbot-v2",
-    model: "google/gemini-3-flash-preview",
+  // Use createAIClient().complete() directly to support tool_calls
+  const aiClient = createAIClient({ workspaceId, userId });
+  
+  // Auto-fetch function-specific config
+  const functionConfig = await aiClient.getFunctionConfig("cockpit-chatbot-v2");
+  const resolvedModel = functionConfig?.model || "google/gemini-3-flash-preview";
+  const resolvedProvider = functionConfig?.provider || undefined;
+
+  const response = await aiClient.complete({
+    messages: llmMessages as Array<{ role: "system" | "user" | "assistant"; content: string }>,
+    model: resolvedModel,
+    provider: resolvedProvider,
     temperature: 0.7,
-    maxTokens: 1024,
-    workspaceId,
-    tools,
+    max_tokens: 1024,
+    tools: tools as Array<{ type: "function"; function: { name: string; description: string; parameters: Record<string, unknown> } }>,
+    tool_choice: "auto",
   });
 
-  // Check if response contains tool calls (action proposals)
-  let messageText = responseContent;
+  // Extract tool calls (action proposals) from response
+  let messageText = response.content || "";
   const actionProposals: Array<{ action_type: string; action_label: string; action_payload: unknown; ai_reasoning?: string }> = [];
 
-  // Parse potential JSON tool call responses
-  try {
-    if (typeof responseContent === "object" && responseContent !== null) {
-      const rc = responseContent as Record<string, unknown>;
-      if (rc.tool_calls && Array.isArray(rc.tool_calls)) {
-        for (const tc of rc.tool_calls) {
-          const tcObj = tc as Record<string, unknown>;
-          if (tcObj.function) {
-            const fn = tcObj.function as Record<string, unknown>;
-            if (fn.name === "propose_action") {
-              const args = typeof fn.arguments === "string" ? JSON.parse(fn.arguments) : fn.arguments;
-              actionProposals.push(args);
-            }
-          }
+  if (response.tool_calls && response.tool_calls.length > 0) {
+    console.log(`[chatbot-v2] Received ${response.tool_calls.length} tool call(s)`);
+    for (const tc of response.tool_calls) {
+      if (tc.function.name === "propose_action") {
+        try {
+          const args = JSON.parse(tc.function.arguments);
+          actionProposals.push(args);
+          console.log(`[chatbot-v2] Action proposed: ${args.action_type} - ${args.action_label}`);
+        } catch (e) {
+          console.warn("[chatbot-v2] Failed to parse tool call arguments:", e);
         }
-        messageText = rc.content as string || "J'ai préparé des actions pour toi.";
-      } else if (rc.content) {
-        messageText = rc.content as string;
       }
     }
-  } catch (e) {
-    console.warn("[chatbot-v2] Tool call parsing:", e);
+    // If model only returned tool_calls without content, generate a summary
+    if (!messageText && actionProposals.length > 0) {
+      messageText = `J'ai préparé ${actionProposals.length} action(s) pour toi. Tu peux les valider ou les rejeter depuis le tableau de bord.`;
+    }
   }
 
   // Store action proposals in DB
