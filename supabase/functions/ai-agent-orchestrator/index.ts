@@ -126,6 +126,53 @@ async function saveMemory(supabase: any, entry: MemoryEntry, workspaceId?: strin
   }
 }
 
+/**
+ * Log a decision automatically after a write tool is executed.
+ * Used for post-processing without LLM round-trip.
+ * Records the action + result to ai_agent_memory for context.
+ */
+// deno-lint-ignore no-explicit-any
+async function logDecision(
+  supabase: any,
+  toolName: string,
+  args: Record<string, unknown>,
+  result: unknown,
+  workspaceId?: string,
+  userId?: string,
+  sessionId?: string
+): Promise<void> {
+  const writeTools = [
+    "create_lead", "update_lead", "create_booking", "update_booking",
+    "create_task", "update_task", "create_project", "update_project",
+    "send_email", "create_meeting_note", "update_meeting_note",
+    "create_opportunity", "update_opportunity", "update_lead_score"
+  ];
+
+  // Only log write operations that succeeded
+  if (!writeTools.includes(toolName)) return;
+  if (typeof result === "object" && result !== null && "success" in result && !result.success) return;
+
+  try {
+    const entityId = (args.lead_id || args.booking_id || args.task_id || args.project_id || args.opportunity_id) as string | undefined;
+    const entityType = toolName.split("_")[1] || "unknown"; // e.g., "create_lead" -> "lead"
+
+    const decisionText = `${toolName}: ${JSON.stringify(args).substring(0, 100)}`;
+
+    await saveMemory(supabase, {
+      memory_type: "decision",
+      category: "executed_action",
+      entity_type: entityType,
+      entity_id: entityId,
+      content: decisionText,
+      importance_score: 0.9,
+      metadata: { tool_result: typeof result === "string" ? result : "success" },
+    }, workspaceId, userId, sessionId);
+  } catch (err) {
+    console.error("[logDecision] Error:", err);
+    // Silent fail - don't break orchestration
+  }
+}
+
 // deno-lint-ignore no-explicit-any
 async function getRecentMemory(supabase: any, workspaceId?: string, userId?: string, sessionId?: string, limit = 10): Promise<string[]> {
   try {
@@ -2587,6 +2634,40 @@ const AGENT_TOOLS = [
           entity_type: { type: "string", enum: ["lead", "project", "partner", "all"], description: "Type d'entité (défaut: all)" },
           max_count: { type: "number", description: "Nombre max à traiter (défaut: 10)" },
         },
+      },
+    },
+  },
+  // ============ PHASE 1 - MEMORY ENRICHMENT ============
+  {
+    type: "function",
+    function: {
+      name: "save_user_preference",
+      description: "Sauvegarde une préférence utilisateur explicite dans la mémoire IA. Appelé quand l'IA détecte une préférence déclarée par l'utilisateur.",
+      parameters: {
+        type: "object",
+        properties: {
+          preference_text: { type: "string", description: "Description claire de la préférence (ex: 'préfère les réunions en fin de journée')" },
+          category: { type: "string", description: "Catégorie (optionnel, ex: 'communication', 'scheduling', 'format')" },
+          importance_score: { type: "number", description: "Score d'importance 0-1 (défaut: 0.8)" },
+        },
+        required: ["preference_text"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "save_context_insight",
+      description: "Sauvegarde un insight contextuel notable détecté dans les données CRM (changement de statut, anomalie, date proche, fait clé). Importance modérée, expire en 30 jours.",
+      parameters: {
+        type: "object",
+        properties: {
+          insight_text: { type: "string", description: "Description de l'insight (ex: 'Lead passé de prospect à qualifié')" },
+          entity_type: { type: "string", description: "Type d'entité concernée (lead, project, partner, etc.)" },
+          entity_id: { type: "string", description: "ID de l'entité (optionnel)" },
+          importance_score: { type: "number", description: "Score d'importance 0-1 (défaut: 0.6)" },
+        },
+        required: ["insight_text"],
       },
     },
   },
@@ -8439,6 +8520,69 @@ Génère un contenu HTML pour email avec:
       };
     }
 
+    // ============ PHASE 1 - MEMORY ENRICHMENT ============
+    case "save_user_preference": {
+      const prefText = args.preference_text as string;
+      const category = (args.category as string) || "user_preference";
+      const importance = (args.importance_score as number) || 0.8;
+
+      if (!prefText || prefText.length < 5) {
+        return { success: false, error: "preference_text trop court (min 5 chars)" };
+      }
+
+      try {
+        await saveMemory(supabase, {
+          memory_type: "preference",
+          category,
+          content: prefText,
+          importance_score: Math.min(importance, 1.0),
+          metadata: { saved_by: "user_preference_tool", auto_detected: false },
+        }, workspaceId, userId, sessionId);
+
+        return {
+          success: true,
+          message: `✅ Préférence sauvegardée : "${prefText.substring(0, 50)}..."`
+        };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Memory error" };
+      }
+    }
+
+    case "save_context_insight": {
+      const insightText = args.insight_text as string;
+      const entityType = args.entity_type as string | undefined;
+      const entityId = args.entity_id as string | undefined;
+      const importance = (args.importance_score as number) || 0.6;
+
+      if (!insightText || insightText.length < 5) {
+        return { success: false, error: "insight_text trop court (min 5 chars)" };
+      }
+
+      try {
+        // Expire en 30 jours
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
+
+        await saveMemory(supabase, {
+          memory_type: "insight",
+          category: "crm_context",
+          entity_type: entityType,
+          entity_id: entityId,
+          content: insightText,
+          importance_score: Math.min(importance, 1.0),
+          expires_at: expiresAt.toISOString(),
+          metadata: { saved_by: "context_insight_tool", expiration_days: 30 },
+        }, workspaceId, userId, sessionId);
+
+        return {
+          success: true,
+          message: `💡 Insight sauvegardé : "${insightText.substring(0, 50)}..."`
+        };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Memory error" };
+      }
+    }
+
     default:
       throw new Error(`Unknown tool: ${toolName}`);
   }
@@ -8568,6 +8712,25 @@ Tu DOIS utiliser les informations collectées précédemment :
 - get_leads, get_opportunities : Pipeline
 - get_tasks : Tâches
 - search_knowledge_base : Recherche RAG
+
+## PHASE 1 - ENRICHISSEMENT MÉMOIRE (Circulaire)
+
+Quand l'utilisateur DECLARE une préférence personnelle → appelle save_user_preference
+Exemples : "J'aime réunir le matin", "Je préfère par email", "Toujours en visio"
+- Importance: 0.8 par défaut
+- Ne pas attendre confirmation, le tool s'exécute silencieusement
+
+Quand TU DÉTECTES un insight notable dans les données CRM → appelle save_context_insight
+Exemples : 
+  - Changement de statut d'un lead (prospect → qualifié)
+  - Anomalie (anomalie de budget, date proche)
+  - Fait clé nouvellement identifié
+- Importance: 0.6 par défaut
+- Expiration: 30 jours
+- Entity_id et entity_type sont optionnels mais importants pour le contexte
+
+**Les décisions des write-tools sont AUTO-LOGGÉES en background** (save_decision automatique)
+Tu n'as rien à faire pour ça. C'est un post-processing qui sauvegarde chaque create/update/send exécuté.
 
 ## INTERDIT ABSOLU
 - Demander validation ou confirmation
@@ -9208,6 +9371,9 @@ ${calendarRef.join('\n')}
             expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
           }, workspace_id, user_id, session_id);
           
+          // Phase 1: Auto-log write decisions (post-processing)
+          await logDecision(supabase, toolName, toolArgs, toolResult, workspace_id, user_id, session_id);
+          
         } catch (toolError) {
           const toolDuration = Date.now() - toolStartTime;
           console.error(`Tool ${toolName} error after ${toolDuration}ms:`, toolError);
@@ -9272,7 +9438,12 @@ ${calendarRef.join('\n')}
       ok: true,
       message: finalContent,
       tool_calls: allToolCalls,
-      usage: aiResponse.usage,
+      usage: {
+        ...aiResponse.usage,
+        max_tokens: selectedModel.includes("gpt-5") ? 128000 : 32000, // Context window based on model
+        model_id: selectedModel,
+        tokens_available: (selectedModel.includes("gpt-5") ? 128000 : 32000) - (aiResponse.usage?.total_tokens || 0),
+      },
       memory_used: recentMemory.length + relevantMemory.length > 0,
       active_entities_count: activeEntities.length,
       performance: {
