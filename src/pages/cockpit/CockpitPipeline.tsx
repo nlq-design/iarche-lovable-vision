@@ -13,6 +13,15 @@ import { CreateOpportunityDialog } from '@/components/cockpit/dialogs';
 import { LeadDetailSheet } from '@/components/cockpit/LeadDetailSheet';
 import { Link } from 'react-router-dom';
 import { differenceInDays } from 'date-fns';
+import { useEntityCompleteness } from '@/hooks/cockpit/useEntityCompleteness';
+import { CompletenessIndicator } from '@/components/cockpit/CompletenessIndicator';
+
+// Small wrapper component so useEntityCompleteness hook can be called per-card
+function OppCompleteness({ data }: { data: Record<string, unknown> }) {
+  const completeness = useEntityCompleteness('opportunity', data);
+  if (completeness.severity === 'good') return null;
+  return <CompletenessIndicator completeness={completeness} compact />;
+}
 
 const STAGE_CONFIG: Record<string, { label: string; color: string }> = {
   lead: { label: 'Lead', color: 'bg-slate-500' },
@@ -228,9 +237,12 @@ const CockpitPipeline = () => {
                                   <span className="text-sm font-semibold">
                                     {formatCurrency(Number(opp.value_amount) || 0)}
                                   </span>
-                                  <Badge variant="outline" className="text-xs h-5 px-1.5">
-                                    {opp.probability}%
-                                  </Badge>
+                                  <div className="flex items-center gap-1">
+                                    <OppCompleteness data={opp} />
+                                    <Badge variant="outline" className="text-xs h-5 px-1.5">
+                                      {opp.probability}%
+                                    </Badge>
+                                  </div>
                                 </div>
                                 {isStagnant && (
                                   <div className="flex items-center gap-1 mt-1.5 text-xs text-amber-600">

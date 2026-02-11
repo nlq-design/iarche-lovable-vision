@@ -306,7 +306,7 @@ async function healthCheckProjects(supabase: any, workspaceId: string) {
     if (totalTasks === 0) riskFactors.push("Aucune tâche définie");
 
     let computedHealth = "on_track";
-    if (riskFactors.length >= 3 || overdueTasks > 3 || consumedPct > 100) computedHealth = "off_track";
+    if (riskFactors.length >= 3 || overdueTasks > 3 || consumedPct > 100) computedHealth = "blocked";
     else if (riskFactors.length >= 1) computedHealth = "at_risk";
 
     if (computedHealth !== project.health_status) {

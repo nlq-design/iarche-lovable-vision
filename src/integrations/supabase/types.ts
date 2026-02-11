@@ -2822,6 +2822,7 @@ export type Database = {
           address: string | null
           ai_documents_summary: string | null
           ai_metadata: Json | null
+          budget: number | null
           city: string | null
           company: string | null
           company_size: string | null
@@ -2850,7 +2851,9 @@ export type Database = {
           source: string
           source_context: string | null
           source_id: string | null
+          status: string | null
           synthesis_stale: boolean | null
+          updated_at: string | null
           website: string | null
           workspace_id: string | null
         }
@@ -2858,6 +2861,7 @@ export type Database = {
           address?: string | null
           ai_documents_summary?: string | null
           ai_metadata?: Json | null
+          budget?: number | null
           city?: string | null
           company?: string | null
           company_size?: string | null
@@ -2886,7 +2890,9 @@ export type Database = {
           source: string
           source_context?: string | null
           source_id?: string | null
+          status?: string | null
           synthesis_stale?: boolean | null
+          updated_at?: string | null
           website?: string | null
           workspace_id?: string | null
         }
@@ -2894,6 +2900,7 @@ export type Database = {
           address?: string | null
           ai_documents_summary?: string | null
           ai_metadata?: Json | null
+          budget?: number | null
           city?: string | null
           company?: string | null
           company_size?: string | null
@@ -2922,7 +2929,9 @@ export type Database = {
           source?: string
           source_context?: string | null
           source_id?: string | null
+          status?: string | null
           synthesis_stale?: boolean | null
+          updated_at?: string | null
           website?: string | null
           workspace_id?: string | null
         }
@@ -3190,6 +3199,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           expected_close_date: string | null
+          expected_revenue: number | null
           id: string
           lead_id: string | null
           lost_to: string | null
@@ -3209,6 +3219,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           expected_close_date?: string | null
+          expected_revenue?: number | null
           id?: string
           lead_id?: string | null
           lost_to?: string | null
@@ -3228,6 +3239,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           expected_close_date?: string | null
+          expected_revenue?: number | null
           id?: string
           lead_id?: string | null
           lost_to?: string | null
@@ -3803,6 +3815,7 @@ export type Database = {
           created_at: string | null
           deleted_at: string | null
           email: string | null
+          expertise: string | null
           id: string
           is_active: boolean | null
           last_login_at: string | null
@@ -3828,6 +3841,7 @@ export type Database = {
           created_at?: string | null
           deleted_at?: string | null
           email?: string | null
+          expertise?: string | null
           id?: string
           is_active?: boolean | null
           last_login_at?: string | null
@@ -3853,6 +3867,7 @@ export type Database = {
           created_at?: string | null
           deleted_at?: string | null
           email?: string | null
+          expertise?: string | null
           id?: string
           is_active?: boolean | null
           last_login_at?: string | null
@@ -4147,6 +4162,7 @@ export type Database = {
           lead_id: string | null
           name: string
           opportunity_id: string | null
+          planned_end_date: string | null
           solution_id: string | null
           start_date: string | null
           status: string
@@ -4170,6 +4186,7 @@ export type Database = {
           lead_id?: string | null
           name: string
           opportunity_id?: string | null
+          planned_end_date?: string | null
           solution_id?: string | null
           start_date?: string | null
           status?: string
@@ -4193,6 +4210,7 @@ export type Database = {
           lead_id?: string | null
           name?: string
           opportunity_id?: string | null
+          planned_end_date?: string | null
           solution_id?: string | null
           start_date?: string | null
           status?: string
