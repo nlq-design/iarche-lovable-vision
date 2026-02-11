@@ -153,6 +153,11 @@ serve(async (req) => {
         const durationMinutes = payload.duration_minutes as number || 30;
         const endTime = new Date(new Date(startTime).getTime() + durationMinutes * 60000).toISOString();
 
+        // meeting_type must be one of: visio, telephone, presentiel
+        const rawMeetingType = (payload.meeting_type as string || "visio").toLowerCase();
+        const allowedTypes = ["visio", "telephone", "presentiel"];
+        const meetingType = allowedTypes.includes(rawMeetingType) ? rawMeetingType : "visio";
+
         const { data, error } = await supabase.from("bookings").insert({
           booking_type_id: bookingType.id,
           name: payload.name as string || "Rendez-vous IA",
@@ -161,6 +166,7 @@ serve(async (req) => {
           end_time: endTime,
           message: payload.message as string || proposal.action_label,
           status: "confirmed",
+          meeting_type: meetingType,
           lead_id: payload.lead_id as string || null,
           workspace_id: proposal.workspace_id,
         }).select("id").single();
