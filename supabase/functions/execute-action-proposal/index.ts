@@ -85,7 +85,7 @@ serve(async (req) => {
           title: payload.title as string || proposal.action_label,
           description: payload.description as string || null,
           priority: payload.priority as string || "medium",
-          status: "todo",
+          status: "pending",
           lead_id: payload.lead_id as string || null,
           project_id: payload.project_id as string || null,
           assigned_to: user.id,
