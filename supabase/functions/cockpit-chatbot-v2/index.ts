@@ -139,27 +139,34 @@ async function handleChatMode(
   const userMessage = messages[messages.length - 1];
   const conversationHistory = messages.slice(0, -1);
 
-  // Build context from CRM data if user asks about a specific entity
-  let crmContext = "";
-  const entityMention = detectEntityMention(userMessage.content);
-  if (entityMention) {
-    try {
-      const ctx = await buildMaxContext(supabase, {
-        entityType: entityMention.type,
-        entityId: entityMention.id,
-        tokenBudget: 20000, // Keep it reasonable for chat
-      });
-      crmContext = formatContextSummary(ctx);
-    } catch (e) {
-      console.warn("[chatbot-v2] Context build failed:", e);
-    }
-  }
+   // Build context from CRM data if user asks about a specific entity
+   let crmContext = "";
+   const entityMention = await detectEntityMention(supabase, userMessage.content);
+   if (entityMention) {
+     try {
+       const ctx = await buildMaxContext(supabase, {
+         entityType: entityMention.type,
+         entityId: entityMention.id,
+         tokenBudget: 20000,
+       });
+       crmContext = formatContextSummary(ctx);
+       console.log(`[chatbot-v2] CRM context loaded for ${entityMention.type}:${entityMention.id} (${crmContext.length} chars)`);
+     } catch (e) {
+       console.warn("[chatbot-v2] Context build failed:", e);
+     }
+   } else {
+     console.log("[chatbot-v2] No entity detected in message, no CRM context injected");
+   }
+
+  const antiHallucinationRule = crmContext
+    ? ""
+    : "\n\n⚠️ RÈGLE ABSOLUE: Aucune donnée CRM n'a été trouvée pour cette requête. Tu ne dois JAMAIS inventer de données (noms, entreprises, contacts, montants, statuts). Si l'utilisateur demande des informations sur une entité non trouvée, réponds honnêtement que tu n'as pas trouvé cette entité dans le CRM et propose de vérifier l'orthographe ou de chercher autrement.";
 
   // Build LLM messages
   const llmMessages = [
     {
       role: "system" as const,
-      content: `${systemPrompt.system_prompt}\n\n${memoryBlock}${crmContext ? `\n\n## Contexte CRM:\n${crmContext}` : ""}`,
+      content: `${systemPrompt.system_prompt}${antiHallucinationRule}\n\n${memoryBlock}${crmContext ? `\n\n## Contexte CRM:\n${crmContext}` : ""}`,
     },
     ...conversationHistory.map((m) => ({
       role: m.role as "user" | "assistant",
@@ -374,20 +381,51 @@ Ne pose qu'UNE seule question à la fois.`;
 }
 
 /**
- * Detect entity mentions in user message (simple heuristic)
+ * Detect entity mentions in user message — by UUID or by name search in CRM
  */
-function detectEntityMention(text: string): { type: string; id: string } | null {
-  // UUID pattern in message
+async function detectEntityMention(
+  supabase: ReturnType<typeof createClient>,
+  text: string
+): Promise<{ type: string; id: string } | null> {
+  // 1. UUID pattern in message (direct reference)
   const uuidMatch = text.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
-  if (!uuidMatch) return null;
+  if (uuidMatch) {
+    const lowerText = text.toLowerCase();
+    let type = "lead";
+    if (lowerText.includes("projet") || lowerText.includes("project")) type = "project";
+    else if (lowerText.includes("opportunit")) type = "opportunity";
+    else if (lowerText.includes("partenaire") || lowerText.includes("partner")) type = "partner";
+    return { type, id: uuidMatch[1] };
+  }
 
-  const lowerText = text.toLowerCase();
-  let type = "lead";
-  if (lowerText.includes("projet") || lowerText.includes("project")) type = "project";
-  else if (lowerText.includes("opportunit")) type = "opportunity";
-  else if (lowerText.includes("partenaire") || lowerText.includes("partner")) type = "partner";
+  // 2. Name-based search: extract potential entity names and search CRM tables
+  // Remove common filler words to extract the entity name
+  const cleanText = text
+    .replace(/parle[- ]?moi\s+(de|du|d'|des)\s*/gi, "")
+    .replace(/(quel|quelle|quelles|quels|comment|où|qui|que|qu'est-ce|donne|montre|affiche|résume|résumé|info|infos|information|informations|sur|le|la|les|un|une|des|de|du|d')\s*/gi, "")
+    .replace(/[?!.,;:]/g, "")
+    .trim();
 
-  return { type, id: uuidMatch[1] };
+  if (cleanText.length < 2) return null;
+
+  console.log(`[chatbot-v2] Searching CRM for entity name: "${cleanText}"`);
+
+  // Search across main CRM tables in parallel
+  const [leads, projects, opportunities, partners] = await Promise.all([
+    supabase.from("leads").select("id, name, company").or(`name.ilike.%${cleanText}%,company.ilike.%${cleanText}%`).limit(3),
+    supabase.from("projects").select("id, name").ilike("name", `%${cleanText}%`).limit(3),
+    supabase.from("opportunities").select("id, name").ilike("name", `%${cleanText}%`).limit(3),
+    supabase.from("partners").select("id, name, company_name").or(`name.ilike.%${cleanText}%,company_name.ilike.%${cleanText}%`).limit(3),
+  ]);
+
+  // Return the first match found, prioritizing leads
+  if (leads.data?.length) return { type: "lead", id: leads.data[0].id };
+  if (partners.data?.length) return { type: "partner", id: partners.data[0].id };
+  if (projects.data?.length) return { type: "project", id: projects.data[0].id };
+  if (opportunities.data?.length) return { type: "opportunity", id: opportunities.data[0].id };
+
+  console.log(`[chatbot-v2] No CRM entity found for "${cleanText}"`);
+  return null;
 }
 
 /**
