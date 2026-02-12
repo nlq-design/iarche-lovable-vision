@@ -55,6 +55,7 @@ export type Database = {
           executed_result: Json | null
           id: string
           status: string
+          telegram_notified: boolean | null
           updated_at: string
           user_id: string | null
           validation_notes: string | null
@@ -70,6 +71,7 @@ export type Database = {
           executed_result?: Json | null
           id?: string
           status?: string
+          telegram_notified?: boolean | null
           updated_at?: string
           user_id?: string | null
           validation_notes?: string | null
@@ -85,6 +87,7 @@ export type Database = {
           executed_result?: Json | null
           id?: string
           status?: string
+          telegram_notified?: boolean | null
           updated_at?: string
           user_id?: string | null
           validation_notes?: string | null

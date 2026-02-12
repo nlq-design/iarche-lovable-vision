@@ -1,0 +1,1 @@
+ALTER TABLE public.action_proposals ADD COLUMN IF NOT EXISTS telegram_notified boolean DEFAULT false;
