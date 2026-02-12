@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useCockpitAuth } from '@/hooks/cockpit/useCockpitAuth';
-import { LogOut, Shield, Clock, Briefcase, Fish, Mail } from 'lucide-react';
+import { LogOut, Shield, Clock, Briefcase, Fish, Mail, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
@@ -14,9 +14,23 @@ import { fr } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { EmailDraftsSheet } from './EmailDraftsSheet';
 import { AISentinelNotification } from './AISentinelNotification';
+import { useCockpitIntelligence } from '@/hooks/cockpit/useCockpitIntelligence';
 
 export function CockpitHeader() {
   const [emailDraftsOpen, setEmailDraftsOpen] = useState(false);
+  const { data: intel, isLoading: intelLoading } = useCockpitIntelligence();
+
+  const urgentCount = useMemo(() => {
+    if (!intel?.intelligence?.top_actions) return 0;
+    return intel.intelligence.top_actions.filter(
+      a => a.urgency === 'critical' || a.urgency === 'high'
+    ).length;
+  }, [intel]);
+
+  const handleUrgentClick = () => {
+    const el = document.getElementById('actions-prioritaires');
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   // Fetch pending email drafts count
   const { data: pendingDraftsCount = 0 } = useQuery({
@@ -72,6 +86,28 @@ export function CockpitHeader() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Urgences badge */}
+          {!intelLoading && urgentCount > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleUrgentClick}
+                  className="h-8 gap-1.5 animate-pulse"
+                  aria-label={`${urgentCount} action${urgentCount > 1 ? 's' : ''} urgente${urgentCount > 1 ? 's' : ''}`}
+                >
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">
+                    {urgentCount} {urgentCount === 1 ? 'urgence' : 'urgences'}
+                  </span>
+                  <span className="sm:hidden">{urgentCount}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{urgentCount} action{urgentCount > 1 ? 's' : ''} critique{urgentCount > 1 ? 's' : ''} à traiter</TooltipContent>
+            </Tooltip>
+          )}
+
           {/* AI Sentinel */}
           <AISentinelNotification />
 
