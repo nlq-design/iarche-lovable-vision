@@ -20,7 +20,8 @@ import {
   Wrench,
   ChevronDown,
   ChevronUp,
-  Trash2
+  Trash2,
+  Info
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -34,6 +35,14 @@ interface Message {
   toolCalls?: { name: string; result: unknown }[];
 }
 
+interface TokenUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  max_tokens: number;
+  model_id: string;
+}
+
 export default function CockpitChatbot() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -41,6 +50,7 @@ export default function CockpitChatbot() {
   const [isListening, setIsListening] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedTools, setExpandedTools] = useState<string | null>(null);
+  const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null);
   
   // Persistent session ID for memory continuity across the conversation
   const sessionIdRef = useRef<string>(crypto.randomUUID());
@@ -146,6 +156,17 @@ export default function CockpitChatbot() {
 
       if (error) throw error;
 
+      // Extraire les données d'usage si disponibles
+      if (data?.usage) {
+        setTokenUsage({
+          prompt_tokens: data.usage.prompt_tokens || 0,
+          completion_tokens: data.usage.completion_tokens || 0,
+          total_tokens: data.usage.total_tokens || 0,
+          max_tokens: data.usage.max_tokens || 80000,
+          model_id: data.usage.model_id || 'unknown',
+        });
+      }
+
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
@@ -194,9 +215,23 @@ export default function CockpitChatbot() {
       .replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  const getTokenColor = (percentage: number): string => {
+    if (percentage < 50) return 'bg-success'; // Vert
+    if (percentage < 80) return 'bg-accent';  // Orange/Terracotta
+    return 'bg-destructive';                  // Rouge
+  };
+
+  const formatTokenCount = (count: number): string => {
+    if (count >= 1000) {
+      return `${(count / 1000).toFixed(0)}k`;
+    }
+    return count.toString();
+  };
+
   const clearConversation = () => {
     setMessages([]);
     sessionIdRef.current = crypto.randomUUID();
+    setTokenUsage(null);
     toast.success('Conversation effacée');
   };
 
@@ -216,6 +251,38 @@ export default function CockpitChatbot() {
               </p>
             </div>
           </div>
+          
+          {/* Token Usage Indicator */}
+          {tokenUsage && (
+            <div className="group relative flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <div className="w-20 h-1 bg-muted rounded-full overflow-hidden">
+                  {tokenUsage.max_tokens > 0 && (
+                    <div
+                      className={`h-full rounded-full transition-all ${getTokenColor(
+                        (tokenUsage.total_tokens / tokenUsage.max_tokens) * 100
+                      )}`}
+                      style={{
+                        width: `${Math.min(
+                          (tokenUsage.total_tokens / tokenUsage.max_tokens) * 100,
+                          100
+                        )}%`,
+                      }}
+                    />
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                  {formatTokenCount(tokenUsage.total_tokens)}/{formatTokenCount(tokenUsage.max_tokens)}
+                </span>
+              </div>
+              
+              {/* Tooltip */}
+              <div className="absolute -bottom-12 right-0 hidden group-hover:block bg-foreground text-background text-xs rounded px-2 py-1.5 whitespace-nowrap z-50 shadow-lg">
+                Tokens : {tokenUsage.prompt_tokens.toLocaleString()} + {tokenUsage.completion_tokens.toLocaleString()} = {tokenUsage.total_tokens.toLocaleString()} / {tokenUsage.max_tokens.toLocaleString()} ({Math.round((tokenUsage.total_tokens / tokenUsage.max_tokens) * 100)}%)
+              </div>
+            </div>
+          )}
+
           {messages.length > 0 && (
             <Button variant="outline" size="sm" onClick={clearConversation}>
               <Trash2 className="h-4 w-4 mr-2" />
