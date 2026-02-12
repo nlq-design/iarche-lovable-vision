@@ -342,6 +342,40 @@ async function answerCallbackQuery(callbackQueryId: string, text?: string): Prom
   }
 }
 
+async function editTelegramMessage(
+  chatId: number,
+  messageId: number,
+  text: string,
+  parseMode: string = "Markdown"
+): Promise<void> {
+  try {
+    const response = await fetch(`${TELEGRAM_API}/editMessageText`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_id: messageId,
+        text,
+        parse_mode: parseMode,
+      }),
+    });
+    const result = await response.json();
+    if (!result.ok && result.description?.includes("parse")) {
+      await fetch(`${TELEGRAM_API}/editMessageText`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          message_id: messageId,
+          text,
+        }),
+      });
+    }
+  } catch (error) {
+    console.error("Error editing Telegram message:", error);
+  }
+}
+
 async function sendTypingAction(chatId: number): Promise<void> {
   try {
     await fetch(`${TELEGRAM_API}/sendChatAction`, {
@@ -961,6 +995,221 @@ Posez simplement votre question et je vous répondrai !`;
 }
 
 // =============================================================================
+// ACTION PROPOSAL HELPERS - Detect & execute proposals from Telegram
+// =============================================================================
+
+async function checkAndSendProposalButtons(chatId: number): Promise<void> {
+  try {
+    // Find recent proposals (last 60s) with status 'proposed'
+    const cutoff = new Date(Date.now() - 60000).toISOString();
+    const { data: proposals, error } = await supabase
+      .from("action_proposals")
+      .select("id, action_label, ai_reasoning, action_type")
+      .eq("status", "proposed")
+      .eq("workspace_id", DEFAULT_WORKSPACE_ID)
+      .gte("created_at", cutoff)
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    if (error || !proposals || proposals.length === 0) return;
+
+    for (const proposal of proposals) {
+      const text = `🤖 *Action proposée :* ${proposal.action_label}${proposal.ai_reasoning ? `\n\n💡 _Raison : ${proposal.ai_reasoning}_` : ""}`;
+      
+      const replyMarkup = {
+        inline_keyboard: [[
+          { text: "✅ Confirmer", callback_data: `action:validate:${proposal.id}` },
+          { text: "❌ Rejeter", callback_data: `action:reject:${proposal.id}` },
+        ]],
+      };
+
+      await sendTelegramMessage(chatId, text, "Markdown", replyMarkup);
+    }
+  } catch (err) {
+    console.error("Error checking proposals:", err);
+  }
+}
+
+async function executeProposalFromTelegram(
+  proposalId: string
+): Promise<{ success: boolean; label: string; error?: string }> {
+  try {
+    const { data: proposal, error: fetchError } = await supabase
+      .from("action_proposals")
+      .select("*")
+      .eq("id", proposalId)
+      .single();
+
+    if (fetchError || !proposal) {
+      return { success: false, label: "", error: "Proposition introuvable" };
+    }
+
+    if (proposal.status !== "proposed") {
+      return { success: false, label: proposal.action_label, error: "already_handled" };
+    }
+
+    // Check expiration (24h)
+    const createdAt = new Date(proposal.created_at).getTime();
+    if (Date.now() - createdAt > 24 * 60 * 60 * 1000) {
+      await supabase.from("action_proposals").update({
+        status: "rejected",
+        validation_notes: "Expiré (>24h)",
+        updated_at: new Date().toISOString(),
+      }).eq("id", proposalId);
+      return { success: false, label: proposal.action_label, error: "expired" };
+    }
+
+    // Mark as validated first
+    await supabase.from("action_proposals").update({
+      status: "validated",
+      updated_at: new Date().toISOString(),
+    }).eq("id", proposalId);
+
+    // Execute the action (mirrors execute-action-proposal logic)
+    let executionResult: Record<string, unknown> = {};
+    const payload = proposal.action_payload as Record<string, unknown>;
+    const systemUserId = await getTelegramSystemUserId();
+
+    switch (proposal.action_type) {
+      case "create_task": {
+        const { data, error } = await supabase.from("tasks").insert({
+          workspace_id: proposal.workspace_id,
+          title: (payload.title as string) || proposal.action_label,
+          description: (payload.description as string) || null,
+          priority: (payload.priority as string) || "medium",
+          status: "pending",
+          lead_id: (payload.lead_id as string) || null,
+          project_id: (payload.project_id as string) || null,
+          assigned_to: systemUserId,
+        }).select("id").single();
+        if (error) throw error;
+        executionResult = { task_id: data.id, type: "task_created" };
+        break;
+      }
+
+      case "update_lead": {
+        const leadId = payload.lead_id as string;
+        if (!leadId) throw new Error("lead_id manquant");
+        const safeFields = ["email", "phone", "company", "position", "industry",
+          "company_size", "website", "city", "qualification_status", "siret"];
+        const updates: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(payload)) {
+          if (safeFields.includes(key) && value !== undefined) updates[key] = value;
+        }
+        if (Object.keys(updates).length === 0) throw new Error("Aucun champ valide");
+        const { error } = await supabase.from("leads").update(updates).eq("id", leadId);
+        if (error) throw error;
+        executionResult = { lead_id: leadId, updated_fields: Object.keys(updates), type: "lead_updated" };
+        break;
+      }
+
+      case "create_note": {
+        const { data, error } = await supabase.from("activity_log").insert({
+          workspace_id: proposal.workspace_id,
+          entity_type: (payload.entity_type as string) || "lead",
+          entity_id: (payload.entity_id as string) || "",
+          activity_type: "note",
+          title: (payload.title as string) || proposal.action_label,
+          content: (payload.content as string) || "",
+          is_ai_generated: true,
+          created_by: systemUserId,
+        }).select("id").single();
+        if (error) throw error;
+        executionResult = { note_id: data.id, type: "note_created" };
+        break;
+      }
+
+      case "schedule_meeting": {
+        const { data: bookingType } = await supabase
+          .from("booking_types").select("id").eq("is_active", true).limit(1).single();
+        if (!bookingType) throw new Error("Aucun type de RDV configuré");
+        const startTime = (payload.start_time as string) || new Date().toISOString();
+        const durationMinutes = (payload.duration_minutes as number) || 30;
+        const endTime = new Date(new Date(startTime).getTime() + durationMinutes * 60000).toISOString();
+        const rawType = ((payload.meeting_type as string) || "visio").toLowerCase();
+        const meetingType = ["visio", "telephone", "presentiel"].includes(rawType) ? rawType : "visio";
+        const { data, error } = await supabase.from("bookings").insert({
+          booking_type_id: bookingType.id,
+          name: (payload.name as string) || "Rendez-vous IA",
+          email: (payload.email as string) || "",
+          start_time: startTime,
+          end_time: endTime,
+          message: (payload.message as string) || proposal.action_label,
+          status: "confirmed",
+          meeting_type: meetingType,
+          lead_id: (payload.lead_id as string) || null,
+          workspace_id: proposal.workspace_id,
+        }).select("id").single();
+        if (error) throw error;
+        executionResult = { booking_id: data.id, type: "meeting_scheduled" };
+        break;
+      }
+
+      case "send_email": {
+        const recipientEmail = (payload.to as string) || (payload.email as string);
+        if (!recipientEmail) throw new Error("Email destinataire manquant");
+        const resendKey = Deno.env.get("RESEND_API_KEY");
+        if (!resendKey) throw new Error("RESEND_API_KEY non configurée");
+        const emailSubject = (payload.subject as string) || proposal.action_label;
+        const emailBody = (payload.body as string) || (payload.content as string) || "";
+        const fromEmail = (payload.from as string) || "IArche CRM <crm@iarche.fr>";
+        const resendResponse = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${resendKey}` },
+          body: JSON.stringify({ from: fromEmail, to: [recipientEmail], subject: emailSubject, html: emailBody }),
+        });
+        if (!resendResponse.ok) {
+          const errText = await resendResponse.text();
+          throw new Error(`Échec envoi email: ${errText}`);
+        }
+        const resendData = await resendResponse.json();
+        await supabase.from("email_logs").insert({
+          email_type: "ai_action", source_type: "action_proposal", source_id: proposalId,
+          recipient_email: recipientEmail, subject: emailSubject, status: "sent",
+          sent_at: new Date().toISOString(), metadata: { resend_id: resendData.id, ai_generated: true, source: "telegram" },
+        });
+        executionResult = { type: "email_sent", resend_id: resendData.id, to: recipientEmail };
+        break;
+      }
+
+      default:
+        throw new Error(`Type d'action non supporté: ${proposal.action_type}`);
+    }
+
+    // Update proposal as executed
+    await supabase.from("action_proposals").update({
+      status: "executed",
+      executed_at: new Date().toISOString(),
+      executed_result: executionResult,
+      updated_at: new Date().toISOString(),
+    }).eq("id", proposalId);
+
+    // Log execution
+    await supabase.from("activity_log").insert({
+      workspace_id: proposal.workspace_id,
+      entity_type: "action_proposal",
+      entity_id: proposalId,
+      activity_type: "ai_action",
+      title: `Action IA exécutée (Telegram): ${proposal.action_label}`,
+      content: JSON.stringify(executionResult),
+      is_ai_generated: true,
+      created_by: systemUserId,
+    });
+
+    return { success: true, label: proposal.action_label };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("Execute proposal error:", msg);
+    // Revert to proposed if execution failed
+    await supabase.from("action_proposals").update({
+      status: "proposed",
+      updated_at: new Date().toISOString(),
+    }).eq("id", proposalId).eq("status", "validated");
+    return { success: false, label: "", error: msg };
+  }
+}
+
+// =============================================================================
 // BACKGROUND PROCESSING TASKS
 // =============================================================================
 
@@ -982,6 +1231,9 @@ async function processMessageInBackground(
     // Send response with inline buttons
     const buttons = getQuickActionButtons(aiResponse);
     await sendTelegramMessage(chatId, aiResponse, "Markdown", buttons);
+    
+    // Check for new action proposals and send inline validation buttons
+    await checkAndSendProposalButtons(chatId);
     
     await markUpdateAsCompleted(updateId, aiResponse);
     
@@ -1235,16 +1487,73 @@ async function handleCallbackQuery(
   chatId: number,
   userId: number,
   userName: string,
-  data: string
+  data: string,
+  messageId?: number
 ): Promise<void> {
-  await answerCallbackQuery(callbackQueryId, "⏳ Traitement...");
-  
-  const [actionType, actionValue] = data.split(":");
+  const parts = data.split(":");
+  const actionType = parts[0];
+  const actionValue = parts[1];
+  const actionParam = parts.slice(2).join(":"); // proposal ID may contain colons
   
   if (actionType !== "action") {
-    await sendTelegramMessage(chatId, "❌ Action non reconnue.");
+    await answerCallbackQuery(callbackQueryId, "❌ Action non reconnue.");
     return;
   }
+
+  // ========= ACTION PROPOSAL: VALIDATE =========
+  if (actionValue === "validate" && actionParam) {
+    await answerCallbackQuery(callbackQueryId, "⏳ Exécution en cours...");
+    
+    const result = await executeProposalFromTelegram(actionParam);
+    
+    if (result.error === "already_handled") {
+      await answerCallbackQuery(callbackQueryId, "⚠️ Déjà traitée");
+      if (messageId) await editTelegramMessage(chatId, messageId, `⚠️ Cette action a déjà été traitée.`);
+      return;
+    }
+    if (result.error === "expired") {
+      if (messageId) await editTelegramMessage(chatId, messageId, `⏰ Action expirée (>24h) : ${result.label}`);
+      return;
+    }
+    if (result.success) {
+      if (messageId) await editTelegramMessage(chatId, messageId, `✅ *Exécuté* : ${result.label}`);
+      await trackTelegramStat(chatId, userName, "action_proposal", "validate", null, "success");
+    } else {
+      await sendTelegramMessage(chatId, `❌ Erreur d'exécution : ${result.error}`);
+      await trackTelegramStat(chatId, userName, "action_proposal", "validate", null, "failed", result.error);
+    }
+    return;
+  }
+
+  // ========= ACTION PROPOSAL: REJECT =========
+  if (actionValue === "reject" && actionParam) {
+    await answerCallbackQuery(callbackQueryId, "❌ Action rejetée");
+    
+    // Check if already handled
+    const { data: proposal } = await supabase
+      .from("action_proposals")
+      .select("status, action_label")
+      .eq("id", actionParam)
+      .single();
+
+    if (!proposal || proposal.status !== "proposed") {
+      if (messageId) await editTelegramMessage(chatId, messageId, `⚠️ Cette action a déjà été traitée.`);
+      return;
+    }
+
+    await supabase.from("action_proposals").update({
+      status: "rejected",
+      validation_notes: "Rejeté via Telegram",
+      updated_at: new Date().toISOString(),
+    }).eq("id", actionParam);
+
+    if (messageId) await editTelegramMessage(chatId, messageId, `❌ *Rejeté* : ${proposal.action_label}`);
+    await trackTelegramStat(chatId, userName, "action_proposal", "reject", null, "success");
+    return;
+  }
+
+  // ========= EXISTING QUICK ACTIONS =========
+  await answerCallbackQuery(callbackQueryId, "⏳ Traitement...");
   
   const startTime = Date.now();
   const typing = startTypingLoop(chatId);
@@ -1405,7 +1714,7 @@ serve(async (req) => {
       const userName = cb.from.first_name + (cb.from.last_name ? ` ${cb.from.last_name}` : "");
       
       if (chatId && cb.data) {
-        handleCallbackQuery(cb.id, chatId, userId, userName, cb.data)
+        handleCallbackQuery(cb.id, chatId, userId, userName, cb.data, cb.message?.message_id)
           .catch(err => console.error("Callback query error:", err));
       } else {
         await answerCallbackQuery(cb.id, "❌ Erreur");
