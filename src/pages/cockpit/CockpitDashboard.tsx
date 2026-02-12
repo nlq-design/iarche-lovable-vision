@@ -1,4 +1,4 @@
-// Cockpit Dashboard v8.0 — Command Intelligence Layer
+// Cockpit Dashboard v8.1 — Refactored with atomic components
 import { useState } from 'react';
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,18 +7,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Progress } from '@/components/ui/progress';
 import {
   Users, Target, Calendar, TrendingUp, Clock,
-  CheckCircle2, Plus, FileText, Mail, Phone,
-  Activity, Wheat, ArrowRight, Sparkles, AlertCircle,
-  ChevronRight, Radar, Brain, RefreshCw, Loader2,
-  AlertTriangle, Info, XCircle, X, Shield, Zap,
-  Database, Mic, FolderOpen, BarChart3, Trophy,
-  ArrowUpRight, ArrowDownRight, ExternalLink, Eye,
-  Lightbulb, TrendingDown, Crosshair, Gauge,
+  Plus, FileText, Activity, Wheat, Sparkles,
+  ChevronRight, Brain, RefreshCw, Loader2,
+  AlertTriangle, X, Shield, Zap,
+  Database, Mic, FolderOpen, BarChart3, ExternalLink,
 } from 'lucide-react';
 import {
   useCockpitLeads, useCockpitOpportunities, useCockpitTasks,
@@ -26,12 +21,19 @@ import {
 } from '@/hooks/cockpit';
 import { useDashboardRealtime } from '@/hooks/cockpit/useDashboardRealtime';
 import { useCockpitAICopilot } from '@/hooks/cockpit/useCockpitAICopilot';
-import { useCockpitIntelligence, IntelligenceAction, CrossSignal, Prediction } from '@/hooks/cockpit/useCockpitIntelligence';
-import { useAISentinel, SentinelAlert } from '@/hooks/cockpit/useAISentinel';
+import { useCockpitIntelligence } from '@/hooks/cockpit/useCockpitIntelligence';
+import { useAISentinel } from '@/hooks/cockpit/useAISentinel';
 import { useAutoConsulte } from '@/hooks/cockpit/useAutoConsulte';
 import { CreateTaskDialog } from '@/components/cockpit/dialogs';
 import { HarvestInterviewPanel } from '@/components/cockpit/HarvestInterviewPanel';
 import { ActionProposalsList } from '@/components/cockpit/ActionProposalsList';
+import {
+  TopActionsWidget, CrossSignalsWidget, PredictionsWidget,
+  SentinelCardWidget, SentinelButton, StagnantWidget,
+  TaskRow, MiniStat, ActivityIcon,
+  getSmartHeadline, formatCurrency, STAGE_COLORS,
+  navigateToEntity,
+} from '@/components/cockpit/dashboard';
 import { format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
@@ -39,19 +41,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
-
-const STAGE_LABELS: Record<string, string> = {
-  lead: 'Lead', r1: 'R1', r2: 'R2', pause: 'Pause',
-  closed_won: 'Gagné', closed_lost: 'Perdu',
-};
-const STAGE_COLORS: Record<string, string> = {
-  lead: 'bg-blue-500/20 text-blue-700 dark:text-blue-300',
-  r1: 'bg-amber-500/20 text-amber-700 dark:text-amber-300',
-  r2: 'bg-orange-500/20 text-orange-700 dark:text-orange-300',
-  pause: 'bg-muted text-muted-foreground',
-  closed_won: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300',
-  closed_lost: 'bg-destructive/20 text-destructive',
-};
 
 export default function CockpitDashboard() {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
@@ -69,13 +58,13 @@ export default function CockpitDashboard() {
   const { stats: noteStats } = useCockpitMeetingNotes();
   const { activities, isLoading: activitiesLoading } = useCockpitActivityLog();
 
-  // ─── UNIFIED INTELLIGENCE (replaces morningBrief + healthCheck + opportunityScore) ───
+  // ─── UNIFIED INTELLIGENCE ───
   const { data: intel, isLoading: intelLoading, refresh: refreshIntel } = useCockpitIntelligence();
 
-  // ─── Other AI hooks (kept for specific actions) ───
+  // ─── Other AI hooks ───
   const { suggestNextStep, suggestTasks } = useCockpitAICopilot();
   const { alerts: sentinelAlerts, isLoading: sentinelLoading, refresh: refreshSentinel, dismissAlert, lastFetched: sentinelLastFetched } = useAISentinel();
-  const { isRunning: isAutoRunning, triggerAutoConsulte, triggerAutoHarvest } = useAutoConsulte();
+  const { isRunning: isAutoRunning, triggerAutoConsulte } = useAutoConsulte();
 
   // ─── Recent transcriptions ───
   const { data: recentTranscriptions = [] } = useQuery({
@@ -141,9 +130,7 @@ export default function CockpitDashboard() {
   ).slice(0, 12);
 
   const handleAutoConsulte = async () => {
-    try {
-      await triggerAutoConsulte();
-    } catch {}
+    try { await triggerAutoConsulte(); } catch {}
   };
 
   return (
@@ -157,7 +144,6 @@ export default function CockpitDashboard() {
             <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3">
               {/* Left: Intelligence score + smart summary */}
               <div className="flex items-center gap-3 min-w-0 flex-1">
-                {/* Global health gauge */}
                 <div className={cn(
                   "h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 relative",
                   intelLoading ? "bg-muted animate-pulse" :
@@ -225,12 +211,9 @@ export default function CockpitDashboard() {
                 {staleCount > 0 && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        variant="outline" size="sm"
+                      <Button variant="outline" size="sm"
                         className="h-8 gap-1.5 border-blue-500/30 text-blue-600 hover:bg-blue-500/10"
-                        onClick={handleAutoConsulte}
-                        disabled={isAutoRunning}
-                      >
+                        onClick={handleAutoConsulte} disabled={isAutoRunning}>
                         {isAutoRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Database className="h-3.5 w-3.5" />}
                         <span className="text-xs font-semibold">{staleCount}</span>
                       </Button>
@@ -238,8 +221,6 @@ export default function CockpitDashboard() {
                     <TooltipContent side="bottom">{staleCount} synthèses à mettre à jour</TooltipContent>
                   </Tooltip>
                 )}
-
-                {/* Refresh Intelligence */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 px-2" onClick={refreshIntel} disabled={intelLoading}>
@@ -248,8 +229,6 @@ export default function CockpitDashboard() {
                   </TooltipTrigger>
                   <TooltipContent side="bottom">Rafraîchir l'intelligence</TooltipContent>
                 </Tooltip>
-
-                {/* Brief expand */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setBriefExpanded(!briefExpanded)}>
@@ -258,9 +237,7 @@ export default function CockpitDashboard() {
                   </TooltipTrigger>
                   <TooltipContent side="bottom">Brief IA — Résumé narratif</TooltipContent>
                 </Tooltip>
-
                 <SentinelButton alerts={sentinelAlerts} isLoading={sentinelLoading} onRefresh={refreshSentinel} onDismiss={dismissAlert} lastFetched={sentinelLastFetched} />
-
                 {overdueAiCount > 0 && (
                   <Sheet open={harvestOpen} onOpenChange={setHarvestOpen}>
                     <SheetTrigger asChild>
@@ -283,7 +260,6 @@ export default function CockpitDashboard() {
                     </SheetContent>
                   </Sheet>
                 )}
-
                 <Button size="sm" variant="outline" className="h-8" onClick={() => setTaskDialogOpen(true)}>
                   <Plus className="h-3.5 w-3.5 mr-1" /> Tâche
                 </Button>
@@ -352,13 +328,9 @@ export default function CockpitDashboard() {
 
             {/* ─── COL 1: Actions Prioritaires + Tâches + RDV ─── */}
             <div className="lg:col-span-4 flex flex-col gap-3">
-
-              {/* ⚡ TOP ACTIONS (from Intelligence) */}
               <div id="actions-prioritaires">
                 <TopActionsWidget actions={intelligence?.top_actions} isLoading={intelLoading} navigate={navigate} />
               </div>
-
-              {/* ⚡ ACTION PROPOSALS (from Chatbot AI) */}
               <ActionProposalsList compact />
 
               {/* Today tasks */}
@@ -444,8 +416,6 @@ export default function CockpitDashboard() {
 
             {/* ─── COL 2: Signaux Croisés + Pipeline + Prédictions ─── */}
             <div className="lg:col-span-4 flex flex-col gap-3">
-
-              {/* 🔗 CROSS SIGNALS (from Intelligence) */}
               <CrossSignalsWidget signals={intelligence?.cross_signals} isLoading={intelLoading} navigate={navigate} />
 
               {/* Pipeline */}
@@ -481,7 +451,7 @@ export default function CockpitDashboard() {
                           if (!data || data.count === 0) return null;
                           return (
                             <div key={stage} className={`flex items-center justify-between px-2 py-1 rounded text-[11px] ${STAGE_COLORS[stage]}`}>
-                              <span className="font-medium">{STAGE_LABELS[stage]}</span>
+                              <span className="font-medium">{stage === 'lead' ? 'Lead' : stage === 'r1' ? 'R1' : stage === 'r2' ? 'R2' : stage === 'pause' ? 'Pause' : stage === 'closed_won' ? 'Gagné' : 'Perdu'}</span>
                               <span>{data.count} · {formatCurrency(data.value)}</span>
                             </div>
                           );
@@ -492,10 +462,9 @@ export default function CockpitDashboard() {
                 </CardContent>
               </Card>
 
-              {/* 🔮 PREDICTIONS (from Intelligence) */}
               <PredictionsWidget predictions={intelligence?.predictions} isLoading={intelLoading} navigate={navigate} />
 
-              {/* Health overview from intelligence */}
+              {/* Health overview */}
               {intelligence?.health_overview && (
                 <Card>
                   <CardHeader className="pb-1 pt-3 px-3">
@@ -519,20 +488,16 @@ export default function CockpitDashboard() {
                       </div>
                     </div>
                     {intelligence.health_overview.degrading.length > 0 && (
-                      <div className="text-[10px] text-destructive">
-                        📉 {intelligence.health_overview.degrading.join(', ')}
-                      </div>
+                      <div className="text-[10px] text-destructive">📉 {intelligence.health_overview.degrading.join(', ')}</div>
                     )}
                     {intelligence.health_overview.improving.length > 0 && (
-                      <div className="text-[10px] text-emerald-600">
-                        📈 {intelligence.health_overview.improving.join(', ')}
-                      </div>
+                      <div className="text-[10px] text-emerald-600">📈 {intelligence.health_overview.improving.join(', ')}</div>
                     )}
                   </CardContent>
                 </Card>
               )}
 
-              {/* Scoring from raw intelligence data */}
+              {/* Scoring */}
               {raw?.scoring && raw.scoring.length > 0 && (
                 <Card>
                   <CardHeader className="pb-1 pt-3 px-3">
@@ -572,14 +537,12 @@ export default function CockpitDashboard() {
                 <MiniStat icon={FileText} label="Notes" value={noteStats.thisWeek} subtitle="sem." loading={false} onClick={() => navigate('/cockpit/transcriptions')} />
               </div>
 
-              {/* Stagnant Widget */}
               <StagnantWidget onSuggestFollowUp={(entityId) => suggestNextStep.mutate(entityId)} suggestNextStep={suggestNextStep} />
             </div>
 
             {/* ─── COL 3: Transcriptions + Projets + Activité + Sentinel ─── */}
             <div className="lg:col-span-4 flex flex-col gap-3">
-              {/* Sentinel */}
-              <SentinelWidget alerts={sentinelAlerts} lastFetched={sentinelLastFetched} />
+              <SentinelCardWidget alerts={sentinelAlerts} lastFetched={sentinelLastFetched} />
 
               {/* Stale synthesis impact */}
               {intelligence?.stale_synthesis_impact && staleCount > 0 && (
@@ -737,455 +700,4 @@ export default function CockpitDashboard() {
       </div>
     </CockpitLayout>
   );
-}
-
-// ─── NEW: Top Actions Widget ───
-function TopActionsWidget({ actions, isLoading, navigate }: { actions?: IntelligenceAction[]; isLoading: boolean; navigate: any }) {
-  if (isLoading) return (
-    <Card className="border-primary/20">
-      <CardContent className="pt-3 px-3 pb-2">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Calcul des priorités...
-        </div>
-      </CardContent>
-    </Card>
-  );
-  if (!actions?.length) return null;
-
-  const urgencyConfig: Record<string, { bg: string; text: string; icon: string }> = {
-    critical: { bg: 'bg-destructive/10 border-destructive/30', text: 'text-destructive', icon: '🔴' },
-    high: { bg: 'bg-amber-500/10 border-amber-500/30', text: 'text-amber-700 dark:text-amber-400', icon: '🟠' },
-    medium: { bg: 'bg-blue-500/10 border-blue-500/30', text: 'text-blue-700 dark:text-blue-400', icon: '🔵' },
-    low: { bg: 'bg-muted border-border', text: 'text-muted-foreground', icon: '⚪' },
-  };
-
-  return (
-    <Card className="border-primary/20">
-      <CardHeader className="pb-1 pt-3 px-3">
-        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-primary flex items-center gap-1.5">
-          <Zap className="h-3.5 w-3.5" /> Actions Prioritaires
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0 px-3 pb-2">
-        <div className="space-y-1.5">
-          {actions.slice(0, 5).map((action, i) => {
-            const cfg = urgencyConfig[action.urgency] || urgencyConfig.medium;
-            const route = entityRoute(action.entity_type, action.entity_id);
-            return (
-              <div key={i}
-                className={cn("p-2 rounded-lg border cursor-pointer hover:opacity-80 transition-opacity", cfg.bg)}
-                onClick={() => navigate(route)}>
-                <div className="flex items-start gap-2">
-                  <span className="text-xs mt-0.5">{cfg.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className={cn("text-xs font-medium", cfg.text)}>{action.action}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{action.reasoning}</p>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <Badge variant="outline" className="text-[9px] px-1 py-0 capitalize">{action.entity_type}</Badge>
-                      <span className="text-[9px] text-muted-foreground">{action.entity_name}</span>
-                      {action.impact_value && action.impact_value > 0 && (
-                        <span className="text-[9px] font-semibold text-primary">{formatCurrency(action.impact_value)}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ─── NEW: Cross Signals Widget ───
-function CrossSignalsWidget({ signals, isLoading, navigate }: { signals?: CrossSignal[]; isLoading: boolean; navigate: any }) {
-  if (isLoading || !signals?.length) return null;
-
-  return (
-    <Card className="border-violet-500/20">
-      <CardHeader className="pb-1 pt-3 px-3">
-        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400 flex items-center gap-1.5">
-          <Crosshair className="h-3.5 w-3.5" /> Signaux Croisés
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0 px-3 pb-2">
-        <div className="space-y-1.5">
-          {signals.slice(0, 4).map((signal, i) => (
-            <div key={i} className={cn(
-              "p-2 rounded-lg border text-xs",
-              signal.severity === 'high' ? 'bg-destructive/5 border-destructive/20' :
-              signal.severity === 'medium' ? 'bg-amber-500/5 border-amber-500/20' : 'bg-muted/50 border-border'
-            )}>
-              <p className="font-medium leading-snug">{signal.signal}</p>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {signal.entities.map((e, j) => (
-                  <button key={j}
-                    className="text-[9px] bg-background/80 border rounded px-1 py-0 hover:bg-primary/10 transition-colors"
-                    onClick={() => navigate(entityRoute(e.type, e.id))}>
-                    {e.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ─── NEW: Predictions Widget ───
-function PredictionsWidget({ predictions, isLoading, navigate }: { predictions?: Prediction[]; isLoading: boolean; navigate: any }) {
-  if (isLoading || !predictions?.length) return null;
-
-  return (
-    <Card className="border-cyan-500/20">
-      <CardHeader className="pb-1 pt-3 px-3">
-        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
-          <Eye className="h-3.5 w-3.5" /> Prédictions 7j
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0 px-3 pb-2">
-        <div className="space-y-1.5">
-          {predictions.slice(0, 4).map((pred, i) => (
-            <div key={i} className={cn(
-              "p-2 rounded-lg border text-xs",
-              pred.risk_type === 'risk' ? 'bg-destructive/5 border-destructive/20' : 'bg-emerald-500/5 border-emerald-500/20'
-            )}>
-              <div className="flex items-start gap-2">
-                {pred.risk_type === 'risk' ?
-                  <TrendingDown className="h-3.5 w-3.5 text-destructive flex-shrink-0 mt-0.5" /> :
-                  <TrendingUp className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                }
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium leading-snug">{pred.prediction}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Progress value={pred.confidence * 100} className="h-1 flex-1" />
-                    <span className="text-[9px] text-muted-foreground">{Math.round(pred.confidence * 100)}%</span>
-                    <span className="text-[9px] text-muted-foreground">{pred.timeframe}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ─── Navigation helpers ───
-function entityRoute(type: string, id: string): string {
-  const routes: Record<string, string> = {
-    lead: `/cockpit/leads/${id}`,
-    opportunity: `/cockpit/pipeline`,
-    project: `/cockpit/projects/${id}`,
-    partner: `/cockpit/partenaires/${id}`,
-    transcription: `/cockpit/transcriptions/${id}`,
-    task: `/cockpit/projects`,
-  };
-  return routes[type] || '/cockpit';
-}
-
-function navigateToEntity(navigate: ReturnType<typeof useNavigate>, alert: SentinelAlert) {
-  navigate(entityRoute(alert.entity_type, alert.entity_id));
-}
-
-function getSmartHeadline(ctx: {
-  humanOverdue: number; criticalAlerts: number; todayTasks: number;
-  todayBookings: number; overdueAi: number; staleQueue: number;
-}): string {
-  if (ctx.criticalAlerts > 0) return `⚠️ ${ctx.criticalAlerts} alerte${ctx.criticalAlerts > 1 ? 's' : ''} critique${ctx.criticalAlerts > 1 ? 's' : ''}`;
-  if (ctx.humanOverdue >= 3) return `🔴 ${ctx.humanOverdue} tâches en retard`;
-  if (ctx.todayBookings > 0 && ctx.todayTasks > 0) return `${ctx.todayTasks} tâche${ctx.todayTasks > 1 ? 's' : ''} et ${ctx.todayBookings} RDV aujourd'hui`;
-  if (ctx.todayTasks > 0) return `${ctx.todayTasks} tâche${ctx.todayTasks > 1 ? 's' : ''} au programme`;
-  if (ctx.overdueAi > 20) return `🌾 ${ctx.overdueAi} tâches IA à récolter`;
-  if (ctx.staleQueue > 0) return `🔄 ${ctx.staleQueue} synthèses à mettre à jour`;
-  return 'Analyse en cours...';
-}
-
-// ─── Sentinel Widget ───
-function SentinelWidget({ alerts, lastFetched }: { alerts: SentinelAlert[]; lastFetched: Date | null }) {
-  const navigate = useNavigate();
-  const criticalCount = alerts.filter(a => a.severity === 'critical').length;
-  if (alerts.length === 0) return null;
-
-  return (
-    <Card className={cn("flex-shrink-0", criticalCount > 0 ? "border-destructive/30" : "border-amber-500/20")}>
-      <CardHeader className="pb-1 pt-3 px-3">
-        <CardTitle className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
-          <Radar className={cn("h-3.5 w-3.5", criticalCount > 0 ? "text-destructive" : "text-amber-500")} />
-          <span className={criticalCount > 0 ? "text-destructive" : "text-amber-600"}>Sentinelle</span>
-          <Badge variant={criticalCount > 0 ? "destructive" : "secondary"} className="text-[10px] px-1.5 py-0 ml-1">{alerts.length}</Badge>
-          {lastFetched && <span className="text-[9px] text-muted-foreground ml-auto font-normal">{formatDistanceToNow(lastFetched, { addSuffix: true, locale: fr })}</span>}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0 px-3 pb-2">
-        <div className="space-y-1">
-          {alerts.slice(0, 3).map(alert => (
-            <button key={alert.id}
-              className={cn("w-full text-left flex items-start gap-2 p-1.5 rounded text-xs hover:bg-muted/50 transition-colors",
-                alert.severity === 'critical' ? "text-destructive" : "text-muted-foreground"
-              )}
-              onClick={() => navigateToEntity(navigate, alert)}>
-              {alert.severity === 'critical' ? <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" /> : <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0 text-amber-500" />}
-              <span className="truncate">{alert.entity_name}: {alert.question}</span>
-            </button>
-          ))}
-          {alerts.length > 3 && <p className="text-[10px] text-muted-foreground text-center">+{alerts.length - 3} autres</p>}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ─── Sentinel Button ───
-const severityConfig = {
-  critical: { icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10', badge: 'destructive' as const },
-  warning: { icon: AlertTriangle, color: 'text-amber-500', bg: 'bg-amber-500/10', badge: 'secondary' as const },
-  info: { icon: Info, color: 'text-blue-500', bg: 'bg-blue-500/10', badge: 'outline' as const },
-};
-
-function SentinelButton({ alerts, isLoading, onRefresh, onDismiss, lastFetched }: {
-  alerts: SentinelAlert[]; isLoading: boolean; onRefresh: () => void; onDismiss: (id: string) => void; lastFetched: Date | null;
-}) {
-  const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-  const criticalCount = alerts.filter(a => a.severity === 'critical').length;
-  const hasAlerts = alerts.length > 0;
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="sm"
-              className={cn("h-8 px-2 relative",
-                criticalCount > 0 ? "text-destructive animate-pulse" :
-                hasAlerts ? "text-amber-600" : "text-muted-foreground"
-              )}>
-              <Radar className="h-3.5 w-3.5" />
-              {hasAlerts && (
-                <span className={cn("absolute -top-1 -right-1 text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center",
-                  criticalCount > 0 ? "bg-destructive text-destructive-foreground" : "bg-amber-500 text-white"
-                )}>{alerts.length > 9 ? '9+' : alerts.length}</span>
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            {hasAlerts ? `Sentinelle : ${alerts.length} anomalie${alerts.length > 1 ? 's' : ''}` : 'Sentinelle — Aucune anomalie'}
-          </TooltipContent>
-        </Tooltip>
-      </PopoverTrigger>
-      <PopoverContent className="w-96 p-0" align="end" sideOffset={8}>
-        <div className="flex items-center justify-between px-4 py-2.5 border-b bg-muted/30">
-          <div className="flex items-center gap-2">
-            <Radar className="w-4 h-4 text-primary" />
-            <span className="font-semibold text-sm">IA Sentinelle</span>
-            {alerts.length > 0 && <Badge variant="secondary" className="text-[10px]">{alerts.length}</Badge>}
-          </div>
-          <div className="flex items-center gap-1">
-            {lastFetched && <span className="text-[9px] text-muted-foreground">{formatDistanceToNow(lastFetched, { addSuffix: true, locale: fr })}</span>}
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onRefresh} disabled={isLoading}>
-              <RefreshCw className={cn("w-3.5 h-3.5", isLoading && "animate-spin")} />
-            </Button>
-          </div>
-        </div>
-        <ScrollArea className="max-h-[350px]">
-          {alerts.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground">
-              <Radar className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              <p className="text-sm font-medium">Aucune anomalie</p>
-            </div>
-          ) : (
-            <div className="p-2 space-y-1.5">
-              {alerts.map(alert => {
-                const config = severityConfig[alert.severity as keyof typeof severityConfig] ?? severityConfig.info;
-                const Icon = config.icon;
-                return (
-                  <div key={alert.id} className={cn("p-2.5 rounded-lg border transition-colors hover:bg-muted/50", config.bg)}>
-                    <div className="flex items-start gap-2">
-                      <Icon className={cn("w-3.5 h-3.5 mt-0.5 shrink-0", config.color)} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium leading-snug">{alert.question}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{alert.entity_name} · {alert.entity_type}</p>
-                        <div className="flex gap-1 mt-1">
-                          <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]"
-                            onClick={() => { setOpen(false); navigateToEntity(navigate, alert); }}>
-                            Voir <ChevronRight className="w-2.5 h-2.5 ml-0.5" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px] text-muted-foreground"
-                            onClick={() => onDismiss(alert.id)}>
-                            <X className="w-2.5 h-2.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </ScrollArea>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-// ─── Sub-components ───
-function MiniStat({ icon: Icon, label, value, subtitle, loading, onClick }: {
-  icon: any; label: string; value: string | number; subtitle?: string; loading: boolean; onClick?: () => void;
-}) {
-  return (
-    <button onClick={onClick}
-      className="flex flex-col items-center justify-center p-2.5 rounded-lg border bg-card hover:bg-muted/50 transition-colors text-center"
-      disabled={!onClick}>
-      {loading ? <Skeleton className="h-8 w-full" /> : (
-        <>
-          <Icon className="h-3.5 w-3.5 text-muted-foreground mb-0.5" />
-          <p className="text-lg font-bold leading-tight">{value}</p>
-          <p className="text-[10px] text-muted-foreground">{label}{subtitle ? ` ${subtitle}` : ''}</p>
-        </>
-      )}
-    </button>
-  );
-}
-
-function TaskRow({ task, showDate, navigate }: { task: any; showDate?: boolean; navigate: any }) {
-  const provenance = task.leads?.name || task.leads?.company || task.projects?.name || '';
-  const handleClick = () => {
-    if (task.entity_type === 'lead' && task.entity_id) navigate(`/cockpit/leads/${task.entity_id}`);
-    else if (task.entity_type === 'project' && task.entity_id) navigate(`/cockpit/projects/${task.entity_id}`);
-    else if (task.lead_id) navigate(`/cockpit/leads/${task.lead_id}`);
-    else if (task.project_id) navigate(`/cockpit/projects/${task.project_id}`);
-  };
-
-  return (
-    <div className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-muted/50 transition-colors cursor-pointer" onClick={handleClick}>
-      <div className="flex-shrink-0">
-        {task.priority === 'high' || task.priority === 'urgent' ? (
-          <div className="h-2 w-2 rounded-full bg-destructive" />
-        ) : (
-          <div className="h-2 w-2 rounded-full bg-muted-foreground/30" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs truncate">{task.title}</p>
-        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-          {showDate && task.due_date && <span className="font-medium">{format(new Date(task.due_date), 'd MMM', { locale: fr })}</span>}
-          {provenance && <span className="truncate">{provenance}</span>}
-        </div>
-      </div>
-      <div className="flex items-center gap-1 flex-shrink-0">
-        {task.due_time && <span className="text-[10px] text-muted-foreground font-mono">{task.due_time.slice(0, 5)}</span>}
-        {task.ai_generated && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="secondary" className="text-[9px] px-1 py-0 cursor-help">IA</Badge>
-            </TooltipTrigger>
-            <TooltipContent className="text-xs max-w-[200px]">
-              Tâche IA{task.entity_type && <span> · {task.entity_type}</span>}
-            </TooltipContent>
-          </Tooltip>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function StagnantWidget({ onSuggestFollowUp, suggestNextStep }: { onSuggestFollowUp: (id: string) => void; suggestNextStep: any }) {
-  const navigate = useNavigate();
-  const { data: stagnant = [], isLoading } = useQuery({
-    queryKey: ['stagnant-opportunities'],
-    queryFn: async () => {
-      const ago = new Date();
-      ago.setDate(ago.getDate() - 7);
-      const { data } = await supabase
-        .from('opportunities')
-        .select('id, title, stage, updated_at, lead_id, value_amount')
-        .lt('updated_at', ago.toISOString())
-        .not('stage', 'in', '(closed_won,closed_lost)')
-        .order('updated_at', { ascending: true })
-        .limit(5);
-      return data || [];
-    },
-    staleTime: 30 * 1000,
-  });
-
-  if (isLoading || stagnant.length === 0) return null;
-
-  return (
-    <Card className="border-destructive/20">
-      <CardHeader className="pb-1.5 pt-3 px-3">
-        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-destructive flex items-center gap-1.5">
-          <AlertCircle className="h-3.5 w-3.5" /> Inactif +7j
-          <Badge variant="destructive" className="text-[10px] px-1.5 py-0 ml-auto">{stagnant.length}</Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0 px-3 pb-2">
-        {stagnant.map((opp: any) => (
-          <div key={opp.id} className="flex items-center justify-between py-1.5 px-1.5 rounded transition-colors group">
-            <div className="min-w-0 cursor-pointer hover:bg-muted/50 flex-1" onClick={() => navigate('/cockpit/pipeline')}>
-              <p className="text-xs font-medium truncate">{opp.title}</p>
-              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                <span className="capitalize">{STAGE_LABELS[opp.stage] || opp.stage}</span>
-                {opp.value_amount > 0 && <span>· {formatCurrency(opp.value_amount)}</span>}
-              </div>
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(opp.updated_at), { locale: fr })}</span>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => { e.stopPropagation(); onSuggestFollowUp(opp.id); }}
-                    disabled={suggestNextStep.isPending}>
-                    {suggestNextStep.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3 text-primary" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>💡 Suggestion IA</TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
-function ActivityIcon({ type, isAI }: { type: string; isAI?: boolean }) {
-  const icons: Record<string, React.ReactNode> = {
-    note_added: <FileText className="h-3.5 w-3.5 text-primary" />,
-    status_changed: <Activity className="h-3.5 w-3.5 text-accent-foreground" />,
-    task_created: <CheckCircle2 className="h-3.5 w-3.5 text-primary" />,
-    email_sent: <Mail className="h-3.5 w-3.5 text-primary" />,
-    call_logged: <Phone className="h-3.5 w-3.5 text-primary" />,
-    meeting_scheduled: <Calendar className="h-3.5 w-3.5 text-primary" />,
-    new_lead: <Users className="h-3.5 w-3.5 text-emerald-500" />,
-    new_opportunity: <Target className="h-3.5 w-3.5 text-amber-500" />,
-    new_transcription: <Mic className="h-3.5 w-3.5 text-blue-500" />,
-    new_booking: <Calendar className="h-3.5 w-3.5 text-violet-500" />,
-    new_generated_document: <FileText className="h-3.5 w-3.5 text-orange-500" />,
-    new_project: <TrendingUp className="h-3.5 w-3.5 text-teal-500" />,
-    note: <FileText className="h-3.5 w-3.5 text-primary" />,
-    ai_action: <Brain className="h-3.5 w-3.5 text-primary" />,
-    synthesis_generated: <Database className="h-3.5 w-3.5 text-primary" />,
-    email_draft_generated: <Mail className="h-3.5 w-3.5 text-primary" />,
-  };
-  if (isAI && !icons[type]) return <span className="mt-0.5 flex-shrink-0"><Brain className="h-3.5 w-3.5 text-primary/70" /></span>;
-  return <span className="mt-0.5 flex-shrink-0">{icons[type] || <Activity className="h-3.5 w-3.5 text-muted-foreground" />}</span>;
-}
-
-function formatCurrency(value: number): string {
-  if (value >= 1000) {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency', currency: 'EUR',
-      minimumFractionDigits: 0, maximumFractionDigits: 0,
-      notation: 'compact',
-    }).format(value);
-  }
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency', currency: 'EUR',
-    minimumFractionDigits: 0, maximumFractionDigits: 0,
-  }).format(value);
 }
