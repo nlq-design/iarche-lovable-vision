@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useCockpitAuth } from '@/hooks/cockpit/useCockpitAuth';
-import { LogOut, Shield, Clock, Briefcase, Fish, Mail, AlertTriangle } from 'lucide-react';
+import { LogOut, Shield, Clock, Briefcase, Fish, Mail, AlertTriangle, Coffee } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
@@ -14,10 +14,12 @@ import { fr } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { EmailDraftsSheet } from './EmailDraftsSheet';
 import { AISentinelNotification } from './AISentinelNotification';
+import { MorningBriefModal } from './MorningBriefModal';
 import { useCockpitIntelligence } from '@/hooks/cockpit/useCockpitIntelligence';
 
 export function CockpitHeader() {
   const [emailDraftsOpen, setEmailDraftsOpen] = useState(false);
+  const [morningBriefOpen, setMorningBriefOpen] = useState(false);
   const { data: intel, isLoading: intelLoading } = useCockpitIntelligence();
 
   const urgentCount = useMemo(() => {
@@ -108,6 +110,22 @@ export function CockpitHeader() {
             </Tooltip>
           )}
 
+          {/* Morning Brief Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMorningBriefOpen(true)}
+                className="h-8 px-3 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
+              >
+                <Coffee className="w-4 h-4 mr-1.5" />
+                <span className="hidden sm:inline">Brief du jour</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Résumé des priorités du jour</TooltipContent>
+          </Tooltip>
+
           {/* AI Sentinel */}
           <AISentinelNotification />
 
@@ -153,22 +171,25 @@ export function CockpitHeader() {
             <TooltipContent>Gérer les leads froids</TooltipContent>
           </Tooltip>
 
-          <EmailDraftsSheet open={emailDraftsOpen} onOpenChange={setEmailDraftsOpen} />
+        <EmailDraftsSheet open={emailDraftsOpen} onOpenChange={setEmailDraftsOpen} />
 
-          {sessionTimeRemaining && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-md border">
-                  <Shield className="w-3.5 h-3.5 text-emerald-500" />
-                  <Clock className="w-3 h-3" />
-                  <span className="hidden sm:inline font-medium">{sessionTimeRemaining}</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                Session sécurisée expire dans {sessionTimeRemaining}
-              </TooltipContent>
-            </Tooltip>
-          )}
+
+        <MorningBriefModal open={morningBriefOpen} onOpenChange={setMorningBriefOpen} />
+
+        {sessionTimeRemaining && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-md border">
+                <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                <Clock className="w-3 h-3" />
+                <span className="hidden sm:inline font-medium">{sessionTimeRemaining}</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              Session sécurisée expire dans {sessionTimeRemaining}
+            </TooltipContent>
+          </Tooltip>
+        )}
 
           {user && (
             <div className="flex items-center gap-2">
