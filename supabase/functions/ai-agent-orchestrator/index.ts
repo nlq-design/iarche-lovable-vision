@@ -4260,7 +4260,7 @@ async function executeTool(
           success: false,
           error: "Le titre de la tâche est obligatoire",
           message: `⚠️ Je ne peux pas créer la tâche. Merci de préciser un titre.`,
-          autonomy_level: "execution_directe",
+          autonomy_level: "proposal",
         };
       }
       
@@ -4289,7 +4289,8 @@ async function executeTool(
         }
       }
       
-      const taskData = {
+      // CREATE ACTION PROPOSAL (Phase 3)
+      const actionPayload = {
         title: title,
         description: args.description as string || null,
         task_type: args.task_type as string || "follow_up",
@@ -4299,32 +4300,31 @@ async function executeTool(
         lead_id: args.lead_id as string || null,
         project_id: args.project_id as string || null,
         opportunity_id: args.opportunity_id as string || null,
-        status: "pending",
-        ai_generated: true,
-        ai_metadata: {
-          autonomy_level: "execution_directe",
-          generated_at: new Date().toISOString(),
-          validation_required: false,
-          validated_by_human: false,
-          source_transcription_id: args.transcription_id || null,
-        },
-        workspace_id: "00000000-0000-0000-0000-000000000001",
       };
 
-      const { data, error } = await supabase
-        .from("tasks")
-        .insert(taskData)
-        .select()
+      const { data: proposal, error: proposalError } = await supabase
+        .from("action_proposals")
+        .insert({
+          workspace_id: "00000000-0000-0000-0000-000000000001",
+          action_type: "create_task",
+          action_label: `Créer tâche: "${title}"`,
+          action_payload: actionPayload,
+          status: "pending",
+          ai_reasoning: args.reasoning || "Task création proposée par l'IA",
+          user_id: userId || null,
+        })
+        .select("id")
         .single();
 
-      if (error) throw error;
+      if (proposalError) throw proposalError;
 
       return {
         success: true,
-        task: data,
-        message: `✅ Tâche "${title}" créée${dueTime ? ` pour ${dueTime}` : ''}.`,
-        autonomy_level: "execution_directe",
-        extracted_time: dueTime,
+        proposal_id: proposal.id,
+        action_type: "create_task",
+        message: `📋 Proposition créée: Créer tâche "${title}". Valide-la dans le cockpit pour l'exécuter.`,
+        autonomy_level: "proposal",
+        action_details: actionPayload,
       };
     }
 
@@ -5700,7 +5700,6 @@ Génère un contenu HTML pour email avec:
     }
 
     case "send_email": {
-      const sendNow = args.send_now === true;
       const emailType = args.email_type as string || "custom";
       
       // If body not provided, generate it
@@ -5741,35 +5740,44 @@ Génère un contenu HTML pour email avec:
         bodyHtml = `<p>Email généré automatiquement.</p><p>Cordialement,<br>${signature}</p>`;
       }
 
-      // Direct execution: always send immediately
-      // Note: activity_type "email" est dans la liste blanche de la contrainte
-      await supabase.from("activity_log").insert({
-        entity_type: "lead",
-        entity_id: args.lead_id || "00000000-0000-0000-0000-000000000001",
-        activity_type: "email",
-        title: `Email envoyé: ${subject}`.slice(0, 255),
-        content: `Destinataire: ${args.to_email}`,
-        is_ai_generated: true,
-        ai_metadata: {
-          autonomy_level: "execution_directe",
-          email_type: emailType,
-          sent_at: new Date().toISOString(),
-        },
-        visibility: "internal",
-        workspace_id: "00000000-0000-0000-0000-000000000001",
-      });
+      // CREATE ACTION PROPOSAL (Phase 3) - Emails require validation
+      const actionPayload = {
+        to_email: args.to_email as string,
+        to_name: args.to_name as string || null,
+        subject: subject,
+        body_html: bodyHtml,
+        signature: signature,
+        email_type: emailType,
+        lead_id: args.lead_id as string || null,
+      };
+
+      const { data: proposal, error: proposalError } = await supabase
+        .from("action_proposals")
+        .insert({
+          workspace_id: "00000000-0000-0000-0000-000000000001",
+          action_type: "send_email",
+          action_label: `Envoyer email: "${subject}" à ${args.to_name || args.to_email}`,
+          action_payload: actionPayload,
+          status: "pending",
+          ai_reasoning: args.reasoning || "Email proposé par l'IA",
+          user_id: userId || null,
+        })
+        .select("id")
+        .single();
+
+      if (proposalError) throw proposalError;
 
       return {
         success: true,
-        mode: "sent",
-        email: {
-          to_email: args.to_email,
-          to_name: args.to_name || args.to_email,
+        proposal_id: proposal.id,
+        action_type: "send_email",
+        message: `📧 Proposition d'email créée: "${subject}" → ${args.to_name || args.to_email}. Valide-la pour l'envoyer.`,
+        autonomy_level: "proposal",
+        email_preview: {
           subject: subject,
-          body_html: bodyHtml,
+          to: args.to_email,
+          body_preview: bodyHtml.substring(0, 200) + "...",
         },
-        message: `✅ Email envoyé à ${args.to_name || args.to_email}. Objet: "${subject}"`,
-        autonomy_level: "execution_directe",
       };
     }
 
@@ -8746,25 +8754,37 @@ Quand l'utilisateur demande une action (créer RDV, lead, email...) :
 - Si infos critiques manquent, pose UNE question regroupant tout
 - Sinon, EXÉCUTE DIRECTEMENT
 
-## RÈGLES D'EXÉCUTION
+## RÈGLES D'EXÉCUTION (Phase 3: Propose-Validate-Execute)
 
-### 1. EXÉCUTION DIRECTE
-Quand l'utilisateur demande une action, tu DOIS :
-- Appeler les outils appropriés IMMÉDIATEMENT (create_booking, create_lead, send_email, etc.)
-- NE PAS demander de confirmation
-- Créer RÉELLEMENT les données dans le système
-- Retourner les résultats concrets (confirmations, liens Zoom, etc.)
+### 1. ACTIONS SENSIBLES REQUIÈRENT VALIDATION
+Les actions suivantes créent des **propositions** qui doivent être validées par l'utilisateur:
+- send_email: Emails doivent être relus avant envoi
+- create_task: Tâches complexes nécessitent validation
+- schedule_meeting: RDVs sensibles nécessitent confirmation
+- update_lead: Mises à jour CRM critiques
 
-### 2. COLLECTE D'INFOS MINIMALE
-Si des informations CRITIQUES manquent :
-- Demande UNIQUEMENT les infos vraiment indispensables en UNE question
-- Dès que tu as les infos, EXÉCUTE sans demander validation
+**Workflow**: Tu proposes → Utilisateur valide → Exécution automatique
 
-### 3. PAS DE BAVARDAGE
-- Réponses courtes (3-5 lignes max en mode CHAT)
-- Données concrètes : noms, dates, montants, statuts
-- Jamais d'UUIDs visibles (utilise les noms/titres)
-- JAMAIS de "voulez-vous que je..." ou "confirmez-vous ?"
+### 2. ACTIONS DIRECTES (pas de validation)
+Ces actions s'exécutent immédiatement sans proposition:
+- get_* (lectures): Jamais bloquées
+- detect_missing_fields: Pour l'interview mode
+- create_meeting_note: Notes de suivi standard
+- suggest_*: Analyses et recommandations
+
+### 3. INTERVIEW MODE (Phase 2 active)
+Si champs manquent:
+- Consulte detect_missing_fields
+- Pose UNE seule question à la fois
+- Met à jour l'entité après chaque réponse
+- NE JAMAIS inventer de données
+- Priorité: infos bloquant une action spécifique
+
+### 4. RÈGLE DE PRIORITÉ ABSOLUE
+Si l'utilisateur demande une action PRÉCISE (email, tâche, RDV):
+- N'exécute PAS l'interview complète sur tous les champs
+- Demande UNIQUEMENT les infos critiques pour cette action
+- Ex: "Envoie email à Dupont" + email manquant → "Quel est l'email de Dupont ?" (pas interview complète)
 
 ## FORMAT DE RÉPONSE
 
