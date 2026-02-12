@@ -354,7 +354,9 @@ export default function CockpitDashboard() {
             <div className="lg:col-span-4 flex flex-col gap-3">
 
               {/* ⚡ TOP ACTIONS (from Intelligence) */}
-              <TopActionsWidget actions={intelligence?.top_actions} isLoading={intelLoading} navigate={navigate} />
+              <div id="actions-prioritaires">
+                <TopActionsWidget actions={intelligence?.top_actions} isLoading={intelLoading} navigate={navigate} />
+              </div>
 
               {/* ⚡ ACTION PROPOSALS (from Chatbot AI) */}
               <ActionProposalsList compact />
