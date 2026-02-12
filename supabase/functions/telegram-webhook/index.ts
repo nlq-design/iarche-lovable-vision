@@ -1000,13 +1000,14 @@ Posez simplement votre question et je vous répondrai !`;
 
 async function checkAndSendProposalButtons(chatId: number): Promise<void> {
   try {
-    // Find recent proposals (last 60s) with status 'proposed'
+    // Find recent proposals (last 60s) with status 'proposed' AND not yet notified via Telegram
     const cutoff = new Date(Date.now() - 60000).toISOString();
     const { data: proposals, error } = await supabase
       .from("action_proposals")
       .select("id, action_label, ai_reasoning, action_type")
       .eq("status", "proposed")
       .eq("workspace_id", DEFAULT_WORKSPACE_ID)
+      .eq("telegram_notified", false)
       .gte("created_at", cutoff)
       .order("created_at", { ascending: false })
       .limit(5);
@@ -1024,6 +1025,11 @@ async function checkAndSendProposalButtons(chatId: number): Promise<void> {
       };
 
       await sendTelegramMessage(chatId, text, "Markdown", replyMarkup);
+      
+      // Mark as notified to prevent re-trigger
+      await supabase.from("action_proposals").update({
+        telegram_notified: true,
+      }).eq("id", proposal.id);
     }
   } catch (err) {
     console.error("Error checking proposals:", err);
@@ -1034,9 +1040,10 @@ async function executeProposalFromTelegram(
   proposalId: string
 ): Promise<{ success: boolean; label: string; error?: string }> {
   try {
+    // FIRST: Atomic status check before anything else (race condition guard)
     const { data: proposal, error: fetchError } = await supabase
       .from("action_proposals")
-      .select("*")
+      .select("status, action_label, created_at")
       .eq("id", proposalId)
       .single();
 
@@ -1044,6 +1051,7 @@ async function executeProposalFromTelegram(
       return { success: false, label: "", error: "Proposition introuvable" };
     }
 
+    // Race condition: check status FIRST
     if (proposal.status !== "proposed") {
       return { success: false, label: proposal.action_label, error: "already_handled" };
     }
@@ -1059,143 +1067,46 @@ async function executeProposalFromTelegram(
       return { success: false, label: proposal.action_label, error: "expired" };
     }
 
-    // Mark as validated first
-    await supabase.from("action_proposals").update({
-      status: "validated",
-      updated_at: new Date().toISOString(),
-    }).eq("id", proposalId);
+    // Mark as validated (optimistic lock — prevents double execution)
+    const { data: lockResult, error: lockError } = await supabase
+      .from("action_proposals")
+      .update({ status: "validated", updated_at: new Date().toISOString() })
+      .eq("id", proposalId)
+      .eq("status", "proposed") // Only update if still proposed (atomic)
+      .select("id")
+      .maybeSingle();
 
-    // Execute the action (mirrors execute-action-proposal logic)
-    let executionResult: Record<string, unknown> = {};
-    const payload = proposal.action_payload as Record<string, unknown>;
-    const systemUserId = await getTelegramSystemUserId();
-
-    switch (proposal.action_type) {
-      case "create_task": {
-        const { data, error } = await supabase.from("tasks").insert({
-          workspace_id: proposal.workspace_id,
-          title: (payload.title as string) || proposal.action_label,
-          description: (payload.description as string) || null,
-          priority: (payload.priority as string) || "medium",
-          status: "pending",
-          lead_id: (payload.lead_id as string) || null,
-          project_id: (payload.project_id as string) || null,
-          assigned_to: systemUserId,
-        }).select("id").single();
-        if (error) throw error;
-        executionResult = { task_id: data.id, type: "task_created" };
-        break;
-      }
-
-      case "update_lead": {
-        const leadId = payload.lead_id as string;
-        if (!leadId) throw new Error("lead_id manquant");
-        const safeFields = ["email", "phone", "company", "position", "industry",
-          "company_size", "website", "city", "qualification_status", "siret"];
-        const updates: Record<string, unknown> = {};
-        for (const [key, value] of Object.entries(payload)) {
-          if (safeFields.includes(key) && value !== undefined) updates[key] = value;
-        }
-        if (Object.keys(updates).length === 0) throw new Error("Aucun champ valide");
-        const { error } = await supabase.from("leads").update(updates).eq("id", leadId);
-        if (error) throw error;
-        executionResult = { lead_id: leadId, updated_fields: Object.keys(updates), type: "lead_updated" };
-        break;
-      }
-
-      case "create_note": {
-        const { data, error } = await supabase.from("activity_log").insert({
-          workspace_id: proposal.workspace_id,
-          entity_type: (payload.entity_type as string) || "lead",
-          entity_id: (payload.entity_id as string) || "",
-          activity_type: "note",
-          title: (payload.title as string) || proposal.action_label,
-          content: (payload.content as string) || "",
-          is_ai_generated: true,
-          created_by: systemUserId,
-        }).select("id").single();
-        if (error) throw error;
-        executionResult = { note_id: data.id, type: "note_created" };
-        break;
-      }
-
-      case "schedule_meeting": {
-        const { data: bookingType } = await supabase
-          .from("booking_types").select("id").eq("is_active", true).limit(1).single();
-        if (!bookingType) throw new Error("Aucun type de RDV configuré");
-        const startTime = (payload.start_time as string) || new Date().toISOString();
-        const durationMinutes = (payload.duration_minutes as number) || 30;
-        const endTime = new Date(new Date(startTime).getTime() + durationMinutes * 60000).toISOString();
-        const rawType = ((payload.meeting_type as string) || "visio").toLowerCase();
-        const meetingType = ["visio", "telephone", "presentiel"].includes(rawType) ? rawType : "visio";
-        const { data, error } = await supabase.from("bookings").insert({
-          booking_type_id: bookingType.id,
-          name: (payload.name as string) || "Rendez-vous IA",
-          email: (payload.email as string) || "",
-          start_time: startTime,
-          end_time: endTime,
-          message: (payload.message as string) || proposal.action_label,
-          status: "confirmed",
-          meeting_type: meetingType,
-          lead_id: (payload.lead_id as string) || null,
-          workspace_id: proposal.workspace_id,
-        }).select("id").single();
-        if (error) throw error;
-        executionResult = { booking_id: data.id, type: "meeting_scheduled" };
-        break;
-      }
-
-      case "send_email": {
-        const recipientEmail = (payload.to as string) || (payload.email as string);
-        if (!recipientEmail) throw new Error("Email destinataire manquant");
-        const resendKey = Deno.env.get("RESEND_API_KEY");
-        if (!resendKey) throw new Error("RESEND_API_KEY non configurée");
-        const emailSubject = (payload.subject as string) || proposal.action_label;
-        const emailBody = (payload.body as string) || (payload.content as string) || "";
-        const fromEmail = (payload.from as string) || "IArche CRM <crm@iarche.fr>";
-        const resendResponse = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${resendKey}` },
-          body: JSON.stringify({ from: fromEmail, to: [recipientEmail], subject: emailSubject, html: emailBody }),
-        });
-        if (!resendResponse.ok) {
-          const errText = await resendResponse.text();
-          throw new Error(`Échec envoi email: ${errText}`);
-        }
-        const resendData = await resendResponse.json();
-        await supabase.from("email_logs").insert({
-          email_type: "ai_action", source_type: "action_proposal", source_id: proposalId,
-          recipient_email: recipientEmail, subject: emailSubject, status: "sent",
-          sent_at: new Date().toISOString(), metadata: { resend_id: resendData.id, ai_generated: true, source: "telegram" },
-        });
-        executionResult = { type: "email_sent", resend_id: resendData.id, to: recipientEmail };
-        break;
-      }
-
-      default:
-        throw new Error(`Type d'action non supporté: ${proposal.action_type}`);
+    if (lockError || !lockResult) {
+      return { success: false, label: proposal.action_label, error: "already_handled" };
     }
 
-    // Update proposal as executed
-    await supabase.from("action_proposals").update({
-      status: "executed",
-      executed_at: new Date().toISOString(),
-      executed_result: executionResult,
-      updated_at: new Date().toISOString(),
-    }).eq("id", proposalId);
-
-    // Log execution
-    await supabase.from("activity_log").insert({
-      workspace_id: proposal.workspace_id,
-      entity_type: "action_proposal",
-      entity_id: proposalId,
-      activity_type: "ai_action",
-      title: `Action IA exécutée (Telegram): ${proposal.action_label}`,
-      content: JSON.stringify(executionResult),
-      is_ai_generated: true,
-      created_by: systemUserId,
+    // Delegate execution to the existing edge function (NO duplication)
+    const systemUserId = await getTelegramSystemUserId();
+    
+    const execResponse = await fetch(`${SUPABASE_URL}/functions/v1/execute-action-proposal`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({
+        proposal_id: proposalId,
+        source: "telegram",
+      }),
     });
 
+    if (!execResponse.ok) {
+      const errText = await execResponse.text();
+      // Revert to proposed if execution failed
+      await supabase.from("action_proposals").update({
+        status: "proposed",
+        updated_at: new Date().toISOString(),
+      }).eq("id", proposalId).eq("status", "validated");
+      return { success: false, label: proposal.action_label, error: errText.slice(0, 200) };
+    }
+
+    const execData = await execResponse.json();
+    
     return { success: true, label: proposal.action_label };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -1529,25 +1440,25 @@ async function handleCallbackQuery(
   if (actionValue === "reject" && actionParam) {
     await answerCallbackQuery(callbackQueryId, "❌ Action rejetée");
     
-    // Check if already handled
-    const { data: proposal } = await supabase
+    // Atomic reject: only update if still in 'proposed' status
+    const { data: updated, error: rejectError } = await supabase
       .from("action_proposals")
-      .select("status, action_label")
+      .update({
+        status: "rejected",
+        validation_notes: "Rejeté via Telegram",
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", actionParam)
-      .single();
+      .eq("status", "proposed")
+      .select("action_label")
+      .maybeSingle();
 
-    if (!proposal || proposal.status !== "proposed") {
+    if (rejectError || !updated) {
       if (messageId) await editTelegramMessage(chatId, messageId, `⚠️ Cette action a déjà été traitée.`);
       return;
     }
 
-    await supabase.from("action_proposals").update({
-      status: "rejected",
-      validation_notes: "Rejeté via Telegram",
-      updated_at: new Date().toISOString(),
-    }).eq("id", actionParam);
-
-    if (messageId) await editTelegramMessage(chatId, messageId, `❌ *Rejeté* : ${proposal.action_label}`);
+    if (messageId) await editTelegramMessage(chatId, messageId, `❌ *Rejeté* : ${updated.action_label}`);
     await trackTelegramStat(chatId, userName, "action_proposal", "reject", null, "success");
     return;
   }

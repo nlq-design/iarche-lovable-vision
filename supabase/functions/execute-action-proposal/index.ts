@@ -26,25 +26,45 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.replace("Bearer ", "");
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const userClient = createClient(Deno.env.get("SUPABASE_URL")!, anonKey, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
-    });
-
-    const { data: { user }, error: authError } = await userClient.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Non autorisé" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const isServiceRole = token === serviceRoleKey;
+    
+    let userId: string;
+    
+    if (isServiceRole) {
+      // Internal call (e.g., from Telegram webhook) — use system user
+      const supabaseAdmin = createClient(Deno.env.get("SUPABASE_URL")!, serviceRoleKey);
+      const { data: owner } = await supabaseAdmin
+        .from("workspace_members")
+        .select("user_id")
+        .eq("workspace_id", "00000000-0000-0000-0000-000000000001")
+        .eq("role", "owner")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      userId = owner?.user_id || "";
+    } else {
+      // Standard user auth
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+      const userClient = createClient(Deno.env.get("SUPABASE_URL")!, anonKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
       });
+      const { data: { user }, error: authError } = await userClient.auth.getUser();
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Non autorisé" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      userId = user.id;
     }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      serviceRoleKey
     );
 
-    const { proposal_id, validation_notes } = await req.json();
+    const { proposal_id, validation_notes, source } = await req.json();
 
     if (!proposal_id) {
       return new Response(JSON.stringify({ error: "proposal_id requis" }), {
@@ -67,7 +87,9 @@ serve(async (req) => {
       });
     }
 
-    if (proposal.status !== "pending") {
+    // Accept both "pending" (web) and "validated" (Telegram pre-validated) statuses
+    const acceptableStatuses = ["pending", "validated"];
+    if (!acceptableStatuses.includes(proposal.status)) {
       return new Response(JSON.stringify({ error: "Cette proposition a déjà été traitée" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -88,7 +110,7 @@ serve(async (req) => {
           status: "pending",
           lead_id: payload.lead_id as string || null,
           project_id: payload.project_id as string || null,
-          assigned_to: user.id,
+          assigned_to: userId,
         }).select("id").single();
 
         if (error) throw error;
@@ -129,7 +151,7 @@ serve(async (req) => {
           title: payload.title as string || proposal.action_label,
           content: payload.content as string || "",
           is_ai_generated: true,
-          created_by: user.id,
+          created_by: userId,
         }).select("id").single();
 
         if (error) throw error;
@@ -161,7 +183,7 @@ serve(async (req) => {
         const { data, error } = await supabase.from("bookings").insert({
           booking_type_id: bookingType.id,
           name: payload.name as string || "Rendez-vous IA",
-          email: payload.email as string || user.email || "",
+          email: payload.email as string || "",
           start_time: startTime,
           end_time: endTime,
           message: payload.message as string || proposal.action_label,
@@ -247,7 +269,7 @@ serve(async (req) => {
       title: `Action IA exécutée: ${proposal.action_label}`,
       content: JSON.stringify(executionResult),
       is_ai_generated: true,
-      created_by: user.id,
+      created_by: userId,
     });
 
     return new Response(JSON.stringify({
