@@ -35,6 +35,7 @@ export { useEntityContextNotes, type ContextNoteEntityType, type EntityContextNo
 export { useCockpitAICopilot } from './useCockpitAICopilot';
 export { useMorningBrief } from './useMorningBrief';
 export { useWinLossAnalysis } from './useWinLossAnalysis';
+export { useMeetingPrep } from './useMeetingPrep';
 
 // Ré-exporter les hooks partagés pour faciliter les imports
 export { useBookings, useBookingTypes, BOOKING_QUERY_KEY } from '@/hooks/shared/useBookings';
