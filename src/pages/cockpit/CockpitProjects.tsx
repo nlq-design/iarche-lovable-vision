@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FolderKanban, Clock, CheckCircle2, AlertCircle, PauseCircle, Calendar, Users, Plus, Mic } from "lucide-react";
@@ -9,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useCockpitProjects } from "@/hooks/cockpit";
 import { useCockpitVoiceTranscriptions } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { ProjectTimeline } from '@/components/cockpit/ProjectTimeline';
+import { DeadlineCascadeDrawer } from '@/components/cockpit/DeadlineCascadeDrawer';
 import { format, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -34,6 +36,8 @@ const CockpitProjects = () => {
   const { projects, stats, isLoading, createProject } = useCockpitProjects();
   const { transcriptions } = useCockpitVoiceTranscriptions();
   const navigate = useNavigate();
+  const [cascadeOpen, setCascadeOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   // Get project IDs that have transcriptions
   const projectsWithTranscriptions = new Set(
@@ -144,7 +148,7 @@ const CockpitProjects = () => {
                     <div 
                       key={project.id}
                       className="p-3 rounded-md border bg-background hover:bg-muted/40 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/cockpit/projects/${project.id}`)}
+                      onClick={() => { setSelectedProjectId(project.id); setCascadeOpen(true); }}
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
@@ -311,6 +315,7 @@ const CockpitProjects = () => {
           </Card>
         </div>
       </div>
+      <DeadlineCascadeDrawer open={cascadeOpen} onOpenChange={setCascadeOpen} projectId={selectedProjectId} />
     </CockpitLayout>
   );
 };
