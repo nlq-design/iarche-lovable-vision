@@ -36,6 +36,7 @@ export { useCockpitAICopilot } from './useCockpitAICopilot';
 export { useMorningBrief } from './useMorningBrief';
 export { useWinLossAnalysis } from './useWinLossAnalysis';
 export { useMeetingPrep } from './useMeetingPrep';
+export { useDeadlineCascade } from './useDeadlineCascade';
 
 // Ré-exporter les hooks partagés pour faciliter les imports
 export { useBookings, useBookingTypes, BOOKING_QUERY_KEY } from '@/hooks/shared/useBookings';
