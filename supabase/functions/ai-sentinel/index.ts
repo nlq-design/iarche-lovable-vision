@@ -220,8 +220,125 @@ serve(async (req) => {
 
     const alerts: SentinelAlert[] = anomalies.slice(0, 8).map(formatAnomaly);
 
+    // ============================================================
+    // PHASE 3: Create Action Proposals for critical/warning anomalies
+    // ============================================================
+    const PROPOSAL_TEMPLATES: Record<string, (a: RawAnomaly) => {
+      action_type: string;
+      action_label: string;
+      action_payload: Record<string, unknown>;
+      ai_reasoning: string;
+    } | null> = {
+      inactivity_hot_lead: (a) => ({
+        action_type: "send_email",
+        action_label: `Relancer ${a.entity_name} (${a.days_inactive}j inactif)`,
+        action_payload: {
+          lead_id: a.entity_id,
+          email_type: "followup",
+          context: `Lead chaud inactif depuis ${a.days_inactive} jours. Dernière activité: ${a.last_activity_date || "inconnue"}.`,
+        },
+        ai_reasoning: `[Sentinelle] Lead qualifié "hot" sans activité depuis ${a.days_inactive}j. Risque de perdre l'opportunité si pas de relance rapide.`,
+      }),
+      inactivity_active_project: (a) => ({
+        action_type: "create_task",
+        action_label: `Suivi projet ${a.entity_name} (${a.days_inactive}j sans activité)`,
+        action_payload: {
+          entity_type: "project",
+          entity_id: a.entity_id,
+          title: `Point de suivi – ${a.entity_name}`,
+          description: `Projet actif sans activité depuis ${a.days_inactive} jours. Vérifier l'avancement et identifier les blocages.`,
+          priority: (a.days_inactive || 0) > 21 ? "high" : "medium",
+          due_in_days: 1,
+        },
+        ai_reasoning: `[Sentinelle] Projet actif stagnant depuis ${a.days_inactive}j. Un point de suivi est nécessaire pour détecter d'éventuels blocages.`,
+      }),
+      incomplete_lead_email: (a) => ({
+        action_type: "update_lead",
+        action_label: `Compléter email de ${a.entity_name}`,
+        action_payload: {
+          lead_id: a.entity_id,
+          fields_to_complete: ["email"],
+          context: "Email manquant — nécessaire pour les relances automatiques",
+        },
+        ai_reasoning: `[Sentinelle] Lead sans email, impossible de relancer automatiquement. Compléter cette donnée est prioritaire.`,
+      }),
+      inconsistency_opp_won_lead_not: (a) => ({
+        action_type: "update_lead",
+        action_label: `Corriger qualification de ${a.entity_name} → won`,
+        action_payload: {
+          lead_id: a.entity_id,
+          qualification: "won",
+          context: "Opportunité marquée \"won\" mais lead non mis à jour",
+        },
+        ai_reasoning: `[Sentinelle] Incohérence: opportunité gagnée mais lead pas marqué "won". Correction automatique pour garder le CRM propre.`,
+      }),
+      incomplete_opp_amount: (a) => ({
+        action_type: "create_task",
+        action_label: `Renseigner montant de "${a.entity_name}" (stage: ${a.stage || "?"})`,
+        action_payload: {
+          entity_type: "opportunity",
+          entity_id: a.entity_id,
+          title: `Compléter montant – ${a.entity_name}`,
+          description: `Opportunité en stage "${a.stage || "inconnu"}" sans montant estimé. Renseigner pour le suivi pipeline.`,
+          priority: "medium",
+          due_in_days: 2,
+        },
+        ai_reasoning: `[Sentinelle] Opportunité sans montant estimé en stage "${a.stage}". Le pipeline financier est incomplet.`,
+      }),
+    };
+
+    const proposableAnomalies = anomalies.filter(
+      (a) => a.severity === "critical" || a.severity === "warning"
+    );
+
+    if (proposableAnomalies.length > 0) {
+      try {
+        // Anti-dedup: check existing pending proposals from last 48h
+        const { data: existingProposals } = await supabase
+          .from("action_proposals")
+          .select("action_label")
+          .eq("status", "pending")
+          .eq("workspace_id", ws.id)
+          .gte("created_at", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString());
+
+        const existingLabels = new Set((existingProposals || []).map((p: { action_label: string }) => p.action_label));
+
+        const newProposals: Record<string, unknown>[] = [];
+        for (const anomaly of proposableAnomalies) {
+          const template = PROPOSAL_TEMPLATES[anomaly.rule_type];
+          if (!template) continue;
+          const proposal = template(anomaly);
+          if (!proposal) continue;
+          if (existingLabels.has(proposal.action_label)) continue;
+
+          newProposals.push({
+            workspace_id: ws.id,
+            status: "pending",
+            action_type: proposal.action_type,
+            action_label: proposal.action_label,
+            action_payload: proposal.action_payload,
+            ai_reasoning: proposal.ai_reasoning,
+          });
+        }
+
+        if (newProposals.length > 0) {
+          const { error: insertError } = await supabase
+            .from("action_proposals")
+            .insert(newProposals);
+
+          if (insertError) {
+            console.error("[sentinel] Error creating proposals:", insertError);
+          } else {
+            console.log(`[sentinel] Created ${newProposals.length} action proposals from anomalies`);
+          }
+        }
+      } catch (proposalErr) {
+        console.error("[sentinel] Proposal creation failed:", proposalErr);
+      }
+    }
+
     return new Response(
-      JSON.stringify({ alerts, total: anomalies.length }),
+      JSON.stringify({ alerts, total: anomalies.length, proposals_created: proposableAnomalies.length }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

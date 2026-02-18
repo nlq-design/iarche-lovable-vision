@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   CheckCircle2, XCircle, Loader2, Zap, Brain,
   ListTodo, Mail, UserCheck, Calendar, StickyNote,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, ShieldAlert,
 } from 'lucide-react';
 import { useActionProposals, ActionProposal } from '@/hooks/cockpit/useActionProposals';
 import { formatDistanceToNow } from 'date-fns';
@@ -112,11 +112,17 @@ export function ActionProposalsList({ workspaceId, compact = false }: ActionProp
                   <Icon className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-medium truncate">{proposal.action_label}</p>
                     <Badge variant="outline" className="text-[10px] shrink-0">
                       {ACTION_LABELS[proposal.action_type] || proposal.action_type}
                     </Badge>
+                    {proposal.ai_reasoning?.startsWith('[Sentinelle]') && (
+                      <Badge variant="secondary" className="text-[10px] shrink-0 gap-0.5">
+                        <ShieldAlert className="h-2.5 w-2.5" />
+                        Sentinelle
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {formatDistanceToNow(new Date(proposal.created_at), { addSuffix: true, locale: fr })}
