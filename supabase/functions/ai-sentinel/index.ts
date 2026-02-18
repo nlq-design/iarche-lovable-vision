@@ -291,13 +291,15 @@ serve(async (req) => {
       (a) => a.severity === "critical" || a.severity === "warning"
     );
 
+    let proposalsCreatedCount = 0;
+
     if (proposableAnomalies.length > 0) {
       try {
         // Anti-dedup: check existing pending proposals from last 48h
         const { data: existingProposals } = await supabase
           .from("action_proposals")
           .select("action_label")
-          .eq("status", "pending")
+          .in("status", ["pending", "executed"])
           .eq("workspace_id", ws.id)
           .gte("created_at", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString());
 
@@ -333,7 +335,8 @@ serve(async (req) => {
           if (insertError) {
             console.error("[sentinel] Error creating proposals:", insertError);
           } else {
-            console.log(`[sentinel] Created ${(insertedData || []).length} action proposals from anomalies`);
+            proposalsCreatedCount = (insertedData || []).length;
+            console.log(`[sentinel] Created ${proposalsCreatedCount} action proposals from anomalies`);
 
             // Auto-execute low-risk proposals (Option B: synchronous)
             const autoExecProposals = (insertedData || []).filter((p: { auto_execute: boolean }) => p.auto_execute);
@@ -367,7 +370,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ alerts, total: anomalies.length, proposals_created: proposableAnomalies.length }),
+      JSON.stringify({ alerts, total: anomalies.length, proposals_created: proposalsCreatedCount }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
