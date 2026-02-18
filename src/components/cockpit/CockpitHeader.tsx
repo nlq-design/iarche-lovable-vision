@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useCockpitAuth } from '@/hooks/cockpit/useCockpitAuth';
-import { LogOut, Shield, Clock, Briefcase, Fish, Mail, AlertTriangle, Coffee, TrendingUp, Handshake } from 'lucide-react';
+import { LogOut, Shield, Clock, Briefcase, Fish, Mail, AlertTriangle, TrendingUp, Handshake } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
@@ -14,14 +14,13 @@ import { fr } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { EmailDraftsSheet } from './EmailDraftsSheet';
 import { AISentinelNotification } from './AISentinelNotification';
-import { MorningBriefModal } from './MorningBriefModal';
 import { WinLossDrawer } from './WinLossDrawer';
 import { MeetingPrepDrawer } from './MeetingPrepDrawer';
 import { useCockpitIntelligence } from '@/hooks/cockpit/useCockpitIntelligence';
 
 export function CockpitHeader() {
   const [emailDraftsOpen, setEmailDraftsOpen] = useState(false);
-  const [morningBriefOpen, setMorningBriefOpen] = useState(false);
+  
   const [winLossOpen, setWinLossOpen] = useState(false);
   const [meetingPrepOpen, setMeetingPrepOpen] = useState(false);
   const { data: intel, isLoading: intelLoading } = useCockpitIntelligence();
@@ -114,22 +113,6 @@ export function CockpitHeader() {
             </Tooltip>
           )}
 
-          {/* Morning Brief Button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setMorningBriefOpen(true)}
-                className="h-8 px-3 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
-              >
-                <Coffee className="w-4 h-4 mr-1.5" />
-                <span className="hidden sm:inline">Brief du jour</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Résumé des priorités du jour</TooltipContent>
-          </Tooltip>
-
           {/* Win/Loss Analysis Button */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -209,7 +192,7 @@ export function CockpitHeader() {
 
         <EmailDraftsSheet open={emailDraftsOpen} onOpenChange={setEmailDraftsOpen} />
 
-        <MorningBriefModal open={morningBriefOpen} onOpenChange={setMorningBriefOpen} />
+
 
         <WinLossDrawer open={winLossOpen} onOpenChange={setWinLossOpen} />
 

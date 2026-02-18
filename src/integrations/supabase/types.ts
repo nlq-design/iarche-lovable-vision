@@ -1843,6 +1843,53 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_intelligence: {
+        Row: {
+          consulte_count: number | null
+          created_at: string | null
+          generated_at: string | null
+          generated_date: string
+          generation_ms: number | null
+          id: string
+          intelligence: Json
+          llm_model: string | null
+          raw_data: Json | null
+          workspace_id: string
+        }
+        Insert: {
+          consulte_count?: number | null
+          created_at?: string | null
+          generated_at?: string | null
+          generated_date?: string
+          generation_ms?: number | null
+          id?: string
+          intelligence: Json
+          llm_model?: string | null
+          raw_data?: Json | null
+          workspace_id: string
+        }
+        Update: {
+          consulte_count?: number | null
+          created_at?: string | null
+          generated_at?: string | null
+          generated_date?: string
+          generation_ms?: number | null
+          id?: string
+          intelligence?: Json
+          llm_model?: string | null
+          raw_data?: Json | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_intelligence_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       database_backups: {
         Row: {
           backup_type: string

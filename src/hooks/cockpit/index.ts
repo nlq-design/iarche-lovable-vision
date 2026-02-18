@@ -33,7 +33,7 @@ export { usePappersLookup } from './usePappersLookup';
 export { useEntityLinks, type EntityType, type LinkedEntity, type EntityLinksData } from './useEntityLinks';
 export { useEntityContextNotes, type ContextNoteEntityType, type EntityContextNote } from './useEntityContextNotes';
 export { useCockpitAICopilot } from './useCockpitAICopilot';
-export { useMorningBrief } from './useMorningBrief';
+
 export { useWinLossAnalysis } from './useWinLossAnalysis';
 export { useMeetingPrep } from './useMeetingPrep';
 export { useDeadlineCascade } from './useDeadlineCascade';

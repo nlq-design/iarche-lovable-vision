@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { handleAIError } from '@/lib/ai-error-handler';
 import { toast as sonnerToast } from 'sonner';
@@ -80,6 +80,32 @@ export function useCockpitIntelligence(workspaceId: string = DEFAULT_WORKSPACE_I
   const queryClient = useQueryClient();
   const [autoFetched, setAutoFetched] = useState(false);
 
+  // Step 1: Read today's cached brief from DB (instant)
+  const dailyBrief = useQuery({
+    queryKey: ['daily-intelligence', workspaceId],
+    queryFn: async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('daily_intelligence')
+        .select('*')
+        .eq('workspace_id', workspaceId)
+        .eq('generated_date', today)
+        .order('generated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) return null;
+
+      return {
+        intelligence: data.intelligence as unknown as IntelligencePayload,
+        raw: data.raw_data as unknown as IntelligenceRawData,
+      } as IntelligenceResult;
+    },
+    staleTime: 30 * 60 * 1000, // 30 min cache
+  });
+
+  // Step 2: LLM fallback mutation (only if no DB data)
   const intelligence = useMutation({
     mutationFn: async (): Promise<IntelligenceResult> => {
       const { data, error } = await supabase.functions.invoke('cockpit-ai-copilot', {
@@ -98,21 +124,26 @@ export function useCockpitIntelligence(workspaceId: string = DEFAULT_WORKSPACE_I
       return data as IntelligenceResult;
     },
     onSuccess: () => {
-      // Invalidate related queries so widgets stay fresh
       queryClient.invalidateQueries({ queryKey: ['cockpit-projects'] });
     },
   });
 
-  // Auto-fetch on mount (once)
+  // Auto-fetch: only trigger LLM if no DB data available
   useEffect(() => {
-    if (!autoFetched && !intelligence.isPending && !intelligence.data) {
+    if (
+      !autoFetched &&
+      !intelligence.isPending &&
+      !intelligence.data &&
+      !dailyBrief.data &&
+      !dailyBrief.isLoading
+    ) {
       const timer = setTimeout(() => {
         intelligence.mutate();
         setAutoFetched(true);
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [autoFetched, intelligence]);
+  }, [autoFetched, intelligence, dailyBrief.data, dailyBrief.isLoading]);
 
   const refresh = useCallback(() => {
     intelligence.mutate();
@@ -121,8 +152,9 @@ export function useCockpitIntelligence(workspaceId: string = DEFAULT_WORKSPACE_I
   return {
     intelligence,
     refresh,
-    isLoading: intelligence.isPending,
-    data: intelligence.data ?? null,
+    isLoading: intelligence.isPending || dailyBrief.isLoading,
+    data: dailyBrief.data ?? intelligence.data ?? null,
     error: intelligence.error,
+    isFromCache: !!dailyBrief.data,
   };
 }
