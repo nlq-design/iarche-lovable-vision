@@ -1,7 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { callLLM } from "../_shared/ai-client.ts";
-import { loadPrompt } from "../_shared/prompt-loader.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,10 +22,63 @@ interface SentinelAlert {
 
 interface RawAnomaly {
   category: string;
+  severity: "info" | "warning" | "critical";
+  rule_type: string;
   entity_type: string;
   entity_id: string;
   entity_name: string;
   raw_issue: string;
+  stage?: string;
+  status?: string;
+  days_inactive?: number;
+  last_activity_date?: string;
+  created_at?: string;
+}
+
+// === Direct formatting templates (no LLM) ===
+const ALERT_TEMPLATES: Record<string, (a: RawAnomaly) => { question: string; detail: string }> = {
+  incomplete_lead_email: (a) => ({
+    question: `${a.entity_name} n'a pas d'email renseigné`,
+    detail: `Lead actif — compléter l'email pour pouvoir relancer`,
+  }),
+  incomplete_opp_amount: (a) => ({
+    question: `Opportunité "${a.entity_name}" sans montant estimé`,
+    detail: `Stage: ${a.stage || "inconnu"} — renseigner le montant pour le pipeline`,
+  }),
+  incomplete_project_budget: (a) => ({
+    question: `Projet "${a.entity_name}" sans budget défini`,
+    detail: `Status: ${a.status || "inconnu"} — définir le budget pour le suivi financier`,
+  }),
+  inconsistency_opp_won_lead_not: (a) => ({
+    question: `Opportunité gagnée mais lead "${a.entity_name}" pas marqué "won"`,
+    detail: `Incohérence à corriger — mettre à jour la qualification du lead`,
+  }),
+  inactivity_hot_lead: (a) => ({
+    question: `Lead chaud "${a.entity_name}" inactif depuis ${a.days_inactive}j`,
+    detail: `Dernière activité: ${a.last_activity_date || "inconnue"} — relancer rapidement`,
+  }),
+  inactivity_active_project: (a) => ({
+    question: `Projet actif "${a.entity_name}" inactif depuis ${a.days_inactive}j`,
+    detail: `Aucune activité depuis ${a.days_inactive} jours — vérifier l'avancement`,
+  }),
+};
+
+function formatAnomaly(anomaly: RawAnomaly): SentinelAlert {
+  const template = ALERT_TEMPLATES[anomaly.rule_type];
+  const formatted = template
+    ? template(anomaly)
+    : { question: anomaly.raw_issue, detail: "" };
+
+  return {
+    id: `sentinel-${anomaly.category}-${anomaly.entity_type}-${anomaly.entity_id}`,
+    severity: anomaly.severity,
+    category: anomaly.category as SentinelAlert["category"],
+    entity_type: anomaly.entity_type,
+    entity_id: anomaly.entity_id,
+    entity_name: anomaly.entity_name,
+    question: formatted.question,
+    detail: formatted.detail,
+  };
 }
 
 serve(async (req) => {
@@ -39,7 +90,7 @@ serve(async (req) => {
   try {
     const { data: ws } = await supabase.from("workspaces").select("id").limit(1).single();
     if (!ws?.id) {
-      return new Response(JSON.stringify({ alerts: [] }), {
+      return new Response(JSON.stringify({ alerts: [], total: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -65,7 +116,8 @@ serve(async (req) => {
 
     for (const l of leadsNoEmail || []) {
       anomalies.push({
-        category: "incomplete", entity_type: "lead", entity_id: l.id,
+        category: "incomplete", severity: "warning", rule_type: "incomplete_lead_email",
+        entity_type: "lead", entity_id: l.id,
         entity_name: l.company || l.name || "Lead",
         raw_issue: `Lead sans email — statut actif`,
       });
@@ -73,17 +125,21 @@ serve(async (req) => {
 
     for (const o of oppsNoAmount || []) {
       anomalies.push({
-        category: "incomplete", entity_type: "opportunity", entity_id: o.id,
+        category: "incomplete", severity: "warning", rule_type: "incomplete_opp_amount",
+        entity_type: "opportunity", entity_id: o.id,
         entity_name: o.title || "Opportunité",
         raw_issue: `Opportunité en étape "${o.stage}" sans montant estimé`,
+        stage: o.stage,
       });
     }
 
     for (const p of projectsNoBudget || []) {
       anomalies.push({
-        category: "incomplete", entity_type: "project", entity_id: p.id,
+        category: "incomplete", severity: "info", rule_type: "incomplete_project_budget",
+        entity_type: "project", entity_id: p.id,
         entity_name: p.name || "Projet",
         raw_issue: `Projet "${p.status}" sans budget défini`,
+        status: p.status,
       });
     }
 
@@ -103,8 +159,9 @@ serve(async (req) => {
         if (o.lead_id && problemLeadMap.has(o.lead_id)) {
           const lead = problemLeadMap.get(o.lead_id)!;
           anomalies.push({
-            category: "inconsistency", entity_type: "opportunity", entity_id: o.id,
-            entity_name: o.title || "Opportunité",
+            category: "inconsistency", severity: "critical", rule_type: "inconsistency_opp_won_lead_not",
+            entity_type: "opportunity", entity_id: o.id,
+            entity_name: lead.company || lead.name || o.title || "Opportunité",
             raw_issue: `Opportunité marquée "won" mais lead "${lead.company || lead.name}" est en statut "${lead.qualification_status}"`,
           });
         }
@@ -127,18 +184,24 @@ serve(async (req) => {
     for (const l of hotLeads || []) {
       const daysSince = Math.floor((now.getTime() - new Date(l.updated_at).getTime()) / (1000 * 60 * 60 * 24));
       anomalies.push({
-        category: "inactivity", entity_type: "lead", entity_id: l.id,
+        category: "inactivity", severity: "warning", rule_type: "inactivity_hot_lead",
+        entity_type: "lead", entity_id: l.id,
         entity_name: l.company || l.name || "Lead",
         raw_issue: `Lead en phase "${l.qualification_status}" sans interaction depuis ${daysSince} jours`,
+        days_inactive: daysSince,
+        last_activity_date: new Date(l.updated_at).toLocaleDateString("fr-FR"),
       });
     }
 
     for (const p of staleProjects || []) {
       const daysSince = Math.floor((now.getTime() - new Date(p.updated_at).getTime()) / (1000 * 60 * 60 * 24));
       anomalies.push({
-        category: "inactivity", entity_type: "project", entity_id: p.id,
+        category: "inactivity", severity: "info", rule_type: "inactivity_active_project",
+        entity_type: "project", entity_id: p.id,
         entity_name: p.name || "Projet",
         raw_issue: `Projet actif stagnant depuis ${daysSince} jours`,
+        days_inactive: daysSince,
+        last_activity_date: new Date(p.updated_at).toLocaleDateString("fr-FR"),
       });
     }
 
@@ -148,75 +211,17 @@ serve(async (req) => {
       });
     }
 
-    const shuffled = anomalies.sort(() => Math.random() - 0.5).slice(0, 6);
-
     // ============================================================
-    // PHASE 2: LLM generates smart, contextual questions
-    // Load prompt dynamically from ai_prompts table
+    // PHASE 2: Direct formatting (no LLM)
+    // Sort by severity, cap at 8
     // ============================================================
-    const prompt = await loadPrompt(supabase, "sentinel-analysis", {
-      system_prompt: `Tu es l'IA Sentinelle d'un CRM commercial. Transforme des anomalies en questions actionnables.
-IMPORTANT: Tu DOIS répondre UNIQUEMENT avec un tableau JSON valide, sans texte avant ni après. Pas de markdown, pas de commentaires.
-Format attendu: [{"index":0,"severity":"warning","question":"...","detail":"..."},...]`,
-    });
+    const severityOrder = { critical: 0, warning: 1, info: 2 };
+    anomalies.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 
-    const temperature = (prompt.model_config?.temperature as number) ?? 0.7;
-
-    const userPrompt = `Voici ${shuffled.length} anomalies détectées dans le CRM. Transforme chacune en question actionnable.
-Réponds UNIQUEMENT avec un tableau JSON valide. Aucun texte en dehors du JSON.
-
-${shuffled.map((a, i) => `[${i}] ${a.category} | ${a.entity_type} "${a.entity_name}" | ${a.raw_issue}`).join("\n")}
-
-Réponse (JSON uniquement):`;
-
-    let alerts: SentinelAlert[] = [];
-
-    try {
-      const llmResponse = await callLLM(
-        [
-          { role: "system", content: prompt.system_prompt },
-          { role: "user", content: userPrompt },
-        ],
-        { functionName: "ai-sentinel", temperature, workspaceId: ws.id }
-      );
-
-      const cleaned = llmResponse.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-      const parsed = JSON.parse(cleaned);
-
-      if (Array.isArray(parsed)) {
-        alerts = parsed.map((item: any, i: number) => {
-          const source = shuffled[item.index ?? i];
-          if (!source) return null;
-          return {
-            id: `sentinel-${source.category}-${source.entity_type}-${source.entity_id}`,
-            severity: item.severity || "info",
-            category: source.category as SentinelAlert["category"],
-            entity_type: source.entity_type,
-            entity_id: source.entity_id,
-            entity_name: source.entity_name,
-            question: item.question || source.raw_issue,
-            detail: item.detail || "",
-          };
-        }).filter(Boolean) as SentinelAlert[];
-      }
-    } catch (llmErr) {
-      console.warn("[ai-sentinel] LLM enrichment failed, using raw fallback:", llmErr);
-      alerts = shuffled.map((a) => ({
-        id: `sentinel-${a.category}-${a.entity_type}-${a.entity_id}`,
-        severity: a.category === "inconsistency" ? "critical" as const : "warning" as const,
-        category: a.category as SentinelAlert["category"],
-        entity_type: a.entity_type, entity_id: a.entity_id, entity_name: a.entity_name,
-        question: a.raw_issue, detail: "",
-      }));
-    }
-
-    alerts.sort((a, b) => {
-      const order = { critical: 0, warning: 1, info: 2 };
-      return order[a.severity] - order[b.severity];
-    });
+    const alerts: SentinelAlert[] = anomalies.slice(0, 8).map(formatAnomaly);
 
     return new Response(
-      JSON.stringify({ alerts: alerts.slice(0, 8), total: anomalies.length }),
+      JSON.stringify({ alerts, total: anomalies.length }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
