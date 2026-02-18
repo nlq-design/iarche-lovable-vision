@@ -18,7 +18,7 @@ import { useCockpitIntelligence } from '@/hooks/cockpit/useCockpitIntelligence';
 
 export function CockpitHeader() {
   const [emailDraftsOpen, setEmailDraftsOpen] = useState(false);
-  const { data: intel, isLoading: intelLoading } = useCockpitIntelligence();
+  const { data: intel, isLoading: intelLoading, generatedAt } = useCockpitIntelligence();
 
   const urgentCount = useMemo(() => {
     if (!intel?.intelligence?.top_actions) return 0;

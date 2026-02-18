@@ -46,6 +46,13 @@ export interface IntelligencePayload {
   generated_at: string;
 }
 
+export interface IntelligenceResult {
+  intelligence: IntelligencePayload;
+  raw: IntelligenceRawData;
+  generated_at?: string;
+  generation_ms?: number;
+}
+
 // Raw data that's also returned for widgets
 export interface IntelligenceRawData {
   leads_count: number;
@@ -78,18 +85,17 @@ const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
 
 export function useCockpitIntelligence(workspaceId: string = DEFAULT_WORKSPACE_ID) {
   const queryClient = useQueryClient();
-  const [autoFetched, setAutoFetched] = useState(false);
 
-  // Step 1: Read today's cached brief from DB (instant)
+  // Step 1: Read today's cached brief from DB (instant, no LLM)
   const dailyBrief = useQuery({
     queryKey: ['daily-intelligence', workspaceId],
     queryFn: async () => {
       const today = new Date().toISOString().split('T')[0];
       const { data, error } = await supabase
         .from('daily_intelligence')
-        .select('*')
+        .select('intelligence, raw_data, generated_at, generation_ms')
         .eq('workspace_id', workspaceId)
-        .eq('generated_date', today)
+        .gte('generated_at', `${today}T00:00:00Z`)
         .order('generated_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -100,12 +106,15 @@ export function useCockpitIntelligence(workspaceId: string = DEFAULT_WORKSPACE_I
       return {
         intelligence: data.intelligence as unknown as IntelligencePayload,
         raw: data.raw_data as unknown as IntelligenceRawData,
+        generated_at: data.generated_at,
+        generation_ms: data.generation_ms,
       } as IntelligenceResult;
     },
     staleTime: 30 * 60 * 1000, // 30 min cache
+    refetchOnWindowFocus: false,
   });
 
-  // Step 2: LLM fallback mutation (only if no DB data)
+  // Step 2: Manual LLM refresh mutation (only triggered by user action)
   const intelligence = useMutation({
     mutationFn: async (): Promise<IntelligenceResult> => {
       const { data, error } = await supabase.functions.invoke('cockpit-ai-copilot', {
@@ -124,26 +133,12 @@ export function useCockpitIntelligence(workspaceId: string = DEFAULT_WORKSPACE_I
       return data as IntelligenceResult;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['daily-intelligence', workspaceId] });
       queryClient.invalidateQueries({ queryKey: ['cockpit-projects'] });
     },
   });
 
-  // Auto-fetch: only trigger LLM if no DB data available
-  useEffect(() => {
-    if (
-      !autoFetched &&
-      !intelligence.isPending &&
-      !intelligence.data &&
-      !dailyBrief.data &&
-      !dailyBrief.isLoading
-    ) {
-      const timer = setTimeout(() => {
-        intelligence.mutate();
-        setAutoFetched(true);
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [autoFetched, intelligence, dailyBrief.data, dailyBrief.isLoading]);
+  // NO auto-trigger — brief is only read from DB or manually refreshed
 
   const refresh = useCallback(() => {
     intelligence.mutate();
@@ -152,9 +147,11 @@ export function useCockpitIntelligence(workspaceId: string = DEFAULT_WORKSPACE_I
   return {
     intelligence,
     refresh,
-    isLoading: intelligence.isPending || dailyBrief.isLoading,
+    isLoading: dailyBrief.isLoading,
+    isRefreshing: intelligence.isPending,
     data: dailyBrief.data ?? intelligence.data ?? null,
     error: intelligence.error,
     isFromCache: !!dailyBrief.data,
+    generatedAt: dailyBrief.data?.generated_at ?? null,
   };
 }
