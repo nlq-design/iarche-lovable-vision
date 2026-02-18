@@ -50,10 +50,12 @@ export type Database = {
           action_payload: Json
           action_type: string
           ai_reasoning: string | null
+          auto_execute: boolean | null
           created_at: string
           executed_at: string | null
           executed_result: Json | null
           id: string
+          source: string | null
           status: string
           telegram_notified: boolean | null
           updated_at: string
@@ -66,10 +68,12 @@ export type Database = {
           action_payload: Json
           action_type: string
           ai_reasoning?: string | null
+          auto_execute?: boolean | null
           created_at?: string
           executed_at?: string | null
           executed_result?: Json | null
           id?: string
+          source?: string | null
           status?: string
           telegram_notified?: boolean | null
           updated_at?: string
@@ -82,10 +86,12 @@ export type Database = {
           action_payload?: Json
           action_type?: string
           ai_reasoning?: string | null
+          auto_execute?: boolean | null
           created_at?: string
           executed_at?: string | null
           executed_result?: Json | null
           id?: string
+          source?: string | null
           status?: string
           telegram_notified?: boolean | null
           updated_at?: string

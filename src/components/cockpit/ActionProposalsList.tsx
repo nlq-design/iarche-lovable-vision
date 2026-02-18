@@ -235,6 +235,16 @@ export function ActionProposalsList({ workspaceId, compact = false }: ActionProp
               <div key={p.id} className="flex items-center gap-2 py-1 text-xs text-muted-foreground">
                 <CheckCircle2 className="h-3 w-3 text-primary" />
                 <span className="truncate">{p.action_label}</span>
+                {(p as any).auto_execute && (
+                  <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-200 shrink-0">
+                    ⚡ Auto
+                  </Badge>
+                )}
+                {(p as any).source === 'sentinel' && (
+                  <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 shrink-0">
+                    🛡️ Sentinelle
+                  </Badge>
+                )}
                 <span className="ml-auto shrink-0">
                   {p.executed_at && formatDistanceToNow(new Date(p.executed_at), { addSuffix: true, locale: fr })}
                 </span>
