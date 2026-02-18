@@ -1444,7 +1444,7 @@ async function intelligenceAggregator(supabase: any, workspaceId: string) {
     supabase.from("opportunities").select("id, title, stage, expected_revenue, probability, expected_close_date, lead_id, project_id, value_amount, updated_at")
       .eq("workspace_id", workspaceId).not("stage", "in", "(closed_won,closed_lost)")
       .order("expected_revenue", { ascending: false, nullsFirst: false }).limit(20),
-    supabase.from("projects").select("id, name, status, health_status, budget_amount, consumed_amount, planned_end_date, updated_at")
+    supabase.from("projects").select("id, name, status, health_status, budget_amount, consumed_amount, planned_end_date, updated_at, ai_documents_summary")
       .eq("workspace_id", workspaceId).in("status", ["active", "planning"]).limit(20),
     supabase.from("tasks").select("id, title, priority, entity_type, entity_id, due_time, ai_generated")
       .eq("workspace_id", workspaceId).eq("due_date", today).neq("status", "completed").neq("status", "cancelled"),
@@ -1557,6 +1557,46 @@ ${(partners || []).map((p: any) => {
 ${(recentActivity || []).slice(0, 15).map((a: any) => `- ${a.created_at?.slice(0, 10)}: ${a.activity_type} ${a.entity_type}${a.title ? ` — ${a.title}` : ""}${a.is_ai_generated ? " [IA]" : ""}`).join("\n") || "Aucune"}
 `;
 
+  // === ENRICHISSEMENT CONSULTE : Synthèses 360° des entités actives ===
+  const consulteSections: string[] = [];
+
+  // Leads avec synthèses Consulte complètes (800 chars au lieu de 150)
+  const leadsWithSynthesis = (leads || []).filter((l: any) => l.ai_documents_summary && l.ai_documents_summary.length > 100);
+  if (leadsWithSynthesis.length > 0) {
+    consulteSections.push('## SYNTHÈSES CONSULTE — LEADS ACTIFS');
+    for (const lead of leadsWithSynthesis.slice(0, 10)) {
+      const summary = lead.ai_documents_summary.slice(0, 800);
+      consulteSections.push(`### ${lead.company || lead.name} (${lead.status}, score: ${lead.lead_score || '?'})\n${summary}\n`);
+    }
+  }
+
+  // Projets avec synthèses Consulte
+  const projectsWithSynthesis = (projects || []).filter((p: any) => p.ai_documents_summary && p.ai_documents_summary.length > 100);
+  if (projectsWithSynthesis.length > 0) {
+    consulteSections.push('## SYNTHÈSES CONSULTE — PROJETS ACTIFS');
+    for (const project of projectsWithSynthesis.slice(0, 8)) {
+      const summary = project.ai_documents_summary.slice(0, 800);
+      consulteSections.push(`### ${project.name} (${project.status} / ${project.health_status})\n${summary}\n`);
+    }
+  }
+
+  // Partenaires avec synthèses Consulte
+  const partnersWithSynthesis = (partners || []).filter((p: any) => p.ai_documents_summary && p.ai_documents_summary.length > 100);
+  if (partnersWithSynthesis.length > 0) {
+    consulteSections.push('## SYNTHÈSES CONSULTE — PARTENAIRES ACTIFS');
+    for (const partner of partnersWithSynthesis.slice(0, 5)) {
+      const summary = partner.ai_documents_summary.slice(0, 500);
+      consulteSections.push(`### ${partner.name} (${partner.partner_type || '?'})\n${summary}\n`);
+    }
+  }
+
+  const consulteContext = consulteSections.join('\n');
+  const consulteEnrichment = consulteContext.length > 200
+    ? `\n\n--- CONTEXTE ENRICHI (Synthèses Consulte 360°) ---\nCes synthèses ont été générées par le module Consulte à partir de l'ensemble des données CRM, transcriptions, documents et historique de chaque entité. Elles sont plus riches et complètes que les données SQL brutes ci-dessus. PRIORISE ces synthèses pour tes analyses.\n\n${consulteContext}\n--- FIN CONTEXTE ENRICHI ---`
+    : '';
+
+  const enrichedLlmContext = llmContext + consulteEnrichment;
+
   // Load prompt from DB
   const prompt = await loadPrompt(supabase, "cockpit-intelligence-aggregator", {
     system_prompt: `Tu es le cerveau analytique du Command Center. Analyse TOUTES les données et produis une intelligence structurée. Français uniquement.`,
@@ -1597,7 +1637,7 @@ ${(recentActivity || []).slice(0, 15).map((a: any) => `- ${a.created_at?.slice(0
   }>(
     [
       { role: "system", content: prompt.system_prompt },
-      { role: "user", content: `${prompt.user_prompt || "Analyse le contexte commercial complet:"}\n\n${llmContext}` },
+      { role: "user", content: `${prompt.user_prompt || "Analyse le contexte commercial complet:"}\n\n${enrichedLlmContext}` },
     ],
     {
       name: "intelligence_aggregator",
