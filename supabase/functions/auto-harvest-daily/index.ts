@@ -99,6 +99,19 @@ serve(async (req) => {
       console.log(`[auto-harvest] Rescheduled ${toReschedule.length} tasks to ${newDue}`);
     }
 
+    // Expire stale action proposals (pending > 48h)
+    const { data: expiredProposals } = await supabase
+      .from("action_proposals")
+      .update({ status: "expired", updated_at: new Date().toISOString() })
+      .eq("status", "pending")
+      .lt("created_at", new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString())
+      .select("id");
+
+    const expiredCount = expiredProposals?.length || 0;
+    if (expiredCount > 0) {
+      console.log(`[auto-harvest] Expired ${expiredCount} stale action proposals`);
+    }
+
     // Log activity
     await supabase.from("activity_log").insert({
       workspace_id: workspaceId,
