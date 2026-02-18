@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useCockpitAuth } from '@/hooks/cockpit/useCockpitAuth';
-import { LogOut, Shield, Clock, Briefcase, Fish, Mail, AlertTriangle, TrendingUp, Handshake } from 'lucide-react';
+import { LogOut, Shield, Clock, Briefcase, Fish, Mail, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
@@ -14,15 +14,10 @@ import { fr } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { EmailDraftsSheet } from './EmailDraftsSheet';
 import { AISentinelNotification } from './AISentinelNotification';
-import { WinLossDrawer } from './WinLossDrawer';
-import { MeetingPrepDrawer } from './MeetingPrepDrawer';
 import { useCockpitIntelligence } from '@/hooks/cockpit/useCockpitIntelligence';
 
 export function CockpitHeader() {
   const [emailDraftsOpen, setEmailDraftsOpen] = useState(false);
-  
-  const [winLossOpen, setWinLossOpen] = useState(false);
-  const [meetingPrepOpen, setMeetingPrepOpen] = useState(false);
   const { data: intel, isLoading: intelLoading } = useCockpitIntelligence();
 
   const urgentCount = useMemo(() => {
@@ -113,37 +108,6 @@ export function CockpitHeader() {
             </Tooltip>
           )}
 
-          {/* Win/Loss Analysis Button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setWinLossOpen(true)}
-                className="h-8 px-3 border-secondary/50 text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground"
-              >
-                <TrendingUp className="w-4 h-4 mr-1.5" />
-                <span className="hidden sm:inline">Pipeline</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Analyse Win/Loss du pipeline</TooltipContent>
-          </Tooltip>
-
-          {/* Meeting Prep Button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setMeetingPrepOpen(true)}
-                className="h-8 px-3 border-secondary/50 text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground"
-              >
-                <Handshake className="w-4 h-4 mr-1.5" />
-                <span className="hidden sm:inline">Prép. RDV</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Préparer le prochain rendez-vous</TooltipContent>
-          </Tooltip>
 
           {/* AI Sentinel */}
           <AISentinelNotification />
@@ -193,10 +157,6 @@ export function CockpitHeader() {
         <EmailDraftsSheet open={emailDraftsOpen} onOpenChange={setEmailDraftsOpen} />
 
 
-
-        <WinLossDrawer open={winLossOpen} onOpenChange={setWinLossOpen} />
-
-        <MeetingPrepDrawer open={meetingPrepOpen} onOpenChange={setMeetingPrepOpen} />
 
         {sessionTimeRemaining && (
           <Tooltip>
