@@ -29,7 +29,7 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const isServiceRole = token === serviceRoleKey;
     
-    let userId: string;
+    let userId: string | null;
     
     if (isServiceRole) {
       // Internal call (e.g., from Telegram webhook) — use system user
@@ -42,7 +42,7 @@ serve(async (req) => {
         .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle();
-      userId = owner?.user_id || "";
+      userId = owner?.user_id || null;
     } else {
       // Standard user auth
       const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -110,7 +110,7 @@ serve(async (req) => {
           status: "pending",
           lead_id: payload.lead_id as string || null,
           project_id: payload.project_id as string || null,
-          assigned_to: userId,
+          assigned_to: userId || undefined,
         }).select("id").single();
 
         if (error) throw error;
@@ -151,7 +151,7 @@ serve(async (req) => {
           title: payload.title as string || proposal.action_label,
           content: payload.content as string || "",
           is_ai_generated: true,
-          created_by: userId,
+          created_by: userId || undefined,
         }).select("id").single();
 
         if (error) throw error;
@@ -269,7 +269,7 @@ serve(async (req) => {
       title: `Action IA exécutée: ${proposal.action_label}`,
       content: JSON.stringify(executionResult),
       is_ai_generated: true,
-      created_by: userId,
+      created_by: userId || undefined,
     });
 
     return new Response(JSON.stringify({
