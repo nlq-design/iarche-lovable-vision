@@ -595,6 +595,30 @@ export type Database = {
           },
         ]
       }
+      alert_dismissals: {
+        Row: {
+          alert_id: string
+          dismissed_at: string | null
+          expires_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          alert_id: string
+          dismissed_at?: string | null
+          expires_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          alert_id?: string
+          dismissed_at?: string | null
+          expires_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       api_pricing: {
         Row: {
           api_name: string
