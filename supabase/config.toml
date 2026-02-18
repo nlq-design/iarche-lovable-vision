@@ -179,3 +179,6 @@ verify_jwt = false
 
 [functions.execute-action-proposal]
 verify_jwt = false
+
+[functions.auto-daily-intelligence]
+verify_jwt = false
