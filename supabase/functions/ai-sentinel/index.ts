@@ -311,6 +311,7 @@ serve(async (req) => {
           if (!proposal) continue;
           if (existingLabels.has(proposal.action_label)) continue;
 
+          const AUTO_EXEC_TYPES = ['create_task', 'create_note'];
           newProposals.push({
             workspace_id: ws.id,
             status: "pending",
@@ -318,18 +319,46 @@ serve(async (req) => {
             action_label: proposal.action_label,
             action_payload: proposal.action_payload,
             ai_reasoning: proposal.ai_reasoning,
+            auto_execute: AUTO_EXEC_TYPES.includes(proposal.action_type),
+            source: 'sentinel',
           });
         }
 
         if (newProposals.length > 0) {
-          const { error: insertError } = await supabase
+          const { data: insertedData, error: insertError } = await supabase
             .from("action_proposals")
-            .insert(newProposals);
+            .insert(newProposals)
+            .select("id, action_type, action_label, auto_execute");
 
           if (insertError) {
             console.error("[sentinel] Error creating proposals:", insertError);
           } else {
-            console.log(`[sentinel] Created ${newProposals.length} action proposals from anomalies`);
+            console.log(`[sentinel] Created ${(insertedData || []).length} action proposals from anomalies`);
+
+            // Auto-execute low-risk proposals (Option B: synchronous)
+            const autoExecProposals = (insertedData || []).filter((p: { auto_execute: boolean }) => p.auto_execute);
+            for (const proposal of autoExecProposals) {
+              try {
+                const execRes = await fetch(
+                  `${SUPABASE_URL}/functions/v1/execute-action-proposal`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                    },
+                    body: JSON.stringify({
+                      proposal_id: proposal.id,
+                      validation_notes: "Auto-exécuté par la Sentinelle (action low-risk)",
+                    }),
+                  }
+                );
+                const execBody = await execRes.text();
+                console.log(`[sentinel] Auto-exec ${proposal.action_label}: ${execRes.status}`, execBody);
+              } catch (e) {
+                console.warn(`[sentinel] Auto-exec failed for ${proposal.action_label}:`, e);
+              }
+            }
           }
         }
       } catch (proposalErr) {
