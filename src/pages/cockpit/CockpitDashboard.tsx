@@ -1,6 +1,6 @@
 // Cockpit Dashboard v8.1 — Refactored with atomic components
 import { useState } from 'react';
-import { DeadlineCascadeDrawer } from '@/components/cockpit/DeadlineCascadeDrawer';
+
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -47,8 +47,6 @@ export default function CockpitDashboard() {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [harvestOpen, setHarvestOpen] = useState(false);
   const [briefExpanded, setBriefExpanded] = useState(false);
-  const [cascadeOpen, setCascadeOpen] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useDashboardRealtime();
@@ -622,7 +620,7 @@ export default function CockpitDashboard() {
                       {recentProjects.map((p: any) => (
                         <div key={p.id}
                           className="flex items-center justify-between py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() => { setSelectedProjectId(p.id); setCascadeOpen(true); }}>
+                          onClick={() => navigate(`/cockpit/projects`)}>
                           <div className="min-w-0 flex-1">
                             <p className="text-xs font-medium truncate">{p.name}</p>
                             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
@@ -700,7 +698,6 @@ export default function CockpitDashboard() {
         </div>
 
         <CreateTaskDialog open={taskDialogOpen} onOpenChange={setTaskDialogOpen} />
-        <DeadlineCascadeDrawer open={cascadeOpen} onOpenChange={setCascadeOpen} projectId={selectedProjectId} />
       </div>
     </CockpitLayout>
   );
