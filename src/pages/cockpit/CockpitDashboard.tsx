@@ -1,4 +1,4 @@
-// Cockpit Dashboard v8.1 — Refactored with atomic components
+// Cockpit Dashboard v8.2 — Refactored with atomic components
 import { useState } from 'react';
 
 import { CockpitLayout } from '@/components/cockpit/CockpitLayout';
