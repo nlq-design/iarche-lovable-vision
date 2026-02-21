@@ -61,7 +61,7 @@ const Logo: React.FC<LogoProps> = ({
   return (
     <img
       src={logoSrc[variant]}
-      alt="IArche · Agence IA Bayonne"
+      alt="IArche · Architecte IA Bayonne"
       className={cn('inline-block', className)}
       width={width}
       height={height}

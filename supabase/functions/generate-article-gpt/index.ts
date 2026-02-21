@@ -41,7 +41,7 @@ serve(async (req) => {
     );
 
     const prompt = await loadPrompt(supabase, "content-article-b2b", {
-      system_prompt: `Tu es un rédacteur expert pour IArche, une agence IA basée à Bayonne. 
+      system_prompt: `Tu es un rédacteur expert pour IArche, Architecte IA basé à Bayonne. 
 Tu rédiges des articles de blog professionnels sur l'IA pour les PME françaises.
 
 Style IArche :
@@ -78,7 +78,7 @@ CONTRAINTES :
 - Ton : ${toneMap[tone]}
 - Longueur : environ ${lengthMap[length]}
 - Inclure 3-5 questions FAQ pertinentes
-- Optimisé SEO pour "agence IA" et mots-clés du sujet
+- Optimisé SEO pour "architecte IA" et mots-clés du sujet
 
 Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
 

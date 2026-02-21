@@ -64,7 +64,7 @@ const CharteGraphique = () => {
             <p className="text-lg text-[#999999]">Version 4.0 — Décembre 2025</p>
           </div>
           <div className="absolute bottom-12 text-center">
-            <p className="text-sm text-[#999999]">L'IA se construit avec vous</p>
+            <p className="text-sm text-[#999999]">Votre Architecte IA. De l'audit à l'autonomie.</p>
             <p className="text-xs text-[#CCCCCC] mt-2">Bayonne · France · nlq@iarche.fr</p>
           </div>
         </section>
@@ -417,23 +417,23 @@ const CharteGraphique = () => {
             <div className="space-y-4">
               <div className="flex items-baseline gap-8">
                 <span className="w-32 text-sm text-[#666666]">Light (300)</span>
-                <span className="text-3xl font-light text-[#1A2B4A]">L'IA se construit avec vous</span>
+                <span className="text-3xl font-light text-[#1A2B4A]">Votre Architecte IA. De l'audit à l'autonomie.</span>
               </div>
               <div className="flex items-baseline gap-8">
                 <span className="w-32 text-sm text-[#666666]">Regular (400)</span>
-                <span className="text-3xl font-normal text-[#1A2B4A]">L'IA se construit avec vous</span>
+                <span className="text-3xl font-normal text-[#1A2B4A]">Votre Architecte IA. De l'audit à l'autonomie.</span>
               </div>
               <div className="flex items-baseline gap-8">
                 <span className="w-32 text-sm text-[#666666]">Medium (500)</span>
-                <span className="text-3xl font-medium text-[#1A2B4A]">L'IA se construit avec vous</span>
+                <span className="text-3xl font-medium text-[#1A2B4A]">Votre Architecte IA. De l'audit à l'autonomie.</span>
               </div>
               <div className="flex items-baseline gap-8">
                 <span className="w-32 text-sm text-[#666666]">Semibold (600)</span>
-                <span className="text-3xl font-semibold text-[#1A2B4A]">L'IA se construit avec vous</span>
+                <span className="text-3xl font-semibold text-[#1A2B4A]">Votre Architecte IA. De l'audit à l'autonomie.</span>
               </div>
               <div className="flex items-baseline gap-8">
                 <span className="w-32 text-sm text-[#666666]">Bold (700)</span>
-                <span className="text-3xl font-bold text-[#1A2B4A]">L'IA se construit avec vous</span>
+                <span className="text-3xl font-bold text-[#1A2B4A]">Votre Architecte IA. De l'audit à l'autonomie.</span>
               </div>
             </div>
           </div>
@@ -770,7 +770,7 @@ animation: gradientText 8s ease infinite;`}
               <p className="text-sm text-[#666666]">Fondateur</p>
               <img src="/logos/iarche-main.svg" alt="IArche" className="h-6 mt-2" />
               <p className="text-xs text-[#666666] mt-1">nlq@iarche.fr · Bayonne, France</p>
-              <p className="text-xs text-[#B04A32] mt-1">L'IA se construit avec vous</p>
+              <p className="text-xs text-[#B04A32] mt-1">Votre Architecte IA. De l'audit à l'autonomie.</p>
             </div>
             <p className="text-sm text-[#666666] mt-2">Export: 600 × 200px PNG via /admin/medias/signature</p>
           </div>
@@ -791,7 +791,7 @@ animation: gradientText 8s ease infinite;`}
                 <div className="text-right">
                   <p className="text-white text-sm">nlq@iarche.fr</p>
                   <p className="text-white/70 text-xs">Bayonne · France</p>
-                  <p className="text-[#B04A32] text-xs mt-2">L'IA se construit avec vous</p>
+                  <p className="text-[#B04A32] text-xs mt-2">Votre Architecte IA. De l'audit à l'autonomie.</p>
                 </div>
               </div>
             </div>
@@ -831,7 +831,7 @@ animation: gradientText 8s ease infinite;`}
           <div>
             <h3 className="text-xl font-medium text-[#1A2B4A] mb-4">Coordonnées Officielles</h3>
             <div className="bg-[#FAF9F7] p-6 rounded-lg">
-              <p className="text-[#1A2B4A]"><strong>Baseline:</strong> L'IA se construit avec vous</p>
+              <p className="text-[#1A2B4A]"><strong>Baseline:</strong> Votre Architecte IA. De l'audit à l'autonomie.</p>
               <p className="text-[#1A2B4A]"><strong>Email:</strong> nlq@iarche.fr</p>
               <p className="text-[#1A2B4A]"><strong>Localisation:</strong> Bayonne · France</p>
               <p className="text-[#1A2B4A]"><strong>Site:</strong> iarche.fr</p>

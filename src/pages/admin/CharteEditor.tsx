@@ -148,7 +148,7 @@ const CharteCompletePDF = () => (
         <Text style={styles.coverVersion}>Version 3.0 — Décembre 2025</Text>
       </View>
       <View style={styles.coverFooter}>
-        <Text style={styles.coverBaseline}>L'IA se construit avec vous</Text>
+        <Text style={styles.coverBaseline}>Votre Architecte IA. De l'audit à l'autonomie.</Text>
         <Text style={styles.coverContact}>Bayonne · France · nlq@iarche.fr</Text>
       </View>
     </Page>
@@ -292,11 +292,11 @@ const CharteCompletePDF = () => (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Poids Utilisés</Text>
         <View style={{ gap: 4 }}>
-          <Text style={{ fontSize: 14, fontWeight: 300, color: '#1A2B4A' }}>Light (300) — L'IA se construit avec vous</Text>
-          <Text style={{ fontSize: 14, color: '#1A2B4A' }}>Regular (400) — L'IA se construit avec vous</Text>
-          <Text style={{ fontSize: 14, fontWeight: 500, color: '#1A2B4A' }}>Medium (500) — L'IA se construit avec vous</Text>
-          <Text style={{ fontSize: 14, fontWeight: 600, color: '#1A2B4A' }}>Semibold (600) — L'IA se construit avec vous</Text>
-          <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#1A2B4A' }}>Bold (700) — L'IA se construit avec vous</Text>
+          <Text style={{ fontSize: 14, fontWeight: 300, color: '#1A2B4A' }}>Light (300) — Votre Architecte IA. De l'audit à l'autonomie.</Text>
+          <Text style={{ fontSize: 14, color: '#1A2B4A' }}>Regular (400) — Votre Architecte IA. De l'audit à l'autonomie.</Text>
+          <Text style={{ fontSize: 14, fontWeight: 500, color: '#1A2B4A' }}>Medium (500) — Votre Architecte IA. De l'audit à l'autonomie.</Text>
+          <Text style={{ fontSize: 14, fontWeight: 600, color: '#1A2B4A' }}>Semibold (600) — Votre Architecte IA. De l'audit à l'autonomie.</Text>
+          <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#1A2B4A' }}>Bold (700) — Votre Architecte IA. De l'audit à l'autonomie.</Text>
         </View>
       </View>
 
@@ -526,14 +526,14 @@ const CharteCompletePDF = () => (
               <Text style={{ fontSize: 8, color: '#666666' }}>Fondateur</Text>
               <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#1A2B4A', marginTop: 4 }}>IArche</Text>
               <Text style={{ fontSize: 7, color: '#666666' }}>nlq@iarche.fr · Bayonne</Text>
-              <Text style={{ fontSize: 7, color: '#B04A32', marginTop: 2 }}>L'IA se construit avec vous</Text>
+              <Text style={{ fontSize: 7, color: '#B04A32', marginTop: 2 }}>Votre Architecte IA. De l'audit à l'autonomie.</Text>
             </View>
             <Text style={{ fontSize: 8, color: '#999999', marginTop: 4 }}>Export: 600×200px</Text>
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Coordonnées</Text>
-            <Text style={{ fontSize: 9, color: '#1A2B4A' }}>Baseline: L'IA se construit avec vous</Text>
+            <Text style={{ fontSize: 9, color: '#1A2B4A' }}>Baseline: Votre Architecte IA. De l'audit à l'autonomie.</Text>
             <Text style={{ fontSize: 9, color: '#1A2B4A' }}>Email: nlq@iarche.fr</Text>
             <Text style={{ fontSize: 9, color: '#1A2B4A' }}>Lieu: Bayonne · France</Text>
             <Text style={{ fontSize: 9, color: '#1A2B4A' }}>Site: iarche.fr</Text>

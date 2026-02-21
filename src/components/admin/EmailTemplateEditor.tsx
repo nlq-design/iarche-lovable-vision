@@ -180,7 +180,7 @@ const generateUserTemplate = (theme: EmailTheme, sourceType: string): string => 
       <p style="margin-top: 24px; color: ${EMAIL_COLORS.grey};">À bientôt,<br><strong style="color: ${EMAIL_COLORS.bleuNuit};">L'équipe IArche</strong></p>
     </div>
     <div class="footer">
-      <p class="baseline">L'IA se construit avec vous</p>
+      <p class="baseline">Votre Architecte IA. De l'audit à l'autonomie.</p>
       <p>IArche · Bayonne, France</p>
       <p><a href="https://iarche.fr">iarche.fr</a></p>
     </div>
@@ -266,7 +266,7 @@ const generateAdminTemplate = (theme: EmailTheme, sourceType: string): string =>
     </div>
     <div class="footer">
       <img src="${t.logoSrc}" alt="IArche" style="height: 24px; margin-bottom: 8px; opacity: 0.8;" />
-      <p>IArche · Agence IA · Bayonne, France</p>
+      <p>IArche · Architecte IA · Bayonne, France</p>
       <p><a href="https://iarche.fr">iarche.fr</a> · <a href="mailto:nlq@iarche.fr">nlq@iarche.fr</a></p>
     </div>
   </div>

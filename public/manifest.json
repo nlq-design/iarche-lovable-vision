@@ -1,7 +1,7 @@
 {
-  "name": "IArche - L'IA se construit avec vous",
+  "name": "IArche - Votre Architecte IA",
   "short_name": "IArche",
-  "description": "Agence IA et solutions SaaS pour PME françaises",
+  "description": "Architecte IA et solutions SaaS pour PME françaises",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FAF9F7",

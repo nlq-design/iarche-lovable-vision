@@ -52,7 +52,7 @@ type PresetTemplate = {
 
 const PRESET_TEMPLATES: PresetTemplate[] = [
   // ========== ANNONCE ==========
-  { id: 'default', label: 'Par défaut', category: 'annonce', tagline: "L'IA se construit avec vous", ceoName: 'Nicolas Lara Queralta', ceoTitle: 'CEO & Fondateur' },
+  { id: 'default', label: 'Par défaut', category: 'annonce', tagline: "Votre Architecte IA. De l'audit à l'autonomie.", ceoName: 'Nicolas Lara Queralta', ceoTitle: 'CEO & Fondateur' },
   { id: 'innovation', label: 'Innovation', category: 'annonce', tagline: 'Transformez votre entreprise avec l\'IA', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Expert IA & Consultant' },
   { id: 'lancement', label: 'Lancement produit', category: 'annonce', tagline: 'Découvrez notre nouvelle solution IA', ceoName: 'Nicolas Lara Queralta', ceoTitle: 'Fondateur IArche' },
   // ========== CHIFFRE ==========
@@ -127,7 +127,7 @@ export default function BannerEditor() {
   const [showDecorativeArc, setShowDecorativeArc] = useState(true);
   
   // Entreprise fields
-  const [tagline, setTagline] = useState("L'IA se construit avec vous");
+  const [tagline, setTagline] = useState("Votre Architecte IA. De l'audit à l'autonomie.");
   
   // Solution fields
   const [selectedSolution, setSelectedSolution] = useState(SOLUTIONS[0].id);
@@ -351,7 +351,7 @@ export default function BannerEditor() {
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
               }}>
-                Agence IA
+                Architecte IA
               </span>
             </div>
             
@@ -548,7 +548,7 @@ export default function BannerEditor() {
                   <Input
                     value={tagline}
                     onChange={(e) => setTagline(e.target.value)}
-                    placeholder="L'IA se construit avec vous"
+                    placeholder="Votre Architecte IA. De l'audit à l'autonomie."
                   />
                 </div>
               )}

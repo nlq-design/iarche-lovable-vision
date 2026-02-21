@@ -250,7 +250,7 @@ export const WordDocEditor = ({ templateId, onBack }: WordDocEditorProps) => {
         new Paragraph({
           children: [
             new TextRun({
-              text: 'IArche - Agence IA | Bayonne, France | iarche.fr | nlq@iarche.fr',
+              text: 'IArche - Architecte IA | Bayonne, France | iarche.fr | nlq@iarche.fr',
               size: 20,
               color: WORD_COLORS.bleuNuit,
             }),

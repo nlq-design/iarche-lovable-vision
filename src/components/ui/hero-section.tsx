@@ -17,11 +17,11 @@ const HeroSection = () => {
         {/* Logo officiel SVG + Arc décoratif */}
         <div className="mb-20 md:mb-28 invisible animate-fadeIn [animation-delay:0.1s] flex flex-col items-center">
           <Logo variant="main" size="xl" priority />
-          <span className="sr-only">IArche · Agence IA Bayonne | Conseil & Intégration PME</span>
+          <span className="sr-only">IArche · Architecte IA Bayonne | Conseil & Intégration PME</span>
         </div>
         
         <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed invisible animate-fadeIn [animation-delay:0.2s]">
-          L'IA se construit avec vous
+          Votre Architecte IA. De l'audit à l'autonomie.
         </p>
         
         {/* CTA Principal - Above the fold */}

@@ -152,11 +152,11 @@ const Contact = () => {
   return (
     <BackgroundLayout>
       <Helmet>
-        <title>Contact · IArche · Agence IA Bayonne</title>
-        <meta name="description" content="Une question ? Un projet IA ? Contactez IArche, agence IA à Bayonne. Réponse sous 24h." />
+        <title>Contact · IArche · Architecte IA Bayonne</title>
+        <meta name="description" content="Une question ? Un projet IA ? Contactez IArche, votre Architecte IA à Bayonne. Réponse sous 24h." />
         <link rel="canonical" href="https://iarche.fr/contact" />
-        <meta property="og:title" content="Contact · IArche · Agence IA Bayonne" />
-        <meta property="og:description" content="Une question ? Un projet IA ? Contactez IArche, agence IA à Bayonne." />
+        <meta property="og:title" content="Contact · IArche · Architecte IA Bayonne" />
+        <meta property="og:description" content="Une question ? Un projet IA ? Contactez IArche, votre Architecte IA à Bayonne." />
         <meta property="og:url" content="https://iarche.fr/contact" />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://iarche.fr/og-image-v4.png" />
@@ -168,7 +168,7 @@ const Contact = () => {
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Contact · IArche" />
-        <meta name="twitter:description" content="Contactez IArche, agence IA à Bayonne." />
+        <meta name="twitter:description" content="Contactez IArche, votre Architecte IA à Bayonne." />
         <meta name="twitter:image" content="https://iarche.fr/og-image-v4.png" />
         
         {/* Schema.org BreadcrumbList */}

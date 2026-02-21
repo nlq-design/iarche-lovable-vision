@@ -502,7 +502,7 @@ function generateEmailHTML(
             <td style="padding: 24px 40px; background-color: ${EMAIL_COLORS.offWhite}; border-top: 1px solid ${EMAIL_COLORS.borderGray}; text-align: center;">
               <img src="${LOGO_URL}" alt="IArche" style="height: 28px; margin-bottom: 12px; opacity: 0.8;" />
               <p style="margin: 0 0 8px; font-size: 12px; color: ${EMAIL_COLORS.lightGray};">
-                IArche · Agence IA · Bayonne, France
+                IArche · Architecte IA · Bayonne, France
               </p>
               <p style="margin: 0;">
                 <a href="https://iarche.fr" style="color: ${EMAIL_COLORS.terracotta}; text-decoration: none; font-size: 12px; font-weight: 500;">iarche.fr</a>

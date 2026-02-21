@@ -137,8 +137,8 @@ const templateConfigs: Record<string, { name: string; defaultSlides: SlideData[]
   pitch: {
     name: 'Pitch Commercial',
     defaultSlides: [
-      { id: 1, type: 'title', title: 'IArche', subtitle: 'L\'IA se construit avec vous', content: '', bullets: [], exportMode: 'full', barSize: 'lg' },
-      { id: 2, type: 'content', title: 'Qui sommes-nous ?', subtitle: '', content: 'IArche est une agence IA installée à Bayonne. On accompagne les dirigeants de PME dans l\'intégration concrète de l\'intelligence artificielle.', bullets: [], exportMode: 'full', barSize: 'lg' },
+      { id: 1, type: 'title', title: 'IArche', subtitle: 'Votre Architecte IA. De l\'audit à l\'autonomie.', content: '', bullets: [], exportMode: 'full', barSize: 'lg' },
+      { id: 2, type: 'content', title: 'Qui sommes-nous ?', subtitle: '', content: 'IArche est votre Architecte IA, basé à Bayonne. On accompagne les dirigeants de PME dans l\'intégration concrète de l\'intelligence artificielle.', bullets: [], exportMode: 'full', barSize: 'lg' },
       { id: 3, type: 'bullets', title: 'Nos services', subtitle: '', content: '', bullets: ['Audit IA', 'Développement sur-mesure', 'Formation', 'Conformité RGPD'], exportMode: 'full', barSize: 'lg' },
       { id: 4, type: 'bullets', title: 'Nos solutions', subtitle: '', content: '', bullets: ['Collaboria', 'Datalia', 'Team 5 Connect', 'Lexia', 'Dialogue Plus'], exportMode: 'full', barSize: 'lg' },
       { id: 5, type: 'content', title: 'Notre méthodologie', subtitle: '', content: 'Une approche pragmatique centrée sur vos besoins réels et votre ROI.', bullets: [], exportMode: 'full', barSize: 'lg' },
