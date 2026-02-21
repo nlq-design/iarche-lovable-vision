@@ -4890,7 +4890,7 @@ Retourne le contenu au format HTML avec les balises appropriées.`;
 
       // Use centralized AI client for provider fallback
       const content = await callCentralizedAI(
-        "Tu es un expert en rédaction de contenu B2B pour une agence d'IA. Génère des articles professionnels et engageants.",
+        "Tu es un expert en rédaction de contenu B2B pour IArche, Architecte IA. Génère des articles professionnels et engageants.",
         articlePrompt
       );
 
