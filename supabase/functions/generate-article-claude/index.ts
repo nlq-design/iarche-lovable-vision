@@ -35,7 +35,7 @@ serve(async (req) => {
     
     console.log(`[generate-article-claude] Generating article via centralized AI client - tone: ${tone}, length: ${length}, template: ${templateId || 'custom'}`);
 
-    const systemPrompt = `Tu es un rédacteur expert pour IArche, une agence IA basée à Bayonne. 
+    const systemPrompt = `Tu es un rédacteur expert pour IArche, Architecte IA basé à Bayonne. 
 Tu rédiges des articles de blog professionnels sur l'IA pour les PME françaises.
 
 Style IArche :
@@ -73,7 +73,7 @@ CONTRAINTES :
 - Ton : ${toneMap[tone]}
 - Longueur : environ ${lengthMap[length]}
 - Inclure 3-5 questions FAQ pertinentes
-- Optimisé SEO pour "agence IA" et mots-clés du sujet
+- Optimisé SEO pour "architecte IA" et mots-clés du sujet
 
 Réponds UNIQUEMENT avec le JSON, sans texte avant ou après.`;
 

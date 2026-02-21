@@ -81,15 +81,15 @@ const Services = () => {
       <Helmet>
         <html lang="fr" />
         <link rel="alternate" hrefLang="fr" href="https://iarche.fr/services" />
-        <title>Nos services · IArche · Agence IA Bayonne</title>
-        <meta name="description" content="Audit IA, développement, accompagnement et conformité. Services adaptés aux PME. Agence basée à Bayonne." />
+        <title>Nos services · IArche · Architecte IA Bayonne</title>
+        <meta name="description" content="Audit IA, développement, accompagnement et conformité. Services adaptés aux PME. Architecte IA basé à Bayonne." />
         <meta name="robots" content="index, follow" />
         <meta name="author" content="IArche" />
         <meta name="keywords" content="services IA, audit IA, développement IA, accompagnement IA, conformité RGPD, PME, Bayonne" />
         <link rel="canonical" href="https://iarche.fr/services" />
         
         {/* Open Graph */}
-        <meta property="og:title" content="Nos services · IArche · Agence IA Bayonne" />
+        <meta property="og:title" content="Nos services · IArche · Architecte IA Bayonne" />
         <meta property="og:description" content="Audit IA, développement, accompagnement et conformité. Services adaptés aux PME." />
         <meta property="og:url" content="https://iarche.fr/services" />
         <meta property="og:type" content="website" />

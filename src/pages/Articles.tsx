@@ -128,15 +128,15 @@ const Articles = () => {
       <Helmet>
         <html lang="fr" />
         <link rel="alternate" hrefLang="fr" href="https://iarche.fr/articles" />
-        <title>Articles IA · IArche · Agence IA Bayonne</title>
-        <meta name="description" content="Suivez les dernières actualités en intelligence artificielle et découvrez les innovations d'IArche, agence IA à Bayonne. Analyses, tendances et cas d'usage concrets." />
+        <title>Articles IA · IArche · Architecte IA Bayonne</title>
+        <meta name="description" content="Suivez les dernières actualités en intelligence artificielle et découvrez les innovations d'IArche, Architecte IA à Bayonne. Analyses, tendances et cas d'usage concrets." />
         <meta name="robots" content="index, follow" />
         <meta name="author" content="IArche" />
         <meta name="keywords" content="articles IA, intelligence artificielle, innovations IA, tendances IA, cas d'usage IA" />
         <link rel="canonical" href="https://iarche.fr/articles" />
         
         {/* Open Graph */}
-        <meta property="og:title" content="Articles IA · IArche · Agence IA Bayonne" />
+        <meta property="og:title" content="Articles IA · IArche · Architecte IA Bayonne" />
         <meta property="og:description" content="Actualités IA et innovations IArche : analyses, tendances et cas d'usage concrets pour PME." />
         <meta property="og:url" content="https://iarche.fr/articles" />
         <meta property="og:type" content="website" />

@@ -36,7 +36,7 @@ export function getEmailFooter(): string {
       <td style="padding: 24px 40px; background-color: ${EMAIL_COLORS.offWhite}; border-top: 1px solid ${EMAIL_COLORS.borderGray}; text-align: center; border-radius: 0 0 12px 12px;">
         <img src="${LOGO_URL}" alt="IArche" style="height: 28px; margin-bottom: 12px; opacity: 0.8;" />
         <p style="color: ${EMAIL_COLORS.lightGray}; font-size: 12px; margin: 0 0 8px 0;">
-          IArche · Agence IA · Bayonne, France
+          IArche · Architecte IA · Bayonne, France
         </p>
         <p style="margin: 0;">
           <a href="https://iarche.fr" style="color: ${EMAIL_COLORS.terracotta}; text-decoration: none; font-size: 12px; font-weight: 500;">iarche.fr</a>

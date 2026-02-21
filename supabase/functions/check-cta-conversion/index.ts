@@ -174,7 +174,7 @@ Deno.serve(async (req) => {
               Analyse période: 7 derniers jours • Seuil minimum: ${MIN_CLICKS_THRESHOLD} clics
             </p>
             <p style="color: #6B7280; font-size: 12px; margin-top: 5px;">
-              IArche · Agence IA · Bayonne, France
+              IArche · Architecte IA · Bayonne, France
             </p>
           </div>
         </div>

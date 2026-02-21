@@ -156,7 +156,7 @@ const NewsletterSection = () => {
         </div>
         
         <p className="text-sm text-muted-foreground tracking-widest text-center invisible animate-fadeIn [animation-delay:0.8s]">
-          Agence IA · Bayonne · Pays Basque · France
+          Architecte IA · Bayonne · Pays Basque · France
         </p>
       </div>
     </section>

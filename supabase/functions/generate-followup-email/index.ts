@@ -54,7 +54,7 @@ serve(async (req) => {
 
     // Load prompt from DB
     const prompt = await loadPrompt(supabase, "email-followup", {
-      system_prompt: `Tu es un assistant commercial expert pour IArche, agence IA basée à Bayonne.
+      system_prompt: `Tu es un assistant commercial expert pour IArche, Architecte IA basé à Bayonne.
 
 Tu génères des emails de suivi commerciaux professionnels, personnalisés et engageants.
 
