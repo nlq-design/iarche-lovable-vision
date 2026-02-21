@@ -26,7 +26,7 @@ const ServicesSection = () => {
     <section id="services" className="pb-12 md:pb-16 bg-background">
       <div className="container mx-auto px-6 lg:px-16">
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center mb-8">Nos services</h2>
-        <div className="grid gap-6 grid-cols-1 md:grid-cols-4 lg:gap-8 max-w-7xl mx-auto">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8 max-w-7xl mx-auto">
           {services.map((service, index) => (
             <Card 
               key={index}
