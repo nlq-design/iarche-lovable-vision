@@ -59,7 +59,7 @@ const carouselTemplates = [
 ];
 
 const presentationTemplates = [
-  { id: 'pitch', name: 'Pitch Commercial', description: 'Présentation de l\'agence et services', slides: 10, icon: '🎯' },
+  { id: 'pitch', name: 'Pitch Commercial', description: 'Présentation d\'IArche et services', slides: 10, icon: '🎯' },
   { id: 'project', name: 'Présentation Projet', description: 'Détailler une solution à un prospect', slides: 12, icon: '📋' },
   { id: 'report', name: 'Rapport / Bilan', description: 'Synthèse de résultats ou d\'activité', slides: 8, icon: '📈' },
 ];
