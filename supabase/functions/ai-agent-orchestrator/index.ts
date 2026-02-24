@@ -9519,58 +9519,89 @@ ${calendarRef.join('\n')}
         const toolArgs = JSON.parse(toolCall.function.arguments || "{}");
         const toolStartTime = Date.now();
 
-        try {
-          const toolResult = await executeTool(supabase, toolName, toolArgs, messages, workspace_id, user_id, session_id);
-          const toolDuration = Date.now() - toolStartTime;
-          
-          allToolCalls.push({ name: toolName, result: toolResult, duration_ms: toolDuration });
-          toolResults.push({
-            role: "tool",
-            tool_call_id: toolCall.id,
-            content: JSON.stringify(toolResult),
-          });
-          
-          // Enhanced logging with execution time
-          console.log(`Tool ${toolName} completed in ${toolDuration}ms`);
-          
-          // Save tool call to memory - skip for write tools (logDecision handles those with higher importance)
-          const writeToolNames = [
-            "create_lead", "update_lead", "create_booking", "update_booking",
-            "create_task", "update_task", "create_project", "update_project",
-            "send_email", "create_meeting_note", "update_meeting_note",
-            "create_opportunity", "update_opportunity", "update_lead_score"
-          ];
-          const isWriteTool = writeToolNames.includes(toolName);
-          
-          if (!isWriteTool) {
-            await saveMemory(supabase, {
-              memory_type: "tool_call",
-              category: toolName,
-              content: `Tool ${toolName} appelé avec ${JSON.stringify(toolArgs).slice(0, 200)}`,
-              metadata: { 
-                tool: toolName, 
-                args: toolArgs, 
-                success: true,
-                duration_ms: toolDuration,
-                timestamp: new Date().toISOString(),
-              },
-              importance_score: 0.6,
-              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            }, workspace_id, user_id, session_id);
+        // Retry mechanism: up to 2 attempts with exponential backoff
+        const maxRetries = 2;
+        let lastError: Error | null = null;
+        let toolSucceeded = false;
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            const toolResult = await executeTool(supabase, toolName, toolArgs, messages, workspace_id, user_id, session_id);
+            const toolDuration = Date.now() - toolStartTime;
+            
+            allToolCalls.push({ name: toolName, result: toolResult, duration_ms: toolDuration });
+            toolResults.push({
+              role: "tool",
+              tool_call_id: toolCall.id,
+              content: JSON.stringify(toolResult),
+            });
+            
+            // Enhanced logging with execution time
+            if (attempt > 1) {
+              console.log(`Tool ${toolName} succeeded on attempt ${attempt} in ${toolDuration}ms`);
+            } else {
+              console.log(`Tool ${toolName} completed in ${toolDuration}ms`);
+            }
+            
+            // Save tool call to memory - skip for write tools (logDecision handles those with higher importance)
+            const writeToolNames = [
+              "create_lead", "update_lead", "create_booking", "update_booking",
+              "create_task", "update_task", "create_project", "update_project",
+              "send_email", "create_meeting_note", "update_meeting_note",
+              "create_opportunity", "update_opportunity", "update_lead_score"
+            ];
+            const isWriteTool = writeToolNames.includes(toolName);
+            
+            if (!isWriteTool) {
+              await saveMemory(supabase, {
+                memory_type: "tool_call",
+                category: toolName,
+                content: `Tool ${toolName} appelé avec ${JSON.stringify(toolArgs).slice(0, 200)}`,
+                metadata: { 
+                  tool: toolName, 
+                  args: toolArgs, 
+                  success: true,
+                  duration_ms: toolDuration,
+                  attempts: attempt,
+                  timestamp: new Date().toISOString(),
+                },
+                importance_score: 0.6,
+                expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              }, workspace_id, user_id, session_id);
+            }
+            
+            // Phase 1: Auto-log write decisions (post-processing, replaces saveMemory for write tools)
+            await logDecision(supabase, toolName, toolArgs, toolResult, workspace_id, user_id, session_id);
+            
+            toolSucceeded = true;
+            break; // Success - exit retry loop
+            
+          } catch (toolError) {
+            lastError = toolError as Error;
+            console.warn(`Tool ${toolName} attempt ${attempt}/${maxRetries} failed:`, (toolError as Error).message);
+            
+            if (attempt < maxRetries) {
+              // Exponential backoff: 1s, 2s
+              const backoffMs = 1000 * attempt;
+              console.log(`Retrying ${toolName} in ${backoffMs}ms...`);
+              await new Promise(r => setTimeout(r, backoffMs));
+            }
           }
-          
-          // Phase 1: Auto-log write decisions (post-processing, replaces saveMemory for write tools)
-          await logDecision(supabase, toolName, toolArgs, toolResult, workspace_id, user_id, session_id);
-          
-        } catch (toolError) {
+        }
+
+        // All retries exhausted
+        if (!toolSucceeded && lastError) {
           const toolDuration = Date.now() - toolStartTime;
-          console.error(`Tool ${toolName} error after ${toolDuration}ms:`, toolError);
+          console.error(`Tool ${toolName} failed after ${maxRetries} attempts (${toolDuration}ms):`, lastError.message);
           
-          allToolCalls.push({ name: toolName, error: (toolError as Error).message, duration_ms: toolDuration });
+          allToolCalls.push({ name: toolName, error: lastError.message, duration_ms: toolDuration });
           toolResults.push({
             role: "tool",
             tool_call_id: toolCall.id,
-            content: JSON.stringify({ error: (toolError as Error).message }),
+            content: JSON.stringify({ 
+              error: lastError.message,
+              details: `L'outil ${toolName} a échoué après ${maxRetries} tentatives. Raison: ${lastError.message}. Veuillez proposer une alternative à l'utilisateur.`
+            }),
           });
         }
       }
