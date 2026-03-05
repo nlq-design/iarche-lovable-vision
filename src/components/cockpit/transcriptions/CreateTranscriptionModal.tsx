@@ -84,6 +84,7 @@ export function CreateTranscriptionModal({
   const [transcriptionDate, setTranscriptionDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [analysisContext, setAnalysisContext] = useState<string>('');
   const [expectedParticipants, setExpectedParticipants] = useState<ExpectedParticipant[]>([]);
+  const [qualityMode, setQualityMode] = useState<'standard' | 'high'>('standard');
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -283,6 +284,7 @@ export function CreateTranscriptionModal({
             audio_format: audioMeta.format,
             analysis_context: analysisContext.trim() || null,
             expected_participants: expectedParticipants.length > 0 ? expectedParticipants : null,
+            quality_mode: qualityMode,
           });
 
           // Fire-and-forget: also trigger processing immediately for fast results
