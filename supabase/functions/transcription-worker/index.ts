@@ -20,7 +20,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ASSEMBLYAI_API_KEY = Deno.env.get("ASSEMBLYAI_API_KEY")!;
 
-const MAX_CONCURRENT = 1;
+const MAX_CONCURRENT = 3;
 const STALE_TIMEOUT_MINUTES = 30; // Increased: async jobs legitimately take longer
 const ANALYZING_STALE_MINUTES = 10; // LLM analysis shouldn't take >10 min
 

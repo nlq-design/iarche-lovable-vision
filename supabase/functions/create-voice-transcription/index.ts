@@ -67,6 +67,7 @@ serve(async (req) => {
       audio_format = null,
       analysis_context = null,
       expected_participants = null,
+      quality_mode = "standard",
     } = body;
 
     // Convert empty strings to null for UUID fields
