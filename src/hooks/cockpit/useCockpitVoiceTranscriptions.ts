@@ -142,6 +142,7 @@ export interface CreateTranscriptionInput {
   audio_format?: string | null;
   analysis_context?: string | null;
   expected_participants?: ExpectedParticipant[] | null;
+  quality_mode?: 'standard' | 'high';
 }
 
 export interface LLMModel {
