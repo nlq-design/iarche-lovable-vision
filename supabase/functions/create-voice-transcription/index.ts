@@ -67,6 +67,7 @@ serve(async (req) => {
       audio_format = null,
       analysis_context = null,
       expected_participants = null,
+      quality_mode = "standard",
     } = body;
 
     // Convert empty strings to null for UUID fields
@@ -95,6 +96,11 @@ serve(async (req) => {
 
     if (expected_participants?.length) {
       initialMetadata.expected_participants = expected_participants;
+    }
+
+    // Store quality mode for the worker to use
+    if (quality_mode === "high") {
+      initialMetadata.quality_mode = "high";
     }
 
     const { data, error } = await supabase

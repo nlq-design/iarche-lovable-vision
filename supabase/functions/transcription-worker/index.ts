@@ -20,7 +20,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ASSEMBLYAI_API_KEY = Deno.env.get("ASSEMBLYAI_API_KEY")!;
 
-const MAX_CONCURRENT = 1;
+const MAX_CONCURRENT = 3;
 const STALE_TIMEOUT_MINUTES = 30; // Increased: async jobs legitimately take longer
 const ANALYZING_STALE_MINUTES = 10; // LLM analysis shouldn't take >10 min
 
@@ -117,6 +117,42 @@ serve(async (req) => {
             };
 
             log(`Job ${job.id}: AssemblyAI completed! ${result.text.length} chars, ${assemblyMeta.speakers_count} speakers`);
+
+            // Track AssemblyAI cost in api_usage_metrics
+            const durationMin = (result.audio_duration ?? 60) / 60;
+            const qualityMode = (meta.quality_mode as string) || "standard";
+            const speechModel = qualityMode === "high" ? "best" : "nano";
+            // Cost calculation: nano ~$0.10/min, best ~$0.37/min + features
+            const baseCostPerMin = speechModel === "best" ? 0.37 : 0.10;
+            const featureCost = speechModel === "best" ? 0.09 : 0; // sentiment + entity + chapters + safety
+            const totalCostCents = Math.max(0.5, durationMin * (baseCostPerMin + featureCost) * 100);
+            
+            try {
+              await supabase.from("api_usage_metrics").insert({
+                workspace_id: '00000000-0000-0000-0000-000000000001',
+                api_category: 'ai',
+                api_name: 'assemblyai',
+                provider_name: 'assemblyai',
+                operation_type: 'transcription',
+                model_id: `assemblyai-${speechModel}`,
+                success: true,
+                latency_ms: null, // async, no single latency
+                estimated_cost_cents: Math.round(totalCostCents * 100) / 100,
+                metadata: {
+                  job_id: job.id,
+                  audio_duration_s: result.audio_duration,
+                  duration_min: Math.round(durationMin * 10) / 10,
+                  transcript_length: result.text.length,
+                  speakers: assemblyMeta.speakers_count,
+                  quality_mode: qualityMode,
+                  speech_model: speechModel,
+                  language: result.language_code,
+                },
+              });
+              log(`Job ${job.id}: Tracked cost ${totalCostCents.toFixed(1)}¢ (${speechModel}, ${durationMin.toFixed(1)}min)`);
+            } catch (trackErr) {
+              log(`Job ${job.id}: Cost tracking failed (non-blocking): ${trackErr}`);
+            }
 
             // Save transcript and move to analyzing
             await supabase.from("voice_transcriptions").update({

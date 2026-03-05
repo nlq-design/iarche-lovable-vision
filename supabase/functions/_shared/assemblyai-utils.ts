@@ -374,21 +374,37 @@ export async function transcribeFromUrl(
  * Returns the standard set of AssemblyAI options with all features enabled.
  * Custom vocabulary can be appended per-workspace.
  */
-export function getDefaultTranscriptionOptions(overrides?: Partial<AssemblyAITranscriptionOptions>): AssemblyAITranscriptionOptions {
+/**
+ * Returns transcription options based on quality mode.
+ * - "standard" (default): nano model, only speaker diarization + language detection
+ *   → ~$0.10/min, sufficient for clear French speech
+ * - "high": best model + all features (sentiment, entities, chapters, safety)
+ *   → ~$0.46/min, for noisy/multi-language/complex recordings
+ */
+export function getDefaultTranscriptionOptions(
+  overrides?: Partial<AssemblyAITranscriptionOptions> & { quality?: "standard" | "high" },
+): AssemblyAITranscriptionOptions {
+  const quality = overrides?.quality ?? "standard";
+  const isHigh = quality === "high";
+
+  // Remove quality from overrides before spreading
+  const { quality: _q, ...rest } = overrides ?? {};
+
   return {
-    speech_model: "best",
+    speech_model: isHigh ? "best" : "nano",
     language_code: null, // auto-detect
     language_detection: true,
     speaker_labels: true,
-    sentiment_analysis: true,
-    entity_detection: true,
-    auto_chapters: true,
-    content_safety: true,
-    multichannel: false, // Enable only when explicitly needed (stereo audio)
+    // Redundant features: LLM pipeline already handles these better
+    sentiment_analysis: isHigh,
+    entity_detection: isHigh,
+    auto_chapters: isHigh,
+    content_safety: isHigh,
+    multichannel: false,
     word_boost: [],
     boost_param: "high",
     maxWaitMs: 300_000,
     pollIntervalMs: 3000,
-    ...overrides,
+    ...rest,
   };
 }

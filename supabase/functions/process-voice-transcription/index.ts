@@ -568,8 +568,10 @@ serve(async (req) => {
       }
 
       // Submit to AssemblyAI — ASYNC: return immediately, worker will poll
-      log("AssemblyAI", `Submitting to AssemblyAI (async mode)...`);
+      const qualityMode = (aiMeta?.quality_mode as string) || "standard";
+      log("AssemblyAI", `Submitting to AssemblyAI (async mode, quality=${qualityMode})...`);
       const options = getDefaultTranscriptionOptions({
+        quality: qualityMode as "standard" | "high",
         word_boost: wordBoost.length > 0 ? wordBoost : undefined,
       });
 
