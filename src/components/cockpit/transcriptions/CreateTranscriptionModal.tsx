@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Upload, Mic, MicOff, Loader2, Check, CalendarIcon } from 'lucide-react';
+import { Upload, Mic, MicOff, Loader2, Check, CalendarIcon, Sparkles, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCockpitVoiceTranscriptions, useAIPromptProfiles, type ExpectedParticipant } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { useCockpitLeads, useCockpitProjects, useCockpitMeetingNotes } from '@/hooks/cockpit';
