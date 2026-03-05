@@ -500,6 +500,29 @@ export function CreateTranscriptionModal({
             </p>
           </div>
 
+          {/* Qualité de transcription */}
+          <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
+            <div className="space-y-0.5">
+              <Label className="flex items-center gap-2">
+                {qualityMode === 'high' ? (
+                  <Sparkles className="h-4 w-4 text-amber-500" />
+                ) : (
+                  <Zap className="h-4 w-4 text-primary" />
+                )}
+                {qualityMode === 'high' ? 'Haute précision (best)' : 'Standard (nano)'}
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {qualityMode === 'high' 
+                  ? 'Modèle premium + analyse enrichie — ~4x plus cher, pour audio bruyant ou multi-langues'
+                  : 'Rapide et économique — optimal pour enregistrements clairs en français'}
+              </p>
+            </div>
+            <Switch 
+              checked={qualityMode === 'high'} 
+              onCheckedChange={(checked) => setQualityMode(checked ? 'high' : 'standard')} 
+            />
+          </div>
+
           {/* Auto create tasks - now always on */}
           <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
             <div className="space-y-0.5">
