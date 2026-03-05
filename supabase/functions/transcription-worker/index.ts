@@ -153,6 +153,9 @@ serve(async (req) => {
             } catch (trackErr) {
               log(`Job ${job.id}: Cost tracking failed (non-blocking): ${trackErr}`);
             }
+
+            // Save transcript and move to analyzing
+            await supabase.from("voice_transcriptions").update({
               raw_transcript: rawText,
               status: "analyzing",
               duration_seconds: result.audio_duration,
