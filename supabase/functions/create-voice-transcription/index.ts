@@ -98,6 +98,11 @@ serve(async (req) => {
       initialMetadata.expected_participants = expected_participants;
     }
 
+    // Store quality mode for the worker to use
+    if (quality_mode === "high") {
+      initialMetadata.quality_mode = "high";
+    }
+
     const { data, error } = await supabase
       .from("voice_transcriptions")
       .insert({
