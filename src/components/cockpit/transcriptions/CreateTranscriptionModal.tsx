@@ -131,6 +131,7 @@ export function CreateTranscriptionModal({
     setTranscriptionDate(format(new Date(), 'yyyy-MM-dd'));
     setAnalysisContext('');
     setExpectedParticipants([]);
+    setQualityMode('standard');
     setUploadProgress({ current: 0, total: 0 });
     // chunking progress removed
   }, []);
