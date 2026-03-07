@@ -37,7 +37,7 @@ const Footer = () => {
             </p>
             <div className="flex items-center gap-3">
               <a 
-                href="https://linkedin.com" 
+                href="https://www.linkedin.com/company/iarche" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className={linkClass}
@@ -46,7 +46,7 @@ const Footer = () => {
                 <Linkedin className="w-5 h-5" aria-hidden="true" />
               </a>
               <a 
-                href="https://instagram.com" 
+                href="https://www.instagram.com/iarche.ia" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className={linkClass}
@@ -55,7 +55,7 @@ const Footer = () => {
                 <Instagram className="w-5 h-5" aria-hidden="true" />
               </a>
               <a 
-                href="https://tiktok.com" 
+                href="https://www.tiktok.com/@iarche.ia" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className={linkClass}
@@ -66,7 +66,7 @@ const Footer = () => {
                 </svg>
               </a>
               <a 
-                href="https://facebook.com" 
+                href="https://www.facebook.com/iarche.ia" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className={linkClass}
@@ -177,7 +177,7 @@ const Footer = () => {
         {/* Copyright */}
         <div className="border-t border-[hsl(45,20%,85%)]/10 pt-6">
           <p className="text-xs text-[hsl(45,20%,80%)] text-center">
-            © 2025 IArche · Tous droits réservés
+            © {new Date().getFullYear()} IArche · Tous droits réservés
           </p>
         </div>
       </div>
