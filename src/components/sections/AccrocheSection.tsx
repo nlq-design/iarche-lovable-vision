@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import GradientLink from '@/components/ui/GradientLink';
 import { useCTATracking } from '@/hooks/useCTATracking';
 
 const AccrocheSection = () => {
@@ -10,10 +10,24 @@ const AccrocheSection = () => {
         Dirigeant, indépendant ou porteur de projet IA ?
       </h2>
       
-      <p className="text-lg md:text-xl text-foreground text-center max-w-2xl leading-relaxed invisible animate-fadeIn [animation-delay:0.2s]">
+      <p className="text-lg md:text-xl text-foreground text-center max-w-2xl leading-relaxed mb-2 invisible animate-fadeIn [animation-delay:0.2s]">
         Vous savez que l'IA peut transformer votre quotidien,<br />
         mais par où commencer concrètement ?
       </p>
+
+      <p className="text-base text-muted-foreground text-center max-w-xl leading-relaxed mb-8 invisible animate-fadeIn [animation-delay:0.3s]">
+        On vous accompagne de l'audit à l'autonomie.
+      </p>
+
+      <div className="invisible animate-fadeIn [animation-delay:0.4s]">
+        <GradientLink
+          to="/rendez-vous/premier-echange"
+          onClick={() => trackCTAClick('premier_echange', 'accroche_section')}
+          className="text-base"
+        >
+          Échanger avec nous
+        </GradientLink>
+      </div>
     </section>
   );
 };
