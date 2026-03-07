@@ -530,6 +530,59 @@ export type Database = {
           },
         ]
       }
+      ai_sentinel_alerts: {
+        Row: {
+          ai_metadata: Json | null
+          category: string
+          created_at: string | null
+          description: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          ai_metadata?: Json | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          ai_metadata?: Json | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_sentinel_alerts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_usage_metrics: {
         Row: {
           created_at: string
@@ -3108,6 +3161,53 @@ export type Database = {
           user_agent?: string | null
         }
         Relationships: []
+      }
+      mcp_api_keys: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          key_hash: string
+          key_prefix: string
+          label: string
+          last_used_at: string | null
+          revoked_at: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          key_prefix: string
+          label: string
+          last_used_at?: string | null
+          revoked_at?: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          label?: string
+          last_used_at?: string | null
+          revoked_at?: string | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcp_api_keys_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       media_templates: {
         Row: {
