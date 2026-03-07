@@ -6,9 +6,9 @@
  * All queries use service_role scoped by workspace_id from key.
  */
 
-import { Hono } from "https://deno.land/x/hono@v4.4.0/mod.ts";
+import { Hono } from "npm:hono@4.4.0";
 import { McpServer, StreamableHttpTransport } from "npm:mcp-lite@^0.10.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -76,11 +76,10 @@ const mcpServer = new McpServer({
 // ============================================================
 // TOOL 1: get_leads
 // ============================================================
-mcpServer.tool({
-  name: "get_leads",
+mcpServer.tool("get_leads", {
   description: "Liste les leads CRM du workspace IArche. Filtrable par statut, qualification et recherche texte.",
   inputSchema: {
-    type: "object",
+    type: "object" as const,
     properties: {
       status: { type: "string", description: "Filtrer par statut (ex: active, lost)" },
       qualification_status: { type: "string", description: "Filtrer par qualification (ex: new, hot, won)" },
@@ -117,11 +116,10 @@ mcpServer.tool({
 // ============================================================
 // TOOL 2: get_lead_detail
 // ============================================================
-mcpServer.tool({
-  name: "get_lead_detail",
+mcpServer.tool("get_lead_detail", {
   description: "Détail complet d'un lead avec ses 5 dernières activités.",
   inputSchema: {
-    type: "object",
+    type: "object" as const,
     properties: {
       lead_id: { type: "string", description: "UUID du lead" },
     },
@@ -164,11 +162,10 @@ mcpServer.tool({
 // ============================================================
 // TOOL 3: get_opportunities
 // ============================================================
-mcpServer.tool({
-  name: "get_opportunities",
+mcpServer.tool("get_opportunities", {
   description: "Liste les opportunités commerciales du pipeline.",
   inputSchema: {
-    type: "object",
+    type: "object" as const,
     properties: {
       stage: { type: "string", description: "Filtrer par stage (ex: lead, qualified, proposal, won, lost)" },
       limit: { type: "number", description: "Nombre max (défaut 20)" },
@@ -199,11 +196,10 @@ mcpServer.tool({
 // ============================================================
 // TOOL 4: get_projects
 // ============================================================
-mcpServer.tool({
-  name: "get_projects",
+mcpServer.tool("get_projects", {
   description: "Liste les projets en cours avec leur santé et budget.",
   inputSchema: {
-    type: "object",
+    type: "object" as const,
     properties: {
       status: { type: "string", description: "Filtrer par statut (ex: scoping, active, completed)" },
       health_status: { type: "string", description: "Filtrer par santé (on_track, at_risk, off_track)" },
@@ -236,11 +232,10 @@ mcpServer.tool({
 // ============================================================
 // TOOL 5: get_action_proposals
 // ============================================================
-mcpServer.tool({
-  name: "get_action_proposals",
+mcpServer.tool("get_action_proposals", {
   description: "Liste les propositions d'action IA en attente de validation.",
   inputSchema: {
-    type: "object",
+    type: "object" as const,
     properties: {
       status: { type: "string", description: "Filtrer par statut (défaut: pending)" },
       limit: { type: "number", description: "Nombre max (défaut 10)" },
@@ -269,11 +264,10 @@ mcpServer.tool({
 // ============================================================
 // TOOL 6: get_sentinel_alerts
 // ============================================================
-mcpServer.tool({
-  name: "get_sentinel_alerts",
+mcpServer.tool("get_sentinel_alerts", {
   description: "Liste les alertes Sentinel (anomalies CRM détectées). Filtrables par sévérité et statut de résolution.",
   inputSchema: {
-    type: "object",
+    type: "object" as const,
     properties: {
       severity: { type: "string", description: "Filtrer: info, warning, critical" },
       resolved: { type: "boolean", description: "Inclure les résolues? (défaut: false)" },
@@ -306,11 +300,10 @@ mcpServer.tool({
 // ============================================================
 // TOOL 7: validate_action_proposal
 // ============================================================
-mcpServer.tool({
-  name: "validate_action_proposal",
+mcpServer.tool("validate_action_proposal", {
   description: "Valider (approve) ou rejeter (reject) une proposition d'action IA. L'approbation déclenche l'exécution automatique.",
   inputSchema: {
-    type: "object",
+    type: "object" as const,
     properties: {
       proposal_id: { type: "string", description: "UUID de la proposition" },
       decision: { type: "string", description: "'approve' ou 'reject'" },
@@ -326,7 +319,6 @@ mcpServer.tool({
       return { content: [{ type: "text", text: "Erreur: decision doit être 'approve' ou 'reject'" }] };
     }
 
-    // Verify proposal belongs to workspace
     const { data: proposal } = await supabaseAdmin
       .from("action_proposals")
       .select("id, status, workspace_id")
@@ -395,11 +387,10 @@ mcpServer.tool({
 // ============================================================
 // TOOL 8: resolve_sentinel_alert
 // ============================================================
-mcpServer.tool({
-  name: "resolve_sentinel_alert",
+mcpServer.tool("resolve_sentinel_alert", {
   description: "Marquer une alerte Sentinel comme résolue.",
   inputSchema: {
-    type: "object",
+    type: "object" as const,
     properties: {
       alert_id: { type: "string", description: "UUID de l'alerte" },
       resolution_note: { type: "string", description: "Note de résolution optionnelle" },
@@ -434,11 +425,10 @@ mcpServer.tool({
 // ============================================================
 // TOOL 9: run_sentinel_analysis
 // ============================================================
-mcpServer.tool({
-  name: "run_sentinel_analysis",
+mcpServer.tool("run_sentinel_analysis", {
   description: "Déclenche une analyse Sentinel à la volée et persiste les alertes trouvées.",
   inputSchema: {
-    type: "object",
+    type: "object" as const,
     properties: {
       entity_type: { type: "string", description: "Filtrer par type d'entité (lead, opportunity, project)" },
       entity_id: { type: "string", description: "UUID d'une entité spécifique" },
@@ -449,7 +439,6 @@ mcpServer.tool({
     if (!wsId) return { content: [{ type: "text", text: "Auth error" }] };
 
     try {
-      // Call ai-sentinel Edge Function
       const sentinelRes = await fetch(
         `${SUPABASE_URL}/functions/v1/ai-sentinel`,
         {
@@ -475,13 +464,12 @@ mcpServer.tool({
         };
       }
 
-      // Persist alerts to ai_sentinel_alerts
-      const alertRows = alerts.map((a: { severity: string; category: string; question: string; detail: string; entity_type: string; entity_id: string }) => ({
+      const alertRows = alerts.map((a: any) => ({
         workspace_id: wsId,
         severity: a.severity,
         category: a.category,
-        title: a.question,
-        description: a.detail,
+        title: a.question || a.title,
+        description: a.detail || a.description,
         entity_type: a.entity_type,
         entity_id: a.entity_id,
         ai_metadata: { source: "mcp_triggered", raw: a },
@@ -516,6 +504,7 @@ mcpServer.tool({
 const app = new Hono();
 
 const transport = new StreamableHttpTransport();
+const httpHandler = transport.bind(mcpServer);
 
 // CORS preflight
 app.options("/*", (c) => {
@@ -549,13 +538,13 @@ app.all("/*", async (c) => {
     );
   }
 
-  // Store auth context for tool handlers (mcp-lite doesn't pass request context)
+  // Store auth context for tool handlers
   (globalThis as any).__mcpAuth = {
     workspace_id: auth.workspace_id,
     user_id: auth.user_id,
   };
 
-  return await transport.handleRequest(c.req.raw, mcpServer);
+  return httpHandler(c.req.raw);
 });
 
 Deno.serve(app.fetch);
