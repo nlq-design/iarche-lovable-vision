@@ -182,3 +182,9 @@ verify_jwt = false
 
 [functions.auto-daily-intelligence]
 verify_jwt = false
+
+[functions.mcp-api-keys]
+verify_jwt = false
+
+[functions.mcp-server]
+verify_jwt = false
