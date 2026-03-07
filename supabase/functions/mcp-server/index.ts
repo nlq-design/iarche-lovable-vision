@@ -88,8 +88,8 @@ mcpServer.tool({
       search: { type: "string", description: "Recherche texte sur nom, email ou entreprise" },
     },
   },
-  handler: async (params, extra) => {
-    const wsId = extra?.workspace_id;
+  handler: async (params: any) => {
+    const wsId = (globalThis as any).__mcpAuth?.workspace_id;
     if (!wsId) return { content: [{ type: "text", text: "Auth error: no workspace" }] };
 
     let query = supabaseAdmin
