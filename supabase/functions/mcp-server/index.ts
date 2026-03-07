@@ -517,7 +517,18 @@ const app = new Hono();
 
 const transport = new StreamableHttpTransport();
 
-// Auth middleware wrapper
+// CORS preflight
+app.options("/*", (c) => {
+  return new Response(null, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "authorization, content-type, accept",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS, DELETE",
+    },
+  });
+});
+
+// All MCP routes
 app.all("/*", async (c) => {
   const auth = await authenticateMcpKey(c.req.raw);
 
@@ -533,46 +544,18 @@ app.all("/*", async (c) => {
         headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "authorization, content-type, accept",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS, DELETE",
         },
       }
     );
   }
 
-  // Inject workspace context into the transport/server
-  // mcp-lite handlers receive extra context via the transport
-  // We patch the request to include workspace info
-  const originalRequest = c.req.raw;
-
-  // Store auth context for tool handlers
+  // Store auth context for tool handlers (mcp-lite doesn't pass request context)
   (globalThis as any).__mcpAuth = {
     workspace_id: auth.workspace_id,
     user_id: auth.user_id,
   };
 
-  return await transport.handleRequest(originalRequest, mcpServer);
+  return await transport.handleRequest(c.req.raw, mcpServer);
 });
-
-// Override tool handlers to receive auth context
-const originalToolMethod = mcpServer.tool.bind(mcpServer);
-
-// Patch: inject workspace context into handler extra param
-// Since mcp-lite doesn't natively pass request context to handlers,
-// we use a global context variable set before each request
-const _origHandler = transport.handleRequest.bind(transport);
-transport.handleRequest = async (req: Request, server: McpServer) => {
-  return _origHandler(req, server);
-};
-
-// Monkey-patch the tool registration to inject auth context
-const registeredTools = new Map<string, Function>();
-
-// Re-register all tools with context injection
-// This is handled by the globalThis.__mcpAuth pattern above
-// Tool handlers access it via: const wsId = (globalThis as any).__mcpAuth?.workspace_id
-
-// Update all tool handlers to use globalThis context
-// (Already done in handler implementations above via extra parameter)
 
 Deno.serve(app.fetch);
