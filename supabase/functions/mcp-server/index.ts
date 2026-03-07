@@ -127,8 +127,8 @@ mcpServer.tool({
     },
     required: ["lead_id"],
   },
-  handler: async (params, extra) => {
-    const wsId = extra?.workspace_id;
+  handler: async (params: any) => {
+    const wsId = (globalThis as any).__mcpAuth?.workspace_id;
     if (!wsId) return { content: [{ type: "text", text: "Auth error" }] };
 
     const [leadRes, activitiesRes] = await Promise.all([
@@ -174,8 +174,8 @@ mcpServer.tool({
       limit: { type: "number", description: "Nombre max (défaut 20)" },
     },
   },
-  handler: async (params, extra) => {
-    const wsId = extra?.workspace_id;
+  handler: async (params: any) => {
+    const wsId = (globalThis as any).__mcpAuth?.workspace_id;
     if (!wsId) return { content: [{ type: "text", text: "Auth error" }] };
 
     let query = supabaseAdmin
@@ -210,8 +210,8 @@ mcpServer.tool({
       limit: { type: "number", description: "Nombre max (défaut 20)" },
     },
   },
-  handler: async (params, extra) => {
-    const wsId = extra?.workspace_id;
+  handler: async (params: any) => {
+    const wsId = (globalThis as any).__mcpAuth?.workspace_id;
     if (!wsId) return { content: [{ type: "text", text: "Auth error" }] };
 
     let query = supabaseAdmin
@@ -246,8 +246,8 @@ mcpServer.tool({
       limit: { type: "number", description: "Nombre max (défaut 10)" },
     },
   },
-  handler: async (params, extra) => {
-    const wsId = extra?.workspace_id;
+  handler: async (params: any) => {
+    const wsId = (globalThis as any).__mcpAuth?.workspace_id;
     if (!wsId) return { content: [{ type: "text", text: "Auth error" }] };
 
     const { data, error } = await supabaseAdmin
@@ -280,8 +280,8 @@ mcpServer.tool({
       limit: { type: "number", description: "Nombre max (défaut 20)" },
     },
   },
-  handler: async (params, extra) => {
-    const wsId = extra?.workspace_id;
+  handler: async (params: any) => {
+    const wsId = (globalThis as any).__mcpAuth?.workspace_id;
     if (!wsId) return { content: [{ type: "text", text: "Auth error" }] };
 
     let query = supabaseAdmin
@@ -318,8 +318,8 @@ mcpServer.tool({
     },
     required: ["proposal_id", "decision"],
   },
-  handler: async (params, extra) => {
-    const wsId = extra?.workspace_id;
+  handler: async (params: any) => {
+    const wsId = (globalThis as any).__mcpAuth?.workspace_id;
     if (!wsId) return { content: [{ type: "text", text: "Auth error" }] };
 
     if (!["approve", "reject"].includes(params.decision)) {
@@ -406,9 +406,9 @@ mcpServer.tool({
     },
     required: ["alert_id"],
   },
-  handler: async (params, extra) => {
-    const wsId = extra?.workspace_id;
-    const userId = extra?.user_id;
+  handler: async (params: any) => {
+    const wsId = (globalThis as any).__mcpAuth?.workspace_id;
+    const userId = (globalThis as any).__mcpAuth?.user_id;
     if (!wsId) return { content: [{ type: "text", text: "Auth error" }] };
 
     const { error } = await supabaseAdmin
@@ -444,8 +444,8 @@ mcpServer.tool({
       entity_id: { type: "string", description: "UUID d'une entité spécifique" },
     },
   },
-  handler: async (params, extra) => {
-    const wsId = extra?.workspace_id;
+  handler: async (params: any) => {
+    const wsId = (globalThis as any).__mcpAuth?.workspace_id;
     if (!wsId) return { content: [{ type: "text", text: "Auth error" }] };
 
     try {
