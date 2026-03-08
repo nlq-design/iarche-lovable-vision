@@ -1,6 +1,6 @@
-// redeploy 08/03/2026 v6 — 43 exposed tools (85 internal)
+// redeploy 08/03/2026 v7 — 45 exposed tools (85 internal)
 /**
- * MCP Server Edge Function — IArche CRM (43 exposed / 85 internal tools)
+ * MCP Server Edge Function — IArche CRM (45 exposed / 85 internal tools)
  *
  * Native JSON-RPC handler — no @modelcontextprotocol/sdk dependency.
  * Eliminates safeParseAsync / Zod compatibility issues in Deno edge runtime.
@@ -4923,12 +4923,12 @@ mcpServer.registerTool(
 );
 
 
-// === 43 outils exposés via tools/list (les 42 autres restent appelables via callTool) ===
+// === 45 outils exposés via tools/list (les 40 autres restent appelables via callTool) ===
 const _EXPOSED_TOOLS = new Set([
   // CORE CRM
   'get_leads', 'get_lead_detail', 'create_lead', 'update_lead',
   'get_opportunities', 'upsert_opportunity',
-  'get_activity_log',
+  'get_activity_log', 'create_activity_note',
   'get_tasks', 'create_task', 'update_task',
   'get_contacts', 'get_lead_contacts',
   // INTELLIGENCE
@@ -4945,7 +4945,7 @@ const _EXPOSED_TOOLS = new Set([
   // PROSPECTION
   'search_viviers', 'promote_vivier',
   // PROJETS
-  'get_projects', 'project_write', 'get_specifications',
+  'get_projects', 'project_write', 'get_specifications', 'create_specification',
   'get_documents', 'create_document',
   // LEGAL & FINANCE
   'analyze_legal', 'get_partner_report',
