@@ -1,7 +1,7 @@
 /**
  * MCP Server Edge Function — IArche CRM
  * 
- * Exposes 37 MCP tools via official @modelcontextprotocol/sdk.
+ * Exposes 55 MCP tools via official @modelcontextprotocol/sdk.
  * Auth: Custom MCP API key (Bearer iarche_mcp_...) on tool calls.
  * Initialize/discovery requests pass without auth (MCP spec requirement).
  * All queries use service_role scoped by workspace_id from key.
@@ -1644,6 +1644,696 @@ mcpServer.registerTool(
       return { content: [{ type: "text" as const, text: JSON.stringify({ found: false, message: "Aucune intelligence disponible pour cette date." }) }] };
     }
     return { content: [{ type: "text" as const, text: JSON.stringify({ found: true, intelligence: data[0] }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 38: trigger_daily_intelligence
+// ============================================================
+mcpServer.registerTool(
+  "trigger_daily_intelligence",
+  {
+    title: "Trigger Daily Intelligence",
+    description: "Déclenche la génération du briefing intelligence quotidien.",
+    inputSchema: {},
+  },
+  async () => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/auto-daily-intelligence`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({ workspace_id: ctx.wsId }),
+      });
+      const data = await res.json().catch(() => ({ status: res.status }));
+      if (!res.ok) return { content: [{ type: "text" as const, text: `Erreur: ${JSON.stringify(data)}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ triggered: true, message: "Daily intelligence generation started", result: data }) }] };
+    } catch (err) {
+      return { content: [{ type: "text" as const, text: `Erreur: ${err}` }] };
+    }
+  }
+);
+
+// ============================================================
+// TOOL 39: search_knowledge
+// ============================================================
+mcpServer.registerTool(
+  "search_knowledge",
+  {
+    title: "Search Knowledge Base",
+    description: "Recherche sémantique dans la base de connaissances (embeddings). Retourne les ressources les plus proches.",
+    inputSchema: {
+      query: z.string().describe("Requête de recherche en langage naturel"),
+      entity_type: z.string().optional().describe("Filtrer par type (article, lead, project, solution)"),
+      limit: z.number().optional().describe("Nombre max de résultats (défaut 10)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/search-embeddings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          query: params.query,
+          entity_type: params.entity_type,
+          limit: params.limit || 10,
+          workspace_id: ctx.wsId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { content: [{ type: "text" as const, text: `Erreur: ${JSON.stringify(data)}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ results: data.results || data, count: data.results?.length || 0 }) }] };
+    } catch (err) {
+      return { content: [{ type: "text" as const, text: `Erreur: ${err}` }] };
+    }
+  }
+);
+
+// ============================================================
+// TOOL 40: extract_entities
+// ============================================================
+mcpServer.registerTool(
+  "extract_entities",
+  {
+    title: "Extract Entities from Text",
+    description: "Extraction IA d'entités nommées (personnes, entreprises, lieux, etc.) depuis un texte libre.",
+    inputSchema: {
+      text: z.string().describe("Texte à analyser"),
+      entity_types: z.array(z.string()).optional().describe("Types d'entités à extraire (person, company, location, email, phone)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/extract-entities`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          text: params.text,
+          entity_types: params.entity_types,
+          workspace_id: ctx.wsId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { content: [{ type: "text" as const, text: `Erreur: ${JSON.stringify(data)}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ entities: data }) }] };
+    } catch (err) {
+      return { content: [{ type: "text" as const, text: `Erreur: ${err}` }] };
+    }
+  }
+);
+
+// ============================================================
+// TOOL 41: get_articles
+// ============================================================
+mcpServer.registerTool(
+  "get_articles",
+  {
+    title: "Get Articles",
+    description: "Liste les articles et contenus CMS (actualités, cas clients, livres blancs, solutions).",
+    inputSchema: {
+      resource_type: z.string().optional().describe("Filtrer par type (actualite, article, cas-client, livre-blanc, atelier-webinaire, solution)"),
+      status: z.string().optional().describe("Filtrer par statut (draft, published, scheduled)"),
+      published: z.boolean().optional().describe("Filtrer par état de publication"),
+      limit: z.number().optional().describe("Nombre max (défaut 20)"),
+      search: z.string().optional().describe("Recherche texte sur titre"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    let query = supabaseAdmin
+      .from("articles")
+      .select("id, title, slug, resource_type, status, published, excerpt, meta_title, meta_description, cover_image_url, event_date, created_at, updated_at")
+      .order("created_at", { ascending: false })
+      .limit(params.limit || 20);
+
+    if (params.resource_type) query = query.eq("resource_type", params.resource_type);
+    if (params.status) query = query.eq("status", params.status);
+    if (params.published !== undefined) query = query.eq("published", params.published);
+    if (params.search) query = query.ilike("title", `%${params.search}%`);
+
+    const { data, error } = await query;
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ articles: data, count: data?.length || 0 }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 42: create_article
+// ============================================================
+mcpServer.registerTool(
+  "create_article",
+  {
+    title: "Create Article",
+    description: "Créer un nouvel article/contenu CMS. Le slug est auto-généré depuis le titre si non fourni.",
+    inputSchema: {
+      title: z.string().describe("Titre de l'article"),
+      resource_type: z.string().describe("Type: actualite, article, cas-client, livre-blanc, atelier-webinaire, solution"),
+      content: z.string().optional().describe("Contenu HTML"),
+      excerpt: z.string().optional().describe("Résumé court"),
+      meta_title: z.string().optional().describe("Titre SEO"),
+      meta_description: z.string().optional().describe("Description SEO"),
+      cover_image_url: z.string().optional().describe("URL image de couverture"),
+      status: z.string().optional().describe("Statut (défaut: draft)"),
+      published: z.boolean().optional().describe("Publié (défaut: false)"),
+      slug: z.string().optional().describe("Slug personnalisé (auto-généré si absent)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const slug = params.slug || params.title.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+    const { data, error } = await supabaseAdmin.from("articles").insert({
+      title: params.title,
+      slug,
+      resource_type: params.resource_type,
+      content: params.content || "",
+      excerpt: params.excerpt || null,
+      meta_title: params.meta_title || null,
+      meta_description: params.meta_description || null,
+      cover_image_url: params.cover_image_url || null,
+      status: params.status || "draft",
+      published: params.published || false,
+    }).select("id, title, slug, resource_type, status, created_at").single();
+
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, article: data }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 43: update_article
+// ============================================================
+mcpServer.registerTool(
+  "update_article",
+  {
+    title: "Update Article",
+    description: "Modifier un article/contenu CMS existant. Seuls les champs fournis sont mis à jour.",
+    inputSchema: {
+      article_id: z.string().describe("UUID de l'article"),
+      title: z.string().optional(),
+      content: z.string().optional(),
+      excerpt: z.string().optional(),
+      meta_title: z.string().optional(),
+      meta_description: z.string().optional(),
+      cover_image_url: z.string().optional(),
+      status: z.string().optional(),
+      published: z.boolean().optional(),
+      slug: z.string().optional(),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const { article_id, ...fields } = params;
+    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    for (const [key, value] of Object.entries(fields)) {
+      if (value !== undefined) updates[key] = value;
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("articles")
+      .update(updates)
+      .eq("id", article_id)
+      .select("id, title, slug, resource_type, status, published, meta_title, meta_description, updated_at")
+      .single();
+
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, article: data }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 44: generate_article
+// ============================================================
+mcpServer.registerTool(
+  "generate_article",
+  {
+    title: "Generate Article with AI",
+    description: "Générer un article complet via IA à partir d'un prompt.",
+    inputSchema: {
+      prompt: z.string().describe("Instructions pour la génération de l'article"),
+      resource_type: z.string().describe("Type: actualite, article, cas-client, livre-blanc"),
+      tone: z.string().optional().describe("Ton souhaité (expert, vulgarisé, formel, engageant)"),
+      target_length: z.number().optional().describe("Longueur cible en mots"),
+      keywords: z.array(z.string()).optional().describe("Mots-clés SEO à intégrer"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-article-claude`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          prompt: params.prompt,
+          resource_type: params.resource_type,
+          tone: params.tone,
+          target_length: params.target_length,
+          keywords: params.keywords,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { content: [{ type: "text" as const, text: `Erreur: ${JSON.stringify(data)}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, generated: data }) }] };
+    } catch (err) {
+      return { content: [{ type: "text" as const, text: `Erreur: ${err}` }] };
+    }
+  }
+);
+
+// ============================================================
+// TOOL 45: enrich_seo
+// ============================================================
+mcpServer.registerTool(
+  "enrich_seo",
+  {
+    title: "Enrich Content SEO",
+    description: "Enrichir le SEO d'un article : ajoute des <strong> sur les mots-clés stratégiques.",
+    inputSchema: {
+      article_id: z.string().describe("UUID de l'article à enrichir"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const { data: article, error: fetchErr } = await supabaseAdmin
+      .from("articles")
+      .select("id, title, content, excerpt")
+      .eq("id", params.article_id)
+      .single();
+
+    if (fetchErr || !article) {
+      return { content: [{ type: "text" as const, text: "Article non trouvé." }] };
+    }
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/enrich-content-seo`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          content: article.content,
+          resourceType: "article",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { content: [{ type: "text" as const, text: `Erreur: ${JSON.stringify(data)}` }] };
+
+      if (data.enrichedContent) {
+        await supabaseAdmin
+          .from("articles")
+          .update({ content: data.enrichedContent, updated_at: new Date().toISOString() })
+          .eq("id", params.article_id);
+      }
+
+      return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, article_id: params.article_id, enriched: !!data.enrichedContent }) }] };
+    } catch (err) {
+      return { content: [{ type: "text" as const, text: `Erreur: ${err}` }] };
+    }
+  }
+);
+
+// ============================================================
+// TOOL 46: suggest_tags
+// ============================================================
+mcpServer.registerTool(
+  "suggest_tags",
+  {
+    title: "Suggest Tags",
+    description: "Suggérer des tags pertinents pour un contenu via IA.",
+    inputSchema: {
+      content: z.string().describe("Contenu textuel à analyser"),
+      title: z.string().optional().describe("Titre de l'article"),
+      excerpt: z.string().optional().describe("Résumé court"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/suggest-tags`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          title: params.title || "",
+          content: params.content,
+          excerpt: params.excerpt,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { content: [{ type: "text" as const, text: `Erreur: ${JSON.stringify(data)}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ tags: data.tags || data }) }] };
+    } catch (err) {
+      return { content: [{ type: "text" as const, text: `Erreur: ${err}` }] };
+    }
+  }
+);
+
+// ============================================================
+// TOOL 47: generate_faq
+// ============================================================
+mcpServer.registerTool(
+  "generate_faq",
+  {
+    title: "Generate FAQ",
+    description: "Générer une FAQ automatique pour un article via IA.",
+    inputSchema: {
+      article_id: z.string().describe("UUID de l'article"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-faq`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({ article_id: params.article_id }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { content: [{ type: "text" as const, text: `Erreur: ${JSON.stringify(data)}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, faq: data }) }] };
+    } catch (err) {
+      return { content: [{ type: "text" as const, text: `Erreur: ${err}` }] };
+    }
+  }
+);
+
+// ============================================================
+// TOOL 48: get_tags_categories
+// ============================================================
+mcpServer.registerTool(
+  "get_tags_categories",
+  {
+    title: "Get Tags & Categories",
+    description: "Liste tous les tags et catégories disponibles pour le CMS.",
+    inputSchema: {},
+  },
+  async () => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const [tagsRes, categoriesRes] = await Promise.all([
+      supabaseAdmin.from("tags").select("id, name, slug").order("name"),
+      supabaseAdmin.from("categories").select("id, name, slug").order("name"),
+    ]);
+
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          tags: tagsRes.data || [],
+          categories: categoriesRes.data || [],
+          tags_count: tagsRes.data?.length || 0,
+          categories_count: categoriesRes.data?.length || 0,
+        }),
+      }],
+    };
+  }
+);
+
+// ============================================================
+// TOOL 49: get_vivier_campaigns
+// ============================================================
+mcpServer.registerTool(
+  "get_vivier_campaigns",
+  {
+    title: "Get Vivier Campaigns",
+    description: "Liste les campagnes d'outreach sur les viviers (emails, séquences).",
+    inputSchema: {
+      status: z.string().optional().describe("Filtrer par statut (draft, active, paused, completed)"),
+      limit: z.number().optional().describe("Nombre max (défaut 20)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    let query = supabaseAdmin
+      .from("vivier_campaigns")
+      .select("id, name, status, subject, sender_email, total_recipients, open_rate, click_rate, created_at")
+      .eq("workspace_id", ctx.wsId)
+      .order("created_at", { ascending: false })
+      .limit(params.limit || 20);
+
+    if (params.status) query = query.eq("status", params.status);
+
+    const { data, error } = await query;
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ campaigns: data, count: data?.length || 0 }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 50: get_vivier_stats
+// ============================================================
+mcpServer.registerTool(
+  "get_vivier_stats",
+  {
+    title: "Get Vivier Statistics",
+    description: "Statistiques agrégées de la base viviers : totaux, statuts, score moyen.",
+    inputSchema: {},
+  },
+  async () => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const { data, error } = await supabaseAdmin
+      .from("viviers")
+      .select("status, cold_score")
+      .eq("workspace_id", ctx.wsId);
+
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+
+    const rows = data || [];
+    const scored = rows.filter((v: any) => v.cold_score != null);
+    const stats = {
+      total: rows.length,
+      new_count: rows.filter((v: any) => v.status === "new").length,
+      contacted_count: rows.filter((v: any) => v.status === "contacted").length,
+      qualified_count: rows.filter((v: any) => v.status === "qualified").length,
+      converted_count: rows.filter((v: any) => v.status === "converted" || v.status === "promoted").length,
+      avg_score: scored.length > 0
+        ? Math.round(scored.reduce((sum: number, v: any) => sum + (v.cold_score || 0), 0) / scored.length)
+        : 0,
+    };
+
+    return { content: [{ type: "text" as const, text: JSON.stringify(stats) }] };
+  }
+);
+
+// ============================================================
+// TOOL 51: get_vivier_insights
+// ============================================================
+mcpServer.registerTool(
+  "get_vivier_insights",
+  {
+    title: "Get Vivier Insights",
+    description: "Insights et statistiques avancées sur les viviers via IA.",
+    inputSchema: {
+      filters: z.record(z.unknown()).optional().describe("Filtres structurés (industry, city, score_min, etc.)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/vivier-insights`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({ workspace_id: ctx.wsId, filters: params.filters }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { content: [{ type: "text" as const, text: `Erreur: ${JSON.stringify(data)}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ insights: data }) }] };
+    } catch (err) {
+      return { content: [{ type: "text" as const, text: `Erreur: ${err}` }] };
+    }
+  }
+);
+
+// ============================================================
+// TOOL 52: cleanup_viviers
+// ============================================================
+mcpServer.registerTool(
+  "cleanup_viviers",
+  {
+    title: "Cleanup Viviers",
+    description: "Nettoyer la base viviers : supprime doublons, emails invalides, données incomplètes.",
+    inputSchema: {},
+  },
+  async () => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/vivier-cleanup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({ workspace_id: ctx.wsId }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { content: [{ type: "text" as const, text: `Erreur: ${JSON.stringify(data)}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, cleanup: data }) }] };
+    } catch (err) {
+      return { content: [{ type: "text" as const, text: `Erreur: ${err}` }] };
+    }
+  }
+);
+
+// ============================================================
+// TOOL 53: score_viviers_batch
+// ============================================================
+mcpServer.registerTool(
+  "score_viviers_batch",
+  {
+    title: "Score Viviers Batch",
+    description: "Scorer un lot de viviers via IA. Max 200 par batch.",
+    inputSchema: {
+      batch_size: z.number().optional().describe("Nombre de viviers à scorer (défaut 50, max 200)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const batchSize = Math.min(params.batch_size || 50, 200);
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/score-viviers-batch`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({ workspace_id: ctx.wsId, batch_size: batchSize }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { content: [{ type: "text" as const, text: `Erreur: ${JSON.stringify(data)}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, batch_size: batchSize, result: data }) }] };
+    } catch (err) {
+      return { content: [{ type: "text" as const, text: `Erreur: ${err}` }] };
+    }
+  }
+);
+
+// ============================================================
+// TOOL 54: get_workspace_config
+// ============================================================
+mcpServer.registerTool(
+  "get_workspace_config",
+  {
+    title: "Get Workspace Configuration",
+    description: "Configuration complète du workspace : settings, quotas IA, quotas API, config email.",
+    inputSchema: {},
+  },
+  async () => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const [workspaceRes, aiQuotasRes, apiQuotasRes, emailConfigRes] = await Promise.all([
+      supabaseAdmin.from("workspaces").select("name, description, settings").eq("id", ctx.wsId).single(),
+      supabaseAdmin.from("workspace_ai_quotas").select("*").eq("workspace_id", ctx.wsId),
+      supabaseAdmin.from("api_quotas").select("*").order("api_name"),
+      supabaseAdmin.from("email_configurations").select("*").limit(5),
+    ]);
+
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          workspace: workspaceRes.data,
+          ai_quotas: aiQuotasRes.data || [],
+          api_quotas: apiQuotasRes.data || [],
+          email_config: emailConfigRes.data || [],
+        }),
+      }],
+    };
+  }
+);
+
+// ============================================================
+// TOOL 55: get_audit_logs
+// ============================================================
+mcpServer.registerTool(
+  "get_audit_logs",
+  {
+    title: "Get Audit Logs",
+    description: "Journal d'audit admin : actions, modifications, qui a fait quoi.",
+    inputSchema: {
+      action_type: z.string().optional().describe("Filtrer par type d'action (create, update, delete, approve)"),
+      resource_type: z.string().optional().describe("Filtrer par type de ressource (article, tag, comment, lead)"),
+      limit: z.number().optional().describe("Nombre max (défaut 50)"),
+      days: z.number().optional().describe("Remonter sur N jours (défaut 7)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const daysAgo = new Date();
+    daysAgo.setDate(daysAgo.getDate() - (params.days || 7));
+
+    let query = supabaseAdmin
+      .from("admin_audit_logs")
+      .select("id, action_type, resource_type, resource_id, resource_name, user_email, created_at, old_data, new_data")
+      .gte("created_at", daysAgo.toISOString())
+      .order("created_at", { ascending: false })
+      .limit(params.limit || 50);
+
+    if (params.action_type) query = query.eq("action_type", params.action_type);
+    if (params.resource_type) query = query.eq("resource_type", params.resource_type);
+
+    const { data, error } = await query;
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ audit_logs: data, count: data?.length || 0 }) }] };
   }
 );
 
