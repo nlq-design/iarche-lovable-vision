@@ -13,7 +13,7 @@ import { McpServer } from 'npm:@modelcontextprotocol/sdk@1.25.3/server/mcp.js'
 import { WebStandardStreamableHTTPServerTransport } from 'npm:@modelcontextprotocol/sdk@1.25.3/server/webStandardStreamableHttp.js'
 import { Hono } from 'npm:hono@^4.9.7'
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { z } from 'npm:zod@^3.25.0'
+import { z } from 'npm:zod@3.23.8'
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
