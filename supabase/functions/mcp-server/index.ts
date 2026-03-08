@@ -558,7 +558,7 @@ mcpServer.registerTool(
       city: params.city || null,
       budget: params.budget || null,
       qualification_status: params.qualification_status || "new",
-      notes: params.notes || null,
+      message: params.message || null,
     }).select("id, name, email, company, slug, created_at").single();
 
     if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
