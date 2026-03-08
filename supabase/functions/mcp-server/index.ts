@@ -1,6 +1,6 @@
-// redeploy 08/03/2026 v2 — native JSON-RPC (no SDK, no Zod)
+// redeploy 08/03/2026 v3 — 82 tools (added simulate_pricing + get_financial_report)
 /**
- * MCP Server Edge Function — IArche CRM (80 tools)
+ * MCP Server Edge Function — IArche CRM (82 tools)
  *
  * Native JSON-RPC handler — no @modelcontextprotocol/sdk dependency.
  * Eliminates safeParseAsync / Zod compatibility issues in Deno edge runtime.
