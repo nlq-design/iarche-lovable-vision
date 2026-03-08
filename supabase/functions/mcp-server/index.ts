@@ -2139,24 +2139,27 @@ mcpServer.registerTool(
     const ctx = getAuthContext();
     if (!ctx) return authError();
 
-    const { data, error } = await supabaseAdmin
-      .from("viviers")
-      .select("status, cold_score")
-      .eq("workspace_id", ctx.wsId);
+    const [totalRes, newRes, contactedRes, qualifiedRes, convertedRes, scoreRes] = await Promise.all([
+      supabaseAdmin.from("viviers").select("*", { count: "exact", head: true }).eq("workspace_id", ctx.wsId),
+      supabaseAdmin.from("viviers").select("*", { count: "exact", head: true }).eq("workspace_id", ctx.wsId).eq("status", "new"),
+      supabaseAdmin.from("viviers").select("*", { count: "exact", head: true }).eq("workspace_id", ctx.wsId).eq("status", "contacted"),
+      supabaseAdmin.from("viviers").select("*", { count: "exact", head: true }).eq("workspace_id", ctx.wsId).eq("status", "qualified"),
+      supabaseAdmin.from("viviers").select("*", { count: "exact", head: true }).eq("workspace_id", ctx.wsId).in("status", ["converted", "promoted"]),
+      supabaseAdmin.from("viviers").select("cold_score").eq("workspace_id", ctx.wsId).not("cold_score", "is", null).limit(1000),
+    ]);
 
-    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    const scored = scoreRes.data || [];
+    const avgScore = scored.length > 0
+      ? Math.round(scored.reduce((sum: number, v: any) => sum + (v.cold_score || 0), 0) / scored.length)
+      : 0;
 
-    const rows = data || [];
-    const scored = rows.filter((v: any) => v.cold_score != null);
     const stats = {
-      total: rows.length,
-      new_count: rows.filter((v: any) => v.status === "new").length,
-      contacted_count: rows.filter((v: any) => v.status === "contacted").length,
-      qualified_count: rows.filter((v: any) => v.status === "qualified").length,
-      converted_count: rows.filter((v: any) => v.status === "converted" || v.status === "promoted").length,
-      avg_score: scored.length > 0
-        ? Math.round(scored.reduce((sum: number, v: any) => sum + (v.cold_score || 0), 0) / scored.length)
-        : 0,
+      total: totalRes.count || 0,
+      new_count: newRes.count || 0,
+      contacted_count: contactedRes.count || 0,
+      qualified_count: qualifiedRes.count || 0,
+      converted_count: convertedRes.count || 0,
+      avg_score: avgScore,
     };
 
     return { content: [{ type: "text" as const, text: JSON.stringify(stats) }] };
