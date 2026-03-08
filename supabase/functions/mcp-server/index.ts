@@ -1,4 +1,4 @@
-// redeploy 08/03/2026 v3 — 82 tools (added simulate_pricing + get_financial_report)
+// redeploy 08/03/2026 v4 — 82 tools (forced redeploy simulate_pricing + get_financial_report)
 /**
  * MCP Server Edge Function — IArche CRM (82 tools)
  *
