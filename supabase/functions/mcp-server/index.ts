@@ -4978,7 +4978,7 @@ app.options("/*", (c) => {
 const OWNER_WORKSPACE_ID = Deno.env.get("OWNER_WORKSPACE_ID") || "00000000-0000-0000-0000-000000000001";
 
 // Health check — avoids 406 on GET
-app.get("/*", (c) => c.json({ status: 'ok', tools: _tools.length, server: 'iarche-crm', version: '2.0.0' }));
+app.get("/*", (c) => c.json({ status: 'ok', tools: _toolsList().length, tools_internal: _tools.length, server: 'iarche-crm', version: '2.0.0' }));
 
 // MCP JSON-RPC handler
 app.post("/*", async (c) => {
