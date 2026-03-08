@@ -9,8 +9,8 @@
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 
-import { McpServer } from 'npm:@modelcontextprotocol/sdk@1.25.3/server/mcp.js'
-import { WebStandardStreamableHTTPServerTransport } from 'npm:@modelcontextprotocol/sdk@1.25.3/server/webStandardStreamableHttp.js'
+import { McpServer } from 'npm:@modelcontextprotocol/sdk@1.0.4/server/mcp.js'
+import { WebStandardStreamableHTTPServerTransport } from 'npm:@modelcontextprotocol/sdk@1.0.4/server/webStandardStreamableHttp.js'
 import { Hono } from 'npm:hono@^4.9.7'
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from 'npm:zod@3.23.8'
