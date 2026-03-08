@@ -3506,7 +3506,7 @@ mcpServer.registerTool(
         type: "text" as const,
         text: JSON.stringify({
           horizon_months: months,
-          monthly_forecast: forecastArray,
+          monthly_forecast: (params.include_scenarios !== false) ? forecastArray : forecastArray.map((m: any) => ({ month: m.month, opportunities: m.opportunities, realistic: m.realistic })),
           totals: {
             pessimistic: totalPessimistic,
             realistic: totalRealistic,
