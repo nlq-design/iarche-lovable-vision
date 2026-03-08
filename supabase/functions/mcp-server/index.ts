@@ -1155,8 +1155,9 @@ mcpServer.registerTool(
       .order("created_at", { ascending: false })
       .limit(params.limit || 20);
 
-    if (params.project_id) query = query.eq("project_id", params.project_id);
+     if (params.project_id) query = query.eq("project_id", params.project_id);
     if (params.opportunity_id) query = query.eq("opportunity_id", params.opportunity_id);
+    if (params.booking_id) query = query.eq("booking_id", params.booking_id);
 
     const { data, error } = await query;
     if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
