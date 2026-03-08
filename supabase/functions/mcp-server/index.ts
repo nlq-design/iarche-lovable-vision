@@ -1138,9 +1138,9 @@ mcpServer.registerTool(
     title: "Get Meeting Notes",
     description: "Liste les comptes-rendus de réunion.",
     inputSchema: {
-      lead_id: z.string().optional().describe("Filtrer par lead lié (via booking)"),
       project_id: z.string().optional().describe("Filtrer par projet"),
       opportunity_id: z.string().optional().describe("Filtrer par opportunité"),
+      booking_id: z.string().optional().describe("Filtrer par booking"),
       limit: z.number().optional().describe("Nombre max (défaut 20)"),
     },
   },
