@@ -1,4 +1,4 @@
-// redeploy 08/03/2026 v5 — 85 tools (added analyze_legal + get_partner_report + save_preference)
+// redeploy 08/03/2026 v3
 /**
  * MCP Server Edge Function — IArche CRM (85 tools)
  *
