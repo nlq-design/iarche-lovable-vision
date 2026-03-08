@@ -1,3 +1,4 @@
+// redeploy 08/03/2026
 /**
  * MCP Server Edge Function — IArche CRM (75 tools)
  *
