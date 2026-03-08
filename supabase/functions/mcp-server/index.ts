@@ -126,10 +126,7 @@ function authError() {
 }
 
 // === MCP Server setup ===
-const mcpServer = new McpServer({
-  name: "iarche-crm",
-  version: "1.0.0",
-});
+// (McpServer shim defined above — registerTool stores tools in _tools array)
 
 // ============================================================
 // TOOL 1: get_leads
