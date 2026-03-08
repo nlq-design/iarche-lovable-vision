@@ -1,6 +1,6 @@
-// redeploy 08/03/2026 v3
+// redeploy 08/03/2026 v6 — 43 exposed tools (85 internal)
 /**
- * MCP Server Edge Function — IArche CRM (85 tools)
+ * MCP Server Edge Function — IArche CRM (43 exposed / 85 internal tools)
  *
  * Native JSON-RPC handler — no @modelcontextprotocol/sdk dependency.
  * Eliminates safeParseAsync / Zod compatibility issues in Deno edge runtime.
@@ -4923,8 +4923,38 @@ mcpServer.registerTool(
 );
 
 
+// === 43 outils exposés via tools/list (les 42 autres restent appelables via callTool) ===
+const _EXPOSED_TOOLS = new Set([
+  // CORE CRM
+  'get_leads', 'get_lead_detail', 'create_lead', 'update_lead',
+  'get_opportunities', 'upsert_opportunity',
+  'get_activity_log',
+  'get_tasks', 'create_task', 'update_task',
+  'get_contacts', 'get_lead_contacts',
+  // INTELLIGENCE
+  'analyze_pipeline', 'get_forecast', 'audit_crm_quality',
+  'get_financial_report', 'simulate_pricing',
+  'get_daily_intelligence', 'trigger_daily_intelligence',
+  'get_sentinel_alerts', 'resolve_sentinel_alert', 'run_sentinel_analysis',
+  'get_action_proposals', 'validate_action_proposal',
+  // WORKFLOWS
+  'run_workflow', 'run_consulte', 'generate_followup_email', 'lookup_company',
+  // CONTENU
+  'analyze_content_gaps', 'plan_editorial', 'generate_article', 'enrich_seo',
+  'suggest_tags', 'generate_faq',
+  // PROSPECTION
+  'search_viviers', 'promote_vivier',
+  // PROJETS
+  'get_projects', 'project_write', 'get_specifications',
+  'get_documents', 'create_document',
+  // LEGAL & FINANCE
+  'analyze_legal', 'get_partner_report',
+]);
+
 function _toolsList() {
-  return _tools.map(t => ({ name: t.name, description: t.description, inputSchema: _toJsonSchema(t.inputSchema) }));
+  return _tools
+    .filter(t => _EXPOSED_TOOLS.has(t.name))
+    .map(t => ({ name: t.name, description: t.description, inputSchema: _toJsonSchema(t.inputSchema) }));
 }
 
 async function _callTool(name: string, args: any) {
@@ -4948,7 +4978,7 @@ app.options("/*", (c) => {
 const OWNER_WORKSPACE_ID = Deno.env.get("OWNER_WORKSPACE_ID") || "00000000-0000-0000-0000-000000000001";
 
 // Health check — avoids 406 on GET
-app.get("/*", (c) => c.json({ status: 'ok', tools: _tools.length, server: 'iarche-crm', version: '2.0.0' }));
+app.get("/*", (c) => c.json({ status: 'ok', tools: _toolsList().length, tools_internal: _tools.length, server: 'iarche-crm', version: '2.0.0' }));
 
 // MCP JSON-RPC handler
 app.post("/*", async (c) => {
