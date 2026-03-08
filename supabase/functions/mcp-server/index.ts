@@ -1,20 +1,61 @@
-// redeploy 08/03/2026
+// redeploy 08/03/2026 v2 — native JSON-RPC (no SDK, no Zod)
 /**
- * MCP Server Edge Function — IArche CRM (75 tools)
+ * MCP Server Edge Function — IArche CRM (80 tools)
  *
- * Exposes 75 MCP tools via official @modelcontextprotocol/sdk.
+ * Native JSON-RPC handler — no @modelcontextprotocol/sdk dependency.
+ * Eliminates safeParseAsync / Zod compatibility issues in Deno edge runtime.
  * Auth: Custom MCP API key (Bearer iarche_mcp_...) on tool calls.
- * Initialize/discovery requests pass without auth (MCP spec requirement).
  * All queries use service_role scoped by workspace_id from key.
  */
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 
-import { McpServer } from 'npm:@modelcontextprotocol/sdk@1.25.3/server/mcp.js'
-import { WebStandardStreamableHTTPServerTransport } from 'npm:@modelcontextprotocol/sdk@1.25.3/server/webStandardStreamableHttp.js'
 import { Hono } from 'npm:hono@^4.9.7'
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { z } from 'npm:zod@3.23.8'
+
+// === Zod-compatible shim (schema descriptors only, no validation) ===
+function _sh(base: any) {
+  const s: any = { ...base };
+  s.optional = () => _sh({ ...base, _opt: true });
+  s.describe = (d: string) => _sh({ ...base, _desc: d });
+  s.uuid = () => _sh({ ...base });
+  return s;
+}
+const z = {
+  string: () => _sh({ _t: 'string' }),
+  number: () => _sh({ _t: 'number' }),
+  boolean: () => _sh({ _t: 'boolean' }),
+  enum: (v: string[]) => _sh({ _t: 'string', _enum: v }),
+  array: (inner: any) => _sh({ _t: 'array', _items: inner }),
+  record: (inner: any) => _sh({ _t: 'object' }),
+  unknown: () => _sh({ _t: 'object' }),
+};
+
+function _toJsonSchema(schema: any): any {
+  if (!schema || (schema.type === 'object' && schema.properties)) return schema || { type: 'object', properties: {} };
+  const props: any = {};
+  const req: string[] = [];
+  for (const [k, v] of Object.entries(schema)) {
+    const x = v as any;
+    if (typeof x !== 'object' || !x._t) continue;
+    const p: any = { type: x._t };
+    if (x._desc) p.description = x._desc;
+    if (x._enum) p.enum = x._enum;
+    if (x._t === 'array' && x._items) p.items = { type: x._items._t || 'string' };
+    props[k] = p;
+    if (!x._opt) req.push(k);
+  }
+  return { type: 'object', properties: props, ...(req.length ? { required: req } : {}) };
+}
+
+// === Tool registry (replaces McpServer) ===
+interface _Tool { name: string; description: string; inputSchema: any; handler: Function; }
+const _tools: _Tool[] = [];
+const mcpServer = {
+  registerTool(name: string, config: any, handler: Function) {
+    _tools.push({ name, description: config.description || '', inputSchema: config.inputSchema, handler });
+  },
+};
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
