@@ -517,7 +517,27 @@ app.options("/*", (c) => {
   });
 });
 
-// All MCP routes
+// Discovery route (no auth required — Claude.ai probes this)
+app.get("/", (c) => {
+  return new Response(
+    JSON.stringify({
+      name: "IArche MCP Server",
+      version: "1.0.0",
+      protocol: "mcp",
+      description: "IArche CRM — Leads, Opportunités, Projets, Actions, Sentinel",
+      tools_count: 9,
+    }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+    }
+  );
+});
+
+// All MCP routes (auth required)
 app.all("/*", async (c) => {
   const auth = await authenticateMcpKey(c.req.raw);
 
