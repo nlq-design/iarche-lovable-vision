@@ -1,6 +1,6 @@
-// redeploy 08/03/2026 v4 — 82 tools (forced redeploy simulate_pricing + get_financial_report)
+// redeploy 08/03/2026 v5 — 85 tools (added analyze_legal + get_partner_report + save_preference)
 /**
- * MCP Server Edge Function — IArche CRM (82 tools)
+ * MCP Server Edge Function — IArche CRM (85 tools)
  *
  * Native JSON-RPC handler — no @modelcontextprotocol/sdk dependency.
  * Eliminates safeParseAsync / Zod compatibility issues in Deno edge runtime.
@@ -4575,8 +4575,354 @@ mcpServer.registerTool(
   }
 );
 
+// ===== TOOL #83: analyze_legal =====
+mcpServer.registerTool(
+  "analyze_legal",
+  {
+    description: "Analyse un document juridique (CGV, CDC, contrat) pour détecter clauses risquées, vérifier conformité RGPD et AI Act, suggérer corrections.",
+    inputSchema: {
+      document_type: z.enum(['cgv', 'cdc', 'contrat', 'mention_legale', 'politique_confidentialite']).describe("Type de document juridique"),
+      specification_id: z.string().uuid().optional().describe("ID d'un CDC existant dans IArche"),
+      content: z.string().optional().describe("Texte libre à analyser"),
+      check_rgpd: z.boolean().optional().describe("Vérifier conformité RGPD (défaut true)"),
+      check_ai_act: z.boolean().optional().describe("Vérifier conformité AI Act (défaut true)"),
+    },
+  },
+  async (params: any) => {
+    try {
+      const { wsId } = getAuthContext()!;
 
-// === Native JSON-RPC MCP Handler ===
+      let documentContent = params.content || '';
+      let documentTitle = params.document_type;
+
+      if (params.specification_id) {
+        const { data: spec } = await supabaseAdmin
+          .from('specifications')
+          .select('title, content, version, status')
+          .eq('id', params.specification_id)
+          .eq('workspace_id', wsId)
+          .single();
+        if (spec) {
+          documentContent = typeof spec.content === 'string' ? spec.content : JSON.stringify(spec.content);
+          documentTitle = spec.title;
+        }
+      }
+
+      const LEGAL_CHECKS: Record<string, any> = {
+        cgv: {
+          required_clauses: [
+            'Identification du vendeur (SIRET, adresse)', 'Prix et modalités de paiement',
+            'Délais de livraison', 'Droit de rétractation (14 jours B2C)', 'Garanties légales',
+            'Médiation et litiges', 'Droit applicable (droit français)'
+          ],
+          risk_patterns: [
+            { pattern: 'responsabilité limitée', risk: 'medium', note: 'Vérifier plafond de responsabilité explicite' },
+            { pattern: 'modification unilatérale', risk: 'high', note: 'Clause abusive possible en B2C' },
+            { pattern: 'données personnelles', risk: 'high', note: 'Renvoi obligatoire vers politique RGPD' },
+            { pattern: 'résiliation', risk: 'medium', note: 'Préavis minimum à préciser' }
+          ]
+        },
+        cdc: {
+          required_clauses: [
+            'Contexte et objectifs du projet', 'Périmètre fonctionnel', 'Livrables attendus',
+            'Délais et jalons', 'Budget et conditions de paiement', 'Propriété intellectuelle',
+            'Confidentialité', 'Conditions de recette et validation'
+          ],
+          risk_patterns: [
+            { pattern: 'propriété intellectuelle', risk: 'high', note: 'Cession de droits à préciser (auteur vs client)' },
+            { pattern: 'sous-traitance', risk: 'medium', note: 'Mention Net It Be / partenaires à encadrer' },
+            { pattern: 'garantie', risk: 'medium', note: 'Durée et périmètre de garantie à définir' },
+            { pattern: 'forfait', risk: 'high', note: 'Définir précisément ce qui est hors forfait' }
+          ]
+        },
+        contrat: {
+          required_clauses: [
+            'Identité des parties', 'Objet du contrat', 'Durée et renouvellement',
+            'Prix et révision tarifaire', 'Obligations de chaque partie', 'Confidentialité (NDA)',
+            'Propriété intellectuelle', 'Résiliation et conséquences', 'Force majeure',
+            'Attribution de juridiction'
+          ],
+          risk_patterns: [
+            { pattern: 'tacite reconduction', risk: 'medium', note: 'Préavis de résiliation à encadrer' },
+            { pattern: 'exclusivité', risk: 'high', note: 'Clause à négocier — impact sur autres clients' },
+            { pattern: 'pénalités', risk: 'medium', note: 'Plafond de pénalités à fixer' },
+            { pattern: 'cession', risk: 'high', note: 'Cession du contrat à des tiers — accord préalable requis' }
+          ]
+        },
+        mention_legale: {
+          required_clauses: [
+            "Identité de l'éditeur (SIRET, forme juridique)", 'Directeur de publication',
+            'Hébergeur (nom, adresse, contact)', 'Propriété intellectuelle du contenu',
+            'Cookies et traceurs', 'Contact pour exercice des droits RGPD'
+          ],
+          risk_patterns: [
+            { pattern: 'cookies', risk: 'high', note: 'Consentement explicite requis (CNIL)' },
+            { pattern: 'analytics', risk: 'medium', note: 'Google Analytics → vérifier conformité CNIL' }
+          ]
+        },
+        politique_confidentialite: {
+          required_clauses: [
+            'Identité du responsable de traitement', 'Données collectées et finalités',
+            'Base légale de chaque traitement', 'Durée de conservation', 'Destinataires des données',
+            'Transferts hors UE', 'Droits des personnes (accès, rectification, suppression)',
+            'Contact DPO ou référent RGPD', 'Cookies et traceurs'
+          ],
+          risk_patterns: [
+            { pattern: 'ia', risk: 'high', note: 'AI Act : mention obligatoire si traitement IA décisionnel' },
+            { pattern: 'tiers', risk: 'medium', note: 'Lister les sous-traitants (Supabase, Anthropic, OpenRouter)' },
+            { pattern: 'profilage', risk: 'high', note: "Profilage automatisé → consentement explicite + droit d'opposition" },
+            { pattern: 'etats-unis', risk: 'high', note: 'Transfert USA → vérifier Standard Contractual Clauses' }
+          ]
+        }
+      };
+
+      const checks = LEGAL_CHECKS[params.document_type] || LEGAL_CHECKS.contrat;
+      const contentLower = documentContent.toLowerCase();
+
+      const clauseAnalysis = checks.required_clauses.map((clause: string) => {
+        const keywords = clause.toLowerCase().split(' ').filter((w: string) => w.length > 4);
+        const present = keywords.some((kw: string) => contentLower.includes(kw));
+        return {
+          clause,
+          status: present ? 'present' : documentContent.length > 100 ? 'missing' : 'unknown',
+          note: !present && documentContent.length > 100 ? 'À ajouter' : null
+        };
+      });
+
+      const riskFindings = checks.risk_patterns
+        .filter((rp: any) => contentLower.includes(rp.pattern.toLowerCase()))
+        .map((rp: any) => ({ pattern: rp.pattern, risk_level: rp.risk, recommendation: rp.note }));
+
+      const rgpdChecks = params.check_rgpd !== false ? [
+        { check: 'Mention responsable de traitement', compliant: contentLower.includes('responsable') || contentLower.includes('traitement') },
+        { check: 'Base légale explicite', compliant: contentLower.includes('base légale') || contentLower.includes('consentement') || contentLower.includes('intérêt légitime') },
+        { check: 'Droits des personnes', compliant: contentLower.includes('droit') && (contentLower.includes('accès') || contentLower.includes('rectification')) },
+        { check: 'Durée de conservation', compliant: contentLower.includes('conservation') || contentLower.includes('durée') },
+        { check: 'Contact RGPD', compliant: contentLower.includes('rgpd') || contentLower.includes('cnil') || contentLower.includes('dpo') }
+      ] : [];
+
+      const aiActChecks = params.check_ai_act !== false ? [
+        { check: 'Mention système IA', compliant: contentLower.includes('intelligence artificielle') || contentLower.includes('ia') || contentLower.includes('algorithme') },
+        { check: 'Transparence IA', compliant: contentLower.includes('automatisé') || contentLower.includes('décision automatique') },
+        { check: "Droit à l'explication", compliant: contentLower.includes('explication') || contentLower.includes('contestation') },
+        { check: 'Niveau de risque IA déclaré', compliant: contentLower.includes('risque') && contentLower.includes('ia') }
+      ] : [];
+
+      const totalChecks = clauseAnalysis.length + rgpdChecks.length + aiActChecks.length;
+      const passedChecks =
+        clauseAnalysis.filter((c: any) => c.status === 'present').length +
+        rgpdChecks.filter((c: any) => c.compliant).length +
+        aiActChecks.filter((c: any) => c.compliant).length;
+
+      const complianceScore = documentContent.length > 100 ? Math.round((passedChecks / totalChecks) * 100) : null;
+      const missingClauses = clauseAnalysis.filter((c: any) => c.status === 'missing');
+      const highRisks = riskFindings.filter((r: any) => r.risk_level === 'high');
+
+      const result = {
+        document: { type: params.document_type, title: documentTitle, analyzed: documentContent.length > 100, content_length: documentContent.length },
+        compliance_score: complianceScore,
+        compliance_label: complianceScore === null ? 'Document non fourni — analyse structurelle uniquement'
+          : complianceScore >= 80 ? '🟢 Conforme'
+          : complianceScore >= 50 ? '🟡 Partiellement conforme'
+          : '🔴 Non conforme',
+        required_clauses: clauseAnalysis,
+        risk_findings: riskFindings,
+        rgpd_checks: rgpdChecks,
+        ai_act_checks: aiActChecks,
+        summary: {
+          missing_clauses_count: missingClauses.length,
+          high_risk_count: highRisks.length,
+          missing_clauses: missingClauses.map((c: any) => c.clause),
+          high_risks: highRisks.map((r: any) => r.pattern)
+        },
+        recommendations: [
+          ...missingClauses.slice(0, 3).map((c: any) => `Ajouter : ${c.clause}`),
+          ...highRisks.map((r: any) => `⚠️ Risque ${r.risk_level} : ${r.recommendation}`)
+        ],
+        note: 'Analyse indicative — non substituable à un avis juridique professionnel.',
+        generated_at: new Date().toISOString()
+      };
+      return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
+    } catch (err: any) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: err.message }) }] };
+    }
+  }
+);
+
+// ===== TOOL #84: get_partner_report =====
+mcpServer.registerTool(
+  "get_partner_report",
+  {
+    description: "Rapport d'activité partenaires. Analyse deals apportés, commissions estimées et rentabilité par partenaire.",
+    inputSchema: {
+      partner_id: z.string().uuid().optional().describe("Rapport pour 1 partenaire spécifique"),
+      period_days: z.number().optional().describe("Fenêtre d'analyse en jours (défaut 90)"),
+    },
+  },
+  async (params: any) => {
+    try {
+      const { wsId } = getAuthContext()!;
+      const since = new Date(Date.now() - (params.period_days || 90) * 24 * 60 * 60 * 1000).toISOString();
+
+      const [partners, leads, opportunities] = await Promise.all([
+        supabaseAdmin.from('partners')
+          .select('id, name, company, email, status, commission_rate, created_at, updated_at')
+          .eq('workspace_id', wsId).eq('status', 'active'),
+        supabaseAdmin.from('leads')
+          .select('id, name, company, source, partner_id, lead_score, status, created_at')
+          .eq('workspace_id', wsId).gte('created_at', since).not('partner_id', 'is', null),
+        supabaseAdmin.from('opportunities')
+          .select('id, title, value_amount, stage, probability, partner_id, closed_at, created_at')
+          .eq('workspace_id', wsId).gte('created_at', since).not('partner_id', 'is', null)
+      ]);
+
+      const partnerStats = new Map<string, any>();
+      (partners.data || []).forEach((p: any) => {
+        partnerStats.set(p.id, {
+          id: p.id, name: p.name, company: p.company, commission_rate: p.commission_rate || 10,
+          leads_referred: 0, opportunities_count: 0, revenue_won: 0, revenue_pipeline: 0,
+          commission_earned: 0, commission_pipeline: 0, last_activity: p.updated_at, deals: []
+        });
+      });
+
+      (leads.data || []).forEach((l: any) => {
+        if (partnerStats.has(l.partner_id)) partnerStats.get(l.partner_id).leads_referred++;
+      });
+
+      (opportunities.data || []).forEach((o: any) => {
+        if (!partnerStats.has(o.partner_id)) return;
+        const ps = partnerStats.get(o.partner_id);
+        ps.opportunities_count++;
+        if (o.stage === 'won') {
+          ps.revenue_won += o.value_amount || 0;
+          ps.commission_earned += (o.value_amount || 0) * (ps.commission_rate / 100);
+        } else if (o.stage !== 'lost') {
+          ps.revenue_pipeline += (o.value_amount || 0) * ((o.probability || 50) / 100);
+          ps.commission_pipeline += (o.value_amount || 0) * ((o.probability || 50) / 100) * (ps.commission_rate / 100);
+        }
+        ps.deals.push({ title: o.title, stage: o.stage, value: o.value_amount || 0, probability: o.probability });
+      });
+
+      let reportData = Array.from(partnerStats.values());
+      if (params.partner_id) reportData = reportData.filter((p: any) => p.id === params.partner_id);
+      reportData.sort((a: any, b: any) => b.revenue_won - a.revenue_won);
+
+      const totals = {
+        partners_count: reportData.length,
+        total_leads_referred: reportData.reduce((s: number, p: any) => s + p.leads_referred, 0),
+        total_revenue_won: Math.round(reportData.reduce((s: number, p: any) => s + p.revenue_won, 0)),
+        total_commission_due: Math.round(reportData.reduce((s: number, p: any) => s + p.commission_earned, 0)),
+        total_pipeline: Math.round(reportData.reduce((s: number, p: any) => s + p.revenue_pipeline, 0))
+      };
+
+      const inactiveThreshold = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const inactivePartners = reportData.filter((p: any) => new Date(p.last_activity) < inactiveThreshold && p.leads_referred === 0);
+
+      const result = {
+        period_days: params.period_days || 90,
+        totals,
+        partners: reportData.map((p: any) => ({
+          ...p,
+          commission_earned: Math.round(p.commission_earned),
+          commission_pipeline: Math.round(p.commission_pipeline),
+          revenue_won: Math.round(p.revenue_won),
+          revenue_pipeline: Math.round(p.revenue_pipeline),
+          performance: p.leads_referred === 0 ? 'inactive' : p.revenue_won > 0 ? 'converting' : 'prospecting'
+        })),
+        inactive_partners: inactivePartners.map((p: any) => p.name),
+        recommendations: [
+          ...inactivePartners.slice(0, 2).map((p: any) => `Relancer ${p.name} — aucune activité depuis 30j`),
+          totals.total_commission_due > 0 ? `💶 ${totals.total_commission_due}€ de commissions à verser` : 'Aucune commission due sur la période'
+        ],
+        generated_at: new Date().toISOString()
+      };
+      return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
+    } catch (err: any) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: err.message }) }] };
+    }
+  }
+);
+
+// ===== TOOL #85: save_preference =====
+mcpServer.registerTool(
+  "save_preference",
+  {
+    description: "Mémorise une préférence ou information dans ai_agent_memory pour personnaliser les réponses futures. Ex: style communication, priorités, contexte perso.",
+    inputSchema: {
+      key: z.string().describe("Clé de la préférence (ex: 'tone', 'priority_sector')"),
+      value: z.string().describe("Valeur de la préférence"),
+      category: z.string().optional().describe("Catégorie: communication, business, personal, technical"),
+      ttl_days: z.number().optional().describe("Durée de vie en jours (null = permanent)"),
+    },
+  },
+  async (params: any) => {
+    try {
+      const { wsId } = getAuthContext()!;
+      const memoryContent = `preference:${params.key} = ${params.value}`;
+      const expiresAt = params.ttl_days
+        ? new Date(Date.now() + params.ttl_days * 24 * 60 * 60 * 1000).toISOString()
+        : null;
+
+      // Check for existing preference with same key
+      const { data: existing } = await supabaseAdmin
+        .from('ai_agent_memory')
+        .select('id, content')
+        .eq('workspace_id', wsId)
+        .eq('memory_type', 'preference')
+        .ilike('content', `preference:${params.key} =%`)
+        .limit(1);
+
+      let action = 'created';
+      let previousValue: string | null = null;
+
+      if (existing?.length) {
+        previousValue = existing[0].content.replace(`preference:${params.key} = `, '');
+        await supabaseAdmin
+          .from('ai_agent_memory')
+          .update({
+            content: memoryContent,
+            category: params.category || 'general',
+            importance_score: 0.85,
+            expires_at: expiresAt,
+            metadata: { key: params.key, category: params.category || 'general' },
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existing[0].id);
+        action = 'updated';
+      } else {
+        await supabaseAdmin
+          .from('ai_agent_memory')
+          .insert({
+            workspace_id: wsId,
+            content: memoryContent,
+            memory_type: 'preference',
+            category: params.category || 'general',
+            importance_score: 0.85,
+            expires_at: expiresAt,
+            metadata: { key: params.key, category: params.category || 'general' },
+          });
+        action = 'created';
+      }
+
+      const result = {
+        status: 'saved',
+        action,
+        key: params.key,
+        value: params.value,
+        category: params.category || 'general',
+        expires_at: expiresAt,
+        previous_value: previousValue,
+        message: `Préférence "${params.key}" mémorisée${expiresAt ? ` jusqu'au ${expiresAt.slice(0, 10)}` : ' de façon permanente'}.`,
+        generated_at: new Date().toISOString()
+      };
+      return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
+    } catch (err: any) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: err.message }) }] };
+    }
+  }
+);
+
+
 function _toolsList() {
   return _tools.map(t => ({ name: t.name, description: t.description, inputSchema: _toJsonSchema(t.inputSchema) }));
 }
