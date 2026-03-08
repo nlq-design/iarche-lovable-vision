@@ -2894,6 +2894,301 @@ mcpServer.registerTool(
   }
 );
 
+// ============================================================
+// TOOL 75: audit_crm_quality
+// ============================================================
+mcpServer.registerTool(
+  "audit_crm_quality",
+  {
+    title: "Audit CRM Quality",
+    description: "Analyse complète de la qualité et hygiène du CRM. Génère un score /100 avec liste d'actions correctives prioritaires. 10 vérifications : leads inactifs, sans score, sans entreprise, non qualifiés, opportunités sans date/montant, projets rouges sans tâche, tâches en retard, leads qualifiés sans opportunité, doublons.",
+    inputSchema: {
+      fix: z.boolean().optional().describe("Réservé — les corrections passent toujours par validation explicite (défaut false)"),
+    },
+  },
+  async (_params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    const wsId = ctx.wsId;
+
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const today = new Date().toISOString();
+
+    const [
+      leadsNoActivity,
+      leadsNoScore,
+      leadsNoCompany,
+      leadsNoQualification,
+      opportunitiesNoDate,
+      opportunitiesNoValue,
+      projectsRedNoTask,
+      tasksOverdue,
+      leadsQualifiedNoOpportunity,
+      duplicateLeads,
+    ] = await Promise.all([
+      // 1. Leads sans activité depuis 30j
+      supabaseAdmin
+        .from("leads")
+        .select("id, name, email, company, status, created_at")
+        .eq("workspace_id", wsId)
+        .not("status", "in", '("lost","converted")')
+        .lt("updated_at", thirtyDaysAgo),
+      // 2. Leads sans score
+      supabaseAdmin
+        .from("leads")
+        .select("id, name, email, company")
+        .eq("workspace_id", wsId)
+        .or("lead_score.is.null,lead_score.eq.0")
+        .not("status", "in", '("lost","converted")'),
+      // 3. Leads sans entreprise
+      supabaseAdmin
+        .from("leads")
+        .select("id, name, email, status")
+        .eq("workspace_id", wsId)
+        .is("company", null)
+        .not("status", "in", '("lost","converted")'),
+      // 4. Leads non qualifiés > 7j
+      supabaseAdmin
+        .from("leads")
+        .select("id, name, email, company")
+        .eq("workspace_id", wsId)
+        .eq("qualification_status", "new")
+        .lt("created_at", sevenDaysAgo),
+      // 5. Opportunités sans date de clôture
+      supabaseAdmin
+        .from("opportunities")
+        .select("id, title, stage, value_amount")
+        .eq("workspace_id", wsId)
+        .is("expected_close_date", null)
+        .not("stage", "in", '("won","lost")'),
+      // 6. Opportunités sans montant
+      supabaseAdmin
+        .from("opportunities")
+        .select("id, title, stage")
+        .eq("workspace_id", wsId)
+        .or("value_amount.is.null,value_amount.eq.0")
+        .not("stage", "in", '("won","lost")'),
+      // 7. Projets rouges sans tâche active
+      supabaseAdmin
+        .from("projects")
+        .select("id, name, health_status, status, tasks(id, status)")
+        .eq("workspace_id", wsId)
+        .eq("health_status", "red")
+        .eq("status", "active"),
+      // 8. Tâches en retard
+      supabaseAdmin
+        .from("tasks")
+        .select("id, title, status, priority, due_date, lead_id, project_id")
+        .eq("workspace_id", wsId)
+        .lt("due_date", today)
+        .not("status", "in", '("done","cancelled")'),
+      // 9. Leads qualifiés sans opportunité
+      supabaseAdmin
+        .from("leads")
+        .select("id, name, company, lead_score, opportunities(id)")
+        .eq("workspace_id", wsId)
+        .eq("qualification_status", "qualified"),
+      // 10. Doublons potentiels
+      supabaseAdmin
+        .from("leads")
+        .select("id, name, email, company, status")
+        .eq("workspace_id", wsId)
+        .not("status", "eq", "lost"),
+    ]);
+
+    // === Score calculation ===
+    const issues: Array<{
+      severity: string;
+      category: string;
+      count: number;
+      message: string;
+      items: any[];
+      action: string;
+    }> = [];
+    let score = 100;
+
+    // 1. Leads inactifs (-2 pts, max -20)
+    const inactiveLeads = leadsNoActivity.data || [];
+    if (inactiveLeads.length > 0) {
+      score -= Math.min(inactiveLeads.length * 2, 20);
+      issues.push({
+        severity: inactiveLeads.length > 5 ? "high" : "medium",
+        category: "Inactivité",
+        count: inactiveLeads.length,
+        message: `${inactiveLeads.length} leads sans activité depuis 30j`,
+        items: inactiveLeads.slice(0, 5).map((l) => ({ id: l.id, name: l.name, company: l.company })),
+        action: "Relancer ou archiver ces leads",
+      });
+    }
+
+    // 2. Leads sans score (-1 pt, max -10)
+    const unscoredLeads = leadsNoScore.data || [];
+    if (unscoredLeads.length > 0) {
+      score -= Math.min(unscoredLeads.length, 10);
+      issues.push({
+        severity: "medium",
+        category: "Données manquantes",
+        count: unscoredLeads.length,
+        message: `${unscoredLeads.length} leads sans score`,
+        items: unscoredLeads.slice(0, 5).map((l) => ({ id: l.id, name: l.name })),
+        action: "Déclencher le scoring IA sur ces leads",
+      });
+    }
+
+    // 3. Leads sans entreprise (-1 pt, max -10)
+    const noCompanyLeads = leadsNoCompany.data || [];
+    if (noCompanyLeads.length > 0) {
+      score -= Math.min(noCompanyLeads.length, 10);
+      issues.push({
+        severity: "low",
+        category: "Données manquantes",
+        count: noCompanyLeads.length,
+        message: `${noCompanyLeads.length} leads sans entreprise renseignée`,
+        items: noCompanyLeads.slice(0, 5).map((l) => ({ id: l.id, name: l.name })),
+        action: "Enrichir via Pappers ou manuellement",
+      });
+    }
+
+    // 4. Leads non qualifiés > 7j (-1 pt, max -10)
+    const unqualifiedLeads = leadsNoQualification.data || [];
+    if (unqualifiedLeads.length > 0) {
+      score -= Math.min(unqualifiedLeads.length, 10);
+      issues.push({
+        severity: "medium",
+        category: "Pipeline",
+        count: unqualifiedLeads.length,
+        message: `${unqualifiedLeads.length} leads en statut "new" depuis plus de 7j`,
+        items: unqualifiedLeads.slice(0, 5).map((l) => ({ id: l.id, name: l.name })),
+        action: "Qualifier ou disqualifier ces leads",
+      });
+    }
+
+    // 5. Opportunités sans date (-3 pts, max -15)
+    const oppsNoDate = opportunitiesNoDate.data || [];
+    if (oppsNoDate.length > 0) {
+      score -= Math.min(oppsNoDate.length * 3, 15);
+      issues.push({
+        severity: "high",
+        category: "Pipeline",
+        count: oppsNoDate.length,
+        message: `${oppsNoDate.length} opportunités sans date de clôture`,
+        items: oppsNoDate.slice(0, 5).map((o) => ({ id: o.id, title: o.title, stage: o.stage })),
+        action: "Ajouter une date de clôture estimée",
+      });
+    }
+
+    // 6. Opportunités sans montant (-3 pts, max -15)
+    const oppsNoValue = opportunitiesNoValue.data || [];
+    if (oppsNoValue.length > 0) {
+      score -= Math.min(oppsNoValue.length * 3, 15);
+      issues.push({
+        severity: "high",
+        category: "Pipeline",
+        count: oppsNoValue.length,
+        message: `${oppsNoValue.length} opportunités sans montant estimé`,
+        items: oppsNoValue.slice(0, 5).map((o) => ({ id: o.id, title: o.title, stage: o.stage })),
+        action: "Renseigner la valeur estimée du deal",
+      });
+    }
+
+    // 7. Projets rouges sans tâche active (-5 pts, max -15)
+    const redProjects = (projectsRedNoTask.data || []).filter(
+      (p: any) => !p.tasks || p.tasks.filter((t: any) => t.status !== "done" && t.status !== "cancelled").length === 0
+    );
+    if (redProjects.length > 0) {
+      score -= Math.min(redProjects.length * 5, 15);
+      issues.push({
+        severity: "critical",
+        category: "Projets",
+        count: redProjects.length,
+        message: `${redProjects.length} projets en rouge sans tâche active`,
+        items: redProjects.slice(0, 5).map((p: any) => ({ id: p.id, name: p.name })),
+        action: "Créer une tâche de remédiation immédiatement",
+      });
+    }
+
+    // 8. Tâches en retard (-1 pt, max -10)
+    const overdueTasks = tasksOverdue.data || [];
+    if (overdueTasks.length > 0) {
+      score -= Math.min(overdueTasks.length, 10);
+      issues.push({
+        severity: overdueTasks.length > 5 ? "high" : "medium",
+        category: "Tâches",
+        count: overdueTasks.length,
+        message: `${overdueTasks.length} tâches en retard`,
+        items: overdueTasks.slice(0, 5).map((t) => ({ id: t.id, title: t.title, due_date: t.due_date, priority: t.priority })),
+        action: "Reprogrammer ou déléguer ces tâches",
+      });
+    }
+
+    // 9. Leads qualifiés sans opportunité (-3 pts, max -15)
+    const qualifiedNoOpp = (leadsQualifiedNoOpportunity.data || []).filter(
+      (l: any) => !l.opportunities || l.opportunities.length === 0
+    );
+    if (qualifiedNoOpp.length > 0) {
+      score -= Math.min(qualifiedNoOpp.length * 3, 15);
+      issues.push({
+        severity: "high",
+        category: "Pipeline",
+        count: qualifiedNoOpp.length,
+        message: `${qualifiedNoOpp.length} leads qualifiés sans opportunité créée`,
+        items: qualifiedNoOpp.slice(0, 5).map((l: any) => ({ id: l.id, name: l.name, lead_score: l.lead_score })),
+        action: "Créer une opportunité pour chaque lead qualifié",
+      });
+    }
+
+    // 10. Doublons potentiels (-5 pts)
+    const allLeads = duplicateLeads.data || [];
+    const emailMap = new Map<string, string>();
+    const duplicates: Array<{ id: string; name: string; email: string }> = [];
+    allLeads.forEach((l: any) => {
+      if (l.email && emailMap.has(l.email)) {
+        duplicates.push({ id: l.id, name: l.name, email: l.email });
+      } else if (l.email) {
+        emailMap.set(l.email, l.id);
+      }
+    });
+    if (duplicates.length > 0) {
+      score -= 5;
+      issues.push({
+        severity: "medium",
+        category: "Doublons",
+        count: duplicates.length,
+        message: `${duplicates.length} doublons potentiels détectés`,
+        items: duplicates.slice(0, 5),
+        action: "Fusionner ou supprimer les doublons",
+      });
+    }
+
+    score = Math.max(0, score);
+
+    const qualityLabel =
+      score >= 90 ? "🟢 Excellent" :
+      score >= 70 ? "🟡 Correct" :
+      score >= 50 ? "🟠 À améliorer" :
+      "🔴 Critique";
+
+    const severityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          score,
+          quality_label: qualityLabel,
+          total_issues: issues.length,
+          critical_count: issues.filter((i) => i.severity === "critical").length,
+          high_count: issues.filter((i) => i.severity === "high").length,
+          issues: issues.sort((a, b) => (severityOrder[a.severity] ?? 9) - (severityOrder[b.severity] ?? 9)),
+          generated_at: new Date().toISOString(),
+          note: "Pour appliquer les corrections, confirme chaque action — je les exécute via les outils MCP existants.",
+        }),
+      }],
+    };
+  }
+);
+
 // === Hono app ===
 const app = new Hono().basePath('/mcp-server');
 
