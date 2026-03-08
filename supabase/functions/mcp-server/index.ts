@@ -2736,10 +2736,12 @@ mcpServer.registerTool(
   "ask_copilot",
   {
     title: "Ask Copilot",
-    description: "Interroger le copilote IA IArche : briefing, health-check, scoring pipeline, analyse, etc.",
+    description: "Interroger le copilote IA IArche. Modes : suggest-tasks, detect-inactivity, health-check, next-step, opportunity-score, harvest, harvest-respond, intelligence.",
     inputSchema: {
-      prompt: z.string().describe("Question ou instruction pour le copilote"),
-      mode: z.string().optional().describe("Mode: morning-brief, health-check, pipeline-analysis, lead-scoring, meeting-prep, weekly-review, risk-alert, task-prioritization, opportunity-coach, project-health"),
+      mode: z.string().optional().describe("Mode: suggest-tasks, detect-inactivity, health-check, next-step, opportunity-score, harvest, harvest-respond, intelligence (défaut: health-check)"),
+      entity_type: z.string().optional().describe("Type d'entité (lead, opportunity, project)"),
+      entity_id: z.string().uuid().optional().describe("UUID de l'entité cible"),
+      extra: z.string().optional().describe("Contexte additionnel ou question libre"),
     },
   },
   async (params) => {
@@ -2748,7 +2750,7 @@ mcpServer.registerTool(
     const resp = await fetch(`${SUPABASE_URL}/functions/v1/cockpit-ai-copilot`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
-      body: JSON.stringify({ workspaceId: ctx.wsId, prompt: params.prompt, mode: params.mode || "health-check", context: { source: "mcp" } }),
+      body: JSON.stringify({ workspaceId: ctx.wsId, mode: params.mode || "health-check", entityType: params.entity_type, entityId: params.entity_id, extra: params.extra, context: { source: "mcp" } }),
     });
     const result = await resp.json();
     if (!resp.ok) return { content: [{ type: "text" as const, text: `Erreur copilot: ${JSON.stringify(result)}` }] };
