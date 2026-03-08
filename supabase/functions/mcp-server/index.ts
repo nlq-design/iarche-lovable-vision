@@ -4044,6 +4044,36 @@ mcpServer.registerTool(
         vivierSectors.set(sector, (vivierSectors.get(sector) || 0) + 1);
       });
 
+      // Mapping synonymes secteurs
+      const sectorSynonyms: Record<string, string[]> = {
+        'juridique': ['avocat', 'cabinet', 'droit', 'legal', 'juridique', 'notaire'],
+        'comptabilité': ['comptable', 'comptabilité', 'expert-comptable', 'cabinet comptable', 'finance'],
+        'architecture': ['architecte', 'architecture', 'btp', 'construction', 'bureau d\'études'],
+        'événementiel': ['événement', 'événementiel', 'samba', 'spectacle', 'production'],
+        'gestion de patrimoine': ['patrimoine', 'wealth', 'investissement', 'finance', 'immobilier'],
+        'clubs d\'affaires': ['club', 'réseau', 'association', 'networking', 'beerecos'],
+        'immobilier': ['immobilier', 'agence immobilière', 'promoteur', 'foncier'],
+        'santé': ['santé', 'médecin', 'clinique', 'médical', 'pharmacie'],
+        'formation': ['formation', 'enseignement', 'éducation', 'organisme de formation'],
+        'consulting': ['conseil', 'consulting', 'consultant', 'stratégie'],
+      };
+
+      const matchesSector = (article: any, sector: string): boolean => {
+        const text = (
+          article.title + ' ' +
+          (article.meta_description || '') + ' ' +
+          (article.slug || '')
+        ).toLowerCase();
+
+        // Match direct
+        if (text.includes(sector)) return true;
+
+        // Match synonymes
+        const synonyms = sectorSynonyms[sector] ||
+          sector.split(' ').filter((w: string) => w.length > 3);
+        return synonyms.some((syn: string) => text.includes(syn));
+      };
+
       // Identifier les gaps
       const threshold = params.min_leads_threshold || 2;
       const gaps: any[] = [];
@@ -4052,11 +4082,10 @@ mcpServer.registerTool(
       sectorMap.forEach((data, sector) => {
         if (data.leads < threshold) return;
 
-        const isCovered = (articles.data || []).some((a: any) => {
-          const text = (a.title + ' ' + (a.meta_description || '')).toLowerCase();
-          return text.includes(sector) ||
-            sector.split(' ').some((word: string) => word.length > 3 && text.includes(word));
-        });
+        // Compter les articles couvrant ce secteur
+        const coveringArticles = (articles.data || []).filter((a: any) => matchesSector(a, sector));
+        // Seuil minimum 2 articles pour considérer un secteur comme "covered"
+        const isCovered = coveringArticles.length >= 2;
 
         const vivierCount = vivierSectors.get(sector) || 0;
         const priority = data.qualified > 0 ? 'high' :
@@ -4069,6 +4098,8 @@ mcpServer.registerTool(
           avg_score: data.leads > 0 ? Math.round(data.total_score / data.leads) : 0,
           companies: Array.from(data.companies).slice(0, 3),
           vivier_prospects: vivierCount,
+          covering_articles_count: coveringArticles.length,
+          covering_articles: coveringArticles.slice(0, 3).map((a: any) => ({ title: a.title, slug: a.slug })),
           priority,
           article_suggestions: [
             `L'IA dans le secteur ${sector} : guide pratique pour les PME`,
