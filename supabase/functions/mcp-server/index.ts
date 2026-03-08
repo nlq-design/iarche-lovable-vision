@@ -4923,8 +4923,38 @@ mcpServer.registerTool(
 );
 
 
+// === 43 outils exposés via tools/list (les 42 autres restent appelables via callTool) ===
+const _EXPOSED_TOOLS = new Set([
+  // CORE CRM
+  'get_leads', 'get_lead_detail', 'create_lead', 'update_lead',
+  'get_opportunities', 'upsert_opportunity',
+  'get_activity_log', 'create_activity_note',
+  'get_tasks', 'create_task', 'update_task',
+  'get_contacts', 'get_lead_contacts',
+  // INTELLIGENCE
+  'analyze_pipeline', 'get_forecast', 'audit_crm_quality',
+  'get_financial_report', 'simulate_pricing',
+  'get_daily_intelligence', 'trigger_daily_intelligence',
+  'get_sentinel_alerts', 'resolve_sentinel_alert', 'run_sentinel_analysis',
+  'get_action_proposals', 'validate_action_proposal',
+  // WORKFLOWS
+  'run_workflow', 'run_consulte', 'generate_followup_email', 'lookup_company',
+  // CONTENU
+  'analyze_content_gaps', 'plan_editorial', 'generate_article', 'enrich_seo',
+  'suggest_tags', 'generate_faq',
+  // PROSPECTION
+  'search_viviers', 'promote_vivier',
+  // PROJETS
+  'get_projects', 'project_write', 'get_specifications', 'create_specification',
+  'get_documents', 'create_document',
+  // LEGAL & FINANCE
+  'analyze_legal', 'get_partner_report',
+]);
+
 function _toolsList() {
-  return _tools.map(t => ({ name: t.name, description: t.description, inputSchema: _toJsonSchema(t.inputSchema) }));
+  return _tools
+    .filter(t => _EXPOSED_TOOLS.has(t.name))
+    .map(t => ({ name: t.name, description: t.description, inputSchema: _toJsonSchema(t.inputSchema) }));
 }
 
 async function _callTool(name: string, args: any) {
