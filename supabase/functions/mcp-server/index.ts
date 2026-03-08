@@ -2566,7 +2566,7 @@ mcpServer.registerTool(
     if (!ctx) return authError();
     const { data, error } = await supabaseAdmin
       .from("specifications")
-      .insert({ title: params.title, project_id: params.project_id, content: params.content || "", status: params.status || "draft", version: 1, workspace_id: ctx.wsId })
+      .insert({ title: params.title, project_id: params.project_id, content: params.content ? (typeof params.content === "string" ? { text: params.content } : params.content) : null, status: params.status || "draft", version: "1", workspace_id: ctx.wsId })
       .select("id, title, version, status, created_at")
       .single();
     if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
