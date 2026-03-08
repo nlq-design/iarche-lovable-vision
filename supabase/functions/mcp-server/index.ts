@@ -3189,6 +3189,344 @@ mcpServer.registerTool(
   }
 );
 
+// ============================================================
+// TOOL 76: analyze_pipeline
+// ============================================================
+mcpServer.registerTool(
+  "analyze_pipeline",
+  {
+    title: "Analyze Pipeline",
+    description: "Analyse complète du pipeline commercial. Détecte les deals à risque, les opportunités chaudes, les signaux faibles et les actions prioritaires.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        risk_threshold_days: { type: "number", description: "Jours sans activité considérés comme risque (défaut: 21)" },
+        stage_filter: { type: "string", description: "Filtrer par stage spécifique" },
+      },
+    },
+  },
+  async (params: any) => {
+    const wsId = (globalThis as any).__mcpAuth?.workspace_id;
+    const riskThresholdDays = params.risk_threshold_days || 21;
+
+    let oppsQuery = supabaseAdmin
+      .from("opportunities")
+      .select(`
+        id, title, stage, value_amount, probability,
+        expected_close_date, source, created_at, updated_at,
+        lead_id, description,
+        leads(id, name, company, email, lead_score, status)
+      `)
+      .eq("workspace_id", wsId)
+      .not("stage", "in", '("won","lost")')
+      .order("value_amount", { ascending: false });
+
+    if (params.stage_filter) {
+      oppsQuery = oppsQuery.eq("stage", params.stage_filter);
+    }
+
+    const [opportunities, leads, activities, tasks, projects, wonDeals] = await Promise.all([
+      oppsQuery,
+      supabaseAdmin
+        .from("leads")
+        .select("id, name, company, lead_score, qualification_status, updated_at")
+        .eq("workspace_id", wsId)
+        .eq("qualification_status", "qualified"),
+      supabaseAdmin
+        .from("activity_log")
+        .select("opportunity_id, created_at, activity_type, title")
+        .eq("workspace_id", wsId)
+        .not("opportunity_id", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(200),
+      supabaseAdmin
+        .from("tasks")
+        .select("id, title, status, priority, due_date, opportunity_id")
+        .eq("workspace_id", wsId)
+        .not("status", "in", '("done","cancelled")')
+        .not("opportunity_id", "is", null),
+      supabaseAdmin
+        .from("projects")
+        .select("id, name, status, health_status, opportunity_id, budget_amount")
+        .eq("workspace_id", wsId)
+        .eq("status", "active"),
+      supabaseAdmin
+        .from("opportunities")
+        .select("id, title, value_amount, stage, closed_at, probability")
+        .eq("workspace_id", wsId)
+        .eq("stage", "won")
+        .gte("closed_at", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()),
+    ]);
+
+    const now = new Date();
+
+    // Dernière activité par opportunité
+    const lastActivityMap = new Map<string, any>();
+    (activities.data || []).forEach((a: any) => {
+      if (!lastActivityMap.has(a.opportunity_id)) {
+        lastActivityMap.set(a.opportunity_id, a);
+      }
+    });
+
+    // Tâches par opportunité
+    const tasksMap = new Map<string, any[]>();
+    (tasks.data || []).forEach((t: any) => {
+      if (!tasksMap.has(t.opportunity_id)) tasksMap.set(t.opportunity_id, []);
+      tasksMap.get(t.opportunity_id)!.push(t);
+    });
+
+    const analyzedOpps = (opportunities.data || []).map((opp: any) => {
+      const lastActivity = lastActivityMap.get(opp.id);
+      const daysSinceActivity = lastActivity
+        ? Math.floor((now.getTime() - new Date(lastActivity.created_at).getTime()) / (24 * 60 * 60 * 1000))
+        : Math.floor((now.getTime() - new Date(opp.updated_at).getTime()) / (24 * 60 * 60 * 1000));
+
+      const oppTasks = tasksMap.get(opp.id) || [];
+      const overdueTasksCount = oppTasks.filter(
+        (t: any) => t.due_date && new Date(t.due_date) < now
+      ).length;
+
+      const daysToClose = opp.expected_close_date
+        ? Math.floor((new Date(opp.expected_close_date).getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
+        : null;
+
+      let riskScore = 0;
+      const riskFactors: string[] = [];
+
+      if (daysSinceActivity > riskThresholdDays) {
+        riskScore += 3;
+        riskFactors.push(`Inactif depuis ${daysSinceActivity}j`);
+      }
+      if (!opp.expected_close_date) {
+        riskScore += 2;
+        riskFactors.push("Pas de date de clôture");
+      }
+      if (daysToClose !== null && daysToClose < 0) {
+        riskScore += 3;
+        riskFactors.push(`Date de clôture dépassée de ${Math.abs(daysToClose)}j`);
+      }
+      if (!opp.value_amount || opp.value_amount === 0) {
+        riskScore += 1;
+        riskFactors.push("Montant non renseigné");
+      }
+      if (overdueTasksCount > 0) {
+        riskScore += 2;
+        riskFactors.push(`${overdueTasksCount} tâche(s) en retard`);
+      }
+
+      const hotSignals: string[] = [];
+      if (daysSinceActivity <= 3) hotSignals.push("Activité récente < 3j");
+      if (opp.probability >= 70) hotSignals.push(`Probabilité élevée (${opp.probability}%)`);
+      if (daysToClose !== null && daysToClose <= 14 && daysToClose >= 0) {
+        hotSignals.push(`Closing imminent (${daysToClose}j)`);
+      }
+      if (opp.leads?.lead_score >= 15) hotSignals.push("Lead très qualifié");
+
+      const status =
+        riskScore >= 5 ? "at_risk" :
+        riskScore >= 3 ? "needs_attention" :
+        hotSignals.length >= 2 ? "hot" :
+        "normal";
+
+      return {
+        id: opp.id,
+        title: opp.title,
+        stage: opp.stage,
+        value_amount: opp.value_amount || 0,
+        probability: opp.probability || 0,
+        expected_close_date: opp.expected_close_date,
+        days_to_close: daysToClose,
+        days_since_activity: daysSinceActivity,
+        last_activity: lastActivity?.title || null,
+        lead: opp.leads ? { name: opp.leads.name, company: opp.leads.company, score: opp.leads.lead_score } : null,
+        status,
+        risk_score: riskScore,
+        risk_factors: riskFactors,
+        hot_signals: hotSignals,
+        active_tasks: oppTasks.length,
+        overdue_tasks: overdueTasksCount,
+      };
+    });
+
+    const totalPipelineValue = analyzedOpps.reduce((sum: number, o: any) => sum + o.value_amount, 0);
+    const weightedPipelineValue = analyzedOpps.reduce((sum: number, o: any) => sum + (o.value_amount * (o.probability / 100)), 0);
+    const atRisk = analyzedOpps.filter((o: any) => o.status === "at_risk");
+    const needsAttention = analyzedOpps.filter((o: any) => o.status === "needs_attention");
+    const hotDeals = analyzedOpps.filter((o: any) => o.status === "hot");
+
+    const oppLeadIds = new Set((opportunities.data || []).map((o: any) => o.lead_id).filter(Boolean));
+    const qualifiedNoOpp = (leads.data || []).filter((l: any) => !oppLeadIds.has(l.id));
+
+    const wonData = wonDeals.data || [];
+    const avgDealSize = wonData.length > 0
+      ? wonData.reduce((s: number, d: any) => s + (d.value_amount || 0), 0) / wonData.length
+      : 0;
+
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          summary: {
+            total_opportunities: analyzedOpps.length,
+            total_pipeline_value: totalPipelineValue,
+            weighted_pipeline_value: Math.round(weightedPipelineValue),
+            at_risk_count: atRisk.length,
+            needs_attention_count: needsAttention.length,
+            hot_deals_count: hotDeals.length,
+            qualified_leads_no_opp: qualifiedNoOpp.length,
+            avg_won_deal_size_90d: Math.round(avgDealSize),
+          },
+          at_risk: atRisk.sort((a: any, b: any) => b.risk_score - a.risk_score),
+          needs_attention: needsAttention,
+          hot_deals: hotDeals,
+          all_opportunities: analyzedOpps,
+          qualified_leads_no_opportunity: qualifiedNoOpp.map((l: any) => ({
+            id: l.id, name: l.name, company: l.company, lead_score: l.lead_score,
+          })),
+          benchmark: {
+            won_deals_last_90d: wonData.length,
+            avg_deal_size: Math.round(avgDealSize),
+          },
+          generated_at: new Date().toISOString(),
+        }),
+      }],
+    };
+  }
+);
+
+// ============================================================
+// TOOL 77: get_forecast
+// ============================================================
+mcpServer.registerTool(
+  "get_forecast",
+  {
+    title: "Get Revenue Forecast",
+    description: "Prévisions de revenus avec scénarios pessimiste / réaliste / optimiste. Basé sur les opportunités actives + historique real deals.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        months: { type: "number", description: "Horizon de prévision en mois (défaut: 3)" },
+        include_scenarios: { type: "boolean", description: "Inclure les 3 scénarios (défaut: true)" },
+      },
+    },
+  },
+  async (params: any) => {
+    const wsId = (globalThis as any).__mcpAuth?.workspace_id;
+    const months = params.months || 3;
+
+    const [activeOpps, wonHistory, projects] = await Promise.all([
+      supabaseAdmin
+        .from("opportunities")
+        .select("id, title, stage, value_amount, probability, expected_close_date, created_at")
+        .eq("workspace_id", wsId)
+        .not("stage", "in", '("won","lost")')
+        .not("expected_close_date", "is", null),
+      supabaseAdmin
+        .from("opportunities")
+        .select("id, value_amount, closed_at, stage, probability")
+        .eq("workspace_id", wsId)
+        .eq("stage", "won")
+        .gte("closed_at", new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString())
+        .order("closed_at", { ascending: true }),
+      supabaseAdmin
+        .from("projects")
+        .select("id, name, budget_amount, consumed_amount, status, planned_end_date")
+        .eq("workspace_id", wsId)
+        .eq("status", "active")
+        .not("budget_amount", "is", null),
+    ]);
+
+    const now = new Date();
+    const horizonEnd = new Date(now.getTime() + months * 30 * 24 * 60 * 60 * 1000);
+
+    // Grouper par mois
+    const monthlyForecast: Record<string, any> = {};
+    for (let i = 0; i < months; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      monthlyForecast[key] = {
+        month: key,
+        opportunities: [],
+        pessimistic: 0,
+        realistic: 0,
+        optimistic: 0,
+      };
+    }
+
+    // Répartir les opportunités par mois de clôture estimé
+    (activeOpps.data || []).forEach((opp: any) => {
+      const closeDate = new Date(opp.expected_close_date);
+      if (closeDate <= horizonEnd) {
+        const key = `${closeDate.getFullYear()}-${String(closeDate.getMonth() + 1).padStart(2, "0")}`;
+        if (monthlyForecast[key]) {
+          const value = opp.value_amount || 0;
+          const prob = (opp.probability || 50) / 100;
+          monthlyForecast[key].opportunities.push({
+            id: opp.id,
+            title: opp.title,
+            value_amount: value,
+            probability: opp.probability,
+            stage: opp.stage,
+          });
+          monthlyForecast[key].pessimistic += Math.round(value * prob * 0.6);
+          monthlyForecast[key].realistic += Math.round(value * prob);
+          monthlyForecast[key].optimistic += Math.round(value * Math.min(prob * 1.3, 1));
+        }
+      }
+    });
+
+    // Historique mensuel (revenus réels)
+    const monthlyHistory: Record<string, any> = {};
+    (wonHistory.data || []).forEach((deal: any) => {
+      const d = new Date(deal.closed_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      if (!monthlyHistory[key]) monthlyHistory[key] = { month: key, revenue: 0, deals: 0 };
+      monthlyHistory[key].revenue += deal.value_amount || 0;
+      monthlyHistory[key].deals++;
+    });
+
+    const historyValues = Object.values(monthlyHistory) as any[];
+    const avgMonthlyRevenue = historyValues.length > 0
+      ? historyValues.reduce((s: number, m: any) => s + m.revenue, 0) / historyValues.length
+      : 0;
+
+    const forecastArray = Object.values(monthlyForecast) as any[];
+    const totalPessimistic = forecastArray.reduce((s: number, m: any) => s + m.pessimistic, 0);
+    const totalRealistic = forecastArray.reduce((s: number, m: any) => s + m.realistic, 0);
+    const totalOptimistic = forecastArray.reduce((s: number, m: any) => s + m.optimistic, 0);
+
+    const contractedRevenue = (projects.data || []).reduce((s: number, p: any) => {
+      const remaining = (p.budget_amount || 0) - (p.consumed_amount || 0);
+      return s + Math.max(0, remaining);
+    }, 0);
+
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          horizon_months: months,
+          monthly_forecast: forecastArray,
+          totals: {
+            pessimistic: totalPessimistic,
+            realistic: totalRealistic,
+            optimistic: totalOptimistic,
+            contracted_revenue: Math.round(contractedRevenue),
+          },
+          historical: {
+            monthly_history: historyValues.slice(-6),
+            avg_monthly_revenue: Math.round(avgMonthlyRevenue),
+            total_won_12m: (wonHistory.data || []).reduce((s: number, d: any) => s + (d.value_amount || 0), 0),
+          },
+          confidence_note: historyValues.length < 3
+            ? "Historique insuffisant (<3 mois) — forecast indicatif uniquement"
+            : `Basé sur ${historyValues.length} mois d'historique réel`,
+          generated_at: new Date().toISOString(),
+        }),
+      }],
+    };
+  }
+);
+
 // === Hono app ===
 const app = new Hono().basePath('/mcp-server');
 
