@@ -3219,7 +3219,8 @@ mcpServer.registerTool(
       `)
       .eq("workspace_id", wsId)
       .not("stage", "in", '("won","lost")')
-      .order("value_amount", { ascending: false });
+      .order("value_amount", { ascending: false })
+      .limit(1000);
 
     if (params.stage_filter) {
       oppsQuery = oppsQuery.eq("stage", params.stage_filter);
@@ -3238,7 +3239,7 @@ mcpServer.registerTool(
         .eq("workspace_id", wsId)
         .not("opportunity_id", "is", null)
         .order("created_at", { ascending: false })
-        .limit(200),
+        .limit(500),
       supabaseAdmin
         .from("tasks")
         .select("id, title, status, priority, due_date, opportunity_id")
@@ -3505,7 +3506,7 @@ mcpServer.registerTool(
         type: "text" as const,
         text: JSON.stringify({
           horizon_months: months,
-          monthly_forecast: forecastArray,
+          monthly_forecast: (params.include_scenarios !== false) ? forecastArray : forecastArray.map((m: any) => ({ month: m.month, opportunities: m.opportunities, realistic: m.realistic })),
           totals: {
             pessimistic: totalPessimistic,
             realistic: totalRealistic,
