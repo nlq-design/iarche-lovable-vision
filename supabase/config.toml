@@ -186,5 +186,8 @@ verify_jwt = false
 [functions.mcp-api-keys]
 verify_jwt = false
 
+[functions.score-viviers-batch]
+verify_jwt = true
+
 [functions.mcp-server]
 verify_jwt = false

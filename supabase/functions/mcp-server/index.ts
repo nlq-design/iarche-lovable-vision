@@ -1138,9 +1138,9 @@ mcpServer.registerTool(
     title: "Get Meeting Notes",
     description: "Liste les comptes-rendus de réunion.",
     inputSchema: {
-      lead_id: z.string().optional().describe("Filtrer par lead lié (via booking)"),
       project_id: z.string().optional().describe("Filtrer par projet"),
       opportunity_id: z.string().optional().describe("Filtrer par opportunité"),
+      booking_id: z.string().optional().describe("Filtrer par booking"),
       limit: z.number().optional().describe("Nombre max (défaut 20)"),
     },
   },
@@ -1155,8 +1155,9 @@ mcpServer.registerTool(
       .order("created_at", { ascending: false })
       .limit(params.limit || 20);
 
-    if (params.project_id) query = query.eq("project_id", params.project_id);
+     if (params.project_id) query = query.eq("project_id", params.project_id);
     if (params.opportunity_id) query = query.eq("opportunity_id", params.opportunity_id);
+    if (params.booking_id) query = query.eq("booking_id", params.booking_id);
 
     const { data, error } = await query;
     if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
@@ -2138,24 +2139,27 @@ mcpServer.registerTool(
     const ctx = getAuthContext();
     if (!ctx) return authError();
 
-    const { data, error } = await supabaseAdmin
-      .from("viviers")
-      .select("status, cold_score")
-      .eq("workspace_id", ctx.wsId);
+    const [totalRes, newRes, contactedRes, qualifiedRes, convertedRes, scoreRes] = await Promise.all([
+      supabaseAdmin.from("viviers").select("*", { count: "exact", head: true }).eq("workspace_id", ctx.wsId),
+      supabaseAdmin.from("viviers").select("*", { count: "exact", head: true }).eq("workspace_id", ctx.wsId).eq("status", "new"),
+      supabaseAdmin.from("viviers").select("*", { count: "exact", head: true }).eq("workspace_id", ctx.wsId).eq("status", "contacted"),
+      supabaseAdmin.from("viviers").select("*", { count: "exact", head: true }).eq("workspace_id", ctx.wsId).eq("status", "qualified"),
+      supabaseAdmin.from("viviers").select("*", { count: "exact", head: true }).eq("workspace_id", ctx.wsId).in("status", ["converted", "promoted"]),
+      supabaseAdmin.from("viviers").select("cold_score").eq("workspace_id", ctx.wsId).not("cold_score", "is", null).limit(1000),
+    ]);
 
-    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    const scored = scoreRes.data || [];
+    const avgScore = scored.length > 0
+      ? Math.round(scored.reduce((sum: number, v: any) => sum + (v.cold_score || 0), 0) / scored.length)
+      : 0;
 
-    const rows = data || [];
-    const scored = rows.filter((v: any) => v.cold_score != null);
     const stats = {
-      total: rows.length,
-      new_count: rows.filter((v: any) => v.status === "new").length,
-      contacted_count: rows.filter((v: any) => v.status === "contacted").length,
-      qualified_count: rows.filter((v: any) => v.status === "qualified").length,
-      converted_count: rows.filter((v: any) => v.status === "converted" || v.status === "promoted").length,
-      avg_score: scored.length > 0
-        ? Math.round(scored.reduce((sum: number, v: any) => sum + (v.cold_score || 0), 0) / scored.length)
-        : 0,
+      total: totalRes.count || 0,
+      new_count: newRes.count || 0,
+      contacted_count: contactedRes.count || 0,
+      qualified_count: qualifiedRes.count || 0,
+      converted_count: convertedRes.count || 0,
+      avg_score: avgScore,
     };
 
     return { content: [{ type: "text" as const, text: JSON.stringify(stats) }] };
@@ -2390,7 +2394,7 @@ mcpServer.registerTool(
     if (!ctx) return authError();
     let query = supabaseAdmin
       .from("voice_transcriptions")
-      .select("id, title, status, transcription_text, summary, lead_id, project_id, slug, created_at")
+      .select("id, title, status, raw_transcript, summary, lead_id, project_id, slug, created_at")
       .eq("workspace_id", ctx.wsId)
       .order("created_at", { ascending: false })
       .limit(params.limit || 20);
@@ -2562,7 +2566,7 @@ mcpServer.registerTool(
     if (!ctx) return authError();
     const { data, error } = await supabaseAdmin
       .from("specifications")
-      .insert({ title: params.title, project_id: params.project_id, content: params.content || "", status: params.status || "draft", version: 1, workspace_id: ctx.wsId })
+      .insert({ title: params.title, project_id: params.project_id, content: params.content ? (typeof params.content === "string" ? { text: params.content } : params.content) : null, status: params.status || "draft", version: "1", workspace_id: ctx.wsId })
       .select("id, title, version, status, created_at")
       .single();
     if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
@@ -2590,9 +2594,11 @@ mcpServer.registerTool(
     if (!ctx) return authError();
     const { data: current } = await supabaseAdmin.from("specifications").select("version").eq("id", params.spec_id).eq("workspace_id", ctx.wsId).single();
     if (!current) return { content: [{ type: "text" as const, text: "Cahier des charges non trouvé" }] };
-    const updates: Record<string, unknown> = { version: (current.version || 1) + 1 };
+    const currentVersion = parseInt(current.version || "1", 10);
+    const newVersion = String(currentVersion + 1);
+    const updates: Record<string, unknown> = { version: newVersion };
     if (params.title !== undefined) updates.title = params.title;
-    if (params.content !== undefined) updates.content = params.content;
+    if (params.content !== undefined) updates.content = typeof params.content === "string" ? { text: params.content } : params.content;
     if (params.status !== undefined) updates.status = params.status;
     const { data, error } = await supabaseAdmin.from("specifications").update(updates).eq("id", params.spec_id).eq("workspace_id", ctx.wsId).select().single();
     if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
@@ -2730,10 +2736,12 @@ mcpServer.registerTool(
   "ask_copilot",
   {
     title: "Ask Copilot",
-    description: "Interroger le copilote IA IArche : briefing, health-check, scoring pipeline, analyse, etc.",
+    description: "Interroger le copilote IA IArche. Modes : suggest-tasks, detect-inactivity, health-check, next-step, opportunity-score, harvest, harvest-respond, intelligence.",
     inputSchema: {
-      prompt: z.string().describe("Question ou instruction pour le copilote"),
-      mode: z.string().optional().describe("Mode: morning-brief, health-check, pipeline-analysis, lead-scoring, meeting-prep, weekly-review, risk-alert, task-prioritization, opportunity-coach, project-health"),
+      mode: z.string().optional().describe("Mode: suggest-tasks, detect-inactivity, health-check, next-step, opportunity-score, harvest, harvest-respond, intelligence (défaut: health-check)"),
+      entity_type: z.string().optional().describe("Type d'entité (lead, opportunity, project)"),
+      entity_id: z.string().uuid().optional().describe("UUID de l'entité cible"),
+      extra: z.string().optional().describe("Contexte additionnel ou question libre"),
     },
   },
   async (params) => {
@@ -2742,7 +2750,7 @@ mcpServer.registerTool(
     const resp = await fetch(`${SUPABASE_URL}/functions/v1/cockpit-ai-copilot`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
-      body: JSON.stringify({ workspaceId: ctx.wsId, prompt: params.prompt, mode: params.mode || "health-check", context: { source: "mcp" } }),
+      body: JSON.stringify({ workspaceId: ctx.wsId, mode: params.mode || "health-check", entityType: params.entity_type, entityId: params.entity_id, extra: params.extra, context: { source: "mcp" } }),
     });
     const result = await resp.json();
     if (!resp.ok) return { content: [{ type: "text" as const, text: `Erreur copilot: ${JSON.stringify(result)}` }] };
