@@ -2337,6 +2337,555 @@ mcpServer.registerTool(
   }
 );
 
+// ============================================================
+// TOOL 56: get_uploaded_files
+// ============================================================
+mcpServer.registerTool(
+  "get_uploaded_files",
+  {
+    title: "Get Uploaded Files",
+    description: "Liste les fichiers uploadés dans le workspace (PDF, images, documents).",
+    inputSchema: {
+      lead_id: z.string().uuid().optional().describe("Filtrer par lead"),
+      project_id: z.string().uuid().optional().describe("Filtrer par projet"),
+      file_type: z.string().optional().describe("Filtrer par type de fichier"),
+      limit: z.number().optional().describe("Nombre max (défaut 20)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    let query = supabaseAdmin
+      .from("uploaded_files")
+      .select("id, original_filename, file_type, storage_path, lead_ids, project_ids, ai_summary, processing_status, created_at")
+      .eq("workspace_id", ctx.wsId)
+      .order("created_at", { ascending: false })
+      .limit(params.limit || 20);
+    if (params.file_type) query = query.eq("file_type", params.file_type);
+    if (params.lead_id) query = query.contains("lead_ids", [params.lead_id]);
+    if (params.project_id) query = query.contains("project_ids", [params.project_id]);
+    const { data, error } = await query;
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ files: data, count: data?.length || 0 }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 57: get_transcriptions
+// ============================================================
+mcpServer.registerTool(
+  "get_transcriptions",
+  {
+    title: "Get Transcriptions",
+    description: "Liste les transcriptions vocales du workspace.",
+    inputSchema: {
+      lead_id: z.string().uuid().optional().describe("Filtrer par lead"),
+      project_id: z.string().uuid().optional().describe("Filtrer par projet"),
+      status: z.string().optional().describe("Filtrer par statut (pending, completed, error)"),
+      limit: z.number().optional().describe("Nombre max (défaut 20)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    let query = supabaseAdmin
+      .from("voice_transcriptions")
+      .select("id, title, status, transcription_text, summary, lead_id, project_id, slug, created_at")
+      .eq("workspace_id", ctx.wsId)
+      .order("created_at", { ascending: false })
+      .limit(params.limit || 20);
+    if (params.lead_id) query = query.eq("lead_id", params.lead_id);
+    if (params.project_id) query = query.eq("project_id", params.project_id);
+    if (params.status) query = query.eq("status", params.status);
+    const { data, error } = await query;
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ transcriptions: data, count: data?.length || 0 }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 58: get_transcription_detail
+// ============================================================
+mcpServer.registerTool(
+  "get_transcription_detail",
+  {
+    title: "Get Transcription Detail",
+    description: "Détail complet d'une transcription avec ses participants.",
+    inputSchema: {
+      transcription_id: z.string().uuid().describe("ID de la transcription"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    const [transcRes, partRes] = await Promise.all([
+      supabaseAdmin.from("voice_transcriptions").select("*").eq("id", params.transcription_id).eq("workspace_id", ctx.wsId).single(),
+      supabaseAdmin.from("transcription_participants").select("*").eq("transcription_id", params.transcription_id),
+    ]);
+    if (transcRes.error) return { content: [{ type: "text" as const, text: `Erreur: ${transcRes.error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ transcription: transcRes.data, participants: partRes.data || [] }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 59: update_workspace_config
+// ============================================================
+mcpServer.registerTool(
+  "update_workspace_config",
+  {
+    title: "Update Workspace Config",
+    description: "Met à jour la configuration du workspace (merge JSON, ne remplace pas).",
+    inputSchema: {
+      settings: z.record(z.unknown()).describe("Champs de configuration à merger dans les settings existants"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    const { data: current } = await supabaseAdmin.from("workspaces").select("settings").eq("id", ctx.wsId).single();
+    const merged = { ...(current?.settings || {}), ...params.settings };
+    const { data, error } = await supabaseAdmin
+      .from("workspaces")
+      .update({ settings: merged })
+      .eq("id", ctx.wsId)
+      .select("id, name, settings")
+      .single();
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ updated: true, settings: data?.settings }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 60: get_email_logs
+// ============================================================
+mcpServer.registerTool(
+  "get_email_logs",
+  {
+    title: "Get Email Logs",
+    description: "Journal des emails envoyés (notifications, confirmations, campagnes).",
+    inputSchema: {
+      email_type: z.string().optional().describe("Filtrer par type d'email"),
+      status: z.string().optional().describe("Filtrer par statut (sent, failed, pending)"),
+      limit: z.number().optional().describe("Nombre max (défaut 50)"),
+      days: z.number().optional().describe("Remonter sur N jours (défaut 7)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    const daysAgo = new Date();
+    daysAgo.setDate(daysAgo.getDate() - (params.days || 7));
+    let query = supabaseAdmin
+      .from("email_logs")
+      .select("id, email_type, recipient_email, subject, status, source_type, created_at")
+      .gte("created_at", daysAgo.toISOString())
+      .order("created_at", { ascending: false })
+      .limit(params.limit || 50);
+    if (params.email_type) query = query.eq("email_type", params.email_type);
+    if (params.status) query = query.eq("status", params.status);
+    const { data, error } = await query;
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ emails: data, count: data?.length || 0 }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 61: get_billing_entities
+// ============================================================
+mcpServer.registerTool(
+  "get_billing_entities",
+  {
+    title: "Get Billing Entities",
+    description: "Entités de facturation du workspace (SIREN, TVA, adresse, format devis).",
+    inputSchema: {},
+  },
+  async () => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    const { data, error } = await supabaseAdmin
+      .from("billing_entities")
+      .select("id, name, siren, tva_number, address, legal_form, default_tva_rate, quote_prefix")
+      .eq("workspace_id", ctx.wsId);
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ billing_entities: data }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 62: get_specifications
+// ============================================================
+mcpServer.registerTool(
+  "get_specifications",
+  {
+    title: "Get Specifications",
+    description: "Liste les cahiers des charges du workspace.",
+    inputSchema: {
+      project_id: z.string().uuid().optional().describe("Filtrer par projet"),
+      status: z.string().optional().describe("Filtrer par statut (draft, validated, archived)"),
+      limit: z.number().optional().describe("Nombre max (défaut 20)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    let query = supabaseAdmin
+      .from("specifications")
+      .select("id, title, content, version, status, project_id, created_at")
+      .eq("workspace_id", ctx.wsId)
+      .order("created_at", { ascending: false })
+      .limit(params.limit || 20);
+    if (params.project_id) query = query.eq("project_id", params.project_id);
+    if (params.status) query = query.eq("status", params.status);
+    const { data, error } = await query;
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ specifications: data, count: data?.length || 0 }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 63: create_specification
+// ============================================================
+mcpServer.registerTool(
+  "create_specification",
+  {
+    title: "Create Specification",
+    description: "Créer un nouveau cahier des charges.",
+    inputSchema: {
+      title: z.string().describe("Titre du cahier des charges"),
+      project_id: z.string().uuid().describe("ID du projet associé"),
+      content: z.string().optional().describe("Contenu du cahier des charges"),
+      status: z.string().optional().describe("Statut (défaut: draft)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    const { data, error } = await supabaseAdmin
+      .from("specifications")
+      .insert({ title: params.title, project_id: params.project_id, content: params.content || "", status: params.status || "draft", version: 1, workspace_id: ctx.wsId })
+      .select("id, title, version, status, created_at")
+      .single();
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ created: true, specification: data }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 64: update_specification
+// ============================================================
+mcpServer.registerTool(
+  "update_specification",
+  {
+    title: "Update Specification",
+    description: "Mettre à jour un cahier des charges (incrémente la version).",
+    inputSchema: {
+      spec_id: z.string().uuid().describe("ID du cahier des charges"),
+      title: z.string().optional().describe("Nouveau titre"),
+      content: z.string().optional().describe("Nouveau contenu"),
+      status: z.string().optional().describe("Nouveau statut"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    const { data: current } = await supabaseAdmin.from("specifications").select("version").eq("id", params.spec_id).eq("workspace_id", ctx.wsId).single();
+    if (!current) return { content: [{ type: "text" as const, text: "Cahier des charges non trouvé" }] };
+    const updates: Record<string, unknown> = { version: (current.version || 1) + 1 };
+    if (params.title !== undefined) updates.title = params.title;
+    if (params.content !== undefined) updates.content = params.content;
+    if (params.status !== undefined) updates.status = params.status;
+    const { data, error } = await supabaseAdmin.from("specifications").update(updates).eq("id", params.spec_id).eq("workspace_id", ctx.wsId).select().single();
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ updated: true, specification: data }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 65: get_ai_models
+// ============================================================
+mcpServer.registerTool(
+  "get_ai_models",
+  {
+    title: "Get AI Models",
+    description: "Liste les modèles IA disponibles (OpenRouter, Gemini, GPT, etc.).",
+    inputSchema: {
+      provider_name: z.string().optional().describe("Filtrer par provider"),
+      category: z.string().optional().describe("Filtrer par catégorie (chat, embedding, image)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    let query = supabaseAdmin
+      .from("ai_models")
+      .select("model_id, provider_name, display_name, category, capabilities, context_window, cost_per_1k_input, cost_per_1k_output")
+      .order("provider_name").order("category");
+    if (params.provider_name) query = query.eq("provider_name", params.provider_name);
+    if (params.category) query = query.eq("category", params.category);
+    const { data, error } = await query;
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ models: data, count: data?.length || 0 }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 66: get_ai_provider_config
+// ============================================================
+mcpServer.registerTool(
+  "get_ai_provider_config",
+  {
+    title: "Get AI Provider Config",
+    description: "Configuration des providers IA (priorité, limites, statut). Ne retourne jamais les clés API.",
+    inputSchema: {},
+  },
+  async () => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    const { data, error } = await supabaseAdmin
+      .from("ai_provider_config")
+      .select("provider_name, base_url, is_active, priority, rate_limit_rpm")
+      .order("priority");
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ providers: data }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 67: update_ai_provider
+// ============================================================
+mcpServer.registerTool(
+  "update_ai_provider",
+  {
+    title: "Update AI Provider",
+    description: "Modifier la config d'un provider IA (activation, priorité, rate limit).",
+    inputSchema: {
+      provider_name: z.string().describe("Nom du provider à modifier"),
+      is_active: z.boolean().optional().describe("Activer/désactiver"),
+      priority: z.number().optional().describe("Priorité (1 = plus haute)"),
+      rate_limit_rpm: z.number().optional().describe("Limite requêtes/min"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    const updates: Record<string, unknown> = {};
+    if (params.is_active !== undefined) updates.is_active = params.is_active;
+    if (params.priority !== undefined) updates.priority = params.priority;
+    if (params.rate_limit_rpm !== undefined) updates.rate_limit_rpm = params.rate_limit_rpm;
+    if (Object.keys(updates).length === 0) return { content: [{ type: "text" as const, text: "Aucun champ à mettre à jour" }] };
+    const { data, error } = await supabaseAdmin.from("ai_provider_config").update(updates).eq("provider_name", params.provider_name).select("provider_name, is_active, priority, rate_limit_rpm").single();
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ updated: true, provider: data }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 68: get_edge_function_models
+// ============================================================
+mcpServer.registerTool(
+  "get_edge_function_models",
+  {
+    title: "Get Edge Function Models",
+    description: "Voir quel modèle IA est assigné à chaque Edge Function.",
+    inputSchema: {},
+  },
+  async () => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    const { data, error } = await supabaseAdmin.from("edge_function_model_config").select("function_name, provider_name, model_id, is_custom_model").order("function_name");
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ edge_functions: data, count: data?.length || 0 }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 69: update_edge_function_model
+// ============================================================
+mcpServer.registerTool(
+  "update_edge_function_model",
+  {
+    title: "Update Edge Function Model",
+    description: "Changer le modèle IA assigné à une Edge Function.",
+    inputSchema: {
+      function_name: z.string().describe("Nom de la fonction Edge"),
+      model_id: z.string().describe("ID du nouveau modèle"),
+      provider_name: z.string().optional().describe("Provider du modèle"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    const updates: Record<string, unknown> = { model_id: params.model_id };
+    if (params.provider_name) updates.provider_name = params.provider_name;
+    const { data, error } = await supabaseAdmin.from("edge_function_model_config").update(updates).eq("function_name", params.function_name).select().single();
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ updated: true, config: data }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 70: ask_copilot
+// ============================================================
+mcpServer.registerTool(
+  "ask_copilot",
+  {
+    title: "Ask Copilot",
+    description: "Interroger le copilote IA IArche : briefing, health-check, scoring pipeline, analyse, etc.",
+    inputSchema: {
+      prompt: z.string().describe("Question ou instruction pour le copilote"),
+      mode: z.string().optional().describe("Mode: morning-brief, health-check, pipeline-analysis, lead-scoring, meeting-prep, weekly-review, risk-alert, task-prioritization, opportunity-coach, project-health"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/cockpit-ai-copilot`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+      body: JSON.stringify({ workspaceId: ctx.wsId, prompt: params.prompt, mode: params.mode || "health-check", context: { source: "mcp" } }),
+    });
+    const result = await resp.json();
+    if (!resp.ok) return { content: [{ type: "text" as const, text: `Erreur copilot: ${JSON.stringify(result)}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
+  }
+);
+
+// ============================================================
+// TOOL 71: get_ai_memory
+// ============================================================
+mcpServer.registerTool(
+  "get_ai_memory",
+  {
+    title: "Get AI Memory",
+    description: "Mémoire de l'agent IA : contextes, préférences, souvenirs importants.",
+    inputSchema: {
+      memory_type: z.string().optional().describe("Type (preference, context, fact, instruction)"),
+      entity_type: z.string().optional().describe("Type d'entité liée"),
+      entity_id: z.string().uuid().optional().describe("ID d'entité liée"),
+      limit: z.number().optional().describe("Nombre max (défaut 20)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    let query = supabaseAdmin
+      .from("ai_agent_memory")
+      .select("id, memory_type, content, entity_type, entity_id, importance_score, expires_at, created_at")
+      .eq("workspace_id", ctx.wsId)
+      .order("importance_score", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(params.limit || 20);
+    if (params.memory_type) query = query.eq("memory_type", params.memory_type);
+    if (params.entity_type) query = query.eq("entity_type", params.entity_type);
+    if (params.entity_id) query = query.eq("entity_id", params.entity_id);
+    const { data, error } = await query;
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ memories: data, count: data?.length || 0 }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 72: project_write
+// ============================================================
+mcpServer.registerTool(
+  "project_write",
+  {
+    title: "Create or Update Project",
+    description: "Créer ou mettre à jour un projet. Si project_id → update, sinon → création (name requis).",
+    inputSchema: {
+      project_id: z.string().uuid().optional().describe("ID du projet (si update)"),
+      name: z.string().optional().describe("Nom du projet (requis si création)"),
+      status: z.string().optional().describe("Statut (active, on_hold, completed, cancelled)"),
+      health_status: z.string().optional().describe("Santé (green, yellow, red)"),
+      budget_amount: z.number().optional().describe("Budget total"),
+      consumed_amount: z.number().optional().describe("Montant consommé"),
+      lead_id: z.string().uuid().optional().describe("Lead associé"),
+      opportunity_id: z.string().uuid().optional().describe("Opportunité associée"),
+      description: z.string().optional().describe("Description"),
+      assigned_to: z.string().optional().describe("Assigné à"),
+      start_date: z.string().optional().describe("Date de début (ISO)"),
+      planned_end_date: z.string().optional().describe("Date de fin prévue (ISO)"),
+      target_end_date: z.string().optional().describe("Date cible (ISO)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    if (params.project_id) {
+      const updates: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(params)) { if (k !== "project_id" && v !== undefined) updates[k] = v; }
+      const { data, error } = await supabaseAdmin.from("projects").update(updates).eq("id", params.project_id).eq("workspace_id", ctx.wsId).select().single();
+      if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ updated: true, project: data }) }] };
+    } else {
+      if (!params.name) return { content: [{ type: "text" as const, text: "Erreur: 'name' requis pour créer un projet" }] };
+      const { data, error } = await supabaseAdmin.from("projects").insert({
+        name: params.name, workspace_id: ctx.wsId, status: params.status || "active", health_status: params.health_status || "green",
+        budget_amount: params.budget_amount, consumed_amount: params.consumed_amount, lead_id: params.lead_id, opportunity_id: params.opportunity_id,
+        description: params.description, assigned_to: params.assigned_to, start_date: params.start_date, planned_end_date: params.planned_end_date, target_end_date: params.target_end_date,
+      }).select().single();
+      if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ created: true, project: data }) }] };
+    }
+  }
+);
+
+// ============================================================
+// TOOL 73: get_api_quotas
+// ============================================================
+mcpServer.registerTool(
+  "get_api_quotas",
+  {
+    title: "Get API Quotas",
+    description: "Quotas API, alertes récentes, quotas IA et usage workspace — vue complète.",
+    inputSchema: {},
+  },
+  async () => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const [quotasRes, alertsRes, aiQuotasRes, aiUsageRes] = await Promise.all([
+      supabaseAdmin.from("api_quotas").select("*").order("api_name"),
+      supabaseAdmin.from("api_quota_alerts").select("*").gte("created_at", sevenDaysAgo.toISOString()).order("created_at", { ascending: false }),
+      supabaseAdmin.from("workspace_ai_quotas").select("*").eq("workspace_id", ctx.wsId),
+      supabaseAdmin.from("workspace_ai_usage").select("*").eq("workspace_id", ctx.wsId).order("period_start", { ascending: false }).limit(3),
+    ]);
+    return { content: [{ type: "text" as const, text: JSON.stringify({ quotas: quotasRes.data || [], alerts: alertsRes.data || [], ai_quotas: aiQuotasRes.data || [], ai_usage: aiUsageRes.data || [] }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 74: get_performance_metrics
+// ============================================================
+mcpServer.registerTool(
+  "get_performance_metrics",
+  {
+    title: "Get Performance Metrics",
+    description: "Métriques de performance (Lighthouse) et coûts API agrégés sur 30 jours.",
+    inputSchema: {
+      limit: z.number().optional().describe("Nombre de mesures Lighthouse (défaut 10)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const [perfRes, costsRaw] = await Promise.all([
+      supabaseAdmin.from("performance_metrics").select("performance_score, lcp, fcp, cls, seo_score, created_at").order("created_at", { ascending: false }).limit(params.limit || 10),
+      supabaseAdmin.from("api_usage_metrics").select("api_name, estimated_cost_cents, total_tokens").gte("created_at", thirtyDaysAgo.toISOString()),
+    ]);
+    const grouped: Record<string, { total_cost: number; total_tokens: number; request_count: number }> = {};
+    for (const row of costsRaw.data || []) {
+      if (!grouped[row.api_name]) grouped[row.api_name] = { total_cost: 0, total_tokens: 0, request_count: 0 };
+      grouped[row.api_name].total_cost += row.estimated_cost_cents || 0;
+      grouped[row.api_name].total_tokens += row.total_tokens || 0;
+      grouped[row.api_name].request_count += 1;
+    }
+    const apiCosts = Object.entries(grouped).map(([api_name, v]) => ({ api_name, ...v })).sort((a, b) => b.total_cost - a.total_cost);
+    return { content: [{ type: "text" as const, text: JSON.stringify({ performance: perfRes.data || [], api_costs_30d: apiCosts }) }] };
+  }
+);
+
 // === Hono app ===
 const app = new Hono().basePath('/mcp-server');
 
