@@ -536,7 +536,7 @@ mcpServer.registerTool(
       city: z.string().optional().describe("Ville"),
       budget: z.number().optional().describe("Budget estimé en euros"),
       qualification_status: z.string().optional().describe("Statut qualification (new, contacted, qualified, hot, won, lost)"),
-      notes: z.string().optional().describe("Notes libres"),
+      message: z.string().optional().describe("Notes / message libre"),
     },
   },
   async (params) => {
