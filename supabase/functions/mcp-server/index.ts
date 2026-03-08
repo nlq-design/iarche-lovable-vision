@@ -517,6 +517,465 @@ mcpServer.registerTool(
   }
 );
 
+// ============================================================
+// TOOL 10: create_lead
+// ============================================================
+mcpServer.registerTool(
+  "create_lead",
+  {
+    title: "Create Lead",
+    description: "Créer un nouveau lead dans le CRM IArche.",
+    inputSchema: {
+      name: z.string().describe("Nom complet du lead"),
+      email: z.string().describe("Email du lead"),
+      source: z.string().describe("Source d'acquisition (ex: mcp, linkedin, salon)"),
+      company: z.string().optional().describe("Nom de l'entreprise"),
+      phone: z.string().optional().describe("Téléphone"),
+      position: z.string().optional().describe("Poste / fonction"),
+      industry: z.string().optional().describe("Secteur d'activité"),
+      city: z.string().optional().describe("Ville"),
+      budget: z.number().optional().describe("Budget estimé en euros"),
+      qualification_status: z.string().optional().describe("Statut qualification (new, contacted, qualified, hot, won, lost)"),
+      notes: z.string().optional().describe("Notes libres"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const slug = params.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+    const { data, error } = await supabaseAdmin.from("leads").insert({
+      workspace_id: ctx.wsId,
+      name: params.name,
+      email: params.email,
+      source: params.source,
+      slug,
+      company: params.company || null,
+      phone: params.phone || null,
+      position: params.position || null,
+      industry: params.industry || null,
+      city: params.city || null,
+      budget: params.budget || null,
+      qualification_status: params.qualification_status || "new",
+      notes: params.notes || null,
+    }).select("id, name, email, company, slug, created_at").single();
+
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, lead: data }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 11: update_lead
+// ============================================================
+mcpServer.registerTool(
+  "update_lead",
+  {
+    title: "Update Lead",
+    description: "Modifier un ou plusieurs champs d'un lead existant. Seuls les champs fournis sont mis à jour.",
+    inputSchema: {
+      lead_id: z.string().describe("UUID du lead à modifier"),
+      name: z.string().optional(),
+      email: z.string().optional(),
+      company: z.string().optional(),
+      phone: z.string().optional(),
+      position: z.string().optional(),
+      industry: z.string().optional(),
+      city: z.string().optional(),
+      address: z.string().optional(),
+      postal_code: z.string().optional(),
+      country: z.string().optional(),
+      website: z.string().optional(),
+      linkedin_url: z.string().optional(),
+      company_size: z.string().optional(),
+      revenue_range: z.string().optional(),
+      siret: z.string().optional(),
+      budget: z.number().optional(),
+      lead_score: z.number().optional(),
+      qualification_status: z.string().optional(),
+      status: z.string().optional(),
+      consent_marketing: z.boolean().optional(),
+      synthesis_stale: z.boolean().optional(),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const { lead_id, ...fields } = params;
+    const updates: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(fields)) {
+      if (value !== undefined) updates[key] = value;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return { content: [{ type: "text" as const, text: "Aucun champ à mettre à jour fourni." }] };
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from("leads")
+      .update(updates)
+      .eq("id", lead_id)
+      .eq("workspace_id", ctx.wsId)
+      .select("*")
+      .single();
+
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, lead: data }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 12: create_task
+// ============================================================
+mcpServer.registerTool(
+  "create_task",
+  {
+    title: "Create Task",
+    description: "Créer une tâche liée à un lead ou projet.",
+    inputSchema: {
+      title: z.string().describe("Titre de la tâche"),
+      description: z.string().optional().describe("Description détaillée"),
+      status: z.string().optional().describe("Statut (défaut: todo)"),
+      priority: z.string().optional().describe("Priorité: low, medium, high, urgent (défaut: medium)"),
+      assigned_to: z.string().optional().describe("UUID utilisateur assigné"),
+      due_date: z.string().optional().describe("Date d'échéance ISO"),
+      lead_id: z.string().optional().describe("UUID lead lié"),
+      project_id: z.string().optional().describe("UUID projet lié"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const { data, error } = await supabaseAdmin.from("tasks").insert({
+      workspace_id: ctx.wsId,
+      title: params.title,
+      description: params.description || null,
+      status: params.status || "todo",
+      priority: params.priority || "medium",
+      assigned_to: params.assigned_to || null,
+      due_date: params.due_date || null,
+      lead_id: params.lead_id || null,
+      project_id: params.project_id || null,
+    }).select("id, title, status, priority, due_date, lead_id, project_id, created_at").single();
+
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, task: data }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 13: create_activity_note
+// ============================================================
+mcpServer.registerTool(
+  "create_activity_note",
+  {
+    title: "Create Activity Note",
+    description: "Ajouter une note ou activité dans le journal CRM (append-only).",
+    inputSchema: {
+      entity_type: z.string().describe("Type d'entité (lead, project, opportunity, partner)"),
+      entity_id: z.string().describe("UUID de l'entité"),
+      activity_type: z.string().describe("Type d'activité (note, call, email, meeting, status_change, task)"),
+      title: z.string().describe("Titre de l'activité"),
+      content: z.string().optional().describe("Contenu détaillé"),
+      lead_id: z.string().optional().describe("UUID lead lié"),
+      opportunity_id: z.string().optional().describe("UUID opportunité liée"),
+      project_id: z.string().optional().describe("UUID projet lié"),
+      task_id: z.string().optional().describe("UUID tâche liée"),
+      visibility: z.string().optional().describe("Visibilité: internal, team, public (défaut: internal)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const { data, error } = await supabaseAdmin.from("activity_log").insert({
+      workspace_id: ctx.wsId,
+      entity_type: params.entity_type,
+      entity_id: params.entity_id,
+      activity_type: params.activity_type,
+      title: params.title,
+      content: params.content || null,
+      lead_id: params.lead_id || null,
+      opportunity_id: params.opportunity_id || null,
+      project_id: params.project_id || null,
+      task_id: params.task_id || null,
+      visibility: params.visibility || "internal",
+      is_ai_generated: true,
+      created_by: ctx.userId || null,
+    }).select("id, title, activity_type, entity_type, created_at").single();
+
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, activity: data }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 14: generate_followup_email
+// ============================================================
+mcpServer.registerTool(
+  "generate_followup_email",
+  {
+    title: "Generate Follow-up Email",
+    description: "Générer un brouillon d'email de relance IA pour un lead.",
+    inputSchema: {
+      lead_id: z.string().describe("UUID du lead"),
+      context: z.string().optional().describe("Contexte additionnel pour personnaliser le mail"),
+      tone: z.string().optional().describe("Ton souhaité (formel, amical, direct)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-followup-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          lead_id: params.lead_id,
+          workspace_id: ctx.wsId,
+          context: params.context,
+          tone: params.tone,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { content: [{ type: "text" as const, text: `Erreur: ${JSON.stringify(data)}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, email_draft: data }) }] };
+    } catch (err) {
+      return { content: [{ type: "text" as const, text: `Erreur: ${err}` }] };
+    }
+  }
+);
+
+// ============================================================
+// TOOL 15: search_viviers
+// ============================================================
+mcpServer.registerTool(
+  "search_viviers",
+  {
+    title: "Search Viviers",
+    description: "Recherche IA dans la base de 170k+ prospects (viviers). Accepte une requête en langage naturel.",
+    inputSchema: {
+      query: z.string().describe("Requête de recherche en langage naturel (ex: 'agences immobilières à Lyon')"),
+      filters: z.record(z.unknown()).optional().describe("Filtres structurés optionnels"),
+      limit: z.number().optional().describe("Nombre max de résultats (défaut 20)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/vivier-ai-search`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          query: params.query,
+          workspace_id: ctx.wsId,
+          filters: params.filters,
+          limit: params.limit || 20,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { content: [{ type: "text" as const, text: `Erreur: ${JSON.stringify(data)}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, results: data }) }] };
+    } catch (err) {
+      return { content: [{ type: "text" as const, text: `Erreur: ${err}` }] };
+    }
+  }
+);
+
+// ============================================================
+// TOOL 16: promote_vivier
+// ============================================================
+mcpServer.registerTool(
+  "promote_vivier",
+  {
+    title: "Promote Vivier to Lead",
+    description: "Promouvoir un prospect vivier en lead CRM actif.",
+    inputSchema: {
+      vivier_id: z.string().describe("UUID du vivier à promouvoir"),
+      source: z.string().optional().describe("Source d'acquisition (défaut: vivier)"),
+      notes: z.string().optional().describe("Notes de promotion"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/promote-vivier-to-lead`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          vivier_id: params.vivier_id,
+          workspace_id: ctx.wsId,
+          source: params.source || "vivier",
+          notes: params.notes,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { content: [{ type: "text" as const, text: `Erreur: ${JSON.stringify(data)}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, promotion: data }) }] };
+    } catch (err) {
+      return { content: [{ type: "text" as const, text: `Erreur: ${err}` }] };
+    }
+  }
+);
+
+// ============================================================
+// TOOL 17: run_consulte
+// ============================================================
+mcpServer.registerTool(
+  "run_consulte",
+  {
+    title: "Run Consulte Synthesis",
+    description: "Lancer une synthèse 360° Consulte sur un lead ou projet. Agrège transcriptions, notes, documents.",
+    inputSchema: {
+      entity_type: z.enum(["lead", "project"]).describe("Type d'entité"),
+      entity_id: z.string().describe("UUID de l'entité"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/synthesize-entity-documents`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          entity_type: params.entity_type,
+          entity_id: params.entity_id,
+          workspace_id: ctx.wsId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { content: [{ type: "text" as const, text: `Erreur: ${JSON.stringify(data)}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, synthesis: data }) }] };
+    } catch (err) {
+      return { content: [{ type: "text" as const, text: `Erreur: ${err}` }] };
+    }
+  }
+);
+
+// ============================================================
+// TOOL 18: upsert_opportunity
+// ============================================================
+mcpServer.registerTool(
+  "upsert_opportunity",
+  {
+    title: "Upsert Opportunity",
+    description: "Créer ou mettre à jour une opportunité commerciale dans le pipeline.",
+    inputSchema: {
+      title: z.string().describe("Titre de l'opportunité"),
+      stage: z.string().describe("Stage du pipeline (lead, qualified, proposal, negotiation, won, lost)"),
+      opportunity_id: z.string().optional().describe("UUID existant pour mise à jour"),
+      lead_id: z.string().optional().describe("UUID lead associé"),
+      description: z.string().optional(),
+      value_amount: z.number().optional().describe("Montant du deal en euros"),
+      expected_revenue: z.number().optional().describe("Revenu attendu"),
+      probability: z.number().optional().describe("Probabilité de closing (0-100)"),
+      expected_close_date: z.string().optional().describe("Date de closing prévue ISO"),
+      source: z.string().optional().describe("Source de l'opportunité"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const payload: Record<string, unknown> = {
+      workspace_id: ctx.wsId,
+      title: params.title,
+      stage: params.stage,
+    };
+    if (params.lead_id) payload.lead_id = params.lead_id;
+    if (params.description !== undefined) payload.description = params.description;
+    if (params.value_amount !== undefined) payload.value_amount = params.value_amount;
+    if (params.expected_revenue !== undefined) payload.expected_revenue = params.expected_revenue;
+    if (params.probability !== undefined) payload.probability = params.probability;
+    if (params.expected_close_date) payload.expected_close_date = params.expected_close_date;
+    if (params.source) payload.source = params.source;
+
+    if (params.opportunity_id) {
+      // UPDATE
+      const { workspace_id: _ws, ...updateFields } = payload as any;
+      const { data, error } = await supabaseAdmin
+        .from("opportunities")
+        .update(updateFields)
+        .eq("id", params.opportunity_id)
+        .eq("workspace_id", ctx.wsId)
+        .select("*")
+        .single();
+
+      if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, action: "updated", opportunity: data }) }] };
+    } else {
+      // INSERT
+      const { data, error } = await supabaseAdmin
+        .from("opportunities")
+        .insert(payload)
+        .select("*")
+        .single();
+
+      if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, action: "created", opportunity: data }) }] };
+    }
+  }
+);
+
+// ============================================================
+// TOOL 19: lookup_company
+// ============================================================
+mcpServer.registerTool(
+  "lookup_company",
+  {
+    title: "Lookup Company (Pappers)",
+    description: "Enrichir les données d'une entreprise via Pappers : SIRET, dirigeants, CA, effectifs, code NAF.",
+    inputSchema: {
+      query: z.string().describe("Nom d'entreprise ou numéro SIRET"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/pappers-lookup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          query: params.query,
+          workspace_id: ctx.wsId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { content: [{ type: "text" as const, text: `Erreur: ${JSON.stringify(data)}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, company: data }) }] };
+    } catch (err) {
+      return { content: [{ type: "text" as const, text: `Erreur: ${err}` }] };
+    }
+  }
+);
+
 // === Hono app ===
 const app = new Hono().basePath('/mcp-server');
 
