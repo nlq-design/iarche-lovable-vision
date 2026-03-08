@@ -4315,6 +4315,266 @@ mcpServer.registerTool(
   }
 );
 
+// ===== TOOL #81: simulate_pricing =====
+mcpServer.registerTool(
+  "simulate_pricing",
+  {
+    description: "Simule le pricing IArche pour un produit donné selon le profil client. Calcule ROI, payback period et recommande le bon package.",
+    inputSchema: {
+      product: z.string().describe("Produit IArche : ERP_Avocat, Collaboria, ChatbotRAG, Team5Connect, Datalia"),
+      profile: z.unknown().optional().describe("Objet { team_size, revenue, sector, usage_frequency, needs_setup }"),
+      compare_competitors: z.boolean().optional().describe("Inclure comparatif concurrents (défaut false)"),
+    },
+  },
+  async (params: any) => {
+    try {
+      const PRICING: any = {
+        ERP_Avocat: {
+          name: 'ERP Avocat', model: 'subscription',
+          tiers: [
+            { name: 'Solo', min_users: 1, max_users: 2, monthly: 149, annual: 1490, setup: 500 },
+            { name: 'Cabinet', min_users: 3, max_users: 10, monthly: 349, annual: 3490, setup: 1000 },
+            { name: 'Structure', min_users: 11, max_users: 50, monthly: 749, annual: 7490, setup: 2000 },
+          ],
+          value_drivers: ['Réduction 40% temps administratif','Conformité RGPD automatisée','Facturation automatique','Gestion CLM intégrée'],
+          competitors: [
+            { name: 'Clio', monthly_per_user: 49, notes: 'US, pas RGPD natif' },
+            { name: 'Jarvis Legal', monthly_per_user: 55, notes: 'FR, moins complet' },
+            { name: 'Secib', monthly_per_user: 35, notes: 'FR, vieillissant' },
+          ],
+        },
+        Collaboria: {
+          name: 'Collaboria', model: 'per_seat',
+          tiers: [
+            { name: 'Starter', min_users: 1, max_users: 5, monthly_per_user: 29, annual_per_user: 290 },
+            { name: 'Team', min_users: 6, max_users: 20, monthly_per_user: 24, annual_per_user: 240 },
+            { name: 'Business', min_users: 21, max_users: 100, monthly_per_user: 19, annual_per_user: 190 },
+          ],
+          value_drivers: ['Accès 340+ LLMs depuis 1 interface','Collaboration équipe sur prompts','Historique et audit des conversations','Souveraineté données FR'],
+          competitors: [
+            { name: 'ChatGPT Team', monthly_per_user: 25, notes: 'US, 1 seul LLM' },
+            { name: 'Mistral Le Chat Pro', monthly_per_user: 15, notes: 'FR, limité' },
+          ],
+        },
+        ChatbotRAG: {
+          name: 'Chatbot RAG Avancé', model: 'credits',
+          tiers: [
+            { name: 'Découverte', credits: 1000, price: 99, per_credit: 0.099 },
+            { name: 'Pro', credits: 5000, price: 399, per_credit: 0.08 },
+            { name: 'Scale', credits: 20000, price: 1299, per_credit: 0.065 },
+          ],
+          setup_range: { min: 2000, max: 8000 },
+          value_drivers: ['Support client 24/7 automatisé','Réduction 60% tickets support','Base connaissance propriétaire','Intégration site existant < 1 semaine'],
+          competitors: [
+            { name: 'Intercom AI', monthly: 74, notes: 'US, générique' },
+            { name: 'Crisp AI', monthly: 45, notes: 'FR, moins puissant' },
+          ],
+        },
+        Team5Connect: {
+          name: 'Team 5 Connect', model: 'license',
+          tiers: [
+            { name: 'PME BTP', max_employees: 50, license: 20000, annual_maintenance: 3000 },
+            { name: 'ETI BTP', max_employees: 200, license: 35000, annual_maintenance: 5000 },
+          ],
+          value_drivers: ['Conformité RH BTP automatisée','Gestion intérimaires simplifiée','Réduction accidents chantier via alertes','ROI < 6 mois sur masse salariale'],
+          competitors: [
+            { name: 'Sage HR', annual: 8000, notes: 'Généraliste, pas BTP' },
+            { name: 'Batigest', annual: 5000, notes: 'BTP mais pas RH IA' },
+          ],
+        },
+        Datalia: {
+          name: 'Datalia', model: 'lifetime',
+          tiers: [{ name: 'Lifetime', price: 749, notes: 'Licence perpétuelle HT' }],
+          value_drivers: ['Extraction 46 000+ contacts qualifiés','Données locales Pays Basque / Nouvelle-Aquitaine','Enrichissement automatique','Export direct CRM'],
+          competitors: [
+            { name: 'Kaspr', monthly: 49, notes: 'International, moins local' },
+            { name: 'Lusha', monthly: 79, notes: 'US, RGPD risqué' },
+          ],
+        },
+      };
+
+      const productData = PRICING[params.product];
+      if (!productData) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Produit inconnu : ${params.product}`, available_products: Object.keys(PRICING) }) }] };
+      }
+
+      const teamSize = params.profile?.team_size || 1;
+      const sector = params.profile?.sector || 'non renseigné';
+      const annualRevenue = params.profile?.revenue || 0;
+
+      let recommendedTier: any = null;
+      if (productData.model === 'subscription' || productData.model === 'per_seat') {
+        recommendedTier = productData.tiers.find((t: any) => teamSize >= t.min_users && teamSize <= t.max_users) || productData.tiers[productData.tiers.length - 1];
+      } else {
+        recommendedTier = productData.tiers[0];
+      }
+
+      let annualCost = 0, monthlyCost = 0, setupCost = recommendedTier.setup || 0;
+      if (productData.model === 'subscription') {
+        annualCost = recommendedTier.annual || recommendedTier.monthly * 12;
+        monthlyCost = recommendedTier.monthly;
+      } else if (productData.model === 'per_seat') {
+        annualCost = (recommendedTier.annual_per_user || recommendedTier.monthly_per_user * 12) * teamSize;
+        monthlyCost = recommendedTier.monthly_per_user * teamSize;
+      } else if (productData.model === 'license') {
+        annualCost = recommendedTier.license + (recommendedTier.annual_maintenance || 0);
+        monthlyCost = Math.round(annualCost / 12);
+        setupCost = 0;
+      } else if (productData.model === 'credits') {
+        annualCost = recommendedTier.price;
+        monthlyCost = Math.round(recommendedTier.price / 12);
+        setupCost = params.profile?.needs_setup ? productData.setup_range?.min || 0 : 0;
+      } else if (productData.model === 'lifetime') {
+        annualCost = recommendedTier.price;
+        monthlyCost = 0;
+        setupCost = 0;
+      }
+
+      const totalFirstYear = annualCost + setupCost;
+
+      let roiAnalysis: any = null;
+      if (annualRevenue > 0) {
+        const productivityGain: any = { ERP_Avocat: 0.30, Collaboria: 0.20, ChatbotRAG: 0.25, Team5Connect: 0.35, Datalia: 0.15 };
+        const gain = annualRevenue * (productivityGain[params.product] || 0.20);
+        const roi = Math.round(((gain - totalFirstYear) / totalFirstYear) * 100);
+        const paybackMonths = Math.ceil(totalFirstYear / (gain / 12));
+        roiAnalysis = { estimated_annual_gain: Math.round(gain), total_first_year_cost: totalFirstYear, roi_percentage: roi, payback_months: paybackMonths, note: 'Estimation basée sur gains productivité moyens observés clients IArche' };
+      }
+
+      let competitorComparison: any = null;
+      if (params.compare_competitors && productData.competitors) {
+        competitorComparison = productData.competitors.map((comp: any) => {
+          const compAnnual = comp.monthly ? comp.monthly * 12 : comp.monthly_per_user ? comp.monthly_per_user * 12 * teamSize : comp.annual || 0;
+          return {
+            name: comp.name, annual_cost: compAnnual,
+            vs_iarche: compAnnual > annualCost ? `${Math.round(compAnnual - annualCost)}€ plus cher/an` : `${Math.round(annualCost - compAnnual)}€ moins cher/an`,
+            notes: comp.notes,
+            iarche_advantage: comp.notes.includes('US') ? 'Souveraineté données FR + RGPD natif' : 'Fonctionnalités IA avancées',
+          };
+        });
+      }
+
+      const result = {
+        product: productData.name, model: productData.model,
+        profile: { team_size: teamSize, sector, annual_revenue: annualRevenue },
+        recommended_tier: { name: recommendedTier.name, monthly_cost: monthlyCost, annual_cost: annualCost, setup_cost: setupCost, total_first_year: totalFirstYear },
+        all_tiers: productData.tiers, value_drivers: productData.value_drivers,
+        roi_analysis: roiAnalysis, competitor_comparison: competitorComparison,
+        sales_recommendation: roiAnalysis?.payback_months <= 6
+          ? `ROI < 6 mois — argument closing fort : "Vous êtes rentable avant la fin du semestre"`
+          : roiAnalysis?.roi_percentage > 100
+            ? `ROI > 100% — mettre en avant le gain net : ${roiAnalysis.estimated_annual_gain - totalFirstYear}€ de gain net an 1`
+            : `Mettre en avant les ${productData.value_drivers[0]}`,
+        generated_at: new Date().toISOString(),
+      };
+      return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
+    } catch (err: any) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: err.message }) }] };
+    }
+  }
+);
+
+// ===== TOOL #82: get_financial_report =====
+mcpServer.registerTool(
+  "get_financial_report",
+  {
+    description: "Rapport financier complet IArche. Agrège revenus réalisés, pipeline, projections, coûts IA et KPIs business.",
+    inputSchema: {
+      period: z.string().optional().describe("Période : Q1, Q2, Q3, Q4, month, year (défaut = trimestre en cours)"),
+      year: z.number().optional().describe("Année (défaut = année en cours)"),
+    },
+  },
+  async (params: any) => {
+    try {
+      const wsId = (globalThis as any).__mcpAuth?.workspace_id || Deno.env.get("OWNER_WORKSPACE_ID") || "00000000-0000-0000-0000-000000000001";
+      const currentYear = params.year || new Date().getFullYear();
+      const quarter = params.period || `Q${Math.ceil((new Date().getMonth() + 1) / 3)}`;
+
+      const quarterMap: any = {
+        Q1: { start: `${currentYear}-01-01`, end: `${currentYear}-03-31` },
+        Q2: { start: `${currentYear}-04-01`, end: `${currentYear}-06-30` },
+        Q3: { start: `${currentYear}-07-01`, end: `${currentYear}-09-30` },
+        Q4: { start: `${currentYear}-10-01`, end: `${currentYear}-12-31` },
+        year: { start: `${currentYear}-01-01`, end: `${currentYear}-12-31` },
+        month: {
+          start: new Date(currentYear, new Date().getMonth(), 1).toISOString().slice(0, 10),
+          end: new Date(currentYear, new Date().getMonth() + 1, 0).toISOString().slice(0, 10),
+        },
+      };
+      const period = quarterMap[quarter] || quarterMap[`Q${Math.ceil((new Date().getMonth() + 1) / 3)}`];
+
+      const [wonDeals, activeOpps, aiUsage, projects, tasks] = await Promise.all([
+        supabaseAdmin.from('opportunities').select('id, title, value_amount, closed_at, stage, lead_id').eq('workspace_id', wsId).eq('stage', 'won').gte('closed_at', period.start).lte('closed_at', period.end + 'T23:59:59'),
+        supabaseAdmin.from('opportunities').select('id, title, value_amount, probability, stage, expected_close_date').eq('workspace_id', wsId).not('stage', 'in', '("won","lost")'),
+        supabaseAdmin.from('ai_usage_metrics').select('model_provider, total_tokens, estimated_cost_cents, created_at').eq('workspace_id', wsId).gte('created_at', period.start).lte('created_at', period.end + 'T23:59:59'),
+        supabaseAdmin.from('projects').select('id, name, budget_amount, consumed_amount, status, health_status').eq('workspace_id', wsId).eq('status', 'active'),
+        supabaseAdmin.from('tasks').select('status, priority, created_at').eq('workspace_id', wsId).gte('created_at', period.start),
+      ]);
+
+      const totalRevenue = (wonDeals.data || []).reduce((s: number, d: any) => s + (d.value_amount || 0), 0);
+      const dealCount = wonDeals.data?.length || 0;
+      const avgDealSize = dealCount > 0 ? Math.round(totalRevenue / dealCount) : 0;
+
+      const pipelineValue = (activeOpps.data || []).reduce((s: number, o: any) => s + (o.value_amount || 0), 0);
+      const weightedPipeline = (activeOpps.data || []).reduce((s: number, o: any) => s + ((o.value_amount || 0) * ((o.probability || 50) / 100)), 0);
+
+      const totalAiCost = (aiUsage.data || []).reduce((s: number, u: any) => s + ((u.estimated_cost_cents || 0) / 100), 0);
+      const aiCostByProvider: any = {};
+      (aiUsage.data || []).forEach((u: any) => {
+        const prov = u.model_provider || 'unknown';
+        if (!aiCostByProvider[prov]) aiCostByProvider[prov] = { cost: 0, tokens: 0, calls: 0 };
+        aiCostByProvider[prov].cost += (u.estimated_cost_cents || 0) / 100;
+        aiCostByProvider[prov].tokens += u.total_tokens || 0;
+        aiCostByProvider[prov].calls++;
+      });
+
+      const contractedRevenue = (projects.data || []).reduce((s: number, p: any) => s + Math.max(0, (p.budget_amount || 0) - (p.consumed_amount || 0)), 0);
+
+      const allOpps = [...(wonDeals.data || []), ...(activeOpps.data || [])];
+      const conversionRate = allOpps.length > 0 ? Math.round((dealCount / allOpps.length) * 100) : 0;
+
+      const taskStats: any = { done: 0, todo: 0, in_progress: 0 };
+      (tasks.data || []).forEach((t: any) => { if (taskStats[t.status] !== undefined) taskStats[t.status]++; });
+
+      const healthScore = Math.min(100, Math.round(
+        (totalRevenue > 0 ? 30 : 0) +
+        (weightedPipeline > totalRevenue ? 25 : 15) +
+        (conversionRate > 20 ? 20 : conversionRate) +
+        ((projects.data || []).filter((p: any) => p.health_status === 'green').length > 0 ? 15 : 5) +
+        (totalAiCost < totalRevenue * 0.1 ? 10 : 5)
+      ));
+
+      const result = {
+        period: { label: quarter, start: period.start, end: period.end },
+        revenue: { realized: Math.round(totalRevenue), deals_won: dealCount, avg_deal_size: avgDealSize, contracted_backlog: Math.round(contractedRevenue) },
+        pipeline: { total_value: Math.round(pipelineValue), weighted_value: Math.round(weightedPipeline), active_opportunities: activeOpps.data?.length || 0, conversion_rate_pct: conversionRate },
+        costs: {
+          ai_total_eur: Math.round(totalAiCost * 100) / 100,
+          ai_by_provider: Object.entries(aiCostByProvider).map(([provider, data]: any) => ({ provider, cost_eur: Math.round(data.cost * 100) / 100, tokens: data.tokens, calls: data.calls })),
+          ai_cost_ratio_pct: totalRevenue > 0 ? Math.round((totalAiCost / totalRevenue) * 100) : null,
+        },
+        projects: {
+          active_count: projects.data?.length || 0,
+          green: (projects.data || []).filter((p: any) => p.health_status === 'green').length,
+          orange: (projects.data || []).filter((p: any) => p.health_status === 'orange').length,
+          red: (projects.data || []).filter((p: any) => p.health_status === 'red').length,
+        },
+        productivity: {
+          tasks_created: tasks.data?.length || 0, tasks_done: taskStats.done,
+          completion_rate_pct: (tasks.data?.length || 0) > 0 ? Math.round((taskStats.done / tasks.data!.length) * 100) : 0,
+        },
+        health_score: healthScore,
+        health_label: healthScore >= 70 ? '🟢 Bonne santé' : healthScore >= 40 ? '🟡 Attention requise' : '🔴 Situation critique',
+        executive_summary: `${quarter} ${currentYear} : ${Math.round(totalRevenue)}€ réalisés, ${Math.round(weightedPipeline)}€ pipeline pondéré, ${dealCount} deal(s) gagnés. Coûts IA : ${Math.round(totalAiCost * 100) / 100}€. Score santé : ${healthScore}/100.`,
+        generated_at: new Date().toISOString(),
+      };
+      return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
+    } catch (err: any) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: err.message }) }] };
+    }
+  }
+);
+
 
 // === Native JSON-RPC MCP Handler ===
 function _toolsList() {
