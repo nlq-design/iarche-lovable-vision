@@ -1,7 +1,7 @@
 /**
  * MCP Server Edge Function — IArche CRM
  * 
- * Exposes 9 MCP tools (6 READ + 3 WRITE) via official @modelcontextprotocol/sdk.
+ * Exposes 37 MCP tools via official @modelcontextprotocol/sdk.
  * Auth: Custom MCP API key (Bearer iarche_mcp_...) on tool calls.
  * Initialize/discovery requests pass without auth (MCP spec requirement).
  * All queries use service_role scoped by workspace_id from key.
