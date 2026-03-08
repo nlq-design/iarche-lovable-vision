@@ -3528,7 +3528,413 @@ mcpServer.registerTool(
   }
 );
 
-// === Hono app ===
+// ============================================================
+// TOOL 78: run_workflow
+// ============================================================
+mcpServer.registerTool(
+  "run_workflow",
+  {
+    title: "Run Workflow",
+    description: "Exécute un workflow complexe multi-actions en une commande. Retourne un plan d'exécution détaillé — validation requise avant exécution réelle. Workflows : onboard_client, close_deal, analyze_prospect, weekly_review, content_campaign.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        workflow_name: { type: "string", description: "Nom du workflow (onboard_client, close_deal, analyze_prospect, weekly_review, content_campaign)" },
+        entity_id: { type: "string", description: "UUID de l'entité cible (opportunity_id ou lead_id selon le workflow)" },
+        entity_type: { type: "string", description: "Type d'entité (opportunity, lead)" },
+        params: { type: "object", description: "Paramètres spécifiques au workflow (outcome, reason, sector, product…)" },
+      },
+      required: ["workflow_name"],
+    },
+  },
+  async (params: any) => {
+    const wsId = (globalThis as any).__mcpAuth?.workspace_id;
+
+    const workflows: Record<string, (entityId: string | null, wfParams: any) => Promise<any>> = {
+
+      // WORKFLOW 1: ONBOARD CLIENT
+      onboard_client: async (entityId, wfParams) => {
+        if (!entityId) throw new Error("entity_id requis (opportunity_id)");
+
+        const { data: opp } = await supabaseAdmin
+          .from("opportunities")
+          .select("*, leads(id, name, company, email)")
+          .eq("id", entityId)
+          .single();
+
+        if (!opp) throw new Error("Opportunité introuvable");
+
+        const steps = [
+          {
+            step: 1,
+            action: "create_project",
+            description: `Créer projet "${opp.title}" pour ${(opp as any).leads?.company}`,
+            data: {
+              name: opp.title,
+              opportunity_id: opp.id,
+              lead_id: opp.lead_id,
+              budget_amount: opp.value_amount,
+              status: "active",
+              health_status: "green",
+            },
+          },
+          {
+            step: 2,
+            action: "create_tasks",
+            description: "Créer les 5 tâches d'onboarding standard",
+            data: [
+              { title: "Kick-off call planifié", priority: "high", due_days: 3 },
+              { title: "Accès et credentials envoyés", priority: "high", due_days: 5 },
+              { title: "Audit technique initial", priority: "medium", due_days: 10 },
+              { title: "Formation utilisateurs", priority: "medium", due_days: 21 },
+              { title: "Premier bilan à 30j", priority: "low", due_days: 30 },
+            ],
+          },
+          {
+            step: 3,
+            action: "create_meeting_note",
+            description: "Créer note de kick-off",
+            data: {
+              title: `Kick-off ${(opp as any).leads?.company}`,
+              objectives: `Démarrage projet ${opp.title}`,
+              next_steps: "Envoyer accès, planifier formation",
+              opportunity_id: opp.id,
+            },
+          },
+          {
+            step: 4,
+            action: "generate_followup_email",
+            description: `Générer email de bienvenue pour ${(opp as any).leads?.name}`,
+            data: {
+              lead_id: opp.lead_id,
+              context: `Client vient de signer pour ${opp.title}. Email de bienvenue chaleureux avec prochaines étapes.`,
+            },
+          },
+          {
+            step: 5,
+            action: "create_activity_note",
+            description: "Logger le démarrage dans l'historique",
+            data: {
+              entity_type: "opportunity",
+              entity_id: opp.id,
+              activity_type: "deal_won",
+              title: `Deal gagné — ${opp.title}`,
+              content: `Valeur : ${opp.value_amount}€. Onboarding initié.`,
+              opportunity_id: opp.id,
+            },
+          },
+        ];
+
+        return {
+          workflow: "onboard_client",
+          entity: { id: opp.id, title: opp.title, client: (opp as any).leads?.company },
+          steps_count: steps.length,
+          steps,
+          estimated_actions: "1 projet + 5 tâches + 1 note réunion + 1 email + 1 activité",
+          validation_required: true,
+          message: "Plan d'onboarding prêt. Confirme pour exécuter chaque étape.",
+        };
+      },
+
+      // WORKFLOW 2: CLOSE DEAL
+      close_deal: async (entityId, wfParams) => {
+        if (!entityId) throw new Error("entity_id requis (opportunity_id)");
+
+        const { data: opp } = await supabaseAdmin
+          .from("opportunities")
+          .select("*, leads(id, name, company, email, lead_score)")
+          .eq("id", entityId)
+          .single();
+
+        if (!opp) throw new Error("Opportunité introuvable");
+
+        const outcome = wfParams?.outcome || "won";
+
+        const steps = outcome === "won" ? [
+          {
+            step: 1,
+            action: "update_opportunity",
+            description: "Passer l'opportunité en \"won\"",
+            data: {
+              opportunity_id: opp.id,
+              stage: "won",
+              closed_at: new Date().toISOString(),
+              probability: 100,
+            },
+          },
+          {
+            step: 2,
+            action: "update_lead",
+            description: `Passer le lead ${(opp as any).leads?.name} en "converted"`,
+            data: { lead_id: opp.lead_id, status: "converted" },
+          },
+          {
+            step: 3,
+            action: "create_specification",
+            description: "Générer un CDC initial",
+            data: {
+              title: `CDC — ${opp.title}`,
+              project_id: null,
+              status: "draft",
+              content: {
+                context: opp.description || "",
+                value: opp.value_amount,
+                client: (opp as any).leads?.company,
+              },
+            },
+          },
+          {
+            step: 4,
+            action: "trigger_onboard",
+            description: "Déclencher le workflow onboard_client",
+            data: { opportunity_id: opp.id },
+          },
+        ] : [
+          {
+            step: 1,
+            action: "update_opportunity",
+            description: "Passer l'opportunité en \"lost\"",
+            data: {
+              opportunity_id: opp.id,
+              stage: "lost",
+              closed_at: new Date().toISOString(),
+              close_reason: wfParams?.reason || "Non renseigné",
+            },
+          },
+          {
+            step: 2,
+            action: "update_lead",
+            description: "Passer le lead en \"lost\"",
+            data: { lead_id: opp.lead_id, status: "lost" },
+          },
+          {
+            step: 3,
+            action: "create_activity_note",
+            description: "Logger la perte avec raison",
+            data: {
+              entity_type: "opportunity",
+              entity_id: opp.id,
+              activity_type: "deal_lost",
+              title: `Deal perdu — ${opp.title}`,
+              content: `Raison : ${wfParams?.reason || "Non renseignée"}`,
+              opportunity_id: opp.id,
+            },
+          },
+        ];
+
+        return {
+          workflow: "close_deal",
+          outcome,
+          entity: { id: opp.id, title: opp.title, client: (opp as any).leads?.company },
+          steps_count: steps.length,
+          steps,
+          validation_required: true,
+          message: `Plan de clôture (${outcome}) prêt. Confirme pour exécuter.`,
+        };
+      },
+
+      // WORKFLOW 3: ANALYZE PROSPECT
+      analyze_prospect: async (entityId, wfParams) => {
+        if (!entityId) throw new Error("entity_id requis (lead_id)");
+
+        const [leadResult, activitiesResult, oppsResult] = await Promise.all([
+          supabaseAdmin
+            .from("leads")
+            .select("*")
+            .eq("id", entityId)
+            .single(),
+          supabaseAdmin
+            .from("activity_log")
+            .select("activity_type, title, created_at")
+            .eq("workspace_id", wsId)
+            .eq("lead_id", entityId)
+            .order("created_at", { ascending: false })
+            .limit(10),
+          supabaseAdmin
+            .from("opportunities")
+            .select("id, title, stage, value_amount, probability")
+            .eq("workspace_id", wsId)
+            .eq("lead_id", entityId),
+        ]);
+
+        const lead = leadResult.data;
+        if (!lead) throw new Error("Lead introuvable");
+
+        const steps = [
+          {
+            step: 1,
+            action: "pappers_lookup",
+            description: `Enrichir ${lead.company || lead.name} via Pappers`,
+            data: { query: lead.siret || lead.company || lead.name },
+          },
+          {
+            step: 2,
+            action: "run_consulte",
+            description: "Générer synthèse 360° Consulte",
+            data: { entity_type: "lead", entity_id: lead.id },
+          },
+          {
+            step: 3,
+            action: "search_viviers",
+            description: "Chercher des contacts similaires dans les viviers",
+            data: {
+              query: `${lead.industry || ""} ${lead.city || ""} ${lead.company || ""}`.trim(),
+            },
+          },
+          {
+            step: 4,
+            action: "generate_followup_email",
+            description: "Préparer un email de relance personnalisé",
+            data: {
+              lead_id: lead.id,
+              context: `Score: ${lead.lead_score}, Secteur: ${lead.industry}, Budget déclaré: ${lead.budget || "non renseigné"}`,
+            },
+          },
+        ];
+
+        return {
+          workflow: "analyze_prospect",
+          entity: {
+            id: lead.id,
+            name: lead.name,
+            company: lead.company,
+            score: lead.lead_score,
+            status: lead.status,
+          },
+          existing_data: {
+            activities_count: activitiesResult.data?.length || 0,
+            opportunities_count: oppsResult.data?.length || 0,
+            last_activity: activitiesResult.data?.[0]?.title || "Aucune",
+          },
+          steps_count: steps.length,
+          steps,
+          validation_required: true,
+          message: "Plan d'analyse prêt. Confirme pour lancer chaque étape.",
+        };
+      },
+
+      // WORKFLOW 4: WEEKLY REVIEW
+      weekly_review: async (_entityId, _wfParams) => {
+        const steps = [
+          { step: 1, action: "audit_crm_quality", description: "Score de qualité CRM de la semaine" },
+          { step: 2, action: "analyze_pipeline", description: "État du pipeline et deals à risque" },
+          { step: 3, action: "get_forecast", description: "Forecast 3 mois mis à jour" },
+          { step: 4, action: "get_tasks", description: "Tâches en retard et priorités semaine prochaine", data: { status: "todo", limit: 20 } },
+          { step: 5, action: "get_sentinel_alerts", description: "Alertes Sentinel non résolues" },
+          { step: 6, action: "get_ai_usage", description: "Consommation IA de la semaine", data: { days: 7 } },
+        ];
+
+        return {
+          workflow: "weekly_review",
+          week: new Date().toISOString().slice(0, 10),
+          steps_count: steps.length,
+          steps,
+          validation_required: false,
+          message: "Revue hebdo — toutes les données en lecture. Lance directement ?",
+        };
+      },
+
+      // WORKFLOW 5: CONTENT CAMPAIGN
+      content_campaign: async (_entityId, wfParams) => {
+        const targetSector = wfParams?.sector || "PME françaises";
+        const targetProduct = wfParams?.product || "IArche";
+
+        const { data: sectorLeads } = await supabaseAdmin
+          .from("leads")
+          .select("industry, company, qualification_status, lead_score")
+          .eq("workspace_id", wsId)
+          .not("status", "in", '("lost","archived")')
+          .limit(100);
+
+        const sectorCount: Record<string, number> = {};
+        (sectorLeads || []).forEach((l: any) => {
+          if (l.industry) {
+            sectorCount[l.industry] = (sectorCount[l.industry] || 0) + 1;
+          }
+        });
+        const topSectors = Object.entries(sectorCount)
+          .sort((a, b) => (b[1] as number) - (a[1] as number))
+          .slice(0, 3)
+          .map(([sector, count]) => ({ sector, count }));
+
+        const steps = [
+          {
+            step: 1,
+            action: "generate_article",
+            description: `Générer article SEO ciblé "${targetSector}"`,
+            data: {
+              prompt: `Rédige un article expert sur l'IA pour les ${targetSector}. Angle : comment ${targetProduct} transforme leur quotidien. SEO-optimisé, ton expert mais accessible.`,
+              resource_type: "expertise",
+            },
+          },
+          { step: 2, action: "enrich_seo", description: "Enrichir le SEO de l'article généré" },
+          { step: 3, action: "suggest_tags", description: "Suggérer les tags pertinents" },
+          { step: 4, action: "generate_faq", description: "Générer la FAQ associée à l'article" },
+          {
+            step: 5,
+            action: "search_viviers",
+            description: "Identifier les prospects cibles dans les viviers",
+            data: { query: targetSector, limit: 50 },
+          },
+        ];
+
+        return {
+          workflow: "content_campaign",
+          target: { sector: targetSector, product: targetProduct },
+          sector_analysis: {
+            top_sectors_in_crm: topSectors,
+            recommendation: topSectors[0]
+              ? `Secteur le plus représenté dans ton CRM : ${topSectors[0].sector} (${topSectors[0].count} leads)`
+              : "Pas assez de données sectorielles",
+          },
+          steps_count: steps.length,
+          steps,
+          validation_required: true,
+          message: "Plan de campagne contenu prêt. Confirme pour lancer.",
+        };
+      },
+    };
+
+    // DISPATCHER
+    const handler = workflows[params.workflow_name];
+    if (!handler) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            error: `Workflow "${params.workflow_name}" inconnu.`,
+            available_workflows: [
+              "onboard_client — Onboarder un nouveau client (entity_id = opportunity_id)",
+              "close_deal — Clôturer un deal won/lost (entity_id = opportunity_id, params.outcome)",
+              "analyze_prospect — Analyse complète d'un prospect (entity_id = lead_id)",
+              "weekly_review — Revue hebdomadaire complète (pas d'entity_id)",
+              "content_campaign — Campagne contenu ciblée (params.sector, params.product)",
+            ],
+          }),
+        }],
+      };
+    }
+
+    try {
+      const result = await handler(params.entity_id || null, params.params || {});
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify(result),
+        }],
+      };
+    } catch (err: any) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({ error: err.message, workflow: params.workflow_name }),
+        }],
+      };
+    }
+  }
+);
+
+
 const app = new Hono().basePath('/mcp-server');
 
 // CORS preflight
