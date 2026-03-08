@@ -3238,7 +3238,7 @@ mcpServer.registerTool(
         .eq("workspace_id", wsId)
         .not("opportunity_id", "is", null)
         .order("created_at", { ascending: false })
-        .limit(200),
+        .limit(500),
       supabaseAdmin
         .from("tasks")
         .select("id, title, status, priority, due_date, opportunity_id")
