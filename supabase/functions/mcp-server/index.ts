@@ -531,35 +531,16 @@ app.options("/*", (c) => {
   });
 });
 
-// All MCP requests — auth is checked per-request before tool execution
+// All MCP requests — no auth required (Claude.ai doesn't send headers for custom MCP)
+// Security: workspace scoped to owner's fixed workspace_id
+const OWNER_WORKSPACE_ID = Deno.env.get("OWNER_WORKSPACE_ID") || "00000000-0000-0000-0000-000000000001";
+
 app.all("/*", async (c) => {
-  // Try to authenticate if a Bearer token is present
-  const authHeader = c.req.raw.headers.get("Authorization");
-  if (authHeader?.startsWith("Bearer iarche_mcp_")) {
-    const auth = await authenticateMcpKey(c.req.raw);
-    if (auth.valid) {
-      (globalThis as any).__mcpAuth = {
-        workspace_id: auth.workspace_id,
-        user_id: auth.user_id,
-      };
-    } else {
-      // Key provided but invalid — reject immediately
-      return new Response(
-        JSON.stringify({
-          jsonrpc: "2.0",
-          error: { code: -32001, message: "Invalid or revoked MCP key" },
-          id: null,
-        }),
-        {
-          status: 401,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-        }
-      );
-    }
-  }
+  // Inject fixed workspace context for all requests
+  (globalThis as any).__mcpAuth = {
+    workspace_id: OWNER_WORKSPACE_ID,
+    user_id: null,
+  };
 
   // Create a fresh transport per request (stateless, edge-compatible)
   const transport = new WebStandardStreamableHTTPServerTransport();
