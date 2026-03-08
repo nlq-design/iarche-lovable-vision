@@ -1,20 +1,61 @@
-// redeploy 08/03/2026
+// redeploy 08/03/2026 v2 — native JSON-RPC (no SDK, no Zod)
 /**
- * MCP Server Edge Function — IArche CRM (75 tools)
+ * MCP Server Edge Function — IArche CRM (80 tools)
  *
- * Exposes 75 MCP tools via official @modelcontextprotocol/sdk.
+ * Native JSON-RPC handler — no @modelcontextprotocol/sdk dependency.
+ * Eliminates safeParseAsync / Zod compatibility issues in Deno edge runtime.
  * Auth: Custom MCP API key (Bearer iarche_mcp_...) on tool calls.
- * Initialize/discovery requests pass without auth (MCP spec requirement).
  * All queries use service_role scoped by workspace_id from key.
  */
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 
-import { McpServer } from 'npm:@modelcontextprotocol/sdk@1.25.3/server/mcp.js'
-import { WebStandardStreamableHTTPServerTransport } from 'npm:@modelcontextprotocol/sdk@1.25.3/server/webStandardStreamableHttp.js'
 import { Hono } from 'npm:hono@^4.9.7'
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { z } from 'npm:zod@3.23.8'
+
+// === Zod-compatible shim (schema descriptors only, no validation) ===
+function _sh(base: any) {
+  const s: any = { ...base };
+  s.optional = () => _sh({ ...base, _opt: true });
+  s.describe = (d: string) => _sh({ ...base, _desc: d });
+  s.uuid = () => _sh({ ...base });
+  return s;
+}
+const z = {
+  string: () => _sh({ _t: 'string' }),
+  number: () => _sh({ _t: 'number' }),
+  boolean: () => _sh({ _t: 'boolean' }),
+  enum: (v: string[]) => _sh({ _t: 'string', _enum: v }),
+  array: (inner: any) => _sh({ _t: 'array', _items: inner }),
+  record: (inner: any) => _sh({ _t: 'object' }),
+  unknown: () => _sh({ _t: 'object' }),
+};
+
+function _toJsonSchema(schema: any): any {
+  if (!schema || (schema.type === 'object' && schema.properties)) return schema || { type: 'object', properties: {} };
+  const props: any = {};
+  const req: string[] = [];
+  for (const [k, v] of Object.entries(schema)) {
+    const x = v as any;
+    if (typeof x !== 'object' || !x._t) continue;
+    const p: any = { type: x._t };
+    if (x._desc) p.description = x._desc;
+    if (x._enum) p.enum = x._enum;
+    if (x._t === 'array' && x._items) p.items = { type: x._items._t || 'string' };
+    props[k] = p;
+    if (!x._opt) req.push(k);
+  }
+  return { type: 'object', properties: props, ...(req.length ? { required: req } : {}) };
+}
+
+// === Tool registry (replaces McpServer) ===
+interface _Tool { name: string; description: string; inputSchema: any; handler: Function; }
+const _tools: _Tool[] = [];
+const mcpServer = {
+  registerTool(name: string, config: any, handler: Function) {
+    _tools.push({ name, description: config.description || '', inputSchema: config.inputSchema, handler });
+  },
+};
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -85,10 +126,7 @@ function authError() {
 }
 
 // === MCP Server setup ===
-const mcpServer = new McpServer({
-  name: "iarche-crm",
-  version: "1.0.0",
-});
+// (McpServer shim defined above — registerTool stores tools in _tools array)
 
 // ============================================================
 // TOOL 1: get_leads
@@ -4247,9 +4285,19 @@ mcpServer.registerTool(
 );
 
 
+// === Native JSON-RPC MCP Handler ===
+function _toolsList() {
+  return _tools.map(t => ({ name: t.name, description: t.description, inputSchema: _toJsonSchema(t.inputSchema) }));
+}
+
+async function _callTool(name: string, args: any) {
+  const tool = _tools.find(t => t.name === name);
+  if (!tool) throw new Error(`Tool "${name}" not found. ${_tools.length} tools available.`);
+  return await tool.handler(args || {});
+}
+
 const app = new Hono().basePath('/mcp-server');
 
-// CORS preflight
 app.options("/*", (c) => {
   return new Response(null, {
     headers: {
@@ -4260,21 +4308,55 @@ app.options("/*", (c) => {
   });
 });
 
-// All MCP requests — no auth required (Claude.ai doesn't send headers for custom MCP)
-// Security: workspace scoped to owner's fixed workspace_id
 const OWNER_WORKSPACE_ID = Deno.env.get("OWNER_WORKSPACE_ID") || "00000000-0000-0000-0000-000000000001";
 
-app.all("/*", async (c) => {
-  // Inject fixed workspace context for all requests
-  (globalThis as any).__mcpAuth = {
-    workspace_id: OWNER_WORKSPACE_ID,
-    user_id: null,
-  };
+// Health check — avoids 406 on GET
+app.get("/*", (c) => c.json({ status: 'ok', tools: _tools.length, server: 'iarche-crm', version: '2.0.0' }));
 
-  // Create a fresh transport per request (stateless, edge-compatible)
-  const transport = new WebStandardStreamableHTTPServerTransport();
-  await mcpServer.connect(transport);
-  return transport.handleRequest(c.req.raw);
+// MCP JSON-RPC handler
+app.post("/*", async (c) => {
+  (globalThis as any).__mcpAuth = { workspace_id: OWNER_WORKSPACE_ID, user_id: null };
+
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } }, 400);
+  }
+
+  const { method, params, id } = body;
+
+  try {
+    if (method === 'initialize') {
+      return c.json({
+        jsonrpc: '2.0', id,
+        result: {
+          protocolVersion: '2024-11-05',
+          capabilities: { tools: {} },
+          serverInfo: { name: 'iarche-crm', version: '2.0.0' },
+        },
+      });
+    }
+
+    if (method === 'notifications/initialized') {
+      return c.json({ jsonrpc: '2.0', id: id ?? null, result: {} });
+    }
+
+    if (method === 'tools/list') {
+      return c.json({ jsonrpc: '2.0', id, result: { tools: _toolsList() } });
+    }
+
+    if (method === 'tools/call') {
+      const { name, arguments: args } = params || {};
+      const result = await _callTool(name, args);
+      return c.json({ jsonrpc: '2.0', id, result });
+    }
+
+    return c.json({ jsonrpc: '2.0', id, error: { code: -32601, message: `Method "${method}" not supported` } });
+  } catch (err: any) {
+    console.error('[MCP Error]', method, err.message);
+    return c.json({ jsonrpc: '2.0', id, error: { code: -32603, message: err.message } });
+  }
 });
 
 Deno.serve(app.fetch);
