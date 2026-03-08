@@ -3219,7 +3219,8 @@ mcpServer.registerTool(
       `)
       .eq("workspace_id", wsId)
       .not("stage", "in", '("won","lost")')
-      .order("value_amount", { ascending: false });
+      .order("value_amount", { ascending: false })
+      .limit(1000);
 
     if (params.stage_filter) {
       oppsQuery = oppsQuery.eq("stage", params.stage_filter);
