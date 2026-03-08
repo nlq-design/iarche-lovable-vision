@@ -3935,6 +3935,317 @@ mcpServer.registerTool(
 );
 
 
+// ============================================================
+// TOOL 79: analyze_content_gaps
+// ============================================================
+mcpServer.registerTool(
+  "analyze_content_gaps",
+  {
+    title: "Analyze Content Gaps",
+    description: "Analyse les lacunes de contenu SEO en croisant les articles existants avec les secteurs réels du pipeline CRM. Identifie les opportunités de contenu manquantes avec priorité high/medium/low.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        resource_type: { type: "string", description: "Filtrer par type d'article (expertise, cas-client, actualite, solution…)" },
+        min_leads_threshold: { type: "number", description: "Nombre minimum de leads dans un secteur pour justifier un article (défaut: 2)" },
+      },
+    },
+  },
+  async (params: any) => {
+    const wsId = (globalThis as any).__mcpAuth?.workspace_id;
+    try {
+      const articlesQuery = supabaseAdmin
+        .from('articles')
+        .select('id, title, slug, resource_type, status, published, meta_description, created_at')
+        .order('created_at', { ascending: false });
+      if (params.resource_type) {
+        articlesQuery.eq('resource_type', params.resource_type);
+      }
+
+      const [articles, leads, viviers, tags] = await Promise.all([
+        articlesQuery,
+        supabaseAdmin
+          .from('leads')
+          .select('industry, company, qualification_status, lead_score, status')
+          .eq('workspace_id', wsId)
+          .not('status', 'in', '("lost","archived")')
+          .not('industry', 'is', null),
+        supabaseAdmin
+          .from('viviers')
+          .select('industry')
+          .eq('workspace_id', wsId)
+          .not('industry', 'is', null)
+          .limit(500),
+        supabaseAdmin
+          .from('tags')
+          .select('name, slug')
+          .order('name'),
+      ]);
+
+      // Analyse des secteurs CRM
+      const sectorMap = new Map<string, { leads: number; qualified: number; total_score: number; companies: Set<string> }>();
+      (leads.data || []).forEach((l: any) => {
+        if (!l.industry) return;
+        const sector = l.industry.toLowerCase().trim();
+        if (!sectorMap.has(sector)) {
+          sectorMap.set(sector, { leads: 0, qualified: 0, total_score: 0, companies: new Set() });
+        }
+        const s = sectorMap.get(sector)!;
+        s.leads++;
+        if (l.qualification_status === 'qualified') s.qualified++;
+        s.total_score += l.lead_score || 0;
+        if (l.company) s.companies.add(l.company);
+      });
+
+      // Secteurs viviers
+      const vivierSectors = new Map<string, number>();
+      (viviers.data || []).forEach((v: any) => {
+        if (!v.industry) return;
+        const sector = v.industry.toLowerCase().trim();
+        vivierSectors.set(sector, (vivierSectors.get(sector) || 0) + 1);
+      });
+
+      // Identifier les gaps
+      const threshold = params.min_leads_threshold || 2;
+      const gaps: any[] = [];
+      const covered: any[] = [];
+
+      sectorMap.forEach((data, sector) => {
+        if (data.leads < threshold) return;
+
+        const isCovered = (articles.data || []).some((a: any) => {
+          const text = (a.title + ' ' + (a.meta_description || '')).toLowerCase();
+          return text.includes(sector) ||
+            sector.split(' ').some((word: string) => word.length > 3 && text.includes(word));
+        });
+
+        const vivierCount = vivierSectors.get(sector) || 0;
+        const priority = data.qualified > 0 ? 'high' :
+          data.leads >= 3 ? 'medium' : 'low';
+
+        const item = {
+          sector,
+          leads_count: data.leads,
+          qualified_count: data.qualified,
+          avg_score: data.leads > 0 ? Math.round(data.total_score / data.leads) : 0,
+          companies: Array.from(data.companies).slice(0, 3),
+          vivier_prospects: vivierCount,
+          priority,
+          article_suggestions: [
+            `L'IA dans le secteur ${sector} : guide pratique pour les PME`,
+            `Comment ${sector} optimise ses processus avec l'IA en 2026`,
+            `Cas client : transformation IA dans le ${sector}`,
+          ],
+        };
+
+        if (isCovered) {
+          covered.push({ ...item, status: 'covered' });
+        } else {
+          gaps.push({ ...item, status: 'gap' });
+        }
+      });
+
+      // Trier par priorité
+      const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
+      gaps.sort((a, b) => (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2));
+
+      // Articles par type
+      const articlesByType: Record<string, { total: number; published: number; draft: number }> = {};
+      (articles.data || []).forEach((a: any) => {
+        if (!articlesByType[a.resource_type]) {
+          articlesByType[a.resource_type] = { total: 0, published: 0, draft: 0 };
+        }
+        articlesByType[a.resource_type].total++;
+        if (a.published) articlesByType[a.resource_type].published++;
+        else articlesByType[a.resource_type].draft++;
+      });
+
+      const result = {
+        summary: {
+          total_articles: articles.data?.length || 0,
+          total_sectors_in_crm: sectorMap.size,
+          gaps_identified: gaps.length,
+          covered_sectors: covered.length,
+          high_priority_gaps: gaps.filter(g => g.priority === 'high').length,
+        },
+        articles_by_type: articlesByType,
+        content_gaps: gaps,
+        covered_sectors: covered,
+        quick_wins: gaps
+          .filter(g => g.priority === 'high')
+          .slice(0, 3)
+          .map(g => ({
+            sector: g.sector,
+            reason: `${g.leads_count} leads actifs dont ${g.qualified_count} qualifiés`,
+            suggested_title: g.article_suggestions[0],
+            vivier_audience: g.vivier_prospects,
+          })),
+        available_tags: (tags.data || []).map((t: any) => t.name),
+        generated_at: new Date().toISOString(),
+      };
+
+      return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
+    } catch (err: any) {
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify({ error: err.message }) }],
+      };
+    }
+  }
+);
+
+
+// ============================================================
+// TOOL 80: plan_editorial
+// ============================================================
+mcpServer.registerTool(
+  "plan_editorial",
+  {
+    title: "Plan Editorial",
+    description: "Génère un calendrier éditorial sur N semaines basé sur le pipeline réel, les gaps de contenu détectés, et les événements CRM (bookings, opportunités, projets).",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        weeks: { type: "number", description: "Horizon du calendrier en semaines (défaut: 4)" },
+        focus_product: { type: "string", description: "Produit IArche à mettre en avant (Collaboria, ERP Avocat, Team5Connect, ChatbotRAG, Datalia)" },
+      },
+    },
+  },
+  async (params: any) => {
+    const wsId = (globalThis as any).__mcpAuth?.workspace_id;
+    const totalWeeks = params.weeks || 4;
+    const focus_product = params.focus_product;
+
+    try {
+      const horizonDate = new Date(Date.now() + totalWeeks * 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      const [leadsResult, bookings, opportunities, projects] = await Promise.all([
+        supabaseAdmin
+          .from('leads')
+          .select('industry, qualification_status, lead_score')
+          .eq('workspace_id', wsId)
+          .not('status', 'in', '("lost","archived")')
+          .not('industry', 'is', null),
+        supabaseAdmin
+          .from('bookings')
+          .select('id, name, start_time, meeting_type, lead_id')
+          .eq('workspace_id', wsId)
+          .gte('start_time', new Date().toISOString())
+          .lte('start_time', horizonDate)
+          .order('start_time'),
+        supabaseAdmin
+          .from('opportunities')
+          .select('id, title, stage, expected_close_date, value_amount')
+          .eq('workspace_id', wsId)
+          .not('stage', 'in', '("won","lost")')
+          .not('expected_close_date', 'is', null)
+          .lte('expected_close_date', horizonDate),
+        supabaseAdmin
+          .from('projects')
+          .select('id, name, planned_end_date, health_status')
+          .eq('workspace_id', wsId)
+          .eq('status', 'active')
+          .not('planned_end_date', 'is', null)
+          .lte('planned_end_date', horizonDate),
+      ]);
+
+      // Analyser les secteurs prioritaires
+      const sectorPriority = new Map<string, { count: number; qualified: number }>();
+      (leadsResult.data || []).forEach((l: any) => {
+        if (!l.industry) return;
+        const s = l.industry.toLowerCase().trim();
+        if (!sectorPriority.has(s)) sectorPriority.set(s, { count: 0, qualified: 0 });
+        const entry = sectorPriority.get(s)!;
+        entry.count++;
+        if (l.qualification_status === 'qualified') entry.qualified++;
+      });
+
+      const topSectors = Array.from(sectorPriority.entries())
+        .sort((a, b) => (b[1].qualified * 3 + b[1].count) - (a[1].qualified * 3 + a[1].count))
+        .slice(0, 5)
+        .map(([sector, data]) => ({ sector, ...data }));
+
+      // Types de contenu rotatifs
+      const contentTypes = ['expertise', 'cas-client', 'actualite', 'solution'];
+      const products = focus_product
+        ? [focus_product]
+        : ['ERP Avocat', 'Collaboria', 'ChatbotRAG', 'Team5Connect', 'Datalia'];
+
+      // Générer le calendrier semaine par semaine
+      const calendar: any[] = [];
+
+      for (let w = 0; w < totalWeeks; w++) {
+        const weekStart = new Date(Date.now() + w * 7 * 24 * 60 * 60 * 1000);
+        const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+        const weekLabel = `Semaine ${w + 1} (${weekStart.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })})`;
+
+        const weekBookings = (bookings.data || []).filter((b: any) => {
+          const d = new Date(b.start_time);
+          return d >= weekStart && d < weekEnd;
+        });
+        const weekOpps = (opportunities.data || []).filter((o: any) => {
+          const d = new Date(o.expected_close_date);
+          return d >= weekStart && d < weekEnd;
+        });
+
+        const targetSector = topSectors[w % topSectors.length]?.sector || 'PME';
+        const contentType = contentTypes[w % contentTypes.length];
+        const product = products[w % products.length];
+
+        const contentSuggestions: any[] = [
+          {
+            type: contentType,
+            title: `${product} pour le secteur ${targetSector} : ce qui change vraiment`,
+            keywords: [targetSector, product, 'IA', 'PME', 'automatisation'],
+            estimated_effort: '2-3h avec generate_article',
+            audience: `${topSectors[w % topSectors.length]?.count || 0} leads actifs dans ce secteur`,
+            crm_trigger: weekOpps.length > 0
+              ? `${weekOpps.length} opportunité(s) à relancer cette semaine`
+              : null,
+          },
+        ];
+
+        if (weekBookings.length > 0) {
+          contentSuggestions.push({
+            type: 'actualite',
+            title: `Retour sur [événement] — Ce que les PME retiennent de l'IA`,
+            keywords: ['événement', 'networking', 'IA', 'PME'],
+            estimated_effort: '1h post-événement',
+            crm_trigger: `${weekBookings.length} RDV cette semaine`,
+          });
+        }
+
+        calendar.push({
+          week: w + 1,
+          label: weekLabel,
+          target_sector: targetSector,
+          content_suggestions: contentSuggestions,
+          crm_events: {
+            bookings: weekBookings.length,
+            closing_opportunities: weekOpps.map((o: any) => o.title),
+          },
+          priority: weekOpps.length > 0 ? 'high' : 'normal',
+        });
+      }
+
+      const result = {
+        horizon_weeks: totalWeeks,
+        focus_product: focus_product || 'Rotation tous produits',
+        top_sectors_identified: topSectors,
+        calendar,
+        next_action: `Commence par la semaine 1 : utilise generate_article avec le titre suggéré, puis enrich_seo + suggest_tags + generate_faq`,
+        generated_at: new Date().toISOString(),
+      };
+
+      return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
+    } catch (err: any) {
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify({ error: err.message }) }],
+      };
+    }
+  }
+);
+
+
 const app = new Hono().basePath('/mcp-server');
 
 // CORS preflight
