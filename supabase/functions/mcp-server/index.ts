@@ -1,6 +1,6 @@
-// redeploy 08/03/2026 v4 — 82 tools (forced redeploy simulate_pricing + get_financial_report)
+// redeploy 08/03/2026 v5 — 85 tools (added analyze_legal + get_partner_report + save_preference)
 /**
- * MCP Server Edge Function — IArche CRM (82 tools)
+ * MCP Server Edge Function — IArche CRM (85 tools)
  *
  * Native JSON-RPC handler — no @modelcontextprotocol/sdk dependency.
  * Eliminates safeParseAsync / Zod compatibility issues in Deno edge runtime.
