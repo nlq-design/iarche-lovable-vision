@@ -1,6 +1,6 @@
-// redeploy 08/03/2026 v3
+// redeploy 08/03/2026 v6 — 43 exposed tools (85 internal)
 /**
- * MCP Server Edge Function — IArche CRM (85 tools)
+ * MCP Server Edge Function — IArche CRM (43 exposed / 85 internal tools)
  *
  * Native JSON-RPC handler — no @modelcontextprotocol/sdk dependency.
  * Eliminates safeParseAsync / Zod compatibility issues in Deno edge runtime.
