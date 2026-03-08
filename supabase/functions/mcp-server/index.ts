@@ -4945,7 +4945,7 @@ const _EXPOSED_TOOLS = new Set([
   // PROSPECTION
   'search_viviers', 'promote_vivier',
   // PROJETS
-  'get_projects', 'project_write', 'get_specifications', 'create_specification',
+  'get_projects', 'project_write', 'get_specifications',
   'get_documents', 'create_document',
   // LEGAL & FINANCE
   'analyze_legal', 'get_partner_report',
