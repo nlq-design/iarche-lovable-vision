@@ -4923,12 +4923,12 @@ mcpServer.registerTool(
 );
 
 
-// === 43 outils exposés via tools/list (les 42 autres restent appelables via callTool) ===
+// === 45 outils exposés via tools/list (les 40 autres restent appelables via callTool) ===
 const _EXPOSED_TOOLS = new Set([
   // CORE CRM
   'get_leads', 'get_lead_detail', 'create_lead', 'update_lead',
   'get_opportunities', 'upsert_opportunity',
-  'get_activity_log',
+  'get_activity_log', 'create_activity_note',
   'get_tasks', 'create_task', 'update_task',
   'get_contacts', 'get_lead_contacts',
   // INTELLIGENCE
@@ -4945,7 +4945,7 @@ const _EXPOSED_TOOLS = new Set([
   // PROSPECTION
   'search_viviers', 'promote_vivier',
   // PROJETS
-  'get_projects', 'project_write', 'get_specifications',
+  'get_projects', 'project_write', 'get_specifications', 'create_specification',
   'get_documents', 'create_document',
   // LEGAL & FINANCE
   'analyze_legal', 'get_partner_report',
