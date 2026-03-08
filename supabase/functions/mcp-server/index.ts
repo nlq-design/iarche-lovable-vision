@@ -2594,9 +2594,11 @@ mcpServer.registerTool(
     if (!ctx) return authError();
     const { data: current } = await supabaseAdmin.from("specifications").select("version").eq("id", params.spec_id).eq("workspace_id", ctx.wsId).single();
     if (!current) return { content: [{ type: "text" as const, text: "Cahier des charges non trouvé" }] };
-    const updates: Record<string, unknown> = { version: (current.version || 1) + 1 };
+    const currentVersion = parseInt(current.version || "1", 10);
+    const newVersion = String(currentVersion + 1);
+    const updates: Record<string, unknown> = { version: newVersion };
     if (params.title !== undefined) updates.title = params.title;
-    if (params.content !== undefined) updates.content = params.content;
+    if (params.content !== undefined) updates.content = typeof params.content === "string" ? { text: params.content } : params.content;
     if (params.status !== undefined) updates.status = params.status;
     const { data, error } = await supabaseAdmin.from("specifications").update(updates).eq("id", params.spec_id).eq("workspace_id", ctx.wsId).select().single();
     if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
