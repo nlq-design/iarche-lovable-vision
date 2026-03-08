@@ -4285,9 +4285,19 @@ mcpServer.registerTool(
 );
 
 
+// === Native JSON-RPC MCP Handler ===
+function _toolsList() {
+  return _tools.map(t => ({ name: t.name, description: t.description, inputSchema: _toJsonSchema(t.inputSchema) }));
+}
+
+async function _callTool(name: string, args: any) {
+  const tool = _tools.find(t => t.name === name);
+  if (!tool) throw new Error(`Tool "${name}" not found. ${_tools.length} tools available.`);
+  return await tool.handler(args || {});
+}
+
 const app = new Hono().basePath('/mcp-server');
 
-// CORS preflight
 app.options("/*", (c) => {
   return new Response(null, {
     headers: {
@@ -4298,21 +4308,55 @@ app.options("/*", (c) => {
   });
 });
 
-// All MCP requests — no auth required (Claude.ai doesn't send headers for custom MCP)
-// Security: workspace scoped to owner's fixed workspace_id
 const OWNER_WORKSPACE_ID = Deno.env.get("OWNER_WORKSPACE_ID") || "00000000-0000-0000-0000-000000000001";
 
-app.all("/*", async (c) => {
-  // Inject fixed workspace context for all requests
-  (globalThis as any).__mcpAuth = {
-    workspace_id: OWNER_WORKSPACE_ID,
-    user_id: null,
-  };
+// Health check — avoids 406 on GET
+app.get("/*", (c) => c.json({ status: 'ok', tools: _tools.length, server: 'iarche-crm', version: '2.0.0' }));
 
-  // Create a fresh transport per request (stateless, edge-compatible)
-  const transport = new WebStandardStreamableHTTPServerTransport();
-  await mcpServer.connect(transport);
-  return transport.handleRequest(c.req.raw);
+// MCP JSON-RPC handler
+app.post("/*", async (c) => {
+  (globalThis as any).__mcpAuth = { workspace_id: OWNER_WORKSPACE_ID, user_id: null };
+
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } }, 400);
+  }
+
+  const { method, params, id } = body;
+
+  try {
+    if (method === 'initialize') {
+      return c.json({
+        jsonrpc: '2.0', id,
+        result: {
+          protocolVersion: '2024-11-05',
+          capabilities: { tools: {} },
+          serverInfo: { name: 'iarche-crm', version: '2.0.0' },
+        },
+      });
+    }
+
+    if (method === 'notifications/initialized') {
+      return c.json({ jsonrpc: '2.0', id: id ?? null, result: {} });
+    }
+
+    if (method === 'tools/list') {
+      return c.json({ jsonrpc: '2.0', id, result: { tools: _toolsList() } });
+    }
+
+    if (method === 'tools/call') {
+      const { name, arguments: args } = params || {};
+      const result = await _callTool(name, args);
+      return c.json({ jsonrpc: '2.0', id, result });
+    }
+
+    return c.json({ jsonrpc: '2.0', id, error: { code: -32601, message: `Method "${method}" not supported` } });
+  } catch (err: any) {
+    console.error('[MCP Error]', method, err.message);
+    return c.json({ jsonrpc: '2.0', id, error: { code: -32603, message: err.message } });
+  }
 });
 
 Deno.serve(app.fetch);
