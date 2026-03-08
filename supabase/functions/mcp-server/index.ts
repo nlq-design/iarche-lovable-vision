@@ -2394,7 +2394,7 @@ mcpServer.registerTool(
     if (!ctx) return authError();
     let query = supabaseAdmin
       .from("voice_transcriptions")
-      .select("id, title, status, transcription_text, summary, lead_id, project_id, slug, created_at")
+      .select("id, title, status, raw_transcript, summary, lead_id, project_id, slug, created_at")
       .eq("workspace_id", ctx.wsId)
       .order("created_at", { ascending: false })
       .limit(params.limit || 20);
