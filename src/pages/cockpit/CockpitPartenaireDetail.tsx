@@ -80,8 +80,8 @@ export default function CockpitPartenaireDetail() {
     is_active: true,
   });
 
-  // Find existing partner by slug (in allPartners to include trashed ones)
-  const existingPartner = !isNew ? allPartners?.find(p => p.slug === slug) : null;
+  // Find existing partner by slug or UUID (in allPartners to include trashed ones)
+  const existingPartner = !isNew ? allPartners?.find(p => p.slug === slug || p.id === slug) : null;
 
   useEffect(() => {
     if (existingPartner) {
