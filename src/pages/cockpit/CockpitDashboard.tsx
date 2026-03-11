@@ -42,6 +42,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
+import { OwnerBadge } from '@/components/cockpit/shared/OwnerBadge';
 
 export default function CockpitDashboard() {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
