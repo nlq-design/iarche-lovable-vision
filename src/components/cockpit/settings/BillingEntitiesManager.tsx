@@ -265,6 +265,61 @@ export function BillingEntitiesManager() {
 
             <TabsContent value="general" className="space-y-4 mt-4">
               <div className="grid gap-4">
+                {/* Logo upload */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" />
+                    Logo de la société
+                  </Label>
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-20 w-20 rounded-lg">
+                      <AvatarImage src={formData.logo_url || undefined} alt={formData.name} />
+                      <AvatarFallback
+                        className="rounded-lg text-primary-foreground font-bold text-xl"
+                        style={{ backgroundColor: formData.primary_color || "hsl(var(--primary))" }}
+                      >
+                        {getInitials(formData.name || "?")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col gap-2">
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleLogoUpload(f);
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={uploading}
+                        onClick={() => logoInputRef.current?.click()}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        {uploading ? "Upload..." : formData.logo_url ? "Changer" : "Ajouter un logo"}
+                      </Button>
+                      {formData.logo_url && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setFormData(prev => ({ ...prev, logo_url: null }))}
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Supprimer
+                        </Button>
+                      )}
+                      <p className="text-xs text-muted-foreground">PNG, JPG — max 2 MB, 200×200px recommandé</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nom de la société *</Label>
