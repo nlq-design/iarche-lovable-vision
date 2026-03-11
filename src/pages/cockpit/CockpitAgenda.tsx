@@ -348,20 +348,27 @@ const CockpitAgenda = () => {
                     <Skeleton className="h-20 w-full" />
                   </div>
                 ) : (() => {
-                  // Merge and sort tasks + bookings by time
+                  // Merge bookings, Google events (non-synced), and tasks
                   const dayBookings = bookings.filter(b => 
                     isSameDay(new Date(b.start_time), currentDate) && b.status !== "cancelled"
                   );
+                  const dayGoogleEvents = getGoogleEventsForDay(currentDate);
                   
                   type TimelineItem = 
                     | { type: 'booking'; data: Booking; time: string }
-                    | { type: 'task'; data: Task; time: string };
+                    | { type: 'task'; data: Task; time: string }
+                    | { type: 'google'; data: GoogleCalendarEvent; time: string };
                   
                   const timeline: TimelineItem[] = [
                     ...dayBookings.map(b => ({ 
                       type: 'booking' as const, 
                       data: b, 
                       time: format(new Date(b.start_time), 'HH:mm') 
+                    })),
+                    ...dayGoogleEvents.map(e => ({
+                      type: 'google' as const,
+                      data: e,
+                      time: format(new Date(e.start), 'HH:mm'),
                     })),
                     ...currentDayTasks.map(t => ({ 
                       type: 'task' as const, 
@@ -382,7 +389,7 @@ const CockpitAgenda = () => {
                   return (
                     <div className="space-y-2">
                       {timeline.map((item, idx) => (
-                        <div key={`${item.type}-${item.type === 'booking' ? item.data.id : item.data.id}-${idx}`} className="relative">
+                        <div key={`${item.type}-${item.type === 'booking' ? item.data.id : item.type === 'task' ? item.data.id : item.data.id}-${idx}`} className="relative">
                           {/* Time indicator */}
                           <div className="absolute -left-1 top-3 text-xs text-muted-foreground font-mono w-10">
                             {item.time !== '23:59' ? item.time : ''}
@@ -390,6 +397,8 @@ const CockpitAgenda = () => {
                           <div className="ml-12">
                             {item.type === 'booking' ? (
                               <BookingCard booking={item.data} />
+                            ) : item.type === 'google' ? (
+                              <GoogleEventCard event={item.data} />
                             ) : (
                               <TaskCard task={item.data} />
                             )}
