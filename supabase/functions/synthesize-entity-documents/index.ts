@@ -85,7 +85,8 @@ function countSources(events: ChronologicalEvent[]): Record<string, number> {
 }
 
 function getDefaultSystemPrompt(): string {
-  return `Tu es un expert en synthèse commerciale pour IArche (conseil IA B2B).
+  return `{{owner_context}}
+Tu es un expert en synthèse commerciale pour IArche (conseil IA B2B).
 ${FRENCH_INSTRUCTION}
 
 ## MISSION CRITIQUE
