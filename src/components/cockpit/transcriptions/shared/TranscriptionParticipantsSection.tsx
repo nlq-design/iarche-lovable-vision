@@ -440,6 +440,8 @@ export function TranscriptionParticipantsSection({
               } else if (p.linked_entity_type === 'project') {
                 const { data } = await supabase.from('projects').select('name, slug').eq('id', p.linked_entity_id).single();
                 entityData = data;
+              } else if (p.linked_entity_type === 'owner' && ownerProfile) {
+                entityData = { name: ownerProfile.display_name };
               }
               if (entityData?.name) names[p.id] = entityData.name;
               if (entityData?.slug) slugs[p.id] = entityData.slug;
