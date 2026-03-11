@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 export type PresenceStatus = 'present' | 'mentioned' | 'observer';
 export type MeetingRole = 'animator' | 'decision_maker' | 'technical_expert' | 'commercial' | 'support';
-export type LinkedEntityType = 'partner' | 'lead_contact' | 'lead' | 'project';
+export type LinkedEntityType = 'partner' | 'lead_contact' | 'lead' | 'project' | 'owner';
 
 export interface TranscriptionParticipant {
   id: string;
