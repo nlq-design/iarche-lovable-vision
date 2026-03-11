@@ -169,6 +169,13 @@ const App = () => (
           {/* Redirection 301: /accueil → / */}
           <Route path="/accueil" element={<Navigate to="/" replace />} />
           
+          {/* Redirections 301: anciennes URLs */}
+          <Route path="/solutions/erp-avocat-booste-a-l-ia" element={<Navigate to="/solutions/lexia" replace />} />
+          <Route path="/solutions/chatbot-rag-avance" element={<Navigate to="/solutions/dialogue-plus" replace />} />
+          <Route path="/services/audit-ia" element={<Navigate to="/services/audit" replace />} />
+          <Route path="/services/developpement-ia" element={<Navigate to="/services/developpement" replace />} />
+          <Route path="/services/formation-ia" element={<Navigate to="/services/accompagnement" replace />} />
+          
           {/* Pages principales */}
           <Route path="/services" element={<Services />} />
           <Route path="/services/:slug" element={<ServiceDetail />} />

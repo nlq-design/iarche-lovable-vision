@@ -53,7 +53,7 @@ const Solutions = () => {
         <html lang="fr" />
         <link rel="alternate" hrefLang="fr" href="https://iarche.fr/solutions" />
         <title>Nos solutions · IArche · SaaS IA pour PME</title>
-        <meta name="description" content="Solutions IA développées par IArche : Collaboria, Datalia, Team 5 Connect. Ce qu'on conseille, on le construit aussi." />
+        <meta name="description" content="5 solutions SaaS IA conçues pour les PME : Collaboria, Datalia, Lexia, Dialogue Plus et Team 5 Connect." />
         <meta name="robots" content="index, follow" />
         <meta name="author" content="IArche" />
         <meta name="keywords" content="solutions IA, SaaS IA, PME, Collaboria, Datalia, IArche" />

@@ -82,7 +82,7 @@ const Services = () => {
         <html lang="fr" />
         <link rel="alternate" hrefLang="fr" href="https://iarche.fr/services" />
         <title>Nos services · IArche · Architecte IA Bayonne</title>
-        <meta name="description" content="Audit IA, développement, accompagnement et conformité. Services adaptés aux PME. Architecte IA basé à Bayonne." />
+        <meta name="description" content="Découvrez nos 4 services d'accompagnement IA : audit, développement, accompagnement à l'autonomie et conformité réglementaire." />
         <meta name="robots" content="index, follow" />
         <meta name="author" content="IArche" />
         <meta name="keywords" content="services IA, audit IA, développement IA, accompagnement IA, conformité RGPD, PME, Bayonne" />
