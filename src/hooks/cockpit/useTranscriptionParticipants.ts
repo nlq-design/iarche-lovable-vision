@@ -40,6 +40,7 @@ export const ENTITY_TYPE_LABELS: Record<LinkedEntityType, string> = {
   lead_contact: 'Contact',
   lead: 'Lead',
   project: 'Projet',
+  owner: 'Propriétaire',
 };
 
 export function useTranscriptionParticipants(transcriptionId: string | null) {
