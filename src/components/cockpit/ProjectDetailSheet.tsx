@@ -52,6 +52,8 @@ import { useCockpitMeetingNotes } from '@/hooks/cockpit/useCockpitMeetingNotes';
 import { useCockpitSpecifications } from '@/hooks/cockpit/useCockpitSpecifications';
 import { ProjectTimeline } from './ProjectTimeline';
 import { LinkedPartnersSection } from './LinkedPartnersSection';
+import { OwnerAssignField } from './shared/OwnerAssignField';
+import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
 type Project = Database['public']['Tables']['projects']['Row'];
