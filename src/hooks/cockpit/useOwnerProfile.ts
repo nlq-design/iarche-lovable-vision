@@ -94,10 +94,26 @@ export function useOwnerProfile(workspaceId: string = DEFAULT_WORKSPACE_ID) {
     onError: (e) => toast.error(`Erreur lors de la mise à jour : ${e.message}`),
   });
 
+  const isOwner = (userId: string | null | undefined): boolean => {
+    if (!userId || !ownerProfile) return false;
+    return userId === ownerProfile.user_id;
+  };
+
+  const resolveOwner = (userId: string | null | undefined) => {
+    if (!userId || !ownerProfile || userId !== ownerProfile.user_id) return null;
+    return {
+      display_name: ownerProfile.display_name,
+      role_label: ownerProfile.role_label,
+      avatar_url: ownerProfile.avatar_url,
+    };
+  };
+
   return {
     ownerProfile,
     isLoading,
     createOwnerProfile,
     updateOwnerProfile,
+    isOwner,
+    resolveOwner,
   };
 }
