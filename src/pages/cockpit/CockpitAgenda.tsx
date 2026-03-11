@@ -199,6 +199,42 @@ const CockpitAgenda = () => {
     );
   };
 
+  const GoogleEventCard = ({ event }: { event: GoogleCalendarEvent }) => (
+    <div className="p-3 rounded-lg border bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800 hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock className="h-3 w-3 text-muted-foreground" />
+            <span className="text-sm font-medium">
+              {format(new Date(event.start), "HH:mm")} - {format(new Date(event.end), "HH:mm")}
+            </span>
+          </div>
+          <p className="font-medium truncate">{event.summary}</p>
+          {event.location && (
+            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3" />
+              <span className="truncate">{event.location}</span>
+            </div>
+          )}
+        </div>
+        <Badge variant="outline" className="text-xs border-blue-300 text-blue-700 dark:text-blue-300">
+          <Globe className="h-3 w-3 mr-1" />
+          Google
+        </Badge>
+      </div>
+      {event.meetLink && (
+        <div className="mt-2">
+          <Button variant="outline" size="sm" className="w-full" asChild>
+            <a href={event.meetLink} target="_blank" rel="noopener noreferrer">
+              <Video className="h-3 w-3 mr-2" />
+              Rejoindre
+            </a>
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <CockpitLayout>
       <div className="p-5 space-y-4">
