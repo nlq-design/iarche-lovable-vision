@@ -55,7 +55,7 @@ const CockpitAgenda = () => {
   const currentDayTasks = getTasksForDay(currentDate);
   const todayTasks = getTasksForDay(new Date());
 
-  const handleSyncCalendar = async () => {
+    const handleSyncCalendar = async () => {
     setIsSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke('sync-google-calendar', {
@@ -69,8 +69,8 @@ const CockpitAgenda = () => {
         toast.success(`Synchronisation terminée`, {
           description: `${results.synced} nouveau(x) RDV importé(s), ${results.skipped} ignoré(s)`,
         });
-        // Rafraîchir les données
         refetch();
+        refetchGoogle();
       } else {
         throw new Error(data?.error || 'Erreur inconnue');
       }
