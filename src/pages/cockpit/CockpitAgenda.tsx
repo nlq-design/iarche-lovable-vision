@@ -307,6 +307,8 @@ const CockpitAgenda = () => {
                   const dayBookings = bookings.filter(b => 
                     isSameDay(new Date(b.start_time), day) && b.status !== "cancelled"
                   );
+                  const dayGoogleEvents = getGoogleEventsForDay(day);
+                  const totalEvents = dayBookings.length + dayGoogleEvents.length;
                   const isToday = isSameDay(day, new Date());
                   
                   return (
@@ -325,9 +327,9 @@ const CockpitAgenda = () => {
                         {format(day, "EEE", { locale: fr })}
                       </p>
                       <p className="text-lg font-bold">{format(day, "d")}</p>
-                      {dayBookings.length > 0 && (
+                      {totalEvents > 0 && (
                         <Badge variant="secondary" className="text-xs px-1">
-                          {dayBookings.length}
+                          {totalEvents}
                         </Badge>
                       )}
                     </button>
