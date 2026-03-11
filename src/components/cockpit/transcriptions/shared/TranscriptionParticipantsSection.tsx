@@ -184,7 +184,8 @@ function ParticipantRow({
   linkedEntitySlug?: string;
 }) {
   const navigate = useNavigate();
-
+  const { ownerProfile } = useOwnerProfile();
+  const ownerUserId = ownerProfile?.user_id;
   const getEntityUrl = (): string | null => {
     if (!participant.linked_entity_type || !participant.linked_entity_id) return null;
     const slug = linkedEntitySlug || participant.linked_entity_id;
