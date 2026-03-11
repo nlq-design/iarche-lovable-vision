@@ -194,7 +194,7 @@ export function useTranscriptionParticipants(transcriptionId: string | null) {
     },
   });
 
-  // Search entities across partners, lead_contacts, leads, projects
+  // Search entities across partners, lead_contacts, leads, projects, owner
   const searchEntities = async (query: string): Promise<Array<{ type: LinkedEntityType; id: string; name: string; subtitle?: string }>> => {
     const limit = 10;
     
@@ -214,6 +214,19 @@ export function useTranscriptionParticipants(transcriptionId: string | null) {
     const [partners, contacts, leads, projects] = await Promise.all([partnersQ, contactsQ, leadsQ, projectsQ]);
 
     const results: Array<{ type: LinkedEntityType; id: string; name: string; subtitle?: string }> = [];
+
+    // Add owner profile as searchable entity
+    if (ownerProfile) {
+      const ownerMatch = !query || query.length < 2 || ownerProfile.display_name.toLowerCase().includes(query.toLowerCase());
+      if (ownerMatch) {
+        results.push({
+          type: 'owner',
+          id: ownerProfile.id,
+          name: ownerProfile.display_name,
+          subtitle: ownerProfile.role_label ?? 'Propriétaire',
+        });
+      }
+    }
 
     partners.data?.forEach(p => results.push({ type: 'partner', id: p.id, name: p.name, subtitle: p.company ?? undefined }));
     contacts.data?.forEach(c => results.push({ type: 'lead_contact', id: c.id, name: c.name, subtitle: c.email ?? undefined }));
