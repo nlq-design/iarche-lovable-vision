@@ -27,7 +27,7 @@ interface ParticipantPickerProps {
 }
 
 interface SearchResult {
-  type: 'partner' | 'lead_contact';
+  type: 'partner' | 'lead_contact' | 'owner';
   id: string;
   name: string;
   company?: string;
