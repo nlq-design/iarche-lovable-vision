@@ -235,9 +235,12 @@ const CockpitPipeline = () => {
                                   </div>
                                 ) : null}
                                 <div className="flex items-center justify-between mt-1.5">
-                                  <span className="text-sm font-semibold">
-                                    {formatCurrency(Number(opp.value_amount) || 0)}
-                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    <OwnerBadge userId={opp.assigned_to} size="sm" />
+                                    <span className="text-sm font-semibold">
+                                      {formatCurrency(Number(opp.value_amount) || 0)}
+                                    </span>
+                                  </div>
                                   <div className="flex items-center gap-1">
                                     <OppCompleteness data={opp} />
                                     <Badge variant="outline" className="text-xs h-5 px-1.5">
