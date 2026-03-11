@@ -124,6 +124,8 @@ export function useTranscriptionParticipants(transcriptionId: string | null) {
             } else if (updates.linked_entity_type === 'project') {
               const { data } = await supabase.from('projects').select('name').eq('id', updates.linked_entity_id).single();
               entityName = data?.name ?? null;
+            } else if (updates.linked_entity_type === 'owner' && ownerProfile) {
+              entityName = ownerProfile.display_name;
             }
 
             await supabase.from('participant_entity_mappings').upsert({
