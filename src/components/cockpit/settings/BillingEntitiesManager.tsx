@@ -36,6 +36,7 @@ interface EntityFormData {
   default_tva_rate: number;
   primary_color: string;
   cgv_template_id: string | null;
+  logo_url: string | null;
 }
 
 const defaultFormData: EntityFormData = {
