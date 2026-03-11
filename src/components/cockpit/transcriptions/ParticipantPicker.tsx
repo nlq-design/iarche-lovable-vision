@@ -39,6 +39,7 @@ export function ParticipantPicker({ value, onChange }: ParticipantPickerProps) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [manualName, setManualName] = useState('');
+  const { ownerProfile } = useOwnerProfile();
 
   const doSearch = useCallback(async (q: string) => {
     if (q.length < 2) { setResults([]); return; }
