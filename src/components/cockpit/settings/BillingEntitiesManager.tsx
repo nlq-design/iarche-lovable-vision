@@ -68,6 +68,30 @@ export function BillingEntitiesManager() {
   const [editingEntity, setEditingEntity] = useState<BillingEntity | null>(null);
   const [formData, setFormData] = useState<EntityFormData>(defaultFormData);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const getInitials = (name: string) =>
+    name.split(/\s+/).map(w => w[0]).join("").toUpperCase().slice(0, 2);
+
+  const handleLogoUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("Veuillez sélectionner une image"); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error("L'image ne doit pas dépasser 2 MB"); return; }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("billing-logos").upload(path, file);
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from("billing-logos").getPublicUrl(path);
+      setFormData(prev => ({ ...prev, logo_url: publicUrl }));
+      toast.success("Logo uploadé");
+    } catch (err: any) {
+      toast.error("Erreur upload: " + err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleEdit = (entity: BillingEntity) => {
     setEditingEntity(entity);
