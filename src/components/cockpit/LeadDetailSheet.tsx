@@ -113,6 +113,7 @@ interface Lead {
   created_at?: string | null;
   last_contacted_at?: string | null;
   ai_metadata?: any | null;
+  assigned_to?: string | null;
 }
 
 interface LeadDetailSheetProps {
