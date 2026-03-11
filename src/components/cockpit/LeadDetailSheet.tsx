@@ -440,8 +440,14 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
             {/* Owner / Responsable */}
             <OwnerAssignField
               assignedTo={lead.assigned_to}
-              onAssign={(userId) => updateLead.mutate({ id: lead.id, assigned_to: userId })}
-              onUnassign={() => updateLead.mutate({ id: lead.id, assigned_to: null })}
+              onAssign={async (userId) => {
+                await supabase.from('leads').update({ assigned_to: userId } as any).eq('id', lead.id);
+                updateLead.mutate({ id: lead.id });
+              }}
+              onUnassign={async () => {
+                await supabase.from('leads').update({ assigned_to: null } as any).eq('id', lead.id);
+                updateLead.mutate({ id: lead.id });
+              }}
             />
 
             <Separator />
