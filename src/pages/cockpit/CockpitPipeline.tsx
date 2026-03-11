@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, ArrowRight, Filter, GripVertical, Building2, Plus, User, AlertTriangle, Clock } from "lucide-react";
+import { OwnerBadge } from '@/components/cockpit/shared/OwnerBadge';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -234,9 +235,12 @@ const CockpitPipeline = () => {
                                   </div>
                                 ) : null}
                                 <div className="flex items-center justify-between mt-1.5">
-                                  <span className="text-sm font-semibold">
-                                    {formatCurrency(Number(opp.value_amount) || 0)}
-                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    <OwnerBadge userId={opp.assigned_to} size="sm" />
+                                    <span className="text-sm font-semibold">
+                                      {formatCurrency(Number(opp.value_amount) || 0)}
+                                    </span>
+                                  </div>
                                   <div className="flex items-center gap-1">
                                     <OppCompleteness data={opp} />
                                     <Badge variant="outline" className="text-xs h-5 px-1.5">

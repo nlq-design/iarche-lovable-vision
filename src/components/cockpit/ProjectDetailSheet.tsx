@@ -52,6 +52,8 @@ import { useCockpitMeetingNotes } from '@/hooks/cockpit/useCockpitMeetingNotes';
 import { useCockpitSpecifications } from '@/hooks/cockpit/useCockpitSpecifications';
 import { ProjectTimeline } from './ProjectTimeline';
 import { LinkedPartnersSection } from './LinkedPartnersSection';
+import { OwnerAssignField } from './shared/OwnerAssignField';
+import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
 type Project = Database['public']['Tables']['projects']['Row'];
@@ -203,6 +205,21 @@ export function ProjectDetailSheet({ project, open, onOpenChange }: ProjectDetai
 
               {/* Details Tab */}
               <TabsContent value="details" className="px-5 py-4 space-y-4">
+                {/* Responsable */}
+                <OwnerAssignField
+                  assignedTo={project.assigned_to}
+                  onAssign={async (userId) => {
+                    await supabase.from('projects').update({ assigned_to: userId }).eq('id', project.id);
+                    updateProject.mutate({ id: project.id, updates: {} });
+                  }}
+                  onUnassign={async () => {
+                    await supabase.from('projects').update({ assigned_to: null }).eq('id', project.id);
+                    updateProject.mutate({ id: project.id, updates: {} });
+                  }}
+                />
+
+                <Separator />
+
                 {/* Timeline */}
                 <div className="p-3 bg-muted/50 rounded-lg space-y-2">
                   <h3 className="text-xs font-semibold flex items-center gap-2">

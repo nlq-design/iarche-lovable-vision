@@ -44,6 +44,7 @@ import { useCockpitLeadContacts } from '@/hooks/cockpit/useCockpitLeadContacts';
 import { useCockpitTasks } from '@/hooks/cockpit/useCockpitTasks';
 import { useNavigate } from 'react-router-dom';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
+import { OwnerBadge } from '@/components/cockpit/shared/OwnerBadge';
 import { useQuery } from '@tanstack/react-query';
 import {
   TranscriptionSummaryTab,
@@ -262,6 +263,14 @@ export function TranscriptionDetailSheet({
           ) : (
             <ScrollArea className="flex-1">
               <div className="px-6 py-4 space-y-6">
+                {/* Created by */}
+                {transcription?.created_by && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="shrink-0">Créé par</span>
+                    <OwnerBadge userId={transcription.created_by} size="md" />
+                  </div>
+                )}
+
                 {/* Audio Player */}
                 <TranscriptionAudioPlayer
                   audioUrl={audioUrl}

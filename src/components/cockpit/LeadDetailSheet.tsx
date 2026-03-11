@@ -90,6 +90,7 @@ import { LinkedPartnersSection } from './LinkedPartnersSection';
 import { useCockpitPartners } from '@/hooks/cockpit/useCockpitPartners';
 import { useEntityPartners } from '@/hooks/cockpit/usePartnerLinks';
 import { usePappersLookup } from '@/hooks/cockpit/usePappersLookup';
+import { OwnerAssignField } from './shared/OwnerAssignField';
 
 interface Lead {
   id: string;
@@ -113,6 +114,7 @@ interface Lead {
   created_at?: string | null;
   last_contacted_at?: string | null;
   ai_metadata?: any | null;
+  assigned_to?: string | null;
 }
 
 interface LeadDetailSheetProps {
@@ -435,6 +437,21 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-5">
+            {/* Owner / Responsable */}
+            <OwnerAssignField
+              assignedTo={lead.assigned_to}
+              onAssign={async (userId) => {
+                await supabase.from('leads').update({ assigned_to: userId } as any).eq('id', lead.id);
+                updateLead.mutate({ id: lead.id });
+              }}
+              onUnassign={async () => {
+                await supabase.from('leads').update({ assigned_to: null } as any).eq('id', lead.id);
+                updateLead.mutate({ id: lead.id });
+              }}
+            />
+
+            <Separator />
+
             {/* Contact Info Section */}
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">

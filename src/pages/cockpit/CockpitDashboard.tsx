@@ -42,6 +42,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
+import { OwnerBadge } from '@/components/cockpit/shared/OwnerBadge';
 
 export default function CockpitDashboard() {
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
@@ -677,7 +678,10 @@ export default function CockpitDashboard() {
                             }}>
                             <ActivityIcon type={a.activity_type} isAI={!!a.is_ai_generated} />
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium truncate">{a.title}</p>
+                              <div className="flex items-center gap-1.5">
+                                <OwnerBadge userId={a.created_by} size="sm" />
+                                <p className="text-xs font-medium truncate">{a.title}</p>
+                              </div>
                               <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                                 {a.is_ai_generated && <span className="text-primary">🤖</span>}
                                 <span className="capitalize">{a.entity_type}</span>
