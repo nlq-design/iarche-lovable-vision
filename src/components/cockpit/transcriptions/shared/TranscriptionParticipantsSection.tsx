@@ -394,6 +394,7 @@ export function TranscriptionParticipantsSection({
     searchEntities,
     getParticipantHistory,
   } = useTranscriptionParticipants(transcriptionId);
+  const { ownerProfile } = useOwnerProfile();
 
   const [historyCounts, setHistoryCounts] = useState<Record<string, number>>({});
   const [entityNames, setEntityNames] = useState<Record<string, string>>({});
