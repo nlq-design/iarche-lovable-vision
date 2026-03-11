@@ -43,6 +43,8 @@ import {
 } from '@/hooks/cockpit/useTranscriptionParticipants';
 import type { NormalizedSummary } from './normalizeSummary';
 import { EntityVocabularyEditor } from './EntityVocabularyEditor';
+import { OwnerBadge } from '@/components/cockpit/shared/OwnerBadge';
+import { useOwnerProfile } from '@/hooks/cockpit/useOwnerProfile';
 
 // ============= PRESENCE ICON =============
 
@@ -182,7 +184,8 @@ function ParticipantRow({
   linkedEntitySlug?: string;
 }) {
   const navigate = useNavigate();
-
+  const { ownerProfile } = useOwnerProfile();
+  const ownerUserId = ownerProfile?.user_id;
   const getEntityUrl = (): string | null => {
     if (!participant.linked_entity_type || !participant.linked_entity_id) return null;
     const slug = linkedEntitySlug || participant.linked_entity_id;
@@ -218,7 +221,17 @@ function ParticipantRow({
             )}
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">
-            {participant.linked_entity_type && participant.linked_entity_id ? (
+            {participant.linked_entity_type === 'owner' && participant.linked_entity_id ? (
+              <div className="flex items-center gap-1.5">
+                <OwnerBadge userId={ownerUserId} size="sm" />
+                <Badge variant="secondary" className="text-[10px] h-4">
+                  {ENTITY_TYPE_LABELS['owner']}
+                  {linkedEntityName && (
+                    <span className="ml-1 font-normal">· {linkedEntityName}</span>
+                  )}
+                </Badge>
+              </div>
+            ) : participant.linked_entity_type && participant.linked_entity_id ? (
               <Badge 
                 variant="secondary" 
                 className={`text-[10px] h-4 ${entityUrl ? 'cursor-pointer hover:bg-primary/20 transition-colors' : ''}`}
@@ -381,6 +394,7 @@ export function TranscriptionParticipantsSection({
     searchEntities,
     getParticipantHistory,
   } = useTranscriptionParticipants(transcriptionId);
+  const { ownerProfile } = useOwnerProfile();
 
   const [historyCounts, setHistoryCounts] = useState<Record<string, number>>({});
   const [entityNames, setEntityNames] = useState<Record<string, string>>({});
@@ -427,6 +441,8 @@ export function TranscriptionParticipantsSection({
               } else if (p.linked_entity_type === 'project') {
                 const { data } = await supabase.from('projects').select('name, slug').eq('id', p.linked_entity_id).single();
                 entityData = data;
+              } else if (p.linked_entity_type === 'owner' && ownerProfile) {
+                entityData = { name: ownerProfile.display_name };
               }
               if (entityData?.name) names[p.id] = entityData.name;
               if (entityData?.slug) slugs[p.id] = entityData.slug;

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useOwnerProfile } from '@/hooks/cockpit/useOwnerProfile';
 
 export type PresenceStatus = 'present' | 'mentioned' | 'observer';
 export type MeetingRole = 'animator' | 'decision_maker' | 'technical_expert' | 'commercial' | 'support';
@@ -45,6 +46,7 @@ export const ENTITY_TYPE_LABELS: Record<LinkedEntityType, string> = {
 
 export function useTranscriptionParticipants(transcriptionId: string | null) {
   const queryClient = useQueryClient();
+  const { ownerProfile } = useOwnerProfile();
   const queryKey = ['transcription-participants', transcriptionId];
 
   const { data: participants = [], isLoading } = useQuery({
@@ -122,6 +124,8 @@ export function useTranscriptionParticipants(transcriptionId: string | null) {
             } else if (updates.linked_entity_type === 'project') {
               const { data } = await supabase.from('projects').select('name').eq('id', updates.linked_entity_id).single();
               entityName = data?.name ?? null;
+            } else if (updates.linked_entity_type === 'owner' && ownerProfile) {
+              entityName = ownerProfile.display_name;
             }
 
             await supabase.from('participant_entity_mappings').upsert({
@@ -190,7 +194,7 @@ export function useTranscriptionParticipants(transcriptionId: string | null) {
     },
   });
 
-  // Search entities across partners, lead_contacts, leads, projects
+  // Search entities across partners, lead_contacts, leads, projects, owner
   const searchEntities = async (query: string): Promise<Array<{ type: LinkedEntityType; id: string; name: string; subtitle?: string }>> => {
     const limit = 10;
     
@@ -210,6 +214,19 @@ export function useTranscriptionParticipants(transcriptionId: string | null) {
     const [partners, contacts, leads, projects] = await Promise.all([partnersQ, contactsQ, leadsQ, projectsQ]);
 
     const results: Array<{ type: LinkedEntityType; id: string; name: string; subtitle?: string }> = [];
+
+    // Add owner profile as searchable entity
+    if (ownerProfile) {
+      const ownerMatch = !query || query.length < 2 || ownerProfile.display_name.toLowerCase().includes(query.toLowerCase());
+      if (ownerMatch) {
+        results.push({
+          type: 'owner',
+          id: ownerProfile.id,
+          name: ownerProfile.display_name,
+          subtitle: ownerProfile.role_label ?? 'Propriétaire',
+        });
+      }
+    }
 
     partners.data?.forEach(p => results.push({ type: 'partner', id: p.id, name: p.name, subtitle: p.company ?? undefined }));
     contacts.data?.forEach(c => results.push({ type: 'lead_contact', id: c.id, name: c.name, subtitle: c.email ?? undefined }));

@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/popover';
 import { Users, Plus, X, Search, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useOwnerProfile } from '@/hooks/cockpit/useOwnerProfile';
 import type { ExpectedParticipant } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 
 const ENTITY_TYPE_LABELS: Record<string, string> = {
@@ -18,6 +19,7 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
   lead: 'Lead',
   project: 'Projet',
   manual: 'Manuel',
+  owner: 'Propriétaire',
 };
 
 interface ParticipantPickerProps {
@@ -26,7 +28,7 @@ interface ParticipantPickerProps {
 }
 
 interface SearchResult {
-  type: 'partner' | 'lead_contact';
+  type: 'partner' | 'lead_contact' | 'owner';
   id: string;
   name: string;
   company?: string;
@@ -38,6 +40,7 @@ export function ParticipantPicker({ value, onChange }: ParticipantPickerProps) {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [manualName, setManualName] = useState('');
+  const { ownerProfile } = useOwnerProfile();
 
   const doSearch = useCallback(async (q: string) => {
     if (q.length < 2) { setResults([]); return; }
@@ -50,6 +53,10 @@ export function ParticipantPicker({ value, onChange }: ParticipantPickerProps) {
       ]);
 
       const r: SearchResult[] = [];
+      // Add owner if matches
+      if (ownerProfile && ownerProfile.display_name.toLowerCase().includes(q.toLowerCase())) {
+        r.push({ type: 'owner', id: ownerProfile.id, name: ownerProfile.display_name, company: ownerProfile.role_label ?? 'Propriétaire' });
+      }
       partners.data?.forEach(p => r.push({ type: 'partner', id: p.id, name: p.name, company: p.company ?? undefined }));
       contacts.data?.forEach(c => r.push({ type: 'lead_contact', id: c.id, name: c.name }));
       setResults(r);
