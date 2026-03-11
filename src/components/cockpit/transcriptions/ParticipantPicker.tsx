@@ -52,6 +52,10 @@ export function ParticipantPicker({ value, onChange }: ParticipantPickerProps) {
       ]);
 
       const r: SearchResult[] = [];
+      // Add owner if matches
+      if (ownerProfile && ownerProfile.display_name.toLowerCase().includes(q.toLowerCase())) {
+        r.push({ type: 'owner', id: ownerProfile.id, name: ownerProfile.display_name, company: ownerProfile.role_label ?? 'Propriétaire' });
+      }
       partners.data?.forEach(p => r.push({ type: 'partner', id: p.id, name: p.name, company: p.company ?? undefined }));
       contacts.data?.forEach(c => r.push({ type: 'lead_contact', id: c.id, name: c.name }));
       setResults(r);
