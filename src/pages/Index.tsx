@@ -19,7 +19,7 @@ const Index = () => {
         <link rel="alternate" hrefLang="fr" href="https://iarche.fr/" />
         {/* Primary Meta Tags */}
         <title>IArche · Architecte IA Bayonne | Conseil & Intégration PME</title>
-        <meta name="description" content="Architecte IA basé à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME. Sud-Ouest et toute la France." />
+        <meta name="description" content="IArche est votre architecte IA à Bayonne. Nous concevons et intégrons des solutions IA souveraines pour les PME françaises." />
         <meta name="robots" content="index, follow" />
         <meta name="author" content="IArche" />
         <meta name="keywords" content="architecte IA, intelligence artificielle, PME, Bayonne, Pays Basque, conseil IA, intégration IA" />

@@ -20,9 +20,9 @@ const HeroSection = () => {
           <span className="sr-only">IArche · L'IA se construit avec vous</span>
         </div>
         
-        <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed invisible animate-fadeIn [animation-delay:0.2s]">
+        <h1 className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed invisible animate-fadeIn [animation-delay:0.2s]">
           L'IA se construit avec vous.
-        </p>
+        </h1>
         
         {/* CTA Principal - Above the fold */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 invisible animate-fadeIn [animation-delay:0.3s]">

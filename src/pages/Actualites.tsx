@@ -108,7 +108,7 @@ const Actualites = () => {
         <html lang="fr" />
         <link rel="alternate" hrefLang="fr" href="https://iarche.fr/actualites" />
         <title>Actualités IA · IArche · Architecte IA Bayonne</title>
-        <meta name="description" content="Découvrez nos articles de fond sur l'intelligence artificielle : guides pratiques, analyses techniques et retours d'expérience pour les dirigeants de PME." />
+        <meta name="description" content="Actualités IA pour les PME françaises : tendances, retours d'expérience et analyses par l'équipe IArche." />
         <meta name="robots" content="index, follow" />
         <meta name="author" content="IArche" />
         <meta name="keywords" content="actualités IA, intelligence artificielle, PME, guides IA, analyses techniques" />
