@@ -437,6 +437,15 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-5">
+            {/* Owner / Responsable */}
+            <OwnerAssignField
+              assignedTo={lead.assigned_to}
+              onAssign={(userId) => updateLead.mutate({ id: lead.id, assigned_to: userId })}
+              onUnassign={() => updateLead.mutate({ id: lead.id, assigned_to: null })}
+            />
+
+            <Separator />
+
             {/* Contact Info Section */}
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
