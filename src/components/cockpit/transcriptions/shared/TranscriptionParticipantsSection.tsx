@@ -43,6 +43,8 @@ import {
 } from '@/hooks/cockpit/useTranscriptionParticipants';
 import type { NormalizedSummary } from './normalizeSummary';
 import { EntityVocabularyEditor } from './EntityVocabularyEditor';
+import { OwnerBadge } from '@/components/cockpit/shared/OwnerBadge';
+import { useOwnerProfile } from '@/hooks/cockpit/useOwnerProfile';
 
 // ============= PRESENCE ICON =============
 
