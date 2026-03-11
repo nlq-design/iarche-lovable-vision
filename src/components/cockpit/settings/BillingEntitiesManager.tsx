@@ -59,6 +59,7 @@ const defaultFormData: EntityFormData = {
   default_tva_rate: 20,
   primary_color: "#1e40af",
   cgv_template_id: null,
+  logo_url: null,
 };
 
 export function BillingEntitiesManager() {
