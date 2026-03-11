@@ -341,6 +341,7 @@ export function BillingEntitiesManager() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="SAS">SAS</SelectItem>
+                        <SelectItem value="SASU">SASU</SelectItem>
                         <SelectItem value="SARL">SARL</SelectItem>
                         <SelectItem value="EURL">EURL</SelectItem>
                         <SelectItem value="SA">SA</SelectItem>
