@@ -19,6 +19,7 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
   lead: 'Lead',
   project: 'Projet',
   manual: 'Manuel',
+  owner: 'Propriétaire',
 };
 
 interface ParticipantPickerProps {
