@@ -44,6 +44,7 @@ import { useCockpitLeadContacts } from '@/hooks/cockpit/useCockpitLeadContacts';
 import { useCockpitTasks } from '@/hooks/cockpit/useCockpitTasks';
 import { useNavigate } from 'react-router-dom';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
+import { OwnerBadge } from '@/components/cockpit/shared/OwnerBadge';
 import { useQuery } from '@tanstack/react-query';
 import {
   TranscriptionSummaryTab,
