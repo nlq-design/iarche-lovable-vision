@@ -137,11 +137,48 @@ serve(async (req) => {
 
     const { action, daysAhead = 30, daysBefore = 7 } = await req.json();
     
-    console.log(`[sync-google-calendar] Starting sync. Action: ${action}, daysAhead: ${daysAhead}, daysBefore: ${daysBefore}`);
+    console.log(`[sync-google-calendar] Action: ${action}, daysAhead: ${daysAhead}, daysBefore: ${daysBefore}`);
 
     // Get access token
     const accessToken = await getAccessToken();
-    console.log('[sync-google-calendar] Got Google access token');
+
+    // ── Action: get-events (real-time Google Calendar events for cockpit) ──
+    if (action === 'get-events') {
+      const now = new Date();
+      const timeMin = new Date(now.getTime() - daysBefore * 24 * 60 * 60 * 1000).toISOString();
+      const timeMax = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000).toISOString();
+
+      const events = await getCalendarEvents(accessToken, timeMin, timeMax);
+
+      // Get existing google_event_ids from bookings to mark which are already synced
+      const { data: existingBookings } = await supabase
+        .from('bookings')
+        .select('google_event_id')
+        .not('google_event_id', 'is', null);
+      const syncedIds = new Set(existingBookings?.map(b => b.google_event_id) || []);
+
+      const calendarEvents = events
+        .filter((e: any) => e.status !== 'cancelled' && e.start?.dateTime)
+        .map((event: any) => ({
+          id: event.id,
+          summary: event.summary || '(Sans titre)',
+          start: event.start.dateTime,
+          end: event.end?.dateTime || event.start.dateTime,
+          meetLink: event.conferenceData?.entryPoints?.find((ep: any) => ep.entryPointType === 'video')?.uri || null,
+          location: event.location || null,
+          description: event.description || null,
+          isSynced: syncedIds.has(event.id),
+          source: 'google_calendar' as const,
+        }));
+
+      return new Response(
+        JSON.stringify({ success: true, events: calendarEvents, timeRange: { from: timeMin, to: timeMax } }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ── Action: sync (import Google → DB) ──
+    console.log('[sync-google-calendar] Starting sync...');
 
     // Define time range
     const now = new Date();
