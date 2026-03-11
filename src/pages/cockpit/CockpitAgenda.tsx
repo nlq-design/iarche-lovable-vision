@@ -35,6 +35,14 @@ const CockpitAgenda = () => {
   } = useCockpitBookings();
   
   const { tasks, isLoading: tasksLoading } = useCockpitTasks();
+  const { events: googleEvents, isLoading: loadingGoogleEvents, refetch: refetchGoogle } = useGoogleCalendarEvents();
+  
+  // Get Google Calendar events for a specific day (only non-synced ones to avoid duplicates)
+  const getGoogleEventsForDay = (day: Date) => {
+    return googleEvents.filter(e => 
+      !e.isSynced && isSameDay(new Date(e.start), day)
+    );
+  };
   
   // Get tasks for current day
   const getTasksForDay = (day: Date) => {
