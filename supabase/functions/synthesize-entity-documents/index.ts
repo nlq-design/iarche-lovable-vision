@@ -1074,7 +1074,7 @@ serve(async (req) => {
       finalPromptData = fallbackPrompt;
     }
 
-    const systemPrompt = finalPromptData?.system_prompt || getDefaultSystemPrompt();
+    let systemPrompt = finalPromptData?.system_prompt || getDefaultSystemPrompt();
     const userPromptTemplate = finalPromptData?.user_prompt || getDefaultUserPrompt();
     const modelConfig = (finalPromptData?.model_config as Record<string, any>) || { model: 'google/gemini-2.5-flash', max_tokens: 16384, temperature: 0.5 };
 
