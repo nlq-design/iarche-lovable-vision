@@ -188,13 +188,16 @@ export function BillingEntitiesManager() {
                     entity.is_default && "border-primary bg-primary/5"
                   )}
                 >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
-                      style={{ backgroundColor: entity.primary_color || "#1e40af" }}
-                    >
-                      {entity.name.charAt(0)}
-                    </div>
+                    <div className="flex items-center gap-4">
+                    <Avatar className="h-10 w-10 rounded-lg">
+                      <AvatarImage src={entity.logo_url || undefined} alt={entity.name} />
+                      <AvatarFallback
+                        className="rounded-lg text-primary-foreground font-bold"
+                        style={{ backgroundColor: entity.primary_color || "hsl(var(--primary))" }}
+                      >
+                        {getInitials(entity.name)}
+                      </AvatarFallback>
+                    </Avatar>
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{entity.name}</span>
