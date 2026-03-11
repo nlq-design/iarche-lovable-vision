@@ -91,6 +91,7 @@ export function BillingEntitiesManager() {
       default_tva_rate: entity.default_tva_rate || 20,
       primary_color: entity.primary_color || "#1e40af",
       cgv_template_id: entity.cgv_template_id,
+      logo_url: entity.logo_url,
     });
     setIsSheetOpen(true);
   };
