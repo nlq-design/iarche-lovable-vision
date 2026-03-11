@@ -1,9 +1,10 @@
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, Video, MapPin, ChevronLeft, ChevronRight, User, Building, RefreshCw, FileText, CheckSquare, AlertCircle, Phone, Mail } from "lucide-react";
+import { Calendar, Clock, Video, MapPin, ChevronLeft, ChevronRight, User, Building, RefreshCw, FileText, CheckSquare, AlertCircle, Phone, Mail, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCockpitBookings, useCockpitTasks } from "@/hooks/cockpit";
+import { useGoogleCalendarEvents, type GoogleCalendarEvent } from "@/hooks/cockpit/useGoogleCalendarEvents";
 import { format, isSameDay, addDays, subDays, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useState } from "react";
@@ -34,6 +35,14 @@ const CockpitAgenda = () => {
   } = useCockpitBookings();
   
   const { tasks, isLoading: tasksLoading } = useCockpitTasks();
+  const { events: googleEvents, isLoading: loadingGoogleEvents, refetch: refetchGoogle } = useGoogleCalendarEvents();
+  
+  // Get Google Calendar events for a specific day (only non-synced ones to avoid duplicates)
+  const getGoogleEventsForDay = (day: Date) => {
+    return googleEvents.filter(e => 
+      !e.isSynced && isSameDay(new Date(e.start), day)
+    );
+  };
   
   // Get tasks for current day
   const getTasksForDay = (day: Date) => {
@@ -46,7 +55,7 @@ const CockpitAgenda = () => {
   const currentDayTasks = getTasksForDay(currentDate);
   const todayTasks = getTasksForDay(new Date());
 
-  const handleSyncCalendar = async () => {
+    const handleSyncCalendar = async () => {
     setIsSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke('sync-google-calendar', {
@@ -60,8 +69,8 @@ const CockpitAgenda = () => {
         toast.success(`Synchronisation terminée`, {
           description: `${results.synced} nouveau(x) RDV importé(s), ${results.skipped} ignoré(s)`,
         });
-        // Rafraîchir les données
         refetch();
+        refetchGoogle();
       } else {
         throw new Error(data?.error || 'Erreur inconnue');
       }
@@ -190,6 +199,42 @@ const CockpitAgenda = () => {
     );
   };
 
+  const GoogleEventCard = ({ event }: { event: GoogleCalendarEvent }) => (
+    <div className="p-3 rounded-lg border bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800 hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock className="h-3 w-3 text-muted-foreground" />
+            <span className="text-sm font-medium">
+              {format(new Date(event.start), "HH:mm")} - {format(new Date(event.end), "HH:mm")}
+            </span>
+          </div>
+          <p className="font-medium truncate">{event.summary}</p>
+          {event.location && (
+            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3" />
+              <span className="truncate">{event.location}</span>
+            </div>
+          )}
+        </div>
+        <Badge variant="outline" className="text-xs border-blue-300 text-blue-700 dark:text-blue-300">
+          <Globe className="h-3 w-3 mr-1" />
+          Google
+        </Badge>
+      </div>
+      {event.meetLink && (
+        <div className="mt-2">
+          <Button variant="outline" size="sm" className="w-full" asChild>
+            <a href={event.meetLink} target="_blank" rel="noopener noreferrer">
+              <Video className="h-3 w-3 mr-2" />
+              Rejoindre
+            </a>
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <CockpitLayout>
       <div className="p-5 space-y-4">
@@ -262,6 +307,8 @@ const CockpitAgenda = () => {
                   const dayBookings = bookings.filter(b => 
                     isSameDay(new Date(b.start_time), day) && b.status !== "cancelled"
                   );
+                  const dayGoogleEvents = getGoogleEventsForDay(day);
+                  const totalEvents = dayBookings.length + dayGoogleEvents.length;
                   const isToday = isSameDay(day, new Date());
                   
                   return (
@@ -280,9 +327,9 @@ const CockpitAgenda = () => {
                         {format(day, "EEE", { locale: fr })}
                       </p>
                       <p className="text-lg font-bold">{format(day, "d")}</p>
-                      {dayBookings.length > 0 && (
+                      {totalEvents > 0 && (
                         <Badge variant="secondary" className="text-xs px-1">
-                          {dayBookings.length}
+                          {totalEvents}
                         </Badge>
                       )}
                     </button>
@@ -301,20 +348,27 @@ const CockpitAgenda = () => {
                     <Skeleton className="h-20 w-full" />
                   </div>
                 ) : (() => {
-                  // Merge and sort tasks + bookings by time
+                  // Merge bookings, Google events (non-synced), and tasks
                   const dayBookings = bookings.filter(b => 
                     isSameDay(new Date(b.start_time), currentDate) && b.status !== "cancelled"
                   );
+                  const dayGoogleEvents = getGoogleEventsForDay(currentDate);
                   
                   type TimelineItem = 
                     | { type: 'booking'; data: Booking; time: string }
-                    | { type: 'task'; data: Task; time: string };
+                    | { type: 'task'; data: Task; time: string }
+                    | { type: 'google'; data: GoogleCalendarEvent; time: string };
                   
                   const timeline: TimelineItem[] = [
                     ...dayBookings.map(b => ({ 
                       type: 'booking' as const, 
                       data: b, 
                       time: format(new Date(b.start_time), 'HH:mm') 
+                    })),
+                    ...dayGoogleEvents.map(e => ({
+                      type: 'google' as const,
+                      data: e,
+                      time: format(new Date(e.start), 'HH:mm'),
                     })),
                     ...currentDayTasks.map(t => ({ 
                       type: 'task' as const, 
@@ -335,7 +389,7 @@ const CockpitAgenda = () => {
                   return (
                     <div className="space-y-2">
                       {timeline.map((item, idx) => (
-                        <div key={`${item.type}-${item.type === 'booking' ? item.data.id : item.data.id}-${idx}`} className="relative">
+                        <div key={`${item.type}-${item.type === 'booking' ? item.data.id : item.type === 'task' ? item.data.id : item.data.id}-${idx}`} className="relative">
                           {/* Time indicator */}
                           <div className="absolute -left-1 top-3 text-xs text-muted-foreground font-mono w-10">
                             {item.time !== '23:59' ? item.time : ''}
@@ -343,6 +397,8 @@ const CockpitAgenda = () => {
                           <div className="ml-12">
                             {item.type === 'booking' ? (
                               <BookingCard booking={item.data} />
+                            ) : item.type === 'google' ? (
+                              <GoogleEventCard event={item.data} />
                             ) : (
                               <TaskCard task={item.data} />
                             )}
