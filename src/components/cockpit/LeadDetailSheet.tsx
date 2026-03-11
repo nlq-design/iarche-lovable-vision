@@ -90,6 +90,7 @@ import { LinkedPartnersSection } from './LinkedPartnersSection';
 import { useCockpitPartners } from '@/hooks/cockpit/useCockpitPartners';
 import { useEntityPartners } from '@/hooks/cockpit/usePartnerLinks';
 import { usePappersLookup } from '@/hooks/cockpit/usePappersLookup';
+import { OwnerAssignField } from './shared/OwnerAssignField';
 
 interface Lead {
   id: string;
