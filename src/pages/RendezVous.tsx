@@ -387,6 +387,12 @@ const RendezVous = () => {
       <Helmet>
         <title>{bookingType.name} · Prendre rendez-vous · IArche</title>
         <meta name="description" content={bookingType.description || `Réservez un rendez-vous ${bookingType.name} avec IArche`} />
+        <link rel="canonical" href={`https://iarche.fr/rendez-vous/${slug}`} />
+        <meta property="og:title" content={`${bookingType.name} · Prendre rendez-vous · IArche`} />
+        <meta property="og:description" content={bookingType.description || `Réservez un rendez-vous ${bookingType.name} avec IArche`} />
+        <meta property="og:url" content={`https://iarche.fr/rendez-vous/${slug}`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://iarche.fr/og-image-v4.png" />
       </Helmet>
       
       <Header />

@@ -82,7 +82,7 @@ const Status = () => {
       <Helmet>
         <title>Status - IArche</title>
         <meta name="description" content="Statut en temps réel des performances et de la disponibilité de la plateforme IArche." />
-        <meta name="robots" content="index, follow" />
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
       <div className="container mx-auto px-4 py-16 md:py-24 max-w-6xl">
