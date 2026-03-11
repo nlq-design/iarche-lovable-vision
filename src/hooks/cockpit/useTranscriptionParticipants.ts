@@ -46,6 +46,7 @@ export const ENTITY_TYPE_LABELS: Record<LinkedEntityType, string> = {
 
 export function useTranscriptionParticipants(transcriptionId: string | null) {
   const queryClient = useQueryClient();
+  const { ownerProfile } = useOwnerProfile();
   const queryKey = ['transcription-participants', transcriptionId];
 
   const { data: participants = [], isLoading } = useQuery({
