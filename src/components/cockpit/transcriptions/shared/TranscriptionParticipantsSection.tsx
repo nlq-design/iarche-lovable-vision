@@ -220,7 +220,17 @@ function ParticipantRow({
             )}
           </div>
           <div className="flex items-center gap-1.5 mt-0.5">
-            {participant.linked_entity_type && participant.linked_entity_id ? (
+            {participant.linked_entity_type === 'owner' && participant.linked_entity_id ? (
+              <div className="flex items-center gap-1.5">
+                <OwnerBadge userId={ownerUserId} size="sm" />
+                <Badge variant="secondary" className="text-[10px] h-4">
+                  {ENTITY_TYPE_LABELS['owner']}
+                  {linkedEntityName && (
+                    <span className="ml-1 font-normal">· {linkedEntityName}</span>
+                  )}
+                </Badge>
+              </div>
+            ) : participant.linked_entity_type && participant.linked_entity_id ? (
               <Badge 
                 variant="secondary" 
                 className={`text-[10px] h-4 ${entityUrl ? 'cursor-pointer hover:bg-primary/20 transition-colors' : ''}`}
