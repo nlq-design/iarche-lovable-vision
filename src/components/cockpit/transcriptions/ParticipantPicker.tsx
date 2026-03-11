@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/popover';
 import { Users, Plus, X, Search, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useOwnerProfile } from '@/hooks/cockpit/useOwnerProfile';
 import type { ExpectedParticipant } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 
 const ENTITY_TYPE_LABELS: Record<string, string> = {
