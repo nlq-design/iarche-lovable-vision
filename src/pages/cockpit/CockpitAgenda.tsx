@@ -1,9 +1,10 @@
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, Video, MapPin, ChevronLeft, ChevronRight, User, Building, RefreshCw, FileText, CheckSquare, AlertCircle, Phone, Mail } from "lucide-react";
+import { Calendar, Clock, Video, MapPin, ChevronLeft, ChevronRight, User, Building, RefreshCw, FileText, CheckSquare, AlertCircle, Phone, Mail, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCockpitBookings, useCockpitTasks } from "@/hooks/cockpit";
+import { useGoogleCalendarEvents, type GoogleCalendarEvent } from "@/hooks/cockpit/useGoogleCalendarEvents";
 import { format, isSameDay, addDays, subDays, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useState } from "react";
