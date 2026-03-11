@@ -3487,6 +3487,60 @@ export type Database = {
           },
         ]
       }
+      owner_profile: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string
+          email: string | null
+          id: string
+          primary_company_id: string | null
+          role_label: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name: string
+          email?: string | null
+          id?: string
+          primary_company_id?: string | null
+          role_label?: string | null
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          email?: string | null
+          id?: string
+          primary_company_id?: string | null
+          role_label?: string | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_profile_primary_company_id_fkey"
+            columns: ["primary_company_id"]
+            isOneToOne: false
+            referencedRelation: "billing_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_profile_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_entity_mappings: {
         Row: {
           created_at: string
@@ -6493,6 +6547,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          owner_id: string | null
           settings: Json | null
           type: string
           updated_at: string | null
@@ -6503,6 +6558,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          owner_id?: string | null
           settings?: Json | null
           type?: string
           updated_at?: string | null
@@ -6513,11 +6569,20 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          owner_id?: string | null
           settings?: Json | null
           type?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "workspaces_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "owner_profile"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
