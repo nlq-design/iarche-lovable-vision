@@ -85,7 +85,8 @@ function countSources(events: ChronologicalEvent[]): Record<string, number> {
 }
 
 function getDefaultSystemPrompt(): string {
-  return `Tu es un expert en synthèse commerciale pour IArche (conseil IA B2B).
+  return `{{owner_context}}
+Tu es un expert en synthèse commerciale pour IArche (conseil IA B2B).
 ${FRENCH_INSTRUCTION}
 
 ## MISSION CRITIQUE
@@ -1073,7 +1074,7 @@ serve(async (req) => {
       finalPromptData = fallbackPrompt;
     }
 
-    const systemPrompt = finalPromptData?.system_prompt || getDefaultSystemPrompt();
+    let systemPrompt = finalPromptData?.system_prompt || getDefaultSystemPrompt();
     const userPromptTemplate = finalPromptData?.user_prompt || getDefaultUserPrompt();
     const modelConfig = (finalPromptData?.model_config as Record<string, any>) || { model: 'google/gemini-2.5-flash', max_tokens: 16384, temperature: 0.5 };
 
@@ -1081,6 +1082,80 @@ serve(async (req) => {
     const graphData = await collectGraphData(supabase, entity_type, entity_id);
 
     console.log(`[synthesize-v2] Collected ${graphData.events.length} events, ${graphData.linkedEntities.length} linked entities`);
+
+    // ====== Owner Context Injection ======
+    let ownerContextBlock = '';
+    try {
+      const workspaceId = '00000000-0000-0000-0000-000000000001';
+      const { data: ownerProfile } = await supabase
+        .from('owner_profile')
+        .select('id, user_id, display_name, role_label, avatar_url, primary_company_id')
+        .eq('workspace_id', workspaceId)
+        .limit(1)
+        .maybeSingle();
+
+      if (ownerProfile) {
+        // Fetch company name
+        let companyName = '';
+        if (ownerProfile.primary_company_id) {
+          const { data: be } = await supabase
+            .from('billing_entities')
+            .select('name')
+            .eq('id', ownerProfile.primary_company_id)
+            .maybeSingle();
+          companyName = be?.name || '';
+        }
+
+        // Count owner participations on this entity
+        let participationCount = 0;
+        try {
+          let query = supabase
+            .from('transcription_participants')
+            .select('id', { count: 'exact', head: true })
+            .eq('linked_entity_type', 'owner')
+            .eq('linked_entity_id', ownerProfile.id);
+
+          // Filter transcriptions linked to this entity
+          if (['lead', 'project'].includes(entity_type)) {
+            const fkCol = entity_type === 'lead' ? 'lead_id' : 'project_id';
+            const { data: tIds } = await supabase
+              .from('voice_transcriptions')
+              .select('id')
+              .eq(fkCol, entity_id);
+            if (tIds?.length) {
+              query = query.in('transcription_id', tIds.map((t: any) => t.id));
+            } else {
+              query = query.eq('transcription_id', '00000000-0000-0000-0000-000000000000'); // no match
+            }
+          }
+
+          const { count } = await query;
+          participationCount = count || 0;
+        } catch { /* non-blocking */ }
+
+        // Check if owner is assigned to the entity
+        let isAssigned = false;
+        try {
+          if (entity_type === 'lead') {
+            const { data } = await supabase.from('leads').select('assigned_to').eq('id', entity_id).maybeSingle();
+            isAssigned = data?.assigned_to === ownerProfile.user_id;
+          } else if (entity_type === 'project') {
+            const { data } = await supabase.from('projects').select('assigned_to').eq('id', entity_id).maybeSingle();
+            isAssigned = data?.assigned_to === ownerProfile.user_id;
+          }
+        } catch { /* non-blocking */ }
+
+        // Build the context block
+        ownerContextBlock = `Cette analyse est demandée par ${ownerProfile.display_name}${ownerProfile.role_label ? `, ${ownerProfile.role_label}` : ''}${companyName ? ` — ${companyName}` : ''}. ${participationCount > 0 ? `Il a participé directement à ${participationCount} réunion(s) avec cette entité.` : "Il n'a pas participé directement aux réunions documentées."} ${isAssigned ? 'Il est le responsable assigné à ce dossier.' : ''} Tiens compte de son implication dans ta synthèse.`.trim();
+
+        console.log(`[synthesize-v2] Owner context: ${ownerProfile.display_name}, ${participationCount} participations, assigned=${isAssigned}`);
+      }
+    } catch (e) {
+      console.warn('[synthesize-v2] Owner context fetch failed (non-blocking):', e);
+    }
+
+    // Inject owner_context into system prompt
+    systemPrompt = systemPrompt.replace('{{owner_context}}', ownerContextBlock);
 
     if (graphData.events.length <= 1 && graphData.linkedEntities.length === 0) {
       await setStaleFlag(supabase, entity_type, entity_id, false);
