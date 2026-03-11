@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useBillingEntities, useCgvTemplates, BillingEntity } from "@/hooks/cockpit/useBillingEntities";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +11,10 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Plus, Star, StarOff, Pencil, Trash2, FileText, Hash, Euro, Palette } from "lucide-react";
+import { Building2, Plus, Star, StarOff, Pencil, Trash2, FileText, Hash, Euro, Palette, Upload, X, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface EntityFormData {
   name: string;
@@ -33,6 +36,7 @@ interface EntityFormData {
   default_tva_rate: number;
   primary_color: string;
   cgv_template_id: string | null;
+  logo_url: string | null;
 }
 
 const defaultFormData: EntityFormData = {
@@ -55,6 +59,7 @@ const defaultFormData: EntityFormData = {
   default_tva_rate: 20,
   primary_color: "#1e40af",
   cgv_template_id: null,
+  logo_url: null,
 };
 
 export function BillingEntitiesManager() {
@@ -63,6 +68,30 @@ export function BillingEntitiesManager() {
   const [editingEntity, setEditingEntity] = useState<BillingEntity | null>(null);
   const [formData, setFormData] = useState<EntityFormData>(defaultFormData);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const getInitials = (name: string) =>
+    name.split(/\s+/).map(w => w[0]).join("").toUpperCase().slice(0, 2);
+
+  const handleLogoUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("Veuillez sélectionner une image"); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error("L'image ne doit pas dépasser 2 MB"); return; }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("billing-logos").upload(path, file);
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from("billing-logos").getPublicUrl(path);
+      setFormData(prev => ({ ...prev, logo_url: publicUrl }));
+      toast.success("Logo uploadé");
+    } catch (err: any) {
+      toast.error("Erreur upload: " + err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleEdit = (entity: BillingEntity) => {
     setEditingEntity(entity);
@@ -86,6 +115,7 @@ export function BillingEntitiesManager() {
       default_tva_rate: entity.default_tva_rate || 20,
       primary_color: entity.primary_color || "#1e40af",
       cgv_template_id: entity.cgv_template_id,
+      logo_url: entity.logo_url,
     });
     setIsSheetOpen(true);
   };
@@ -158,13 +188,16 @@ export function BillingEntitiesManager() {
                     entity.is_default && "border-primary bg-primary/5"
                   )}
                 >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
-                      style={{ backgroundColor: entity.primary_color || "#1e40af" }}
-                    >
-                      {entity.name.charAt(0)}
-                    </div>
+                    <div className="flex items-center gap-4">
+                    <Avatar className="h-10 w-10 rounded-lg">
+                      <AvatarImage src={entity.logo_url || undefined} alt={entity.name} />
+                      <AvatarFallback
+                        className="rounded-lg text-primary-foreground font-bold"
+                        style={{ backgroundColor: entity.primary_color || "hsl(var(--primary))" }}
+                      >
+                        {getInitials(entity.name)}
+                      </AvatarFallback>
+                    </Avatar>
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{entity.name}</span>
@@ -232,6 +265,61 @@ export function BillingEntitiesManager() {
 
             <TabsContent value="general" className="space-y-4 mt-4">
               <div className="grid gap-4">
+                {/* Logo upload */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" />
+                    Logo de la société
+                  </Label>
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-20 w-20 rounded-lg">
+                      <AvatarImage src={formData.logo_url || undefined} alt={formData.name} />
+                      <AvatarFallback
+                        className="rounded-lg text-primary-foreground font-bold text-xl"
+                        style={{ backgroundColor: formData.primary_color || "hsl(var(--primary))" }}
+                      >
+                        {getInitials(formData.name || "?")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col gap-2">
+                      <input
+                        ref={logoInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleLogoUpload(f);
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={uploading}
+                        onClick={() => logoInputRef.current?.click()}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        {uploading ? "Upload..." : formData.logo_url ? "Changer" : "Ajouter un logo"}
+                      </Button>
+                      {formData.logo_url && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setFormData(prev => ({ ...prev, logo_url: null }))}
+                        >
+                          <X className="h-4 w-4 mr-2" />
+                          Supprimer
+                        </Button>
+                      )}
+                      <p className="text-xs text-muted-foreground">PNG, JPG — max 2 MB, 200×200px recommandé</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nom de la société *</Label>
@@ -253,6 +341,7 @@ export function BillingEntitiesManager() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="SAS">SAS</SelectItem>
+                        <SelectItem value="SASU">SASU</SelectItem>
                         <SelectItem value="SARL">SARL</SelectItem>
                         <SelectItem value="EURL">EURL</SelectItem>
                         <SelectItem value="SA">SA</SelectItem>
