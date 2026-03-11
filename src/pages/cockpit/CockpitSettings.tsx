@@ -1,4 +1,5 @@
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
+import { OwnerProfileManager } from "@/components/cockpit/settings/OwnerProfileManager";
 import { BillingEntitiesManager } from "@/components/cockpit/settings/BillingEntitiesManager";
 import { CgvTemplatesManager } from "@/components/cockpit/settings/CgvTemplatesManager";
 import { Settings, Key } from "lucide-react";
@@ -26,6 +27,7 @@ export default function CockpitSettings() {
         </div>
 
         <div className="grid gap-6">
+          <OwnerProfileManager />
           <BillingEntitiesManager />
           <CgvTemplatesManager />
         </div>
