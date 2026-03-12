@@ -29,50 +29,72 @@ async function zoomGet(url: string, zoomToken: string) {
   const resp = await fetch(url, {
     headers: { 'Authorization': `Bearer ${zoomToken}` },
   });
-
   const text = await resp.text();
   let data: any = null;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = null;
-  }
-
+  try { data = text ? JSON.parse(text) : null; } catch { data = null; }
   return { resp, data, text };
 }
 
+/**
+ * Strategy: try multiple Zoom API endpoints for listing recordings,
+ * since S2S apps have different scopes available depending on account type.
+ * 
+ * Order of attempts:
+ * 1. GET /users/me/recordings (user-level scope)
+ * 2. GET /users (list users) → GET /users/{id}/recordings (admin scope)
+ */
 async function listZoomRecordings(zoomToken: string, from: string, to: string) {
-  const userListUrl = `https://api.zoom.us/v2/users/me/recordings?from=${from}&to=${to}&page_size=100`;
-  const userList = await zoomGet(userListUrl, zoomToken);
-
+  // Strategy 1: Direct user recordings
+  const userList = await zoomGet(
+    `https://api.zoom.us/v2/users/me/recordings?from=${from}&to=${to}&page_size=100`,
+    zoomToken
+  );
   if (userList.resp.ok) return userList.data;
 
-  const userMessage = userList.data?.message || userList.text || 'Unknown Zoom error';
-  const missingUserRecordingScope =
-    userList.data?.code === 4711 &&
-    typeof userMessage === 'string' &&
-    userMessage.includes('list_user_recordings');
+  console.warn(`[zoom-import] /users/me/recordings failed (${userList.resp.status}), trying user-list approach`);
 
-  // Server-to-Server apps often expose account-level recording scopes instead of user-level ones.
-  if (missingUserRecordingScope) {
-    const accountId = Deno.env.get('ZOOM_ACCOUNT_ID');
-    if (!accountId) {
-      throw new Error('ZOOM_ACCOUNT_ID is required for account-level recordings fallback');
+  // Strategy 2: List users then get recordings per user
+  const usersResp = await zoomGet(
+    'https://api.zoom.us/v2/users?page_size=300&status=active',
+    zoomToken
+  );
+
+  if (usersResp.resp.ok && usersResp.data?.users?.length > 0) {
+    const allMeetings: any[] = [];
+
+    for (const user of usersResp.data.users) {
+      const userRecordings = await zoomGet(
+        `https://api.zoom.us/v2/users/${user.id}/recordings?from=${from}&to=${to}&page_size=100`,
+        zoomToken
+      );
+
+      if (userRecordings.resp.ok && userRecordings.data?.meetings) {
+        allMeetings.push(...userRecordings.data.meetings);
+      } else {
+        console.warn(`[zoom-import] Could not get recordings for user ${user.email}: ${userRecordings.resp.status}`);
+      }
     }
 
-    console.warn('[zoom-import] Missing user-level scopes, retrying with account-level recordings endpoint');
-    const accountListUrl = `https://api.zoom.us/v2/accounts/${accountId}/recordings?from=${from}&to=${to}&page_size=100`;
-    const accountList = await zoomGet(accountListUrl, zoomToken);
-
-    if (accountList.resp.ok) return accountList.data;
-
-    const accountMessage = accountList.data?.message || accountList.text || 'Unknown Zoom error';
-    throw new Error(
-      `Zoom scopes insuffisants: ajoutez cloud_recording:read:list_account_recordings:master (S2S) ou cloud_recording:read:list_user_recordings. Zoom: ${accountList.resp.status} - ${accountMessage}`
-    );
+    return { meetings: allMeetings, total_records: allMeetings.length };
   }
 
-  throw new Error(`Zoom API error: ${userList.resp.status} - ${userMessage}`);
+  // Strategy 3: Account-level recordings (requires master scope)
+  const accountId = Deno.env.get('ZOOM_ACCOUNT_ID');
+  if (accountId) {
+    const accountList = await zoomGet(
+      `https://api.zoom.us/v2/accounts/${accountId}/recordings?from=${from}&to=${to}&page_size=100`,
+      zoomToken
+    );
+    if (accountList.resp.ok) return accountList.data;
+  }
+
+  // All strategies failed - give a helpful error
+  throw new Error(
+    `Impossible de lister les enregistrements Zoom. Vérifiez que votre app S2S dispose d'au moins un de ces scopes : ` +
+    `cloud_recording:read:list_user_recordings:admin, user:read:list_users:admin, ` +
+    `ou cloud_recording:read:list_account_recordings:master. ` +
+    `Dernière erreur: ${userList.data?.message || userList.text}`
+  );
 }
 
 serve(async (req) => {
@@ -81,7 +103,6 @@ serve(async (req) => {
   }
 
   try {
-    // Auth check
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
@@ -100,12 +121,11 @@ serve(async (req) => {
     }
 
     const supabaseService = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-
     const body = await req.json();
     const action = body.action || 'list';
 
     // ========================================
-    // ACTION: list — List Zoom cloud recordings
+    // ACTION: list
     // ========================================
     if (action === 'list') {
       const zoomToken = await getZoomAccessToken();
@@ -117,28 +137,15 @@ serve(async (req) => {
       const listData = await listZoomRecordings(zoomToken, from, to);
       const meetings = listData.meetings || [];
 
-      // Check which meeting IDs are already imported
       const meetingIds = meetings.map((m: any) => String(m.id));
-      const { data: existingTranscriptions } = await supabaseService
-        .from('voice_transcriptions')
-        .select('ai_metadata')
-        .eq('source', 'zoom_recording')
-        .in('ai_metadata->>zoom_meeting_id', meetingIds);
-
-      const importedMeetingIds = new Set(
-        (existingTranscriptions || []).map((t: any) => t.ai_metadata?.zoom_meeting_id)
-      );
-
-      // Also check webhook-imported ones
       const { data: webhookTranscriptions } = await supabaseService
         .from('voice_transcriptions')
         .select('ai_metadata')
         .eq('source', 'zoom_recording');
-      
-      const allImportedIds = new Set([
-        ...importedMeetingIds,
-        ...(webhookTranscriptions || []).map((t: any) => t.ai_metadata?.zoom_meeting_id).filter(Boolean),
-      ]);
+
+      const allImportedIds = new Set(
+        (webhookTranscriptions || []).map((t: any) => t.ai_metadata?.zoom_meeting_id).filter(Boolean)
+      );
 
       const recordings = meetings.map((m: any) => {
         const audioFile = (m.recording_files || []).find(
@@ -167,17 +174,15 @@ serve(async (req) => {
     }
 
     // ========================================
-    // ACTION: import — Import a specific recording
+    // ACTION: import
     // ========================================
     if (action === 'import') {
       const meetingId = body.meeting_id;
       if (!meetingId) throw new Error('meeting_id required');
 
       console.log(`[zoom-import] Importing recording for meeting ${meetingId}`);
-
       const zoomToken = await getZoomAccessToken();
 
-      // Get recording details
       const recUrl = `https://api.zoom.us/v2/meetings/${meetingId}/recordings`;
       const recResp = await fetch(recUrl, {
         headers: { 'Authorization': `Bearer ${zoomToken}` },
@@ -200,14 +205,12 @@ serve(async (req) => {
 
       if (!audioFile) throw new Error('No audio file found in this recording');
 
-      // Download
       console.log(`[zoom-import] Downloading ${audioFile.file_extension} (${audioFile.file_size} bytes)`);
       const downloadResp = await fetch(`${audioFile.download_url}?access_token=${zoomToken}`);
       if (!downloadResp.ok) throw new Error(`Download failed: ${downloadResp.status}`);
 
       const audioBlob = await downloadResp.arrayBuffer();
 
-      // Upload to storage
       const fileExt = audioFile.file_extension?.toLowerCase() || 'mp4';
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const storagePath = `zoom-recordings/${meetingId}_${timestamp}.${fileExt}`;
@@ -221,7 +224,6 @@ serve(async (req) => {
 
       if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
 
-      // Find linked booking
       const { data: linkedBooking } = await supabaseService
         .from('bookings')
         .select('id, name, email, company, lead_id, start_time')
@@ -231,7 +233,6 @@ serve(async (req) => {
       const leadId = linkedBooking?.lead_id || null;
       const contactName = linkedBooking?.name || topic;
 
-      // Create transcription record
       const { data: transcription, error: insertError } = await supabaseService
         .from('voice_transcriptions')
         .insert({
