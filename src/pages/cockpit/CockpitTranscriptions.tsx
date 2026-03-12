@@ -33,12 +33,14 @@ import {
   ShieldAlert,
   X,
   CheckSquare,
+  Video,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { useCockpitVoiceTranscriptions, TRANSCRIPTION_STATUSES, type VoiceTranscription } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { CreateTranscriptionModal } from '@/components/cockpit/transcriptions/CreateTranscriptionModal';
+import { ZoomImportModal } from '@/components/cockpit/transcriptions/ZoomImportModal';
 import { toast } from 'sonner';
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
@@ -55,6 +57,7 @@ export default function CockpitTranscriptions() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [zoomImportOpen, setZoomImportOpen] = useState(false);
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, successCount: 0, errorCount: 0, currentJobId: '', currentJobTitle: '', startedAt: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -302,6 +305,10 @@ export default function CockpitTranscriptions() {
                 Re-transcrire tout ({stats.done})
               </Button>
             )}
+            <Button size="sm" variant="outline" className="h-8 text-sm" onClick={() => setZoomImportOpen(true)}>
+              <Video className="h-3.5 w-3.5 mr-1.5" />
+              Import Zoom
+            </Button>
             <Button size="sm" className="h-8 text-sm w-fit" onClick={() => setCreateModalOpen(true)}>
               <Mic className="h-3.5 w-3.5 mr-1.5" />
               Nouvelle transcription
@@ -662,6 +669,13 @@ export default function CockpitTranscriptions() {
             setDroppedFiles([]);
           }}
           defaultFiles={droppedFiles.length > 0 ? droppedFiles : undefined}
+        />
+
+        {/* Zoom Import Modal */}
+        <ZoomImportModal
+          open={zoomImportOpen}
+          onOpenChange={setZoomImportOpen}
+          onImportComplete={() => refetch()}
         />
       </div>
     </CockpitLayout>
