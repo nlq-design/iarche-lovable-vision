@@ -25,6 +25,56 @@ async function getZoomAccessToken(): Promise<string> {
   return data.access_token;
 }
 
+async function zoomGet(url: string, zoomToken: string) {
+  const resp = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${zoomToken}` },
+  });
+
+  const text = await resp.text();
+  let data: any = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = null;
+  }
+
+  return { resp, data, text };
+}
+
+async function listZoomRecordings(zoomToken: string, from: string, to: string) {
+  const userListUrl = `https://api.zoom.us/v2/users/me/recordings?from=${from}&to=${to}&page_size=100`;
+  const userList = await zoomGet(userListUrl, zoomToken);
+
+  if (userList.resp.ok) return userList.data;
+
+  const userMessage = userList.data?.message || userList.text || 'Unknown Zoom error';
+  const missingUserRecordingScope =
+    userList.data?.code === 4711 &&
+    typeof userMessage === 'string' &&
+    userMessage.includes('list_user_recordings');
+
+  // Server-to-Server apps often expose account-level recording scopes instead of user-level ones.
+  if (missingUserRecordingScope) {
+    const accountId = Deno.env.get('ZOOM_ACCOUNT_ID');
+    if (!accountId) {
+      throw new Error('ZOOM_ACCOUNT_ID is required for account-level recordings fallback');
+    }
+
+    console.warn('[zoom-import] Missing user-level scopes, retrying with account-level recordings endpoint');
+    const accountListUrl = `https://api.zoom.us/v2/accounts/${accountId}/recordings?from=${from}&to=${to}&page_size=100`;
+    const accountList = await zoomGet(accountListUrl, zoomToken);
+
+    if (accountList.resp.ok) return accountList.data;
+
+    const accountMessage = accountList.data?.message || accountList.text || 'Unknown Zoom error';
+    throw new Error(
+      `Zoom scopes insuffisants: ajoutez cloud_recording:read:list_account_recordings:master (S2S) ou cloud_recording:read:list_user_recordings. Zoom: ${accountList.resp.status} - ${accountMessage}`
+    );
+  }
+
+  throw new Error(`Zoom API error: ${userList.resp.status} - ${userMessage}`);
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -64,17 +114,7 @@ serve(async (req) => {
 
       console.log(`[zoom-import] Listing recordings from ${from} to ${to}`);
 
-      const listUrl = `https://api.zoom.us/v2/users/me/recordings?from=${from}&to=${to}&page_size=100`;
-      const listResp = await fetch(listUrl, {
-        headers: { 'Authorization': `Bearer ${zoomToken}` },
-      });
-
-      if (!listResp.ok) {
-        const errText = await listResp.text();
-        throw new Error(`Zoom API error: ${listResp.status} - ${errText}`);
-      }
-
-      const listData = await listResp.json();
+      const listData = await listZoomRecordings(zoomToken, from, to);
       const meetings = listData.meetings || [];
 
       // Check which meeting IDs are already imported
