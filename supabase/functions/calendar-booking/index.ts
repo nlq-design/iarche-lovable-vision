@@ -520,6 +520,33 @@ function generateEmailHTML(
   `.trim();
 }
 
+// Get UTC offset in minutes for Europe/Paris at a given date
+function getParisOffsetMs(date: Date): number {
+  // Use Intl to determine the actual offset (handles DST automatically)
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Paris',
+    hour: 'numeric',
+    hourCycle: 'h23',
+  });
+  // Create two dates: one at UTC midnight, compare with Paris hour
+  const utcMidnight = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0));
+  const parisHourStr = formatter.format(utcMidnight);
+  const parisHour = parseInt(parisHourStr, 10);
+  // Offset = Paris hour - UTC hour (at the reference point of 12:00 UTC)
+  const offsetHours = parisHour - 12;
+  return offsetHours * 60 * 60 * 1000;
+}
+
+// Create a Date object representing a specific hour in Europe/Paris timezone
+function createParisDate(dateStr: string, hour: number): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  // Start with the desired hour in UTC
+  const utcDate = new Date(Date.UTC(year, month - 1, day, hour, 0, 0, 0));
+  // Subtract the Paris offset to get the correct UTC instant
+  const offsetMs = getParisOffsetMs(utcDate);
+  return new Date(utcDate.getTime() - offsetMs);
+}
+
 // Generate available time slots for a date - fixed hourly slots (9h, 10h, 11h, etc.)
 function generateSlots(
   date: string,
@@ -530,20 +557,17 @@ function generateSlots(
   existingBookings: { start_time: string; end_time: string }[]
 ): string[] {
   const slots: string[] = [];
-  const dateObj = new Date(date);
   
   for (const avail of availability) {
     const [startH] = avail.start_time.split(':').map(Number);
     const [endH] = avail.end_time.split(':').map(Number);
     
-    // Generate slots at fixed hours only (9, 10, 11, 12, etc.)
+    // Generate slots at fixed hours only (9, 10, 11, 12, etc.) in Europe/Paris
     for (let hour = startH; hour < endH; hour++) {
-      const current = new Date(dateObj);
-      current.setHours(hour, 0, 0, 0);
+      const current = createParisDate(date, hour);
       
       const slotEndTime = new Date(current.getTime() + durationMinutes * 60000);
-      const endTimeLimit = new Date(dateObj);
-      endTimeLimit.setHours(endH, 0, 0, 0);
+      const endTimeLimit = createParisDate(date, endH);
       
       // Skip if slot end time exceeds availability end time
       if (slotEndTime.getTime() > endTimeLimit.getTime()) {

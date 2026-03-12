@@ -1,0 +1,1 @@
+DELETE FROM booking_availability WHERE id IN ('9ab7b948-fc1d-4d0d-8fd5-13d11ffe81ce', 'd0601f44-9448-4ba0-8a17-dbcf4c96ad11', '7d9c7b71-ae7f-4fa0-a309-dfcec9728712', '6f7e32e8-fab6-4a1e-b444-2cc85170b204', '7a85aa37-962f-45f3-bea0-75426c588aac');
