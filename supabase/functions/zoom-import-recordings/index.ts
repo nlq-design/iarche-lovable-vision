@@ -107,6 +107,8 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let action = 'unknown';
+
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
@@ -127,7 +129,7 @@ serve(async (req) => {
 
     const supabaseService = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const body = await req.json();
-    const action = body.action || 'list';
+    action = body.action || 'list';
 
     // ========================================
     // ACTION: list
@@ -142,7 +144,6 @@ serve(async (req) => {
       const listData = await listZoomRecordings(zoomToken, from, to);
       const meetings = listData.meetings || [];
 
-      const meetingIds = meetings.map((m: any) => String(m.id));
       const { data: webhookTranscriptions } = await supabaseService
         .from('voice_transcriptions')
         .select('ai_metadata')
@@ -293,9 +294,31 @@ serve(async (req) => {
     });
 
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    const isZoomScopeError =
+      action === 'list' &&
+      (
+        message.includes('list_user_recordings') ||
+        message.includes('list_account_recordings') ||
+        message.includes('Impossible de lister les enregistrements Zoom') ||
+        message.includes('Zoom scopes')
+      );
+
+    if (isZoomScopeError) {
+      console.warn('[zoom-import] Returning degraded list response due to missing Zoom scopes');
+      return new Response(
+        JSON.stringify({
+          recordings: [],
+          total: 0,
+          warning: message,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.error('[zoom-import] Error:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
