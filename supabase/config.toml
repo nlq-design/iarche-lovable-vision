@@ -191,3 +191,6 @@ verify_jwt = true
 
 [functions.mcp-server]
 verify_jwt = false
+
+[functions.zoom-recording-webhook]
+verify_jwt = false
