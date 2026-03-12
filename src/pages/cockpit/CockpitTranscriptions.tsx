@@ -39,6 +39,7 @@ import { fr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { useCockpitVoiceTranscriptions, TRANSCRIPTION_STATUSES, type VoiceTranscription } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { CreateTranscriptionModal } from '@/components/cockpit/transcriptions/CreateTranscriptionModal';
+import { ZoomImportModal } from '@/components/cockpit/transcriptions/ZoomImportModal';
 import { toast } from 'sonner';
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
