@@ -173,7 +173,11 @@ serve(async (req) => {
         };
       });
 
-      return new Response(JSON.stringify({ recordings, total: listData.total_records || recordings.length }), {
+      return new Response(JSON.stringify({
+        recordings,
+        total: listData.total_records || recordings.length,
+        warning: listData.warning || null,
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
