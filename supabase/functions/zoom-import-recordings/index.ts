@@ -88,13 +88,18 @@ async function listZoomRecordings(zoomToken: string, from: string, to: string) {
     if (accountList.resp.ok) return accountList.data;
   }
 
-  // All strategies failed - give a helpful error
-  throw new Error(
-    `Impossible de lister les enregistrements Zoom. Vérifiez que votre app S2S dispose d'au moins un de ces scopes : ` +
-    `cloud_recording:read:list_user_recordings:admin, user:read:list_users:admin, ` +
-    `ou cloud_recording:read:list_account_recordings:master. ` +
-    `Dernière erreur: ${userList.data?.message || userList.text}`
-  );
+  const scopeErrorMessage =
+    `Zoom scopes manquants. Ajoutez un des scopes suivants dans votre app Zoom : ` +
+    `cloud_recording:read:list_user_recordings, cloud_recording:read:list_user_recordings:admin, ` +
+    `ou cloud_recording:read:list_account_recordings:master.`;
+
+  console.warn(`[zoom-import] ${scopeErrorMessage} Dernière erreur: ${userList.data?.message || userList.text}`);
+
+  return {
+    meetings: [],
+    total_records: 0,
+    warning: scopeErrorMessage,
+  };
 }
 
 serve(async (req) => {
@@ -168,7 +173,11 @@ serve(async (req) => {
         };
       });
 
-      return new Response(JSON.stringify({ recordings, total: listData.total_records || recordings.length }), {
+      return new Response(JSON.stringify({
+        recordings,
+        total: listData.total_records || recordings.length,
+        warning: listData.warning || null,
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
