@@ -56,6 +56,7 @@ export default function CockpitTranscriptions() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [zoomImportOpen, setZoomImportOpen] = useState(false);
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, successCount: 0, errorCount: 0, currentJobId: '', currentJobTitle: '', startedAt: 0 });
   const [isDragging, setIsDragging] = useState(false);
