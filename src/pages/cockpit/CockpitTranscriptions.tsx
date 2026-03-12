@@ -304,6 +304,10 @@ export default function CockpitTranscriptions() {
                 Re-transcrire tout ({stats.done})
               </Button>
             )}
+            <Button size="sm" variant="outline" className="h-8 text-sm" onClick={() => setZoomImportOpen(true)}>
+              <Video className="h-3.5 w-3.5 mr-1.5" />
+              Import Zoom
+            </Button>
             <Button size="sm" className="h-8 text-sm w-fit" onClick={() => setCreateModalOpen(true)}>
               <Mic className="h-3.5 w-3.5 mr-1.5" />
               Nouvelle transcription
