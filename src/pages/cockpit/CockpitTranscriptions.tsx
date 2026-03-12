@@ -669,6 +669,13 @@ export default function CockpitTranscriptions() {
           }}
           defaultFiles={droppedFiles.length > 0 ? droppedFiles : undefined}
         />
+
+        {/* Zoom Import Modal */}
+        <ZoomImportModal
+          open={zoomImportOpen}
+          onOpenChange={setZoomImportOpen}
+          onImportComplete={() => refetch()}
+        />
       </div>
     </CockpitLayout>
   );
