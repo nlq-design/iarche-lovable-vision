@@ -114,17 +114,7 @@ serve(async (req) => {
 
       console.log(`[zoom-import] Listing recordings from ${from} to ${to}`);
 
-      const listUrl = `https://api.zoom.us/v2/users/me/recordings?from=${from}&to=${to}&page_size=100`;
-      const listResp = await fetch(listUrl, {
-        headers: { 'Authorization': `Bearer ${zoomToken}` },
-      });
-
-      if (!listResp.ok) {
-        const errText = await listResp.text();
-        throw new Error(`Zoom API error: ${listResp.status} - ${errText}`);
-      }
-
-      const listData = await listResp.json();
+      const listData = await listZoomRecordings(zoomToken, from, to);
       const meetings = listData.meetings || [];
 
       // Check which meeting IDs are already imported
