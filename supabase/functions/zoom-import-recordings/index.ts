@@ -68,7 +68,7 @@ async function listZoomRecordings(zoomToken: string, from: string, to: string) {
 
     const accountMessage = accountList.data?.message || accountList.text || 'Unknown Zoom error';
     throw new Error(
-      `Zoom scopes insuffisants: ajoutez cloud_recording:read:list_account_recordings:admin (S2S) ou cloud_recording:read:list_user_recordings. Zoom: ${accountList.resp.status} - ${accountMessage}`
+...
     );
   }
 
