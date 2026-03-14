@@ -530,6 +530,35 @@ export function CreateTranscriptionModal({
           {/* Participants attendus */}
           <ParticipantPicker value={expectedParticipants} onChange={setExpectedParticipants} />
 
+          {/* Suggestions de contacts du Lead */}
+          {suggestedContacts.length > 0 && (
+            <div className="rounded-md border border-primary/20 bg-primary/5 p-3 space-y-2">
+              <p className="text-xs font-medium text-primary flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" />
+                Contacts liés au Lead sélectionné
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {suggestedContacts.map((c) => (
+                  <Button
+                    key={c.entity_id}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1 border-primary/30 hover:bg-primary/10"
+                    onClick={() => {
+                      setExpectedParticipants(prev => [...prev, c]);
+                      setSuggestedContacts(prev => prev.filter(s => s.entity_id !== c.entity_id));
+                    }}
+                  >
+                    <Plus className="h-3 w-3" />
+                    {c.name}
+                    {c.company && <span className="text-muted-foreground">· {c.company}</span>}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Contexte d'analyse */}
           <div className="space-y-2">
             <Label>
