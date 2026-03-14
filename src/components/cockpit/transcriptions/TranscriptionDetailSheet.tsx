@@ -42,6 +42,7 @@ import { useCockpitLeads } from '@/hooks/cockpit/useCockpitLeads';
 import { useCockpitProjects } from '@/hooks/cockpit/useCockpitProjects';
 import { useCockpitLeadContacts } from '@/hooks/cockpit/useCockpitLeadContacts';
 import { useCockpitTasks } from '@/hooks/cockpit/useCockpitTasks';
+import { useTranscriptionParticipants } from '@/hooks/cockpit/useTranscriptionParticipants';
 import { useNavigate } from 'react-router-dom';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
 import { OwnerBadge } from '@/components/cockpit/shared/OwnerBadge';
