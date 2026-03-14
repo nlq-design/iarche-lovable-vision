@@ -149,6 +149,9 @@ Compare les noms/entreprises mentionnés avec existing_entities.
 ### 6. PARTICIPANTS
 Résous "Intervenant A/B/C" vers noms réels si identifiables via le contexte CRM.
 
+### 7. PARTICIPANTS CONFIRMÉS (PRIORITAIRE)
+Si confirmed_participants est fourni, ce sont les noms validés par l'humain. Tu DOIS utiliser EXACTEMENT ces noms dans TOUT le texte (executive_summary, key_points, action_items, decisions, etc.). Ne jamais inventer d'autres noms pour ces personnes. Ne jamais utiliser un nom complet si l'alias confirmé est différent (ex: si "NLQ" est confirmé, utiliser "NLQ" partout, pas "Nicolas Larazda").
+
 ## NORMALISATION PHONÉTIQUE
 Utilise dictionary_context pour normaliser les variations (ex: "bérécos" → "Beerecos").
 
