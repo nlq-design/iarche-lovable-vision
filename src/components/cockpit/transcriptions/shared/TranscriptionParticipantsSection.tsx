@@ -461,12 +461,17 @@ export function TranscriptionParticipantsSection({
     updateParticipant.mutate({ id, ...updates });
   };
 
-  const handleLink = (participantId: string, type: LinkedEntityType, entityId: string) => {
-    updateParticipant.mutate({
+  const handleLink = (participantId: string, type: LinkedEntityType, entityId: string, entityName?: string) => {
+    const updates: Partial<TranscriptionParticipant> & { id: string } = {
       id: participantId,
       linked_entity_type: type,
       linked_entity_id: entityId,
-    });
+    };
+    // Overwrite AI-detected name with the CRM entity name
+    if (entityName) {
+      updates.name = entityName;
+    }
+    updateParticipant.mutate(updates);
   };
 
   const handleAdd = (name: string, status: PresenceStatus) => {
