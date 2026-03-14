@@ -132,10 +132,55 @@ export function CreateTranscriptionModal({
     setTranscriptionDate(format(new Date(), 'yyyy-MM-dd'));
     setAnalysisContext('');
     setExpectedParticipants([]);
+    setSuggestedContacts([]);
     setQualityMode('standard');
     setUploadProgress({ current: 0, total: 0 });
-    // chunking progress removed
   }, []);
+
+  // === BRIDGE: Auto-inject Lead Contact → participants & auto-suggest Lead's contacts ===
+  useEffect(() => {
+    // Auto-inject selected Lead Contact as expected participant
+    if (entitySelection.leadContactId) {
+      const contact = leadContacts.find(c => c.id === entitySelection.leadContactId);
+      if (contact && !expectedParticipants.some(p => p.entity_id === contact.id && p.type === 'lead_contact')) {
+        setExpectedParticipants(prev => [
+          ...prev,
+          { name: contact.name, type: 'lead_contact', entity_id: contact.id, company: contact.position ?? undefined },
+        ]);
+      }
+    }
+  }, [entitySelection.leadContactId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    // Auto-suggest Lead's contacts when a Lead is selected
+    if (entitySelection.leadId) {
+      const fetchLeadContacts = async () => {
+        const { data } = await supabase
+          .from('lead_contacts')
+          .select('id, name, email, position')
+          .eq('lead_id', entitySelection.leadId!)
+          .order('name')
+          .limit(10);
+        if (data && data.length > 0) {
+          const suggestions: ExpectedParticipant[] = data
+            .filter(c => !expectedParticipants.some(p => p.entity_id === c.id))
+            .map(c => ({
+              name: c.name,
+              type: 'lead_contact' as const,
+              entity_id: c.id,
+              company: c.position ?? c.email ?? undefined,
+            }));
+          setSuggestedContacts(suggestions);
+        } else {
+          setSuggestedContacts([]);
+        }
+      };
+      fetchLeadContacts();
+    } else {
+      setSuggestedContacts([]);
+    }
+  }, [entitySelection.leadId]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
