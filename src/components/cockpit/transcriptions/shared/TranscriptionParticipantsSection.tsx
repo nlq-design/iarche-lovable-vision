@@ -266,12 +266,12 @@ function ParticipantRow({
           </div>
         </div>
 
-        {/* Presence selector */}
+        {/* Presence selector — always visible */}
         <Select
           value={participant.presence_status}
           onValueChange={(v) => onUpdate(participant.id, { presence_status: v as PresenceStatus })}
         >
-          <SelectTrigger className="h-7 w-24 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+          <SelectTrigger className="h-7 w-24 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -283,12 +283,12 @@ function ParticipantRow({
           </SelectContent>
         </Select>
 
-        {/* Role selector */}
+        {/* Role selector — always visible */}
         <Select
           value={participant.role_in_meeting ?? 'none'}
           onValueChange={(v) => onUpdate(participant.id, { role_in_meeting: v === 'none' ? null : v as MeetingRole })}
         >
-          <SelectTrigger className="h-7 w-28 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+          <SelectTrigger className="h-7 w-28 text-xs">
             <SelectValue placeholder="Rôle" />
           </SelectTrigger>
           <SelectContent>
