@@ -247,7 +247,7 @@ async function fetchTranscriptionSummaries(
   try {
     let query = supabase
       .from('voice_transcriptions')
-      .select('title, transcription_date, ai_summary, action_items, key_decisions, duration_seconds, participants_count')
+      .select('id, title, transcription_date, ai_summary, action_items, key_decisions, duration_seconds, participants_count')
       .eq('status', 'done')
       .order('transcription_date', { ascending: false })
       .limit(30);
