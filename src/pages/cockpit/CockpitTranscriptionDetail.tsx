@@ -41,6 +41,7 @@ import { useCockpitLeads } from '@/hooks/cockpit/useCockpitLeads';
 import { useCockpitProjects } from '@/hooks/cockpit/useCockpitProjects';
 import { useCockpitLeadContacts } from '@/hooks/cockpit/useCockpitLeadContacts';
 import { useCockpitTasks } from '@/hooks/cockpit/useCockpitTasks';
+import { useTranscriptionParticipants } from '@/hooks/cockpit/useTranscriptionParticipants';
 import { toast } from 'sonner';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
 import { ConsulteTab } from '@/components/cockpit/ConsulteTab';
