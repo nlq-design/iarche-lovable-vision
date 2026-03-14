@@ -98,6 +98,19 @@ export function CreateTranscriptionModal({
   const { projects = [] } = useCockpitProjects();
   const meetingNotesResult = useCockpitMeetingNotes();
   const meetingNotes = meetingNotesResult?.meetingNotes ?? [];
+  const { ownerProfile } = useOwnerProfile();
+
+  // Auto-add owner as expected participant when modal opens
+  useEffect(() => {
+    if (open && ownerProfile && expectedParticipants.length === 0) {
+      setExpectedParticipants([{
+        name: ownerProfile.display_name,
+        type: 'owner',
+        entity_id: ownerProfile.id,
+        company: ownerProfile.role_label ?? 'Propriétaire',
+      }]);
+    }
+  }, [open, ownerProfile]); // eslint-disable-line react-hooks/exhaustive-deps
   
   const { data: solutions = [] } = useQuery({
     queryKey: ['solutions-for-transcription'],
