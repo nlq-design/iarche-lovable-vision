@@ -82,6 +82,7 @@ export function TranscriptionDetailSheet({
   
   // Fetch contacts for the linked lead
   const { contacts: leadContacts = [] } = useCockpitLeadContacts(transcription?.lead_id || undefined);
+  const { participants: persistedParticipants } = useTranscriptionParticipants(transcriptionId);
   
   // Fetch solutions (articles with resource_type = 'solution')
   const { data: solutions = [] } = useQuery({
