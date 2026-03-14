@@ -248,7 +248,7 @@ function ParticipantRow({
                 className="inline-flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors"
                 onClick={() => {
                   const match = participant.ai_suggested_match as { type: string; id: string; name: string; confidence: number };
-                  onLink(participant.id, match.type as LinkedEntityType, match.id);
+                  onLink(participant.id, match.type as LinkedEntityType, match.id, match.name);
                 }}
                 title={`Suggestion IA : ${(participant.ai_suggested_match as any).name} (${Math.round((participant.ai_suggested_match as any).confidence * 100)}%)`}
               >
