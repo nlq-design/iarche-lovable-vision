@@ -48,7 +48,21 @@ const sentimentLabel: Record<string, string> = {
   neutral: 'Neutre',
 };
 
-export function TranscriptionSummaryTab({ summary }: TranscriptionSummaryTabProps) {
+export function TranscriptionSummaryTab({ summary, persistedParticipants }: TranscriptionSummaryTabProps) {
+  // Merge: use persisted participants if available, fallback to AI-detected
+  const displayParticipants = persistedParticipants && persistedParticipants.length > 0
+    ? persistedParticipants.map(p => ({
+        name: p.name,
+        role: p.role_in_meeting || undefined,
+        company: undefined,
+        linked: !!(p.linked_entity_type && p.linked_entity_id),
+      }))
+    : summary.participants?.map(p => ({
+        name: p.name,
+        role: p.role || undefined,
+        company: p.company || undefined,
+        linked: !!p.crm_match?.id,
+      })) || [];
   return (
     <div className="space-y-4">
       {/* Sentiment + Quality Score bar */}
