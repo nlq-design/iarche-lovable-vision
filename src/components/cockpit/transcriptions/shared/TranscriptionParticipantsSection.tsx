@@ -500,6 +500,21 @@ export function TranscriptionParticipantsSection({
   const mentionedCount = participants.filter(p => p.presence_status === 'mentioned').length;
   const observerCount = participants.filter(p => p.presence_status === 'observer').length;
 
+  const unlinkedCount = participants.filter(p => !p.linked_entity_id).length;
+
+  const handleBulkLinkToLead = () => {
+    if (!transcriptionLeadId) return;
+    const unlinked = participants.filter(p => !p.linked_entity_id);
+    for (const p of unlinked) {
+      updateParticipant.mutate({
+        id: p.id,
+        linked_entity_type: 'lead',
+        linked_entity_id: transcriptionLeadId,
+      });
+    }
+    toast.success(`${unlinked.length} participant(s) liés au Lead "${transcriptionLeadName}"`);
+  };
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -508,13 +523,27 @@ export function TranscriptionParticipantsSection({
             <Users className="h-4 w-4 text-primary" />
             Participants ({participants.length})
           </span>
-          {participants.length > 0 && (
-            <div className="flex gap-2 text-[10px] font-normal text-muted-foreground">
-              {presentCount > 0 && <span>🟢 {presentCount}</span>}
-              {mentionedCount > 0 && <span>💬 {mentionedCount}</span>}
-              {observerCount > 0 && <span>👁️ {observerCount}</span>}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Bulk link to Lead */}
+            {transcriptionLeadId && unlinkedCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 text-[10px] gap-1"
+                onClick={handleBulkLinkToLead}
+              >
+                <Link2 className="h-3 w-3" />
+                Lier {unlinkedCount} au Lead {transcriptionLeadName ? `"${transcriptionLeadName}"` : ''}
+              </Button>
+            )}
+            {participants.length > 0 && (
+              <div className="flex gap-2 text-[10px] font-normal text-muted-foreground">
+                {presentCount > 0 && <span>🟢 {presentCount}</span>}
+                {mentionedCount > 0 && <span>💬 {mentionedCount}</span>}
+                {observerCount > 0 && <span>👁️ {observerCount}</span>}
+              </div>
+            )}
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
