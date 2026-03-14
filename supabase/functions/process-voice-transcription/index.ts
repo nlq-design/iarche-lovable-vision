@@ -625,7 +625,25 @@ serve(async (req) => {
     const ctx = await fetchContext(supabase, job);
     const analysisContext = job.analysis_context as string | null;
     const expectedParticipants = (aiMeta?.expected_participants as any[]) || [];
-    const llmInput = buildLLMInput(rawText, segments, ctx, analysisContext, expectedParticipants);
+
+    // Load persisted participants (from previous analysis or manual edits)
+    let confirmedParticipants: { name: string; role?: string; linked_entity_type?: string }[] = [];
+    try {
+      const { data: persistedParts } = await supabase
+        .from('transcription_participants')
+        .select('name, role_in_meeting, linked_entity_type, linked_entity_id')
+        .eq('transcription_id', jobId);
+      if (persistedParts?.length) {
+        confirmedParticipants = persistedParts.map((p: any) => ({
+          name: p.name,
+          role: p.role_in_meeting || undefined,
+          linked_entity_type: p.linked_entity_type || undefined,
+        }));
+        log("Participants", `Found ${confirmedParticipants.length} confirmed participants for re-analysis`);
+      }
+    } catch { /* non-blocking */ }
+
+    const llmInput = buildLLMInput(rawText, segments, ctx, analysisContext, expectedParticipants, confirmedParticipants);
 
     await supabase.from("voice_transcriptions").update({
       ai_metadata: {
