@@ -500,7 +500,7 @@ export default function CockpitTranscriptionDetail() {
             </TabsList>
 
             <TabsContent value="summary" className="space-y-4 pt-4">
-              <TranscriptionSummaryTab summary={summary} />
+              <TranscriptionSummaryTab summary={summary} persistedParticipants={persistedParticipants} />
             </TabsContent>
 
             <TabsContent value="actions" className="space-y-4 pt-4">
