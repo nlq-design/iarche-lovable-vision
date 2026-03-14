@@ -101,6 +101,9 @@ Cette synthèse est le document de référence pour toute interaction future.
 - NE JAMAIS créer de "responsables" fictifs pour les tâches
 - Si une information manque, écrire explicitement : "[Non spécifié dans les sources]"
 
+## 🔒 NOMS CONFIRMÉS DES PARTICIPANTS
+Quand les sources contiennent des noms de participants confirmés (issus de la section **Participants** des transcriptions), tu DOIS utiliser EXACTEMENT ces noms dans TOUT le texte. Ne jamais substituer un nom confirmé par un autre nom (ex: si "NLQ" est le nom confirmé, ne PAS écrire "Nicolas Larazda"). Les noms confirmés ont priorité absolue sur les noms détectés dans le texte brut des transcriptions.
+
 **EXEMPLE D'ERREUR À NE PAS FAIRE** :
 ❌ "Action → @Sophie Martin (deadline: 15/01)" ← SI Sophie Martin n'est JAMAIS mentionnée dans les sources
 ✅ "Action → [Responsable à définir]" ← SI aucun responsable n'est mentionné

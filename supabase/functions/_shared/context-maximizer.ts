@@ -247,7 +247,7 @@ async function fetchTranscriptionSummaries(
   try {
     let query = supabase
       .from('voice_transcriptions')
-      .select('title, transcription_date, ai_summary, action_items, key_decisions, duration_seconds, participants_count')
+      .select('id, title, transcription_date, ai_summary, action_items, key_decisions, duration_seconds, participants_count')
       .eq('status', 'done')
       .order('transcription_date', { ascending: false })
       .limit(30);
@@ -275,7 +275,28 @@ async function fetchTranscriptionSummaries(
     for (const t of data) {
       block += `\n### ${t.title || 'Réunion'} — ${formatDateFR(t.transcription_date || '')}`;
       if (t.duration_seconds) block += ` (${Math.round(t.duration_seconds / 60)} min)`;
-      if (t.participants_count) block += ` — ${t.participants_count} participants`;
+
+      // Fetch confirmed participant names from transcription_participants
+      try {
+        const { data: participants } = await supabase
+          .from('transcription_participants')
+          .select('name, linked_entity_type, role_in_meeting')
+          .eq('transcription_id', t.id)
+          .eq('presence_status', 'present');
+        if (participants?.length) {
+          const names = participants.map((p: any) => {
+            let label = p.name;
+            if (p.linked_entity_type) label += ` [${p.linked_entity_type}]`;
+            return label;
+          }).join(', ');
+          block += ` — Participants: ${names}`;
+        } else if (t.participants_count) {
+          block += ` — ${t.participants_count} participants`;
+        }
+      } catch {
+        if (t.participants_count) block += ` — ${t.participants_count} participants`;
+      }
+
       if (t.ai_summary) block += `\n**Résumé:** ${t.ai_summary}`;
       if (t.key_decisions) {
         const decisions = Array.isArray(t.key_decisions) ? t.key_decisions : [];
