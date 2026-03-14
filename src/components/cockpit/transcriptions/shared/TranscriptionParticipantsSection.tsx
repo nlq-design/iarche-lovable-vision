@@ -177,7 +177,7 @@ function ParticipantRow({
   participant: TranscriptionParticipant;
   onUpdate: (id: string, updates: Partial<TranscriptionParticipant>) => void;
   onDelete: (id: string) => void;
-  onLink: (id: string, type: LinkedEntityType, entityId: string) => void;
+  onLink: (id: string, type: LinkedEntityType, entityId: string, entityName?: string) => void;
   searchEntities: (q: string) => Promise<Array<{ type: LinkedEntityType; id: string; name: string; subtitle?: string }>>;
   historyCount?: number;
   linkedEntityName?: string;
@@ -248,7 +248,7 @@ function ParticipantRow({
                 className="inline-flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors"
                 onClick={() => {
                   const match = participant.ai_suggested_match as { type: string; id: string; name: string; confidence: number };
-                  onLink(participant.id, match.type as LinkedEntityType, match.id);
+                  onLink(participant.id, match.type as LinkedEntityType, match.id, match.name);
                 }}
                 title={`Suggestion IA : ${(participant.ai_suggested_match as any).name} (${Math.round((participant.ai_suggested_match as any).confidence * 100)}%)`}
               >
@@ -302,7 +302,7 @@ function ParticipantRow({
         {/* Link button — always visible */}
         <EntitySearchPopover
           participant={participant}
-          onLink={(type, id) => onLink(participant.id, type, id)}
+          onLink={(type, id, name) => onLink(participant.id, type, id, name)}
           searchEntities={searchEntities}
         />
 
@@ -461,12 +461,17 @@ export function TranscriptionParticipantsSection({
     updateParticipant.mutate({ id, ...updates });
   };
 
-  const handleLink = (participantId: string, type: LinkedEntityType, entityId: string) => {
-    updateParticipant.mutate({
+  const handleLink = (participantId: string, type: LinkedEntityType, entityId: string, entityName?: string) => {
+    const updates: Partial<TranscriptionParticipant> & { id: string } = {
       id: participantId,
       linked_entity_type: type,
       linked_entity_id: entityId,
-    });
+    };
+    // Overwrite AI-detected name with the CRM entity name
+    if (entityName) {
+      updates.name = entityName;
+    }
+    updateParticipant.mutate(updates);
   };
 
   const handleAdd = (name: string, status: PresenceStatus) => {
