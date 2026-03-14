@@ -95,6 +95,7 @@ export default function CockpitTranscriptionDetail() {
   const { createTask } = useCockpitTasks();
 
   const { contacts: leadContacts = [] } = useCockpitLeadContacts(transcription?.lead_id || undefined);
+  const { participants: persistedParticipants } = useTranscriptionParticipants(transcriptionId || null);
 
   const { data: solutions = [] } = useQuery({
     queryKey: ['cockpit-solutions-list'],
