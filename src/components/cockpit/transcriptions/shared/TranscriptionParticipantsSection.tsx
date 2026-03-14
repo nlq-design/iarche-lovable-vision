@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -266,12 +267,12 @@ function ParticipantRow({
           </div>
         </div>
 
-        {/* Presence selector */}
+        {/* Presence selector — always visible */}
         <Select
           value={participant.presence_status}
           onValueChange={(v) => onUpdate(participant.id, { presence_status: v as PresenceStatus })}
         >
-          <SelectTrigger className="h-7 w-24 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+          <SelectTrigger className="h-7 w-24 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -283,12 +284,12 @@ function ParticipantRow({
           </SelectContent>
         </Select>
 
-        {/* Role selector */}
+        {/* Role selector — always visible */}
         <Select
           value={participant.role_in_meeting ?? 'none'}
           onValueChange={(v) => onUpdate(participant.id, { role_in_meeting: v === 'none' ? null : v as MeetingRole })}
         >
-          <SelectTrigger className="h-7 w-28 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+          <SelectTrigger className="h-7 w-28 text-xs">
             <SelectValue placeholder="Rôle" />
           </SelectTrigger>
           <SelectContent>
@@ -396,6 +397,24 @@ export function TranscriptionParticipantsSection({
   } = useTranscriptionParticipants(transcriptionId);
   const { ownerProfile } = useOwnerProfile();
 
+  // Fetch transcription's linked lead for bulk link
+  const [transcriptionLeadId, setTranscriptionLeadId] = useState<string | null>(null);
+  const [transcriptionLeadName, setTranscriptionLeadName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!transcriptionId) return;
+    supabase.from('voice_transcriptions')
+      .select('lead_id, leads:lead_id(name)')
+      .eq('id', transcriptionId)
+      .single()
+      .then(({ data }) => {
+        if (data?.lead_id) {
+          setTranscriptionLeadId(data.lead_id);
+          setTranscriptionLeadName((data as any).leads?.name || null);
+        }
+      });
+  }, [transcriptionId]);
+
   const [historyCounts, setHistoryCounts] = useState<Record<string, number>>({});
   const [entityNames, setEntityNames] = useState<Record<string, string>>({});
   const [entitySlugs, setEntitySlugs] = useState<Record<string, string>>({});
@@ -482,6 +501,21 @@ export function TranscriptionParticipantsSection({
   const mentionedCount = participants.filter(p => p.presence_status === 'mentioned').length;
   const observerCount = participants.filter(p => p.presence_status === 'observer').length;
 
+  const unlinkedCount = participants.filter(p => !p.linked_entity_id).length;
+
+  const handleBulkLinkToLead = () => {
+    if (!transcriptionLeadId) return;
+    const unlinked = participants.filter(p => !p.linked_entity_id);
+    for (const p of unlinked) {
+      updateParticipant.mutate({
+        id: p.id,
+        linked_entity_type: 'lead',
+        linked_entity_id: transcriptionLeadId,
+      });
+    }
+    toast.success(`${unlinked.length} participant(s) liés au Lead "${transcriptionLeadName}"`);
+  };
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -490,13 +524,27 @@ export function TranscriptionParticipantsSection({
             <Users className="h-4 w-4 text-primary" />
             Participants ({participants.length})
           </span>
-          {participants.length > 0 && (
-            <div className="flex gap-2 text-[10px] font-normal text-muted-foreground">
-              {presentCount > 0 && <span>🟢 {presentCount}</span>}
-              {mentionedCount > 0 && <span>💬 {mentionedCount}</span>}
-              {observerCount > 0 && <span>👁️ {observerCount}</span>}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Bulk link to Lead */}
+            {transcriptionLeadId && unlinkedCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 text-[10px] gap-1"
+                onClick={handleBulkLinkToLead}
+              >
+                <Link2 className="h-3 w-3" />
+                Lier {unlinkedCount} au Lead {transcriptionLeadName ? `"${transcriptionLeadName}"` : ''}
+              </Button>
+            )}
+            {participants.length > 0 && (
+              <div className="flex gap-2 text-[10px] font-normal text-muted-foreground">
+                {presentCount > 0 && <span>🟢 {presentCount}</span>}
+                {mentionedCount > 0 && <span>💬 {mentionedCount}</span>}
+                {observerCount > 0 && <span>👁️ {observerCount}</span>}
+              </div>
+            )}
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
