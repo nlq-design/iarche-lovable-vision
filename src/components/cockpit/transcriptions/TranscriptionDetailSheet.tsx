@@ -327,7 +327,7 @@ export function TranscriptionDetailSheet({
                     </TabsList>
 
                     <TabsContent value="summary" className="space-y-4 pt-4">
-                      <TranscriptionSummaryTab summary={normalizedSummary} />
+                      <TranscriptionSummaryTab summary={normalizedSummary} persistedParticipants={persistedParticipants} />
                     </TabsContent>
 
                     <TabsContent value="transcript" className="pt-4 space-y-4">
