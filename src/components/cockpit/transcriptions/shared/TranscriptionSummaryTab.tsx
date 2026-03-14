@@ -16,8 +16,16 @@ import {
 } from 'lucide-react';
 import type { NormalizedSummary, ActionItem } from './normalizeSummary';
 
+interface PersistedParticipant {
+  name: string;
+  linked_entity_type?: string | null;
+  linked_entity_id?: string | null;
+  role_in_meeting?: string | null;
+}
+
 interface TranscriptionSummaryTabProps {
   summary: NormalizedSummary;
+  persistedParticipants?: PersistedParticipant[];
 }
 
 // Safe string converter for rendering
