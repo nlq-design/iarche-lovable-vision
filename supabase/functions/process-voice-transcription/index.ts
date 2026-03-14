@@ -718,72 +718,85 @@ serve(async (req) => {
     } catch (e) { logErr("Entities", e); }
 
     // Seed transcription_participants from expected + LLM-detected participants
+    // STRATEGY: Skip seeding entirely on re-analysis if participants already exist (protect manual edits)
     try {
-      const expectedParts = (aiMeta?.expected_participants as any[]) || [];
-      const llmParts = (summary.participants as any[]) || [];
-      const participantRows: any[] = [];
+      const { count: existingParticipantCount } = await supabase
+        .from('transcription_participants')
+        .select('id', { count: 'exact', head: true })
+        .eq('transcription_id', jobId);
 
-      // Expected participants (pre-selected by user)
-      for (const ep of expectedParts) {
-        if (!ep.name) continue;
-        const linkedType = ep.type === 'manual' ? null : ep.type;
-        participantRows.push({
-          transcription_id: jobId,
-          name: ep.name,
-          presence_status: 'present',
-          linked_entity_type: linkedType,
-          linked_entity_id: ep.entity_id || null,
-        });
-      }
+      const isReanalysis = forceReanalyze || initialStatus === 'done' || initialStatus === 'analyzing';
+      const hasExistingParticipants = (existingParticipantCount ?? 0) > 0;
 
-      // LLM-detected participants (merge, don't overwrite expected)
-      const existingNames = new Set(participantRows.map(p => p.name.toLowerCase()));
-      for (const lp of llmParts) {
-        if (!lp.name || existingNames.has(lp.name.toLowerCase())) continue;
-        participantRows.push({
-          transcription_id: jobId,
-          name: lp.name,
-          presence_status: 'present',
-          ai_suggested_match: lp.crm_match || null,
-          confidence_score: lp.crm_match?.confidence || null,
-        });
-      }
+      if (isReanalysis && hasExistingParticipants) {
+        log("Participants", `Skipping seeding — re-analysis with ${existingParticipantCount} existing participants (protecting manual edits)`);
+      } else {
+        const expectedParts = (aiMeta?.expected_participants as any[]) || [];
+        const llmParts = (summary.participants as any[]) || [];
+        const participantRows: any[] = [];
 
-      // Phase P1: Auto-link from cross-transcription memory (participant_entity_mappings)
-      try {
-        const unlinkedNames = participantRows
-          .filter(p => !p.linked_entity_id)
-          .map(p => p.name.toLowerCase());
-        
-        if (unlinkedNames.length > 0) {
-          const { data: mappings } = await supabase
-            .from('participant_entity_mappings')
-            .select('participant_name, linked_entity_type, linked_entity_id, linked_entity_name, usage_count')
-            .eq('workspace_id', job.workspace_id)
-            .order('usage_count', { ascending: false });
-
-          if (mappings?.length) {
-            let autoLinked = 0;
-            for (const row of participantRows) {
-              if (row.linked_entity_id) continue;
-              const match = mappings.find(
-                (m: any) => m.participant_name.toLowerCase() === row.name.toLowerCase()
-              );
-              if (match) {
-                row.linked_entity_type = match.linked_entity_type;
-                row.linked_entity_id = match.linked_entity_id;
-                autoLinked++;
-              }
-            }
-            if (autoLinked > 0) log("Participants", `Auto-linked ${autoLinked} from memory`);
-          }
+        // Expected participants (pre-selected by user)
+        for (const ep of expectedParts) {
+          if (!ep.name) continue;
+          const linkedType = ep.type === 'manual' ? null : ep.type;
+          participantRows.push({
+            transcription_id: jobId,
+            name: ep.name,
+            presence_status: 'present',
+            linked_entity_type: linkedType,
+            linked_entity_id: ep.entity_id || null,
+          });
         }
-      } catch (e) { logErr("Participant memory lookup", e); }
 
-      if (participantRows.length > 0) {
-        await supabase.from("transcription_participants")
-          .upsert(participantRows, { onConflict: 'transcription_id,name', ignoreDuplicates: true });
-        log("Participants", `Seeded ${participantRows.length} participants`);
+        // LLM-detected participants (merge, don't overwrite expected)
+        const existingNames = new Set(participantRows.map(p => p.name.toLowerCase()));
+        for (const lp of llmParts) {
+          if (!lp.name || existingNames.has(lp.name.toLowerCase())) continue;
+          participantRows.push({
+            transcription_id: jobId,
+            name: lp.name,
+            presence_status: 'present',
+            ai_suggested_match: lp.crm_match || null,
+            confidence_score: lp.crm_match?.confidence || null,
+          });
+        }
+
+        // Phase P1: Auto-link from cross-transcription memory (participant_entity_mappings)
+        try {
+          const unlinkedNames = participantRows
+            .filter(p => !p.linked_entity_id)
+            .map(p => p.name.toLowerCase());
+          
+          if (unlinkedNames.length > 0) {
+            const { data: mappings } = await supabase
+              .from('participant_entity_mappings')
+              .select('participant_name, linked_entity_type, linked_entity_id, linked_entity_name, usage_count')
+              .eq('workspace_id', job.workspace_id)
+              .order('usage_count', { ascending: false });
+
+            if (mappings?.length) {
+              let autoLinked = 0;
+              for (const row of participantRows) {
+                if (row.linked_entity_id) continue;
+                const match = mappings.find(
+                  (m: any) => m.participant_name.toLowerCase() === row.name.toLowerCase()
+                );
+                if (match) {
+                  row.linked_entity_type = match.linked_entity_type;
+                  row.linked_entity_id = match.linked_entity_id;
+                  autoLinked++;
+                }
+              }
+              if (autoLinked > 0) log("Participants", `Auto-linked ${autoLinked} from memory`);
+            }
+          }
+        } catch (e) { logErr("Participant memory lookup", e); }
+
+        if (participantRows.length > 0) {
+          await supabase.from("transcription_participants")
+            .upsert(participantRows, { onConflict: 'transcription_id,name', ignoreDuplicates: true });
+          log("Participants", `Seeded ${participantRows.length} participants`);
+        }
       }
 
       // Phase P3: Advanced AI matching — Levenshtein + phonetic + company context
