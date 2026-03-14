@@ -312,6 +312,7 @@ function buildLLMInput(
   analysisContext: string | null,
   // deno-lint-ignore no-explicit-any
   expectedParticipants: any[] = [],
+  confirmedParticipants: { name: string; role?: string; linked_entity_type?: string }[] = [],
 ): string {
   const chapterSummaries = segments?.chapters
     // deno-lint-ignore no-explicit-any
@@ -329,6 +330,7 @@ function buildLLMInput(
     assemblyai_entities: assemblyEntities,
     existing_entities: ctx.existingEntities,
     expected_participants: expectedParticipants.length > 0 ? expectedParticipants : undefined,
+    confirmed_participants: confirmedParticipants.length > 0 ? confirmedParticipants : undefined,
     crm_context: {
       lead: ctx.lead ? { id: ctx.lead.id, name: ctx.lead.name, company: ctx.lead.company } : null,
       project: ctx.project ? { id: ctx.project.id, name: ctx.project.name } : null,
