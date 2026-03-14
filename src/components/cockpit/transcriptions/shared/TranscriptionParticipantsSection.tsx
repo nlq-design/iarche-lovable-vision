@@ -396,6 +396,24 @@ export function TranscriptionParticipantsSection({
   } = useTranscriptionParticipants(transcriptionId);
   const { ownerProfile } = useOwnerProfile();
 
+  // Fetch transcription's linked lead for bulk link
+  const [transcriptionLeadId, setTranscriptionLeadId] = useState<string | null>(null);
+  const [transcriptionLeadName, setTranscriptionLeadName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!transcriptionId) return;
+    supabase.from('voice_transcriptions')
+      .select('lead_id, leads:lead_id(name)')
+      .eq('id', transcriptionId)
+      .single()
+      .then(({ data }) => {
+        if (data?.lead_id) {
+          setTranscriptionLeadId(data.lead_id);
+          setTranscriptionLeadName((data as any).leads?.name || null);
+        }
+      });
+  }, [transcriptionId]);
+
   const [historyCounts, setHistoryCounts] = useState<Record<string, number>>({});
   const [entityNames, setEntityNames] = useState<Record<string, string>>({});
   const [entitySlugs, setEntitySlugs] = useState<Record<string, string>>({});
