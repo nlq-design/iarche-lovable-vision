@@ -761,7 +761,51 @@ serve(async (req) => {
           });
         }
 
-        // Phase P1: Auto-link from cross-transcription memory (participant_entity_mappings)
+        // Phase P0.5: Auto-link from transcription-level entity FKs (lead_contact, lead)
+        try {
+          if (job.lead_contact_id) {
+            const { data: contact } = await supabase
+              .from('lead_contacts')
+              .select('name')
+              .eq('id', job.lead_contact_id)
+              .single();
+            if (contact) {
+              // Try to match by name similarity
+              for (const row of participantRows) {
+                if (row.linked_entity_id) continue;
+                const rowNorm = row.name.toLowerCase().trim();
+                const contactNorm = contact.name.toLowerCase().trim();
+                if (rowNorm === contactNorm || rowNorm.includes(contactNorm) || contactNorm.includes(rowNorm)) {
+                  row.linked_entity_type = 'lead_contact';
+                  row.linked_entity_id = job.lead_contact_id;
+                  log("Participants", `Auto-linked "${row.name}" → Lead Contact "${contact.name}" from transcription FK`);
+                  break;
+                }
+              }
+            }
+          }
+          if (job.lead_id) {
+            // Check if any unlinked participant matches the lead name
+            const { data: lead } = await supabase
+              .from('leads')
+              .select('name')
+              .eq('id', job.lead_id)
+              .single();
+            if (lead) {
+              for (const row of participantRows) {
+                if (row.linked_entity_id) continue;
+                const rowNorm = row.name.toLowerCase().trim();
+                const leadNorm = lead.name.toLowerCase().trim();
+                if (rowNorm === leadNorm || rowNorm.includes(leadNorm) || leadNorm.includes(rowNorm)) {
+                  row.linked_entity_type = 'lead';
+                  row.linked_entity_id = job.lead_id;
+                  log("Participants", `Auto-linked "${row.name}" → Lead "${lead.name}" from transcription FK`);
+                  break;
+                }
+              }
+            }
+          }
+        } catch (e) { logErr("Participant FK auto-link", e); }
         try {
           const unlinkedNames = participantRows
             .filter(p => !p.linked_entity_id)

@@ -136,10 +136,49 @@ export function useTranscriptionParticipants(transcriptionId: string | null) {
               linked_entity_name: entityName,
               last_used_at: new Date().toISOString(),
             }, { onConflict: 'workspace_id,participant_name,linked_entity_type,linked_entity_id' });
-
-            // Increment usage_count via raw SQL not available, use rpc or just ignore for now
           } catch (e) {
             console.warn('[useTranscriptionParticipants] Memory save failed:', e);
+          }
+
+          // P3: Sync back participant entity link → transcription FK
+          if (transcriptionId) {
+            try {
+              const fkUpdate: Record<string, string> = {};
+              if (updates.linked_entity_type === 'lead') {
+                fkUpdate.lead_id = updates.linked_entity_id;
+              } else if (updates.linked_entity_type === 'lead_contact') {
+                fkUpdate.lead_contact_id = updates.linked_entity_id;
+              } else if (updates.linked_entity_type === 'project') {
+                fkUpdate.project_id = updates.linked_entity_id;
+              }
+
+              if (Object.keys(fkUpdate).length > 0) {
+                // Only update if the FK is currently null (don't overwrite explicit user choices)
+                const { data: currentTranscription } = await supabase
+                  .from('voice_transcriptions')
+                  .select(Object.keys(fkUpdate).join(', '))
+                  .eq('id', transcriptionId)
+                  .single();
+
+                if (currentTranscription) {
+                  const fieldsToUpdate: Record<string, string> = {};
+                  for (const [key, value] of Object.entries(fkUpdate)) {
+                    if (!(currentTranscription as any)[key]) {
+                      fieldsToUpdate[key] = value;
+                    }
+                  }
+                  if (Object.keys(fieldsToUpdate).length > 0) {
+                    await supabase
+                      .from('voice_transcriptions')
+                      .update(fieldsToUpdate)
+                      .eq('id', transcriptionId);
+                    console.log('[useTranscriptionParticipants] Synced FK back:', fieldsToUpdate);
+                  }
+                }
+              }
+            } catch (e) {
+              console.warn('[useTranscriptionParticipants] FK sync-back failed:', e);
+            }
           }
         }
       }

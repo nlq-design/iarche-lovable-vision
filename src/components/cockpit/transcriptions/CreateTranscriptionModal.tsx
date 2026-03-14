@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Upload, Mic, MicOff, Loader2, Check, CalendarIcon, Sparkles, Zap } from 'lucide-react';
+import { Upload, Mic, MicOff, Loader2, Check, CalendarIcon, Sparkles, Zap, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCockpitVoiceTranscriptions, useAIPromptProfiles, type ExpectedParticipant } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { useCockpitLeads, useCockpitProjects, useCockpitMeetingNotes } from '@/hooks/cockpit';
@@ -85,6 +85,7 @@ export function CreateTranscriptionModal({
   const [analysisContext, setAnalysisContext] = useState<string>('');
   const [expectedParticipants, setExpectedParticipants] = useState<ExpectedParticipant[]>([]);
   const [qualityMode, setQualityMode] = useState<'standard' | 'high'>('standard');
+  const [suggestedContacts, setSuggestedContacts] = useState<ExpectedParticipant[]>([]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -131,10 +132,55 @@ export function CreateTranscriptionModal({
     setTranscriptionDate(format(new Date(), 'yyyy-MM-dd'));
     setAnalysisContext('');
     setExpectedParticipants([]);
+    setSuggestedContacts([]);
     setQualityMode('standard');
     setUploadProgress({ current: 0, total: 0 });
-    // chunking progress removed
   }, []);
+
+  // === BRIDGE: Auto-inject Lead Contact → participants & auto-suggest Lead's contacts ===
+  useEffect(() => {
+    // Auto-inject selected Lead Contact as expected participant
+    if (entitySelection.leadContactId) {
+      const contact = leadContacts.find(c => c.id === entitySelection.leadContactId);
+      if (contact && !expectedParticipants.some(p => p.entity_id === contact.id && p.type === 'lead_contact')) {
+        setExpectedParticipants(prev => [
+          ...prev,
+          { name: contact.name, type: 'lead_contact', entity_id: contact.id, company: contact.position ?? undefined },
+        ]);
+      }
+    }
+  }, [entitySelection.leadContactId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    // Auto-suggest Lead's contacts when a Lead is selected
+    if (entitySelection.leadId) {
+      const fetchLeadContacts = async () => {
+        const { data } = await supabase
+          .from('lead_contacts')
+          .select('id, name, email, position')
+          .eq('lead_id', entitySelection.leadId!)
+          .order('name')
+          .limit(10);
+        if (data && data.length > 0) {
+          const suggestions: ExpectedParticipant[] = data
+            .filter(c => !expectedParticipants.some(p => p.entity_id === c.id))
+            .map(c => ({
+              name: c.name,
+              type: 'lead_contact' as const,
+              entity_id: c.id,
+              company: c.position ?? c.email ?? undefined,
+            }));
+          setSuggestedContacts(suggestions);
+        } else {
+          setSuggestedContacts([]);
+        }
+      };
+      fetchLeadContacts();
+    } else {
+      setSuggestedContacts([]);
+    }
+  }, [entitySelection.leadId]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -483,6 +529,35 @@ export function CreateTranscriptionModal({
 
           {/* Participants attendus */}
           <ParticipantPicker value={expectedParticipants} onChange={setExpectedParticipants} />
+
+          {/* Suggestions de contacts du Lead */}
+          {suggestedContacts.length > 0 && (
+            <div className="rounded-md border border-primary/20 bg-primary/5 p-3 space-y-2">
+              <p className="text-xs font-medium text-primary flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5" />
+                Contacts liés au Lead sélectionné
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {suggestedContacts.map((c) => (
+                  <Button
+                    key={c.entity_id}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1 border-primary/30 hover:bg-primary/10"
+                    onClick={() => {
+                      setExpectedParticipants(prev => [...prev, c]);
+                      setSuggestedContacts(prev => prev.filter(s => s.entity_id !== c.entity_id));
+                    }}
+                  >
+                    <Plus className="h-3 w-3" />
+                    {c.name}
+                    {c.company && <span className="text-muted-foreground">· {c.company}</span>}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Contexte d'analyse */}
           <div className="space-y-2">
