@@ -23,6 +23,7 @@ import { Upload, Mic, MicOff, Loader2, Check, CalendarIcon, Sparkles, Zap, Plus 
 import { supabase } from '@/integrations/supabase/client';
 import { useCockpitVoiceTranscriptions, useAIPromptProfiles, type ExpectedParticipant } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { useCockpitLeads, useCockpitProjects, useCockpitMeetingNotes } from '@/hooks/cockpit';
+import { useOwnerProfile } from '@/hooks/cockpit/useOwnerProfile';
 import { ParticipantPicker } from './ParticipantPicker';
 import { TranscriptionEntityLinker, type EntitySelection } from './TranscriptionEntityLinker';
 import { useQuery } from '@tanstack/react-query';
