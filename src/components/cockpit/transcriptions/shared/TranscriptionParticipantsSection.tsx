@@ -177,7 +177,7 @@ function ParticipantRow({
   participant: TranscriptionParticipant;
   onUpdate: (id: string, updates: Partial<TranscriptionParticipant>) => void;
   onDelete: (id: string) => void;
-  onLink: (id: string, type: LinkedEntityType, entityId: string) => void;
+  onLink: (id: string, type: LinkedEntityType, entityId: string, entityName?: string) => void;
   searchEntities: (q: string) => Promise<Array<{ type: LinkedEntityType; id: string; name: string; subtitle?: string }>>;
   historyCount?: number;
   linkedEntityName?: string;
