@@ -42,6 +42,7 @@ import { useCockpitLeads } from '@/hooks/cockpit/useCockpitLeads';
 import { useCockpitProjects } from '@/hooks/cockpit/useCockpitProjects';
 import { useCockpitLeadContacts } from '@/hooks/cockpit/useCockpitLeadContacts';
 import { useCockpitTasks } from '@/hooks/cockpit/useCockpitTasks';
+import { useTranscriptionParticipants } from '@/hooks/cockpit/useTranscriptionParticipants';
 import { useNavigate } from 'react-router-dom';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
 import { OwnerBadge } from '@/components/cockpit/shared/OwnerBadge';
@@ -81,6 +82,7 @@ export function TranscriptionDetailSheet({
   
   // Fetch contacts for the linked lead
   const { contacts: leadContacts = [] } = useCockpitLeadContacts(transcription?.lead_id || undefined);
+  const { participants: persistedParticipants } = useTranscriptionParticipants(transcriptionId);
   
   // Fetch solutions (articles with resource_type = 'solution')
   const { data: solutions = [] } = useQuery({
@@ -325,7 +327,7 @@ export function TranscriptionDetailSheet({
                     </TabsList>
 
                     <TabsContent value="summary" className="space-y-4 pt-4">
-                      <TranscriptionSummaryTab summary={normalizedSummary} />
+                      <TranscriptionSummaryTab summary={normalizedSummary} persistedParticipants={persistedParticipants} />
                     </TabsContent>
 
                     <TabsContent value="transcript" className="pt-4 space-y-4">

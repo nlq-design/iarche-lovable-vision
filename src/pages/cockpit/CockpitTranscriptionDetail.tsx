@@ -41,6 +41,7 @@ import { useCockpitLeads } from '@/hooks/cockpit/useCockpitLeads';
 import { useCockpitProjects } from '@/hooks/cockpit/useCockpitProjects';
 import { useCockpitLeadContacts } from '@/hooks/cockpit/useCockpitLeadContacts';
 import { useCockpitTasks } from '@/hooks/cockpit/useCockpitTasks';
+import { useTranscriptionParticipants } from '@/hooks/cockpit/useTranscriptionParticipants';
 import { toast } from 'sonner';
 import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSection';
 import { ConsulteTab } from '@/components/cockpit/ConsulteTab';
@@ -94,6 +95,7 @@ export default function CockpitTranscriptionDetail() {
   const { createTask } = useCockpitTasks();
 
   const { contacts: leadContacts = [] } = useCockpitLeadContacts(transcription?.lead_id || undefined);
+  const { participants: persistedParticipants } = useTranscriptionParticipants(transcriptionId || null);
 
   const { data: solutions = [] } = useQuery({
     queryKey: ['cockpit-solutions-list'],
@@ -498,7 +500,7 @@ export default function CockpitTranscriptionDetail() {
             </TabsList>
 
             <TabsContent value="summary" className="space-y-4 pt-4">
-              <TranscriptionSummaryTab summary={summary} />
+              <TranscriptionSummaryTab summary={summary} persistedParticipants={persistedParticipants} />
             </TabsContent>
 
             <TabsContent value="actions" className="space-y-4 pt-4">

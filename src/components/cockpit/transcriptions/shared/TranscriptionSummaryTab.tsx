@@ -16,8 +16,16 @@ import {
 } from 'lucide-react';
 import type { NormalizedSummary, ActionItem } from './normalizeSummary';
 
+interface PersistedParticipant {
+  name: string;
+  linked_entity_type?: string | null;
+  linked_entity_id?: string | null;
+  role_in_meeting?: string | null;
+}
+
 interface TranscriptionSummaryTabProps {
   summary: NormalizedSummary;
+  persistedParticipants?: PersistedParticipant[];
 }
 
 // Safe string converter for rendering
@@ -40,7 +48,21 @@ const sentimentLabel: Record<string, string> = {
   neutral: 'Neutre',
 };
 
-export function TranscriptionSummaryTab({ summary }: TranscriptionSummaryTabProps) {
+export function TranscriptionSummaryTab({ summary, persistedParticipants }: TranscriptionSummaryTabProps) {
+  // Merge: use persisted participants if available, fallback to AI-detected
+  const displayParticipants = persistedParticipants && persistedParticipants.length > 0
+    ? persistedParticipants.map(p => ({
+        name: p.name,
+        role: p.role_in_meeting || undefined,
+        company: undefined,
+        linked: !!(p.linked_entity_type && p.linked_entity_id),
+      }))
+    : summary.participants?.map(p => ({
+        name: p.name,
+        role: p.role || undefined,
+        company: p.company || undefined,
+        linked: !!p.crm_match?.id,
+      })) || [];
   return (
     <div className="space-y-4">
       {/* Sentiment + Quality Score bar */}
@@ -91,22 +113,22 @@ export function TranscriptionSummaryTab({ summary }: TranscriptionSummaryTabProp
       )}
 
       {/* Participants */}
-      {summary.participants?.length > 0 && (
+      {displayParticipants.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
-              Participants ({summary.participants.length})
+              Participants ({displayParticipants.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {summary.participants.map((p, i) => (
+              {displayParticipants.map((p, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm">
                   <span className="font-medium">{p.name}</span>
                   {p.role && <Badge variant="outline" className="text-xs">{p.role}</Badge>}
                   {p.company && <span className="text-muted-foreground">— {p.company}</span>}
-                  {p.crm_match?.id && (
+                  {p.linked && (
                     <Badge variant="secondary" className="text-[10px]">CRM ✓</Badge>
                   )}
                 </div>
