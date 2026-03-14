@@ -149,6 +149,9 @@ Compare les noms/entreprises mentionnés avec existing_entities.
 ### 6. PARTICIPANTS
 Résous "Intervenant A/B/C" vers noms réels si identifiables via le contexte CRM.
 
+### 7. PARTICIPANTS CONFIRMÉS (PRIORITAIRE)
+Si confirmed_participants est fourni, ce sont les noms validés par l'humain. Tu DOIS utiliser EXACTEMENT ces noms dans TOUT le texte (executive_summary, key_points, action_items, decisions, etc.). Ne jamais inventer d'autres noms pour ces personnes. Ne jamais utiliser un nom complet si l'alias confirmé est différent (ex: si "NLQ" est confirmé, utiliser "NLQ" partout, pas "Nicolas Larazda").
+
 ## NORMALISATION PHONÉTIQUE
 Utilise dictionary_context pour normaliser les variations (ex: "bérécos" → "Beerecos").
 
@@ -309,6 +312,7 @@ function buildLLMInput(
   analysisContext: string | null,
   // deno-lint-ignore no-explicit-any
   expectedParticipants: any[] = [],
+  confirmedParticipants: { name: string; role?: string; linked_entity_type?: string }[] = [],
 ): string {
   const chapterSummaries = segments?.chapters
     // deno-lint-ignore no-explicit-any
@@ -326,6 +330,7 @@ function buildLLMInput(
     assemblyai_entities: assemblyEntities,
     existing_entities: ctx.existingEntities,
     expected_participants: expectedParticipants.length > 0 ? expectedParticipants : undefined,
+    confirmed_participants: confirmedParticipants.length > 0 ? confirmedParticipants : undefined,
     crm_context: {
       lead: ctx.lead ? { id: ctx.lead.id, name: ctx.lead.name, company: ctx.lead.company } : null,
       project: ctx.project ? { id: ctx.project.id, name: ctx.project.name } : null,
@@ -622,7 +627,25 @@ serve(async (req) => {
     const ctx = await fetchContext(supabase, job);
     const analysisContext = job.analysis_context as string | null;
     const expectedParticipants = (aiMeta?.expected_participants as any[]) || [];
-    const llmInput = buildLLMInput(rawText, segments, ctx, analysisContext, expectedParticipants);
+
+    // Load persisted participants (from previous analysis or manual edits)
+    let confirmedParticipants: { name: string; role?: string; linked_entity_type?: string }[] = [];
+    try {
+      const { data: persistedParts } = await supabase
+        .from('transcription_participants')
+        .select('name, role_in_meeting, linked_entity_type, linked_entity_id')
+        .eq('transcription_id', jobId);
+      if (persistedParts?.length) {
+        confirmedParticipants = persistedParts.map((p: any) => ({
+          name: p.name,
+          role: p.role_in_meeting || undefined,
+          linked_entity_type: p.linked_entity_type || undefined,
+        }));
+        log("Participants", `Found ${confirmedParticipants.length} confirmed participants for re-analysis`);
+      }
+    } catch { /* non-blocking */ }
+
+    const llmInput = buildLLMInput(rawText, segments, ctx, analysisContext, expectedParticipants, confirmedParticipants);
 
     await supabase.from("voice_transcriptions").update({
       ai_metadata: {
