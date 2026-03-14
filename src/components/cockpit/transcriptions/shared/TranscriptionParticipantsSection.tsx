@@ -302,7 +302,7 @@ function ParticipantRow({
         {/* Link button — always visible */}
         <EntitySearchPopover
           participant={participant}
-          onLink={(type, id) => onLink(participant.id, type, id)}
+          onLink={(type, id, name) => onLink(participant.id, type, id, name)}
           searchEntities={searchEntities}
         />
 
