@@ -85,6 +85,7 @@ export function CreateTranscriptionModal({
   const [analysisContext, setAnalysisContext] = useState<string>('');
   const [expectedParticipants, setExpectedParticipants] = useState<ExpectedParticipant[]>([]);
   const [qualityMode, setQualityMode] = useState<'standard' | 'high'>('standard');
+  const [suggestedContacts, setSuggestedContacts] = useState<ExpectedParticipant[]>([]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
