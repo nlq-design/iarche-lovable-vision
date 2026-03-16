@@ -307,6 +307,17 @@ function ParticipantRow({
           </SelectContent>
         </Select>
 
+        {/* Speaker mapping — always visible when speakers exist */}
+        {availableSpeakers.length > 0 && (
+          <SpeakerMappingChips
+            assignedSpeakers={parseSpeakerLabels(participant.speaker_label)}
+            availableSpeakers={availableSpeakers}
+            speakerToParticipant={speakerToParticipant}
+            participantName={participant.name}
+            onToggleSpeaker={(speaker) => onToggleSpeaker(participant.id, speaker)}
+          />
+        )}
+
         {/* Link button — always visible */}
         <EntitySearchPopover
           participant={participant}
