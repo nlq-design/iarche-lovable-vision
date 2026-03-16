@@ -88,8 +88,6 @@ const LivresBlancs = () => {
         <meta name="twitter:title" content="Livres blancs IA · IArche" />
         <meta name="twitter:description" content="Guides et documentation sur l'IA pour PME." />
         <meta name="twitter:image" content="https://iarche.fr/og-image-v4.png" />
-        <meta property="og:image:height" content="794" />
-        <meta property="og:locale" content="fr_FR" />
 
         {/* Schema.org BreadcrumbList */}
         <script type="application/ld+json">
