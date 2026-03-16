@@ -11,6 +11,7 @@ import {
 } from '../shared';
 import { ConsulteTab } from '@/components/cockpit/ConsulteTab';
 import type { TranscriptionParticipant } from '@/hooks/cockpit/useTranscriptionParticipants';
+import { buildSpeakerMap } from '../shared/SpeakerMappingChips';
 
 interface TranscriptionContentTabsProps {
   transcriptionId: string;
@@ -53,6 +54,8 @@ export function TranscriptionContentTabs({
   onSeekAudio,
   aiMetadata,
 }: TranscriptionContentTabsProps) {
+  const speakerMap = buildSpeakerMap(persistedParticipants);
+
   if ((status === 'done' || status === 'analyzing') && summary) {
     return (
       <Tabs defaultValue="summary" className="w-full">
@@ -95,7 +98,7 @@ export function TranscriptionContentTabs({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <SimpleTranscript text={rawTranscript || ''} />
+              <SimpleTranscript text={rawTranscript || ''} speakerNameMap={speakerMap} />
             </CardContent>
           </Card>
         </TabsContent>

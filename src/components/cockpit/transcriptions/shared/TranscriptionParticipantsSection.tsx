@@ -46,6 +46,7 @@ import type { NormalizedSummary } from './normalizeSummary';
 import { EntityVocabularyEditor } from './EntityVocabularyEditor';
 import { OwnerBadge } from '@/components/cockpit/shared/OwnerBadge';
 import { useOwnerProfile } from '@/hooks/cockpit/useOwnerProfile';
+import { SpeakerMappingChips, parseSpeakerLabels, buildSpeakerMap, extractUniqueSpeakers } from './SpeakerMappingChips';
 
 // ============= PRESENCE ICON =============
 
@@ -174,6 +175,9 @@ function ParticipantRow({
   historyCount,
   linkedEntityName,
   linkedEntitySlug,
+  availableSpeakers,
+  speakerToParticipant,
+  onToggleSpeaker,
 }: {
   participant: TranscriptionParticipant;
   onUpdate: (id: string, updates: Partial<TranscriptionParticipant>) => void;
@@ -183,6 +187,9 @@ function ParticipantRow({
   historyCount?: number;
   linkedEntityName?: string;
   linkedEntitySlug?: string;
+  availableSpeakers: string[];
+  speakerToParticipant: Record<string, string>;
+  onToggleSpeaker: (participantId: string, speaker: string) => void;
 }) {
   const navigate = useNavigate();
   const { ownerProfile } = useOwnerProfile();
@@ -300,6 +307,17 @@ function ParticipantRow({
           </SelectContent>
         </Select>
 
+        {/* Speaker mapping — always visible when speakers exist */}
+        {availableSpeakers.length > 0 && (
+          <SpeakerMappingChips
+            assignedSpeakers={parseSpeakerLabels(participant.speaker_label)}
+            availableSpeakers={availableSpeakers}
+            speakerToParticipant={speakerToParticipant}
+            participantName={participant.name}
+            onToggleSpeaker={(speaker) => onToggleSpeaker(participant.id, speaker)}
+          />
+        )}
+
         {/* Link button — always visible */}
         <EntitySearchPopover
           participant={participant}
@@ -378,12 +396,15 @@ interface TranscriptionParticipantsSectionProps {
   transcriptionId: string | null;
   normalizedSummary?: NormalizedSummary | null;
   compact?: boolean;
+  /** Enriched segments from the transcription, used to extract speaker labels */
+  enrichedSegments?: Record<string, unknown> | null;
 }
 
 export function TranscriptionParticipantsSection({
   transcriptionId,
   normalizedSummary,
   compact = false,
+  enrichedSegments,
 }: TranscriptionParticipantsSectionProps) {
   const {
     participants,
@@ -476,6 +497,21 @@ export function TranscriptionParticipantsSection({
     load();
   }, [participants]); // eslint-disable-line
 
+  // === Speaker mapping logic ===
+  const availableSpeakers = extractUniqueSpeakers(enrichedSegments ?? null);
+  const speakerToParticipant = buildSpeakerMap(participants);
+
+  const handleToggleSpeaker = (participantId: string, speaker: string) => {
+    const participant = participants.find(p => p.id === participantId);
+    if (!participant) return;
+    const current = parseSpeakerLabels(participant.speaker_label);
+    const next = current.includes(speaker)
+      ? current.filter(s => s !== speaker)
+      : [...current, speaker];
+    const newLabel = next.length > 0 ? next.join(',') : null;
+    updateParticipant.mutate({ id: participantId, speaker_label: newLabel });
+  };
+
   const handleUpdate = (id: string, updates: Partial<TranscriptionParticipant>) => {
     updateParticipant.mutate({ id, ...updates });
   };
@@ -566,6 +602,9 @@ export function TranscriptionParticipantsSection({
                   historyCount={historyCounts[p.id]}
                   linkedEntityName={entityNames[p.id]}
                   linkedEntitySlug={entitySlugs[p.id]}
+                  availableSpeakers={availableSpeakers}
+                  speakerToParticipant={speakerToParticipant}
+                  onToggleSpeaker={handleToggleSpeaker}
                 />
               ))}
             </div>

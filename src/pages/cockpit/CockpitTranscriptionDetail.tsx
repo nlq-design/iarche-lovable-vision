@@ -249,6 +249,7 @@ export default function CockpitTranscriptionDetail() {
         <TranscriptionParticipantsSection
           transcriptionId={transcriptionId}
           normalizedSummary={summary}
+          enrichedSegments={parseEnrichedSegments(transcription.segments)}
         />
 
         {/* Partners */}
