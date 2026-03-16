@@ -175,6 +175,9 @@ function ParticipantRow({
   historyCount,
   linkedEntityName,
   linkedEntitySlug,
+  availableSpeakers,
+  speakerToParticipant,
+  onToggleSpeaker,
 }: {
   participant: TranscriptionParticipant;
   onUpdate: (id: string, updates: Partial<TranscriptionParticipant>) => void;
@@ -184,6 +187,9 @@ function ParticipantRow({
   historyCount?: number;
   linkedEntityName?: string;
   linkedEntitySlug?: string;
+  availableSpeakers: string[];
+  speakerToParticipant: Record<string, string>;
+  onToggleSpeaker: (participantId: string, speaker: string) => void;
 }) {
   const navigate = useNavigate();
   const { ownerProfile } = useOwnerProfile();
