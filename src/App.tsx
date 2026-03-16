@@ -54,6 +54,7 @@ const AdminAteliersWebinaires = lazy(() => import("./pages/admin/AdminAteliersWe
 const AdminSolutions = lazy(() => import("./pages/admin/AdminSolutions"));
 const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
 const AdminContacts = lazy(() => import("./pages/admin/AdminContacts"));
+const IArcheLabsAdmin = lazy(() => import("./pages/admin/IArcheLabsAdmin"));
 const AdminAtelierInscriptions = lazy(() => import("./pages/admin/AdminAtelierInscriptions"));
 const AdminLivreBlancsInscriptions = lazy(() => import("./pages/admin/AdminLivreBlancsInscriptions"));
 const AdminNewsletters = lazy(() => import("./pages/admin/AdminNewsletters"));
@@ -327,6 +328,11 @@ const App = () => (
           <Route path="/admin/contacts" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><AdminContacts /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/iarche-labs" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><IArcheLabsAdmin /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/atelier-inscriptions" element={
