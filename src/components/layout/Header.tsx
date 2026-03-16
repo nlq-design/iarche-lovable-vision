@@ -25,7 +25,14 @@ const Header = () => {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-background border-b border-border">
+    <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded-md focus:text-sm"
+      >
+        Aller au contenu
+      </a>
+      <header className="sticky top-0 z-50 bg-background border-b border-border">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo IArche v4.0 */}
