@@ -54,6 +54,8 @@ export function TranscriptionContentTabs({
   onSeekAudio,
   aiMetadata,
 }: TranscriptionContentTabsProps) {
+  const speakerMap = buildSpeakerMap(persistedParticipants);
+
   if ((status === 'done' || status === 'analyzing') && summary) {
     return (
       <Tabs defaultValue="summary" className="w-full">
