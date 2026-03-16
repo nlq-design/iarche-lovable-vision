@@ -78,7 +78,7 @@ const Footer = () => {
           </div>
 
           {/* Colonne 2 : Services */}
-          <div>
+          <nav aria-label="Services">
             <h3 className="text-base font-semibold mb-4 text-[hsl(45,30%,95%)]">Services</h3>
             <ul className="space-y-2">
               <li>
@@ -102,7 +102,7 @@ const Footer = () => {
                 </NavLink>
               </li>
             </ul>
-          </div>
+          </nav>
 
           {/* Colonne 3 : Ressources */}
           <div>
