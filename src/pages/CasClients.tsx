@@ -110,6 +110,27 @@ const CasClients = () => {
             ]
           })}
         </script>
+
+        {/* Schema.org CollectionPage */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": "Cas clients IA · IArche",
+            "description": "Projets d'intégration IA réalisés pour des PME.",
+            "url": "https://iarche.fr/cas-clients",
+            "isPartOf": { "@type": "WebSite", "name": "IArche", "url": "https://iarche.fr" },
+            "mainEntity": {
+              "@type": "ItemList",
+              "numberOfItems": casClients.length,
+              "itemListElement": casClients.slice(0, 10).map((item, idx) => ({
+                "@type": "ListItem",
+                "position": idx + 1,
+                "url": `https://iarche.fr/cas-clients/${item.slug}`
+              }))
+            }
+          })}
+        </script>
       </Helmet>
 
       <Header />

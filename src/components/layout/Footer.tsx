@@ -137,7 +137,7 @@ const Footer = () => {
           </nav>
 
           {/* Colonne 4 : Contact & Légal */}
-          <div>
+          <nav aria-label="Contact et informations légales">
             <h3 className="text-base font-semibold mb-4 text-[hsl(45,30%,95%)]">Contact & Légal</h3>
             <ul className="space-y-2">
               <li>
@@ -171,7 +171,7 @@ const Footer = () => {
                 </NavLink>
               </li>
             </ul>
-          </div>
+          </nav>
         </div>
 
         {/* Copyright */}

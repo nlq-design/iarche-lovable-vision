@@ -161,6 +161,27 @@ const AteliersWebinaires = () => {
             ]
           })}
         </script>
+
+        {/* Schema.org CollectionPage */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": "Ateliers & Webinaires IA · IArche",
+            "description": "Formations pratiques et sessions sur l'IA pour les PME.",
+            "url": "https://iarche.fr/ateliers-webinaires",
+            "isPartOf": { "@type": "WebSite", "name": "IArche", "url": "https://iarche.fr" },
+            "mainEntity": {
+              "@type": "ItemList",
+              "numberOfItems": ateliersWebinaires.length,
+              "itemListElement": ateliersWebinaires.slice(0, 10).map((item, idx) => ({
+                "@type": "ListItem",
+                "position": idx + 1,
+                "url": `https://iarche.fr/ateliers-webinaires/${item.slug}`
+              }))
+            }
+          })}
+        </script>
       </Helmet>
 
       <Header />
