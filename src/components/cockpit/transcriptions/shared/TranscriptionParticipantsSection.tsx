@@ -396,12 +396,15 @@ interface TranscriptionParticipantsSectionProps {
   transcriptionId: string | null;
   normalizedSummary?: NormalizedSummary | null;
   compact?: boolean;
+  /** Enriched segments from the transcription, used to extract speaker labels */
+  enrichedSegments?: Record<string, unknown> | null;
 }
 
 export function TranscriptionParticipantsSection({
   transcriptionId,
   normalizedSummary,
   compact = false,
+  enrichedSegments,
 }: TranscriptionParticipantsSectionProps) {
   const {
     participants,
