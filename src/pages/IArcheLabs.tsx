@@ -130,7 +130,7 @@ const IArcheLabs = () => {
     { icon: Scale, text: 'Cadrage juridique par une équipe spécialisée (structure, contrats, conformité)' },
     { icon: Server, text: 'Infrastructure Supabase hébergée 12 mois' },
     { icon: MessageSquare, text: 'Suivi Slack 30 jours post-session' },
-    { icon: Hotel, text: 'Option hébergement Hôtel Oko à proximité' },
+    
   ];
 
   return (
