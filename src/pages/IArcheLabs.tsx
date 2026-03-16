@@ -236,85 +236,32 @@ const IArcheLabs = () => {
           </div>
         </section>
 
-        {/* PROGRAMME 5 JOURS */}
-        <section id="programme" className="py-16 md:py-20 bg-secondary">
-          <div className="max-w-5xl mx-auto px-6">
-            <h2 className="text-3xl md:text-4xl font-bold hero-gradient-text text-center mb-12">5 jours, un produit.</h2>
-            <div className="space-y-4">
-              {timeline.map((step) => (
-                <Card
-                  key={step.day}
-                  className={`p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 border-border ${
-                    step.highlight
-                      ? 'border-accent bg-accent/5 ring-1 ring-accent/20'
-                      : 'bg-background'
-                  }`}
-                >
-                  <div className={`text-2xl font-extrabold shrink-0 w-12 ${step.highlight ? 'text-accent' : 'text-primary'}`}>
-                    {step.day}
-                  </div>
-                  <Separator orientation="vertical" className="h-10 hidden sm:block" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <step.icon className={`w-5 h-5 ${step.highlight ? 'text-accent' : 'text-primary'}`} />
-                      <h3 className="font-bold text-foreground">{step.title}</h3>
-                      {step.badge && (
-                        <Badge className="bg-accent/10 text-accent border-accent/20 text-xs">{step.badge}</Badge>
-                      )}
-                    </div>
-                    <p className="text-muted-foreground text-sm">{step.desc}</p>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* FORMULES */}
+        {/* UNE FORMULE */}
         <section className="py-16 md:py-20 bg-primary text-primary-foreground">
           <div className="max-w-5xl mx-auto px-6">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Deux formules</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* BUILD */}
-              <Card className="p-8 bg-primary-foreground/10 border-primary-foreground/20 backdrop-blur-sm">
-                <h3 className="text-2xl font-bold mb-2">Formule BUILD</h3>
-                <p className="text-3xl font-extrabold mb-4">7 000 € <span className="text-base font-normal opacity-80">HT</span></p>
-                <p className="opacity-80 mb-6">La semaine complète. Tu repars avec ton SaaS.</p>
-                <ul className="space-y-2 text-sm">
-                  {['Semaine 5 jours', 'Matériel fourni', 'Infra Supabase 12 mois', 'Suivi 30j'].map((item) => (
-                    <li key={item} className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-accent shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-
-              {/* BUILD + GROW */}
-              <Card className="p-8 bg-primary-foreground/10 border-accent/40 backdrop-blur-sm relative ring-1 ring-accent/30">
-                <Badge className="absolute -top-3 right-6 bg-accent text-white border-0">Recommandé</Badge>
-                <h3 className="text-2xl font-bold mb-2">Formule BUILD + GROW</h3>
-                <p className="text-3xl font-extrabold mb-1">7 000 € <span className="text-base font-normal opacity-80">HT</span></p>
-                <p className="text-lg font-bold text-accent mb-4">+ 10%*</p>
-                <p className="opacity-80 mb-6">La semaine + notre réseau actif.</p>
-                <ul className="space-y-2 text-sm">
-                  {[
-                    'Tout du Build',
-                    'Introductions réseau IArche Labs',
-                    'Clubs d\'affaires Pays Basque',
-                    'Co-commercialisation active',
-                  ].map((item) => (
-                    <li key={item} className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-accent shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            </div>
-            <p className="text-center text-sm opacity-60 mt-8 max-w-2xl mx-auto">
-              * 10% uniquement sur le CA généré via notre réseau. Si on n'apporte rien un trimestre, on ne touche rien.
-            </p>
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Une formule, un engagement.</h2>
+            <Card className="max-w-xl mx-auto p-8 bg-primary-foreground/10 border-primary-foreground/20 backdrop-blur-sm text-center">
+              <Badge className="mb-4 bg-accent text-white border-0">IArche Labs</Badge>
+              <h3 className="text-2xl font-bold mb-2">Semaine Intensive SaaS</h3>
+              <p className="opacity-80 mb-6">Tarif sur devis — échangeons d'abord.</p>
+              <ul className="space-y-3 text-sm text-left max-w-sm mx-auto mb-8">
+                {[
+                  '5 jours en immersion complète',
+                  'Matériel et infrastructure fournis',
+                  'Cadrage juridique inclus',
+                  'Suivi 30 jours post-session',
+                  'Accès optionnel au réseau IArche Labs',
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-accent shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <GradientButton size="lg" onClick={() => scrollTo('candidature')}>
+                Candidater
+              </GradientButton>
+            </Card>
           </div>
         </section>
 
