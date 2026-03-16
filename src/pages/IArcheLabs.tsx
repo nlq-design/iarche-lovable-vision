@@ -186,7 +186,7 @@ const IArcheLabs = () => {
             </h1>
             <LogoArc size="md" className="mx-auto mb-6 animate-fadeIn [animation-delay:0.1s]" />
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 animate-fadeIn [animation-delay:0.2s]">
-              Une semaine intensive. Tu arrives avec une idée. Tu repars avec un produit en production, accompagné par Nick et Aleks.
+              Une semaine intensive à Bayonne. Tu arrives avec une idée. Tu repars avec un produit en production.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fadeIn [animation-delay:0.3s]">
               <GradientButton size="lg" onClick={() => scrollTo('candidature')}>
