@@ -11,6 +11,7 @@ import {
 } from '../shared';
 import { ConsulteTab } from '@/components/cockpit/ConsulteTab';
 import type { TranscriptionParticipant } from '@/hooks/cockpit/useTranscriptionParticipants';
+import { buildSpeakerMap } from '../shared/SpeakerMappingChips';
 
 interface TranscriptionContentTabsProps {
   transcriptionId: string;
