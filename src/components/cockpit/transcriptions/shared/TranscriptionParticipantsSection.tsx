@@ -46,7 +46,7 @@ import type { NormalizedSummary } from './normalizeSummary';
 import { EntityVocabularyEditor } from './EntityVocabularyEditor';
 import { OwnerBadge } from '@/components/cockpit/shared/OwnerBadge';
 import { useOwnerProfile } from '@/hooks/cockpit/useOwnerProfile';
-import { SpeakerMappingChips, parseSpeakerLabels, buildSpeakerMap } from './SpeakerMappingChips';
+import { SpeakerMappingChips, parseSpeakerLabels, buildSpeakerMap, extractUniqueSpeakers } from './SpeakerMappingChips';
 
 // ============= PRESENCE ICON =============
 
