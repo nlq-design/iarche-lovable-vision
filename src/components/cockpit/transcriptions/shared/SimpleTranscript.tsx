@@ -24,14 +24,14 @@ function replaceSpeakerLabels(text: string, map: Record<string, string>): string
 }
 
 export function SimpleTranscript({ text, speakerNameMap = {} }: SimpleTranscriptProps) {
-  if (!text) {
-    return <p className="text-sm text-muted-foreground">Aucune transcription disponible</p>;
-  }
-
   const processedText = useMemo(
     () => replaceSpeakerLabels(text, speakerNameMap),
     [text, speakerNameMap]
   );
+
+  if (!text) {
+    return <p className="text-sm text-muted-foreground">Aucune transcription disponible</p>;
+  }
 
   return (
     <div className="prose prose-sm max-w-none">

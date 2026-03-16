@@ -86,7 +86,6 @@ export function TranscriptionContentTabs({
             segments={segments}
             languageDetected={languageDetected}
             onSeekTo={onSeekAudio}
-            speakerNameMap={speakerMap}
           />
         </TabsContent>
 
