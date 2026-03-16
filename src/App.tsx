@@ -54,6 +54,7 @@ const AdminAteliersWebinaires = lazy(() => import("./pages/admin/AdminAteliersWe
 const AdminSolutions = lazy(() => import("./pages/admin/AdminSolutions"));
 const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
 const AdminContacts = lazy(() => import("./pages/admin/AdminContacts"));
+const IArcheLabsAdmin = lazy(() => import("./pages/admin/IArcheLabsAdmin"));
 const AdminAtelierInscriptions = lazy(() => import("./pages/admin/AdminAtelierInscriptions"));
 const AdminLivreBlancsInscriptions = lazy(() => import("./pages/admin/AdminLivreBlancsInscriptions"));
 const AdminNewsletters = lazy(() => import("./pages/admin/AdminNewsletters"));
