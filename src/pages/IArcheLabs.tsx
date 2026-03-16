@@ -19,8 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCTATracking } from '@/hooks/useCTATracking';
 import {
   Laptop, Users, Scale, Server, MessageSquare, Hotel,
-  Check, Rocket, Code, Palette, Plug, Flag,
-  UserCheck, RefreshCw, Lightbulb
+  Check, UserCheck, RefreshCw, Lightbulb
 } from 'lucide-react';
 
 const IArcheLabs = () => {
@@ -70,7 +69,7 @@ const IArcheLabs = () => {
         p_name: fullName,
         p_source: 'iarche-labs',
         p_source_context: 'Candidature IArche Labs',
-        p_message: `${formData.project} | Formule : ${formData.formula}`,
+        p_message: `${formData.project} | Intérêt : ${formData.formula}`,
         p_company: formData.company,
         p_consent_marketing: false,
       });
@@ -99,7 +98,7 @@ const IArcheLabs = () => {
             phone: null,
             source: 'iarche-labs',
             source_context: 'Candidature IArche Labs',
-            message: `${formData.project} | Formule : ${formData.formula}`,
+            message: `${formData.project} | Intérêt : ${formData.formula}`,
           },
         });
       } catch (notifError) {
@@ -124,18 +123,11 @@ const IArcheLabs = () => {
     }
   };
 
-  const timeline = [
-    { day: 'J1', title: 'Cadrage', desc: 'Audit juridique + cadrage projet + architecture + choix stack', icon: Scale },
-    { day: 'J2', title: 'Build Sprint #1', desc: 'Auth, data model, feature principale', icon: Code },
-    { day: 'J3', title: 'Build Sprint #2', desc: 'UI/UX, flows secondaires', icon: Palette, highlight: true, badge: 'Lovable' },
-    { day: 'J4', title: 'Intégrations', desc: 'Stripe, APIs métier, tests, sécurité', icon: Plug },
-    { day: 'J5', title: 'Production', desc: 'Mise en production + landing page + introduction réseau', icon: Flag },
-  ];
 
   const includes = [
     { icon: Laptop, text: 'Ordinateur + accès Lovable (crédits inclus)' },
-    { icon: Users, text: 'Accompagnement Nick (bizdev) + Aleks (architecture & dev)' },
-    { icon: Scale, text: 'Module juridique J1 matin (diagnostic + structure adaptée)' },
+    { icon: Users, text: 'Accompagnement expert IArche Labs (technique + go-to-market)' },
+    { icon: Scale, text: 'Cadrage juridique par une équipe spécialisée (structure, contrats, conformité)' },
     { icon: Server, text: 'Infrastructure Supabase hébergée 12 mois' },
     { icon: MessageSquare, text: 'Suivi Slack 30 jours post-session' },
     { icon: Hotel, text: 'Option hébergement Hôtel Oko à proximité' },
@@ -186,14 +178,14 @@ const IArcheLabs = () => {
             </h1>
             <LogoArc size="md" className="mx-auto mb-6 animate-fadeIn [animation-delay:0.1s]" />
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 animate-fadeIn [animation-delay:0.2s]">
-              Une semaine intensive. Tu arrives avec une idée. Tu repars avec un produit en production, accompagné par Nick et Aleks.
+              Une semaine intensive à Bayonne. Tu arrives avec une idée. Tu repars avec un produit en production.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fadeIn [animation-delay:0.3s]">
               <GradientButton size="lg" onClick={() => scrollTo('candidature')}>
                 Candidater
               </GradientButton>
-              <GradientButton size="lg" variant="outline" onClick={() => scrollTo('programme')}>
-                Voir le programme
+              <GradientButton size="lg" variant="outline" onClick={() => scrollTo('candidature')}>
+                En savoir plus
               </GradientButton>
             </div>
           </div>
@@ -216,9 +208,6 @@ const IArcheLabs = () => {
                 </Card>
               ))}
             </div>
-            <p className="text-center text-muted-foreground mt-8 text-sm">
-              ❌ Pas pour les profils purement techniques qui veulent apprendre à coder.
-            </p>
           </div>
         </section>
 
@@ -239,85 +228,32 @@ const IArcheLabs = () => {
           </div>
         </section>
 
-        {/* PROGRAMME 5 JOURS */}
-        <section id="programme" className="py-16 md:py-20 bg-secondary">
-          <div className="max-w-5xl mx-auto px-6">
-            <h2 className="text-3xl md:text-4xl font-bold hero-gradient-text text-center mb-12">5 jours, un produit.</h2>
-            <div className="space-y-4">
-              {timeline.map((step) => (
-                <Card
-                  key={step.day}
-                  className={`p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 border-border ${
-                    step.highlight
-                      ? 'border-accent bg-accent/5 ring-1 ring-accent/20'
-                      : 'bg-background'
-                  }`}
-                >
-                  <div className={`text-2xl font-extrabold shrink-0 w-12 ${step.highlight ? 'text-accent' : 'text-primary'}`}>
-                    {step.day}
-                  </div>
-                  <Separator orientation="vertical" className="h-10 hidden sm:block" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <step.icon className={`w-5 h-5 ${step.highlight ? 'text-accent' : 'text-primary'}`} />
-                      <h3 className="font-bold text-foreground">{step.title}</h3>
-                      {step.badge && (
-                        <Badge className="bg-accent/10 text-accent border-accent/20 text-xs">{step.badge}</Badge>
-                      )}
-                    </div>
-                    <p className="text-muted-foreground text-sm">{step.desc}</p>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* FORMULES */}
+        {/* UNE FORMULE */}
         <section className="py-16 md:py-20 bg-primary text-primary-foreground">
           <div className="max-w-5xl mx-auto px-6">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Deux formules</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* BUILD */}
-              <Card className="p-8 bg-primary-foreground/10 border-primary-foreground/20 backdrop-blur-sm">
-                <h3 className="text-2xl font-bold mb-2">Formule BUILD</h3>
-                <p className="text-3xl font-extrabold mb-4">7 000 € <span className="text-base font-normal opacity-80">HT</span></p>
-                <p className="opacity-80 mb-6">La semaine complète. Tu repars avec ton SaaS.</p>
-                <ul className="space-y-2 text-sm">
-                  {['Semaine 5 jours', 'Matériel fourni', 'Infra Supabase 12 mois', 'Suivi 30j'].map((item) => (
-                    <li key={item} className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-accent shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-
-              {/* BUILD + GROW */}
-              <Card className="p-8 bg-primary-foreground/10 border-accent/40 backdrop-blur-sm relative ring-1 ring-accent/30">
-                <Badge className="absolute -top-3 right-6 bg-accent text-white border-0">Recommandé</Badge>
-                <h3 className="text-2xl font-bold mb-2">Formule BUILD + GROW</h3>
-                <p className="text-3xl font-extrabold mb-1">7 000 € <span className="text-base font-normal opacity-80">HT</span></p>
-                <p className="text-lg font-bold text-accent mb-4">+ 10%*</p>
-                <p className="opacity-80 mb-6">La semaine + notre réseau actif.</p>
-                <ul className="space-y-2 text-sm">
-                  {[
-                    'Tout du Build',
-                    'Introductions réseau IArche Labs',
-                    'Clubs d\'affaires Pays Basque',
-                    'Co-commercialisation active',
-                  ].map((item) => (
-                    <li key={item} className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-accent shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            </div>
-            <p className="text-center text-sm opacity-60 mt-8 max-w-2xl mx-auto">
-              * 10% uniquement sur le CA généré via notre réseau. Si on n'apporte rien un trimestre, on ne touche rien.
-            </p>
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Une formule, un engagement.</h2>
+            <Card className="max-w-xl mx-auto p-8 bg-primary-foreground/10 border-primary-foreground/20 backdrop-blur-sm text-center">
+              <Badge className="mb-4 bg-accent text-white border-0">IArche Labs</Badge>
+              <h3 className="text-2xl font-bold mb-2">Semaine Intensive SaaS</h3>
+              <p className="opacity-80 mb-6">Tarif sur devis — échangeons d'abord.</p>
+              <ul className="space-y-3 text-sm text-left max-w-sm mx-auto mb-8">
+                {[
+                  '5 jours en immersion complète',
+                  'Matériel et infrastructure fournis',
+                  'Cadrage juridique inclus',
+                  'Suivi 30 jours post-session',
+                  'Accès optionnel au réseau IArche Labs',
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-accent shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <GradientButton size="lg" onClick={() => scrollTo('candidature')}>
+                Candidater
+              </GradientButton>
+            </Card>
           </div>
         </section>
 
@@ -422,9 +358,8 @@ const IArcheLabs = () => {
                     <SelectValue placeholder="Sélectionne une formule" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Build (7 000€ HT)">Build (7 000€ HT)</SelectItem>
-                    <SelectItem value="Build + Grow (7 000€ HT + 10%)">Build + Grow (7 000€ HT + 10%)</SelectItem>
-                    <SelectItem value="Je ne sais pas encore">Je ne sais pas encore</SelectItem>
+                    <SelectItem value="Je souhaite en savoir plus">Je souhaite en savoir plus</SelectItem>
+                    <SelectItem value="Je suis prêt(e) à candidater">Je suis prêt(e) à candidater</SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.formula && <p className="text-sm text-destructive mt-1">{errors.formula}</p>}
