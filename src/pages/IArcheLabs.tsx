@@ -134,8 +134,8 @@ const IArcheLabs = () => {
 
   const includes = [
     { icon: Laptop, text: 'Ordinateur + accès Lovable (crédits inclus)' },
-    { icon: Users, text: 'Accompagnement Nick (bizdev) + Aleks (architecture & dev)' },
-    { icon: Scale, text: 'Module juridique J1 matin (diagnostic + structure adaptée)' },
+    { icon: Users, text: 'Accompagnement expert IArche Labs (technique + go-to-market)' },
+    { icon: Scale, text: 'Cadrage juridique par une équipe spécialisée (structure, contrats, conformité)' },
     { icon: Server, text: 'Infrastructure Supabase hébergée 12 mois' },
     { icon: MessageSquare, text: 'Suivi Slack 30 jours post-session' },
     { icon: Hotel, text: 'Option hébergement Hôtel Oko à proximité' },
