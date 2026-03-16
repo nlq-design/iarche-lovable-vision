@@ -70,7 +70,7 @@ const IArcheLabs = () => {
         p_name: fullName,
         p_source: 'iarche-labs',
         p_source_context: 'Candidature IArche Labs',
-        p_message: `${formData.project} | Formule : ${formData.formula}`,
+        p_message: `${formData.project} | Intérêt : ${formData.formula}`,
         p_company: formData.company,
         p_consent_marketing: false,
       });
