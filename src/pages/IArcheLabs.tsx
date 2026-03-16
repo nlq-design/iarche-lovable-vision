@@ -191,8 +191,8 @@ const IArcheLabs = () => {
               <GradientButton size="lg" onClick={() => scrollTo('candidature')}>
                 Candidater
               </GradientButton>
-              <GradientButton size="lg" variant="outline" onClick={() => scrollTo('programme')}>
-                Voir le programme
+              <GradientButton size="lg" variant="outline" onClick={() => scrollTo('candidature')}>
+                En savoir plus
               </GradientButton>
             </div>
           </div>
