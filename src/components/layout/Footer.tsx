@@ -19,7 +19,7 @@ const Footer = () => {
               className="h-8 w-auto mb-4"
             />
             <p className="text-sm text-[hsl(var(--footer-text-muted))] mb-1">Bayonne · France</p>
-            <p className="text-sm text-[hsl(45,20%,85%)] mb-1">
+            <p className="text-sm text-[hsl(var(--footer-text-muted))] mb-1">
               <a 
                 href="mailto:nlq@iarche.fr" 
                 className={linkClass}
