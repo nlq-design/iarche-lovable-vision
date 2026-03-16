@@ -330,6 +330,11 @@ const App = () => (
               <ProtectedAdminRoute><AdminContacts /></ProtectedAdminRoute>
             </Suspense>
           } />
+          <Route path="/admin/iarche-labs" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><IArcheLabsAdmin /></ProtectedAdminRoute>
+            </Suspense>
+          } />
           <Route path="/admin/atelier-inscriptions" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><AdminAtelierInscriptions /></ProtectedAdminRoute>
