@@ -19,8 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCTATracking } from '@/hooks/useCTATracking';
 import {
   Laptop, Users, Scale, Server, MessageSquare, Hotel,
-  Check, Rocket, Code, Palette, Plug, Flag,
-  UserCheck, RefreshCw, Lightbulb
+  Check, UserCheck, RefreshCw, Lightbulb
 } from 'lucide-react';
 
 const IArcheLabs = () => {
