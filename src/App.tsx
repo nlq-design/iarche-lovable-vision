@@ -85,6 +85,7 @@ const AdminRendezVous = lazy(() => import("./pages/admin/AdminRendezVous"));
 const FormPublic = lazy(() => import("./pages/FormPublic"));
 const RendezVous = lazy(() => import("./pages/RendezVous"));
 const BrochurePublic = lazy(() => import("./pages/BrochurePublic"));
+const IArcheLabs = lazy(() => import("./pages/IArcheLabs"));
 const AdminBrochures = lazy(() => import("./pages/admin/AdminBrochures"));
 const BrochureEditor = lazy(() => import("./pages/admin/BrochureEditor"));
 const AdminAIPrompts = lazy(() => import("./pages/admin/AdminAIPrompts"));
