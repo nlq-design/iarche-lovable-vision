@@ -99,7 +99,7 @@ const IArcheLabs = () => {
             phone: null,
             source: 'iarche-labs',
             source_context: 'Candidature IArche Labs',
-            message: `${formData.project} | Formule : ${formData.formula}`,
+            message: `${formData.project} | Intérêt : ${formData.formula}`,
           },
         });
       } catch (notifError) {
