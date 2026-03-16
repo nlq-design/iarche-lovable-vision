@@ -602,6 +602,9 @@ export function TranscriptionParticipantsSection({
                   historyCount={historyCounts[p.id]}
                   linkedEntityName={entityNames[p.id]}
                   linkedEntitySlug={entitySlugs[p.id]}
+                  availableSpeakers={availableSpeakers}
+                  speakerToParticipant={speakerToParticipant}
+                  onToggleSpeaker={handleToggleSpeaker}
                 />
               ))}
             </div>
