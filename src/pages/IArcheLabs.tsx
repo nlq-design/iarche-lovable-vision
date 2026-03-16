@@ -259,19 +259,10 @@ const IArcheLabs = () => {
 
         {/* LIEU */}
         <section className="py-16 md:py-20 bg-background">
-          <div className="max-w-5xl mx-auto px-6">
-            <h2 className="text-3xl md:text-4xl font-bold hero-gradient-text text-center mb-12">Où ça se passe</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="p-6 border-border">
-                <h3 className="text-xl font-bold text-foreground mb-2">Marinadour</h3>
-                <p className="text-muted-foreground">Nos locaux à Bayonne, Pays Basque. Espace de travail dédié.</p>
-              </Card>
-              <Card className="p-6 border-border">
-                <h3 className="text-xl font-bold text-foreground mb-2">Hôtel Oko</h3>
-                <p className="text-muted-foreground">Hébergement à proximité immédiate, en option.</p>
-              </Card>
-            </div>
-            <p className="text-center text-sm text-muted-foreground mt-6">3 participants maximum par session.</p>
+          <div className="max-w-5xl mx-auto px-6 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold hero-gradient-text mb-4">Où ça se passe</h2>
+            <p className="text-lg text-foreground font-semibold">Marinadour — Bayonne, Pays Basque</p>
+            <p className="text-muted-foreground mt-2">Espace de travail dédié. 3 participants maximum par session.</p>
           </div>
         </section>
 
