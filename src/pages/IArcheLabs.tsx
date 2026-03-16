@@ -216,9 +216,6 @@ const IArcheLabs = () => {
                 </Card>
               ))}
             </div>
-            <p className="text-center text-muted-foreground mt-8 text-sm">
-              ❌ Pas pour les profils purement techniques qui veulent apprendre à coder.
-            </p>
           </div>
         </section>
 
