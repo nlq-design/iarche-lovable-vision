@@ -106,7 +106,7 @@ const Footer = () => {
 
           {/* Colonne 3 : Ressources */}
           <nav aria-label="Ressources">
-            <h3 className="text-base font-semibold mb-4 text-[hsl(45,30%,95%)]">Ressources</h3>
+            <h3 className="text-base font-semibold mb-4 text-[hsl(var(--footer-text))]">Ressources</h3>
             <ul className="space-y-2">
               <li>
                 <NavLink to="/articles" className={linkClass}>
