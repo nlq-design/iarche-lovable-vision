@@ -30,7 +30,7 @@ const Newsletter = () => {
       const validatedData = newsletterSchema.parse({ email });
       
       // Track CTA click
-      await trackCTAClick('newsletter_inscription', 'newsletter_page', email);
+      await trackCTAClick('newsletter_inscription', 'newsletter_page');
       
       // Créer ou mettre à jour le lead via fonction sécurisée
       const { error: leadError } = await supabase

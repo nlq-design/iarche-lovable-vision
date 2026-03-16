@@ -141,7 +141,7 @@ const Footer = () => {
             <h3 className="text-base font-semibold mb-4 text-[hsl(45,30%,95%)]">Contact & Légal</h3>
             <ul className="space-y-2">
               <li>
-                <NavLink to="/rendez-vous" className={linkClass}>
+                <NavLink to="/rendez-vous/premier-echange" className={linkClass}>
                   Prendre rendez-vous
                 </NavLink>
               </li>

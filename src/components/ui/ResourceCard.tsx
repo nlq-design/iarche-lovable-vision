@@ -103,11 +103,13 @@ const ResourceCard = ({
           {showDate && createdAt && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60 pt-1">
               <Calendar className="h-3 w-3" aria-hidden="true" />
-              {new Date(createdAt).toLocaleDateString('fr-FR', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric'
-              })}
+              <time dateTime={new Date(createdAt).toISOString()}>
+                {new Date(createdAt).toLocaleDateString('fr-FR', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric'
+                })}
+              </time>
             </div>
           )}
           
