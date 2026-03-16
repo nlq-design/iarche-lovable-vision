@@ -175,7 +175,7 @@ const IArcheLabsAdmin = () => {
   }
 
   return (
-    <AdminLayout title="IArche Labs">
+    <AdminLayout>
       <Helmet>
         <title>IArche Labs — Candidatures | Admin</title>
       </Helmet>

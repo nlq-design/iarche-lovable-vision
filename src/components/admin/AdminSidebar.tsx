@@ -92,6 +92,7 @@ const navigationItems = [
       { title: 'Commentaires', url: '/admin/comments', icon: MessageCircle },
       { title: 'Formulaires', url: '/admin/formulaires', icon: ClipboardList },
       { title: 'Réponses formulaires', url: '/admin/form-responses', icon: ClipboardList },
+      { title: 'IArche Labs', url: '/admin/iarche-labs', icon: Rocket },
     ]
   },
   {
