@@ -3,10 +3,10 @@ import { NavLink } from '@/components/NavLink';
 import { Linkedin, Instagram, Facebook } from 'lucide-react';
 
 const Footer = () => {
-  const linkClass = "text-sm text-[hsl(45,20%,85%)] hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-[hsl(220,25%,12%)] rounded transition-colors duration-200";
+  const linkClass = "text-sm text-[hsl(var(--footer-text-muted))] hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-[hsl(var(--footer-bg-from))] rounded transition-colors duration-200";
 
   return (
-    <footer className="bg-gradient-to-br from-[hsl(220,25%,12%)] via-[hsl(220,20%,18%)] to-[hsl(220,15%,22%)] text-[hsl(45,30%,95%)]">
+    <footer className="bg-gradient-to-br from-[hsl(var(--footer-bg-from))] via-[hsl(var(--footer-bg-via))] to-[hsl(var(--footer-bg-to))] text-[hsl(var(--footer-text))]">
       <div className="container mx-auto px-6 py-10">
         {/* Grid 4 colonnes sur desktop, 2 sur tablette, 1 sur mobile */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
@@ -18,8 +18,8 @@ const Footer = () => {
               alt="IArche" 
               className="h-8 w-auto mb-4"
             />
-            <p className="text-sm text-[hsl(45,20%,85%)] mb-1">Bayonne · France</p>
-            <p className="text-sm text-[hsl(45,20%,85%)] mb-1">
+            <p className="text-sm text-[hsl(var(--footer-text-muted))] mb-1">Bayonne · France</p>
+            <p className="text-sm text-[hsl(var(--footer-text-muted))] mb-1">
               <a 
                 href="mailto:nlq@iarche.fr" 
                 className={linkClass}
@@ -27,7 +27,7 @@ const Footer = () => {
                 nlq@iarche.fr
               </a>
             </p>
-            <p className="text-sm text-[hsl(45,20%,85%)] mb-4">
+            <p className="text-sm text-[hsl(var(--footer-text-muted))] mb-4">
               <a 
                 href="tel:+33661741381" 
                 className={linkClass}
@@ -78,8 +78,8 @@ const Footer = () => {
           </div>
 
           {/* Colonne 2 : Services */}
-          <div>
-            <h3 className="text-base font-semibold mb-4 text-[hsl(45,30%,95%)]">Services</h3>
+          <nav aria-label="Services">
+            <h3 className="text-base font-semibold mb-4 text-[hsl(var(--footer-text))]">Services</h3>
             <ul className="space-y-2">
               <li>
                 <NavLink to="/services/audit" className={linkClass}>
@@ -102,11 +102,11 @@ const Footer = () => {
                 </NavLink>
               </li>
             </ul>
-          </div>
+          </nav>
 
           {/* Colonne 3 : Ressources */}
-          <div>
-            <h3 className="text-base font-semibold mb-4 text-[hsl(45,30%,95%)]">Ressources</h3>
+          <nav aria-label="Ressources">
+            <h3 className="text-base font-semibold mb-4 text-[hsl(var(--footer-text))]">Ressources</h3>
             <ul className="space-y-2">
               <li>
                 <NavLink to="/articles" className={linkClass}>
@@ -134,14 +134,14 @@ const Footer = () => {
                 </NavLink>
               </li>
             </ul>
-          </div>
+          </nav>
 
           {/* Colonne 4 : Contact & Légal */}
-          <div>
-            <h3 className="text-base font-semibold mb-4 text-[hsl(45,30%,95%)]">Contact & Légal</h3>
+          <nav aria-label="Contact et informations légales">
+            <h3 className="text-base font-semibold mb-4 text-[hsl(var(--footer-text))]">Contact & Légal</h3>
             <ul className="space-y-2">
               <li>
-                <NavLink to="/rendez-vous" className={linkClass}>
+                <NavLink to="/rendez-vous/premier-echange" className={linkClass}>
                   Prendre rendez-vous
                 </NavLink>
               </li>
@@ -155,7 +155,7 @@ const Footer = () => {
                   Livre d'Or
                 </NavLink>
               </li>
-              <li className="pt-2 border-t border-[hsl(45,20%,85%)]/10">
+              <li className="pt-2 border-t border-[hsl(var(--footer-border))]/10">
                 <NavLink to="/mentions-legales" className={linkClass}>
                   Mentions légales
                 </NavLink>
@@ -171,12 +171,12 @@ const Footer = () => {
                 </NavLink>
               </li>
             </ul>
-          </div>
+          </nav>
         </div>
 
         {/* Copyright */}
-        <div className="border-t border-[hsl(45,20%,85%)]/10 pt-6">
-          <p className="text-xs text-[hsl(45,20%,80%)] text-center">
+        <div className="border-t border-[hsl(var(--footer-border))]/10 pt-6">
+          <p className="text-xs text-[hsl(var(--footer-text-subtle))] text-center">
             © {new Date().getFullYear()} IArche · Tous droits réservés
           </p>
         </div>

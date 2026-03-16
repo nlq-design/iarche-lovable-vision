@@ -152,6 +152,27 @@ const Actualites = () => {
             ]
           })}
         </script>
+
+        {/* Schema.org CollectionPage */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": "Actualités IA · IArche",
+            "description": "Actualités IA pour les PME françaises.",
+            "url": "https://iarche.fr/actualites",
+            "isPartOf": { "@type": "WebSite", "name": "IArche", "url": "https://iarche.fr" },
+            "mainEntity": {
+              "@type": "ItemList",
+              "numberOfItems": articles.length,
+              "itemListElement": articles.slice(0, 10).map((article, idx) => ({
+                "@type": "ListItem",
+                "position": idx + 1,
+                "url": `https://iarche.fr/actualites/${article.slug}`
+              }))
+            }
+          })}
+        </script>
       </Helmet>
 
       <Header />

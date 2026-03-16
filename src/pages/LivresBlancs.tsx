@@ -88,8 +88,6 @@ const LivresBlancs = () => {
         <meta name="twitter:title" content="Livres blancs IA · IArche" />
         <meta name="twitter:description" content="Guides et documentation sur l'IA pour PME." />
         <meta name="twitter:image" content="https://iarche.fr/og-image-v4.png" />
-        <meta property="og:image:height" content="794" />
-        <meta property="og:locale" content="fr_FR" />
 
         {/* Schema.org BreadcrumbList */}
         <script type="application/ld+json">
@@ -110,6 +108,27 @@ const LivresBlancs = () => {
                 "item": "https://iarche.fr/livres-blancs"
               }
             ]
+          })}
+        </script>
+
+        {/* Schema.org CollectionPage */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": "Livres blancs IA · IArche",
+            "description": "Guides et documentation sur l'IA pour les PME.",
+            "url": "https://iarche.fr/livres-blancs",
+            "isPartOf": { "@type": "WebSite", "name": "IArche", "url": "https://iarche.fr" },
+            "mainEntity": {
+              "@type": "ItemList",
+              "numberOfItems": livresBlancs.length,
+              "itemListElement": livresBlancs.slice(0, 10).map((item, idx) => ({
+                "@type": "ListItem",
+                "position": idx + 1,
+                "url": `https://iarche.fr/livres-blancs/${item.slug}`
+              }))
+            }
           })}
         </script>
       </Helmet>

@@ -68,6 +68,15 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 218 47% 20%;
     --sidebar-border: 30 16% 88%;
     --sidebar-ring: 12 60% 53%;
+    
+    /* Footer */
+    --footer-bg-from: 220 25% 12%;
+    --footer-bg-via: 220 20% 18%;
+    --footer-bg-to: 220 15% 22%;
+    --footer-text: 45 30% 95%;
+    --footer-text-muted: 45 20% 85%;
+    --footer-text-subtle: 45 20% 80%;
+    --footer-border: 45 20% 85%;
   }
 
   /* Dark mode disabled - IArche uses light mode only */

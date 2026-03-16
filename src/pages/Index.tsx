@@ -54,7 +54,7 @@ const Index = () => {
             "@context": "https://schema.org",
             "@type": "Organization",
             "name": "IArche",
-            "alternateName": "Collabor IA",
+            
             "url": "https://iarche.fr",
             "logo": "https://iarche.fr/logo-iarche.svg",
             "description": "Architecte IA basé à Bayonne. On accompagne les dirigeants de PME dans l'intégration concrète de l'intelligence artificielle : audit, développement, accompagnement, conformité. Engagés localement, nous intervenons aussi partout en France.",

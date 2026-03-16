@@ -173,6 +173,27 @@ const Articles = () => {
             ]
           })}
         </script>
+
+        {/* Schema.org CollectionPage */}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": "Articles IA · IArche",
+            "description": "Veille tech, cas d'usage et réglementation IA par IArche.",
+            "url": "https://iarche.fr/articles",
+            "isPartOf": { "@type": "WebSite", "name": "IArche", "url": "https://iarche.fr" },
+            "mainEntity": {
+              "@type": "ItemList",
+              "numberOfItems": articles.length,
+              "itemListElement": articles.slice(0, 10).map((article, idx) => ({
+                "@type": "ListItem",
+                "position": idx + 1,
+                "url": `https://iarche.fr/articles/${article.slug}`
+              }))
+            }
+          })}
+        </script>
       </Helmet>
 
       <Header />
