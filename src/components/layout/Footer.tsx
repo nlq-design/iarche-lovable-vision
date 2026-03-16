@@ -27,7 +27,7 @@ const Footer = () => {
                 nlq@iarche.fr
               </a>
             </p>
-            <p className="text-sm text-[hsl(45,20%,85%)] mb-4">
+            <p className="text-sm text-[hsl(var(--footer-text-muted))] mb-4">
               <a 
                 href="tel:+33661741381" 
                 className={linkClass}
