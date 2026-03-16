@@ -99,7 +99,7 @@ export function TranscriptionContentTabs({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <SimpleTranscript text={rawTranscript || ''} />
+              <SimpleTranscript text={rawTranscript || ''} speakerNameMap={speakerMap} />
             </CardContent>
           </Card>
         </TabsContent>
