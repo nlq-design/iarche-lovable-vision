@@ -138,7 +138,7 @@ const Footer = () => {
 
           {/* Colonne 4 : Contact & Légal */}
           <nav aria-label="Contact et informations légales">
-            <h3 className="text-base font-semibold mb-4 text-[hsl(45,30%,95%)]">Contact & Légal</h3>
+            <h3 className="text-base font-semibold mb-4 text-[hsl(var(--footer-text))]">Contact & Légal</h3>
             <ul className="space-y-2">
               <li>
                 <NavLink to="/rendez-vous/premier-echange" className={linkClass}>
