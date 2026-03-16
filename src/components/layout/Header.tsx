@@ -69,6 +69,19 @@ const Header = () => {
             >
               Nos Solutions
             </NavLink>
+            <NavLink 
+              to="/iarche-labs"
+              className={({ isActive }) => 
+                `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded px-2 py-1 flex items-center gap-1.5 ${
+                  isActive 
+                    ? 'hero-gradient-text font-semibold' 
+                    : 'hero-gradient-text'
+                }`
+              }
+            >
+              IArche Labs
+              <span className="text-[10px] font-bold bg-accent/15 text-accent px-1.5 py-0.5 rounded-full leading-none">Labs</span>
+            </NavLink>
             
             {/* Menu Ressources - pointe vers /actualites avec dropdown */}
             <div 
