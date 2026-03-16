@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useCTATracking } from '@/hooks/useCTATracking';
 import {
-  Laptop, Users, Scale, Server, MessageSquare, Hotel,
+  Laptop, Users, Scale, Server, MessageSquare,
   Check, UserCheck, RefreshCw, Lightbulb
 } from 'lucide-react';
 
