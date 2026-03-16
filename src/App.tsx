@@ -85,6 +85,7 @@ const AdminRendezVous = lazy(() => import("./pages/admin/AdminRendezVous"));
 const FormPublic = lazy(() => import("./pages/FormPublic"));
 const RendezVous = lazy(() => import("./pages/RendezVous"));
 const BrochurePublic = lazy(() => import("./pages/BrochurePublic"));
+const IArcheLabs = lazy(() => import("./pages/IArcheLabs"));
 const AdminBrochures = lazy(() => import("./pages/admin/AdminBrochures"));
 const BrochureEditor = lazy(() => import("./pages/admin/BrochureEditor"));
 const AdminAIPrompts = lazy(() => import("./pages/admin/AdminAIPrompts"));
@@ -204,6 +205,11 @@ const App = () => (
           <Route path="/livres-blancs/:slug" element={<ArticleDetail />} />
           <Route path="/ateliers-webinaires/:slug" element={<ArticleDetail />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/iarche-labs" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <IArcheLabs />
+            </Suspense>
+          } />
           
           {/* Rendez-vous - uniquement avec slug */}
           <Route path="/rendez-vous/:slug" element={
