@@ -257,6 +257,7 @@ const Header = () => {
         )}
       </div>
     </header>
+    </>
   );
 };
 
