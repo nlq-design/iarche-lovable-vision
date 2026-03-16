@@ -3,10 +3,10 @@ import { NavLink } from '@/components/NavLink';
 import { Linkedin, Instagram, Facebook } from 'lucide-react';
 
 const Footer = () => {
-  const linkClass = "text-sm text-[hsl(45,20%,85%)] hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-[hsl(220,25%,12%)] rounded transition-colors duration-200";
+  const linkClass = "text-sm text-[hsl(var(--footer-text-muted))] hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-[hsl(var(--footer-bg-from))] rounded transition-colors duration-200";
 
   return (
-    <footer className="bg-gradient-to-br from-[hsl(220,25%,12%)] via-[hsl(220,20%,18%)] to-[hsl(220,15%,22%)] text-[hsl(45,30%,95%)]">
+    <footer className="bg-gradient-to-br from-[hsl(var(--footer-bg-from))] via-[hsl(var(--footer-bg-via))] to-[hsl(var(--footer-bg-to))] text-[hsl(var(--footer-text))]">
       <div className="container mx-auto px-6 py-10">
         {/* Grid 4 colonnes sur desktop, 2 sur tablette, 1 sur mobile */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
