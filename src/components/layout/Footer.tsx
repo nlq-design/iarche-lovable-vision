@@ -175,8 +175,8 @@ const Footer = () => {
         </div>
 
         {/* Copyright */}
-        <div className="border-t border-[hsl(45,20%,85%)]/10 pt-6">
-          <p className="text-xs text-[hsl(45,20%,80%)] text-center">
+        <div className="border-t border-[hsl(var(--footer-border))]/10 pt-6">
+          <p className="text-xs text-[hsl(var(--footer-text-subtle))] text-center">
             © {new Date().getFullYear()} IArche · Tous droits réservés
           </p>
         </div>
