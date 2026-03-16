@@ -123,13 +123,6 @@ const IArcheLabs = () => {
     }
   };
 
-  const timeline = [
-    { day: 'J1', title: 'Cadrage', desc: 'Audit juridique + cadrage projet + architecture + choix stack', icon: Scale },
-    { day: 'J2', title: 'Build Sprint #1', desc: 'Auth, data model, feature principale', icon: Code },
-    { day: 'J3', title: 'Build Sprint #2', desc: 'UI/UX, flows secondaires', icon: Palette, highlight: true, badge: 'Lovable' },
-    { day: 'J4', title: 'Intégrations', desc: 'Stripe, APIs métier, tests, sécurité', icon: Plug },
-    { day: 'J5', title: 'Production', desc: 'Mise en production + landing page + introduction réseau', icon: Flag },
-  ];
 
   const includes = [
     { icon: Laptop, text: 'Ordinateur + accès Lovable (crédits inclus)' },
