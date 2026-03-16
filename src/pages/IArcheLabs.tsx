@@ -366,9 +366,8 @@ const IArcheLabs = () => {
                     <SelectValue placeholder="Sélectionne une formule" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Build (7 000€ HT)">Build (7 000€ HT)</SelectItem>
-                    <SelectItem value="Build + Grow (7 000€ HT + 10%)">Build + Grow (7 000€ HT + 10%)</SelectItem>
-                    <SelectItem value="Je ne sais pas encore">Je ne sais pas encore</SelectItem>
+                    <SelectItem value="Je souhaite en savoir plus">Je souhaite en savoir plus</SelectItem>
+                    <SelectItem value="Je suis prêt(e) à candidater">Je suis prêt(e) à candidater</SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.formula && <p className="text-sm text-destructive mt-1">{errors.formula}</p>}
