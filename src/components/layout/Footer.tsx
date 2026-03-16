@@ -155,7 +155,7 @@ const Footer = () => {
                   Livre d'Or
                 </NavLink>
               </li>
-              <li className="pt-2 border-t border-[hsl(45,20%,85%)]/10">
+              <li className="pt-2 border-t border-[hsl(var(--footer-border))]/10">
                 <NavLink to="/mentions-legales" className={linkClass}>
                   Mentions légales
                 </NavLink>
