@@ -497,6 +497,21 @@ export function TranscriptionParticipantsSection({
     load();
   }, [participants]); // eslint-disable-line
 
+  // === Speaker mapping logic ===
+  const availableSpeakers = extractUniqueSpeakers(enrichedSegments ?? null);
+  const speakerToParticipant = buildSpeakerMap(participants);
+
+  const handleToggleSpeaker = (participantId: string, speaker: string) => {
+    const participant = participants.find(p => p.id === participantId);
+    if (!participant) return;
+    const current = parseSpeakerLabels(participant.speaker_label);
+    const next = current.includes(speaker)
+      ? current.filter(s => s !== speaker)
+      : [...current, speaker];
+    const newLabel = next.length > 0 ? next.join(',') : null;
+    updateParticipant.mutate({ id: participantId, speaker_label: newLabel });
+  };
+
   const handleUpdate = (id: string, updates: Partial<TranscriptionParticipant>) => {
     updateParticipant.mutate({ id, ...updates });
   };
