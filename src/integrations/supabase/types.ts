@@ -3544,6 +3544,30 @@ export type Database = {
           },
         ]
       }
+      page_sections: {
+        Row: {
+          content: string
+          id: string
+          page_slug: string
+          section_key: string
+          updated_at: string | null
+        }
+        Insert: {
+          content?: string
+          id?: string
+          page_slug: string
+          section_key: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          id?: string
+          page_slug?: string
+          section_key?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       participant_entity_mappings: {
         Row: {
           created_at: string
