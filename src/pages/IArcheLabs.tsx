@@ -11,12 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import GradientButton from '@/components/ui/GradientButton';
 import LogoArc from '@/components/ui/LogoArc';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useCTATracking } from '@/hooks/useCTATracking';
+import { usePageSections } from '@/hooks/usePageSections';
 import {
   Laptop, Users, Scale, Server, MessageSquare,
   Check, UserCheck, RefreshCw, Lightbulb
@@ -25,6 +26,7 @@ import {
 const IArcheLabs = () => {
   const { toast } = useToast();
   const { getSessionId } = useCTATracking();
+  const { sections: s, loading: sectionsLoading } = usePageSections('iarche-labs');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [consent, setConsent] = useState(false);
   const [formData, setFormData] = useState({
@@ -123,15 +125,35 @@ const IArcheLabs = () => {
     }
   };
 
-
   const includes = [
     { icon: Laptop, text: 'Ordinateur + accès Lovable (crédits inclus)' },
     { icon: Users, text: 'Accompagnement expert IArche Labs (technique + go-to-market)' },
     { icon: Scale, text: 'Cadrage juridique par une équipe spécialisée (structure, contrats, conformité)' },
     { icon: Server, text: 'Infrastructure Supabase hébergée 12 mois' },
     { icon: MessageSquare, text: 'Suivi Slack 30 jours post-session' },
-    
   ];
+
+  if (sectionsLoading) {
+    return (
+      <BackgroundLayout>
+        <Header />
+        <main className="min-h-screen py-20">
+          <div className="max-w-5xl mx-auto px-6 space-y-8">
+            <div className="text-center space-y-4">
+              <Skeleton className="h-6 w-48 mx-auto" />
+              <Skeleton className="h-12 w-3/4 mx-auto" />
+              <Skeleton className="h-6 w-2/3 mx-auto" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 rounded-lg" />)}
+            </div>
+            <Skeleton className="h-64 w-full rounded-lg" />
+          </div>
+        </main>
+        <Footer />
+      </BackgroundLayout>
+    );
+  }
 
   return (
     <BackgroundLayout>
@@ -174,11 +196,11 @@ const IArcheLabs = () => {
               IArche Labs — Pays Basque
             </Badge>
             <h1 className="text-4xl md:text-6xl font-extrabold hero-gradient-text mb-6 leading-tight animate-fadeIn">
-              Construis ton SaaS en 5 jours.<br className="hidden md:block" /> À Bayonne.
+              {s['hero_title'] || 'Construis ton SaaS en 5 jours. À Bayonne.'}
             </h1>
             <LogoArc size="md" className="mx-auto mb-6 animate-fadeIn [animation-delay:0.1s]" />
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 animate-fadeIn [animation-delay:0.2s]">
-              Une semaine intensive à Bayonne. Tu arrives avec une idée. Tu repars avec un produit en production.
+              {s['hero_subtitle'] || 'Une semaine intensive à Bayonne. Tu arrives avec une idée. Tu repars avec un produit en production.'}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fadeIn [animation-delay:0.3s]">
               <GradientButton size="lg" onClick={() => scrollTo('candidature')}>
@@ -197,14 +219,14 @@ const IArcheLabs = () => {
             <h2 className="text-3xl md:text-4xl font-bold hero-gradient-text text-center mb-12">Pour qui ?</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
-                { icon: UserCheck, title: 'Consultant expert', desc: 'Tu vends ton temps. Tu veux vendre un outil.' },
-                { icon: RefreshCw, title: 'Entrepreneur en pivot', desc: 'Tu as un projet. Tu veux le tester vite, sans 6 mois de dev.' },
-                { icon: Lightbulb, title: 'Porteur de MVP', desc: 'Tu veux valider avant d\'investir 50k€ en agence.' },
+                { icon: UserCheck, titleKey: 'cible_1_titre', descKey: 'cible_1_texte', defaultTitle: 'Consultant expert', defaultDesc: 'Tu vends ton temps. Tu veux vendre un outil.' },
+                { icon: RefreshCw, titleKey: 'cible_2_titre', descKey: 'cible_2_texte', defaultTitle: 'Entrepreneur en pivot', defaultDesc: 'Tu as un projet. Tu veux le tester vite, sans 6 mois de dev.' },
+                { icon: Lightbulb, titleKey: 'cible_3_titre', descKey: 'cible_3_texte', defaultTitle: 'Porteur de MVP', defaultDesc: "Tu veux valider avant d'investir 50k€ en agence." },
               ].map((item) => (
-                <Card key={item.title} className="p-6 text-center border-border bg-background">
+                <Card key={item.titleKey} className="p-6 text-center border-border bg-background">
                   <item.icon className="w-10 h-10 text-accent mx-auto mb-4" />
-                  <h3 className="text-lg font-bold text-foreground mb-2">{item.title}</h3>
-                  <p className="text-muted-foreground">{item.desc}</p>
+                  <h3 className="text-lg font-bold text-foreground mb-2">{s[item.titleKey] || item.defaultTitle}</h3>
+                  <p className="text-muted-foreground">{s[item.descKey] || item.defaultDesc}</p>
                 </Card>
               ))}
             </div>
@@ -231,11 +253,11 @@ const IArcheLabs = () => {
         {/* UNE FORMULE */}
         <section className="py-16 md:py-20 bg-primary text-primary-foreground">
           <div className="max-w-5xl mx-auto px-6">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">Une formule, un engagement.</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">{s['formule_titre'] || 'Une formule, un engagement.'}</h2>
             <Card className="max-w-xl mx-auto p-8 bg-primary-foreground/10 border-primary-foreground/20 backdrop-blur-sm text-center">
               <Badge className="mb-4 bg-accent text-white border-0">IArche Labs</Badge>
-              <h3 className="text-2xl font-bold mb-2">Semaine Intensive SaaS</h3>
-              <p className="opacity-80 mb-6">Tarif sur devis — échangeons d'abord.</p>
+              <h3 className="text-2xl font-bold mb-2">{s['formule_nom'] || 'Semaine Intensive SaaS'}</h3>
+              <p className="opacity-80 mb-6">{s['formule_sous_titre'] || "Tarif sur devis — échangeons d'abord."}</p>
               <ul className="space-y-3 text-sm text-left max-w-sm mx-auto mb-8">
                 {[
                   '5 jours en immersion complète',
@@ -262,16 +284,16 @@ const IArcheLabs = () => {
           <div className="max-w-5xl mx-auto px-6 text-center">
             <h2 className="text-3xl md:text-4xl font-bold hero-gradient-text mb-4">Où ça se passe</h2>
             <p className="text-lg text-foreground font-semibold">Marinadour — Bayonne, Pays Basque</p>
-            <p className="text-muted-foreground mt-2">Espace de travail dédié. 3 participants maximum par session.</p>
+            <p className="text-muted-foreground mt-2">{s['lieu_texte'] || 'Espace de travail dédié. 3 participants maximum par session.'}</p>
           </div>
         </section>
 
         {/* FORMULAIRE CANDIDATURE */}
         <section id="candidature" className="py-16 md:py-20 bg-secondary">
           <div className="max-w-2xl mx-auto px-6">
-            <h2 className="text-3xl md:text-4xl font-bold hero-gradient-text text-center mb-4">Candidater</h2>
+            <h2 className="text-3xl md:text-4xl font-bold hero-gradient-text text-center mb-4">{s['formulaire_titre'] || 'Candidater'}</h2>
             <p className="text-center text-muted-foreground mb-10">
-              On revient vers toi sous 48h pour un premier échange.
+              {s['formulaire_sous_titre'] || 'On revient vers toi sous 48h pour un premier échange.'}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">

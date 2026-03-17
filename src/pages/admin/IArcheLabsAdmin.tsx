@@ -7,13 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Download, Eye, Rocket } from 'lucide-react';
+import { Loader2, Search, Download, Eye, Rocket, Save } from 'lucide-react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { usePageSections } from '@/hooks/usePageSections';
 import {
   Table,
   TableBody,
@@ -49,6 +52,23 @@ const DATE_FILTERS = [
   { value: '30', label: '30 derniers jours' },
 ];
 
+const SECTION_LABELS: Record<string, string> = {
+  hero_title: 'Titre Hero',
+  hero_subtitle: 'Sous-titre Hero',
+  cible_1_titre: 'Cible 1 — Titre',
+  cible_1_texte: 'Cible 1 — Texte',
+  cible_2_titre: 'Cible 2 — Titre',
+  cible_2_texte: 'Cible 2 — Texte',
+  cible_3_titre: 'Cible 3 — Titre',
+  cible_3_texte: 'Cible 3 — Texte',
+  formule_titre: 'Formule — Titre',
+  formule_nom: 'Formule — Nom',
+  formule_sous_titre: 'Formule — Sous-titre',
+  lieu_texte: 'Lieu — Texte',
+  formulaire_titre: 'Formulaire — Titre',
+  formulaire_sous_titre: 'Formulaire — Sous-titre',
+};
+
 const formatDate = (dateStr: string) => {
   const d = new Date(dateStr);
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -71,6 +91,17 @@ const IArcheLabsAdmin = () => {
   const [dateFilter, setDateFilter] = useState('all');
   const [selectedContact, setSelectedContact] = useState<LabsContact | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  // CMS state
+  const { sections, loading: sectionsLoading, updateSection } = usePageSections('iarche-labs');
+  const [editedSections, setEditedSections] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (sections && Object.keys(editedSections).length === 0) {
+      setEditedSections({ ...sections });
+    }
+  }, [sections]);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -159,14 +190,26 @@ const IArcheLabsAdmin = () => {
     URL.revokeObjectURL(url);
   };
 
-  const getStatusBadge = (status: string) => {
-    const opt = STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0];
-    return <Badge className={`${opt.color} border-0`}>{opt.label}</Badge>;
+  const handleSaveSections = async () => {
+    setSaving(true);
+    try {
+      const changed = Object.keys(editedSections).filter(
+        key => editedSections[key] !== sections[key]
+      );
+      for (const key of changed) {
+        await updateSection(key, editedSections[key]);
+      }
+      toast({ title: 'Contenu mis à jour', description: `${changed.length} section(s) modifiée(s).` });
+    } catch (err) {
+      toast({ title: 'Erreur', description: 'Erreur lors de la mise à jour.', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (authLoading || loading) {
     return (
-    <AdminLayout>
+      <AdminLayout>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -177,7 +220,7 @@ const IArcheLabsAdmin = () => {
   return (
     <AdminLayout>
       <Helmet>
-        <title>IArche Labs — Candidatures | Admin</title>
+        <title>IArche Labs — Admin</title>
       </Helmet>
 
       <div className="space-y-6">
@@ -185,129 +228,188 @@ const IArcheLabsAdmin = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Rocket className="h-6 w-6 text-accent" />
-            <h1 className="text-2xl font-bold text-foreground">IArche Labs — Candidatures</h1>
-            <Badge variant="secondary">{contacts.length}</Badge>
+            <h1 className="text-2xl font-bold text-foreground">IArche Labs</h1>
+            <Badge variant="secondary">{contacts.length} candidature{contacts.length > 1 ? 's' : ''}</Badge>
           </div>
-          <Button variant="outline" size="sm" onClick={exportCSV}>
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
         </div>
 
-        {/* Filters */}
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher nom, email, entreprise..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tous les statuts</SelectItem>
-                  {STATUS_OPTIONS.map(s => (
-                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Période" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DATE_FILTERS.map(d => (
-                    <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <Tabs defaultValue="candidatures">
+          <TabsList>
+            <TabsTrigger value="candidatures">Candidatures</TabsTrigger>
+            <TabsTrigger value="contenu">Contenu de la page</TabsTrigger>
+          </TabsList>
+
+          {/* TAB 1: Candidatures */}
+          <TabsContent value="candidatures" className="space-y-6">
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" onClick={exportCSV}>
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Table */}
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Entreprise</TableHead>
-                  <TableHead>Message</TableHead>
-                  <TableHead>Intérêt</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredContacts.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
-                      Aucune candidature trouvée.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredContacts.map(contact => (
-                    <TableRow key={contact.id}>
-                      <TableCell className="text-sm whitespace-nowrap">{formatDate(contact.created_at)}</TableCell>
-                      <TableCell className="font-medium">{contact.name}</TableCell>
-                      <TableCell className="text-sm">{contact.email}</TableCell>
-                      <TableCell className="text-sm">{contact.company || '—'}</TableCell>
-                      <TableCell className="text-sm max-w-[200px]" title={contact.message}>
-                        {contact.message?.length > 80
-                          ? contact.message.slice(0, 80) + '…'
-                          : contact.message || '—'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs whitespace-nowrap">
-                          {extractInterest(contact.subject)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={contact.labs_status || 'a_traiter'}
-                          onValueChange={(val) => updateStatus(contact.id, val)}
-                        >
-                          <SelectTrigger className="h-8 w-[140px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {STATUS_OPTIONS.map(s => (
-                              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => { setSelectedContact(contact); setSheetOpen(true); }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+            {/* Filters */}
+            <Card>
+              <CardContent className="pt-4 pb-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher nom, email, entreprise..."
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Statut" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les statuts</SelectItem>
+                      {STATUS_OPTIONS.map(s => (
+                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={dateFilter} onValueChange={setDateFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Période" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DATE_FILTERS.map(d => (
+                        <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Table */}
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Nom</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Entreprise</TableHead>
+                      <TableHead>Message</TableHead>
+                      <TableHead>Intérêt</TableHead>
+                      <TableHead>Statut</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredContacts.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                          Aucune candidature trouvée.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredContacts.map(contact => (
+                        <TableRow key={contact.id}>
+                          <TableCell className="text-sm whitespace-nowrap">{formatDate(contact.created_at)}</TableCell>
+                          <TableCell className="font-medium">{contact.name}</TableCell>
+                          <TableCell className="text-sm">{contact.email}</TableCell>
+                          <TableCell className="text-sm">{contact.company || '—'}</TableCell>
+                          <TableCell className="text-sm max-w-[200px]" title={contact.message}>
+                            {contact.message?.length > 80
+                              ? contact.message.slice(0, 80) + '…'
+                              : contact.message || '—'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs whitespace-nowrap">
+                              {extractInterest(contact.subject)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={contact.labs_status || 'a_traiter'}
+                              onValueChange={(val) => updateStatus(contact.id, val)}
+                            >
+                              <SelectTrigger className="h-8 w-[140px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {STATUS_OPTIONS.map(s => (
+                                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => { setSelectedContact(contact); setSheetOpen(true); }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
 
-        {/* Results count */}
-        <p className="text-sm text-muted-foreground">
-          {filteredContacts.length} candidature{filteredContacts.length > 1 ? 's' : ''} affichée{filteredContacts.length > 1 ? 's' : ''}
-        </p>
+            <p className="text-sm text-muted-foreground">
+              {filteredContacts.length} candidature{filteredContacts.length > 1 ? 's' : ''} affichée{filteredContacts.length > 1 ? 's' : ''}
+            </p>
+          </TabsContent>
+
+          {/* TAB 2: Contenu */}
+          <TabsContent value="contenu" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Éditer le contenu de la page IArche Labs</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {sectionsLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <div key={i} className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    {Object.keys(SECTION_LABELS).map(key => (
+                      <div key={key} className="space-y-1.5">
+                        <Label className="text-sm font-medium text-muted-foreground">
+                          {SECTION_LABELS[key]}
+                        </Label>
+                        {(editedSections[key] || '').length >= 100 ? (
+                          <Textarea
+                            value={editedSections[key] || ''}
+                            onChange={e => setEditedSections(prev => ({ ...prev, [key]: e.target.value }))}
+                            rows={3}
+                          />
+                        ) : (
+                          <Input
+                            value={editedSections[key] || ''}
+                            onChange={e => setEditedSections(prev => ({ ...prev, [key]: e.target.value }))}
+                          />
+                        )}
+                      </div>
+                    ))}
+                    <Button onClick={handleSaveSections} disabled={saving}>
+                      {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                      Enregistrer les modifications
+                    </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Detail Sheet */}
