@@ -18,7 +18,11 @@ function _sh(base: any) {
   const s: any = { ...base };
   s.optional = () => _sh({ ...base, _opt: true });
   s.describe = (d: string) => _sh({ ...base, _desc: d });
-  s.uuid = () => _sh({ ...base });
+  s.uuid = () => _sh({ ...base, _format: 'uuid' });
+  s.int = () => _sh({ ...base, _int: true });
+  s.min = (n: number) => _sh({ ...base, _min: n });
+  s.max = (n: number) => _sh({ ...base, _max: n });
+  s.default = (value: any) => _sh({ ...base, _default: value });
   return s;
 }
 const z = {
@@ -41,6 +45,11 @@ function _toJsonSchema(schema: any): any {
     const p: any = { type: x._t };
     if (x._desc) p.description = x._desc;
     if (x._enum) p.enum = x._enum;
+    if (x._format) p.format = x._format;
+    if (x._int) p.type = 'integer';
+    if (typeof x._min === 'number') p.minimum = x._min;
+    if (typeof x._max === 'number') p.maximum = x._max;
+    if (x._default !== undefined) p.default = x._default;
     if (x._t === 'array' && x._items) p.items = { type: x._items._t || 'string' };
     props[k] = p;
     if (!x._opt) req.push(k);
