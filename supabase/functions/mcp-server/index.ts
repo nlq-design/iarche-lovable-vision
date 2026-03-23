@@ -5054,6 +5054,10 @@ const _EXPOSED_TOOLS = new Set([
   'get_documents', 'create_document',
   // LEGAL & FINANCE
   'analyze_legal', 'get_partner_report',
+  // TRANSCRIPTIONS
+  'get_transcriptions', 'get_transcription_detail', 'list_transcriptions', 'get_transcription',
+  // PREFERENCES
+  'save_preference',
 ]);
 
 function _toolsList() {
