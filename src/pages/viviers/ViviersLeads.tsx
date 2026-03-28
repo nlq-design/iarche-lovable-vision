@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { VivierLayout } from '@/components/viviers/VivierLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Upload, Trash2, AlertTriangle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, Upload, Trash2, AlertTriangle, Sparkles, ChevronDown, ChevronUp, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import LogoArc from '@/components/ui/LogoArc';
 import { useViviers, useVivierFilterOptions, type Vivier } from '@/hooks/viviers';
@@ -117,6 +117,51 @@ export default function ViviersLeads() {
       setSelectedIds(new Set());
     }
   };
+
+  // Full CSV export via edge function (all 166k+ rows)
+  const handleExportFullCsv = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Vous devez être connecté');
+        return;
+      }
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const url = `https://${projectId}.supabase.co/functions/v1/export-viviers-csv`;
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: 'Erreur serveur' }));
+        throw new Error(err.error || 'Erreur export');
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      const date = new Date().toISOString().split('T')[0];
+      link.download = `viviers-export-complet-${date}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
+      toast.success('Export CSV complet téléchargé !');
+    } catch (error) {
+      console.error('Full CSV export error:', error);
+      toast.error(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    } finally {
+      setIsExporting(false);
+    }
+  }, []);
 
   // Export function - fetches all filtered data and exports to XLSX
   const handleExport = useCallback(async () => {
@@ -378,6 +423,14 @@ export default function ViviersLeads() {
                 </AlertDialogContent>
               </AlertDialog>
             )}
+            <Button 
+              variant="outline" 
+              onClick={handleExportFullCsv} 
+              disabled={isExporting}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {isExporting ? 'Export...' : `Export CSV complet (${stats.totalLeads?.toLocaleString('fr-FR') || '~166k'})`}
+            </Button>
             <Button asChild>
               <Link to="/viviers/import">
                 <Upload className="w-4 h-4 mr-2" />
