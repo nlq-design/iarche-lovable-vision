@@ -118,6 +118,51 @@ export default function ViviersLeads() {
     }
   };
 
+  // Full CSV export via edge function (all 166k+ rows)
+  const handleExportFullCsv = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Vous devez être connecté');
+        return;
+      }
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const url = `https://${projectId}.supabase.co/functions/v1/export-viviers-csv`;
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: 'Erreur serveur' }));
+        throw new Error(err.error || 'Erreur export');
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      const date = new Date().toISOString().split('T')[0];
+      link.download = `viviers-export-complet-${date}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
+      toast.success('Export CSV complet téléchargé !');
+    } catch (error) {
+      console.error('Full CSV export error:', error);
+      toast.error(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    } finally {
+      setIsExporting(false);
+    }
+  }, []);
+
   // Export function - fetches all filtered data and exports to XLSX
   const handleExport = useCallback(async () => {
     if (totalCount === 0) {
