@@ -50,8 +50,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch ALL viviers in batches of 10000
-    const PAGE_SIZE = 10000;
+    // Fetch ALL viviers in batches of 1000 (PostgREST default max)
+    const PAGE_SIZE = 1000;
     let allRows: any[] = [];
     let offset = 0;
     let hasMore = true;
@@ -73,6 +73,8 @@ Deno.serve(async (req) => {
         hasMore = false;
       }
     }
+
+    console.log(`[export-viviers-csv] Total rows fetched: ${allRows.length}`);
 
     // Build CSV
     const headers = [
