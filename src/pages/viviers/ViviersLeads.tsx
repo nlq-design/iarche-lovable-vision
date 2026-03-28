@@ -423,6 +423,14 @@ export default function ViviersLeads() {
                 </AlertDialogContent>
               </AlertDialog>
             )}
+            <Button 
+              variant="outline" 
+              onClick={handleExportFullCsv} 
+              disabled={isExporting}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {isExporting ? 'Export...' : `Export CSV complet (${stats.totalLeads?.toLocaleString('fr-FR') || '~166k'})`}
+            </Button>
             <Button asChild>
               <Link to="/viviers/import">
                 <Upload className="w-4 h-4 mr-2" />
