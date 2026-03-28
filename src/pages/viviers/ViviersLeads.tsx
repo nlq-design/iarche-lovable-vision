@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { VivierLayout } from '@/components/viviers/VivierLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Upload, Trash2, AlertTriangle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, Upload, Trash2, AlertTriangle, Sparkles, ChevronDown, ChevronUp, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import LogoArc from '@/components/ui/LogoArc';
 import { useViviers, useVivierFilterOptions, type Vivier } from '@/hooks/viviers';
