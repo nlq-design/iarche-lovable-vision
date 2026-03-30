@@ -52,7 +52,7 @@ export default function SignatureEditor() {
   <tr>
     <td style="padding-right: 20px; vertical-align: middle; border-right: 3px solid ${c.terracotta};">
       <a href="https://iarche.fr" style="text-decoration:none;display:block;">
-        <img src="${logoUrl}" alt="IArche" height="48" border="0" style="display:block;border:0;outline:none;text-decoration:none;height:48px;">
+        <img src="${logoUrlPublished}" alt="IArche" height="48" border="0" style="display:block;border:0;outline:none;text-decoration:none;height:48px;">
       </a>
     </td>
     <td style="padding-left: 20px; vertical-align: top;">
@@ -206,7 +206,8 @@ export default function SignatureEditor() {
                           borderRight: `3px solid ${c.terracotta}`,
                         }}>
                           <img
-                            src={logoUrl}
+                            src={logoUrlLocal}
+                            crossOrigin="anonymous"
                             alt="IArche"
                             style={{ height: '48px', display: 'block' }}
                           />
