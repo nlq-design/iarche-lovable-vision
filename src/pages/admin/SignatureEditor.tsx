@@ -222,30 +222,26 @@ export default function SignatureEditor() {
                             </span>
                           </div>
                           <div style={{ marginBottom: '3px' }}>
-                            <span style={{ color: '#999', fontSize: '13px' }}>✉</span>&nbsp;
                             <a href={`mailto:${email}`} style={{ color: c.terracotta, textDecoration: 'none', fontSize: '13px' }}>
                               {email}
                             </a>
                           </div>
                           {telephone && (
                             <div style={{ marginBottom: '3px' }}>
-                              <span style={{ color: '#999', fontSize: '13px' }}>☎</span>&nbsp;
                               <a href={`tel:${telephone.replace(/\s/g, '')}`} style={{ color: c.bleuNuit, textDecoration: 'none', fontSize: '13px' }}>
                                 {telephone}
                               </a>
                             </div>
                           )}
                           <div style={{ marginBottom: '3px' }}>
-                            <span style={{ color: '#999', fontSize: '13px' }}>🌐</span>&nbsp;
                             <a href="https://iarche.fr" style={{ color: c.bleuNuit, textDecoration: 'none', fontSize: '13px' }}>
                               iarche.fr
                             </a>
                           </div>
                           {linkedin && (
                             <div style={{ marginBottom: '3px' }}>
-                              <span style={{ color: '#999', fontSize: '13px', fontWeight: 'bold' }}>in</span>&nbsp;
                               <a href={`https://linkedin.com/in/${linkedin}`} style={{ color: c.bleuNuit, textDecoration: 'none', fontSize: '13px' }}>
-                                linkedin.com/in/{linkedin}
+                                LinkedIn
                               </a>
                             </div>
                           )}
