@@ -45,7 +45,7 @@ export default function SignatureEditor() {
         </td>
       </tr>` : '';
 
-    return `<table cellpadding="0" cellspacing="0" border="0" style="font-family: Arial, 'Helvetica Neue', sans-serif; max-width: 600px;">
+    return `<table cellpadding="0" cellspacing="0" border="0" align="left" style="font-family: Arial, 'Helvetica Neue', sans-serif; max-width: 600px; margin: 0;">
   <tr>
     <td style="padding-right: 20px; vertical-align: top; border-right: 3px solid ${charterColors.terracotta};">
       <table cellpadding="0" cellspacing="0" border="0">
