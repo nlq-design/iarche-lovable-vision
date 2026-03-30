@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Copy, Check, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,9 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import AdminLayout from '@/components/layouts/AdminLayout';
-import ExportActions from '@/components/admin/medias/ExportActions';
 import { PngQuality, PNG_QUALITY_OPTIONS, exportToPNG } from '@/lib/mediaExport';
-import { Download } from 'lucide-react';
 import { IARCHE_COLORS } from '@/components/admin/medias/html';
 
 const SIGNATURE_WIDTH = 600;
@@ -22,70 +20,72 @@ export default function SignatureEditor() {
   const [copied, setCopied] = useState(false);
   const [pngQuality, setPngQuality] = useState<PngQuality>(6);
   
-  // Use official IArche colors
-  const charterColors = IARCHE_COLORS;
+  const c = IARCHE_COLORS;
   
-  // Form fields
   const [prenom, setPrenom] = useState('Nicolas');
   const [nom, setNom] = useState('Lara Queralta');
   const [fonction, setFonction] = useState('CEO & Fondateur');
   const [email, setEmail] = useState('nlq@iarche.fr');
   const [telephone, setTelephone] = useState('');
+  const [linkedin, setLinkedin] = useState('');
   const [tagline, setTagline] = useState("L'IA se construit avec vous");
 
-  const generateHTML = () => {
-    // v4.3: Logo PNG hébergé sur le site publié (iarche.fr n'héberge pas les assets)
-    // IMPORTANT: Remplacer par l'URL définitive de production une fois déployé sur iarche.fr
-    const logoUrl = 'https://iarche-lovable-vision.lovable.app/logos/iarche-main.png';
+  const logoUrl = 'https://iarche-lovable-vision.lovable.app/logos/iarche-main.png';
 
+  const generateHTML = () => {
     const phoneRow = telephone ? `
-      <tr>
-        <td style="padding: 2px 0;">
-          <a href="tel:${telephone.replace(/\s/g, '')}" style="color: ${charterColors.bleuNuit}; text-decoration: none; font-size: 14px;">${telephone}</a>
-        </td>
-      </tr>` : '';
+        <tr>
+          <td style="padding: 3px 0;">
+            <span style="color: #999; font-size: 13px;">☎</span>&nbsp;
+            <a href="tel:${telephone.replace(/\s/g, '')}" style="color: ${c.bleuNuit}; text-decoration: none; font-size: 13px;">${telephone}</a>
+          </td>
+        </tr>` : '';
+
+    const linkedinRow = linkedin ? `
+        <tr>
+          <td style="padding: 3px 0;">
+            <span style="color: #999; font-size: 13px;">in</span>&nbsp;
+            <a href="https://linkedin.com/in/${linkedin}" style="color: ${c.bleuNuit}; text-decoration: none; font-size: 13px;">linkedin.com/in/${linkedin}</a>
+          </td>
+        </tr>` : '';
 
     return `<table cellpadding="0" cellspacing="0" border="0" align="left" style="font-family: Arial, 'Helvetica Neue', sans-serif; max-width: 600px; margin: 0;">
   <tr>
-    <td style="padding-right: 20px; vertical-align: top; border-right: 3px solid ${charterColors.terracotta};">
-      <table cellpadding="0" cellspacing="0" border="0">
-        <tr>
-            <td style="padding-bottom: 8px;">
-              <a href="https://iarche.fr" style="text-decoration:none;display:block;">
-                <img src="${logoUrl}" alt="IArche" height="32" border="0" style="display:block;border:0;outline:none;text-decoration:none;height:32px;">
-              </a>
-            </td>
-        </tr>
-      </table>
+    <td style="padding-right: 20px; vertical-align: middle; border-right: 3px solid ${c.terracotta};">
+      <a href="https://iarche.fr" style="text-decoration:none;display:block;">
+        <img src="${logoUrl}" alt="IArche" height="48" border="0" style="display:block;border:0;outline:none;text-decoration:none;height:48px;">
+      </a>
     </td>
     <td style="padding-left: 20px; vertical-align: top;">
       <table cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td style="padding-bottom: 4px;">
-            <span style="font-weight: bold; font-size: 16px; color: ${charterColors.bleuNuit};">${prenom} ${nom.toUpperCase()}</span>
+          <td style="padding-bottom: 2px;">
+            <span style="font-weight: bold; font-size: 17px; color: ${c.bleuNuit};">${prenom} ${nom.toUpperCase()}</span>
           </td>
         </tr>
         <tr>
-          <td style="padding-bottom: 8px;">
-            <span style="font-size: 14px; color: #666666;">${fonction} · IArche</span>
+          <td style="padding-bottom: 10px;">
+            <span style="font-size: 13px; color: #555555;">${fonction} · IArche</span>
           </td>
         </tr>
         <tr>
-          <td style="padding: 2px 0;">
-            <a href="mailto:${email}" style="color: ${charterColors.terracotta}; text-decoration: none; font-size: 14px;">${email}</a>
+          <td style="padding: 3px 0;">
+            <span style="color: #999; font-size: 13px;">✉</span>&nbsp;
+            <a href="mailto:${email}" style="color: ${c.terracotta}; text-decoration: none; font-size: 13px;">${email}</a>
           </td>
         </tr>${phoneRow}
         <tr>
-          <td style="padding: 2px 0;">
-            <a href="https://iarche.fr" style="color: ${charterColors.bleuNuit}; text-decoration: none; font-size: 14px;">iarche.fr</a>
+          <td style="padding: 3px 0;">
+            <span style="color: #999; font-size: 13px;">🌐</span>&nbsp;
+            <a href="https://iarche.fr" style="color: ${c.bleuNuit}; text-decoration: none; font-size: 13px;">iarche.fr</a>
           </td>
-        </tr>
+        </tr>${linkedinRow}
       </table>
     </td>
   </tr>
   <tr>
-    <td colspan="2" style="padding-top: 16px;">
-      <span style="font-style: italic; color: #888888; font-size: 12px;">${tagline}</span>
+    <td colspan="2" style="padding-top: 12px; border-top: 1px solid #E0DDD8;">
+      <span style="font-style: italic; color: #999999; font-size: 11px;">— ${tagline}</span>
     </td>
   </tr>
 </table>`;
@@ -110,14 +110,13 @@ export default function SignatureEditor() {
       });
       toast.success(`Signature exportée (${SIGNATURE_WIDTH * pngQuality}×${SIGNATURE_HEIGHT * pngQuality}px)`);
     } catch (error) {
-      toast.error('Erreur lors de l\'export');
+      toast.error("Erreur lors de l'export");
     }
   };
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate('/admin/medias')}>
@@ -141,11 +140,8 @@ export default function SignatureEditor() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Settings */}
           <Card>
-            <CardHeader>
-              <CardTitle>Informations</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Informations</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -170,15 +166,17 @@ export default function SignatureEditor() {
                 <Input type="tel" value={telephone} onChange={(e) => setTelephone(e.target.value)} placeholder="+33 6 00 00 00 00" />
               </div>
               <div className="space-y-2">
+                <Label>LinkedIn (optionnel)</Label>
+                <Input value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="pseudo (ex: nicolaslq)" />
+              </div>
+              <div className="space-y-2">
                 <Label>Tagline</Label>
                 <Input value={tagline} onChange={(e) => setTagline(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label>Qualité PNG</Label>
                 <Select value={String(pngQuality)} onValueChange={(v) => setPngQuality(Number(v) as PngQuality)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {PNG_QUALITY_OPTIONS.map((opt) => (
                       <SelectItem key={opt.value} value={String(opt.value)}>{opt.label}</SelectItem>
@@ -189,18 +187,11 @@ export default function SignatureEditor() {
             </CardContent>
           </Card>
 
-          {/* Preview */}
           <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Aperçu</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Aperçu</CardTitle></CardHeader>
             <CardContent className="space-y-6">
-              {/* Visual Preview */}
-              <div 
-                className="rounded-lg border bg-white p-6"
-                style={{ maxWidth: SIGNATURE_WIDTH }}
-              >
-                <div 
+              <div className="rounded-lg border bg-white p-6" style={{ maxWidth: SIGNATURE_WIDTH }}>
+                <div
                   ref={signatureRef}
                   style={{
                     fontFamily: "Arial, 'Helvetica Neue', sans-serif",
@@ -212,80 +203,62 @@ export default function SignatureEditor() {
                   <table cellPadding="0" cellSpacing="0" style={{ borderCollapse: 'collapse' }}>
                     <tbody>
                       <tr>
-                        <td style={{ 
-                          paddingRight: '20px', 
-                          verticalAlign: 'top', 
-                          borderRight: `3px solid ${charterColors.terracotta}` 
+                        <td style={{
+                          paddingRight: '20px',
+                          verticalAlign: 'middle',
+                          borderRight: `3px solid ${c.terracotta}`,
                         }}>
-                          <img 
-                            src="/logos/iarche-main.svg" 
-                            alt="IArche" 
-                            style={{ height: '28px', display: 'block' }}
+                          <img
+                            src={logoUrl}
+                            alt="IArche"
+                            style={{ height: '48px', display: 'block' }}
                           />
                         </td>
                         <td style={{ paddingLeft: '20px', verticalAlign: 'top' }}>
-                          <div style={{ marginBottom: '4px' }}>
-                            <span style={{ 
-                              fontWeight: 'bold', 
-                              fontSize: '16px', 
-                              color: charterColors.bleuNuit 
-                            }}>
+                          <div style={{ marginBottom: '2px' }}>
+                            <span style={{ fontWeight: 'bold', fontSize: '17px', color: c.bleuNuit }}>
                               {prenom} {nom.toUpperCase()}
                             </span>
                           </div>
-                          <div style={{ marginBottom: '8px' }}>
-                            <span style={{ fontSize: '14px', color: '#666666' }}>
+                          <div style={{ marginBottom: '10px' }}>
+                            <span style={{ fontSize: '13px', color: '#555555' }}>
                               {fonction} · IArche
                             </span>
                           </div>
-                          <div style={{ marginBottom: '2px' }}>
-                            <a 
-                              href={`mailto:${email}`} 
-                              style={{ 
-                                color: charterColors.terracotta, 
-                                textDecoration: 'none', 
-                                fontSize: '14px' 
-                              }}
-                            >
+                          <div style={{ marginBottom: '3px' }}>
+                            <span style={{ color: '#999', fontSize: '13px' }}>✉</span>&nbsp;
+                            <a href={`mailto:${email}`} style={{ color: c.terracotta, textDecoration: 'none', fontSize: '13px' }}>
                               {email}
                             </a>
                           </div>
                           {telephone && (
-                            <div style={{ marginBottom: '2px' }}>
-                              <a 
-                                href={`tel:${telephone.replace(/\s/g, '')}`} 
-                                style={{ 
-                                  color: charterColors.bleuNuit, 
-                                  textDecoration: 'none', 
-                                  fontSize: '14px' 
-                                }}
-                              >
+                            <div style={{ marginBottom: '3px' }}>
+                              <span style={{ color: '#999', fontSize: '13px' }}>☎</span>&nbsp;
+                              <a href={`tel:${telephone.replace(/\s/g, '')}`} style={{ color: c.bleuNuit, textDecoration: 'none', fontSize: '13px' }}>
                                 {telephone}
                               </a>
                             </div>
                           )}
-                          <div>
-                            <a 
-                              href="https://iarche.fr" 
-                              style={{ 
-                                color: charterColors.bleuNuit, 
-                                textDecoration: 'none', 
-                                fontSize: '14px' 
-                              }}
-                            >
+                          <div style={{ marginBottom: '3px' }}>
+                            <span style={{ color: '#999', fontSize: '13px' }}>🌐</span>&nbsp;
+                            <a href="https://iarche.fr" style={{ color: c.bleuNuit, textDecoration: 'none', fontSize: '13px' }}>
                               iarche.fr
                             </a>
                           </div>
+                          {linkedin && (
+                            <div style={{ marginBottom: '3px' }}>
+                              <span style={{ color: '#999', fontSize: '13px', fontWeight: 'bold' }}>in</span>&nbsp;
+                              <a href={`https://linkedin.com/in/${linkedin}`} style={{ color: c.bleuNuit, textDecoration: 'none', fontSize: '13px' }}>
+                                linkedin.com/in/{linkedin}
+                              </a>
+                            </div>
+                          )}
                         </td>
                       </tr>
                       <tr>
-                        <td colSpan={2} style={{ paddingTop: '16px' }}>
-                          <span style={{ 
-                            fontStyle: 'italic', 
-                            color: '#888888', 
-                            fontSize: '12px' 
-                          }}>
-                            {tagline}
+                        <td colSpan={2} style={{ paddingTop: '12px', borderTop: '1px solid #E0DDD8' }}>
+                          <span style={{ fontStyle: 'italic', color: '#999999', fontSize: '11px' }}>
+                            — {tagline}
                           </span>
                         </td>
                       </tr>
@@ -294,7 +267,6 @@ export default function SignatureEditor() {
                 </div>
               </div>
 
-              {/* HTML Code Preview */}
               <div className="space-y-2">
                 <Label>Code HTML (email-safe)</Label>
                 <pre className="bg-muted p-4 rounded-lg text-xs overflow-x-auto max-h-48">
