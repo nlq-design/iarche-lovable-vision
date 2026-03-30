@@ -99,6 +99,23 @@ export default function SignatureEditor() {
     }
   };
 
+  const handleCopyForGmail = async () => {
+    try {
+      const html = generateHTML();
+      const blob = new Blob([html], { type: 'text/html' });
+      const plainBlob = new Blob([' '], { type: 'text/plain' });
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': blob,
+          'text/plain': plainBlob,
+        }),
+      ]);
+      toast.success('Signature copiée ! Va dans Gmail → Paramètres → Signature → Ctrl+V');
+    } catch (error) {
+      toast.error('Erreur — essaie avec Chrome');
+    }
+  };
+
   const handleExportPNG = async () => {
     try {
       await exportToPNG(signatureRef, 'signature-email', {
@@ -124,14 +141,18 @@ export default function SignatureEditor() {
               <p className="text-muted-foreground">600 × 200 px — Compatible Outlook/Gmail</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={handleCopyForGmail} className="gap-2">
+              <Copy className="h-4 w-4" />
+              Copier pour Gmail
+            </Button>
             <Button onClick={handleCopyHTML} variant="outline" className="gap-2">
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               {copied ? 'Copié !' : 'Copier HTML'}
             </Button>
-            <Button onClick={handleExportPNG} className="gap-2">
+            <Button onClick={handleExportPNG} variant="outline" className="gap-2">
               <Download className="h-4 w-4" />
-              PNG (fallback)
+              PNG
             </Button>
           </div>
         </div>
