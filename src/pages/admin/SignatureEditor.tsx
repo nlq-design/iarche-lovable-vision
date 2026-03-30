@@ -30,7 +30,8 @@ export default function SignatureEditor() {
   const [linkedin, setLinkedin] = useState('');
   const [tagline, setTagline] = useState("L'IA se construit avec vous");
 
-  const logoUrl = 'https://iarche-lovable-vision.lovable.app/logos/iarche-main.png';
+  const logoUrlLocal = `${window.location.origin}/logos/iarche-main.png`;
+  const logoUrlPublished = 'https://iarche-lovable-vision.lovable.app/logos/iarche-main.png';
 
   const generateHTML = () => {
     const phoneRow = telephone ? `
