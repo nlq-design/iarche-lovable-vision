@@ -36,7 +36,6 @@ export default function SignatureEditor() {
     const phoneRow = telephone ? `
         <tr>
           <td style="padding: 3px 0;">
-            <span style="color: #999; font-size: 13px;">☎</span>&nbsp;
             <a href="tel:${telephone.replace(/\s/g, '')}" style="color: ${c.bleuNuit}; text-decoration: none; font-size: 13px;">${telephone}</a>
           </td>
         </tr>` : '';
@@ -44,8 +43,7 @@ export default function SignatureEditor() {
     const linkedinRow = linkedin ? `
         <tr>
           <td style="padding: 3px 0;">
-            <span style="color: #999; font-size: 13px;">in</span>&nbsp;
-            <a href="https://linkedin.com/in/${linkedin}" style="color: ${c.bleuNuit}; text-decoration: none; font-size: 13px;">linkedin.com/in/${linkedin}</a>
+            <a href="https://linkedin.com/in/${linkedin}" style="color: ${c.bleuNuit}; text-decoration: none; font-size: 13px;">LinkedIn</a>
           </td>
         </tr>` : '';
 
@@ -70,13 +68,11 @@ export default function SignatureEditor() {
         </tr>
         <tr>
           <td style="padding: 3px 0;">
-            <span style="color: #999; font-size: 13px;">✉</span>&nbsp;
             <a href="mailto:${email}" style="color: ${c.terracotta}; text-decoration: none; font-size: 13px;">${email}</a>
           </td>
         </tr>${phoneRow}
         <tr>
           <td style="padding: 3px 0;">
-            <span style="color: #999; font-size: 13px;">🌐</span>&nbsp;
             <a href="https://iarche.fr" style="color: ${c.bleuNuit}; text-decoration: none; font-size: 13px;">iarche.fr</a>
           </td>
         </tr>${linkedinRow}
