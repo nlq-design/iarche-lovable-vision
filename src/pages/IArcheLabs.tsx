@@ -13,7 +13,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import GradientButton from '@/components/ui/GradientButton';
-import LogoArc from '@/components/ui/LogoArc';
+
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useCTATracking } from '@/hooks/useCTATracking';
@@ -128,13 +128,6 @@ const IArcheLabs = () => {
     }
   };
 
-  const programmeJours = [
-    { key: 'j1', icon: Target, color: 'from-primary to-primary/80' },
-    { key: 'j2', icon: Database, color: 'from-primary/80 to-accent/80' },
-    { key: 'j3', icon: Code, color: 'from-accent/80 to-accent' },
-    { key: 'j4', icon: CreditCard, color: 'from-accent to-accent/60' },
-    { key: 'j5', icon: Rocket, color: 'from-accent/60 to-primary' },
-  ];
 
   const faqItems = [1, 2, 3, 4, 5, 6];
 
