@@ -390,33 +390,6 @@ const IArcheLabs = () => {
         </section>
 
 
-        {/* 8. TÉMOIGNAGES */}
-        <section className="py-16 md:py-20 bg-secondary">
-          <div className="max-w-5xl mx-auto px-6">
-            <h2 className="text-3xl md:text-4xl font-bold hero-gradient-text text-center mb-12">Ce qu'ils en disent</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {[1, 2].map(i => (
-                <Card key={i} className="p-6 border-border bg-background relative">
-                  <Quote className="w-8 h-8 text-accent/20 absolute top-4 right-4" />
-                  <p className="text-foreground mb-6 italic leading-relaxed">
-                    "{s[`temoignage_${i}_texte`]}"
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                      <span className="text-sm font-bold text-primary-foreground">
-                        {(s[`temoignage_${i}_nom`] || '')[0]}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground text-sm">{s[`temoignage_${i}_nom`]}</p>
-                      <p className="text-muted-foreground text-xs">{s[`temoignage_${i}_role`]}</p>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* 9. FORMULE & TARIF */}
         <section className="py-16 md:py-20 bg-background">
