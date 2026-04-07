@@ -129,7 +129,7 @@ const IArcheLabs = () => {
   };
 
 
-  const faqItems = [1, 2, 3, 4, 5, 6];
+  const faqItems = [1, 2, 3, 4, 5];
 
   if (sectionsLoading) {
     return (
