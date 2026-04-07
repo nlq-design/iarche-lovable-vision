@@ -79,7 +79,7 @@ const Header = () => {
                 }`
               }
             >
-              <img src="/logos/iarche-labs.svg" alt="IArche Labs" className="h-7 w-auto" style={{ imageRendering: '-webkit-optimize-contrast' as any }} />
+              IArche Labs
             </NavLink>
             
             {/* Menu Ressources - pointe vers /actualites avec dropdown */}
@@ -216,7 +216,7 @@ const Header = () => {
                   }`
                 }
               >
-                <img src="/logos/iarche-labs.svg" alt="IArche Labs" className="h-7 w-auto" />
+                IArche Labs
               </NavLink>
               
               {/* Ressources Mobile avec sous-menu */}

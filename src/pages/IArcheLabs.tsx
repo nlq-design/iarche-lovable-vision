@@ -13,7 +13,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import GradientButton from '@/components/ui/GradientButton';
-import LogoArc from '@/components/ui/LogoArc';
+
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useCTATracking } from '@/hooks/useCTATracking';
@@ -21,7 +21,7 @@ import { usePageSections } from '@/hooks/usePageSections';
 import {
   Laptop, Users, Scale, Server, MessageSquare,
   Check, UserCheck, RefreshCw, Lightbulb, ChevronDown,
-  Rocket, Code, Database, CreditCard, Globe, MapPin,
+  Rocket, Globe, MapPin,
   Quote, Calendar, Zap, Target, Package
 } from 'lucide-react';
 
@@ -128,13 +128,6 @@ const IArcheLabs = () => {
     }
   };
 
-  const programmeJours = [
-    { key: 'j1', icon: Target, color: 'from-primary to-primary/80' },
-    { key: 'j2', icon: Database, color: 'from-primary/80 to-accent/80' },
-    { key: 'j3', icon: Code, color: 'from-accent/80 to-accent' },
-    { key: 'j4', icon: CreditCard, color: 'from-accent to-accent/60' },
-    { key: 'j5', icon: Rocket, color: 'from-accent/60 to-primary' },
-  ];
 
   const faqItems = [1, 2, 3, 4, 5, 6];
 
@@ -292,31 +285,46 @@ const IArcheLabs = () => {
           </div>
         </section>
 
-        {/* 4. PROGRAMME J1→J5 */}
+        {/* 4. 5 JOURS, 1 PRODUIT */}
         <section id="programme" className="py-16 md:py-20 bg-background">
           <div className="max-w-5xl mx-auto px-6">
             <h2 className="text-3xl md:text-4xl font-bold hero-gradient-text text-center mb-4">5 jours. 1 produit.</h2>
             <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-              Un programme structuré, du cadrage au lancement.
+              Une semaine pour transformer ton idée en produit fonctionnel. Avant la semaine, on prépare tout. Pendant, on construit.
             </p>
-            <div className="space-y-4">
-              {programmeJours.map(({ key, icon: Icon, color }, index) => (
-                <div key={key} className="relative">
-                  {index < programmeJours.length - 1 && (
-                    <div className="absolute left-6 top-16 bottom-0 w-0.5 bg-border hidden md:block" />
-                  )}
-                  <div className="flex gap-4 md:gap-6 items-start">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shrink-0`}>
-                      <Icon className="w-5 h-5 text-primary-foreground" />
-                    </div>
-                    <div className="flex-1 pb-4">
-                      <h3 className="text-lg font-bold text-foreground mb-1">
-                        {s[`programme_${key}_titre`]}
-                      </h3>
-                      <p className="text-muted-foreground">
-                        {s[`programme_${key}_desc`]}
-                      </p>
-                    </div>
+
+            {/* Préparation amont */}
+            <div className="mb-10 p-6 rounded-xl border border-accent/20 bg-accent/5">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent to-accent/60 flex items-center justify-center shrink-0">
+                  <Calendar className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground mb-1">Préparation en amont</h3>
+                  <p className="text-muted-foreground">
+                    Avant la semaine intensive, notre équipe cadre ton projet : analyse du marché, architecture technique, spécifications fonctionnelles. Pour que chaque minute sur place soit productive.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Livrables de la semaine */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                { icon: Rocket, title: 'Bâtir ton projet', desc: 'De l\'idée au produit fonctionnel déployé en production. Ton SaaS existe et il tourne.' },
+                { icon: Target, title: 'Structurer ton offre', desc: 'Positionnement, pricing, proposition de valeur. Tu sais exactement quoi vendre et à qui.' },
+                { icon: Scale, title: 'Cadrage juridique', desc: 'CGV, mentions légales, conformité RGPD, contrats. Tout est en ordre pour commercialiser.' },
+                { icon: Server, title: 'Gouvernance & sécurité', desc: 'Architecture sécurisée, bonnes pratiques, gestion des données. Ton produit est solide.' },
+                { icon: Zap, title: 'IA intégrée', desc: 'Fonctionnalités IA embarquées dans ton produit. Pas un gadget, un vrai avantage compétitif.' },
+                { icon: Package, title: 'Tout en 5 jours', desc: 'Grâce au travail préparatoire, la semaine est fluide et compacte. Pas de temps perdu.' },
+              ].map((item) => (
+                <div key={item.title} className="flex items-start gap-4 p-5 rounded-lg border border-border bg-background hover:shadow-md transition-shadow">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <item.icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-foreground mb-1">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
                   </div>
                 </div>
               ))}
@@ -369,23 +377,6 @@ const IArcheLabs = () => {
           </div>
         </section>
 
-        {/* 7. CHIFFRES CLÉS */}
-        <section className="py-12 md:py-16 bg-primary text-primary-foreground">
-          <div className="max-w-4xl mx-auto px-6">
-            <div className="grid grid-cols-3 gap-8 text-center">
-              {[1, 2, 3].map(i => (
-                <div key={i}>
-                  <p className="text-4xl md:text-5xl font-extrabold text-accent mb-1">
-                    {s[`chiffres_${i}_valeur`]}
-                  </p>
-                  <p className="text-sm md:text-base text-primary-foreground/70">
-                    {s[`chiffres_${i}_label`]}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* 8. TÉMOIGNAGES */}
         <section className="py-16 md:py-20 bg-secondary">
