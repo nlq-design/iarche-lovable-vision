@@ -375,6 +375,17 @@ const IArcheLabs = () => {
                 </Card>
               ))}
             </div>
+
+            {/* Partenaires spécialisés */}
+            <div className="mt-10 max-w-2xl mx-auto text-center p-6 rounded-xl border border-border bg-secondary/50">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Users className="w-5 h-5 text-accent" />
+                <h3 className="font-bold text-foreground">Réseau de spécialistes</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Nous travaillons avec des partenaires experts en droit du numérique, gouvernance et conformité qui interviennent sur les thématiques spécialisées de ton projet.
+              </p>
+            </div>
           </div>
         </section>
 
