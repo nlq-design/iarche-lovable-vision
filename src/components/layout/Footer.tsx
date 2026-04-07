@@ -125,7 +125,7 @@ const Footer = () => {
               </li>
               <li>
                 <NavLink to="/iarche-labs" className={`${linkClass} flex items-center gap-1.5`}>
-                  <img src="/logos/iarche-labs.svg" alt="IArche Labs" className="h-3.5 w-auto brightness-0 invert opacity-60 hover:opacity-100 transition-opacity" />
+                  <img src="/logos/iarche-labs.svg" alt="IArche Labs" className="h-5 w-auto opacity-70 hover:opacity-100 transition-opacity" style={{ filter: 'grayscale(1) brightness(2.5)' }} />
                 </NavLink>
               </li>
               <li>
