@@ -225,13 +225,17 @@ const IArcheLabs = () => {
         <section className="relative overflow-hidden py-20 md:py-28">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
           <div className="relative max-w-5xl mx-auto px-6 text-center">
-            <Badge className="mb-6 bg-accent/10 text-accent border-accent/20 hover:bg-accent/15">
-              IArche Labs — Bayonne, Pays Basque
-            </Badge>
-            <h1 className="text-4xl md:text-6xl font-extrabold hero-gradient-text mb-6 leading-tight animate-fadeIn">
+            <img 
+              src="/logos/iarche-labs.svg" 
+              alt="IArche Labs" 
+              className="h-12 md:h-16 w-auto mx-auto mb-8 animate-fadeIn"
+              loading="eager"
+              decoding="async"
+            />
+            <h1 className="text-4xl md:text-6xl font-extrabold hero-gradient-text mb-6 leading-tight animate-fadeIn [animation-delay:0.1s]">
               {s['hero_title']}
             </h1>
-            <LogoArc size="md" className="mx-auto mb-6 animate-fadeIn [animation-delay:0.1s]" />
+            <LogoArc size="md" className="mx-auto mb-6 animate-fadeIn [animation-delay:0.15s]" />
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 animate-fadeIn [animation-delay:0.2s]">
               {s['hero_subtitle']}
             </p>
