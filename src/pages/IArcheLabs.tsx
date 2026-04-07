@@ -228,9 +228,10 @@ const IArcheLabs = () => {
             <img 
               src="/logos/iarche-labs.svg" 
               alt="IArche Labs" 
-              className="h-16 md:h-20 lg:h-24 w-auto mx-auto mb-8 animate-fadeIn"
+              className="h-20 md:h-24 lg:h-28 w-auto mx-auto mb-8 animate-fadeIn"
               loading="eager"
               decoding="async"
+              style={{ imageRendering: 'optimizeQuality' }}
             />
             <h1 className="text-4xl md:text-6xl font-extrabold hero-gradient-text mb-6 leading-tight animate-fadeIn [animation-delay:0.1s]">
               {s['hero_title']}
