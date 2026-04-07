@@ -342,7 +342,7 @@ const IArcheLabs = () => {
                 { icon: Users, text: 'Accompagnement expert (technique + business)' },
                 { icon: Scale, text: 'Cadrage juridique (CGV, contrats, conformité)' },
                 { icon: Server, text: 'Infrastructure hébergée 12 mois' },
-                { icon: MessageSquare, text: 'Suivi Slack 30 jours post-session' },
+                { icon: MessageSquare, text: 'Suivi post-session 30 jours' },
                 { icon: Globe, text: 'Domaine custom + déploiement production' },
               ].map((item) => (
                 <div key={item.text} className="flex items-start gap-4 p-4 rounded-lg bg-background border border-border">
