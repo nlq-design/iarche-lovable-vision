@@ -21,7 +21,7 @@ import { usePageSections } from '@/hooks/usePageSections';
 import {
   Laptop, Users, Scale, Server, MessageSquare,
   Check, UserCheck, RefreshCw, Lightbulb, ChevronDown,
-  Rocket, Code, Database, CreditCard, Globe, MapPin,
+  Rocket, Globe, MapPin,
   Quote, Calendar, Zap, Target, Package
 } from 'lucide-react';
 
