@@ -124,6 +124,11 @@ const Footer = () => {
                 </NavLink>
               </li>
               <li>
+                <NavLink to="/iarche-labs" className={`${linkClass} flex items-center gap-1.5`}>
+                  <img src="/logos/iarche-labs.svg" alt="IArche Labs" className="h-3.5 w-auto brightness-0 invert opacity-60 hover:opacity-100 transition-opacity" />
+                </NavLink>
+              </li>
+              <li>
                 <NavLink to="/actualites" className={linkClass}>
                   Actualités
                 </NavLink>

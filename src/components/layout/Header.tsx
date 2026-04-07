@@ -79,8 +79,7 @@ const Header = () => {
                 }`
               }
             >
-              IArche Labs
-              <span className="text-[10px] font-bold bg-accent/15 text-accent px-1.5 py-0.5 rounded-full leading-none">Labs</span>
+              <img src="/logos/iarche-labs.svg" alt="IArche Labs" className="h-5 w-auto" />
             </NavLink>
             
             {/* Menu Ressources - pointe vers /actualites avec dropdown */}
@@ -217,8 +216,7 @@ const Header = () => {
                   }`
                 }
               >
-                IArche Labs
-                <span className="text-[10px] font-bold bg-accent/15 text-accent px-1.5 py-0.5 rounded-full leading-none">Labs</span>
+                <img src="/logos/iarche-labs.svg" alt="IArche Labs" className="h-5 w-auto" />
               </NavLink>
               
               {/* Ressources Mobile avec sous-menu */}
