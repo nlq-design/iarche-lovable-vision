@@ -235,7 +235,7 @@ const IArcheLabs = () => {
             <h1 className="text-4xl md:text-6xl font-extrabold hero-gradient-text mb-6 leading-tight animate-fadeIn [animation-delay:0.1s]">
               {s['hero_title']}
             </h1>
-            <LogoArc size="md" className="mx-auto mb-6 animate-fadeIn [animation-delay:0.15s]" />
+            
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 animate-fadeIn [animation-delay:0.2s]">
               {s['hero_subtitle']}
             </p>
