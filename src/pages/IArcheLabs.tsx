@@ -265,22 +265,23 @@ const IArcheLabs = () => {
           <div className="max-w-6xl mx-auto px-6">
             <h2 className="text-3xl md:text-4xl font-bold hero-gradient-text text-center mb-4">Pour qui ?</h2>
             <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-              Tu as une idée, un savoir-faire, un marché. Il te manque le produit.
+              Deux profils, un même objectif : concrétiser un projet digital.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                { icon: UserCheck, num: 1, defaultTitle: 'Consultant expert', defaultDesc: 'Tu vends ton temps. Tu veux vendre un outil.' },
-                { icon: RefreshCw, num: 2, defaultTitle: 'Entrepreneur en pivot', defaultDesc: 'Tu as un projet. Tu veux le tester vite, sans 6 mois de dev.' },
-                { icon: Lightbulb, num: 3, defaultTitle: 'Porteur de MVP', defaultDesc: "Tu veux valider avant d'investir 50k€ en agence." },
-              ].map((item) => (
-                <Card key={item.num} className="p-6 text-center border-border bg-background hover:shadow-lg transition-shadow">
-                  <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
-                    <item.icon className="w-6 h-6 text-accent" />
-                  </div>
-                  <h3 className="text-lg font-bold text-foreground mb-2">{s[`cible_${item.num}_titre`]}</h3>
-                  <p className="text-muted-foreground">{s[`cible_${item.num}_texte`]}</p>
-                </Card>
-              ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+              <Card className="p-8 text-center border-border bg-background hover:shadow-lg transition-shadow">
+                <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-5">
+                  <RefreshCw className="w-7 h-7 text-accent" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-3">Tu veux digitaliser ton activité</h3>
+                <p className="text-muted-foreground">Tu as déjà un métier, tu sais que ton secteur évolue. Tu veux créer un outil digital qui te différencie et prendre de l'avance.</p>
+              </Card>
+              <Card className="p-8 text-center border-border bg-background hover:shadow-lg transition-shadow">
+                <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-5">
+                  <Rocket className="w-7 h-7 text-accent" />
+                </div>
+                <h3 className="text-xl font-bold text-foreground mb-3">Tu veux te lancer</h3>
+                <p className="text-muted-foreground">Tu as une idée, un marché en tête. Tu veux un produit concret pour démarrer vite et bien, sans passer par des mois de développement.</p>
+              </Card>
             </div>
           </div>
         </section>
