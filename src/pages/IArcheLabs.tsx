@@ -228,7 +228,7 @@ const IArcheLabs = () => {
             <img 
               src="/logos/iarche-labs.svg" 
               alt="IArche Labs" 
-              className="h-12 md:h-16 w-auto mx-auto mb-8 animate-fadeIn"
+              className="h-16 md:h-20 lg:h-24 w-auto mx-auto mb-8 animate-fadeIn"
               loading="eager"
               decoding="async"
             />
