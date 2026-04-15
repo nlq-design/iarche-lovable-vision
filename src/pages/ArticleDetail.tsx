@@ -6,7 +6,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Calendar, ArrowLeft } from 'lucide-react';
+import { Loader2, Calendar, ArrowLeft, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,6 +26,8 @@ import GradientTitle from '@/components/ui/GradientTitle';
 import { useCTATracking } from '@/hooks/useCTATracking';
 import { TableOfContents } from '@/components/ui/TableOfContents';
 import { RessourcesComplementaires } from '@/components/ui/RessourcesComplementaires';
+import { useCockpitGeneratedDocuments } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
+import { toast } from 'sonner';
 import 'react-quill/dist/quill.snow.css';
 
 interface Article {
