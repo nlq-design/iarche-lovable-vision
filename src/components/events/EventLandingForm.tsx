@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, CheckCircle } from 'lucide-react';
 import { Form, FormField } from '@/types/forms';
 import { COLORS } from '@/components/admin/medias/shared/tokens';
+import { normalizeFormFields } from '@/lib/form-fields';
 
 interface Props {
   articleId: string;
@@ -22,7 +23,7 @@ const isNamePair = (a: FormField, b: FormField): boolean => {
   return aIsName && bIsName;
 };
 
-const fieldKey = (field: FormField) => field.id || (field as any).name || field.label;
+const fieldKey = (field: FormField) => field.id;
 
 const EventLandingForm = ({ articleId }: Props) => {
   const [form, setForm] = useState<Form | null>(null);
@@ -47,7 +48,10 @@ const EventLandingForm = ({ articleId }: Props) => {
       .single();
 
     if (!error && data) {
-      setForm(data as unknown as Form);
+      setForm({
+        ...(data as Record<string, unknown>),
+        fields: normalizeFormFields(data.fields),
+      } as Form);
     }
     setLoading(false);
   };
