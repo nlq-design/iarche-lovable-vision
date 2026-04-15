@@ -14,6 +14,12 @@ interface InvitationSection {
   content: string;
 }
 
+interface ProgrammeRow {
+  horaire: string;
+  theme: string;
+  intervenant: string;
+}
+
 interface InvitationMetadata {
   eventTitle?: string;
   eventDate?: string;
@@ -34,6 +40,9 @@ interface InvitationDocument {
   content_json: {
     sections?: InvitationSection[];
     metadata?: InvitationMetadata;
+    modules?: {
+      programme?: { rows: ProgrammeRow[] };
+    };
   };
   created_at: string;
 }
@@ -84,9 +93,27 @@ const EventLanding = () => {
     );
   }
 
-  const { sections = [], metadata = {} } = doc.content_json || {};
+  const { sections = [], metadata = {}, modules } = doc.content_json || {};
   const sortedSections = [...sections].sort((a, b) => a.order - b.order);
   const pageTitle = metadata.eventTitle || doc.title;
+  const programmeRows = modules?.programme?.rows || [];
+
+  const proseClasses = `prose prose-sm md:prose-base max-w-none
+    prose-headings:text-foreground prose-headings:font-semibold
+    prose-p:text-muted-foreground prose-p:leading-relaxed
+    prose-strong:text-foreground
+    prose-ul:text-muted-foreground prose-li:text-muted-foreground
+    prose-table:text-sm
+    [&_table]:w-full [&_table]:border-collapse [&_table]:table-fixed
+    [&_th]:bg-muted/50 [&_th]:text-left [&_th]:px-4 [&_th]:py-3 [&_th]:font-semibold [&_th]:text-foreground [&_th]:border-b
+    [&_td]:px-4 [&_td]:py-3 [&_td]:border-b [&_td]:border-border
+    [&_tr:last-child_td]:border-b-0
+    [&_.invitation-hero]:hidden
+    [&_hr]:my-4 [&_hr]:border-border
+    overflow-x-auto break-words [overflow-wrap:break-word]`;
+
+  const isProgrammeSection = (section: InvitationSection) =>
+    section.id === 'programme' && programmeRows.length > 0;
 
   return (
     <>
@@ -122,18 +149,18 @@ const EventLanding = () => {
                 </Badge>
               )}
 
-              <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
+              <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight break-words [overflow-wrap:break-word]">
                 {pageTitle}
               </h1>
 
               <div className="flex flex-wrap gap-4 mt-6 text-white/90 text-sm md:text-base">
                 {metadata.eventDate && (
-                  <span className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
+                  <span className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 max-w-full break-words">
                     📅 {metadata.eventDate}
                   </span>
                 )}
                 {metadata.eventLocation && (
-                  <span className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
+                  <span className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 max-w-full break-words">
                     📍 {metadata.eventLocation}
                   </span>
                 )}
@@ -149,30 +176,41 @@ const EventLanding = () => {
                 <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
                   <div className="flex items-center gap-3 px-8 pt-8 pb-4">
                     <div
-                      className="w-1 h-8 rounded-full"
+                      className="w-1 h-8 rounded-full flex-shrink-0"
                       style={{ background: index % 2 === 0 ? COLORS.terracotta : '#4A90D9' }}
                     />
-                    <h2 className="text-xl md:text-2xl font-bold text-foreground">
+                    <h2 className="text-xl md:text-2xl font-bold text-foreground break-words [overflow-wrap:break-word] min-w-0">
                       {section.title}
                     </h2>
                   </div>
-                  <div
-                    className="px-8 pb-8 prose prose-sm md:prose-base max-w-none
-                      prose-headings:text-foreground prose-headings:font-semibold
-                      prose-p:text-muted-foreground prose-p:leading-relaxed
-                      prose-strong:text-foreground
-                      prose-ul:text-muted-foreground prose-li:text-muted-foreground
-                      prose-table:text-sm
-                      [&_table]:w-full [&_table]:border-collapse [&_table]:table-fixed
-                      [&_th]:bg-muted/50 [&_th]:text-left [&_th]:px-4 [&_th]:py-3 [&_th]:font-semibold [&_th]:text-foreground [&_th]:border-b
-                      [&_td]:px-4 [&_td]:py-3 [&_td]:border-b [&_td]:border-border
-                      [&_tr:last-child_td]:border-b-0
-                      [&_.invitation-hero]:hidden
-                      [&_hr]:my-4 [&_hr]:border-border
-                      overflow-x-auto break-words [overflow-wrap:break-word]
-                    "
-                    dangerouslySetInnerHTML={{ __html: section.content }}
-                  />
+
+                  {isProgrammeSection(section) ? (
+                    <div className="px-8 pb-8 overflow-x-auto">
+                      <table className="w-full border-collapse table-fixed text-sm">
+                        <thead>
+                          <tr>
+                            <th className="bg-muted/50 text-left px-4 py-3 font-semibold text-foreground border-b w-[20%]">Horaire</th>
+                            <th className="bg-muted/50 text-left px-4 py-3 font-semibold text-foreground border-b w-[50%]">Thème</th>
+                            <th className="bg-muted/50 text-left px-4 py-3 font-semibold text-foreground border-b w-[30%]">Intervenant</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {programmeRows.map((row, ri) => (
+                            <tr key={ri}>
+                              <td className="px-4 py-3 border-b border-border text-muted-foreground break-words">{row.horaire}</td>
+                              <td className="px-4 py-3 border-b border-border text-muted-foreground break-words">{row.theme}</td>
+                              <td className="px-4 py-3 border-b border-border text-muted-foreground break-words">{row.intervenant}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div
+                      className={`px-8 pb-8 ${proseClasses}`}
+                      dangerouslySetInnerHTML={{ __html: section.content }}
+                    />
+                  )}
                 </div>
               </section>
             );
@@ -206,7 +244,7 @@ const EventLanding = () => {
           <section className="mt-12 mb-8 text-center">
             <div className="bg-muted/30 rounded-xl p-8">
               <img src="/logos/iarche-main.svg" alt="IArche" className="h-6 mx-auto mb-4 opacity-60" />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground break-words [overflow-wrap:break-word]">
                 {metadata.footerText || `© ${new Date().getFullYear()} IArche • Programme officiel`}
               </p>
             </div>
