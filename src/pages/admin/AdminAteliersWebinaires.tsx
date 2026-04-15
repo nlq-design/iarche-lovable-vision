@@ -98,6 +98,13 @@ const AdminAteliersWebinaires = () => {
       .select('id, slug, title, is_active, submissions_count, article_id')
       .in('article_id', articleIds);
 
+    // Load latest generated documents per article
+    const { data: docsData } = await supabase
+      .from('generated_documents')
+      .select('id, title, version, status, article_id')
+      .in('article_id', articleIds)
+      .order('created_at', { ascending: false });
+
     const formsByArticle = new Map<string, LinkedForm>();
     (formsData || []).forEach((f: any) => {
       if (f.article_id) {
@@ -111,11 +118,24 @@ const AdminAteliersWebinaires = () => {
       }
     });
 
+    const docsByArticle = new Map<string, LinkedDocument>();
+    (docsData || []).forEach((d: any) => {
+      if (d.article_id && !docsByArticle.has(d.article_id)) {
+        docsByArticle.set(d.article_id, {
+          id: d.id,
+          title: d.title,
+          version: d.version || 1,
+          status: d.status,
+        });
+      }
+    });
+
     const articlesWithData = (data || []).map((article: any) => ({
       ...article,
       has_faq: article.faqs && article.faqs.length > 0,
       faqs: undefined,
       linked_form: formsByArticle.get(article.id) || null,
+      linked_document: docsByArticle.get(article.id) || null,
     }));
     setArticles(articlesWithData);
     setLoading(false);
