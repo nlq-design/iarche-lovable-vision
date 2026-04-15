@@ -1,0 +1,1 @@
+ALTER TABLE public.generated_documents ADD COLUMN IF NOT EXISTS article_id UUID REFERENCES public.articles(id) ON DELETE SET NULL;

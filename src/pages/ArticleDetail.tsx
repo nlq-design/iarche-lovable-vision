@@ -6,7 +6,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Calendar, ArrowLeft } from 'lucide-react';
+import { Loader2, Calendar, ArrowLeft, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,6 +26,8 @@ import GradientTitle from '@/components/ui/GradientTitle';
 import { useCTATracking } from '@/hooks/useCTATracking';
 import { TableOfContents } from '@/components/ui/TableOfContents';
 import { RessourcesComplementaires } from '@/components/ui/RessourcesComplementaires';
+import { useCockpitGeneratedDocuments } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
+import { toast } from 'sonner';
 import 'react-quill/dist/quill.snow.css';
 
 interface Article {
@@ -84,6 +86,7 @@ const ArticleDetail = () => {
   const location = useLocation();
   const { isAdmin } = useAuth();
   const { trackCTAClick } = useCTATracking();
+  const { generateDocument } = useCockpitGeneratedDocuments();
 
   const [article, setArticle] = useState<Article | null>(null);
   const [faq, setFaq] = useState<Array<{ question: string; answer: string }>>([]);
@@ -592,8 +595,36 @@ const ArticleDetail = () => {
                 </p>
               </div>
             )}
+
+            {/* Bouton générer programme/invitation pour admin sur événements */}
+            {isAdmin && article.resource_type === 'atelier-webinaire' && (
+              <div className="mb-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    generateDocument.mutate({
+                      article_id: article.id,
+                      document_type: 'invitation',
+                    }, {
+                      onSuccess: (doc) => {
+                        toast.success('Programme généré !', {
+                          action: {
+                            label: 'Voir',
+                            onClick: () => navigate(`/cockpit/documents/programme-${doc.id}`),
+                          },
+                        });
+                      },
+                    });
+                  }}
+                  disabled={generateDocument.isPending}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  {generateDocument.isPending ? 'Génération...' : 'Générer programme / invitation'}
+                </Button>
+              </div>
+            )}
             
-            {/* Badge de statut pour les solutions */}
             {article.resource_type === 'solution' && article.tags && article.tags.length > 0 && (
               <div className="mb-4 animate-fadeIn">
                 <Badge 

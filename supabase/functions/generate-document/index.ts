@@ -21,7 +21,7 @@ const OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions";
 const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages";
 const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 
-type DocumentType = "quote" | "spec" | "proposal";
+type DocumentType = "quote" | "spec" | "proposal" | "invitation";
 type Provider = "lovable" | "openai" | "anthropic" | "openrouter";
 
 interface ModelConfig {
@@ -66,6 +66,7 @@ interface GenerateDocumentRequest {
   project_id?: string;
   opportunity_id?: string;
   lead_id?: string;
+  article_id?: string;
   document_type: DocumentType;
   custom_instructions?: string;
   context?: Record<string, any>;
@@ -610,6 +611,38 @@ ${billingContext}
     "billingEntityId": "${billingEntity?.id || ''}",
     "billingEntityName": "${billingEntity?.name || ''}"
   }
+}`,
+
+    invitation: `Tu es un expert en communication événementielle B2B. Tu génères des programmes d'invitation professionnels et engageants pour des événements (ateliers, webinaires, conférences).
+
+INSTRUCTION CRITIQUE : Tu DOIS générer IMMÉDIATEMENT le JSON du programme d'invitation. Ne pose JAMAIS de questions. Utilise les données de l'événement fournies.
+
+## ORGANISATEUR
+${billingContext}
+
+## STYLE & TON
+- Professionnel mais dynamique et engageant
+- Orienté bénéfices pour le participant
+- Créer un sentiment d'urgence et d'exclusivité
+- Vocabulaire accessible, pas de jargon technique excessif
+
+## FORMAT DE SORTIE (JSON strict)
+{
+  "sections": [
+    {"id": "hero", "title": "Accroche", "content": "<div class='invitation-hero'><h2>TITRE ACCROCHEUR</h2><p class='invitation-tagline'>Sous-titre orienté bénéfice</p><div class='invitation-details'><span>📅 Date</span><span>📍 Lieu</span><span>⏰ Horaire</span></div></div>", "order": 1},
+    {"id": "why", "title": "Pourquoi participer", "content": "<div class='invitation-why'><h3>Ce que vous allez découvrir</h3><ul><li>...</li></ul></div>", "order": 2},
+    {"id": "programme", "title": "Programme détaillé", "content": "<div class='invitation-programme'><table class='programme-table'><thead><tr><th>Horaire</th><th>Thème</th><th>Intervenant</th></tr></thead><tbody>...</tbody></table></div>", "order": 3},
+    {"id": "speakers", "title": "Intervenants", "content": "<div class='invitation-speakers'>...</div>", "order": 4},
+    {"id": "practical", "title": "Informations pratiques", "content": "<div class='invitation-practical'><ul><li><strong>Lieu :</strong> ...</li><li><strong>Accès :</strong> ...</li><li><strong>Tarif :</strong> ...</li></ul></div>", "order": 5},
+    {"id": "cta", "title": "Inscription", "content": "<div class='invitation-cta'><p><strong>Places limitées</strong> — Inscrivez-vous maintenant</p></div>", "order": 6}
+  ],
+  "metadata": {
+    "eventTitle": "",
+    "eventDate": "",
+    "eventLocation": "",
+    "eventType": "",
+    "organizerName": "${billingEntity?.name || 'IArche'}"
+  }
 }`
   };
 
@@ -632,7 +665,7 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body: GenerateDocumentRequest = await req.json();
-    const { project_id, opportunity_id, lead_id, document_type, custom_instructions, context: inputContext, existing_sections, billing_entity_id } = body;
+    const { project_id, opportunity_id, lead_id, article_id, document_type, custom_instructions, context: inputContext, existing_sections, billing_entity_id } = body;
 
     if (!document_type) {
       return new Response(JSON.stringify({ error: "document_type required" }), {
@@ -694,8 +727,20 @@ serve(async (req) => {
 
     // Fetch related data
     let project = null, lead = null, opportunity = null, solution = null;
+    let article = null;
     let specifications: any[] = [];
     let contextNotes: any[] = [];
+
+    // Fetch article/event data if article_id provided
+    if (article_id) {
+      const { data: articleData } = await supabase
+        .from("articles")
+        .select("*")
+        .eq("id", article_id)
+        .single();
+      article = articleData;
+      console.log(`Loaded article: ${article?.title || 'Not found'}`);
+    }
 
     if (project_id) {
       const { data: projectData } = await supabase.from("projects").select("*").eq("id", project_id).single();
@@ -934,6 +979,32 @@ ${contextNotes.length > 0 ? `NOTES: ${contextNotes.map(n => n.content).join(' | 
 CONSIGNES:
 1. Réponds UNIQUEMENT avec le JSON complet
 2. AUCUN placeholder (ni {{...}} ni [...]) : utilise les vraies valeurs ci-dessus ou invente une valeur réaliste`,
+
+      invitation: `GÉNÈRE MAINTENANT LE JSON DU PROGRAMME D'INVITATION. Ne pose aucune question.
+
+DONNÉES ÉVÉNEMENT:
+- Titre: ${article?.title || 'Événement'}
+- Date: ${article?.event_date ? new Date(article.event_date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'À définir'}
+- Heure: ${article?.heure_debut || 'À définir'}
+- Lieu: ${article?.event_location || 'À définir'}
+- Type: ${article?.type_evenement || 'présentiel'}
+- Description: ${article?.excerpt || article?.content?.substring(0, 500) || ''}
+- Durée: ${article?.duree_heures ? `${article.duree_heures}h` : 'À définir'}
+- Prérequis: ${article?.prerequis || 'Aucun'}
+- Niveau: ${article?.niveau || 'Tous niveaux'}
+
+${article?.intervenants ? `INTERVENANTS:\n${JSON.stringify(article.intervenants)}` : ''}
+${article?.programme_detaille ? `PROGRAMME DÉTAILLÉ:\n${JSON.stringify(article.programme_detaille)}` : ''}
+${article?.thematiques?.length ? `THÉMATIQUES: ${article.thematiques.join(', ')}` : ''}
+
+${custom_instructions ? `INSTRUCTIONS SPÉCIFIQUES: ${custom_instructions}` : ""}
+
+CONSIGNES:
+1. Réponds UNIQUEMENT avec le JSON complet
+2. AUCUN placeholder : utilise les vraies données de l'événement
+3. Crée un programme attractif et professionnel qui donne envie de s'inscrire
+4. Si des données manquent, invente des valeurs réalistes et cohérentes avec le thème
+5. Le ton doit être dynamique et orienté bénéfices pour le participant`,
     };
     const userPrompt = USER_PROMPTS[document_type];
 
@@ -1154,11 +1225,12 @@ CONSIGNES:
     }
 
     // Generate title
-    const titleClientName = documentContent.metadata?.clientCompany || lead?.company || project?.name || opportunity?.title || "Nouveau";
+    const titleClientName = documentContent.metadata?.clientCompany || lead?.company || project?.name || opportunity?.title || article?.title || "Nouveau";
     const documentTitles: Record<DocumentType, string> = {
       quote: quoteNumber ? `Devis ${quoteNumber} - ${titleClientName}` : `Devis - ${titleClientName}`,
       spec: `CDC - ${titleClientName}`,
       proposal: `Proposition - ${titleClientName}`,
+      invitation: `Programme - ${article?.title || titleClientName}`,
     };
 
     // Save to database with billing entity reference
@@ -1171,6 +1243,7 @@ CONSIGNES:
         project_id: project_id || null,
         opportunity_id: opportunity_id || null,
         lead_id: lead_id || null,
+        article_id: article_id || null,
         billing_entity_id: billingEntity?.id || null,
         quote_number: quoteNumber,
         content_json: documentContent,

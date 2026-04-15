@@ -83,6 +83,7 @@ const DOCUMENT_TYPE_SLUG_MAP: Record<string, DocumentType> = {
   'devis': 'quote',
   'cdc': 'spec',
   'proposition': 'proposal',
+  'programme': 'invitation',
 };
 
 const SLUG_PREFIX_MAP: Record<DocumentType, string> = {
@@ -92,6 +93,7 @@ const SLUG_PREFIX_MAP: Record<DocumentType, string> = {
   report: 'rapport',
   email: 'email',
   contract: 'contrat',
+  invitation: 'programme',
 };
 
 // Check if quote document has new invoice-style format
