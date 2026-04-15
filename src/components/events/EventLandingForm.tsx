@@ -22,7 +22,7 @@ const isNamePair = (a: FormField, b: FormField): boolean => {
   return aIsName && bIsName;
 };
 
-const fieldKey = (field: FormField) => field.id;
+const fieldKey = (field: FormField) => field.id || (field as any).name || field.label;
 
 const EventLandingForm = ({ articleId }: Props) => {
   const [form, setForm] = useState<Form | null>(null);
