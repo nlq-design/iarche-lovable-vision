@@ -1,26 +1,44 @@
 
 
-# Fix : Bug formulaire — tous les champs partagent la meme cle
+# Fix page événement : CTA, formulaire et QR code
 
-## Cause racine
+## Problème
 
-Les champs du formulaire en base ont une propriete `name` (prenom, nom, email, etc.) mais **pas de propriete `id`**. Or `fieldKey()` utilise `field.id` qui retourne `undefined` pour tous les champs. Resultat : tous les inputs ecrivent dans `values[undefined]`, d'ou la propagation de la saisie.
+1. **Section "Inscription" avec CTA bleu** : La section `id: 'cta'` dans `content_json` génère un bloc "Je m'inscris gratuitement maintenant !" via `dangerouslySetInnerHTML`. C'est redondant avec le vrai formulaire en bas.
+2. **QR code mal placé** : Le QR code est actuellement SOUS le formulaire sur la page publique — il devrait être dans le PDF uniquement, pas sur la page web.
+3. **Logique inversée** : Sur la page publique → formulaire (sans QR). Sur le PDF (AdminInvitationPreview) → QR code (pointant vers le formulaire public).
 
-## Fix
+## Actions
 
-Dans `EventLandingForm.tsx`, modifier `fieldKey` pour utiliser `name` en fallback :
+### 1. `EventLanding.tsx` — Supprimer section CTA + retirer QR code
 
-```typescript
-const fieldKey = (field: FormField) => field.id || (field as any).name || field.label;
+- Filtrer la section `id: 'cta'` dans le rendu des `sortedSections` (comme on filtre déjà `id: 'hero'`)
+- Retirer le composant `EventQRCode` de la section inscription — garder uniquement le formulaire
+- Supprimer l'import `EventQRCode`
+
+```
+// Ligne 174 : ajouter le filtre
+if (section.id === 'hero' || section.id === 'cta') return null;
 ```
 
-C'est la seule ligne a modifier. Les 5 champs auront alors des cles uniques : `prenom`, `nom`, `email`, `entreprise`, `telephone`.
+```
+// Lignes 241-247 : supprimer le bloc QR code sous le formulaire
+```
 
-## Fichier impacte
+### 2. `AdminInvitationPreview.tsx` — Vérifier QR code en place
+
+Le QR code est déjà correctement implémenté dans la preview admin (lignes 514-544) avec le lien public. Rien à modifier ici — c'est exactement le comportement souhaité pour l'impression PDF.
+
+### 3. Nettoyage
+
+- Retirer l'import `EventQRCode` de `EventLanding.tsx`
+- Le composant `EventQRCode.tsx` reste disponible pour d'autres usages
+
+## Fichiers impactés
 
 | Fichier | Modification |
 |---------|-------------|
-| `src/components/events/EventLandingForm.tsx` | L.28 : fallback `name` puis `label` dans `fieldKey` |
+| `src/pages/EventLanding.tsx` | Filtrer section `cta`, supprimer QR code, nettoyer imports |
 
-Zero migration. Aucun autre fichier touche.
+Migration SQL : aucune.
 
