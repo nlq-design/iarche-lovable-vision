@@ -21,7 +21,7 @@ const OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions";
 const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages";
 const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 
-type DocumentType = "quote" | "spec" | "proposal";
+type DocumentType = "quote" | "spec" | "proposal" | "invitation";
 type Provider = "lovable" | "openai" | "anthropic" | "openrouter";
 
 interface ModelConfig {
@@ -66,6 +66,7 @@ interface GenerateDocumentRequest {
   project_id?: string;
   opportunity_id?: string;
   lead_id?: string;
+  article_id?: string;
   document_type: DocumentType;
   custom_instructions?: string;
   context?: Record<string, any>;
@@ -610,6 +611,38 @@ ${billingContext}
     "billingEntityId": "${billingEntity?.id || ''}",
     "billingEntityName": "${billingEntity?.name || ''}"
   }
+}`,
+
+    invitation: `Tu es un expert en communication événementielle B2B. Tu génères des programmes d'invitation professionnels et engageants pour des événements (ateliers, webinaires, conférences).
+
+INSTRUCTION CRITIQUE : Tu DOIS générer IMMÉDIATEMENT le JSON du programme d'invitation. Ne pose JAMAIS de questions. Utilise les données de l'événement fournies.
+
+## ORGANISATEUR
+${billingContext}
+
+## STYLE & TON
+- Professionnel mais dynamique et engageant
+- Orienté bénéfices pour le participant
+- Créer un sentiment d'urgence et d'exclusivité
+- Vocabulaire accessible, pas de jargon technique excessif
+
+## FORMAT DE SORTIE (JSON strict)
+{
+  "sections": [
+    {"id": "hero", "title": "Accroche", "content": "<div class='invitation-hero'><h2>TITRE ACCROCHEUR</h2><p class='invitation-tagline'>Sous-titre orienté bénéfice</p><div class='invitation-details'><span>📅 Date</span><span>📍 Lieu</span><span>⏰ Horaire</span></div></div>", "order": 1},
+    {"id": "why", "title": "Pourquoi participer", "content": "<div class='invitation-why'><h3>Ce que vous allez découvrir</h3><ul><li>...</li></ul></div>", "order": 2},
+    {"id": "programme", "title": "Programme détaillé", "content": "<div class='invitation-programme'><table class='programme-table'><thead><tr><th>Horaire</th><th>Thème</th><th>Intervenant</th></tr></thead><tbody>...</tbody></table></div>", "order": 3},
+    {"id": "speakers", "title": "Intervenants", "content": "<div class='invitation-speakers'>...</div>", "order": 4},
+    {"id": "practical", "title": "Informations pratiques", "content": "<div class='invitation-practical'><ul><li><strong>Lieu :</strong> ...</li><li><strong>Accès :</strong> ...</li><li><strong>Tarif :</strong> ...</li></ul></div>", "order": 5},
+    {"id": "cta", "title": "Inscription", "content": "<div class='invitation-cta'><p><strong>Places limitées</strong> — Inscrivez-vous maintenant</p></div>", "order": 6}
+  ],
+  "metadata": {
+    "eventTitle": "",
+    "eventDate": "",
+    "eventLocation": "",
+    "eventType": "",
+    "organizerName": "${billingEntity?.name || 'IArche'}"
+  }
 }`
   };
 
@@ -632,7 +665,7 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body: GenerateDocumentRequest = await req.json();
-    const { project_id, opportunity_id, lead_id, document_type, custom_instructions, context: inputContext, existing_sections, billing_entity_id } = body;
+    const { project_id, opportunity_id, lead_id, article_id, document_type, custom_instructions, context: inputContext, existing_sections, billing_entity_id } = body;
 
     if (!document_type) {
       return new Response(JSON.stringify({ error: "document_type required" }), {
