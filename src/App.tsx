@@ -87,6 +87,7 @@ const AdminRendezVous = lazy(() => import("./pages/admin/AdminRendezVous"));
 const FormPublic = lazy(() => import("./pages/FormPublic"));
 const RendezVous = lazy(() => import("./pages/RendezVous"));
 const BrochurePublic = lazy(() => import("./pages/BrochurePublic"));
+const EventLanding = lazy(() => import("./pages/EventLanding"));
 const IArcheLabs = lazy(() => import("./pages/IArcheLabs"));
 const AdminBrochures = lazy(() => import("./pages/admin/AdminBrochures"));
 const BrochureEditor = lazy(() => import("./pages/admin/BrochureEditor"));
@@ -255,6 +256,13 @@ const App = () => (
           <Route path="/brochure/:slug" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <BrochurePublic />
+            </Suspense>
+          } />
+          
+          {/* Landing pages événements publiques */}
+          <Route path="/evenements/:slug" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <EventLanding />
             </Suspense>
           } />
           

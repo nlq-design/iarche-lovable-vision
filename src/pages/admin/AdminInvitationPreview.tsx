@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,9 +6,10 @@ import { useAuth } from '@/hooks/useAuth';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, Download, Printer } from 'lucide-react';
+import { Loader2, ArrowLeft, Printer, Lock, Link2, Copy, CheckCircle } from 'lucide-react';
 import { COLORS } from '@/components/admin/medias/shared/tokens';
-import LogoArc from '@/components/ui/LogoArc';
+import { toast } from 'sonner';
+import QRCode from 'qrcode';
 
 interface InvitationSection {
   id: string;
@@ -29,6 +30,7 @@ interface InvitationDocument {
   id: string;
   title: string;
   status: string;
+  slug: string | null;
   content_json: {
     sections?: InvitationSection[];
     metadata?: InvitationMetadata;
@@ -43,6 +45,8 @@ const AdminInvitationPreview = () => {
   const { user, isAdmin, loading: authLoading } = useAuth();
   const [doc, setDoc] = useState<InvitationDocument | null>(null);
   const [loading, setLoading] = useState(true);
+  const [freezing, setFreezing] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -59,7 +63,7 @@ const AdminInvitationPreview = () => {
   const loadDocument = async () => {
     const { data, error } = await supabase
       .from('generated_documents')
-      .select('id, title, status, content_json, created_at, article_id')
+      .select('id, title, status, slug, content_json, created_at, article_id')
       .eq('id', id!)
       .single();
 
@@ -67,12 +71,56 @@ const AdminInvitationPreview = () => {
       navigate('/admin/ateliers-webinaires');
       return;
     }
-    setDoc(data as unknown as InvitationDocument);
+    const document = data as unknown as InvitationDocument;
+    setDoc(document);
     setLoading(false);
+
+    // Generate QR code if slug exists
+    if (document.slug) {
+      generateQRCode(document.slug);
+    }
+  };
+
+  const generateQRCode = async (slug: string) => {
+    try {
+      const url = `https://iarche.fr/evenements/${slug}`;
+      const dataUrl = await QRCode.toDataURL(url, {
+        width: 200,
+        margin: 2,
+        color: { dark: COLORS.bleuNuit, light: '#FFFFFF' },
+      });
+      setQrDataUrl(dataUrl);
+    } catch (err) {
+      console.error('QR code generation failed:', err);
+    }
+  };
+
+  const handleFreeze = async () => {
+    if (!doc) return;
+    setFreezing(true);
+    const { error } = await supabase
+      .from('generated_documents')
+      .update({ status: 'approved', approved_at: new Date().toISOString() })
+      .eq('id', doc.id);
+
+    if (error) {
+      toast.error('Erreur lors du figement');
+    } else {
+      toast.success('Version figée ! Le lien public est maintenant actif.');
+      setDoc(prev => prev ? { ...prev, status: 'approved' } : null);
+    }
+    setFreezing(false);
   };
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const copyPublicUrl = () => {
+    if (!doc?.slug) return;
+    const url = `https://iarche.fr/evenements/${doc.slug}`;
+    navigator.clipboard.writeText(url);
+    toast.success('URL publique copiée !', { description: url });
   };
 
   if (authLoading || loading) {
@@ -89,6 +137,8 @@ const AdminInvitationPreview = () => {
 
   const { sections = [], metadata = {} } = doc.content_json || {};
   const sortedSections = [...sections].sort((a, b) => a.order - b.order);
+  const isApproved = doc.status === 'approved';
+  const publicUrl = doc.slug ? `https://iarche.fr/evenements/${doc.slug}` : null;
 
   return (
     <AdminLayout>
@@ -105,9 +155,23 @@ const AdminInvitationPreview = () => {
               <ArrowLeft className="h-4 w-4 mr-1" />
               Retour
             </Button>
-            <Badge variant="secondary">{doc.status}</Badge>
+            <Badge variant={isApproved ? 'default' : 'secondary'}>
+              {isApproved ? '✅ Figé' : 'Brouillon'}
+            </Badge>
           </div>
           <div className="flex items-center gap-2">
+            {!isApproved && (
+              <Button variant="default" size="sm" onClick={handleFreeze} disabled={freezing}>
+                {freezing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Lock className="h-4 w-4 mr-1" />}
+                Figer la version
+              </Button>
+            )}
+            {publicUrl && (
+              <Button variant="outline" size="sm" onClick={copyPublicUrl}>
+                <Copy className="h-4 w-4 mr-1" />
+                Copier lien public
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={handlePrint}>
               <Printer className="h-4 w-4 mr-1" />
               Imprimer / PDF
@@ -165,7 +229,7 @@ const AdminInvitationPreview = () => {
 
           {/* Content Sections */}
           {sortedSections.map((section, index) => {
-            if (section.id === 'hero') return null; // Already rendered above via metadata
+            if (section.id === 'hero') return null;
 
             return (
               <section 
@@ -173,7 +237,6 @@ const AdminInvitationPreview = () => {
                 className="mb-8 print:break-inside-avoid print:mb-4"
               >
                 <div className="bg-card rounded-xl border shadow-sm overflow-hidden print:shadow-none print:border-0">
-                  {/* Section header with accent bar */}
                   <div className="flex items-center gap-3 px-8 pt-8 pb-4">
                     <div 
                       className="w-1 h-8 rounded-full" 
@@ -184,7 +247,6 @@ const AdminInvitationPreview = () => {
                     </h2>
                   </div>
                   
-                  {/* Section content */}
                   <div 
                     className="px-8 pb-8 prose prose-sm md:prose-base max-w-none
                       prose-headings:text-foreground prose-headings:font-semibold
@@ -205,6 +267,31 @@ const AdminInvitationPreview = () => {
               </section>
             );
           })}
+
+          {/* QR Code Section - visible in print and screen */}
+          {qrDataUrl && publicUrl && (
+            <section className="mb-8 print:break-inside-avoid">
+              <div className="bg-card rounded-xl border shadow-sm overflow-hidden print:shadow-none print:border-0 p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-1 h-8 rounded-full" style={{ background: COLORS.terracotta }} />
+                  <h2 className="text-xl md:text-2xl font-bold text-foreground">
+                    Inscription
+                  </h2>
+                </div>
+                <div className="flex flex-col md:flex-row items-center gap-8">
+                  <div className="flex-shrink-0">
+                    <img src={qrDataUrl} alt="QR Code inscription" className="w-40 h-40" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground mb-2">
+                      Scannez ce QR code pour vous inscrire directement en ligne, ou rendez-vous sur :
+                    </p>
+                    <p className="text-primary font-medium text-sm break-all">{publicUrl}</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Footer */}
           <section className="mt-12 mb-8 text-center print:mt-4">
