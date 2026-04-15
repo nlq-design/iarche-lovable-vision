@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { COLORS } from '@/components/admin/medias/shared/tokens';
 import EventLandingForm from '@/components/events/EventLandingForm';
+import EventQRCode from '@/components/events/EventQRCode';
 
 interface InvitationSection {
   id: string;
@@ -236,6 +237,14 @@ const EventLanding = () => {
                   {metadata.qrDescription || 'Remplissez ce formulaire pour confirmer votre participation.'}
                 </p>
                 <EventLandingForm articleId={doc.article_id} />
+
+                <div className="mt-8 pt-6 border-t border-border/50">
+                  <EventQRCode
+                    url={window.location.href.split('#')[0] + '#inscription'}
+                    title={metadata.qrTitle || pageTitle}
+                    description="Scannez ce QR code pour accéder directement au formulaire d'inscription."
+                  />
+                </div>
               </div>
             </section>
           )}
