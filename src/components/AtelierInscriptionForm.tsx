@@ -84,7 +84,7 @@ const AtelierInscriptionForm = ({
       const validatedData = atelierFormSchema.parse(formData);
       
       // Vérifier à nouveau les places disponibles
-      if (inscriptionsCount >= maxParticipants) {
+      if (maxParticipants > 0 && inscriptionsCount >= maxParticipants) {
         throw new Error('Désolé, l\'événement est complet');
       }
       
