@@ -44,11 +44,11 @@ export function TranscriptionDetailHeader({
 
   return (
     <div className="flex items-start justify-between gap-4">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/cockpit/transcriptions')}>
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => navigate('/cockpit/transcriptions')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div>
+        <div className="min-w-0 flex-1">
           {editingTitle ? (
             <div className="flex items-center gap-2">
               <Input
