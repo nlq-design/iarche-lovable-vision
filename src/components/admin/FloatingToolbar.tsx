@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Bold, Italic, Underline, Link, List, ListOrdered } from 'lucide-react';
-import { COLORS } from '@/components/admin/medias/shared/tokens';
 
 interface FloatingToolbarProps {
   containerRef: React.RefObject<HTMLElement>;
