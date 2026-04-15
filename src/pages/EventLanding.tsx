@@ -176,13 +176,22 @@ const EventLanding = () => {
           {/* Registration Form */}
           {doc.article_id && (
             <section id="inscription" className="mb-8">
-              <div className="bg-card rounded-xl border shadow-sm overflow-hidden p-8">
-                <div className="flex items-center gap-3 mb-6">
+              <div
+                className="rounded-xl border-2 overflow-hidden p-8"
+                style={{
+                  borderColor: `${COLORS.terracotta}30`,
+                  background: `${COLORS.terracotta}05`,
+                }}
+              >
+                <div className="flex items-center gap-3 mb-2">
                   <div className="w-1 h-8 rounded-full" style={{ background: COLORS.terracotta }} />
                   <h2 className="text-xl md:text-2xl font-bold text-foreground">
                     Inscription
                   </h2>
                 </div>
+                <p className="text-sm text-muted-foreground mb-6 ml-4 pl-px">
+                  Remplissez ce formulaire pour confirmer votre participation.
+                </p>
                 <EventLandingForm articleId={doc.article_id} />
               </div>
             </section>
