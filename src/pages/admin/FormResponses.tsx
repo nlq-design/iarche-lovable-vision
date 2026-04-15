@@ -335,7 +335,6 @@ const FormResponses = () => {
                       </TableCell>
                       );
                     })}
-                    ))}
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
