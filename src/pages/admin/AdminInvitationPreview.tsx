@@ -130,7 +130,7 @@ const AdminInvitationPreview = () => {
           >
             <div className="absolute inset-0 opacity-10">
               <div className="absolute top-10 right-10 w-64 h-64 rounded-full" style={{ background: COLORS.terracotta, filter: 'blur(80px)' }} />
-              <div className="absolute bottom-10 left-10 w-48 h-48 rounded-full" style={{ background: COLORS.bleuCiel, filter: 'blur(60px)' }} />
+              <div className="absolute bottom-10 left-10 w-48 h-48 rounded-full" style={{ background: '#4A90D9', filter: 'blur(60px)' }} />
             </div>
             
             <div className="relative z-10 p-10 md:p-16 flex flex-col justify-center min-h-[400px]">
@@ -177,7 +177,7 @@ const AdminInvitationPreview = () => {
                   <div className="flex items-center gap-3 px-8 pt-8 pb-4">
                     <div 
                       className="w-1 h-8 rounded-full" 
-                      style={{ background: index % 2 === 0 ? COLORS.terracotta : COLORS.bleuCiel }}
+                      style={{ background: index % 2 === 0 ? COLORS.terracotta : '#4A90D9' }}
                     />
                     <h2 className="text-xl md:text-2xl font-bold text-foreground">
                       {section.title}
