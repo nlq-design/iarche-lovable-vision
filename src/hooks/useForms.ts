@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Form, FormSettings, DEFAULT_FORM_SETTINGS } from '@/types/forms';
 import { useToast } from '@/hooks/use-toast';
 import { Json } from '@/integrations/supabase/types';
+import { normalizeFormFields } from '@/lib/form-fields';
 
 // Générer un slug unique
 const generateSlug = (title: string): string => {
@@ -19,7 +20,7 @@ const generateSlug = (title: string): string => {
 // Helper pour convertir les données Supabase en Form
 const parseForm = (data: any): Form => ({
   ...data,
-  fields: Array.isArray(data.fields) ? data.fields : [],
+  fields: normalizeFormFields(data.fields),
   settings: data.settings as FormSettings || DEFAULT_FORM_SETTINGS
 });
 

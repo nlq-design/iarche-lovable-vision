@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useForms } from '@/hooks/useForms';
 import { useFormResponses } from '@/hooks/useFormResponses';
 import { useFormAnalytics } from '@/hooks/useFormAnalytics';
 import { Form, FormField, DEFAULT_FORM_SETTINGS } from '@/types/forms';
@@ -30,10 +29,10 @@ import {
   DividerField
 } from '@/components/forms/fields';
 import { supabase } from '@/integrations/supabase/client';
+import { normalizeFormFields } from '@/lib/form-fields';
 
 const FormPublic = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { getFormBySlug } = useForms();
   const { submitResponse } = useFormResponses();
   const { trackEvent } = useFormAnalytics();
   
@@ -84,7 +83,7 @@ const FormPublic = () => {
           // Parse form data
           const formData: Form = {
             ...data,
-            fields: Array.isArray(data.fields) ? data.fields : [],
+            fields: normalizeFormFields(data.fields),
             settings: data.settings || DEFAULT_FORM_SETTINGS
           };
           setForm(formData);
