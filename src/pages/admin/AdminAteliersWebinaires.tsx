@@ -236,6 +236,21 @@ const AdminAteliersWebinaires = () => {
                             Aucun formulaire lié
                           </span>
                         )}
+                        {/* Linked document info */}
+                        {article.linked_document && (
+                          <button
+                            onClick={() => navigate(`/admin/invitation/${article.linked_document!.id}`)}
+                            className="flex items-center gap-1.5 px-2 py-1 rounded bg-green-100 text-green-800 text-xs font-medium hover:bg-green-200 transition-colors cursor-pointer"
+                            title="Voir le programme généré"
+                          >
+                            {article.linked_document.status === 'approved' ? (
+                              <Lock className="h-3 w-3" />
+                            ) : (
+                              <FileText className="h-3 w-3" />
+                            )}
+                            Programme v{article.linked_document.version}
+                          </button>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -279,7 +294,9 @@ const AdminAteliersWebinaires = () => {
                           }, {
                             onSuccess: (doc) => {
                               setGeneratingId(null);
+                              loadArticles();
                               sonnerToast.success('Programme généré !', {
+                                duration: 10000,
                                 action: {
                                   label: 'Voir',
                                   onClick: () => navigate(`/admin/invitation/${doc.id}`),
