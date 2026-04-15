@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Edit, Trash2, Eye, History, HelpCircle } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Eye, History, HelpCircle, FileText } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import { useCockpitGeneratedDocuments } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
+import { toast as sonnerToast } from 'sonner';
 
 interface Article {
   id: string;
@@ -28,6 +30,8 @@ const AdminAteliersWebinaires = () => {
   const navigate = useNavigate();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const { generateDocument } = useCockpitGeneratedDocuments();
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -158,6 +162,39 @@ const AdminAteliersWebinaires = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5"
+                        disabled={generatingId === article.id}
+                        onClick={() => {
+                          setGeneratingId(article.id);
+                          generateDocument.mutate({
+                            article_id: article.id,
+                            document_type: 'invitation',
+                          }, {
+                            onSuccess: (doc) => {
+                              setGeneratingId(null);
+                              sonnerToast.success('Programme généré !', {
+                                action: {
+                                  label: 'Voir',
+                                  onClick: () => navigate(`/cockpit/documents/programme-${doc.id}`),
+                                },
+                              });
+                            },
+                            onError: () => {
+                              setGeneratingId(null);
+                            },
+                          });
+                        }}
+                      >
+                        {generatingId === article.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <FileText className="h-4 w-4" />
+                        )}
+                        {generatingId === article.id ? 'Génération...' : 'Programme'}
+                      </Button>
                       <NavLink to={`/ateliers-webinaires/${article.slug}`}>
                         <Button variant="outline" size="icon">
                           <Eye className="h-4 w-4" />
