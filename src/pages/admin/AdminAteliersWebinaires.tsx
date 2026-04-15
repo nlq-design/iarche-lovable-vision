@@ -162,6 +162,39 @@ const AdminAteliersWebinaires = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5"
+                        disabled={generatingId === article.id}
+                        onClick={() => {
+                          setGeneratingId(article.id);
+                          generateDocument.mutate({
+                            article_id: article.id,
+                            document_type: 'invitation',
+                          }, {
+                            onSuccess: (doc) => {
+                              setGeneratingId(null);
+                              sonnerToast.success('Programme généré !', {
+                                action: {
+                                  label: 'Voir',
+                                  onClick: () => navigate(`/cockpit/documents/programme-${doc.id}`),
+                                },
+                              });
+                            },
+                            onError: () => {
+                              setGeneratingId(null);
+                            },
+                          });
+                        }}
+                      >
+                        {generatingId === article.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <FileText className="h-4 w-4" />
+                        )}
+                        {generatingId === article.id ? 'Génération...' : 'Programme'}
+                      </Button>
                       <NavLink to={`/ateliers-webinaires/${article.slug}`}>
                         <Button variant="outline" size="icon">
                           <Eye className="h-4 w-4" />
