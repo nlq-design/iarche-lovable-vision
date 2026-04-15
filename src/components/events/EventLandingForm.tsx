@@ -30,7 +30,7 @@ const isNamePair = (a: FormField, b: FormField): boolean => {
 
 const fieldKey = (field: FormField) => field.id;
 
-const EventLandingForm = ({ articleId }: Props) => {
+const EventLandingForm = ({ articleId, articleTitle, eventDate, eventLocation, heureDebut, typeEvenement }: Props) => {
   const [form, setForm] = useState<Form | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -94,18 +94,85 @@ const EventLandingForm = ({ articleId }: Props) => {
 
       if (insertError) throw insertError;
 
-      await supabase.rpc('increment_form_submissions', { form_slug: form.slug });
-
+      // Extract field values for lead enrichment
       const emailField = fields.find(f => f.type === 'email');
       const nameFields = fields.filter(f => f.type === 'text');
-      if (emailField && values[fieldKey(emailField)]) {
-        const name = nameFields.map(f => values[fieldKey(f)]).filter(Boolean).join(' ') || 'Participant';
-        await supabase.rpc('upsert_lead', {
-          p_email: values[fieldKey(emailField)],
-          p_name: name,
-          p_source: 'atelier',
-          p_source_context: form.title,
+      const phoneField = fields.find(f => f.type === 'phone');
+      const companyField = fields.find(f => {
+        const label = (f.label || '').toLowerCase();
+        return label.includes('entreprise') || label.includes('société') || label.includes('company');
+      });
+
+      const recipientEmail = emailField ? values[fieldKey(emailField)] : '';
+      const recipientName = nameFields.map(f => values[fieldKey(f)]).filter(Boolean).join(' ') || 'Participant';
+      const recipientPhone = phoneField ? values[fieldKey(phoneField)] : null;
+      const recipientCompany = companyField ? values[fieldKey(companyField)] : null;
+
+      // Upsert lead with enriched data
+      if (recipientEmail) {
+        const { data: leadId, error: leadError } = await supabase.rpc('upsert_lead', {
+          p_email: recipientEmail,
+          p_name: recipientName,
+          p_source: 'atelier-webinaire',
+          p_source_id: articleId,
+          p_source_context: articleTitle || form.title,
+          p_company: recipientCompany,
+          p_phone: recipientPhone,
         });
+
+        if (leadError) {
+          console.error('Failed to upsert lead:', leadError);
+        }
+
+        // Insert into atelier_inscriptions for counter
+        if (leadId) {
+          const { error: inscError } = await supabase
+            .from('atelier_inscriptions')
+            .insert([{ atelier_id: articleId, lead_id: leadId }]);
+          if (inscError && inscError.code !== '23505') {
+            console.error('Failed to create atelier inscription:', inscError);
+          }
+        }
+
+        // Send admin notification
+        try {
+          await supabase.functions.invoke('send-lead-notification', {
+            body: {
+              name: recipientName,
+              email: recipientEmail,
+              company: recipientCompany,
+              phone: recipientPhone,
+              source: 'atelier-webinaire',
+              source_context: articleTitle || form.title,
+              event_details: {
+                date: eventDate,
+                location: eventLocation,
+                heure_debut: heureDebut,
+                type_evenement: typeEvenement,
+              },
+            },
+          });
+        } catch (notifError) {
+          console.warn('Failed to send lead notification:', notifError);
+        }
+
+        // Send confirmation email to participant
+        try {
+          await supabase.functions.invoke('send-atelier-confirmation', {
+            body: {
+              name: recipientName,
+              email: recipientEmail,
+              atelier_title: articleTitle || form.title,
+              atelier_id: articleId,
+              event_date: eventDate,
+              event_location: eventLocation,
+              heure_debut: heureDebut,
+              type_evenement: typeEvenement,
+            },
+          });
+        } catch (confirmError) {
+          console.warn('Failed to send confirmation email:', confirmError);
+        }
       }
 
       setSubmitted(true);
